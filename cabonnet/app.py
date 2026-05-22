@@ -409,6 +409,24 @@ async def health():
     return {"status": "ok", "date": date.today().isoformat(), "version": "2026.8.0", "porta": PORT}
 
 
+# ── Stats (KPIs server-side) ──────────────────────────────────────────────────
+
+@router.get("/stats")
+def get_stats():
+    """KPIs da fila operacional computados server-side a partir do cache de OS.
+    Retorna JSON compacto sem enviar CSV completo ao cliente."""
+    from cabonnet.stats import compute_stats
+    with state._query_cache_lock:
+        cached = dict(state._query_cache)
+    ts = cached.get("ts", 0)
+    result = compute_stats(
+        cached.get("pendente", ""),
+        cached.get("agendado",  ""),
+        cached.get("futuro",    ""),
+    )
+    return JSONResponse({"ts": ts, "cached": bool(ts), **result})
+
+
 # ── CSV exports ───────────────────────────────────────────────────────────────
 
 @router.get("/pendente")

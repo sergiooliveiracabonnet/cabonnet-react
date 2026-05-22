@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useAINarrative } from '../../hooks/useAINarrative'
+import { useStats } from '../../hooks/useStats'
 import { isCOPE, isReagend } from '../../lib/transform'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { exportCSV } from '../../lib/export'
@@ -54,6 +55,7 @@ export default function DashboardPage() {
   const { kpis, fornecedores, pulso = {} } = dashboard
   const { clustersAtivos = [] } = pulso
   const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso, fornecedores, anomalias })
+  const { data: stats } = useStats()
 
   const [modal,    setModal]    = useState(null)
   const [drawerOS, setDrawerOS] = useState(null)
@@ -80,7 +82,43 @@ export default function DashboardPage() {
     )
   }
 
-  if (isLoading) return <KPIGridSkeleton count={8} />
+  if (isLoading) {
+    const f = stats?.fila
+    if (f) {
+      const slaAccent = f.sla_pct >= 90 ? 'green' : f.sla_pct >= 75 ? 'yellow' : 'red'
+      const statsKpis = [
+        { id: 'criticas', title: 'OS Críticas',   value: f.criticas,        sub: 'SLA 2× excedido',   accent: 'red'      },
+        { id: 'semEq',    title: 'Sem Equipe',     value: f.sem_equipe,      sub: 'sem atribuição',    accent: 'orange'   },
+        { id: 'pend',     title: 'Pendentes',      value: f.pendente,        sub: 'aguardando',        accent: 'yellow'   },
+        { id: 'atend',    title: 'Em Atendimento', value: f.atendimento,     sub: 'em campo',          accent: 'cyan'     },
+        { id: 'total',    title: 'Fila Total',     value: f.total,           sub: 'OS ativas',         accent: 'primary'  },
+        { id: 'rede',     title: 'Rede',           value: f.rede,            sub: 'OS de rede',        accent: 'green'    },
+        { id: 'sla',      title: 'SLA da Fila',    value: `${f.sla_pct}%`,   sub: 'dentro do prazo',  accent: slaAccent  },
+        { id: 'aging',    title: 'Aging Médio',    value: `${f.aging_med}d`, sub: 'dias em aberto',   accent: 'purple'   },
+      ]
+      return (
+        <div className="space-y-4 max-w-[1600px]">
+          <section>
+            <SectionLabel icon={AlertCircle} color="#ef4444">Alertas &amp; Risco</SectionLabel>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
+              {statsKpis.slice(0, 4).map((k, i) => (
+                <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} />
+              ))}
+            </div>
+          </section>
+          <section>
+            <SectionLabel icon={BarChart3} color="#0ea5e9">Fila Ativa &amp; Performance</SectionLabel>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
+              {statsKpis.slice(4).map((k, i) => (
+                <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} />
+              ))}
+            </div>
+          </section>
+        </div>
+      )
+    }
+    return <KPIGridSkeleton count={8} />
+  }
 
   const riskKpis = kpis.slice(0, 4)
   const perfKpis = kpis.slice(4)

@@ -62,6 +62,7 @@ export const endpoints = {
   juniperHist: '/juniper/historico',
   detalhes:    '/detalhes',
   health:      '/health',
+  stats:       '/stats',
 } as const
 
 export const ai = {

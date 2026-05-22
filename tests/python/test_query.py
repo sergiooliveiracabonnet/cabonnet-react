@@ -63,3 +63,39 @@ def test_detalhes_numeric_numos_not_found(client):
     """Numos numérico válido que não existe no Grafana mockado → 404."""
     r = client.get("/detalhes?numos=1234567")
     assert r.status_code == 404
+
+
+def test_stats_returns_expected_keys(client):
+    r = client.get("/stats")
+    assert r.status_code == 200
+    data = r.json()
+    assert "fila" in data
+    assert "por_cidade" in data
+    assert "por_tipo" in data
+    fila = data["fila"]
+    for key in ("pendente", "atendimento", "total", "rede", "criticas",
+                "sem_equipe", "sem_agendamento", "sla_pct", "aging_med", "aging_dist"):
+        assert key in fila, f"chave ausente em fila: {key}"
+    assert isinstance(fila["total"], int)
+    assert isinstance(fila["sla_pct"], int)
+    assert isinstance(data["por_cidade"], list)
+    assert isinstance(data["por_tipo"], list)
+
+
+def test_stats_v1_path(client):
+    r = client.get("/api/v1/stats")
+    assert r.status_code == 200
+    assert "fila" in r.json()
+
+
+def test_stats_fila_totals_consistent(client):
+    """pendente + atendimento deve ser igual a total."""
+    data = client.get("/stats").json()
+    f = data["fila"]
+    assert f["pendente"] + f["atendimento"] == f["total"]
+
+
+def test_stats_sla_pct_range(client):
+    """SLA % deve estar entre 0 e 100."""
+    data = client.get("/stats").json()
+    assert 0 <= data["fila"]["sla_pct"] <= 100
