@@ -14,3 +14,6 @@ Pillow>=10.0.0
 
 # Claude API (ai.py — optional, only needed if ANTHROPIC_API_KEY is set)
 anthropic>=0.25.0
+
+# Testing
+pytest>=9.0.0
