@@ -66,9 +66,9 @@ def _is_ativo(descsituacao: str) -> bool:
     return (descsituacao or "") in ("Pendente", "Atendimento")
 
 _FCODE_RE = _re.compile(r'\bF\d{2,}\b')
-_WES_CODES  = {"F08", "F11", "F23", "F36", "F39", "F44"}
-_INST_CODES = {"F01", "F04", "F05", "F07", "F20", "F27", "F45", "F46", "F48", "F49", "F50"}
-_THM_CODES  = {"F12", "F13", "F14"}
+_WES_CODES  = {"F08", "F11", "F23", "F36", "F44"}
+_INST_CODES = {"F01", "F04", "F05", "F07", "F20", "F45", "F46", "F47", "F48", "F49", "F50"}
+_THM_CODES  = {"F11", "F12", "F13"}
 
 def _get_tipo(equipe: str, tiposervico: str) -> str:
     u = (equipe or "").upper()

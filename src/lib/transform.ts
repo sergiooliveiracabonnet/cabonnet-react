@@ -188,9 +188,9 @@ export function getSlaLimite(
 export const isCOPE    = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /COPE/i.test(r.nomedaequipe ?? '')
 export const isReagend = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /REAGEND/i.test(r.nomedaequipe ?? '')
 
-const WES_CODES  = new Set(['F08', 'F11', 'F23', 'F36', 'F39', 'F44'])
-const INST_CODES = new Set(['F01', 'F04', 'F05', 'F07', 'F20', 'F27', 'F45', 'F46', 'F48', 'F49', 'F50'])
-const THM_CODES  = new Set(['F12', 'F13', 'F14'])
+const WES_CODES  = new Set(['F08', 'F11', 'F23', 'F36', 'F44'])
+const INST_CODES = new Set(['F01', 'F04', 'F05', 'F07', 'F20', 'F45', 'F46', 'F47', 'F48', 'F49', 'F50'])
+const THM_CODES  = new Set(['F11', 'F12', 'F13'])
 
 export function getFornecedor(equipe: string | undefined | null): Fornecedor {
   const u = (equipe || '').toUpperCase()
