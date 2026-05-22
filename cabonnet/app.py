@@ -19,7 +19,7 @@ from datetime import datetime, date
 from pathlib import Path
 
 import requests as _requests
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (
     FileResponse,
@@ -235,7 +235,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="CaboNet ISP",
     description="Dashboard operacional — OS, SLA, Telegram, Juniper/PPPoE",
-    version="2026.8",
+    version="2026.8.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -248,6 +248,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── API Router (v1) ───────────────────────────────────────────────────────────
+# Business-logic routes are defined on this router and mounted at /api/v1.
+# Legacy unversioned paths (e.g. /query, /health) are kept via a second include
+# hidden from OpenAPI so existing clients keep working without changes.
+
+router = APIRouter(tags=["v1"])
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -397,29 +404,29 @@ async def setup_post(request: Request, _role: str = Depends(_require_gestor)):
 
 # ── Health ────────────────────────────────────────────────────────────────────
 
-@app.get("/health")
+@router.get("/health")
 async def health():
-    return {"status": "ok", "date": date.today().isoformat(), "version": "2026.8", "porta": PORT}
+    return {"status": "ok", "date": date.today().isoformat(), "version": "2026.8.0", "porta": PORT}
 
 
 # ── CSV exports ───────────────────────────────────────────────────────────────
 
-@app.get("/pendente")
+@router.get("/pendente")
 async def pendente():
     return _csv_response(SQL_PENDENTE, "PENDENTE")
 
-@app.get("/agendado")
+@router.get("/agendado")
 async def agendado():
     return _csv_response(SQL_AGENDADO, "AGENDADO")
 
-@app.get("/futuro")
+@router.get("/futuro")
 async def futuro():
     return _csv_response(SQL_FUTURO, "FUTURO")
 
 
 # ── Query principal ───────────────────────────────────────────────────────────
 
-@app.get("/query")
+@router.get("/query")
 async def query(request: Request, date: str = "hoje", _role: str = Depends(_require_auth)):
     try:
         data_iso = parse_date_param(date)
@@ -477,7 +484,7 @@ async def query(request: Request, date: str = "hoje", _role: str = Depends(_requ
         raise HTTPException(502, str(ex))
 
 
-@app.get("/revisitas")
+@router.get("/revisitas")
 async def revisitas(_role: str = Depends(_require_auth)):
     try:
         csv_r = frames_to_csv(grafana_post(SQL_REVISITAS))
@@ -487,7 +494,7 @@ async def revisitas(_role: str = Depends(_require_auth)):
         raise HTTPException(502, str(ex))
 
 
-@app.get("/atendimento")
+@router.get("/atendimento")
 async def atendimento():
     try:
         now = _time_mod.time()
@@ -510,7 +517,7 @@ async def atendimento():
         raise HTTPException(502, str(ex))
 
 
-@app.get("/detalhes")
+@router.get("/detalhes")
 async def detalhes(numos: str = ""):
     if not numos.strip().isdigit():
         raise HTTPException(400, "Parâmetro 'numos' inválido.")
@@ -549,7 +556,7 @@ async def detalhes(numos: str = ""):
 
 # ── Telegram ──────────────────────────────────────────────────────────────────
 
-@app.get("/notify/telegram/status")
+@router.get("/notify/telegram/status")
 async def telegram_status():
     with state._dados_cache_lock:
         cache_ts = state._dados_cache["ts"]
@@ -561,7 +568,7 @@ async def telegram_status():
     }
 
 
-@app.post("/notify/telegram")
+@router.post("/notify/telegram")
 async def telegram_send(request: Request):
     _check_telegram()
     body = await request.json()
@@ -573,14 +580,14 @@ async def telegram_send(request: Request):
     return JSONResponse({"ok": ok}, status_code=200 if ok else 502)
 
 
-@app.post("/notify/telegram/status_now")
+@router.post("/notify/telegram/status_now")
 async def telegram_status_now():
     _check_telegram()
     threading.Thread(target=lambda: _telegram_send(_build_status_text()), daemon=True).start()
     return {"ok": True}
 
 
-@app.post("/notify/telegram/pdf")
+@router.post("/notify/telegram/pdf")
 async def telegram_pdf(request: Request):
     _check_telegram()
     body = await request.json()
@@ -594,7 +601,7 @@ async def telegram_pdf(request: Request):
     return JSONResponse({"ok": ok}, status_code=200 if ok else 502)
 
 
-@app.post("/notify/telegram/photo")
+@router.post("/notify/telegram/photo")
 async def telegram_photo(request: Request):
     _check_telegram()
     body    = await request.json()
@@ -621,7 +628,7 @@ async def telegram_photo(request: Request):
 
 # ── Juniper ───────────────────────────────────────────────────────────────────
 
-@app.get("/juniper")
+@router.get("/juniper")
 async def juniper(cluster: str = ""):
     cluster = cluster or MONITOR_CONFIG["cluster_default"]
     try:
@@ -642,7 +649,7 @@ async def juniper(cluster: str = ""):
         raise HTTPException(502, "Juniper fetch error: " + str(ex))
 
 
-@app.get("/juniper/historico")
+@router.get("/juniper/historico")
 async def juniper_historico_get():
     try:
         if os.path.exists(JUN_HIST_FILE):
@@ -654,7 +661,7 @@ async def juniper_historico_get():
         return {"historico": [], "snapshots": {}}
 
 
-@app.post("/juniper/historico")
+@router.post("/juniper/historico")
 async def juniper_historico_post(request: Request):
     body = await request.json()
     with open(JUN_HIST_FILE, "w", encoding="utf-8") as f:
@@ -664,7 +671,7 @@ async def juniper_historico_post(request: Request):
 
 # ── AI (Claude) ───────────────────────────────────────────────────────────────
 
-@app.post("/ai/revisitas")
+@router.post("/ai/revisitas")
 async def ai_revisitas(request: Request):
     body   = await request.json()
     result = _ai_revisitas(body)
@@ -675,7 +682,7 @@ async def ai_revisitas(request: Request):
     return {"ok": True, **result}
 
 
-@app.post("/ai/narrative")
+@router.post("/ai/narrative")
 async def ai_narrative(request: Request):
     body   = await request.json()
     result = _ai_narrative(body)
@@ -688,7 +695,7 @@ async def ai_narrative(request: Request):
 
 # ── Grafana / Zabbix ──────────────────────────────────────────────────────────
 
-@app.get("/grafana/os-totais")
+@router.get("/grafana/os-totais")
 async def grafana_os_totais():
     try:
         rows = frames_to_dict_list(grafana_post(SQL_ERP_OS_TOTAIS))
@@ -697,7 +704,7 @@ async def grafana_os_totais():
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=502)
 
 
-@app.get("/grafana/os-cidades")
+@router.get("/grafana/os-cidades")
 async def grafana_os_cidades():
     try:
         return {"ok": True, "data": frames_to_dict_list(grafana_post(SQL_ERP_OS_CIDADES))}
@@ -705,7 +712,7 @@ async def grafana_os_cidades():
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=502)
 
 
-@app.get("/grafana/incidentes")
+@router.get("/grafana/incidentes")
 async def grafana_incidentes():
     try:
         return {"ok": True, "data": _map_problems(zabbix_get_problems())}
@@ -721,19 +728,19 @@ def _zabbix_route(fn):
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=502)
     return handler
 
-app.get("/grafana/zabbix/discover")(_zabbix_route(zabbix_discover))
-app.get("/grafana/zabbix/pppoe")(_zabbix_route(zabbix_get_pppoe_vlans))
-app.get("/grafana/zabbix/mttr")(_zabbix_route(zabbix_get_mttr))
-app.get("/grafana/zabbix/cidades")(_zabbix_route(zabbix_get_cidades))
-app.get("/grafana/zabbix/top-equipamentos")(_zabbix_route(zabbix_get_top_equipamentos))
-app.get("/grafana/zabbix/olt")(_zabbix_route(zabbix_get_olt))
-app.get("/grafana/zabbix/infra")(_zabbix_route(zabbix_get_infra))
-app.get("/grafana/zabbix/assinantes")(_zabbix_route(zabbix_get_assinantes))
+router.get("/grafana/zabbix/discover")(_zabbix_route(zabbix_discover))
+router.get("/grafana/zabbix/pppoe")(_zabbix_route(zabbix_get_pppoe_vlans))
+router.get("/grafana/zabbix/mttr")(_zabbix_route(zabbix_get_mttr))
+router.get("/grafana/zabbix/cidades")(_zabbix_route(zabbix_get_cidades))
+router.get("/grafana/zabbix/top-equipamentos")(_zabbix_route(zabbix_get_top_equipamentos))
+router.get("/grafana/zabbix/olt")(_zabbix_route(zabbix_get_olt))
+router.get("/grafana/zabbix/infra")(_zabbix_route(zabbix_get_infra))
+router.get("/grafana/zabbix/assinantes")(_zabbix_route(zabbix_get_assinantes))
 
 
 # ── SSE — Server-Sent Events ──────────────────────────────────────────────────
 
-@app.get("/events")
+@router.get("/events")
 async def events():
     q = _queue.Queue()
     with state._sse_clients_lock:
@@ -760,6 +767,15 @@ async def events():
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "Connection": "keep-alive"},
     )
+
+
+# ── Mount router ─────────────────────────────────────────────────────────────
+# /api/v1/* — versioned, shown in OpenAPI docs
+# legacy paths (e.g. /query, /health) — included without schema so existing
+# clients (React frontend, servidor.js) keep working without any changes.
+
+app.include_router(router, prefix="/api/v1")
+app.include_router(router, include_in_schema=False)
 
 
 # ── SPA catch-all (React Router) ──────────────────────────────────────────────
