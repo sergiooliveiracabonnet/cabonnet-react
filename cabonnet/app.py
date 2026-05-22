@@ -733,6 +733,19 @@ async def ai_briefing_get():
     return {"ok": True, "cached": True, **c}
 
 
+@router.post("/ai/forecast")
+async def ai_forecast(request: Request):
+    """Demand Forecasting — projeta próximos 7 dias de abertura de OS."""
+    from cabonnet.ai import _ai_forecast
+    body   = await request.json()
+    result = _ai_forecast(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 422
+        msg  = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Série histórica insuficiente (mínimo 7 pontos)"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
 @router.post("/ai/daily-briefing")
 async def ai_briefing_post():
     """Disparo manual do briefing executivo — gera e armazena em cache."""

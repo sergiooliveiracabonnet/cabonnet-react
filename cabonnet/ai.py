@@ -305,6 +305,112 @@ def _ai_anomalias(payload):
         return None
 
 
+_AI_FORECAST_TTL = 3600  # 1 hora
+
+
+def _ai_forecast(payload: dict):
+    """Demand Forecasting — Claude analisa série histórica e projeta próximos 7 dias."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_forecast_lock:
+        c = state._ai_forecast_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_FORECAST_TTL:
+            return {
+                "tendencia":     c["tendencia"],
+                "narrativa":     c["narrativa"],
+                "previsao":      c["previsao"],
+                "pico_previsto": c["pico_previsto"],
+                "cached":        True,
+            }
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    serie   = payload.get("serie", [])
+    ctx     = payload.get("contexto", {})
+
+    if len(serie) < 7:
+        return None
+
+    serie_txt = "\n".join(
+        f"  {p['data']}: {p['abertas']} abertas, {p['concluidas']} concluídas"
+        for p in serie[-30:]
+    )
+
+    prompt = (
+        "Você é um analista de dados de ISP especializado em forecasting de demanda operacional. "
+        "Analise a série histórica de OS abaixo e projete os próximos 7 dias.\n\n"
+        "=== SÉRIE HISTÓRICA (últimos dias) ===\n"
+        f"{serie_txt}\n\n"
+        "=== CONTEXTO ===\n"
+        f"Total ativo hoje: {ctx.get('total_ativo', '?')} OS | "
+        f"Fila pendente: {ctx.get('fila', '?')} | "
+        f"Média diária abertas (período): {ctx.get('media_diaria', '?'):.1f}\n\n"
+        "=== INSTRUÇÕES ===\n"
+        "1. Identifique a tendência (crescente/estável/decrescente) com base nos últimos 7 dias vs. os 7 anteriores.\n"
+        "2. Detecte padrões de sazonalidade (picos em certos dias da semana).\n"
+        "3. Projete os próximos 7 dias com volume estimado e confiança.\n"
+        "4. Confiança: 'alta' se tendência clara, 'media' se estável, 'baixa' se volátil.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"tendencia": "crescente|estável|decrescente", '
+        '"narrativa": "2 frases: padrão identificado + risco principal com dados do período", '
+        '"previsao": ['
+        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
+        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
+        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
+        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
+        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
+        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
+        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}'
+        '], '
+        '"pico_previsto": {"data": "dd/mm", "volume": <int>} }'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key":         ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type":      "application/json",
+            },
+            json={
+                "model":      "claude-haiku-4-5-20251001",
+                "max_tokens": 800,
+                "messages":   [{"role": "user", "content": prompt}],
+            },
+            timeout=25,
+            verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] Forecast API %s: %s", resp.status_code, resp.text[:200])
+            return None
+
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "tendencia":     result.get("tendencia", "estável"),
+            "narrativa":     result.get("narrativa", ""),
+            "previsao":      result.get("previsao", [])[:7],
+            "pico_previsto": result.get("pico_previsto"),
+        }
+
+        with state._ai_forecast_lock:
+            state._ai_forecast_cache.update({"hash": data_hash, "ts": now, **out})
+
+        log.info("[AI] Forecast gerado — tendência=%s, %d dias projetados", out["tendencia"], len(out["previsao"]))
+        return {**out, "cached": False}
+
+    except Exception as ex:
+        log.warning("[AI] Erro ao gerar forecast: %s", str(ex)[:200])
+        return None
+
+
 def _ai_daily_briefing(payload: dict):
     """Briefing executivo diário gerado pelo Claude — resumo do dia anterior + riscos + 3 ações."""
     if not ANTHROPIC_API_KEY:

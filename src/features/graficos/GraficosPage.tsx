@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { BarChart2, TrendingUp, Sliders, ZoomIn, MousePointerClick, ChevronUp, ChevronDown } from 'lucide-react'
+import { BarChart2, TrendingUp, Sliders, ZoomIn, MousePointerClick, ChevronUp, ChevronDown, Sparkles, TrendingDown, Minus } from 'lucide-react'
 import { useOSDerived }   from '../../contexts/OSDataContext'
 import { buildGraficos }  from '../../lib/builders'
 import { shortEquipe }    from '../../lib/osFormat'
@@ -12,6 +12,7 @@ import { DonutChart }     from '../../components/ui/DonutChart'
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid, Legend, Cell } from '../../components/ui/bar-chart'
 import { AreaChart, Area }                                                 from '../../components/ui/line-chart'
 import { XAxis as LXAxis, YAxis as LYAxis, ChartTooltip as LTooltip, Grid as LGrid, Legend as LLegend } from '../../components/ui/line-chart'
+import { useAIForecast } from '../../hooks/useAIForecast'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FORN_PILLS = [
@@ -238,7 +239,9 @@ export default function GraficosPage() {
       <TabBar tabs={TABS} active={tab} onChange={setTab} className="mb-2" />
 
       {tab === 'distribuicao' && <TabDistribuicao d={d} rows={activeRows} onDrill={openDrill} />}
-      {tab === 'tendencia'    && <TabTendencia    d={d} rows={activeRows} onDrill={openDrill} />}
+      {tab === 'tendencia'    && <TabTendencia    d={d} rows={activeRows} onDrill={openDrill}
+                                                   totalAtivo={rows.filter(r => ['Pendente','Atendimento'].includes(r.descsituacao)).length}
+                                                   fila={rows.filter(r => r.descsituacao === 'Pendente').length} />}
       {tab === 'estatistica'  && <TabEstatistica  d={d} rows={activeRows} onDrill={openDrill} />}
       {tab === 'cohort'       && <TabCohort       d={d} rows={activeRows} onDrill={openDrill} />}
 
@@ -357,8 +360,87 @@ function TabDistribuicao({ d, rows, onDrill }) {
   )
 }
 
+// ─── Forecast Card ────────────────────────────────────────────────────────────
+const CONF_STYLE = {
+  alta:  'bg-green/15 text-green border-green/25',
+  media: 'bg-yellow/15 text-yellow border-yellow/25',
+  baixa: 'bg-orange/15 text-orange border-orange/25',
+}
+const TEND_STYLE = {
+  crescente:   { cls: 'text-red-400',    Icon: TrendingUp   },
+  estável:     { cls: 'text-cyan-400',   Icon: Minus        },
+  decrescente: { cls: 'text-green-400',  Icon: TrendingDown },
+}
+
+function ForecastCard({ evolucao, totalAtivo, fila }) {
+  const { data, isFetching, isError } = useAIForecast({ evolucao, totalAtivo, fila })
+  const tend = data?.tendencia ? (TEND_STYLE[data.tendencia] ?? TEND_STYLE['estável']) : null
+
+  if ((evolucao?.labels?.length ?? 0) < 7) return null
+
+  return (
+    <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <Sparkles size={14} className="text-primary" />
+        <span className="text-[13px] font-bold text-text">Previsão de Demanda — próximos 7 dias</span>
+        {isFetching && <span className="text-[10px] text-muted animate-pulse ml-auto">Analisando…</span>}
+        {data?.cached && <span className="text-[10px] text-muted/50 ml-auto">cache</span>}
+      </div>
+
+      {isError && (
+        <p className="text-[11px] text-muted">Forecast indisponível — verifique ANTHROPIC_API_KEY no servidor.</p>
+      )}
+
+      {data && (
+        <>
+          {/* Tendência + narrativa */}
+          <div className="flex items-start gap-3">
+            {tend && <tend.Icon size={16} className={`${tend.cls} flex-shrink-0 mt-0.5`} />}
+            <div>
+              <span className={`text-[11px] font-bold uppercase tracking-wider ${tend?.cls ?? 'text-muted'}`}>
+                {data.tendencia}
+              </span>
+              <p className="text-[11px] text-secondary mt-0.5 leading-relaxed">{data.narrativa}</p>
+            </div>
+          </div>
+
+          {/* Pico previsto */}
+          {data.pico_previsto && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange/[0.07] border border-orange/20">
+              <TrendingUp size={12} className="text-orange flex-shrink-0" />
+              <span className="text-[11px] text-secondary">
+                Pico previsto: <span className="font-bold text-text">{data.pico_previsto.data}</span>
+                {' '}— <span className="font-bold text-orange">{data.pico_previsto.volume} OS</span>
+              </span>
+            </div>
+          )}
+
+          {/* Grade de dias */}
+          <div className="grid grid-cols-7 gap-1.5">
+            {data.previsao.map((d, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <span className="text-[9px] text-muted font-semibold">{d.data}</span>
+                <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-surface border border-white/[0.06]">
+                  <span className="text-[13px] font-bold text-text">{d.volume}</span>
+                </div>
+                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${CONF_STYLE[d.confianca] ?? CONF_STYLE['media']}`}>
+                  {d.confianca}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {!data && !isFetching && !isError && (
+        <p className="text-[11px] text-muted/60">Aguardando dados históricos suficientes…</p>
+      )}
+    </div>
+  )
+}
+
 // ─── Tab: Tendência ───────────────────────────────────────────────────────────
-function TabTendencia({ d, rows, onDrill }) {
+function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }) {
   const mensalData = (d.mensal?.labels ?? []).map((name, i) => ({
     name,
     Abertas:        d.mensal?.abertas?.[i]     ?? 0,
@@ -372,6 +454,8 @@ function TabTendencia({ d, rows, onDrill }) {
 
   return (
     <div className="space-y-4">
+      <ForecastCard evolucao={d.evolucao ?? { labels: [], abertas: [], concluidas: [] }} totalAtivo={totalAtivo} fila={fila} />
+
       <SectionTitle icon={TrendingUp}>Visão Mensal — Abertura vs Conclusão</SectionTitle>
 
       <ChartCard title="Abertura × Conclusão × SLA Excedido — Mês a Mês" dot="#0ea5e9" height="h-80">
