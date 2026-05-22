@@ -322,14 +322,56 @@ def _resumo_scheduler_loop():
         enviados = {k for k in enviados if k.startswith(str(agora.date()))}
         if agora.minute % 30 >= 2: continue
 
-        chave_m          = f"{agora.date()}_manha"
-        chave_t          = f"{agora.date()}_tarde"
-        chave_h          = f"{agora.date()}_{agora.hour:02d}_exec"
-        chave_pppoe      = f"{agora.date()}_pppoe"
+        chave_m            = f"{agora.date()}_manha"
+        chave_t            = f"{agora.date()}_tarde"
+        chave_h            = f"{agora.date()}_{agora.hour:02d}_exec"
+        chave_pppoe        = f"{agora.date()}_pppoe"
         chave_alerta_pend  = f"{agora.date()}_alerta_pendentes"
         chave_pulso_12h    = f"{agora.date()}_pulso12h"
         chave_alerta_15h   = f"{agora.date()}_alerta15h"
         chave_ritmo_14h    = f"{agora.date()}_ritmo14h"
+        chave_briefing_7h  = f"{agora.date()}_briefing7h"
+
+        if agora.hour == 7 and agora.minute < 2 and chave_briefing_7h not in enviados:
+            enviados.add(chave_briefing_7h)
+            if TELEGRAM_CHAT_ALERTAS:
+                def _briefing_7h():
+                    try:
+                        from cabonnet.stats import compute_stats
+                        from cabonnet.ai import _ai_daily_briefing
+                        with state._query_cache_lock:
+                            cached = dict(state._query_cache)
+                        stats = compute_stats(
+                            cached.get("pendente", ""),
+                            cached.get("agendado", ""),
+                            cached.get("futuro", ""),
+                        )
+                        ontem = date.today() - timedelta(days=1)
+                        payload = {
+                            **stats,
+                            "data": date.today().strftime("%d/%m/%Y"),
+                            "ontem": {"executadas": None, "abertas": None, "taxa": None},
+                        }
+                        result = _ai_daily_briefing(payload)
+                        if not result:
+                            return
+                        linhas = [
+                            "🌄 <b>Briefing Executivo — Cabonnet</b>",
+                            f"<i>{payload['data']}</i>",
+                            _TG_DIV,
+                            "",
+                            result["texto"],
+                            "",
+                            "<b>Ações do dia:</b>",
+                        ]
+                        for i, acao in enumerate(result.get("acoes", []), 1):
+                            linhas.append(f"  {i}. {_tg_esc(acao)}")
+                        linhas += ["", "<i>Cabonnet · Inteligência Operacional</i>"]
+                        _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
+                        log.info("[Scheduler] Briefing 7h enviado")
+                    except Exception as ex:
+                        log.warning("[Scheduler] Erro briefing 7h: %s", str(ex)[:200])
+                threading.Thread(target=_briefing_7h, daemon=True).start()
 
         if agora.hour == 8 and agora.minute < 2 and chave_m not in enviados:
             enviados.add(chave_m)

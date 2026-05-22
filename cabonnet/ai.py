@@ -303,3 +303,100 @@ def _ai_anomalias(payload):
     except Exception as ex:
         log.warning("[AI] Erro ao analisar anomalias: %s", str(ex)[:200])
         return None
+
+
+def _ai_daily_briefing(payload: dict):
+    """Briefing executivo diário gerado pelo Claude — resumo do dia anterior + riscos + 3 ações."""
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    fila    = payload.get("fila", {})
+    cidades = payload.get("por_cidade", [])
+    tipos   = payload.get("por_tipo", [])
+    ontem   = payload.get("ontem", {})
+    data_str = payload.get("data", "")
+
+    cidades_txt = "\n".join(
+        f"  - {c['cidade']}: {c['pendente']} pendentes, {c['atendimento']} em atendimento, {c['criticas']} críticas"
+        for c in cidades[:5]
+    ) or "  sem dados"
+
+    tipos_txt = "\n".join(
+        f"  - {t['tipo']}: {t['n']} OS, {t['sla_exc']} fora de SLA"
+        for t in tipos[:5]
+    ) or "  sem dados"
+
+    ontem_txt = (
+        f"Executadas ontem: {ontem.get('executadas', '?')} | "
+        f"Abertas ontem: {ontem.get('abertas', '?')} | "
+        f"Taxa: {ontem.get('taxa', '?')}%"
+        if ontem else "dados do dia anterior indisponíveis"
+    )
+
+    prompt = (
+        "Você é um diretor de operações de ISP regional. Gere um briefing executivo matinal "
+        "conciso, acionável e em português brasileiro para a equipe de gestão.\n\n"
+        "=== SITUAÇÃO DA FILA ATUAL ===\n"
+        f"Total ativo: {fila.get('total', 0)} OS | "
+        f"Pendentes: {fila.get('pendente', 0)} | "
+        f"Em atendimento: {fila.get('atendimento', 0)} | "
+        f"Críticas (SLA 2×): {fila.get('criticas', 0)} | "
+        f"Sem agendamento: {fila.get('sem_agendamento', 0)} | "
+        f"SLA da fila: {fila.get('sla_pct', 0)}% | "
+        f"Aging médio: {fila.get('aging_med', 0):.1f}d\n\n"
+        f"=== ONTEM ===\n{ontem_txt}\n\n"
+        f"=== POR CIDADE ===\n{cidades_txt}\n\n"
+        f"=== POR TIPO DE SERVIÇO ===\n{tipos_txt}\n\n"
+        "=== INSTRUÇÕES ===\n"
+        "Seja direto e específico. Identifique o risco principal do dia com dados reais. "
+        "Não use frases genéricas. As ações devem ser concretas (quem, o quê, quando).\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"texto": "2-3 frases: diagnóstico da situação atual + risco principal do dia com dados", '
+        '"acoes": ['
+        '"Ação 1 — específica com dado do relatório (ex: contatar equipe X, {N} OS críticas)", '
+        '"Ação 2 — específica", '
+        '"Ação 3 — específica"'
+        ']}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key":         ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type":      "application/json",
+            },
+            json={
+                "model":      "claude-haiku-4-5-20251001",
+                "max_tokens": 700,
+                "messages":   [{"role": "user", "content": prompt}],
+            },
+            timeout=25,
+            verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] Briefing API %s: %s", resp.status_code, resp.text[:200])
+            return None
+
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "texto": result.get("texto", ""),
+            "acoes": result.get("acoes", [])[:3],
+            "data":  data_str,
+        }
+
+        with state._ai_briefing_lock:
+            state._ai_briefing_cache.update({**out, "ts": _time_mod.time()})
+
+        log.info("[AI] Briefing diário gerado — %d chars, %d ações", len(out["texto"]), len(out["acoes"]))
+        return out
+
+    except Exception as ex:
+        log.warning("[AI] Erro ao gerar briefing diário: %s", str(ex)[:200])
+        return None

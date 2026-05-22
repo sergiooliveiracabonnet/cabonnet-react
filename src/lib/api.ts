@@ -66,9 +66,11 @@ export const endpoints = {
 } as const
 
 export const ai = {
-  narrative: (payload: unknown) => request('/ai/narrative',  { method: 'POST', body: JSON.stringify(payload) }),
-  revisitas: (payload: unknown) => request('/ai/revisitas',  { method: 'POST', body: JSON.stringify(payload) }),
-  anomalias: (payload: unknown) => request('/ai/anomalias',  { method: 'POST', body: JSON.stringify(payload) }),
+  narrative:      (payload: unknown) => request('/ai/narrative',       { method: 'POST', body: JSON.stringify(payload) }),
+  revisitas:      (payload: unknown) => request('/ai/revisitas',       { method: 'POST', body: JSON.stringify(payload) }),
+  anomalias:      (payload: unknown) => request('/ai/anomalias',       { method: 'POST', body: JSON.stringify(payload) }),
+  briefingGet:    ()                 => request('/ai/daily-briefing'),
+  briefingCreate: ()                 => request('/ai/daily-briefing',  { method: 'POST', body: '{}' }),
 }
 
 export const telegram = {

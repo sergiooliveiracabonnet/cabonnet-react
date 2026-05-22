@@ -723,6 +723,34 @@ async def ai_anomalias(request: Request):
     return {"ok": True, **result}
 
 
+@router.get("/ai/daily-briefing")
+async def ai_briefing_get():
+    """Retorna o último briefing executivo gerado (cache em memória)."""
+    with state._ai_briefing_lock:
+        c = dict(state._ai_briefing_cache)
+    if not c.get("texto"):
+        raise HTTPException(404, "Nenhum briefing gerado ainda — aguarde as 7h ou dispare via POST")
+    return {"ok": True, "cached": True, **c}
+
+
+@router.post("/ai/daily-briefing")
+async def ai_briefing_post():
+    """Disparo manual do briefing executivo — gera e armazena em cache."""
+    from cabonnet.ai import _ai_daily_briefing
+    from cabonnet.stats import compute_stats
+    with state._query_cache_lock:
+        cached_q = dict(state._query_cache)
+    stats  = compute_stats(cached_q.get("pendente", ""), cached_q.get("agendado", ""), cached_q.get("futuro", ""))
+    from datetime import date as _date
+    payload = {**stats, "data": _date.today().strftime("%d/%m/%Y"), "ontem": {}}
+    result  = _ai_daily_briefing(payload)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg  = "ANTHROPIC_API_KEY não configurada no .env" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, "cached": False, **result}
+
+
 # ── Grafana / Zabbix ──────────────────────────────────────────────────────────
 
 @router.get("/grafana/os-totais")

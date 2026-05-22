@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Send, Bell, BellOff, Trash2, CheckCheck, Settings, AlertTriangle, Clock, TrendingUp, MapPin } from 'lucide-react'
+import { Send, Bell, BellOff, Trash2, CheckCheck, Settings, AlertTriangle, Clock, TrendingUp, MapPin, Sparkles } from 'lucide-react'
 import { useTelegramStore } from '../../store/telegramStore'
-import { telegram } from '../../lib/api'
+import { telegram, ai } from '../../lib/api'
 import { Badge } from '../../components/ui/Badge'
+
+interface BriefingData { texto: string; acoes: string[]; data: string; cached?: boolean }
 
 const ICON_MAP = {
   'alert-triangle': AlertTriangle,
@@ -39,12 +41,21 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
   const [tab,       setTab]       = useState('alertas')
   const [enviando,  setEnviando]  = useState<string | null>(null)
   const [statusMsg, setStatusMsg] = useState<StatusMsg | null>(null)
+  const [briefing,  setBriefing]  = useState<BriefingData | null>(null)
 
   useEffect(() => {
     telegram.status()
       .then((d: any) => store.setEnabled(d?.enabled === true))
       .catch(() => store.setEnabled(false))
   }, [])
+
+  useEffect(() => {
+    if (tab === 'config') {
+      ai.briefingGet()
+        .then((d: any) => setBriefing(d as BriefingData))
+        .catch(() => {/* sem briefing ainda */})
+    }
+  }, [tab])
 
   async function testar() {
     setEnviando('teste')
@@ -63,6 +74,17 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
       setStatusMsg({ ok: true, txt: 'Status operacional enviado!' })
     } catch {
       setStatusMsg({ ok: false, txt: 'Erro ao enviar status.' })
+    } finally { setEnviando(null) }
+  }
+
+  async function gerarBriefing() {
+    setEnviando('briefing')
+    try {
+      const d = await ai.briefingCreate() as BriefingData
+      setBriefing(d)
+      setStatusMsg({ ok: true, txt: 'Briefing gerado e enviado ao grupo Alertas!' })
+    } catch (err: any) {
+      setStatusMsg({ ok: false, txt: err?.message?.includes('503') ? 'ANTHROPIC_API_KEY não configurada.' : 'Erro ao gerar briefing.' })
     } finally { setEnviando(null) }
   }
 
@@ -212,6 +234,33 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
+          {/* Briefing Executivo */}
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-[1.5px] text-muted block mb-2">
+              <Sparkles size={9} className="inline mr-1 text-primary" /> Briefing Executivo IA
+            </label>
+            {briefing?.texto ? (
+              <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4 space-y-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={11} className="text-primary flex-shrink-0" />
+                  <span className="text-[10px] text-muted">{briefing.data || 'Hoje'}</span>
+                </div>
+                <p className="text-[11px] text-text leading-relaxed">{briefing.texto}</p>
+                {briefing.acoes?.length > 0 && (
+                  <div className="space-y-1 pt-1 border-t border-white/[0.06]">
+                    {briefing.acoes.map((a, i) => (
+                      <p key={i} className="text-[10px] text-secondary">
+                        <span className="text-primary font-bold mr-1">{i + 1}.</span>{a}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-[10px] text-muted/60 mb-2">Nenhum briefing gerado hoje. Será enviado automaticamente às 7h.</p>
+            )}
+          </div>
+
           {/* Feedback */}
           {statusMsg && (
             <div className={`px-3 py-2 rounded-lg text-[11px] font-semibold ${statusMsg.ok ? 'bg-green/10 text-green border border-green/25' : 'bg-red/10 text-red border border-red/25'}`}>
@@ -221,8 +270,13 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
 
           {/* Botões de ação */}
           <div className="flex flex-col gap-2 pt-1">
-            <button onClick={testar} disabled={!!enviando}
+            <button onClick={gerarBriefing} disabled={!!enviando}
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary/15 border border-primary/30 text-primary text-[12px] font-bold hover:bg-primary/25 transition-all disabled:opacity-50"
+            >
+              <Sparkles size={12} /> {enviando === 'briefing' ? 'Gerando…' : 'Gerar briefing executivo agora'}
+            </button>
+            <button onClick={testar} disabled={!!enviando}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white/[0.05] border border-white/[0.08] text-secondary text-[12px] font-bold hover:bg-white/[0.08] transition-all disabled:opacity-50"
             >
               <Send size={12} /> {enviando === 'teste' ? 'Enviando…' : 'Enviar mensagem de teste'}
             </button>

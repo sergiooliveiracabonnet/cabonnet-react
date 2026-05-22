@@ -69,6 +69,8 @@ _ai_revisitas_cache = {"hash": "", "narrativa": "", "insights": [], "estrategia"
 _ai_revisitas_lock  = threading.Lock()
 _ai_anomalias_cache = {"hash": "", "causa_raiz": "", "acoes": [], "prioridade": "", "ts": 0.0}
 _ai_anomalias_lock  = threading.Lock()
+_ai_briefing_cache  = {"texto": "", "acoes": [], "data": "", "ts": 0.0}
+_ai_briefing_lock   = threading.Lock()
 
 # ── PIL fontes pré-carregadas ─────────────────────────────────────────────────
 _F = {}
