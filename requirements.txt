@@ -1,0 +1,16 @@
+# CaboNet ISP — Python dependencies
+# Install: pip install -r requirements.txt
+
+# Web framework
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9   # form data support
+
+# HTTP client (Grafana, Zabbix, Telegram, Claude)
+requests>=2.31.0
+
+# Image generation (Telegram resumo/detalhado)
+Pillow>=10.0.0
+
+# Claude API (ai.py — optional, only needed if ANTHROPIC_API_KEY is set)
+anthropic>=0.25.0
