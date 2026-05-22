@@ -288,7 +288,8 @@ export function exportOrdensPDF(rows, filename) {
     _doc.setFont('helvetica', 'normal')
     _doc.setFontSize(6.5)
     _doc.setTextColor(...SUB)
-    _doc.text(_t(row._risco, 13), COLS[2].x + 2, yT)
+    const _risco = row._riskScore != null ? String(row._riskScore) : ''
+    _doc.text(_t(_risco, 13), COLS[2].x + 2, yT)
 
     // Cliente — white bold
     _doc.setFont('helvetica', 'bold')

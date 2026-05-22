@@ -46,6 +46,7 @@ export interface OSRow {
   _categoria:         Categoria
   _situacaoEfetiva:   SituacaoEfetiva
   _executadaHoje:     boolean
+  _riskScore:         number   // 0–100: score de risco de SLA (computado em enrichRows)
 }
 
 // ─── Date Filter (uiStore) ────────────────────────────────────────────────────

@@ -69,7 +69,17 @@ const columns = [
       return <Badge variant={c}>{v ?? 0}d</Badge>
     }
   },
-  { key: '_risco',          label: 'Risco' },
+  { key: '_riskScore',      label: 'Risco',
+    render: (v: number) => {
+      const score = v ?? 0
+      const [variant, label] =
+        score >= 70 ? ['red',    'Crítico'] :
+        score >= 40 ? ['orange', 'Alto']    :
+        score >= 20 ? ['yellow', 'Médio']   :
+                      ['green',  'Baixo']
+      return <Badge variant={variant as 'red' | 'orange' | 'yellow' | 'green'}>{label} {score}</Badge>
+    }
+  },
   { key: 'nomecliente',     label: 'Cliente',
     render: (v, row) => v
       ? v

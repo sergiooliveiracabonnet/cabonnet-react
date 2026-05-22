@@ -6,21 +6,6 @@ import {
 import { useERPRows } from '../useERPRows'
 import { shortEquipe } from '../../../lib/osFormat'
 
-function calcRiscoScore(row: any) {
-  let s = 0
-  if (row._slaCritico)       s += 40
-  else if (row._slaExcedido) s += 25
-  else if (row._slaSemAgend) s += 10
-  const aging = row._aging ?? row._agingAbertura ?? 0
-  if (aging > 14)      s += 30
-  else if (aging > 7)  s += 20
-  else if (aging > 3)  s += 10
-  else if (aging > 1)  s += 4
-  if (!row.nomedaequipe)     s += 15
-  if (row._tipo === 'INSTALACAO') s += 5
-  return Math.min(s, 100)
-}
-
 const RISCO_LEVELS = [
   { min: 70, label: 'Crítico', cls: 'bg-red-500/20 text-red-400 border-red-500/30',     bar: 'bg-red-500',     row: 'hover:bg-red-500/[0.03]' },
   { min: 40, label: 'Alto',    cls: 'bg-orange-500/20 text-orange-400 border-orange-500/30', bar: 'bg-orange-500',  row: 'hover:bg-orange-500/[0.03]' },
@@ -51,15 +36,14 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
       return true
     })
     return r
-      .map(row => ({ ...row, _riscoScore: calcRiscoScore(row) }))
-      .sort((a, b) => sortDir === 'desc' ? b._riscoScore - a._riscoScore : a._riscoScore - b._riscoScore)
+      .sort((a, b) => sortDir === 'desc' ? b._riskScore - a._riskScore : a._riskScore - b._riskScore)
   }, [rows, equipeFilter, tipoFilter, sortDir])
 
   const buckets = useMemo(() => ({
-    critico: sorted.filter(r => r._riscoScore >= 70).length,
-    alto:    sorted.filter(r => r._riscoScore >= 40 && r._riscoScore < 70).length,
-    medio:   sorted.filter(r => r._riscoScore >= 20 && r._riscoScore < 40).length,
-    baixo:   sorted.filter(r => r._riscoScore < 20).length,
+    critico: sorted.filter(r => r._riskScore >= 70).length,
+    alto:    sorted.filter(r => r._riskScore >= 40 && r._riskScore < 70).length,
+    medio:   sorted.filter(r => r._riskScore >= 20 && r._riskScore < 40).length,
+    baixo:   sorted.filter(r => r._riskScore < 20).length,
   }), [sorted])
 
   return (
@@ -109,7 +93,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
           </thead>
           <tbody>
             {sorted.map(row => {
-              const level = getRiscoLevel(row._riscoScore)
+              const level = getRiscoLevel(row._riskScore)
               const tipoInfo = (TIPO_ICON as Record<string, { Icon: any; cls: string; label: string }>)[row._tipo as string] || { Icon: AlertTriangle, cls: 'text-muted', label: row._tipo || '—' }
               const TipoIcon = tipoInfo.Icon
               const aging = row._aging ?? row._agingAbertura ?? 0
@@ -127,7 +111,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
                         </span>
                         <div className="mt-1 w-16 h-1 bg-white/[0.06] rounded-full overflow-hidden">
                           <div className={`h-full rounded-full ${level.bar}`}
-                               style={{ width: `${row._riscoScore}%` }} />
+                               style={{ width: `${row._riskScore}%` }} />
                         </div>
                       </div>
                     </div>

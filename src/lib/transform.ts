@@ -215,6 +215,23 @@ export function getEquipeTipo(equipe: string | undefined | null, tiposervico: st
   return 'OUTRO'
 }
 
+// ─── Risk Score ──────────────────────────────────────────────────────────────
+
+export function calcRiskScore(row: Partial<OSRow>): number {
+  let s = 0
+  if (row._slaCritico)       s += 40
+  else if (row._slaExcedido) s += 25
+  else if (row._slaSemAgend) s += 10
+  const aging = row._aging ?? row._agingAbertura ?? 0
+  if      (aging > 14) s += 30
+  else if (aging >  7) s += 20
+  else if (aging >  3) s += 10
+  else if (aging >  1) s +=  4
+  if (!row.nomedaequipe?.trim()) s += 15
+  if (row._tipo === 'INSTALACAO') s += 5
+  return Math.min(s, 100)
+}
+
 // ─── Row Enrichment ───────────────────────────────────────────────────────────
 
 export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): OSRow[] {
@@ -283,6 +300,7 @@ export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): O
 
     const _fechamento = (row.dataexecucao || row.databaixa || '').split(' ')[0]
     row._executadaHoje = !isCOPE(row) && !isReagend(row) && isExecucaoReal(row._situacaoEfetiva) && _fechamento === hojeStr
+    row._riskScore     = calcRiskScore(row)
 
     // shortEquipe é usado apenas para exibição — não faz parte do OSRow,
     // mas manter compatibilidade com código JS que chama shortEquipe(r.nomedaequipe)
