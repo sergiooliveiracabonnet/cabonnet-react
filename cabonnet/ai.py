@@ -207,3 +207,99 @@ def _ai_revisitas(payload):
     except Exception as ex:
         log.warning("[AI] Erro ao analisar revisitas: %s", str(ex)[:200])
         return None
+
+
+def _ai_anomalias(payload):
+    """Root Cause Analysis das anomalias detectadas via Z-score."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_anomalias_lock:
+        c = state._ai_anomalias_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {"causa_raiz": c["causa_raiz"], "acoes": c["acoes"],
+                    "prioridade": c["prioridade"], "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    picos   = payload.get("picosDia",       [])
+    bairros = payload.get("bairrosAnomalia", [])
+    equipes = payload.get("equipesAnomalia", [])
+    ctx     = payload.get("contexto",        {})
+
+    picos_txt = "\n".join(
+        f"  - {p['date']}: {p['count']} OS abertas (Z={p['zScore']}σ)"
+        for p in picos[:5]
+    ) or "  nenhum"
+
+    bairros_txt = "\n".join(
+        f"  - {b['bairro']}: {b['ratePct']}% SLA excedido ({b['slaExc']}/{b['total']} OS, Z={b['zScore']}σ)"
+        for b in bairros[:5]
+    ) or "  nenhum"
+
+    equipes_txt = "\n".join(
+        f"  - {e['nome']}: aging médio {e['agingMed']}d ({e['count']} OS, Z={e['zScore']}σ)"
+        for e in equipes[:5]
+    ) or "  nenhum"
+
+    prompt = (
+        "Você é um analista sênior de operações de ISP regional. O sistema detectou anomalias "
+        "estatísticas (desvios significativos do padrão histórico via Z-score) nos dados de campo.\n\n"
+        "=== ANOMALIAS DETECTADAS ===\n\n"
+        f"Picos de abertura de OS (volume > média + 2σ):\n{picos_txt}\n\n"
+        f"Bairros com SLA anômalo (taxa de excedência > média + 1.5σ):\n{bairros_txt}\n\n"
+        f"Equipes com aging elevado (média > média do grupo + 1.5σ):\n{equipes_txt}\n\n"
+        "=== CONTEXTO ATUAL ===\n"
+        f"OS ativas: {ctx.get('total', '?')} | SLA da fila: {ctx.get('sla_pct', '?')}% | "
+        f"Críticas: {ctx.get('criticas', '?')} | Aging médio: {ctx.get('aging_med', '?')}d\n\n"
+        "=== INSTRUÇÕES ===\n"
+        "Identifique a causa raiz MAIS PROVÁVEL das anomalias (não liste sintomas). "
+        "Cite dados específicos do relatório. Proponha ações imediatas e precisas.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"causa_raiz": "1-2 frases: hipótese de causa raiz com dados do relatório", '
+        '"acoes": ["Ação específica 1 (quem, o quê, quando)", "Ação 2", "Ação 3"], '
+        '"prioridade": "alta|média|baixa"}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key":         ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type":      "application/json",
+            },
+            json={
+                "model":      "claude-haiku-4-5-20251001",
+                "max_tokens": 600,
+                "messages":   [{"role": "user", "content": prompt}],
+            },
+            timeout=20,
+            verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] Anomalias API %s: %s", resp.status_code, resp.text[:200])
+            return None
+
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "causa_raiz": result.get("causa_raiz", ""),
+            "acoes":      result.get("acoes", [])[:3],
+            "prioridade": result.get("prioridade", "média"),
+        }
+
+        with state._ai_anomalias_lock:
+            state._ai_anomalias_cache.update({"hash": data_hash, "ts": now, **out})
+
+        log.info("[AI] RCA anomalias gerado — prioridade=%s", out["prioridade"])
+        return {**out, "cached": False}
+
+    except Exception as ex:
+        log.warning("[AI] Erro ao analisar anomalias: %s", str(ex)[:200])
+        return None

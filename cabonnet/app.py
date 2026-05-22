@@ -711,6 +711,18 @@ async def ai_narrative(request: Request):
     return {"ok": True, **result}
 
 
+@router.post("/ai/anomalias")
+async def ai_anomalias(request: Request):
+    from cabonnet.ai import _ai_anomalias
+    body   = await request.json()
+    result = _ai_anomalias(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg  = "ANTHROPIC_API_KEY não configurada no .env" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
 # ── Grafana / Zabbix ──────────────────────────────────────────────────────────
 
 @router.get("/grafana/os-totais")

@@ -8,6 +8,7 @@ import {
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useAINarrative } from '../../hooks/useAINarrative'
 import { useStats } from '../../hooks/useStats'
+import { useAIAnomalias } from '../../hooks/useAIAnomalias'
 import { isCOPE, isReagend } from '../../lib/transform'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { exportCSV } from '../../lib/export'
@@ -198,7 +199,17 @@ export default function DashboardPage() {
         )}
 
         {/* ── 8. Anomalias ──────────────────────────────────────────────── */}
-        {anomalias?.total > 0 && <AnomaliaSection anomalias={anomalias} />}
+        {anomalias?.total > 0 && (
+          <AnomaliaSection
+            anomalias={anomalias}
+            contexto={{
+              total:     pulso.total      ?? 0,
+              sla_pct:   pulso.slaFila    ?? 0,
+              criticas:  pulso.criticas   ?? 0,
+              aging_med: pulso.agingMed   ?? 0,
+            }}
+          />
+        )}
 
       </div>
 
@@ -760,9 +771,22 @@ function FornecedorCard({ nome, total, concluidas, sla, cor }) {
 
 // ─── AnomaliaSection ──────────────────────────────────────────────────────────
 
-function AnomaliaSection({ anomalias }) {
+const PRIORIDADE_STYLE = {
+  alta:  { color: '#ef4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.25)'   },
+  média: { color: '#eab308', bg: 'rgba(234,179,8,0.08)',   border: 'rgba(234,179,8,0.25)'   },
+  baixa: { color: '#22c55e', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.25)'   },
+}
+
+function AnomaliaSection({ anomalias, contexto = {} }) {
   const { total = 0, picosDia = [], bairrosAnomalia = [], equipesAnomalia = [] } = anomalias ?? {}
   const [open, setOpen] = useState(total > 0)
+
+  const { data: rcaData, isLoading: rcaLoading } = useAIAnomalias({
+    picosDia, bairrosAnomalia, equipesAnomalia, contexto,
+  })
+
+  const pri    = rcaData?.prioridade ?? 'média'
+  const priSty = PRIORIDADE_STYLE[pri] ?? PRIORIDADE_STYLE['média']
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-yellow/20 bg-card">
@@ -833,6 +857,51 @@ function AnomaliaSection({ anomalias }) {
               </div>
             </div>
           )}
+
+          {/* ── Análise de Causa Raiz (Claude) ── */}
+          <div className="border-t border-white/[0.06] pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles size={12} className="text-primary/70" />
+              <p className="text-[10px] font-bold uppercase tracking-[1.4px] text-muted">Análise de Causa Raiz</p>
+            </div>
+
+            {rcaLoading && (
+              <div className="flex items-center gap-2 text-[11px] text-muted/60 py-2">
+                <div className="w-3 h-3 rounded-full border border-primary/40 border-t-primary animate-spin" />
+                Analisando anomalias...
+              </div>
+            )}
+
+            {rcaData && (
+              <div className="space-y-3">
+                <div className="rounded-lg px-3 py-2.5 text-[12px] leading-relaxed text-text/80 italic"
+                     style={{ background: priSty.bg, border: `1px solid ${priSty.border}` }}>
+                  <span className="not-italic font-semibold mr-1.5"
+                        style={{ color: priSty.color }}>
+                    [{pri.charAt(0).toUpperCase() + pri.slice(1)}]
+                  </span>
+                  {rcaData.causa_raiz}
+                </div>
+
+                {rcaData.acoes?.length > 0 && (
+                  <div className="space-y-1.5">
+                    {rcaData.acoes.map((acao, i) => (
+                      <div key={i} className="flex items-start gap-2 text-[11px] text-text/70">
+                        <span className="text-primary/60 font-mono flex-shrink-0 mt-0.5">{i + 1}.</span>
+                        <span>{acao}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!rcaLoading && !rcaData && (
+              <p className="text-[11px] text-muted/40 italic">
+                Configure ANTHROPIC_API_KEY no .env para ativar a análise de causa raiz.
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>
