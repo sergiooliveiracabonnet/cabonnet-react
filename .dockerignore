@@ -1,0 +1,53 @@
+# Build artifacts (rebuilt inside Docker)
+node_modules/
+dist/
+
+# Secrets (passed via docker-compose env_file or -e flags)
+.env
+.env.production
+.env.local
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Local data (persisted via volumes)
+Backup/
+cabonnet_data.db
+cabonnet_server.log
+cabonnet_server.lock
+jun_historico.json
+
+# Git
+.git/
+.gitignore
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.sw?
+
+# CI
+.github/
+
+# Unrelated local directories
+android/
+design-system/
+awesome-claude-code/
+awesome-claude-skills/
+everything-claude-code/
+marketingskills/
+.claude/
+Backup/
+
+# Large files
+*.apk
+*.zip
+*.xlsx
+*.xls
+*.db
+~$*
