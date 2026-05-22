@@ -242,7 +242,7 @@ function OSRow({ r }) {
 
 // ─── Cell ─────────────────────────────────────────────────────────────────────
 
-function PlannerCell({ rows = [], isPast, isToday, isWeekend, onClick }) {
+function PlannerCell({ rows = [], isPast, _isToday, isWeekend, onClick }) {
   const count = rows.length
   const color = loadColor(count)
   const [hover, setHover] = useState(false)

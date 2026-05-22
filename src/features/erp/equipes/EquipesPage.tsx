@@ -198,18 +198,9 @@ function EquipeCard({ team, metrics, slaData, custoMensal = 0, indisponivel = fa
 
 /* ── Team Detail Drawer ───────────────────────────────────────────────── */
 function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCustoChange, indisponivel = false, onToggleDisponivel, onClose }) {
-  if (!team) return null
-  const cfg      = TIPO[team.tipo]
-  const Icon     = cfg.Icon
   const isGestor = useIsGestor()
-  const queue    = metrics.queue ?? 0
-  const criticas = metrics.criticas ?? 0
-  const sla      = slaData?.sla ?? 0
-  const agingMed = slaData?.agingMed ?? 0
-  const pct      = Math.min((queue / cfg.maxQueue) * 100, 100)
-  const todayKey = toKey(new Date())
-
   const weekSchedule = useMemo(() => {
+    if (!team) return []
     const ws = getWeekStart(new Date())
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(ws)
@@ -228,6 +219,16 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
       }
     })
   }, [teamRows])
+
+  if (!team) return null
+  const cfg      = TIPO[team.tipo]
+  const Icon     = cfg.Icon
+  const queue    = metrics.queue ?? 0
+  const criticas = metrics.criticas ?? 0
+  const sla      = slaData?.sla ?? 0
+  const agingMed = slaData?.agingMed ?? 0
+  const pct      = Math.min((queue / cfg.maxQueue) * 100, 100)
+  const todayKey = toKey(new Date())
 
   return (
     <div className="fixed inset-0 z-[300] flex items-stretch justify-end">

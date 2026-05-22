@@ -52,3 +52,6 @@ Tempquery_result.json
 auditoria_estrategica_dashboard.txt
 plano_implantacao.txt
 LOGO.png
+*.xlsx
+*.xls
+~$*

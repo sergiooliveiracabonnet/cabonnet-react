@@ -502,7 +502,7 @@ export default function AlertasPage() {
     [rows]
   )
 
-  const hasCritical = counts.CRITICO > 0
+  const _hasCritical = counts.CRITICO > 0
   const hasAny      = totalAlerts > 0
 
   return (

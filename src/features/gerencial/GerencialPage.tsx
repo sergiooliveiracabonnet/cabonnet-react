@@ -8,7 +8,7 @@ import {
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useUIStore }    from '../../store/uiStore'
 import { shortEquipe, situacaoVariant }  from '../../lib/osFormat'
-import { isCOPE, isReagend, isConcluida, isExecucaoReal } from '../../lib/transform'
+import { isCOPE, isReagend, isExecucaoReal } from '../../lib/transform'
 import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 
@@ -347,7 +347,7 @@ function EquipeTable({ equipes, sourceRows, onDrillDown }) {
         <span />
       </div>
       <div className="divide-y divide-white/[0.04] max-h-96 overflow-y-auto">
-        {equipes.map((e, i) => {
+        {equipes.map((e, _i) => {
           const pct = Math.round((e.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)
           return (

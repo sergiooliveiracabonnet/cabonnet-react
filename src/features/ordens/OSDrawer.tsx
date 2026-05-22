@@ -73,7 +73,7 @@ export default function OSDrawer({ os, onClose }) {
 
   const agingVal  = os._aging ?? 0
   const agingCls  = agingVal >= 6 ? 'text-red' : agingVal >= 3 ? 'text-yellow' : 'text-cyan'
-  const agingVar  = agingVal >= 6 ? 'red'      : agingVal >= 3 ? 'yellow'      : 'cyan'
+  const _agingVar = agingVal >= 6 ? 'red'      : agingVal >= 3 ? 'yellow'      : 'cyan'
 
   // Status accent color para barra lateral
   const statusAccent = isConcluida ? 'bg-green/70' : isAtendimento ? 'bg-cyan/70' : 'bg-yellow/70'

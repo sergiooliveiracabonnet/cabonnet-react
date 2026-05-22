@@ -93,7 +93,7 @@ export default function JuniperPage() {
     }
   }, [historico])
   const clientes  = data?.clientes ?? []
-  const log       = data?.log      ?? []
+  const _log      = data?.log      ?? []
   const osCidades = useMemo(() => {
     const hoje   = new Date().toISOString().slice(0, 10)
     const isAtivo = r => ['Pendente', 'Atendimento'].includes(r._situacaoEfetiva ?? r.descsituacao)
@@ -125,7 +125,7 @@ export default function JuniperPage() {
     setHistorico(prev => {
       if (prev[0]?.ts === entry.ts) return prev
       const next = [entry, ...prev].slice(0, MAX_SNAPS)
-      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch {}
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
       return next
     })
   }, [raw])
@@ -149,7 +149,7 @@ export default function JuniperPage() {
       const merged = [...prev, ...extras]
         .sort((a, b) => new Date(b.ts) - new Date(a.ts))
         .slice(0, MAX_SNAPS)
-      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(merged)) } catch {}
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(merged)) } catch { /* storage unavailable */ }
       return merged
     })
   }, [serverHistData])

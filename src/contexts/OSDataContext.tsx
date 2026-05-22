@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components */
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { useOSData } from '../hooks/useOSData'
 import { useServerEvents } from '../hooks/useServerEvents'

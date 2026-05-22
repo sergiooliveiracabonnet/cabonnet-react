@@ -1,5 +1,5 @@
 // @ts-nocheck
-﻿import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { BarChart2, ChevronUp, AlertTriangle, Download, Send, CheckCircle, XCircle, CalendarClock, FileText, Router, Wrench, HardHat, Copy, Users } from 'lucide-react'
 import { useOrdens } from '../../hooks/useOrdens'
 import { KPICard } from '../../components/ui/KPICard'
@@ -98,7 +98,7 @@ const PERIOD_ORDER = ['manhã', 'tarde']
 
 function _parseDateStr(s) {
   if (!s) return null
-  const p = s.split(' ')[0].split(/[\/\-]/)
+  const p = s.split(' ')[0].split(/[/-]/)
   if (p.length < 3) return null
   // Suporta DD/MM/YYYY e YYYY-MM-DD
   const [a, b, c] = p

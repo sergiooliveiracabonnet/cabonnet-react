@@ -7,8 +7,17 @@ import tsParser from '@typescript-eslint/parser'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'servidor.js']),
-  // JS/JSX files — unchanged behavior
+  globalIgnores([
+    'dist',
+    'android',
+    'servidor.js',
+    'awesome-claude-code',
+    'awesome-claude-skills',
+    'everything-claude-code',
+    'marketingskills',
+    'design-system',
+  ]),
+  // JS/JSX files
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -26,8 +35,11 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', caughtErrorsIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['error', 'warn'] }],
+      // react-hooks v7 new aggressive rules — not enforced on existing code
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/use-memo': 'off',
     },
   },
   // TS/TSX files — TypeScript-aware rules
@@ -50,9 +62,16 @@ export default defineConfig([
       },
     },
     rules: {
+      'no-undef': 'off',           // TypeScript handles undefined references
       'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
       'no-console': ['warn', { allow: ['error', 'warn'] }],
+      // react-hooks v7 new aggressive rules — not enforced on existing code
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/use-memo': 'off',
     },
   },
 ])

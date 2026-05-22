@@ -82,13 +82,13 @@ export const useTelegramStore = create<TelegramState>((set, get) => ({
   addAlert: (alerta) => {
     const entry = { ...alerta, ts: Date.now(), lido: false }
     const novo  = [entry, ...get().history].slice(0, MAX_HISTORY)
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(novo)) } catch {}
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(novo)) } catch { /* storage unavailable */ }
     set({ history: novo })
   },
 
   markAllRead: () => {
     const novo = get().history.map(a => ({ ...a, lido: true }))
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(novo)) } catch {}
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(novo)) } catch { /* storage unavailable */ }
     set({ history: novo })
   },
 
@@ -115,7 +115,7 @@ export const useTelegramStore = create<TelegramState>((set, get) => ({
     try { return new Set(JSON.parse(localStorage.getItem(AGING_KEY) ?? '[]')) } catch { return new Set() }
   },
   saveAgingEnviados: (enviados) => {
-    try { localStorage.setItem(AGING_KEY, JSON.stringify([...enviados])) } catch {}
+    try { localStorage.setItem(AGING_KEY, JSON.stringify([...enviados])) } catch { /* storage unavailable */ }
   },
 
   // Filtra alertas por nível de verbosidade configurado

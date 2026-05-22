@@ -74,7 +74,7 @@ export function getPeriodoNome(periodo) {
 function parseDate(s) {
   if (!s) return null
   const dateOnly = s.split(' ')[0]
-  const parts = dateOnly.split(/[\/\\]/)
+  const parts = dateOnly.split(/[/\\]/)
   if (parts.length < 3) return null
   const [d, m, y] = parts.map(Number)
   if (!d || !m || !y || m < 1 || m > 12 || d < 1 || d > 31) return null

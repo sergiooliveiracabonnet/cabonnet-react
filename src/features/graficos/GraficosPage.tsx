@@ -35,7 +35,7 @@ const COLORS = ['#0ea5e9','#22c55e','#eab308','#f97316','#a78bfa','#ef4444','#06
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 const toISODate = (s) => {
   if (!s) return ''
-  const p = (s || '').split(' ')[0].split(/[\/\\]/)
+  const p = (s || '').split(' ')[0].split(/[/\\]/)
   return p.length >= 3 ? `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}` : ''
 }
 const toISOMonth    = (s) => toISODate(s).slice(0, 7)

@@ -21,7 +21,7 @@ const C = {
 const SLA_MIN = 80
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-function tipoKey(r) {
+function _tipoKey(r) {
   const t = (r.tiposervico || '').toUpperCase()
   if (t.includes('INSTALACAO') || t.includes('INSTALAÇÃO')) return 'Instalação'
   if (t.includes('MANUTENCAO') || t.includes('MANUTENÇÃO')) return 'Manutenção'
@@ -63,7 +63,7 @@ function subServ(r) {
 function parseDate(s) {
   if (!s) return null
   const dateOnly = s.split(' ')[0]
-  const parts = dateOnly.split(/[\/\\]/)
+  const parts = dateOnly.split(/[/\\]/)
   if (parts.length < 3) return null
   const [d, m, y] = parts.map(Number)
   if (!d || !m || !y || m < 1 || m > 12 || d < 1 || d > 31) return null

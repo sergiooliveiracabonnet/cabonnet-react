@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { enrichRows, getFornecedor, parseCSV, applyDateFilter } from './transform.js'
 import { buildDashboard, buildSla, buildCapacidade } from './builders.js'
 
@@ -29,7 +29,7 @@ function daysAgo(n) {
   return `${dd}/${mm}/${yyyy}`
 }
 
-function daysAhead(n) {
+function _daysAhead(n) {
   return daysAgo(-n)
 }
 

@@ -1,4 +1,4 @@
-import { useRef, useState, type ComponentType } from 'react'
+import { useRef, useState, type ComponentType, type CSSProperties } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList,
@@ -15,7 +15,7 @@ import { LogoIcon } from '../ui/LogoIcon'
 interface NavLinkDef {
   to:    string
   label: string
-  icon:  ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>
+  icon:  ComponentType<{ size?: number; className?: string; style?: CSSProperties }>
 }
 
 interface NavGroup {
@@ -74,7 +74,7 @@ const groups: NavGroup[] = [
 interface NavItemProps {
   to:          string
   label:       string
-  icon:        ComponentType<{ size?: number; style?: React.CSSProperties }>
+  icon:        ComponentType<{ size?: number; style?: CSSProperties }>
   sidebarOpen: boolean
   groupKey:    string
   groupColor:  string
@@ -147,7 +147,7 @@ export function Sidebar() {
   const setUnauthed = useAuthStore(s => s.setUnauthed)
 
   async function handleLogout() {
-    try { await api.auth.logout() } catch (_) {}
+    try { await api.auth.logout() } catch { /* logout best-effort */ }
     setUnauthed()
   }
 

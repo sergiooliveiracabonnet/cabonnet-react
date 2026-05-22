@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from 'react-leaflet'
 import { Map, Flame, Circle, AlertTriangle, TrendingUp, Users, Filter, X } from 'lucide-react'
 import L from 'leaflet'
@@ -53,7 +53,7 @@ const bubbleRadius = count => Math.max(10, Math.min(42, 6 + Math.sqrt(count) * 3
 function CidadePanel({ cidade, onClose }) {
   if (!cidade) return null
   const { fill } = bubbleColor(cidade)
-  const pct = cidade.count > 0 ? Math.round((cidade.criticos / cidade.count) * 100) : 0
+  const _pct = cidade.count > 0 ? Math.round((cidade.criticos / cidade.count) * 100) : 0
   return (
     <div className="absolute bottom-4 left-4 z-[500] w-72 animate-fade-in">
       <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.10] rounded-2xl overflow-hidden shadow-2xl">

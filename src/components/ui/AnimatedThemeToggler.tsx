@@ -1,4 +1,4 @@
-import { useRef, useId } from 'react'
+import { useRef, useId, type MutableRefObject } from 'react'
 import { motion } from 'motion/react'
 import { useUIStore } from '../../store/uiStore'
 
@@ -35,7 +35,7 @@ function ensureBuf(ac: AudioContext): AudioBuffer {
   return buf
 }
 
-function tick(last: React.MutableRefObject<number>) {
+function tick(last: MutableRefObject<number>) {
   const now = performance.now()
   if (now - last.current < 80) return
   last.current = now

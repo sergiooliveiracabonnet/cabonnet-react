@@ -52,7 +52,7 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
   function addTimer(id: ReturnType<typeof setTimeout>) { timers.current.push(id) }
 
   async function enviarTelegram(texto: string) {
-    try { await telegram.send(texto, 'alertas') } catch {}
+    try { await telegram.send(texto, 'alertas') } catch { /* best-effort */ }
   }
 
   function verificar() {
@@ -139,7 +139,7 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
     novos.forEach(a => {
       store.addAlert(a)
       if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
-        try { new Notification(`Cabonnet — ${a.titulo}`, { body: a.msg, tag: a.tipo + '_' + a.ref }) } catch {}
+        try { new Notification(`Cabonnet — ${a.titulo}`, { body: a.msg, tag: a.tipo + '_' + a.ref }) } catch { /* permission denied */ }
       }
       if (store.enabled && store.deveEnviarTelegram(a.nivel)) {
         const txt = a.tipo === 'sla_crise'     ? tgCriticas(base)

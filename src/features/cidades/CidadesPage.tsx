@@ -1,5 +1,5 @@
 // @ts-nocheck
-﻿import { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { MapPin, Wrench, Clock, CheckCircle, Calendar, CalendarClock, List, ChevronDown, ChevronUp } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { Badge } from '../../components/ui/Badge'

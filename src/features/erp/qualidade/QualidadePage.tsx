@@ -40,7 +40,7 @@ function fmtBRL(v) {
 
 function EquipeRow({ rank, eq }) {
   const color = taxaColor(eq.taxa)
-  const pct   = eq.totalBase > 0 ? Math.round(eq.total / eq.totalBase * 100) : 0
+  const _pct  = eq.totalBase > 0 ? Math.round(eq.total / eq.totalBase * 100) : 0
 
   return (
     <tr className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
@@ -111,10 +111,10 @@ export default function QualidadePage() {
           custoEstimado, evitaveis, tempoMedio,
           tendencia, porEquipe } = rev
 
-  const deltaColor = tendencia?.delta > 0 ? '#ef4444' : tendencia?.delta < 0 ? '#22c55e' : '#6b7280'
+  const _deltaColor = tendencia?.delta > 0 ? '#ef4444' : tendencia?.delta < 0 ? '#22c55e' : '#6b7280'
   const DeltaIcon  = tendencia?.delta > 0 ? TrendingUp : tendencia?.delta < 0 ? TrendingDown : null
 
-  const maxRevEquipe = Math.max(...(porEquipe?.map(e => e.taxa) ?? [1]), 1)
+  const _maxRevEquipe = Math.max(...(porEquipe?.map(e => e.taxa) ?? [1]), 1)
 
   return (
     <div className="space-y-4 max-w-[1600px]">

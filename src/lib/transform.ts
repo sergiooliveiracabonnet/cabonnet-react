@@ -43,7 +43,7 @@ export function applyDateFilter(rows: OSRow[], dateFilter: DateFilter | null): O
 export function parseDate(s: string | null | undefined): Date | null {
   if (!s) return null
   const dateOnly = s.split(' ')[0]
-  const parts = dateOnly.split(/[\/-]/)
+  const parts = dateOnly.split(/[/-]/)
   if (parts.length < 3) return null
   const [d, m, y] = parts.map(Number)
   if (!d || !m || !y || m < 1 || m > 12 || d < 1 || d > 31) return null

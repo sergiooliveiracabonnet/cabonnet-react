@@ -117,6 +117,7 @@ function OSQueueCard({ row, isSelected, onClick }) {
 function TeamSuggestionCard({ entry, rank, onConfirm, isConfirming }) {
   const { team, total, pct, sla, queue } = entry
   const isBest = rank === 0
+  const isOperador = useIsOperador()
 
   const scoreCls = total >= 60
     ? 'bg-emerald-500/15 text-emerald-400'
