@@ -55,3 +55,4 @@ LOGO.png
 *.xlsx
 *.xls
 ~$*
+eslint_report.json
