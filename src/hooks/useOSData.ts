@@ -12,7 +12,8 @@ export function useOSData() {
   const { data, isLoading, error, dataUpdatedAt } = useQuery({
     queryKey:  ['os-query'],
     queryFn:   () => api.get(endpoints.query),
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
+    gcTime:    1000 * 60 * 30,
     retry:     2,
   })
 

@@ -174,25 +174,46 @@ def _check_telegram():
 
 # ── Cache warmup (executado no lifespan) ──────────────────────────────────────
 
-def _cache_warmup():
+_cache_refresh_lock = threading.Lock()   # impede refreshes simultâneos
+
+def _refresh_cache_from_grafana(origem: str = "manual") -> bool:
+    """Busca os 3 CSVs do Grafana e atualiza _query_cache. Retorna True se OK."""
+    if not _cache_refresh_lock.acquire(blocking=False):
+        log.debug("[Cache] Refresh já em andamento — ignorando (%s)", origem)
+        return False
     try:
         csv_p = frames_to_csv(grafana_post(SQL_PENDENTE))
         csv_a = frames_to_csv(grafana_post(SQL_AGENDADO))
         csv_f = frames_to_csv(grafana_post(SQL_FUTURO))
+        ts_now = _time_mod.time()
         with state._query_cache_lock:
-            state._query_cache.update({
-                "pendente": csv_p or "",
-                "agendado": csv_a or "",
-                "futuro":   csv_f or "",
-                "ts":       _time_mod.time(),
-            })
-        _dados_cache_update(csv_agendado=csv_a or "")
+            state._query_cache.update({"pendente": csv_p or "", "agendado": csv_a or "",
+                                       "futuro": csv_f or "", "ts": ts_now})
+        for chave, csv_val in [("pendente", csv_p), ("agendado", csv_a), ("futuro", csv_f)]:
+            if csv_val:
+                threading.Thread(target=_db_save_cache, args=(chave, csv_val, ts_now), daemon=True).start()
+        threading.Thread(target=_dados_cache_update, args=(csv_p or "", csv_a or "", csv_f or ""), daemon=True).start()
         import csv as _csv, io as _io
-        def _n(text):
-            return sum(1 for _ in _csv.reader(_io.StringIO(text or ""))) - 1
-        log.info("[Cache] Warmup OK — P=%d A=%d F=%d", _n(csv_p), _n(csv_a), _n(csv_f))
+        def _n(t): return sum(1 for _ in _csv.reader(_io.StringIO(t or ""))) - 1
+        log.info("[Cache] Refresh OK (%s) — P=%d A=%d F=%d", origem, _n(csv_p), _n(csv_a), _n(csv_f))
+        return True
     except Exception as ex:
-        log.warning("[Cache] Warmup falhou: %s", str(ex)[:120])
+        log.warning("[Cache] Refresh falhou (%s): %s", origem, str(ex)[:120])
+        return False
+    finally:
+        _cache_refresh_lock.release()
+
+
+def _cache_warmup():
+    _refresh_cache_from_grafana("warmup")
+
+
+def _auto_refresh_loop():
+    """Mantém _query_cache sempre fresco — atualiza silenciosamente a cada 3 min."""
+    _time_mod.sleep(90)   # aguarda warmup terminar
+    while True:
+        _time_mod.sleep(180)  # 3 minutos
+        _refresh_cache_from_grafana("auto-refresh")
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
@@ -212,8 +233,9 @@ async def lifespan(app: FastAPI):
 
     _db_init()
 
-    threading.Thread(target=_cache_warmup,  name="CacheWarmup",  daemon=True).start()
-    threading.Thread(target=_jun_poll_loop, name="JuniperPoll",  daemon=True).start()
+    threading.Thread(target=_cache_warmup,      name="CacheWarmup",    daemon=True).start()
+    threading.Thread(target=_auto_refresh_loop, name="CacheAutoRefresh",daemon=True).start()
+    threading.Thread(target=_jun_poll_loop,     name="JuniperPoll",    daemon=True).start()
 
     if _telegram_enabled():
         threading.Thread(target=_telegram_poll_loop,       name="TelegramPoll",      daemon=True).start()
@@ -444,6 +466,9 @@ async def futuro():
 
 # ── Query principal ───────────────────────────────────────────────────────────
 
+_CACHE_FRESH_SEC  = 240   # < 4 min → retorna cache imediatamente
+_CACHE_STALE_SEC  = 120   # > 2 min → agenda refresh em background mesmo devolvendo cache
+
 @router.get("/query")
 async def query(request: Request, date: str = "hoje", _role: str = Depends(_require_auth)):
     try:
@@ -451,24 +476,34 @@ async def query(request: Request, date: str = "hoje", _role: str = Depends(_requ
     except ValueError as ex:
         raise HTTPException(400, str(ex))
 
+    # ── Cache-first: responde instantaneamente se dados recentes ─────────────
+    with state._query_cache_lock:
+        cached = dict(state._query_cache)
+
+    cache_age = _time_mod.time() - cached.get("ts", 0)
+
+    if cached.get("ts", 0) > 0 and cache_age < _CACHE_FRESH_SEC:
+        if cache_age > _CACHE_STALE_SEC:
+            # Cache ainda válido mas envelhecendo — atualiza em background
+            threading.Thread(target=_refresh_cache_from_grafana, args=("bg-stale",), daemon=True).start()
+        def _n(t): return len(t.splitlines()) - 1 if t else 0
+        log.debug("[/query] Cache-hit — %ds atrás", int(cache_age))
+        return {"pendente": cached["pendente"], "agendado": cached["agendado"], "futuro": cached["futuro"],
+                "n_pendente": _n(cached["pendente"]), "n_agendado": _n(cached["agendado"]),
+                "n_futuro":   _n(cached["futuro"]),   "date": data_iso,
+                "cached": True, "cache_age_sec": int(cache_age)}
+
+    # ── Cache vazio ou muito velho → busca do Grafana de forma síncrona ──────
     try:
-        log.info("  -> Pendentes...")
-        csv_p = frames_to_csv(grafana_post(SQL_PENDENTE)); n_p = len(csv_p.splitlines()) - 1 if csv_p else 0
-        log.info("  -> Agendados...")
-        csv_a = frames_to_csv(grafana_post(SQL_AGENDADO)); n_a = len(csv_a.splitlines()) - 1 if csv_a else 0
-        log.info("  -> Futuros...")
-        csv_f = frames_to_csv(grafana_post(SQL_FUTURO));   n_f = len(csv_f.splitlines()) - 1 if csv_f else 0
-
-        ts_now = _time_mod.time()
-        with state._query_cache_lock:
-            state._query_cache.update({"pendente": csv_p or "", "agendado": csv_a or "", "futuro": csv_f or "", "ts": ts_now})
-        for chave, csv_val in [("pendente", csv_p), ("agendado", csv_a), ("futuro", csv_f)]:
-            if csv_val:
-                threading.Thread(target=_db_save_cache, args=(chave, csv_val, ts_now), daemon=True).start()
-        threading.Thread(target=_dados_cache_update, args=(csv_p or "", csv_a or "", csv_f or ""), daemon=True).start()
-
-        return {"pendente": csv_p or "", "agendado": csv_a or "", "futuro": csv_f or "",
-                "n_pendente": n_p, "n_agendado": n_a, "n_futuro": n_f, "date": data_iso}
+        log.info("[/query] Cache frio — buscando do Grafana...")
+        ok = _refresh_cache_from_grafana("/query-sync")
+        if ok:
+            with state._query_cache_lock:
+                cached = dict(state._query_cache)
+            def _n(t): return len(t.splitlines()) - 1 if t else 0
+            return {"pendente": cached["pendente"], "agendado": cached["agendado"], "futuro": cached["futuro"],
+                    "n_pendente": _n(cached["pendente"]), "n_agendado": _n(cached["agendado"]),
+                    "n_futuro":   _n(cached["futuro"]),   "date": data_iso}
 
     except Exception as ex:
         # Fallback 1: cache em memória
