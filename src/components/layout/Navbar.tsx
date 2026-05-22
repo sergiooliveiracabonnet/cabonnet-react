@@ -1,0 +1,461 @@
+import { useState, useEffect, useRef, useMemo, memo } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { RefreshCw, ChevronDown, Clock, AlertTriangle, Menu, Search, Bell, Send } from 'lucide-react'
+import { AnimatedThemeToggler } from '../ui/AnimatedThemeToggler'
+import { useUIStore } from '../../store/uiStore'
+import { useOSDerived } from '../../contexts/OSDataContext'
+import { isCOPE, isReagend } from '../../lib/transform'
+import { shortEquipe } from '../../lib/osFormat'
+import { GlobalSearch } from '../ui/GlobalSearch'
+import { useAlerts } from '../../hooks/useAlerts'
+import { useAlertStore } from '../../store/alertStore'
+import { useAlertasEngine } from '../../hooks/useAlertasEngine'
+import { useTelegramStore } from '../../store/telegramStore'
+import TelegramPanel from '../../features/alertas/TelegramPanel'
+import type { OSRow } from '../../lib/types'
+
+const ROUTE_LABELS: Record<string, string> = {
+  '/':           'Resumo Geral',
+  '/ordens':     'Ordens de Serviço',
+  '/capacidade': 'Capacidade',
+  '/graficos':   'Gráficos',
+  '/cidades':    'Cidades',
+  '/campo':      'Campo',
+  '/fornecedor': 'Fornecedor',
+  '/juniper':    'Juniper',
+}
+
+const INTERVALS: { value: number | null; label: string }[] = [
+  { value: null, label: 'Manual'  },
+  { value: 5,    label: '5 min'   },
+  { value: 10,   label: '10 min'  },
+  { value: 15,   label: '15 min'  },
+  { value: 20,   label: '20 min'  },
+]
+
+function fmtHora(ms: number | null | undefined): string {
+  if (!ms) return '--:--'
+  return new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function fmtCountdown(secs: number): string {
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+// ─── RefreshControl ───────────────────────────────────────────────────────────
+
+const RefreshControl = memo(function RefreshControl() {
+  const qc = useQueryClient()
+  const { isLoading, dataUpdatedAt } = useOSDerived()
+  const triggerGlobalRefresh = useUIStore(s => s.triggerGlobalRefresh)
+
+  const [interval,  setIntervalVal] = useState<number | null>(null)
+  const [countdown, setCountdown]   = useState(0)
+  const [showMenu,  setShowMenu]    = useState(false)
+  const [spinning,  setSpinning]    = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!interval) { setCountdown(0); return }
+    const totalSecs = interval * 60
+    setCountdown(totalSecs)
+
+    const refreshId = setInterval(() => {
+      qc.refetchQueries({ queryKey: ['os-query'] }).then(() => setCountdown(totalSecs))
+      triggerGlobalRefresh()
+    }, totalSecs * 1000)
+
+    const tickId = setInterval(() => {
+      setCountdown(c => (c > 0 ? c - 1 : 0))
+    }, 1000)
+
+    return () => { clearInterval(refreshId); clearInterval(tickId) }
+  }, [interval, qc, triggerGlobalRefresh])
+
+  useEffect(() => {
+    if (!showMenu) return
+    function onDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [showMenu])
+
+  useEffect(() => {
+    if (isLoading) { setSpinning(true); return }
+    const t = setTimeout(() => setSpinning(false), 600)
+    return () => clearTimeout(t)
+  }, [isLoading])
+
+  function handleRefresh() {
+    qc.refetchQueries({ queryKey: ['os-query'] }).then(() => {
+      if (interval) setCountdown(interval * 60)
+    })
+    triggerGlobalRefresh()
+    setShowMenu(false)
+  }
+
+  const urgent   = interval && countdown <= 30
+  const btnLabel = interval ? fmtCountdown(countdown) : fmtHora(dataUpdatedAt as number | undefined)
+
+  return (
+    <div className="relative flex-shrink-0" ref={menuRef}>
+      <button
+        onClick={() => setShowMenu(v => !v)}
+        className={`flex items-center gap-1.5 h-8 px-2.5 rounded-md border
+                    transition-all duration-fast
+                    ${urgent
+                      ? 'border-yellow/40 text-yellow bg-yellow/5 hover:bg-yellow/10'
+                      : 'border-white/[0.08] text-secondary hover:border-white/[0.18] hover:text-text'}`}
+        title="Atualizar dados"
+      >
+        <RefreshCw size={12} className={`flex-shrink-0 ${spinning ? 'animate-spin' : ''}`} />
+        <span className="text-[11px] font-mono tabular-nums w-[36px] text-center">{btnLabel}</span>
+        <ChevronDown size={10} className={`transition-transform ${showMenu ? 'rotate-180' : ''}`} />
+      </button>
+
+      {showMenu && (
+        <div className="absolute right-0 top-10 z-50 w-52
+                        bg-elevated border border-white/[0.10] rounded-lg shadow-accent overflow-hidden">
+          <button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5
+                       text-[11px] font-semibold text-primary hover:bg-primary/10
+                       border-b border-white/[0.06] transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
+            Atualizar agora
+          </button>
+          <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.06]">
+            <div className="flex items-center gap-1.5">
+              <Clock size={10} className="text-muted" />
+              <span className="text-[11px] text-muted">
+                Última: <span className="font-mono text-secondary">{fmtHora(dataUpdatedAt as number | undefined)}</span>
+              </span>
+            </div>
+            {interval && (
+              <span className={`text-[11px] font-mono font-bold tabular-nums ${urgent ? 'text-yellow' : 'text-muted'}`}>
+                -{fmtCountdown(countdown)}
+              </span>
+            )}
+          </div>
+          <div className="px-3 py-2">
+            <p className="text-[10px] font-bold uppercase tracking-[1px] text-muted mb-2">Auto-refresh</p>
+            {INTERVALS.map((opt) => (
+              <button
+                key={String(opt.value)}
+                onClick={() => { setIntervalVal(opt.value); setShowMenu(false) }}
+                className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md
+                            text-[12px] transition-colors
+                            ${interval === opt.value
+                              ? 'bg-primary/15 text-primary font-semibold'
+                              : 'text-secondary hover:bg-white/[0.05]'}`}
+              >
+                {opt.label}
+                {interval === opt.value && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+})
+
+function severityCls(s: string): string {
+  if (s === 'critical') return 'text-red'
+  if (s === 'warning')  return 'text-yellow'
+  return 'text-cyan'
+}
+
+// ─── Navbar ───────────────────────────────────────────────────────────────────
+
+export function Navbar() {
+  const { toggleSidebar } = useUIStore()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { allRows, rows } = useOSDerived()
+  const { rules, updateRule, resetRules } = useAlertStore()
+
+  const slaCriticas = useMemo(
+    () => (allRows as OSRow[])
+      .filter(r => r._slaCritico && r._tipo !== 'REDE' && !isCOPE(r) && !isReagend(r))
+      .sort((a, b) => ((b._agingAbertura as number) ?? 0) - ((a._agingAbertura as number) ?? 0))
+      .slice(0, 15),
+    [allRows]
+  )
+
+  const alerts = useAlerts(rows as OSRow[], allRows as OSRow[])
+  useAlertasEngine(allRows as OSRow[], rows as OSRow[])
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tg = useTelegramStore() as any
+  const naoLidos = (tg.history as { lido: boolean }[]).filter(a => !a.lido).length
+
+  const [showAlerta,   setShowAlerta]   = useState(false)
+  const [searchOpen,   setSearchOpen]   = useState(false)
+  const [alertsOpen,   setAlertsOpen]   = useState(false)
+  const [telegramOpen, setTelegramOpen] = useState(false)
+  const alertaRef   = useRef<HTMLDivElement>(null)
+  const alertsRef   = useRef<HTMLDivElement>(null)
+  const telegramRef = useRef<HTMLDivElement>(null)
+
+  const title = ROUTE_LABELS[location.pathname] ?? 'Dashboard'
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(v => !v)
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
+  useEffect(() => {
+    if (!showAlerta) return
+    function onDown(e: MouseEvent) {
+      if (alertaRef.current && !alertaRef.current.contains(e.target as Node)) setShowAlerta(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [showAlerta])
+
+  useEffect(() => {
+    if (!alertsOpen) return
+    function onDown(e: MouseEvent) {
+      if (alertsRef.current && !alertsRef.current.contains(e.target as Node)) setAlertsOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [alertsOpen])
+
+  useEffect(() => {
+    if (!telegramOpen) return
+    function onDown(e: MouseEvent) {
+      if (telegramRef.current && !telegramRef.current.contains(e.target as Node)) setTelegramOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [telegramOpen])
+
+  const hasCritical = alerts.some(a => a.severity === 'critical')
+  const hasWarning  = alerts.some(a => a.severity === 'warning')
+  const bellCls     = hasCritical
+    ? 'text-red bg-red/[0.08] hover:bg-red/[0.15]'
+    : hasWarning
+    ? 'text-yellow bg-yellow/[0.08] hover:bg-yellow/[0.15]'
+    : alerts.length > 0
+    ? 'text-cyan bg-cyan/[0.08] hover:bg-cyan/[0.15]'
+    : 'text-secondary hover:text-text hover:bg-white/[0.08]'
+
+  return (
+    <>
+    <header className="fixed top-0 right-0 left-0 h-14 z-header navbar-premium flex items-center gap-3 px-4">
+      <button
+        onClick={toggleSidebar}
+        className="w-8 h-8 rounded-lg flex items-center justify-center
+                   text-muted hover:text-text hover:bg-white/[0.07]
+                   transition-all duration-fast flex-shrink-0"
+        aria-label="Toggle sidebar"
+      >
+        <Menu size={15} />
+      </button>
+      <div className="w-px h-5 bg-white/[0.08] flex-shrink-0" />
+      <div className="flex-1 min-w-0">
+        <h1 className="font-headline font-bold text-text text-[14px] leading-none tracking-tight truncate">
+          {title}
+        </h1>
+      </div>
+
+      <button
+        onClick={() => setSearchOpen(true)}
+        title="Busca global (Ctrl+K)"
+        className="flex items-center gap-2 h-8 px-3 rounded-lg border border-white/[0.07]
+                   bg-white/[0.025] text-muted hover:border-white/[0.14] hover:text-secondary
+                   hover:bg-white/[0.05] transition-all duration-fast flex-shrink-0 min-w-[160px]"
+      >
+        <Search size={12} className="flex-shrink-0" />
+        <span className="text-[11px] flex-1 text-left hidden sm:block">Buscar OS, cliente…</span>
+        <kbd className="hidden md:flex items-center text-[9px] font-mono bg-white/[0.06]
+                        border border-white/[0.10] rounded px-1.5 py-0.5 leading-none">⌃K</kbd>
+      </button>
+
+      {slaCriticas.length > 0 && (
+        <div className="relative flex-shrink-0" ref={alertaRef}>
+          <button
+            onClick={() => setShowAlerta(v => !v)}
+            aria-label={`${slaCriticas.length} OS com SLA 2× excedido`}
+            aria-expanded={showAlerta}
+            title={`${slaCriticas.length} OS com SLA 2× excedido`}
+            className="relative w-8 h-8 rounded-md flex items-center justify-center
+                       text-red bg-red/[0.08] hover:bg-red/[0.15] transition-all duration-fast"
+          >
+            <AlertTriangle size={14} />
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
+                             bg-red text-[8px] font-bold text-white flex items-center justify-center leading-none">
+              {slaCriticas.length > 9 ? '9+' : slaCriticas.length}
+            </span>
+          </button>
+
+          {showAlerta && (
+            <div className="absolute right-0 top-10 z-50 w-80
+                            bg-elevated border border-red/30 rounded-lg shadow-accent overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2.5 border-b border-red/20 bg-red/[0.06]">
+                <AlertTriangle size={13} className="text-red flex-shrink-0" />
+                <p className="text-[12px] font-bold text-red flex-1">
+                  {slaCriticas.length} OS com SLA 2× excedido
+                </p>
+              </div>
+              <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.05]">
+                {slaCriticas.map((os, i) => (
+                  <div key={(os.numos as string) ?? i} className="px-3 py-2.5">
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <span className="text-[12px] font-bold text-text font-mono">{os.numos as string}</span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <span className="text-[11px] font-bold text-red bg-red/10 px-1.5 py-0.5 rounded">
+                          {(os._agingAbertura as number) ?? '?'}d aberta
+                        </span>
+                        {(os._diasAcimaSLA as number) > 0 && (
+                          <span className="text-[11px] font-bold text-orange bg-orange/10 px-1.5 py-0.5 rounded">
+                            +{os._diasAcimaSLA as number}d SLA
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-secondary truncate">{os.nomecliente as string}</p>
+                    <p className="text-[10px] text-muted mt-0.5">
+                      {os.nomedacidade as string} · {shortEquipe(os.nomedaequipe as string) || 'Sem equipe'} · {os._slaTipoLabel as string}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="px-3 py-2 border-t border-white/[0.06]">
+                <button
+                  onClick={() => { navigate('/ordens'); setShowAlerta(false) }}
+                  className="w-full text-center text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  Ver todas em Ordens →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="relative flex-shrink-0" ref={alertsRef}>
+        <button
+          onClick={() => setAlertsOpen(v => !v)}
+          title="Motor de alertas"
+          className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all duration-fast ${bellCls}`}
+        >
+          <Bell size={14} />
+          {alerts.length > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
+                             bg-yellow text-[8px] font-bold text-black flex items-center justify-center leading-none">
+              {alerts.length > 9 ? '9+' : alerts.length}
+            </span>
+          )}
+        </button>
+
+        {alertsOpen && (
+          <div className="absolute right-0 top-10 z-50 w-80
+                          bg-elevated border border-white/[0.10] rounded-lg shadow-accent overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-white/[0.06] bg-white/[0.02]">
+              <span className="text-[12px] font-bold text-text">Motor de Alertas</span>
+              <button onClick={resetRules} className="text-[10px] text-muted hover:text-secondary transition-colors">
+                Restaurar padrões
+              </button>
+            </div>
+            {alerts.length > 0 && (
+              <div className="border-b border-white/[0.06]">
+                <p className="text-[10px] font-bold uppercase tracking-[1px] text-muted px-3 pt-2.5 pb-1.5">
+                  Ativos ({alerts.length})
+                </p>
+                {alerts.map(a => (
+                  <div key={a.id} className="flex items-center gap-2 px-3 py-2 border-t border-white/[0.04]">
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      a.severity === 'critical' ? 'bg-red' :
+                      a.severity === 'warning'  ? 'bg-yellow' : 'bg-cyan'
+                    }`} />
+                    <span className="text-[11px] text-text flex-1 truncate">{a.label}</span>
+                    <span className={`text-[11px] font-mono font-bold ${severityCls(a.severity)}`}>
+                      {a.currentValue}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="px-3 py-2.5 space-y-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-[1px] text-muted">Regras</p>
+              {rules.map(rule => (
+                <div key={rule.id} className="flex items-center gap-2">
+                  <button
+                    onClick={() => updateRule(rule.id, { enabled: !rule.enabled })}
+                    className={`relative inline-flex items-center w-7 h-4 rounded-full flex-shrink-0
+                                transition-colors ${rule.enabled ? 'bg-primary' : 'bg-white/[0.15]'}`}
+                  >
+                    <span className={`absolute w-3 h-3 rounded-full bg-white shadow transition-transform
+                                      ${rule.enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                  </button>
+                  <span className={`text-[11px] flex-1 truncate ${rule.enabled ? 'text-text' : 'text-muted'}`}>
+                    {rule.label}
+                  </span>
+                  <span className="text-[10px] text-muted font-mono flex-shrink-0">{rule.operator}</span>
+                  <input
+                    type="number"
+                    value={rule.threshold}
+                    onChange={e => updateRule(rule.id, { threshold: +e.target.value })}
+                    className="w-12 text-[11px] font-mono text-right bg-surface
+                               border border-white/[0.10] rounded px-1 py-0.5
+                               outline-none focus:border-primary/50 text-text"
+                  />
+                </div>
+              ))}
+            </div>
+            {alerts.length === 0 && (
+              <p className="text-[11px] text-muted text-center px-3 py-2 border-t border-white/[0.06]">
+                Nenhuma regra disparada
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="relative flex-shrink-0" ref={telegramRef}>
+        <button
+          onClick={() => setTelegramOpen(v => !v)}
+          title="Alertas & Telegram"
+          className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all duration-fast
+            ${tg.enabled ? 'text-green hover:bg-green/10' : 'text-muted hover:text-secondary hover:bg-white/[0.08]'}`}
+        >
+          <Send size={13} />
+          {naoLidos > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
+                             bg-primary text-[8px] font-bold text-white flex items-center justify-center leading-none">
+              {naoLidos > 9 ? '9+' : naoLidos}
+            </span>
+          )}
+        </button>
+        {telegramOpen && (
+          <div className="absolute right-0 top-10 z-50">
+            <TelegramPanel onClose={() => setTelegramOpen(false)} />
+          </div>
+        )}
+      </div>
+
+      <AnimatedThemeToggler />
+      <RefreshControl />
+    </header>
+
+    <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+    </>
+  )
+}
