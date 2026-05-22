@@ -190,7 +190,7 @@ export const isReagend = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /REAGEND/i
 
 const WES_CODES  = new Set(['F08', 'F11', 'F23', 'F36', 'F44'])
 const INST_CODES = new Set(['F01', 'F04', 'F05', 'F07', 'F20', 'F45', 'F46', 'F47', 'F48', 'F49', 'F50'])
-const THM_CODES  = new Set(['F11', 'F12', 'F13'])
+const THM_CODES  = new Set(['F12', 'F13', 'F14'])
 
 export function getFornecedor(equipe: string | undefined | null): Fornecedor {
   const u = (equipe || '').toUpperCase()
