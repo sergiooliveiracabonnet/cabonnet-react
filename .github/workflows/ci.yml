@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, master]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   frontend:
     name: Type-check · Lint · Test · Build
@@ -49,5 +52,11 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      - name: Check imports
+        run: |
+          python -c "from cabonnet.config import CONFIG; print('config OK')"
+          python -c "from cabonnet.app import app; print('app OK, routes:', len(app.routes))"
+          python -c "from cabonnet.backup_app import backup_app; print('backup_app OK')"
+
       - name: Run pytest
-        run: pytest tests/python -v --tb=short
+        run: pytest tests/python -v --tb=long
