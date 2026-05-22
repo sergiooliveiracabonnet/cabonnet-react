@@ -192,7 +192,7 @@ _STATUS_EMOJI = {
 # Grupos de operadoras: alias → frentes INST vinculadas
 _OPERADORA_GRUPOS = {
     "INSTACABLE": ["F01", "F04", "F05", "F07", "F20", "F27", "F45", "F46", "F48", "F49", "F50"],
-    "WES":        ["F08", "F11", "F36", "F39", "F44"],
+    "WES":        ["F08", "F11", "F23", "F36", "F39", "F44"],
     "THM":        ["F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19"],
 }
 
