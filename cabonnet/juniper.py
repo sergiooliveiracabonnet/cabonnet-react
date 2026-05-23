@@ -9,7 +9,7 @@ from datetime import datetime, date
 
 import requests
 
-from cabonnet.config import MONITOR_CONFIG, JUN_HIST_FILE
+from cabonnet.config import MONITOR_CONFIG, JUN_HIST_FILE, TELEGRAM_CHAT_ALERTAS
 from cabonnet import state
 from cabonnet.telegram import _telegram_enabled, _tg_esc, _telegram_send, _TG_DIV
 
@@ -81,7 +81,7 @@ def _jun_notify_new_clients(novos: list, cluster: str, ts: str) -> None:
             f"<code>{'─' * 28}</code>\n"
             f"📡 <b>Cluster</b>: {clus}  |  ⏱ {coleta}"
         )
-        ok = _telegram_send(msg)
+        ok = _telegram_send(msg, chat_id_override=TELEGRAM_CHAT_ALERTAS)
         log.info("[Juniper-TG] Notificação %s → %s", user, "OK" if ok else "FALHOU")
 
 
