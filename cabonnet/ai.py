@@ -506,3 +506,86 @@ def _ai_daily_briefing(payload: dict):
     except Exception as ex:
         log.warning("[AI] Erro ao gerar briefing diário: %s", str(ex)[:200])
         return None
+
+
+def _ai_suggest_team(payload: dict):
+    """Sugere e justifica ranking de equipes para uma OS via Claude API. Cache 15 min por hash."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_suggest_lock:
+        cached = state._ai_suggest_cache.get(data_hash)
+        if cached and (now - cached["ts"]) < 900:
+            return {**cached["data"], "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    os_data = payload.get("os", {})
+    teams   = payload.get("availableTeams", [])
+
+    os_txt = (
+        f"OS #{os_data.get('numos', '?')} | Tipo: {os_data.get('_tipo', '?')} | "
+        f"Cidade: {os_data.get('nomedacidade', '?')} | Bairro: {os_data.get('bairro', '?')} | "
+        f"Serviço: {os_data.get('tiposervico', '?')} | "
+        f"Aging: {os_data.get('_aging', 0)} dias | Risco SLA: {os_data.get('_riskScore', 0)}/100"
+    )
+
+    teams_txt = "\n".join(
+        f"- {t.get('code', '?')}: {t.get('queue', 0)}/{t.get('maxQueue', 12)} na fila | "
+        f"SLA {t.get('sla_pct', 0):.0f}%"
+        for t in teams
+    ) or "Nenhuma equipe disponível"
+
+    prompt = (
+        "Você é um despachante sênior de ISP. Analise esta OS e ranqueie as equipes disponíveis.\n\n"
+        f"OS a despachar:\n{os_txt}\n\n"
+        f"Equipes ({len(teams)}):\n{teams_txt}\n\n"
+        "Ranqueie priorizando: compatibilidade de tipo, capacidade livre, SLA histórico, urgência da OS.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"sugestoes": [{"code": "F01", "score": 85, "motivo": "frase curta direta", '
+        '"impacto": "frase curta de consequência"}, ...], '
+        '"resumo": "1 frase sobre a melhor escolha"}\n\n'
+        f"Liste no máximo {min(len(teams), 4)} equipes. Score 0-100. Seja técnico e direto."
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key":         ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type":      "application/json",
+            },
+            json={
+                "model":      "claude-haiku-4-5-20251001",
+                "max_tokens": 600,
+                "messages":   [{"role": "user", "content": prompt}],
+            },
+            timeout=20,
+            verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] suggest-team %s: %s", resp.status_code, resp.text[:200])
+            return None
+
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        result = json.loads(raw)
+        data   = {
+            "sugestoes": result.get("sugestoes", [])[:4],
+            "resumo":    result.get("resumo", ""),
+        }
+
+        with state._ai_suggest_lock:
+            state._ai_suggest_cache[data_hash] = {"data": data, "ts": now}
+
+        log.info("[AI] suggest-team gerado — %d sugestões", len(data["sugestoes"]))
+        return {**data, "cached": False}
+
+    except Exception as ex:
+        log.warning("[AI] Erro suggest-team: %s", str(ex)[:200])
+        return None

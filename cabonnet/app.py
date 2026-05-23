@@ -799,6 +799,19 @@ async def ai_briefing_post():
     return {"ok": True, "cached": False, **result}
 
 
+@router.post("/ai/suggest-team")
+async def ai_suggest_team(request: Request):
+    """Sugestão de equipe com justificativa para uma OS sem equipe."""
+    from cabonnet.ai import _ai_suggest_team
+    body   = await request.json()
+    result = _ai_suggest_team(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg  = "ANTHROPIC_API_KEY não configurada no .env" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
 # ── Grafana / Zabbix ──────────────────────────────────────────────────────────
 
 @router.get("/grafana/os-totais")

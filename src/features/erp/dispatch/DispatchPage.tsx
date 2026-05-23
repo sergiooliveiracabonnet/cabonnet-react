@@ -1,8 +1,8 @@
 // @ts-nocheck
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   Send, AlertTriangle, Clock, Users, CheckCircle2,
-  Package, Wrench, Network, MapPin, Undo2, Star, Truck,
+  Package, Wrench, Network, MapPin, Undo2, Star, Truck, Sparkles,
 } from 'lucide-react'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 import { useERPStore }    from '../../../store/erpStore'
@@ -10,6 +10,7 @@ import { useIsOperador }  from '../../../hooks/useRole'
 import { TEAMS }        from '../erpConstants'
 import { shortEquipe }  from '../../../lib/osFormat'
 import { isCOPE, isReagend } from '../../../lib/transform'
+import { ai } from '../../../lib/api'
 
 // Códigos de equipes de campo reais (INSTALACAO / MANUTENCAO / REDE)
 const TEAM_CODE_SET = new Set(TEAMS.map(t => t.code))
@@ -114,7 +115,7 @@ function OSQueueCard({ row, isSelected, onClick }) {
 
 // ── Team suggestion card (right panel) ───────────────────────────────────────
 
-function TeamSuggestionCard({ entry, rank, onConfirm, isConfirming }) {
+function TeamSuggestionCard({ entry, rank, onConfirm, isConfirming, aiSugestao }) {
   const { team, total, pct, sla, queue } = entry
   const isBest = rank === 0
   const isOperador = useIsOperador()
@@ -180,6 +181,21 @@ function TeamSuggestionCard({ entry, rank, onConfirm, isConfirming }) {
         <p className="text-[9px] text-muted mt-1">{queue} / {TIPO_CFG[team.tipo]?.maxQueue} slots</p>
       </div>
 
+      {/* Raciocínio IA */}
+      {aiSugestao && (
+        <div className="mb-3 rounded-lg bg-primary/[0.06] border border-primary/15 px-3 py-2 space-y-1">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Sparkles size={9} className="text-primary" />
+            <span className="text-[9px] font-bold uppercase tracking-wider text-primary/70">IA</span>
+            <span className="text-[9px] text-primary/50 ml-auto">{aiSugestao.score} pts</span>
+          </div>
+          <p className="text-[10px] text-text leading-snug">{aiSugestao.motivo}</p>
+          {aiSugestao.impacto && (
+            <p className="text-[9px] text-secondary leading-snug">{aiSugestao.impacto}</p>
+          )}
+        </div>
+      )}
+
       {/* Botão */}
       {isBest ? (
         <button
@@ -215,9 +231,11 @@ export default function DispatchPage() {
   const { rows, isLoading, derived } = useOSDerived()
   const { dispatchedAssignments, setDispatch, undoDispatch } = useERPStore()
   const isOperador = useIsOperador()
-  const [selectedOS, setSelectedOS]   = useState(null)
-  const [confirming, setConfirming]   = useState(null)
-  const [filterTipo, setFilterTipo]   = useState('')
+  const [selectedOS, setSelectedOS]     = useState(null)
+  const [confirming, setConfirming]     = useState(null)
+  const [filterTipo, setFilterTipo]     = useState('')
+  const [aiResult, setAiResult]         = useState(null)   // { sugestoes, resumo }
+  const [aiLoading, setAiLoading]       = useState(false)
 
   const semaforo = useMemo(() => derived?.sla?.semaforo ?? [], [derived])
 
@@ -272,6 +290,40 @@ export default function DispatchPage() {
     if (!selectedOS) return []
     return rankTeams(selectedOS, metricsByCode, slaByCode)
   }, [selectedOS, metricsByCode, slaByCode])
+
+  useEffect(() => { setAiResult(null) }, [selectedOS?.numos])
+
+  async function fetchAISuggestion() {
+    if (!selectedOS || teamRanking.length === 0) return
+    setAiLoading(true)
+    setAiResult(null)
+    try {
+      const payload = {
+        os: {
+          numos:        selectedOS.numos,
+          _tipo:        selectedOS._tipo,
+          nomedacidade: selectedOS.nomedacidade,
+          bairro:       selectedOS.bairro,
+          tiposervico:  selectedOS.tiposervico,
+          _aging:       selectedOS._aging ?? 0,
+          _riskScore:   selectedOS._riskScore ?? 0,
+        },
+        availableTeams: teamRanking.map(e => ({
+          code:     e.team.code,
+          tipo:     e.team.tipo,
+          queue:    e.queue,
+          maxQueue: TIPO_CFG[e.team.tipo]?.maxQueue ?? 12,
+          sla_pct:  e.sla,
+        })),
+      }
+      const result = await ai.suggestTeam(payload)
+      setAiResult(result)
+    } catch {
+      // silencia — sem IA configurada ou timeout
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   function handleConfirm(teamCode) {
     if (!selectedOS) return
@@ -480,18 +532,40 @@ export default function DispatchPage() {
                     <span className="text-[10px] text-muted bg-white/[0.05] px-1.5 py-0.5 rounded-full">
                       {teamRanking.length} equipes compatíveis
                     </span>
+                    <button
+                      onClick={fetchAISuggestion}
+                      disabled={aiLoading}
+                      className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-lg
+                                 bg-primary/10 border border-primary/20 text-primary
+                                 text-[10px] font-semibold hover:bg-primary/20
+                                 transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
+                    >
+                      <Sparkles size={10} className={aiLoading ? 'animate-spin' : ''} />
+                      {aiLoading ? 'Analisando…' : aiResult ? 'Reanalisar' : 'Análise IA'}
+                    </button>
                   </div>
 
+                  {aiResult?.resumo && (
+                    <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/[0.05] border border-primary/15">
+                      <Sparkles size={12} className="text-primary mt-0.5 flex-shrink-0" />
+                      <p className="text-[11px] text-text leading-relaxed">{aiResult.resumo}</p>
+                    </div>
+                  )}
+
                   <div className="space-y-3">
-                    {teamRanking.slice(0, 4).map((entry, i) => (
-                      <TeamSuggestionCard
-                        key={entry.team.code}
-                        entry={entry}
-                        rank={i}
-                        onConfirm={() => handleConfirm(entry.team.code)}
-                        isConfirming={confirming === selectedOS?.numos}
-                      />
-                    ))}
+                    {teamRanking.slice(0, 4).map((entry, i) => {
+                      const aiSugestao = aiResult?.sugestoes?.find(s => s.code === entry.team.code)
+                      return (
+                        <TeamSuggestionCard
+                          key={entry.team.code}
+                          entry={entry}
+                          rank={i}
+                          onConfirm={() => handleConfirm(entry.team.code)}
+                          isConfirming={confirming === selectedOS?.numos}
+                          aiSugestao={aiSugestao}
+                        />
+                      )
+                    })}
                   </div>
 
                   <p className="text-[10px] text-muted/50 text-center pb-2">

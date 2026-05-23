@@ -282,6 +282,11 @@ export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): O
     row._slaCritico      = isAtiva && row._agingAbertura != null && row._agingAbertura > sla.limite * 2
     row._slaCriticoHoras = isAtiva && row._agingHoras != null && row._agingHoras > sla.limite * 24
     row._diasAcimaSLA    = row._slaCritico ? ((row._agingAbertura ?? 0) - sla.limite) : 0
+    row._diasAteViolacao = row._slaCritico
+      ? 0
+      : (isAtiva && row._agingAbertura != null)
+        ? Math.max(0, Math.floor(sla.limite * 2 - row._agingAbertura))
+        : null
     row._fornecedor      = getFornecedor(row.nomedaequipe)
     row._tipo            = getEquipeTipo(row.nomedaequipe, row.tiposervico)
 

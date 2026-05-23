@@ -70,14 +70,24 @@ const columns = [
     }
   },
   { key: '_riskScore',      label: 'Risco',
-    render: (v: number) => {
+    render: (v: number, row) => {
       const score = v ?? 0
       const [variant, label] =
         score >= 70 ? ['red',    'Crítico'] :
         score >= 40 ? ['orange', 'Alto']    :
         score >= 20 ? ['yellow', 'Médio']   :
                       ['green',  'Baixo']
-      return <Badge variant={variant as 'red' | 'orange' | 'yellow' | 'green'}>{label} {score}</Badge>
+      const dias = row?._diasAteViolacao
+      const pulse = score >= 70
+      const diasLabel = dias != null && dias <= 5 ? ` · ${dias}d` : ''
+      return (
+        <div className="relative inline-flex">
+          {pulse && <span className="absolute inset-0 rounded-[10px] bg-red-500/20 animate-ping pointer-events-none" />}
+          <Badge variant={variant as 'red' | 'orange' | 'yellow' | 'green'}>
+            {label} {score}{diasLabel}
+          </Badge>
+        </div>
+      )
     }
   },
   { key: 'nomecliente',     label: 'Cliente',

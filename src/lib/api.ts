@@ -72,6 +72,7 @@ export const ai = {
   briefingGet:    ()                 => request('/ai/daily-briefing'),
   briefingCreate: ()                 => request('/ai/daily-briefing',  { method: 'POST', body: '{}' }),
   forecast:       (payload: unknown) => request('/ai/forecast',        { method: 'POST', body: JSON.stringify(payload) }),
+  suggestTeam:    (payload: unknown) => request('/ai/suggest-team',    { method: 'POST', body: JSON.stringify(payload) }),
 }
 
 export const telegram = {

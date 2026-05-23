@@ -73,6 +73,8 @@ _ai_briefing_cache  = {"texto": "", "acoes": [], "data": "", "ts": 0.0}
 _ai_briefing_lock   = threading.Lock()
 _ai_forecast_cache  = {"hash": "", "tendencia": "", "narrativa": "", "previsao": [], "pico_previsto": None, "ts": 0.0}
 _ai_forecast_lock   = threading.Lock()
+_ai_suggest_cache   = {}   # key: data_hash → {"data": {...}, "ts": float}
+_ai_suggest_lock    = threading.Lock()
 
 # ── PIL fontes pré-carregadas ─────────────────────────────────────────────────
 _F = {}
