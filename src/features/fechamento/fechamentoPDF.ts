@@ -38,12 +38,8 @@ function fmtDataAt(r) {
 
 function cat4(r) {
   const t = (r.tiposervico || '').toUpperCase()
-  const s = (r.servico    || '').toUpperCase()
   if (t.includes('INSTALACAO') || t.includes('INSTALAÇÃO')) return 'INSTALAÇÃO'
-  if (t.includes('MANUTENCAO') || t.includes('MANUTENÇÃO')) {
-    if (/\bVT\s*\d/i.test(r.servico || '') || s.includes('VT ')) return 'VT'
-    return 'MANUTENÇÃO'
-  }
+  if (t.includes('MANUTENCAO') || t.includes('MANUTENÇÃO') || t.includes('VT') || t.includes('VISITA')) return 'MANUTENÇÃO'
   if (t.includes('SERVICO') || t.includes('SERVIÇO')) return 'SERVIÇO'
   return 'OUTROS'
 }
@@ -284,7 +280,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
   y += 4; _section('4. CLIENTES ATENDIDOS — POR EQUIPE E CATEGORIA')
   const atendidas = rows.filter(r => r.descsituacao === 'Concluída')
   const SERV4_ORDEM = ['TROCA DE EQUIPAMENTO', 'TRANSFERÊNCIA DE ENDEREÇO', 'CONFIGURAÇÃO DE ROTEADOR', 'TROCA DE CABEAMENTO', 'CONNECT HOME', 'MUDANÇA DE PONTO']
-  const CAT4_COR    = { 'INSTALAÇÃO': C.accent, 'VT': C.orange, 'MANUTENÇÃO': C.green, 'SERVIÇO': C.purple, 'OUTROS': C.muted }
+  const CAT4_COR    = { 'INSTALAÇÃO': C.accent, 'MANUTENÇÃO': C.green, 'SERVIÇO': C.purple, 'OUTROS': C.muted }
 
   if (atendidas.length) {
     atendidas.sort((a, b) => {
@@ -352,7 +348,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
       y += 12
 
       const blocos = []
-      ;['INSTALAÇÃO', 'VT', 'MANUTENÇÃO', 'OUTROS'].forEach(cat => {
+      ;['INSTALAÇÃO', 'MANUTENÇÃO', 'OUTROS'].forEach(cat => {
         if (catData[cat]?.length) blocos.push({ label: cat, rows: catData[cat], cor: CAT4_COR[cat], min: minDate(catData[cat]) })
       })
       if (catData['SERVIÇO']) {

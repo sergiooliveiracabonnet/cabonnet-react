@@ -4,6 +4,12 @@ const R  = 80
 const SW = 20
 const C  = 2 * Math.PI * R
 
+const FONT = '"Inter", system-ui, sans-serif'
+
+function isLight(): boolean {
+  return document.documentElement.classList.contains('light')
+}
+
 interface DataPoint {
   name:  string
   value: number
@@ -30,7 +36,7 @@ function buildSegments(data: DataPoint[], colors: string[], total: number): Segm
       pct:        Math.round(frac * 100),
       arc,
       dashoffset: C - (acc - allotted),
-      color:      colors[i % colors.length] ?? '#64748b',
+      color:      colors[i % colors.length] ?? '#71717a',
     }
   })
 }
@@ -62,11 +68,18 @@ export function DonutChart({ data = [], colors = [], onClick, centerLabel = 'Tot
   const cy = 110
   const hs = hovered != null ? segments[hovered] : null
 
+  const trackStroke  = isLight() ? 'rgba(0,0,0,0.06)'   : 'rgba(255,255,255,0.06)'
+  const centerVal    = isLight() ? '#09090b'              : '#fafafa'
+  const centerMuted  = '#71717a'
+
   return (
     <div className="flex h-full w-full min-h-0">
       <div className="flex items-center justify-center" style={{ width: '52%', minWidth: 0 }}>
         <svg viewBox="0 0 220 220" style={{ width: '100%', height: '100%' }}>
-          <circle cx={cx} cy={cy} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={SW} />
+          {/* Track ring */}
+          <circle cx={cx} cy={cy} r={R} fill="none" stroke={trackStroke} strokeWidth={SW} />
+
+          {/* Segments */}
           <g transform={`rotate(-90, ${cx}, ${cy})`}>
             {segments.map((s, i) => {
               const isHov = hovered === i
@@ -92,34 +105,54 @@ export function DonutChart({ data = [], colors = [], onClick, centerLabel = 'Tot
               )
             })}
           </g>
-          <text x={cx} y={hs ? cy - 10 : cy - 7} textAnchor="middle" dominantBaseline="middle"
-                fill={hs ? hs.color : 'rgb(228,238,255)'} fontSize={hs ? 22 : 27}
-                fontFamily='"Outfit", sans-serif' fontWeight="700"
-                style={{ transition: 'all 0.18s ease' }}>
+
+          {/* Center text — value */}
+          <text
+            x={cx} y={hs ? cy - 10 : cy - 7}
+            textAnchor="middle" dominantBaseline="middle"
+            fill={hs ? hs.color : centerVal}
+            fontSize={hs ? 22 : 27}
+            fontFamily={FONT} fontWeight="700"
+            style={{ transition: 'all 0.18s ease' }}
+          >
             {hs ? hs.value : total}
           </text>
-          <text x={cx} y={hs ? cy + 8 : cy + 11} textAnchor="middle" dominantBaseline="middle"
-                fill={hs ? hs.color : 'rgba(100,120,166,0.75)'} fontSize={10}
-                fontFamily='"Outfit", sans-serif' fontWeight="500"
-                style={{ transition: 'all 0.18s ease' }}>
+
+          {/* Center text — label */}
+          <text
+            x={cx} y={hs ? cy + 8 : cy + 11}
+            textAnchor="middle" dominantBaseline="middle"
+            fill={hs ? hs.color : centerMuted}
+            fontSize={10}
+            fontFamily={FONT} fontWeight="500"
+            opacity={0.75}
+            style={{ transition: 'all 0.18s ease' }}
+          >
             {hs ? (hs.name.length > 13 ? hs.name.slice(0, 13) + '…' : hs.name) : centerLabel}
           </text>
+
+          {/* Center text — pct */}
           {hs && (
-            <text x={cx} y={cy + 23} textAnchor="middle" dominantBaseline="middle"
-                  fill={hs.color} fontSize={10} fontFamily='"Outfit", sans-serif'
-                  fontWeight="600" opacity={0.75}>
+            <text
+              x={cx} y={cy + 23}
+              textAnchor="middle" dominantBaseline="middle"
+              fill={hs.color} fontSize={10}
+              fontFamily={FONT} fontWeight="600" opacity={0.75}
+            >
               {hs.pct}%
             </text>
           )}
         </svg>
       </div>
 
+      {/* Legend */}
       <div className="flex flex-col justify-center gap-1.5 py-2 pr-2 min-w-0" style={{ width: '48%' }}>
         {segments.map((s, i) => {
           const isHov = hovered === i
           const isDim = hovered != null && !isHov
           return (
-            <button key={i}
+            <button
+              key={i}
               className="text-left w-full focus:outline-none cursor-pointer"
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
@@ -128,11 +161,13 @@ export function DonutChart({ data = [], colors = [], onClick, centerLabel = 'Tot
             >
               <div className="flex items-center gap-2">
                 <span className="flex-shrink-0 rounded-sm" style={{ width: 10, height: 10, background: s.color }} />
-                <span className="flex-1 min-w-0 truncate text-[11px] leading-none" style={{ color: 'rgba(160,176,214,0.75)' }}>
+                <span className="flex-1 min-w-0 truncate text-[11px] leading-none text-muted">
                   {s.name}
                 </span>
-                <span className="flex-shrink-0 text-[11px] font-mono font-semibold"
-                      style={{ color: isHov ? s.color : 'rgba(100,120,166,0.85)', transition: 'color 0.18s ease' }}>
+                <span
+                  className="flex-shrink-0 text-[11px] font-mono font-semibold tabular-nums"
+                  style={{ color: isHov ? s.color : '#71717a', transition: 'color 0.18s ease' }}
+                >
                   {s.pct}%
                 </span>
               </div>

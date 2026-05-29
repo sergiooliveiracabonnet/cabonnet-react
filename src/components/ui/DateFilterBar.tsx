@@ -56,7 +56,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
   return (
     <div
       className={`fixed z-[39] right-0 top-14 h-10
-                  bg-elevated border-b border-white/[0.07]
+                  bg-elevated border-b border-border
                   flex items-center gap-1.5 px-3
                   transition-all duration-normal
                   ${sidebarOpen ? 'left-[220px]' : 'left-[52px]'}`}
@@ -79,14 +79,14 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                             ? 'border-cyan/20 text-cyan/60 hover:text-cyan hover:border-cyan/40'
                             : p.id === 'futuro'
                               ? 'border-orange/20 text-orange/60 hover:text-orange hover:border-orange/40'
-                              : 'border-white/[0.08] text-muted hover:text-secondary hover:border-white/[0.15]'}`}
+                              : 'border-border text-muted hover:text-secondary hover:border-muted/30'}`}
           >
             {p.label}
           </button>
         ))}
       </div>
 
-      <span className="w-px h-4 bg-white/[0.08] mx-0.5 flex-shrink-0" />
+      <span className="w-px h-4 bg-surface mx-0.5 flex-shrink-0" />
 
       {preset === 'custom' && (
         <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -94,7 +94,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             type="date"
             value={toInputVal(from)}
             onChange={e => setCustomRange(fromInputVal(e.target.value)!, to!)}
-            className="bg-surface border border-white/[0.10] rounded-md px-2 py-0.5 font-mono text-secondary
+            className="bg-surface border border-border rounded-md px-2 py-0.5 font-mono text-secondary
                        outline-none focus:border-primary/50 w-[120px] text-[11px]"
           />
           <span className="text-muted text-[10px]">→</span>
@@ -102,7 +102,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             type="date"
             value={toInputVal(to)}
             onChange={e => setCustomRange(from!, toEndOfDay(e.target.value)!)}
-            className="bg-surface border border-white/[0.10] rounded-md px-2 py-0.5 font-mono text-secondary
+            className="bg-surface border border-border rounded-md px-2 py-0.5 font-mono text-secondary
                        outline-none focus:border-primary/50 w-[120px] text-[11px]"
           />
         </div>
@@ -129,13 +129,13 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
         {showCampo && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setShowCampo(false)} />
-            <div className="absolute right-0 top-6 z-50 bg-elevated border border-white/[0.10] rounded-lg shadow-accent overflow-hidden min-w-[140px]">
+            <div className="absolute right-0 top-6 z-50 bg-elevated border border-border rounded-lg shadow-accent overflow-hidden min-w-[140px]">
               {CAMPOS.map(c => (
                 <button
                   key={c.value}
                   onClick={() => { setCampo(c.value); setShowCampo(false) }}
                   className={`w-full text-left px-3 py-2 text-[11px] transition-colors
-                              ${campo === c.value ? 'text-primary bg-primary/10' : 'text-secondary hover:bg-white/[0.05]'}`}
+                              ${campo === c.value ? 'text-primary bg-primary/10' : 'text-secondary hover:bg-surface/40'}`}
                 >
                   {c.label}
                 </button>
@@ -145,7 +145,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
         )}
       </div>
 
-      <span className="w-px h-4 bg-white/[0.08] mx-0.5 flex-shrink-0" />
+      <span className="w-px h-4 bg-surface mx-0.5 flex-shrink-0" />
 
       <button
         onClick={toggleHideRede}
@@ -154,7 +154,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                     transition-all duration-fast flex-shrink-0
                     ${hideRede
                       ? 'border-orange/40 bg-orange/[0.07] text-orange'
-                      : 'border-white/[0.08] text-muted hover:text-secondary hover:border-white/[0.15]'}`}
+                      : 'border-border text-muted hover:text-secondary hover:border-muted/30'}`}
       >
         <Server size={10} className="flex-shrink-0" />
         <span>Rede</span>

@@ -13,19 +13,19 @@ const variants = {
 type BadgeVariant = keyof typeof variants
 
 interface BadgeProps {
-  children:  ReactNode
-  variant?:  BadgeVariant | string
-  dot?:      boolean
+  children:   ReactNode
+  variant?:   BadgeVariant | string
+  dot?:       boolean
   className?: string
 }
 
 export function Badge({ children, variant = 'cyan', dot = true, className = '' }: BadgeProps) {
   const cls = variants[variant as BadgeVariant] ?? ''
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-pill
-                      text-[10.5px] font-bold tracking-wide ${cls} ${className}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                      text-[11px] font-semibold ${cls} ${className}`}>
       {dot && (
-        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-75 flex-shrink-0" />
+        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70 flex-shrink-0" />
       )}
       {children}
     </span>

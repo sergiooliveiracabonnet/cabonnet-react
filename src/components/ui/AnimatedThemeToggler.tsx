@@ -1,5 +1,5 @@
 import { useRef, useId, type MutableRefObject } from 'react'
-import { motion } from 'motion/react'
+import { motion } from 'framer-motion'
 import { useUIStore } from '../../store/uiStore'
 
 declare global {

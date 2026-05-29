@@ -25,7 +25,7 @@ const ACCENT_CFG = {
   orange: { text: 'text-orange', bar: 'bg-orange', tint: 'bg-orange/[0.04]' },
 }
 function getAccent(a: string) {
-  return (ACCENT_CFG as Record<string, { text: string; bar: string; tint: string }>)[a] ?? { text: 'text-text', bar: 'bg-white/[0.10]', tint: '' }
+  return (ACCENT_CFG as Record<string, { text: string; bar: string; tint: string }>)[a] ?? { text: 'text-text', bar: 'bg-surface', tint: '' }
 }
 
 const SEMAFORO_CFG = {
@@ -51,7 +51,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
     <div className="h-full p-6 flex flex-col gap-4">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Activity size={13} className="text-muted" />
-        <p className="text-[10px] font-bold uppercase tracking-[2.5px] text-muted/70">
+        <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted/70">
           Visão Operacional
         </p>
       </div>
@@ -66,11 +66,11 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
             return (
               <div
                 key={k.id}
-                className={`${acc.tint} bg-card border border-white/[0.07] rounded-xl
+                className={`${acc.tint} bg-card border border-border rounded-xl
                              flex flex-col items-center justify-center gap-2 p-6 relative overflow-hidden`}
               >
                 <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${acc.bar}`} />
-                <p className="text-[10px] font-bold text-muted uppercase tracking-[2px] text-center">
+                <p className="text-[10px] font-bold text-muted uppercase tracking-[0.08em] text-center">
                   {k.title}
                 </p>
                 <p className={`font-mono text-7xl font-bold tabular-nums ${acc.text}`}>
@@ -98,7 +98,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       <div className="flex flex-col gap-2.5 overflow-y-auto">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
           <Users size={13} className="text-muted" />
-          <p className="text-[10px] font-bold uppercase tracking-[2.5px] text-muted/70">
+          <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted/70">
             Semáforo por Equipe
           </p>
         </div>
@@ -111,7 +111,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
           return (
             <div
               key={eq.nome}
-              className="flex items-center gap-3 bg-card border border-white/[0.07]
+              className="flex items-center gap-3 bg-card border border-border
                          rounded-xl px-4 py-3.5 relative overflow-hidden"
             >
               <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${cfg.bar}`} />
@@ -130,7 +130,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       <div className="flex flex-col gap-2.5 overflow-hidden">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
           <AlertCircle size={13} className="text-red flex-shrink-0" />
-          <p className="text-[10px] font-bold uppercase tracking-[2.5px] text-muted/70">
+          <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted/70">
             OS com SLA 2× Excedido
           </p>
           <span className="ml-auto font-mono text-[13px] font-bold text-red tabular-nums">
@@ -184,7 +184,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
     <div className="h-full p-6 flex flex-col gap-4 overflow-y-auto">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Package size={13} className="text-muted" />
-        <p className="text-[10px] font-bold uppercase tracking-[2.5px] text-muted/70">
+        <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted/70">
           Desempenho por Fornecedor
         </p>
       </div>
@@ -200,7 +200,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
           return (
             <div
               key={f.nome}
-              className="bg-card border border-white/[0.07] rounded-xl p-5 flex flex-col gap-4"
+              className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4"
               style={{ borderLeft: `3px solid ${f.cor}` }}
             >
               <div className="flex items-center gap-2.5">
@@ -222,7 +222,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
                 </div>
               </div>
               <div>
-                <div className="h-2.5 bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="h-2.5 bg-surface rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full"
                     style={{
@@ -325,7 +325,7 @@ function NocInner() {
 
       {/* ── Header ── */}
       <header className="flex items-center gap-3 px-6 py-3
-                         border-b border-white/[0.07] bg-elevated flex-shrink-0">
+                         border-b border-border bg-elevated flex-shrink-0">
         {/* Live pulse */}
         <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-60" />
@@ -335,7 +335,7 @@ function NocInner() {
         <Monitor size={17} className="text-primary flex-shrink-0" />
         <span className="font-headline font-bold text-base tracking-wide">NOC — Cabonnet</span>
 
-        <div className="w-px h-5 bg-white/[0.12] mx-1 flex-shrink-0" />
+        <div className="w-px h-5 bg-border mx-1 flex-shrink-0" />
 
         {/* Current slide label */}
         <SlideIcon size={13} className="text-primary flex-shrink-0" />
@@ -359,7 +359,7 @@ function NocInner() {
             else document.exitFullscreen?.()
           }}
           className="w-8 h-8 rounded-md flex items-center justify-center ml-2
-                     text-secondary hover:text-text hover:bg-white/[0.08] transition-all"
+                     text-secondary hover:text-text hover:bg-surface transition-all"
           title={isFullscreen ? 'Sair da tela cheia (F)' : 'Tela cheia (F)'}
         >
           {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -368,7 +368,7 @@ function NocInner() {
         <button
           onClick={() => setPaused(p => !p)}
           className="w-8 h-8 rounded-md flex items-center justify-center
-                     text-secondary hover:text-text hover:bg-white/[0.08] transition-all"
+                     text-secondary hover:text-text hover:bg-surface transition-all"
           title={paused ? 'Retomar (Espaço)' : 'Pausar (Espaço)'}
         >
           {paused ? <Play size={14} /> : <Pause size={14} />}
@@ -398,7 +398,7 @@ function NocInner() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="flex-shrink-0 bg-elevated border-t border-white/[0.07] px-6 py-2.5">
+      <footer className="flex-shrink-0 bg-elevated border-t border-border px-6 py-2.5">
         <div className="flex items-center gap-1 mb-2">
           {SLIDE_CONFIG.map(({ name, icon: Icon }, i) => (
             <button
@@ -407,7 +407,7 @@ function NocInner() {
               className={`flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-full transition-all
                           ${slide === i
                             ? 'bg-primary/15 text-primary font-bold'
-                            : 'text-muted hover:text-secondary hover:bg-white/[0.05]'}`}
+                            : 'text-muted hover:text-secondary hover:bg-surface/40'}`}
             >
               <Icon size={11} />
               {name}
@@ -442,7 +442,7 @@ function NocInner() {
           <span className="text-[11px] text-muted font-mono tabular-nums">{remaining}s</span>
         </div>
 
-        <div className="h-[3px] bg-white/[0.06] rounded-full overflow-hidden">
+        <div className="h-[3px] bg-surface rounded-full overflow-hidden">
           <div
             className="h-full bg-primary rounded-full"
             style={{ width: `${progress}%`, transition: 'width 100ms linear' }}

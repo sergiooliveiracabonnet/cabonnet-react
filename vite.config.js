@@ -15,9 +15,6 @@ export default defineConfig({
   resolve: {
     alias: { '@': '/src' },
   },
-  optimizeDeps: {
-    include: ['leaflet.heat'],
-  },
   server: {
     host: true,
     port: 3000,

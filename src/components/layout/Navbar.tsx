@@ -109,7 +109,7 @@ const RefreshControl = memo(function RefreshControl() {
                     transition-all duration-fast
                     ${urgent
                       ? 'border-yellow/40 text-yellow bg-yellow/5 hover:bg-yellow/10'
-                      : 'border-white/[0.08] text-secondary hover:border-white/[0.18] hover:text-text'}`}
+                      : 'border-border text-secondary hover:border-muted/40 hover:text-text'}`}
         title="Atualizar dados"
       >
         <RefreshCw size={12} className={`flex-shrink-0 ${spinning ? 'animate-spin' : ''}`} />
@@ -119,18 +119,18 @@ const RefreshControl = memo(function RefreshControl() {
 
       {showMenu && (
         <div className="absolute right-0 top-10 z-50 w-52
-                        bg-elevated border border-white/[0.10] rounded-lg shadow-accent overflow-hidden">
+                        bg-elevated border border-border rounded-lg shadow-accent overflow-hidden">
           <button
             onClick={handleRefresh}
             disabled={isLoading}
             className="w-full flex items-center gap-2.5 px-3 py-2.5
                        text-[11px] font-semibold text-primary hover:bg-primary/10
-                       border-b border-white/[0.06] transition-colors disabled:opacity-50"
+                       border-b border-border transition-colors disabled:opacity-50"
           >
             <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
             Atualizar agora
           </button>
-          <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.06]">
+          <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border">
             <div className="flex items-center gap-1.5">
               <Clock size={10} className="text-muted" />
               <span className="text-[11px] text-muted">
@@ -144,7 +144,7 @@ const RefreshControl = memo(function RefreshControl() {
             )}
           </div>
           <div className="px-3 py-2">
-            <p className="text-[10px] font-bold uppercase tracking-[1px] text-muted mb-2">Auto-refresh</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Auto-refresh</p>
             {INTERVALS.map((opt) => (
               <button
                 key={String(opt.value)}
@@ -153,7 +153,7 @@ const RefreshControl = memo(function RefreshControl() {
                             text-[12px] transition-colors
                             ${interval === opt.value
                               ? 'bg-primary/15 text-primary font-semibold'
-                              : 'text-secondary hover:bg-white/[0.05]'}`}
+                              : 'text-secondary hover:bg-surface/40'}`}
               >
                 {opt.label}
                 {interval === opt.value && (
@@ -254,7 +254,7 @@ export function Navbar() {
     ? 'text-yellow bg-yellow/[0.08] hover:bg-yellow/[0.15]'
     : alerts.length > 0
     ? 'text-cyan bg-cyan/[0.08] hover:bg-cyan/[0.15]'
-    : 'text-secondary hover:text-text hover:bg-white/[0.08]'
+    : 'text-secondary hover:text-text hover:bg-surface'
 
   return (
     <>
@@ -262,13 +262,13 @@ export function Navbar() {
       <button
         onClick={toggleSidebar}
         className="w-8 h-8 rounded-lg flex items-center justify-center
-                   text-muted hover:text-text hover:bg-white/[0.07]
+                   text-muted hover:text-text hover:bg-surface
                    transition-all duration-fast flex-shrink-0"
         aria-label="Toggle sidebar"
       >
         <Menu size={15} />
       </button>
-      <div className="w-px h-5 bg-white/[0.08] flex-shrink-0" />
+      <div className="w-px h-5 bg-border flex-shrink-0" />
       <div className="flex-1 min-w-0">
         <h1 className="font-headline font-bold text-text text-[14px] leading-none tracking-tight truncate">
           {title}
@@ -278,14 +278,14 @@ export function Navbar() {
       <button
         onClick={() => setSearchOpen(true)}
         title="Busca global (Ctrl+K)"
-        className="flex items-center gap-2 h-8 px-3 rounded-lg border border-white/[0.07]
-                   bg-white/[0.025] text-muted hover:border-white/[0.14] hover:text-secondary
-                   hover:bg-white/[0.05] transition-all duration-fast flex-shrink-0 min-w-[160px]"
+        className="flex items-center gap-2 h-8 px-3 rounded-lg border border-border
+                   bg-surface text-muted hover:border-muted/30 hover:text-secondary
+                   transition-colors duration-150 flex-shrink-0 min-w-[160px]"
       >
         <Search size={12} className="flex-shrink-0" />
         <span className="text-[11px] flex-1 text-left hidden sm:block">Buscar OS, cliente…</span>
-        <kbd className="hidden md:flex items-center text-[9px] font-mono bg-white/[0.06]
-                        border border-white/[0.10] rounded px-1.5 py-0.5 leading-none">⌃K</kbd>
+        <kbd className="hidden md:flex items-center text-[9px] font-mono
+                        bg-surface border border-border rounded px-1.5 py-0.5 leading-none text-muted">⌃K</kbd>
       </button>
 
       {slaCriticas.length > 0 && (
@@ -314,7 +314,7 @@ export function Navbar() {
                   {slaCriticas.length} OS com SLA 2× excedido
                 </p>
               </div>
-              <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.05]">
+              <div className="max-h-72 overflow-y-auto divide-y divide-border/60">
                 {slaCriticas.map((os, i) => (
                   <div key={(os.numos as string) ?? i} className="px-3 py-2.5">
                     <div className="flex items-center justify-between gap-2 mb-0.5">
@@ -337,7 +337,7 @@ export function Navbar() {
                   </div>
                 ))}
               </div>
-              <div className="px-3 py-2 border-t border-white/[0.06]">
+              <div className="px-3 py-2 border-t border-border">
                 <button
                   onClick={() => { navigate('/ordens'); setShowAlerta(false) }}
                   className="w-full text-center text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
@@ -367,20 +367,20 @@ export function Navbar() {
 
         {alertsOpen && (
           <div className="absolute right-0 top-10 z-50 w-80
-                          bg-elevated border border-white/[0.10] rounded-lg shadow-accent overflow-hidden">
-            <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-white/[0.06] bg-white/[0.02]">
+                          bg-elevated border border-border rounded-lg shadow-accent overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border bg-surface/30">
               <span className="text-[12px] font-bold text-text">Motor de Alertas</span>
               <button onClick={resetRules} className="text-[10px] text-muted hover:text-secondary transition-colors">
                 Restaurar padrões
               </button>
             </div>
             {alerts.length > 0 && (
-              <div className="border-b border-white/[0.06]">
-                <p className="text-[10px] font-bold uppercase tracking-[1px] text-muted px-3 pt-2.5 pb-1.5">
+              <div className="border-b border-border">
+                <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted px-3 pt-2.5 pb-1.5">
                   Ativos ({alerts.length})
                 </p>
                 {alerts.map(a => (
-                  <div key={a.id} className="flex items-center gap-2 px-3 py-2 border-t border-white/[0.04]">
+                  <div key={a.id} className="flex items-center gap-2 px-3 py-2 border-t border-border/50">
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                       a.severity === 'critical' ? 'bg-red' :
                       a.severity === 'warning'  ? 'bg-yellow' : 'bg-cyan'
@@ -394,13 +394,13 @@ export function Navbar() {
               </div>
             )}
             <div className="px-3 py-2.5 space-y-2.5">
-              <p className="text-[10px] font-bold uppercase tracking-[1px] text-muted">Regras</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Regras</p>
               {rules.map(rule => (
                 <div key={rule.id} className="flex items-center gap-2">
                   <button
                     onClick={() => updateRule(rule.id, { enabled: !rule.enabled })}
                     className={`relative inline-flex items-center w-7 h-4 rounded-full flex-shrink-0
-                                transition-colors ${rule.enabled ? 'bg-primary' : 'bg-white/[0.15]'}`}
+                                transition-colors ${rule.enabled ? 'bg-primary' : 'bg-muted/25'}`}
                   >
                     <span className={`absolute w-3 h-3 rounded-full bg-white shadow transition-transform
                                       ${rule.enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
@@ -413,15 +413,15 @@ export function Navbar() {
                     type="number"
                     value={rule.threshold}
                     onChange={e => updateRule(rule.id, { threshold: +e.target.value })}
-                    className="w-12 text-[11px] font-mono text-right bg-surface
-                               border border-white/[0.10] rounded px-1 py-0.5
-                               outline-none focus:border-primary/50 text-text"
+                    className="w-12 text-[11px] font-mono text-right tabular-nums
+                               bg-card border border-border rounded px-1.5 py-0.5
+                               outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 text-text"
                   />
                 </div>
               ))}
             </div>
             {alerts.length === 0 && (
-              <p className="text-[11px] text-muted text-center px-3 py-2 border-t border-white/[0.06]">
+              <p className="text-[11px] text-muted text-center px-3 py-2 border-t border-border">
                 Nenhuma regra disparada
               </p>
             )}
@@ -434,7 +434,7 @@ export function Navbar() {
           onClick={() => setTelegramOpen(v => !v)}
           title="Alertas & Telegram"
           className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all duration-fast
-            ${tg.enabled ? 'text-green hover:bg-green/10' : 'text-muted hover:text-secondary hover:bg-white/[0.08]'}`}
+            ${tg.enabled ? 'text-green hover:bg-green/10' : 'text-muted hover:text-secondary hover:bg-surface'}`}
         >
           <Send size={13} />
           {naoLidos > 0 && (

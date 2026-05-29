@@ -10,7 +10,7 @@ const RISCO_LEVELS = [
   { min: 70, label: 'Crítico', cls: 'bg-red-500/20 text-red-400 border-red-500/30',     bar: 'bg-red-500',     row: 'hover:bg-red-500/[0.03]' },
   { min: 40, label: 'Alto',    cls: 'bg-orange-500/20 text-orange-400 border-orange-500/30', bar: 'bg-orange-500',  row: 'hover:bg-orange-500/[0.03]' },
   { min: 20, label: 'Médio',   cls: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', bar: 'bg-yellow-500',  row: 'hover:bg-yellow-500/[0.03]' },
-  { min: 0,  label: 'Baixo',   cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', bar: 'bg-emerald-500', row: 'hover:bg-white/[0.02]' },
+  { min: 0,  label: 'Baixo',   cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', bar: 'bg-emerald-500', row: 'hover:bg-surface/20' },
 ]
 
 function getRiscoLevel(score: any) {
@@ -71,7 +71,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
         <button
           onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
           className="flex items-center gap-1.5 text-[11px] text-secondary hover:text-text
-                     px-3 py-1.5 rounded-lg hover:bg-white/[0.05] border border-white/[0.07]
+                     px-3 py-1.5 rounded-lg hover:bg-surface/40 border border-border
                      transition-all duration-150"
         >
           {sortDir === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
@@ -80,9 +80,9 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto rounded-xl border border-white/[0.07] min-h-0">
+      <div className="flex-1 overflow-auto rounded-xl border border-border min-h-0">
         <table className="w-full text-[12px] border-collapse">
-          <thead className="sticky top-0 z-10 bg-elevated border-b border-white/[0.07]">
+          <thead className="sticky top-0 z-10 bg-elevated border-b border-border">
             <tr>
               {['Prioridade', 'OS', 'Cliente', 'Tipo', 'Equipe', 'Cidade', 'Aging', 'SLA'].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-muted font-semibold uppercase tracking-wider text-[10px] whitespace-nowrap">
@@ -100,7 +100,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
 
               return (
                 <tr key={row.numos}
-                    className={`border-b border-white/[0.04] transition-colors ${level.row}`}>
+                    className={`border-b border-border/50 transition-colors ${level.row}`}>
                   {/* Priority */}
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2.5">
@@ -109,7 +109,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${level.cls}`}>
                           {level.label}
                         </span>
-                        <div className="mt-1 w-16 h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                        <div className="mt-1 w-16 h-1 bg-surface rounded-full overflow-hidden">
                           <div className={`h-full rounded-full ${level.bar}`}
                                style={{ width: `${row._riskScore}%` }} />
                         </div>

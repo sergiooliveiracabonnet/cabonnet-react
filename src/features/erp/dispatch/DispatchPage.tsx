@@ -47,7 +47,7 @@ function osRisk(row) {
 function slaBadge(row) {
   if (row._slaCritico)  return { label: 'Crítico', cls: 'bg-red-500/20 text-red-400 border border-red-500/30' }
   if (row._slaExcedido) return { label: 'SLA+',    cls: 'bg-orange-500/20 text-orange-400 border border-orange-500/30' }
-  return                       { label: 'OK',       cls: 'bg-white/[0.05] text-muted border border-white/[0.08]' }
+  return                       { label: 'OK',       cls: 'bg-surface/40 text-muted border border-border' }
 }
 
 function rankTeams(os, metricsByCode, slaByCode) {
@@ -88,7 +88,7 @@ function OSQueueCard({ row, isSelected, onClick }) {
         focus-visible:ring-1 focus-visible:ring-primary/50
         ${isSelected
           ? 'bg-primary/10 border-primary/30'
-          : 'bg-white/[0.02] border-white/[0.06] hover:border-white/[0.14] hover:bg-white/[0.04]'}`}
+          : 'bg-surface/20 border-border hover:border-muted/30 hover:bg-surface/30'}`}
     >
       <div className="flex items-center justify-between mb-1.5">
         <span className="font-mono text-[10px] font-semibold text-primary/80">#{row.numos}</span>
@@ -124,13 +124,13 @@ function TeamSuggestionCard({ entry, rank, onConfirm, isConfirming, aiSugestao }
     ? 'bg-emerald-500/15 text-emerald-400'
     : total >= 35
     ? 'bg-amber-500/15 text-amber-400'
-    : 'bg-white/[0.05] text-muted'
+    : 'bg-surface/40 text-muted'
 
   return (
     <div className={`rounded-xl border p-4 transition-all duration-150
       ${isBest
         ? 'bg-primary/[0.05] border-primary/20'
-        : 'bg-white/[0.02] border-white/[0.06]'}`}>
+        : 'bg-surface/20 border-border'}`}>
 
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -149,18 +149,18 @@ function TeamSuggestionCard({ entry, rank, onConfirm, isConfirming, aiSugestao }
 
       {/* Métricas */}
       <div className="grid grid-cols-3 gap-2 mb-3 text-center">
-        <div className="bg-white/[0.03] rounded-lg py-2">
+        <div className="bg-surface/30 rounded-lg py-2">
           <p className={`text-[15px] font-bold leading-none
             ${pct > 85 ? 'text-red-400' : pct > 60 ? 'text-orange-400' : 'text-emerald-400'}`}>
             {Math.round(100 - pct)}%
           </p>
           <p className="text-[9px] text-muted mt-0.5">Livre</p>
         </div>
-        <div className="bg-white/[0.03] rounded-lg py-2">
+        <div className="bg-surface/30 rounded-lg py-2">
           <p className="text-[15px] font-bold text-text leading-none">{queue}</p>
           <p className="text-[9px] text-muted mt-0.5">Na fila</p>
         </div>
-        <div className="bg-white/[0.03] rounded-lg py-2">
+        <div className="bg-surface/30 rounded-lg py-2">
           <p className={`text-[15px] font-bold leading-none
             ${sla >= 90 ? 'text-emerald-400' : sla >= 75 ? 'text-orange-400' : 'text-red-400'}`}>
             {sla > 0 ? `${Math.round(sla)}%` : '—'}
@@ -171,7 +171,7 @@ function TeamSuggestionCard({ entry, rank, onConfirm, isConfirming, aiSugestao }
 
       {/* Barra de capacidade */}
       <div className="mb-3">
-        <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+        <div className="h-1.5 bg-surface/40 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500
               ${pct > 85 ? 'bg-red-500' : pct > 60 ? 'bg-orange-500' : 'bg-emerald-500'}`}
@@ -214,8 +214,8 @@ function TeamSuggestionCard({ entry, rank, onConfirm, isConfirming, aiSugestao }
         <button
           onClick={onConfirm}
           disabled={isConfirming}
-          className="w-full py-2 rounded-lg border border-white/[0.08]
-                     text-[11px] text-secondary hover:text-text hover:border-white/[0.18]
+          className="w-full py-2 rounded-lg border border-border
+                     text-[11px] text-secondary hover:text-text hover:border-muted/40
                      transition-colors disabled:opacity-40"
         >
           Usar esta equipe
@@ -347,7 +347,7 @@ export default function DispatchPage() {
           <p className="text-[12px] text-secondary mt-0.5">Atribuição de equipes · ERP</p>
         </div>
 
-        <div className="flex gap-1 bg-elevated border border-white/[0.07] rounded-lg p-0.5">
+        <div className="flex gap-1 bg-elevated border border-border rounded-lg p-0.5">
           {[
             { value: '',           label: 'Todos'     },
             { value: 'INSTALACAO', label: 'Instalação' },
@@ -360,7 +360,7 @@ export default function DispatchPage() {
               className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150
                 ${filterTipo === opt.value
                   ? 'bg-primary/20 text-primary'
-                  : 'text-secondary hover:text-text hover:bg-white/[0.05]'}`}
+                  : 'text-secondary hover:text-text hover:bg-surface/40'}`}
             >
               {opt.label}
             </button>
@@ -377,7 +377,7 @@ export default function DispatchPage() {
         ].map(k => {
           const KIcon = k.Icon
           return (
-            <div key={k.label} className="bg-elevated border border-white/[0.07] rounded-xl px-4 py-3 flex items-center gap-3">
+            <div key={k.label} className="bg-elevated border border-border rounded-xl px-4 py-3 flex items-center gap-3">
               <div className={`w-9 h-9 rounded-lg ${k.bgCls} flex items-center justify-center flex-shrink-0`}>
                 <KIcon size={16} className={k.colorCls} />
               </div>
@@ -481,7 +481,7 @@ export default function DispatchPage() {
             <div className="h-full overflow-y-auto space-y-4 pr-1">
 
               {/* OS selecionada */}
-              <div className="bg-elevated border border-white/[0.07] rounded-xl p-4">
+              <div className="bg-elevated border border-border rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-mono text-[11px] font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded">
                     #{selectedOS.numos}
@@ -529,7 +529,7 @@ export default function DispatchPage() {
                     <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">
                       Sugestões
                     </p>
-                    <span className="text-[10px] text-muted bg-white/[0.05] px-1.5 py-0.5 rounded-full">
+                    <span className="text-[10px] text-muted bg-surface/40 px-1.5 py-0.5 rounded-full">
                       {teamRanking.length} equipes compatíveis
                     </span>
                     <button

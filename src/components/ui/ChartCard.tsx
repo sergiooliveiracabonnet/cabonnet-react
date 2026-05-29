@@ -12,33 +12,35 @@ interface ChartCardProps {
 
 export function ChartCard({ title, dot, children, height = 'h-48', onExpand, className = '' }: ChartCardProps) {
   return (
-    <div className={`relative bg-card border border-white/[0.07] rounded-xl overflow-hidden card-shine ${className}`}>
-      <div
-        className="absolute top-0 left-0 right-0 h-[1.5px] z-10"
-        style={dot
-          ? { background: `linear-gradient(90deg, transparent 0%, ${dot}99 40%, ${dot}99 60%, transparent 100%)` }
-          : { background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)' }
-        }
-      />
+    <div className={`relative bg-card border border-border rounded-xl overflow-hidden ${className}`}>
+      {/* Top accent — só quando dot está definido */}
+      {dot && (
+        <div
+          className="absolute top-0 left-0 right-0 h-px z-10"
+          style={{ background: `linear-gradient(90deg, transparent 0%, ${dot}80 40%, ${dot}80 60%, transparent 100%)` }}
+        />
+      )}
+
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           {dot && (
             <span
               className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ background: dot, boxShadow: `0 0 8px ${dot}90` }}
+              style={{ background: dot }}
             />
           )}
-          <p className="text-[11px] font-bold uppercase tracking-[1.1px] text-muted">{title}</p>
+          <p className="text-[11px] font-medium text-muted">{title}</p>
         </div>
         {onExpand && (
           <button
             onClick={onExpand}
-            className="text-muted/60 hover:text-text transition-colors duration-fast p-1 rounded-md hover:bg-white/[0.06]"
+            className="text-muted hover:text-text transition-colors duration-150 p-1 rounded-md hover:bg-surface"
           >
             <Maximize2 size={11} />
           </button>
         )}
       </div>
+
       <div className={`relative ${height} px-1 pb-2`}>{children}</div>
     </div>
   )

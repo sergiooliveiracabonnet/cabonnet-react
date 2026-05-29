@@ -14,14 +14,13 @@ export const isExecucaoReal = (s: string | undefined | null): boolean =>
 
 // ─── Date Filter ─────────────────────────────────────────────────────────────
 
-const MIN_YEAR = new Date().getFullYear() - 1
-
 export function applyDateFilter(rows: OSRow[], dateFilter: DateFilter | null): OSRow[] {
+  const minYear = new Date().getFullYear() - 1
   const yearFiltered = rows.filter(r => {
     const raw = r.datacadastro
     if (!raw) return true
     const dt = parseDate(raw)
-    return !dt || dt.getFullYear() >= MIN_YEAR
+    return !dt || dt.getFullYear() >= minYear
   })
 
   if (!dateFilter) return yearFiltered

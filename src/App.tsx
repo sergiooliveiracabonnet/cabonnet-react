@@ -11,7 +11,7 @@ import {
   DashboardPage, OrdensPage, CapacidadePage,
   GraficosPage, CidadesPage, CampoPage,
   FornecedorPage, JuniperPage, NotFoundPage, NocPage, FechamentoPage,
-  MapaPage, GerencialPage,
+  MapaPage, GerencialPage, MapaMentalPage,
 } from './pages/index'
 
 export default function App() {
@@ -69,8 +69,9 @@ export default function App() {
         <Route path="fornecedor" element={<FornecedorPage />} />
         <Route path="juniper"    element={<JuniperPage />}    />
         <Route path="fechamento" element={<FechamentoPage />} />
-        <Route path="mapa"       element={<MapaPage />}       />
-        <Route path="gerencial"  element={<GerencialPage />}  />
+        <Route path="mapa"         element={<MapaPage />}         />
+        <Route path="gerencial"   element={<GerencialPage />}   />
+        <Route path="mapa-mental" element={<MapaMentalPage />}  />
         <Route path="*"          element={<NotFoundPage />}   />
       </Route>
       <Route path="noc" element={<NocPage />} />

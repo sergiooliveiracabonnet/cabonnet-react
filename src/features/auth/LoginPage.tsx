@@ -238,10 +238,10 @@ export function LoginPage() {
               <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0"/>
             </linearGradient>
             <linearGradient id="fo2" x1="100%" y1="0%" x2="0%" y2="0%">
-              <stop offset="0%"   stopColor="#0ea5e9" stopOpacity="0"/>
+              <stop offset="0%"   stopColor="#3b82f6" stopOpacity="0"/>
               <stop offset="20%"  stopColor="#38bdf8" stopOpacity="0.45"/>
-              <stop offset="60%"  stopColor="#0ea5e9" stopOpacity="0.18"/>
-              <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0"/>
+              <stop offset="60%"  stopColor="#3b82f6" stopOpacity="0.18"/>
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0"/>
             </linearGradient>
             <linearGradient id="fo3" x1="100%" y1="0%" x2="0%" y2="0%">
               <stop offset="0%"   stopColor="#6366f1" stopOpacity="0"/>
@@ -394,7 +394,7 @@ export function LoginPage() {
             {/* Erro */}
             {error && (
               <div className="flex items-start gap-2.5 rounded-xl px-3.5 py-3"
-                   style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)' }}>
+                   style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.18)' }}>
                 <span className="text-[10px] font-bold mt-px" style={{ color: '#f87171' }}>!</span>
                 <p className="text-[11px] leading-snug" style={{ color: 'rgba(248,113,113,0.9)' }}>{error}</p>
               </div>

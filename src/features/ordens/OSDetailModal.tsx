@@ -8,9 +8,9 @@ interface FieldProps { label: string; value?: string | number | null; mono?: boo
 function Field({ label, value, mono = false, full = false, highlight = false }: FieldProps) {
   return (
     <div className={`rounded-xl p-4 border
-                     ${highlight ? 'bg-primary/5 border-primary/20' : 'bg-white/[0.03] border-white/[0.07]'}
+                     ${highlight ? 'bg-primary/5 border-primary/20' : 'bg-surface/30 border-border'}
                      ${full ? 'col-span-2' : ''}`}>
-      <p className="font-headline text-[10px] font-bold uppercase tracking-[1.4px] text-muted mb-1.5">
+      <p className="font-headline text-[10px] font-bold uppercase tracking-[0.06em] text-muted mb-1.5">
         {label}
       </p>
       <p className={`text-[13px] font-semibold text-text break-words leading-snug
@@ -23,10 +23,10 @@ function Field({ label, value, mono = false, full = false, highlight = false }: 
 
 function SectionDivider({ children }: { children: ReactNode }) {
   return (
-    <p className="font-headline text-[10px] font-bold uppercase tracking-[1.6px] text-muted/70 mb-3 flex items-center gap-3">
-      <span className="flex-1 h-px bg-white/[0.06]" />
+    <p className="font-headline text-[10px] font-bold uppercase tracking-[0.07em] text-muted/70 mb-3 flex items-center gap-3">
+      <span className="flex-1 h-px bg-surface" />
       {children}
-      <span className="flex-1 h-px bg-white/[0.06]" />
+      <span className="flex-1 h-px bg-surface" />
     </p>
   )
 }
@@ -143,7 +143,7 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
             <div className="space-y-3">
               {os.observacaocritica && (
                 <div className="bg-red/[0.07] border border-red/25 rounded-xl p-4">
-                  <p className="font-headline text-[10px] font-bold uppercase tracking-[1px] text-red mb-1.5">
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.05em] text-red mb-1.5">
                     ⚠ Observação Crítica
                   </p>
                   <p className="text-[13px] text-red/90 leading-relaxed font-sans whitespace-pre-wrap">
@@ -152,7 +152,7 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
                 </div>
               )}
               {(os.observacoes || os.obs || os.observacao) && (
-                <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4">
+                <div className="bg-surface/30 border border-border rounded-xl p-4">
                   <p className="text-[13px] text-secondary leading-relaxed font-sans whitespace-pre-wrap">
                     {os.observacoes || os.obs || os.observacao}
                   </p>

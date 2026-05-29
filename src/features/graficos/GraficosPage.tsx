@@ -31,7 +31,7 @@ const TABS = [
   { id: 'cohort',       label: 'Cohort',       icon: ZoomIn     },
 ]
 
-const COLORS = ['#0ea5e9','#22c55e','#eab308','#f97316','#a78bfa','#ef4444','#06b6d4','#ec4899','#84cc16','#8b5cf6']
+const COLORS = ['#3b82f6','#4ade80','#facc15','#f97316','#c4b5fd','#f87171','#22d3ee','#ec4899','#84cc16','#8b5cf6']
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 const toISODate = (s) => {
@@ -125,13 +125,13 @@ function DrillModal({ drill, onClose }) {
       <div className="p-4 space-y-3">
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por OS, cliente, cidade ou equipe..."
-          className="w-full bg-surface border border-white/[0.08] rounded-xl px-3 py-2.5 text-[12px]
+          className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-[12px]
                      text-text placeholder:text-muted/60 outline-none focus:border-primary/50 transition-colors"
           autoFocus />
         <div className="overflow-auto max-h-[55vh]">
           <table className="w-full text-[11px]">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-white/[0.06] bg-surface">
+              <tr className="border-b border-border bg-surface">
                 {DRILL_COLS.map(col => (
                   <th key={col.key} onClick={() => toggleSort(col.key)}
                     className="px-3 py-2 text-left text-[11px] font-bold text-muted uppercase tracking-wide
@@ -148,9 +148,9 @@ function DrillModal({ drill, onClose }) {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.03]">
+            <tbody className="divide-y divide-border/40">
               {sorted.slice(0, 250).map(r => (
-                <tr key={r.numos} className="hover:bg-white/[0.02] transition-colors">
+                <tr key={r.numos} className="hover:bg-surface/20 transition-colors">
                   <td className="px-3 py-2 font-mono text-primary whitespace-nowrap">{r.numos}</td>
                   <td className="px-3 py-2 text-secondary max-w-[140px] truncate">{r.nomecliente || '—'}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
@@ -158,7 +158,7 @@ function DrillModal({ drill, onClose }) {
                       r.descsituacao === 'Concluída'   ? 'badge-green'  :
                       r.descsituacao === 'Atendimento' ? 'badge-cyan'   :
                       r.descsituacao === 'Pendente'    ? 'badge-yellow' :
-                      'bg-white/[0.05] text-muted'
+                      'bg-surface/40 text-muted'
                     }`}>{r.descsituacao}</span>
                   </td>
                   <td className="px-3 py-2 text-muted whitespace-nowrap">{r.nomedacidade || '—'}</td>
@@ -229,7 +229,7 @@ export default function GraficosPage() {
               className={`text-[11px] font-medium px-3 py-1 rounded-md border transition-all duration-150 cursor-pointer
                           ${fornecedor === f.value
                             ? 'border-primary/40 bg-primary/10 text-primary'
-                            : 'border-white/[0.08] text-muted hover:text-secondary hover:border-white/[0.14]'}`}>
+                            : 'border-border text-muted hover:text-secondary hover:border-muted/30'}`}>
               {f.label}
             </button>
           ))}
@@ -270,14 +270,14 @@ function TabDistribuicao({ d, rows, onDrill }) {
       <SectionTitle icon={BarChart2}>Distribuição de OS</SectionTitle>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        <ChartCard title="Status das OS" dot="#22c55e" height="h-56">
+        <ChartCard title="Status das OS" dot="#4ade80" height="h-56">
           <DonutChart
             data={statusData} colors={COLORS} centerLabel="OS"
             onClick={(entry) => onDrill(`Status: ${entry.name}`, rows.filter(r => r.descsituacao === entry.name))}
           />
         </ChartCard>
 
-        <ChartCard title="Categoria de OS" dot="#06b6d4" height="h-56">
+        <ChartCard title="Categoria de OS" dot="#22d3ee" height="h-56">
           <DonutChart
             data={tipoData} colors={COLORS} centerLabel="OS"
             onClick={(entry) => {
@@ -296,9 +296,9 @@ function TabDistribuicao({ d, rows, onDrill }) {
           />
         </ChartCard>
 
-        <ChartCard title="OS por Cidade" dot="#eab308" height="h-56">
+        <ChartCard title="OS por Cidade" dot="#facc15" height="h-56">
           <BarChart data={cidadeData} layout="vertical">
-            <Bar dataKey="value" fill="#eab308"
+            <Bar dataKey="value" fill="#facc15"
               onClick={(data) => onDrill(`Cidade: ${data.name}`, rows.filter(r => (r.nomedacidade || '').trim() === data.name))} />
             <XAxis type="number" />
             <YAxis dataKey="name" type="category" width={130} />
@@ -311,9 +311,9 @@ function TabDistribuicao({ d, rows, onDrill }) {
       <SectionTitle icon={BarChart2}>Desempenho Operacional</SectionTitle>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        <ChartCard title="Top 10 Equipes — Volume de OS" dot="#0ea5e9" height="h-64" className="lg:col-span-2">
+        <ChartCard title="Top 10 Equipes — Volume de OS" dot="#3b82f6" height="h-64" className="lg:col-span-2">
           <BarChart data={equipesData}>
-            <Bar dataKey="value" fill="#0ea5e9"
+            <Bar dataKey="value" fill="#3b82f6"
               onClick={(data) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
             <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip />
           </BarChart>
@@ -330,15 +330,15 @@ function TabDistribuicao({ d, rows, onDrill }) {
       </div>
 
       <SectionTitle icon={BarChart2}>Eficiência & Tendência</SectionTitle>
-      <ChartCard title="Taxa de Conclusão por Equipe (%)" dot="#22c55e" height="h-96">
+      <ChartCard title="Taxa de Conclusão por Equipe (%)" dot="#4ade80" height="h-96">
         <BarChart data={eficData}>
-          <Bar dataKey="value" fill="#22c55e"
+          <Bar dataKey="value" fill="#4ade80"
             onClick={(data) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
           <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip suffix="%" />
         </BarChart>
       </ChartCard>
 
-      <ChartCard title="Evolução Diária — Abertas vs Concluídas por Data de Fechamento" dot="#0ea5e9" height="h-80">
+      <ChartCard title="Evolução Diária — Abertas vs Concluídas por Data de Fechamento" dot="#3b82f6" height="h-80">
         <AreaChart
           data={evolucaoData}
           onClick={(cd) => {
@@ -351,8 +351,8 @@ function TabDistribuicao({ d, rows, onDrill }) {
               onDrill(`Concluídas em ${label}`, rows.filter(r => r.descsituacao === 'Concluída' && closeISO(r) === label))
           }}
         >
-          <Area dataKey="Abertas"    stroke="#0ea5e9" fill="#0ea5e9" name="Abertas"    />
-          <Area dataKey="Concluídas" stroke="#22c55e" fill="#22c55e" name="Concluídas" />
+          <Area dataKey="Abertas"    stroke="#3b82f6" fill="#3b82f6" name="Abertas"    />
+          <Area dataKey="Concluídas" stroke="#4ade80" fill="#4ade80" name="Concluídas" />
           <LXAxis dataKey="name" /><LYAxis /><LGrid /><LTooltip /><LLegend />
         </AreaChart>
       </ChartCard>
@@ -420,7 +420,7 @@ function ForecastCard({ evolucao, totalAtivo, fila }) {
             {data.previsao.map((d, i) => (
               <div key={i} className="flex flex-col items-center gap-1">
                 <span className="text-[9px] text-muted font-semibold">{d.data}</span>
-                <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-surface border border-white/[0.06]">
+                <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-surface border border-border">
                   <span className="text-[13px] font-bold text-text">{d.volume}</span>
                 </div>
                 <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${CONF_STYLE[d.confianca] ?? CONF_STYLE['media']}`}>
@@ -458,7 +458,7 @@ function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }) {
 
       <SectionTitle icon={TrendingUp}>Visão Mensal — Abertura vs Conclusão</SectionTitle>
 
-      <ChartCard title="Abertura × Conclusão × SLA Excedido — Mês a Mês" dot="#0ea5e9" height="h-80">
+      <ChartCard title="Abertura × Conclusão × SLA Excedido — Mês a Mês" dot="#3b82f6" height="h-80">
         <AreaChart
           data={mensalData}
           onClick={(cd) => {
@@ -473,16 +473,16 @@ function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }) {
               onDrill(`Abertas em ${label}`, rows.filter(r => toISOMonth(r.datacadastro) === label))
           }}
         >
-          <Area dataKey="Abertas"      stroke="#0ea5e9" fill="#0ea5e9" name="Abertas"      />
-          <Area dataKey="Concluídas"   stroke="#22c55e" fill="#22c55e" name="Concluídas"   />
-          <Area dataKey="SLA Excedido" stroke="#ef4444" fill="#ef4444" fillOpacity={0.08} name="SLA Excedido" />
+          <Area dataKey="Abertas"      stroke="#3b82f6" fill="#3b82f6" name="Abertas"      />
+          <Area dataKey="Concluídas"   stroke="#4ade80" fill="#4ade80" name="Concluídas"   />
+          <Area dataKey="SLA Excedido" stroke="#f87171" fill="#f87171" fillOpacity={0.08} name="SLA Excedido" />
           <LXAxis dataKey="name" /><LYAxis /><LGrid /><LTooltip /><LLegend />
         </AreaChart>
       </ChartCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        <ChartCard title="OS por Dia — Comparativo de Status" dot="#0ea5e9" height="h-64">
+        <ChartCard title="OS por Dia — Comparativo de Status" dot="#3b82f6" height="h-64">
           <BarChart
             data={comparativoData}
             onClick={(cd) => {
@@ -504,19 +504,19 @@ function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }) {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="Taxa de Conclusão por Dia (%) — cohort por abertura" dot="#22c55e" height="h-64">
+        <ChartCard title="Taxa de Conclusão por Dia (%) — cohort por abertura" dot="#4ade80" height="h-64">
           <AreaChart
             data={taxaDiaData}
             onClick={(cd) => { if (cd?.activeLabel) onDrill(`OS abertas em ${cd.activeLabel}`, rows.filter(r => toISODate(r.datacadastro) === cd.activeLabel)) }}
           >
-            <Area dataKey="value" stroke="#22c55e" fill="#22c55e" name="Taxa %" />
+            <Area dataKey="value" stroke="#4ade80" fill="#4ade80" name="Taxa %" />
             <LXAxis dataKey="name" /><LYAxis /><LGrid /><LTooltip suffix="%" />
           </AreaChart>
         </ChartCard>
 
       </div>
 
-      <ChartCard title="Meta vs Realizado — Concluídas por Mês de Fechamento" dot="#06b6d4" height="h-64">
+      <ChartCard title="Meta vs Realizado — Concluídas por Mês de Fechamento" dot="#22d3ee" height="h-64">
         <AreaChart
           data={burndownData}
           onClick={(cd) => {
@@ -559,9 +559,9 @@ function TabEstatistica({ d, rows, onDrill }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        <ChartCard title="OS por Cidade" dot="#eab308" height="h-64">
+        <ChartCard title="OS por Cidade" dot="#facc15" height="h-64">
           <BarChart data={cidadeData} layout="vertical">
-            <Bar dataKey="value" fill="#eab308"
+            <Bar dataKey="value" fill="#facc15"
               onClick={(data) => onDrill(`Cidade: ${data.name}`, rows.filter(r => (r.nomedacidade || '').trim() === data.name))} />
             <XAxis type="number" />
             <YAxis dataKey="name" type="category" width={130} />
@@ -569,9 +569,9 @@ function TabEstatistica({ d, rows, onDrill }) {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="Taxa por Equipe (%)" dot="#22c55e" height="h-64">
+        <ChartCard title="Taxa por Equipe (%)" dot="#4ade80" height="h-64">
           <BarChart data={eficData}>
-            <Bar dataKey="value" fill="#22c55e"
+            <Bar dataKey="value" fill="#4ade80"
               onClick={(data) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
             <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip suffix="%" />
           </BarChart>
@@ -596,7 +596,7 @@ function TabCohort({ d, rows, onDrill }) {
   const taxaData = c.labels.map((name, i) => ({ name, value: c.taxaResolucao[i] ?? 0 }))
   const mttrData = c.labels.map((name, i) => ({
     name, value: c.mttr[i] ?? 0,
-    fill: (c.mttr[i] ?? 0) <= 2 ? '#22c55e' : (c.mttr[i] ?? 0) <= 5 ? '#eab308' : '#ef4444',
+    fill: (c.mttr[i] ?? 0) <= 2 ? '#4ade80' : (c.mttr[i] ?? 0) <= 5 ? '#facc15' : '#f87171',
   }))
 
   return (
@@ -608,25 +608,25 @@ function TabCohort({ d, rows, onDrill }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        <ChartCard title="Abertas vs. Concluídas por Mês de Abertura" dot="#0ea5e9" height="h-64">
+        <ChartCard title="Abertas vs. Concluídas por Mês de Abertura" dot="#3b82f6" height="h-64">
           <BarChart data={cohortBarData}>
-            <Bar dataKey="Abertas"    fill="#0ea5e9" name="Abertas"
+            <Bar dataKey="Abertas"    fill="#3b82f6" name="Abertas"
               onClick={(data) => onDrill(`Cohort ${data.name} — todas as OS`, rows.filter(r => toISOMonth(r.datacadastro) === data.name))} />
-            <Bar dataKey="Concluídas" fill="#22c55e" name="Concluídas"
+            <Bar dataKey="Concluídas" fill="#4ade80" name="Concluídas"
               onClick={(data) => onDrill(`Cohort ${data.name} — Concluídas`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === data.name))} />
-            <Bar dataKey="Mesmo Mês"  fill="#a78bfa" name="Mesmo Mês"
+            <Bar dataKey="Mesmo Mês"  fill="#c4b5fd" name="Mesmo Mês"
               onClick={(data) => onDrill(`Cohort ${data.name} — Mesmo Mês`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === data.name && closeISOMonth(r) === data.name))} />
             <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip /><Legend />
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="Taxa de Resolução por Cohort (%)" dot="#22c55e" height="h-64">
+        <ChartCard title="Taxa de Resolução por Cohort (%)" dot="#4ade80" height="h-64">
           <AreaChart
             data={taxaData}
             onClick={(cd) => { if (cd?.activeLabel) onDrill(`Cohort ${cd.activeLabel} — Concluídas`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === cd.activeLabel)) }}
             style={{ cursor: 'pointer' }}
           >
-            <Area dataKey="value" stroke="#22c55e" fill="rgba(34,197,94,0.08)" name="Taxa Resolução" />
+            <Area dataKey="value" stroke="#4ade80" fill="rgba(74,222,128,0.08)" name="Taxa Resolução" />
             <LXAxis dataKey="name" /><LYAxis domain={[0, 100]} /><LGrid /><LTooltip suffix="%" />
           </AreaChart>
         </ChartCard>
@@ -645,8 +645,8 @@ function TabCohort({ d, rows, onDrill }) {
       </ChartCard>
 
       {c.labels.length > 0 && (
-        <div className="bg-card border border-white/[0.07] rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-white/[0.06]">
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-border">
             <p className="text-[11px] font-bold uppercase tracking-wide text-muted">
               Tabela Cohort Detalhada
               <span className="ml-2 font-normal normal-case tracking-normal text-muted/50">
@@ -657,19 +657,19 @@ function TabCohort({ d, rows, onDrill }) {
           <div className="overflow-x-auto">
             <table className="w-full text-[11px]">
               <thead>
-                <tr className="border-b border-white/[0.06] bg-surface">
+                <tr className="border-b border-border bg-surface">
                   {['Mês','Abertas','Concluídas','Mesmo Mês','Taxa Res.','MTTR Méd.'].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-[11px] font-bold text-muted uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-border/50">
                 {c.labels.map((label, i) => {
                   const taxa  = c.taxaResolucao[i] ?? 0
                   const mttrV = c.mttr[i] ?? 0
                   return (
                     <tr key={label}
-                      className="hover:bg-white/[0.04] cursor-pointer transition-colors"
+                      className="hover:bg-surface/30 cursor-pointer transition-colors"
                       onClick={() => onDrill(`Cohort ${label}`, rows.filter(r => toISOMonth(r.datacadastro) === label))}>
                       <td className="px-4 py-2.5 font-mono text-primary">{label}</td>
                       <td className="px-4 py-2.5 font-mono">{c.total[i] ?? 0}</td>

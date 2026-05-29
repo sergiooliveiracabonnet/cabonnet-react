@@ -19,12 +19,12 @@ import OSDrawer from './OSDrawer'
 import { OSHoverCard } from './OSHoverCard'
 
 const FORNECEDOR_OPTS = [
-  { value: 'WES',        label: 'WES',          color: '#a78bfa' },
-  { value: 'Instacable', label: 'Instacable',    color: '#eab308' },
-  { value: 'THM',        label: 'THM',           color: '#06b6d4' },
-  { value: 'REDE',       label: 'Rede',          color: '#22c55e' },
+  { value: 'WES',        label: 'WES',          color: '#c4b5fd' },
+  { value: 'Instacable', label: 'Instacable',    color: '#facc15' },
+  { value: 'THM',        label: 'THM',           color: '#22d3ee' },
+  { value: 'REDE',       label: 'Rede',          color: '#4ade80' },
   { value: 'MANUTENCAO', label: 'Manutenção',    color: '#f97316' },
-  { value: 'INSTALACAO', label: 'Instalação',    color: '#0ea5e9' },
+  { value: 'INSTALACAO', label: 'Instalação',    color: '#3b82f6' },
   { value: 'INTERNO',    label: 'COPE Interno',  color: '#94a3b8' },
 ]
 
@@ -185,7 +185,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
   }
 
   return (
-    <div className="divide-y divide-white/[0.04]">
+    <div className="divide-y divide-border/50">
       {groups.map((g) => {
         const primeiraData = g.sorted[0]?.datacadastro?.split(' ')[0] ?? '—'
         const ultimaData   = g.sorted[g.sorted.length - 1]?.datacadastro?.split(' ')[0] ?? '—'
@@ -193,7 +193,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
         return (
           <div key={g.codigo || g.nome}>
             {/* Header do grupo */}
-            <div className="flex items-center gap-2 px-4 py-2 bg-elevated/40 border-b border-white/[0.05]">
+            <div className="flex items-center gap-2 px-4 py-2 bg-elevated/40 border-b border-border/60">
               <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
                 <span className="text-[12px] font-bold text-text truncate">{g.nome}</span>
                 {g.codigo && (
@@ -221,7 +221,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
               <button
                 key={g.sorted[0].numos}
                 className="w-full text-left flex items-center gap-3 px-4 py-2.5
-                           hover:bg-primary/[0.04] border-b border-white/[0.03]
+                           hover:bg-primary/[0.04] border-b border-border/40
                            transition-colors text-[11px] cursor-pointer"
                 onClick={() => onRowClick(g.sorted[0])}
               >
@@ -238,7 +238,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
               /* Timeline com rail vertical */
               <div className="relative pl-[46px] pr-4">
                 {/* Rail vertical */}
-                <div className="absolute left-[22px] top-0 bottom-0 w-px bg-white/[0.08]" />
+                <div className="absolute left-[22px] top-0 bottom-0 w-px bg-surface" />
 
                 {g.sorted.map((r, i) => {
                   const gap    = _computeGap(g.sorted[i - 1], r)
@@ -339,15 +339,15 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
         {/* Nome da equipe filtrada */}
         {equipe && (
           <div className="flex items-center gap-2 px-4 py-2 bg-primary/[0.05] border-b border-primary/20">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted">Equipe</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Equipe</span>
             <span className="text-[12px] font-bold text-primary">{shortEquipe(equipe)}</span>
             <span className="text-[11px] text-muted">— {rows.length} OS</span>
           </div>
         )}
 
         {/* Cabeçalho de colunas */}
-        <div className="flex items-center gap-3 px-4 py-2 bg-elevated/40 border-b border-white/[0.07]
-                        text-[10px] font-black uppercase tracking-wide text-muted">
+        <div className="flex items-center gap-3 px-4 py-2 bg-elevated/40 border-b border-border
+                        text-[10px] font-bold uppercase tracking-wide text-muted">
           <span className={`${C.aging}  text-center`}>Aging</span>
           <span className={C.numos}>Nº OS</span>
           <span className={C.cliente}>Cliente</span>
@@ -368,9 +368,9 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
           const isManha = periodo.toLowerCase().includes('manh')
           const isTarde = periodo.toLowerCase().includes('tarde')
           const color   = isManha ? 'text-amber-400'          : isTarde ? 'text-indigo-400'          : 'text-secondary'
-          const bg      = isManha ? 'bg-amber-400/[0.06]'     : isTarde ? 'bg-indigo-400/[0.06]'     : 'bg-white/[0.03]'
+          const bg      = isManha ? 'bg-amber-400/[0.06]'     : isTarde ? 'bg-indigo-400/[0.06]'     : 'bg-surface/30'
           const dot     = isManha ? 'bg-amber-400'            : isTarde ? 'bg-indigo-400'            : 'bg-secondary'
-          const border  = isManha ? 'border-amber-400/[0.25]' : isTarde ? 'border-indigo-400/[0.25]' : 'border-white/[0.08]'
+          const border  = isManha ? 'border-amber-400/[0.25]' : isTarde ? 'border-indigo-400/[0.25]' : 'border-border'
 
           return (
             <div key={periodo}>
@@ -386,9 +386,9 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
                 ].filter(Boolean)
                 return (
                   <div className={`flex items-center gap-2.5 px-4 py-2.5 border-b ${border}
-                                  ${gi > 0 ? 'border-t border-white/[0.08]' : ''} ${bg}`}>
+                                  ${gi > 0 ? 'border-t border-border' : ''} ${bg}`}>
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />
-                    <span className={`text-[11px] font-black uppercase tracking-[1.4px] ${color}`}>
+                    <span className={`text-[11px] font-bold uppercase tracking-[0.06em] ${color}`}>
                       Período: {periodo}
                     </span>
                     <span className="text-[11px] font-mono text-muted ml-1">— {periodoRows.length} OS</span>
@@ -416,7 +416,7 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
                     key={row.numos || i}
                     onClick={() => onRowClick?.(row)}
                     className={`flex items-center gap-3 px-4 ${rowPy} cursor-pointer
-                                hover:bg-white/[0.035] transition-all border-b border-white/[0.03]`}
+                                hover:bg-surface/30 transition-all border-b border-border/40`}
                   >
                     <span className={`${C.aging} text-center`}>
                       <span className={`inline-block font-mono font-bold text-[11px] rounded-full px-2 py-0.5 ${agingColor} ${agingBg}`}>
@@ -542,7 +542,7 @@ export default function OrdensPage() {
     try {
       const opt    = FORNECEDOR_OPTS.find(f => f.value === tgFornecedor)
       const label  = opt?.label ?? tgFornecedor
-      const color  = opt?.color ?? '#0ea5e9'
+      const color  = opt?.color ?? '#3b82f6'
       const date   = new Date().toLocaleDateString('pt-BR')
 
       const isFornecedorGrupo = tgFornecedor === 'WES' || tgFornecedor === 'Instacable'
@@ -606,7 +606,7 @@ export default function OrdensPage() {
         <button
           onClick={() => setKpiVisible(v => !v)}
           className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary hover:text-text
-                     border border-white/[0.07] rounded-xl px-3 py-1.5 transition-all duration-fast"
+                     border border-border rounded-xl px-3 py-1.5 transition-all duration-fast"
         >
           <BarChart2 size={12} /> KPIs
           <ChevronUp size={11} className={`transition-transform ${kpiVisible ? '' : 'rotate-180'}`} />
@@ -619,13 +619,13 @@ export default function OrdensPage() {
                      border rounded-xl px-3 py-1.5 transition-all duration-fast
                      ${groupBy === 'cliente'
                        ? 'bg-primary/15 border-primary/40 text-primary'
-                       : 'border-white/[0.07] text-secondary hover:text-text'}`}
+                       : 'border-border text-secondary hover:text-text'}`}
         >
           <Users size={12} /> Por Cliente
         </button>
 
         {/* Density toggle */}
-        <div className="flex items-center gap-0.5 bg-card border border-white/[0.07] rounded-xl p-1">
+        <div className="flex items-center gap-0.5 bg-card border border-border rounded-xl p-1">
           {densityOptions.map((d) => (
             <button
               key={d.value}
@@ -750,7 +750,7 @@ export default function OrdensPage() {
       </div>
 
       {/* ── Barra de filtros ── */}
-      <div className="bg-card border border-white/[0.07] rounded-xl p-3 flex flex-wrap gap-2 items-center">
+      <div className="bg-card border border-border rounded-xl p-3 flex flex-wrap gap-2 items-center">
         <SearchBox
           value={os.search}
           onChange={os.setSearch}
@@ -803,7 +803,7 @@ export default function OrdensPage() {
       )}
 
       {/* Tabela */}
-      <div ref={tableRef} className="bg-card border border-white/[0.07] rounded-xl overflow-hidden">
+      <div ref={tableRef} className="bg-card border border-border rounded-xl overflow-hidden">
         {os.isLoading ? (
           <div className="p-4"><TableSkeleton rows={8} cols={8} /></div>
         ) : os.equipe ? (
@@ -836,7 +836,7 @@ export default function OrdensPage() {
         {/* Paginação — apenas no modo flat */}
         {!os.equipe && os.totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3
-                          border-t border-white/[0.05] text-[11px] text-muted">
+                          border-t border-border/60 text-[11px] text-muted">
             <span>
               Página {os.page} de {os.totalPages} — {os.filtered.length} OS
             </span>
@@ -890,8 +890,8 @@ export default function OrdensPage() {
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[12px] font-semibold
                                 transition-all duration-fast
                                 ${active
-                                  ? 'border-white/20 bg-white/[0.08] text-text'
-                                  : 'border-white/[0.06] text-muted hover:text-secondary hover:border-white/10'}`}
+                                  ? 'border-border0 bg-surface text-text'
+                                  : 'border-border text-muted hover:text-secondary hover:border-border0'}`}
                   >
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: opt.color }} />
                     {opt.label}
@@ -921,7 +921,7 @@ export default function OrdensPage() {
             const equipes = new Set(rows.map(r => r.nomedaequipe?.trim() || '(Sem Equipe)')).size
             const scopeLabel = isForn ? `agendadas hoje · ${hojeDMY.slice(0,5)}` : 'todas do período'
             return (
-              <div className="rounded-lg bg-elevated border border-white/[0.06] px-4 py-3 text-[12px] space-y-2">
+              <div className="rounded-lg bg-elevated border border-border px-4 py-3 text-[12px] space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-text">{opt?.label}</p>
                   <span className="text-[10px] text-muted">Alertas | Cabonnet</span>
@@ -932,12 +932,12 @@ export default function OrdensPage() {
                   </p>
                 )}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white/[0.03] rounded px-3 py-2 space-y-0.5">
+                  <div className="bg-surface/30 rounded px-3 py-2 space-y-0.5">
                     <p className="text-[11px] font-bold text-muted uppercase tracking-wide">Resumo</p>
                     <p className="text-secondary text-[12px]">{equipes} equipes · {rows.length} OS</p>
                     <p className="text-muted text-[11px]">Imagem · {scopeLabel}</p>
                   </div>
-                  <div className="bg-white/[0.03] rounded px-3 py-2 space-y-0.5">
+                  <div className="bg-surface/30 rounded px-3 py-2 space-y-0.5">
                     <p className="text-[11px] font-bold text-muted uppercase tracking-wide">Detalhado</p>
                     <p className="text-secondary text-[12px]">{rows.length} OS individualmente</p>
                     <p className="text-muted text-[11px]">Documento · {scopeLabel}</p>

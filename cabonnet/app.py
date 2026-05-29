@@ -31,7 +31,7 @@ from fastapi.responses import (
 
 from cabonnet import state
 from cabonnet.ai import _ai_narrative, _ai_revisitas
-from cabonnet.auth import _auth_enabled, _create_session
+from cabonnet.auth import _auth_enabled, _create_session, _role_from_cookie
 from cabonnet.builders import _build_status_text
 from cabonnet.cache import _dados_cache_update
 from cabonnet.config import (
@@ -93,6 +93,32 @@ log = logging.getLogger("CaboNetServer")
 
 _ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
+# ── Security ──────────────────────────────────────────────────────────────────
+# COOKIE_SECURE: definir como "false" apenas em desenvolvimento HTTP local.
+_COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "true").lower() not in ("0", "false", "no")
+
+# CORS_ORIGINS: origens permitidas separadas por vírgula.
+# Padrão seguro: apenas localhost em dev. Em produção, definir no .env.
+_CORS_ORIGINS_RAW = os.environ.get("CORS_ORIGINS", "")
+_CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_RAW.split(",") if o.strip()] \
+                or ["http://localhost:3000", "http://localhost:5000"]
+
+# Rate limiting de login: máximo de 10 tentativas por IP em janela de 5 minutos.
+_LOGIN_MAX_ATTEMPTS = 10
+_LOGIN_WINDOW_S     = 300
+_login_attempts: dict[str, list[float]] = {}
+_login_attempts_lock = threading.Lock()
+
+def _check_login_rate_limit(ip: str) -> None:
+    """Levanta HTTP 429 se o IP excedeu o limite de tentativas de login."""
+    now = _time_mod.time()
+    with _login_attempts_lock:
+        attempts = [t for t in _login_attempts.get(ip, []) if now - t < _LOGIN_WINDOW_S]
+        if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
+            raise HTTPException(429, "Muitas tentativas de login. Aguarde 5 minutos.")
+        attempts.append(now)
+        _login_attempts[ip] = attempts
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
 _ROOT        = Path(_SCRIPT_DIR_ENV).parent
@@ -111,33 +137,7 @@ _CHAT_MAP = {
 }
 
 # ── Auth helpers ──────────────────────────────────────────────────────────────
-
-def _role_from_cookie(cookie_str: str | None) -> str | None:
-    """Extrai role da string do cookie 'cbn_session=...'."""
-    if not cookie_str:
-        return None
-    for part in cookie_str.split(";"):
-        part = part.strip()
-        if part.startswith("cbn_session="):
-            token = part[len("cbn_session="):]
-            with state._sessions_lock:
-                sess = state._sessions.get(token)
-            if not sess:
-                return None
-            if isinstance(sess, dict):
-                if _time_mod.time() > sess.get("exp", 0):
-                    with state._sessions_lock:
-                        state._sessions.pop(token, None)
-                    return None
-                return sess.get("role", "gestor")
-            else:
-                if _time_mod.time() > sess:
-                    with state._sessions_lock:
-                        state._sessions.pop(token, None)
-                    return None
-                return "gestor"
-    return None
-
+# _role_from_cookie vive em cabonnet.auth (fonte única de verdade).
 
 def _token_from_cookie(cookie_str: str | None) -> str | None:
     if not cookie_str:
@@ -233,6 +233,20 @@ async def lifespan(app: FastAPI):
 
     _db_init()
 
+    # H4 — validação de configuração obrigatória no startup
+    _missing_creds = [k for k, v in {
+        "GRAFANA_DS_UID": CONFIG.get("ds_uid", ""),
+        "GRAFANA_USER":   CONFIG.get("username", ""),
+        "GRAFANA_PASS":   CONFIG.get("password", ""),
+    }.items() if not v]
+    if _missing_creds:
+        log.warning("=" * 55)
+        log.warning("  ⚠️  CONFIGURAÇÃO INCOMPLETA")
+        log.warning("  Variáveis ausentes no .env: %s", _missing_creds)
+        log.warning("  Acesse /setup para configurar as credenciais do Grafana.")
+        log.warning("  /query retornará 502 até a configuração ser completada.")
+        log.warning("=" * 55)
+
     threading.Thread(target=_cache_warmup,      name="CacheWarmup",    daemon=True).start()
     threading.Thread(target=_auto_refresh_loop, name="CacheAutoRefresh",daemon=True).start()
     threading.Thread(target=_jun_poll_loop,     name="JuniperPoll",    daemon=True).start()
@@ -265,11 +279,23 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type", "X-Request-ID"],
 )
+
+
+@app.middleware("http")
+async def _correlation_id_middleware(request: Request, call_next):
+    rid = request.headers.get("X-Request-ID", "")
+    if rid:
+        log.debug("[%s] %s %s", rid[:8], request.method, request.url.path)
+    response = await call_next(request)
+    if rid:
+        response.headers["X-Request-ID"] = rid
+    return response
+
 
 # ── API Router (v1) ───────────────────────────────────────────────────────────
 # Business-logic routes are defined on this router and mounted at /api/v1.
@@ -335,6 +361,7 @@ async def dashboard(request: Request):
 @app.post("/login")
 async def login_form(request: Request):
     """Login via form HTML (legado)."""
+    _check_login_rate_limit(request.client.host if request.client else "unknown")
     body = await request.form()
     user = (body.get("username") or "").strip()
     pwd  = body.get("password") or ""
@@ -343,7 +370,7 @@ async def login_form(request: Request):
         token = _create_session(role)
         log.info("[Auth] Login OK — usuario: %s role: %s", user, role)
         resp = RedirectResponse("/dashboard", status_code=302)
-        resp.set_cookie("cbn_session", token, path="/", httponly=True, samesite="strict", max_age=SESSION_DURATION)
+        resp.set_cookie("cbn_session", token, path="/", httponly=True, samesite="strict", secure=_COOKIE_SECURE, max_age=SESSION_DURATION)
         return resp
     log.warning("[Auth] Login FALHOU — usuario: %s", user)
     return RedirectResponse("/login?error=1", status_code=302)
@@ -352,6 +379,7 @@ async def login_form(request: Request):
 @app.post("/api/login")
 async def api_login(request: Request):
     """Login JSON (React)."""
+    _check_login_rate_limit(request.client.host if request.client else "unknown")
     body = await request.json()
     user = (body.get("username") or "").strip()
     pwd  = body.get("password") or ""
@@ -360,7 +388,7 @@ async def api_login(request: Request):
         token = _create_session(role)
         log.info("[Auth] Login React OK — usuario: %s role: %s", user, role)
         resp = JSONResponse({"ok": True, "role": role})
-        resp.set_cookie("cbn_session", token, path="/", httponly=True, samesite="strict", max_age=SESSION_DURATION)
+        resp.set_cookie("cbn_session", token, path="/", httponly=True, samesite="strict", secure=_COOKIE_SECURE, max_age=SESSION_DURATION)
         return resp
     log.warning("[Auth] Login React FALHOU — usuario: %s", user)
     return JSONResponse({"ok": False, "error": "Credenciais inválidas"}, status_code=401)

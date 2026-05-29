@@ -13,12 +13,12 @@ function fmtSync(d) {
 
 function KpiCard({ label, value, sub, icon: Icon, color = 'text-primary', loading }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 flex items-start gap-3">
+    <div className="rounded-xl border border-border bg-surface/30 p-4 flex items-start gap-3">
       <div className={`mt-0.5 shrink-0 ${color}`}><Icon size={18} /></div>
       <div className="min-w-0">
         <p className="text-xs text-zinc-500 mb-1 truncate">{label}</p>
         {loading
-          ? <div className="h-6 w-16 rounded bg-white/[0.06] animate-pulse" />
+          ? <div className="h-6 w-16 rounded bg-surface animate-pulse" />
           : <p className={`text-xl font-semibold tabular-nums ${color}`}>{value}</p>
         }
         {sub && <p className="text-xs text-zinc-500 mt-0.5">{sub}</p>}
@@ -95,7 +95,7 @@ function PppoePanel({ pppoe }) {
   const maxTotal   = hosts[0]?.total ?? 1
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+    <div className="rounded-xl border border-border bg-surface/20 p-5">
       <SectionTitle icon={Network} title="PPPoE Conexões Ativas · por VLAN" sync={pppoe.lastSync} onRefresh={pppoe.refresh} />
 
       {pppoe.error && <ErrorBanner msg={pppoe.error} />}
@@ -119,8 +119,8 @@ function PppoePanel({ pppoe }) {
 
       {pppoe.loading && (
         <div className="mb-5">
-          <div className="h-10 w-32 rounded bg-white/[0.06] animate-pulse mb-2" />
-          <div className="h-4 w-24 rounded bg-white/[0.04] animate-pulse" />
+          <div className="h-10 w-32 rounded bg-surface animate-pulse mb-2" />
+          <div className="h-4 w-24 rounded bg-surface/30 animate-pulse" />
         </div>
       )}
 
@@ -132,10 +132,10 @@ function PppoePanel({ pppoe }) {
             const maxVlan  = h.vlans[0]?.conexoes ?? 1
 
             return (
-              <div key={h.host} className="rounded-lg border border-white/[0.06] overflow-hidden">
+              <div key={h.host} className="rounded-lg border border-border overflow-hidden">
                 <button
                   onClick={() => setExpandedHost(expanded ? null : idx)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/30 transition-colors"
                 >
                   <Server size={13} className="text-primary shrink-0" />
                   <span className="text-sm font-medium text-zinc-200 flex-1 text-left truncate">{h.host}</span>
@@ -145,12 +145,12 @@ function PppoePanel({ pppoe }) {
                   {expanded ? <ChevronDown size={13} className="text-zinc-500 shrink-0" /> : <ChevronRight size={13} className="text-zinc-500 shrink-0" />}
                 </button>
 
-                <div className="h-1 bg-white/[0.04]">
+                <div className="h-1 bg-surface/30">
                   <div className="h-full bg-primary/60 transition-all" style={{ width: `${pct}%` }} />
                 </div>
 
                 {expanded && (
-                  <div className="px-4 py-3 border-t border-white/[0.04]">
+                  <div className="px-4 py-3 border-t border-border/50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 max-h-72 overflow-y-auto">
                       {h.vlans.map(v => {
                         const vPct = Math.round((v.conexoes / maxVlan) * 100)
@@ -160,7 +160,7 @@ function PppoePanel({ pppoe }) {
                         return (
                           <div key={v.vlan} className="flex items-center gap-2 text-xs">
                             <span className="text-zinc-500 w-16 shrink-0 font-mono">VLAN {v.vlan}</span>
-                            <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                            <div className="flex-1 h-1.5 rounded-full bg-surface overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all ${vPct > 80 ? 'bg-orange-500/70' : 'bg-primary/50'}`}
                                 style={{ width: `${vPct}%` }}
@@ -183,7 +183,7 @@ function PppoePanel({ pppoe }) {
 
       {pppoe.loading && (
         <div className="space-y-3">
-          {[1, 2].map(i => <div key={i} className="h-14 rounded-lg bg-white/[0.04] animate-pulse" />)}
+          {[1, 2].map(i => <div key={i} className="h-14 rounded-lg bg-surface/30 animate-pulse" />)}
         </div>
       )}
 

@@ -138,7 +138,7 @@ export default function FechamentoPage() {
       </div>
 
       {/* ── Toolbar: Período ── */}
-      <div className="bg-card border border-white/[0.07] rounded-xl p-4 space-y-3">
+      <div className="bg-card border border-border rounded-xl p-4 space-y-3">
         <div className="flex flex-wrap gap-1.5">
           {PERIODOS.map(p => (
             <button
@@ -147,7 +147,7 @@ export default function FechamentoPage() {
               className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-fast
                 ${periodo === p.key
                   ? 'bg-primary text-white'
-                  : 'bg-bg text-secondary border border-white/[0.08] hover:bg-white/[0.05] hover:text-text'}`}
+                  : 'bg-bg text-secondary border border-border hover:bg-surface/40 hover:text-text'}`}
             >
               {p.label}
             </button>
@@ -160,28 +160,28 @@ export default function FechamentoPage() {
               type="date"
               value={customFrom}
               onChange={e => setCustomFrom(e.target.value)}
-              className="px-2 py-1.5 rounded-md text-[11px] bg-bg border border-white/[0.10] text-text focus:outline-none focus:border-primary"
+              className="px-2 py-1.5 rounded-md text-[11px] bg-bg border border-border text-text focus:outline-none focus:border-primary"
             />
             <ChevronRight size={12} className="text-muted" />
             <input
               type="date"
               value={customTo}
               onChange={e => setCustomTo(e.target.value)}
-              className="px-2 py-1.5 rounded-md text-[11px] bg-bg border border-white/[0.10] text-text focus:outline-none focus:border-primary"
+              className="px-2 py-1.5 rounded-md text-[11px] bg-bg border border-border text-text focus:outline-none focus:border-primary"
             />
           </div>
         )}
 
         {/* ── Escopo ── */}
-        <div className="flex flex-wrap gap-1.5 pt-1 border-t border-white/[0.06]">
+        <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
           {ABAS.map(a => (
             <button
               key={a}
               onClick={() => setAba(a)}
               className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-fast
                 ${aba === a
-                  ? 'bg-white/[0.10] text-text border border-white/[0.18]'
-                  : 'text-secondary hover:bg-white/[0.04] hover:text-text'}`}
+                  ? 'bg-surface text-text border border-muted/40'
+                  : 'text-secondary hover:bg-surface/30 hover:text-text'}`}
             >
               {ABA_LABEL[a]}
             </button>
@@ -231,14 +231,14 @@ export default function FechamentoPage() {
         <button
           onClick={handleExportCSV}
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold
-                     bg-card border border-white/[0.08] text-secondary hover:text-text hover:bg-white/[0.05] transition-all"
+                     bg-card border border-border text-secondary hover:text-text hover:bg-surface/40 transition-all"
         >
           <Download size={13} /> CSV
         </button>
         <button
           onClick={handlePrint}
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold
-                     bg-card border border-white/[0.08] text-secondary hover:text-text hover:bg-white/[0.05] transition-all"
+                     bg-card border border-border text-secondary hover:text-text hover:bg-surface/40 transition-all"
         >
           <Printer size={13} /> Imprimir
         </button>
@@ -258,7 +258,7 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }) {
     { label: 'SLA Vencidas', value: stats.slaVenc,    cls: stats.slaVenc > 0 ? 'text-red' : 'text-green' },
   ]
   return (
-    <div className="bg-card border border-white/[0.07] rounded-xl p-5">
+    <div className="bg-card border border-border rounded-xl p-5">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
         <div>
           <p className="text-[13px] font-semibold text-text">Relatório de Fechamento Operacional</p>
@@ -268,10 +268,10 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }) {
           <button onClick={onPDF}   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-all">
             <FileText size={12} /> PDF
           </button>
-          <button onClick={onCSV}   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-bg border border-white/[0.09] text-secondary hover:text-text transition-all">
+          <button onClick={onCSV}   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-bg border border-border text-secondary hover:text-text transition-all">
             <Download size={12} /> CSV
           </button>
-          <button onClick={onPrint} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-bg border border-white/[0.09] text-secondary hover:text-text transition-all">
+          <button onClick={onPrint} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-bg border border-border text-secondary hover:text-text transition-all">
             <Printer size={12} /> Imprimir
           </button>
         </div>
@@ -291,8 +291,8 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }) {
 // ── Section wrapper ────────────────────────────────────────────────────────────
 function Section({ title, children, borderColor }) {
   return (
-    <div className={`bg-card border rounded-xl p-5 ${borderColor ? `border-${borderColor}` : 'border-white/[0.07]'}`}>
-      <p className="text-[10px] font-bold uppercase tracking-[1.2px] text-muted mb-4">{title}</p>
+    <div className={`bg-card border rounded-xl p-5 ${borderColor ? `border-${borderColor}` : 'border-border'}`}>
+      <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-4">{title}</p>
       {children}
     </div>
   )
@@ -318,7 +318,7 @@ function EquipesTable({ byEquipe }) {
     <div className="overflow-x-auto">
       <table className="w-full text-[11px]">
         <thead>
-          <tr className="border-b border-white/[0.08]">
+          <tr className="border-b border-border">
             <th className="px-2 py-2 text-center text-[10px] font-bold text-muted uppercase w-8">#</th>
             <th className="px-2 py-2 text-left   text-[10px] font-bold text-muted uppercase">Equipe</th>
             <th className="px-2 py-2 text-center text-[10px] font-bold text-muted uppercase">Exec.</th>
@@ -328,9 +328,9 @@ function EquipesTable({ byEquipe }) {
             <th className="px-2 py-2 text-center text-[10px] font-bold text-muted uppercase">Taxa</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.04]">
+        <tbody className="divide-y divide-border/50">
           {equipes.map((e, i) => (
-            <tr key={e.eq} className="hover:bg-white/[0.02]">
+            <tr key={e.eq} className="hover:bg-surface/20">
               <td className="px-2 py-2 text-center text-[11px]">{i < 3 ? medals[i] : i + 1}</td>
               <td className="px-2 py-2 font-semibold text-text">{e.eq}</td>
               <td className="px-2 py-2 text-center font-bold text-green">{e.exec}</td>
@@ -383,7 +383,7 @@ function CidadesChart({ byCidade }) {
                 <span className={`font-bold ${tc}`}>{c.taxa}%</span>
               </div>
             </div>
-            <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+            <div className="h-1.5 bg-surface rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${tc === 'text-green' ? 'bg-green' : tc === 'text-yellow' ? 'bg-yellow' : 'bg-red'}`}
                 style={{ width: `${barW}%` }}
@@ -426,7 +426,7 @@ function TiposCards({ byTipo }) {
               <Stat label="S/Exec"  value={t.semExec} cls="text-orange" />
               {t.slaVenc > 0 && <Stat label="SLA Venc." value={t.slaVenc} cls="text-red" />}
             </div>
-            <div className="mt-2 h-1 bg-white/[0.06] rounded-full overflow-hidden">
+            <div className="mt-2 h-1 bg-surface rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full ${tc === 'text-green' ? 'bg-green' : tc === 'text-yellow' ? 'bg-yellow' : 'bg-red'}`}
                 style={{ width: `${t.taxa}%` }}
@@ -468,7 +468,7 @@ function RedeBlock({ rows, stats, periodoLabel, isMain = false }) {
       )}
 
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[1.2px] text-cyan mb-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-cyan mb-3">
           Rede — Bloco Independente
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
@@ -482,17 +482,17 @@ function RedeBlock({ rows, stats, periodoLabel, isMain = false }) {
       </div>
 
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[1.2px] text-muted mb-3">Equipes de Rede</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-3">Equipes de Rede</p>
         <EquipesTable byEquipe={stats.byEquipe} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[1.2px] text-muted mb-3">Produtividade por Cidade</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-3">Produtividade por Cidade</p>
           <CidadesChart byCidade={stats.byCidade} />
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[1.2px] text-muted mb-3">Clientes Atendidos</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-3">Clientes Atendidos</p>
           <ClientesRedeList rows={rows} />
         </div>
       </div>

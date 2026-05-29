@@ -87,4 +87,3 @@ if __name__ == "__main__":
         log.info("Servidor encerrado.")
     except Exception:
         log.exception("Erro inesperado")
-        input("\nPressione Enter para fechar...")

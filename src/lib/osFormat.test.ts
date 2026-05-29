@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe } from './osFormat.js'
+import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe } from './osFormat'
 
 describe('fmtDate', () => {
   it('retorna null para valor nulo', () => {
@@ -53,7 +53,7 @@ describe('situacaoVariant', () => {
 
 describe('FORN_LABEL', () => {
   it('tem entrada para todos os fornecedores conhecidos', () => {
-    const expected = ['WES', 'Instacable', 'REDE', 'MANUTENCAO', 'INSTALACAO', 'INTERNO', 'OUTRO']
+    const expected = ['WES', 'Instacable', 'REDE', 'MANUTENCAO', 'INSTALACAO', 'INTERNO', 'OUTRO'] as const
     expected.forEach(k => {
       expect(FORN_LABEL[k]).toBeDefined()
     })

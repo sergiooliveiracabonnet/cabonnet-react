@@ -1,14 +1,14 @@
 interface SkeletonProps { className?: string }
 
 export function Skeleton({ className = '' }: SkeletonProps) {
-  return <div className={`animate-pulse bg-white/[0.06] rounded-md ${className}`} />
+  return <div className={`animate-pulse bg-surface rounded-md ${className}`} />
 }
 
 export function KPIGridSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-card border border-white/[0.07] rounded-xl p-4 space-y-3">
+        <div key={i} className="bg-card border border-border rounded-xl p-4 space-y-3">
           <Skeleton className="h-2 w-20" />
           <Skeleton className="h-8 w-16" />
           <Skeleton className="h-2 w-12" />

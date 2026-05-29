@@ -35,13 +35,13 @@ const KPI_FILTERS = {
 const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq'])
 
 const ACCENT_COLORS = {
-  red:     { solid: '#ef4444', glow: 'rgba(239,68,68,0.20)',   bg: 'rgba(239,68,68,0.06)'   },
-  orange:  { solid: '#f97316', glow: 'rgba(249,115,22,0.20)',  bg: 'rgba(249,115,22,0.06)'  },
-  yellow:  { solid: '#eab308', glow: 'rgba(234,179,8,0.20)',   bg: 'rgba(234,179,8,0.06)'   },
-  cyan:    { solid: '#06b6d4', glow: 'rgba(6,182,212,0.20)',   bg: 'rgba(6,182,212,0.06)'   },
-  primary: { solid: '#0ea5e9', glow: 'rgba(14,165,233,0.20)',  bg: 'rgba(14,165,233,0.06)'  },
-  purple:  { solid: '#a78bfa', glow: 'rgba(167,139,250,0.20)', bg: 'rgba(167,139,250,0.06)' },
-  green:   { solid: '#22c55e', glow: 'rgba(34,197,94,0.20)',   bg: 'rgba(34,197,94,0.06)'   },
+  red:     { solid: '#f87171', glow: 'rgba(248,113,113,0.18)', bg: 'rgba(248,113,113,0.10)' },
+  orange:  { solid: '#fb923c', glow: 'rgba(251,146,60,0.18)',  bg: 'rgba(251,146,60,0.10)'  },
+  yellow:  { solid: '#facc15', glow: 'rgba(250,204,21,0.16)',  bg: 'rgba(250,204,21,0.10)'  },
+  cyan:    { solid: '#22d3ee', glow: 'rgba(34,211,238,0.18)',  bg: 'rgba(34,211,238,0.10)'  },
+  primary: { solid: '#3b82f6', glow: 'rgba(59,130,246,0.18)',  bg: 'rgba(59,130,246,0.10)'  },
+  purple:  { solid: '#c4b5fd', glow: 'rgba(196,181,253,0.16)', bg: 'rgba(196,181,253,0.10)' },
+  green:   { solid: '#4ade80', glow: 'rgba(74,222,128,0.18)',  bg: 'rgba(74,222,128,0.10)'  },
 }
 
 const KPI_ICONS = {
@@ -100,7 +100,7 @@ export default function DashboardPage() {
       return (
         <div className="space-y-4 max-w-[1600px]">
           <section>
-            <SectionLabel icon={AlertCircle} color="#ef4444">Alertas &amp; Risco</SectionLabel>
+            <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
               {statsKpis.slice(0, 4).map((k, i) => (
                 <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} />
@@ -108,7 +108,7 @@ export default function DashboardPage() {
             </div>
           </section>
           <section>
-            <SectionLabel icon={BarChart3} color="#0ea5e9">Fila Ativa &amp; Performance</SectionLabel>
+            <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
               {statsKpis.slice(4).map((k, i) => (
                 <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} />
@@ -141,7 +141,7 @@ export default function DashboardPage() {
 
         {/* ── 2. KPI BENTO — Alertas & Risco ───────────────────────────── */}
         <section>
-          <SectionLabel icon={AlertCircle} color="#ef4444">Alertas &amp; Risco</SectionLabel>
+          <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
             {riskKpis.map((k, i) => (
               <BentoKPICard
@@ -163,7 +163,7 @@ export default function DashboardPage() {
 
         {/* ── 4. KPI BENTO — Fila & Performance ────────────────────────── */}
         <section>
-          <SectionLabel icon={BarChart3} color="#0ea5e9">Fila Ativa &amp; Performance</SectionLabel>
+          <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
             {perfKpis.map((k, i) => (
               <BentoKPICard
@@ -186,7 +186,7 @@ export default function DashboardPage() {
         {/* ── 6. Fornecedores ───────────────────────────────────────────── */}
         {fornecedores.length > 0 && (
           <section>
-            <SectionLabel icon={Package} color="#a78bfa">Desempenho por Fornecedor</SectionLabel>
+            <SectionLabel icon={Package} color="#c4b5fd">Desempenho por Fornecedor</SectionLabel>
             <div className="grid gap-3 mt-2 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
               {fornecedores.map(f => <FornecedorCard key={f.nome} {...f} />)}
             </div>
@@ -228,7 +228,7 @@ export default function DashboardPage() {
                 exportCSV(modal.rows, `os_${modal.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
               }}
               className="flex items-center gap-1.5 text-[10px] text-muted hover:text-primary
-                         border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
+                         border border-border hover:border-primary/30 rounded-md px-2.5 py-1
                          transition-all duration-fast"
             >
               <Download size={11} /> CSV
@@ -251,7 +251,7 @@ function SectionLabel({ icon: Icon, color, children }) {
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-[11px] font-bold uppercase tracking-[1.6px]" style={{ color }}>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color }}>
         {children}
       </span>
     </div>
@@ -267,8 +267,8 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
   } = pulso
 
   const scoreColor =
-    score >= 85 ? '#22c55e' :
-    score >= 65 ? '#eab308' : '#ef4444'
+    score >= 85 ? '#4ade80' :
+    score >= 65 ? '#facc15' : '#f87171'
 
   const displayNarrative = aiData?.narrativa || narrativa
   const displayInsights  = aiData?.insights?.length
@@ -306,7 +306,7 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
       <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full blur-3xl pointer-events-none"
            style={{ background: `${scoreColor}0e` }} />
       <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full blur-3xl pointer-events-none"
-           style={{ background: 'rgba(14,165,233,0.06)' }} />
+           style={{ background: 'rgba(59,130,246,0.05)' }} />
 
       <div className="relative p-5 space-y-4">
         {/* Main row */}
@@ -315,7 +315,7 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
           {/* Gauge */}
           <div className="flex flex-col items-center gap-1 flex-shrink-0">
             <GaugeChart value={score} color={scoreColor} label={scoreLabel} size={100} />
-            <span className="text-[10px] font-bold uppercase tracking-[1.4px]"
+            <span className="text-[10px] font-bold uppercase tracking-[0.06em]"
                   style={{ color: `${scoreColor}99` }}>
               Score
             </span>
@@ -325,7 +325,7 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
           <div className="flex-1 min-w-[180px]">
             <div className="flex items-center gap-2 mb-2">
               <Activity size={10} className="text-muted" />
-              <span className="text-[10px] font-bold uppercase tracking-[1.8px] text-muted">
+              <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">
                 Pulso Operacional
               </span>
               {aiData && (
@@ -338,8 +338,8 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
 
             {isLoadingAI && !narrativa ? (
               <div className="space-y-2">
-                <div className="h-3 bg-white/[0.06] rounded animate-pulse w-full" />
-                <div className="h-3 bg-white/[0.06] rounded animate-pulse w-3/4" />
+                <div className="h-3 bg-surface rounded animate-pulse w-full" />
+                <div className="h-3 bg-surface rounded animate-pulse w-3/4" />
               </div>
             ) : (
               <p className="text-[13.5px] text-secondary leading-[1.7]">
@@ -364,7 +364,7 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
 
         {/* Insight pills */}
         {displayInsights.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-3 border-t border-white/[0.05]">
+          <div className="flex flex-wrap gap-1.5 pt-3 border-t border-border/60">
             {displayInsights.map((ins, i) => (
               <span
                 key={i}
@@ -400,8 +400,8 @@ function BentoKPICard({ kpi, icon: Icon, delay = 0, onClick }) {
       style={{ animationDelay: `${delay}ms`, borderColor: `${ac.solid}22` }}
       className="relative overflow-hidden rounded-xl border bg-card
                  animate-card-enter cursor-pointer group
-                 transition-all duration-200
-                 hover:shadow-lg hover:-translate-y-0.5"
+                 transition-colors duration-150
+                 hover:shadow-md"
     >
       {/* Accent top bar */}
       <div className="absolute top-0 left-0 right-0 h-[2.5px] transition-opacity duration-200"
@@ -422,7 +422,7 @@ function BentoKPICard({ kpi, icon: Icon, delay = 0, onClick }) {
         </div>
 
         {/* Value */}
-        <p className="font-mono font-black tabular-nums leading-none mb-1.5 transition-colors duration-200"
+        <p className="number-display tabular-nums leading-none mb-1.5 transition-colors duration-150"
            style={{
              fontSize: String(value).length > 4 ? '32px' : '40px',
              color: ac.solid,
@@ -450,7 +450,7 @@ function TrendPill({ trend }) {
   const { delta, pct, higherIsBetter } = trend ?? {}
   if (delta == null) return null
   const positive = (delta > 0) === (higherIsBetter !== false)
-  const color    = positive ? '#22c55e' : '#ef4444'
+  const color    = positive ? '#4ade80' : '#f87171'
   const Icon     = delta === 0 ? Minus : delta > 0 ? TrendingUp : TrendingDown
   return (
     <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] font-bold flex-shrink-0"
@@ -465,10 +465,10 @@ function TrendPill({ trend }) {
 
 // Categorias de negócio do provedor — usa _categoria (calculado em enrichRows)
 const CAT_CFG = [
-  { cat: 'INSTALACAO',    label: 'Instalação',     icon: Package, color: '#0ea5e9' },
-  { cat: 'VT_MANUTENCAO', label: 'VT / Manutenção', icon: Wrench,  color: '#f97316' },
-  { cat: 'SERVICO',       label: 'Serviço',          icon: null,    color: '#a78bfa' },
-  { cat: 'REDE',          label: 'Rede',             icon: Radio,   color: '#64748b' },
+  { cat: 'INSTALACAO',    label: 'Instalação',      icon: Package, color: '#3b82f6' },
+  { cat: 'VT_MANUTENCAO', label: 'VT / Manutenção', icon: Wrench,  color: '#fb923c' },
+  { cat: 'SERVICO',       label: 'Serviço',          icon: null,    color: '#c4b5fd' },
+  { cat: 'REDE',          label: 'Rede',             icon: Radio,   color: '#71717a' },
 ]
 
 function ExecutadasHeroBlock({ rows, onOpenModal }) {
@@ -490,17 +490,17 @@ function ExecutadasHeroBlock({ rows, onOpenModal }) {
     <div className="relative overflow-hidden rounded-2xl border border-green/20 bg-card">
       {/* Top accent */}
       <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: 'linear-gradient(90deg, transparent, #22c55e, transparent)' }} />
+           style={{ background: 'linear-gradient(90deg, transparent, #4ade80, transparent)' }} />
       <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-64 h-32 blur-3xl pointer-events-none"
-           style={{ background: 'rgba(34,197,94,0.07)' }} />
+           style={{ background: 'rgba(74,222,128,0.07)' }} />
 
       <div className="relative p-5">
         <div className="flex items-start justify-between mb-4">
-          <SectionLabel icon={CheckCircle2} color="#22c55e">Executadas Hoje</SectionLabel>
+          <SectionLabel icon={CheckCircle2} color="#4ade80">Executadas Hoje</SectionLabel>
           {total > 0 && (
             <button
               onClick={() => onOpenModal('Executadas Hoje', hojeRows)}
-              className="text-[11px] text-muted hover:text-green border border-white/[0.08]
+              className="text-[11px] text-muted hover:text-green border border-border
                          hover:border-green/30 rounded-lg px-2.5 py-1 transition-all duration-fast"
             >
               Ver todas →
@@ -510,7 +510,7 @@ function ExecutadasHeroBlock({ rows, onOpenModal }) {
 
         {total === 0 ? (
           <div className="flex items-center gap-3 py-4">
-            <p className="font-mono font-black text-[64px] leading-none text-white/10">0</p>
+            <p className="number-display text-[64px] leading-none text-muted/20">0</p>
             <p className="text-[13px] text-muted/60">Nenhuma OS concluída registrada ainda.</p>
           </div>
         ) : (
@@ -533,8 +533,8 @@ function ExecutadasHeroBlock({ rows, onOpenModal }) {
                   <button
                     key={g.cat}
                     onClick={() => onOpenModal(`Hoje — ${g.label}`, g.rows)}
-                    className="bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06]
-                               hover:border-white/[0.14] rounded-xl p-3 text-left
+                    className="bg-surface/30 hover:bg-surface border border-border
+                               hover:border-muted/30 rounded-xl p-3 text-left
                                transition-all duration-150 cursor-pointer group"
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -549,7 +549,7 @@ function ExecutadasHeroBlock({ rows, onOpenModal }) {
                       {g.rows.length}
                     </p>
                     <p className="text-[11px] text-muted truncate">{g.label}</p>
-                    <div className="mt-2 h-[3px] rounded-full bg-white/[0.05] overflow-hidden">
+                    <div className="mt-2 h-[3px] rounded-full bg-surface/40 overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-500"
                            style={{ width: `${pct}%`, background: g.color }} />
                     </div>
@@ -562,7 +562,7 @@ function ExecutadasHeroBlock({ rows, onOpenModal }) {
 
         {/* Composition bar */}
         {total > 0 && (
-          <div className="mt-4 flex h-1 rounded-full overflow-hidden bg-white/[0.04]">
+          <div className="mt-4 flex h-1 rounded-full overflow-hidden bg-surface/30">
             {grupos.map(g => (
               <div
                 key={g.cat}
@@ -585,8 +585,8 @@ function ClustersBairroPanel({ clusters }) {
     return (
       <div className="relative overflow-hidden rounded-2xl border border-green/15 bg-card p-5">
         <div className="absolute top-0 left-0 right-0 h-[2px]"
-             style={{ background: 'linear-gradient(90deg, transparent, #22c55e66, transparent)' }} />
-        <SectionLabel icon={Zap} color="#22c55e">Clusters de Falha</SectionLabel>
+             style={{ background: 'linear-gradient(90deg, transparent, #4ade8066, transparent)' }} />
+        <SectionLabel icon={Zap} color="#4ade80">Clusters de Falha</SectionLabel>
         <div className="flex items-center gap-3 mt-4">
           <CheckCircle2 size={18} className="text-green flex-shrink-0" />
           <p className="text-[13px] text-green font-semibold">
@@ -599,16 +599,16 @@ function ClustersBairroPanel({ clusters }) {
 
   return (
     <div className="relative overflow-hidden rounded-2xl border bg-card"
-         style={{ borderColor: 'rgba(239,68,68,0.35)' }}>
+         style={{ borderColor: 'rgba(248,113,113,0.35)' }}>
       <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: 'linear-gradient(90deg, transparent, #ef4444, transparent)' }} />
+           style={{ background: 'linear-gradient(90deg, transparent, #f87171, transparent)' }} />
       <div className="absolute -top-10 left-0 w-40 h-32 blur-3xl pointer-events-none"
-           style={{ background: 'rgba(239,68,68,0.08)' }} />
+           style={{ background: 'rgba(248,113,113,0.08)' }} />
 
       <div className="relative p-5">
         <div className="flex items-start justify-between mb-4">
-          <SectionLabel icon={Zap} color="#ef4444">Clusters de Falha</SectionLabel>
-          <span className="text-[10px] font-black uppercase tracking-[1.2px] bg-red/15 text-red
+          <SectionLabel icon={Zap} color="#f87171">Clusters de Falha</SectionLabel>
+          <span className="text-[10px] font-bold uppercase tracking-[0.05em] bg-red/15 text-red
                            border border-red/25 rounded-full px-2.5 py-1">
             ALERTA
           </span>
@@ -642,21 +642,21 @@ function AgingPanel({ pulso }) {
   const agingTotal = Object.values(agingDist).reduce((s, v) => s + v, 0)
 
   const agingEntries = [
-    { key: '≤1d',  label: '≤ 1 dia',  color: '#22c55e' },
-    { key: '2-3d', label: '2–3 dias', color: '#eab308' },
+    { key: '≤1d',  label: '≤ 1 dia',  color: '#4ade80' },
+    { key: '2-3d', label: '2–3 dias', color: '#facc15' },
     { key: '4-7d', label: '4–7 dias', color: '#f97316' },
-    { key: '8+d',  label: '8+ dias',  color: '#ef4444' },
+    { key: '8+d',  label: '8+ dias',  color: '#f87171' },
   ]
 
   if (!agingTotal) return (
-    <div className="rounded-2xl border border-white/[0.07] bg-card p-5 flex items-center justify-center">
+    <div className="rounded-2xl border border-border bg-card p-5 flex items-center justify-center">
       <p className="text-muted text-[12px]">Sem dados de aging</p>
     </div>
   )
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card p-5">
-      <SectionLabel icon={Clock} color="#0ea5e9">Aging da Fila Ativa</SectionLabel>
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5">
+      <SectionLabel icon={Clock} color="#3b82f6">Aging da Fila Ativa</SectionLabel>
 
       <div className="mt-4 space-y-3">
         {agingEntries.map(e => {
@@ -666,7 +666,7 @@ function AgingPanel({ pulso }) {
             <div key={e.key} className="flex items-center gap-3">
               <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: e.color }} />
               <span className="text-[11px] text-muted w-14 flex-shrink-0">{e.label}</span>
-              <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
+              <div className="flex-1 h-2 bg-surface/40 rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-700"
                      style={{ width: `${pct}%`, background: e.color, boxShadow: `0 0 6px ${e.color}60` }} />
               </div>
@@ -682,7 +682,7 @@ function AgingPanel({ pulso }) {
       </div>
 
       {/* Stacked bar total */}
-      <div className="mt-4 flex h-1.5 rounded-full overflow-hidden bg-white/[0.04]">
+      <div className="mt-4 flex h-1.5 rounded-full overflow-hidden bg-surface/30">
         {agingEntries.map(e => {
           const val = agingDist[e.key] ?? 0
           const pct = agingTotal > 0 ? Math.round(val / agingTotal * 100) : 0
@@ -702,15 +702,15 @@ function CidadesPanel({ cidades }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-red/15 bg-card p-5">
       <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: 'linear-gradient(90deg, transparent, rgba(239,68,68,0.4), transparent)' }} />
-      <SectionLabel icon={MapPin} color="#ef4444">Top Cidades — OS Críticas</SectionLabel>
+           style={{ background: 'linear-gradient(90deg, transparent, rgba(248,113,113,0.4), transparent)' }} />
+      <SectionLabel icon={MapPin} color="#f87171">Top Cidades — OS Críticas</SectionLabel>
       <div className="mt-4 space-y-2.5">
         {cidades.map(c => (
           <div key={c.cidade} className="flex items-center gap-3">
             <span className="text-[11px] font-semibold text-text w-28 flex-shrink-0 truncate">{c.cidade}</span>
-            <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
+            <div className="flex-1 h-2 bg-surface/40 rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700"
-                   style={{ width: `${Math.round(c.count / max * 100)}%`, background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.5)' }} />
+                   style={{ width: `${Math.round(c.count / max * 100)}%`, background: '#f87171', boxShadow: '0 0 6px rgba(248,113,113,0.5)' }} />
             </div>
             <span className="font-mono text-[13px] font-bold text-red w-6 text-right flex-shrink-0">{c.count}</span>
           </div>
@@ -759,7 +759,7 @@ function FornecedorCard({ nome, total, concluidas, sla, cor }) {
           </div>
         </div>
 
-        <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+        <div className="h-1.5 bg-surface/40 rounded-full overflow-hidden">
           <div className="h-full rounded-full transition-all duration-700"
                style={{ width: `${sla}%`, background: cor }} />
         </div>
@@ -772,9 +772,9 @@ function FornecedorCard({ nome, total, concluidas, sla, cor }) {
 // ─── AnomaliaSection ──────────────────────────────────────────────────────────
 
 const PRIORIDADE_STYLE = {
-  alta:  { color: '#ef4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.25)'   },
-  média: { color: '#eab308', bg: 'rgba(234,179,8,0.08)',   border: 'rgba(234,179,8,0.25)'   },
-  baixa: { color: '#22c55e', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.25)'   },
+  alta:  { color: '#f87171', bg: 'rgba(248,113,113,0.08)',   border: 'rgba(248,113,113,0.25)'   },
+  média: { color: '#facc15', bg: 'rgba(250,204,21,0.08)',   border: 'rgba(250,204,21,0.25)'   },
+  baixa: { color: '#4ade80', bg: 'rgba(74,222,128,0.08)',   border: 'rgba(74,222,128,0.25)'   },
 }
 
 function AnomaliaSection({ anomalias, contexto = {} }) {
@@ -791,11 +791,11 @@ function AnomaliaSection({ anomalias, contexto = {} }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-yellow/20 bg-card">
       <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: 'linear-gradient(90deg, transparent, rgba(234,179,8,0.5), transparent)' }} />
+           style={{ background: 'linear-gradient(90deg, transparent, rgba(250,204,21,0.5), transparent)' }} />
 
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.015] transition-colors"
+        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-surface/15 transition-colors"
       >
         <AlertCircle size={14} className="text-yellow flex-shrink-0" />
         <span className="font-semibold text-[13px] text-text flex-1">Detecções Automáticas</span>
@@ -813,10 +813,10 @@ function AnomaliaSection({ anomalias, contexto = {} }) {
 
           {picosDia.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[1.4px] text-muted mb-2">Picos de Abertura</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted mb-2">Picos de Abertura</p>
               <div className="space-y-2">
                 {picosDia.map(p => (
-                  <div key={p.date} className="flex items-center gap-3 text-[12px] bg-white/[0.02] rounded-lg px-3 py-2">
+                  <div key={p.date} className="flex items-center gap-3 text-[12px] bg-surface/20 rounded-lg px-3 py-2">
                     <span className="font-mono text-primary w-22 flex-shrink-0">{p.date}</span>
                     <span className="font-mono font-bold text-text">{p.count} OS</span>
                     <span className="text-muted ml-auto">Z: <span className="text-yellow font-mono">{p.zScore}σ</span></span>
@@ -828,10 +828,10 @@ function AnomaliaSection({ anomalias, contexto = {} }) {
 
           {bairrosAnomalia.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[1.4px] text-muted mb-2">Bairros com SLA Anômalo</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted mb-2">Bairros com SLA Anômalo</p>
               <div className="space-y-2">
                 {bairrosAnomalia.map(b => (
-                  <div key={b.bairro} className="flex items-center gap-3 text-[12px] bg-white/[0.02] rounded-lg px-3 py-2">
+                  <div key={b.bairro} className="flex items-center gap-3 text-[12px] bg-surface/20 rounded-lg px-3 py-2">
                     <span className="text-text font-semibold flex-1 min-w-0 truncate">{b.bairro}</span>
                     <span className="font-mono font-bold text-red">{b.ratePct}%</span>
                     <span className="text-muted">{b.slaExc}/{b.total}</span>
@@ -844,10 +844,10 @@ function AnomaliaSection({ anomalias, contexto = {} }) {
 
           {equipesAnomalia.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[1.4px] text-muted mb-2">Equipes com Aging Elevado</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted mb-2">Equipes com Aging Elevado</p>
               <div className="space-y-2">
                 {equipesAnomalia.map(e => (
-                  <div key={e.nome} className="flex items-center gap-3 text-[12px] bg-white/[0.02] rounded-lg px-3 py-2">
+                  <div key={e.nome} className="flex items-center gap-3 text-[12px] bg-surface/20 rounded-lg px-3 py-2">
                     <span className="text-text font-semibold flex-1 min-w-0 truncate">{e.nome}</span>
                     <span className="font-mono font-bold text-orange">{e.agingMed}d</span>
                     <span className="text-muted">{e.count} OS</span>
@@ -859,10 +859,10 @@ function AnomaliaSection({ anomalias, contexto = {} }) {
           )}
 
           {/* ── Análise de Causa Raiz (Claude) ── */}
-          <div className="border-t border-white/[0.06] pt-4">
+          <div className="border-t border-border pt-4">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles size={12} className="text-primary/70" />
-              <p className="text-[10px] font-bold uppercase tracking-[1.4px] text-muted">Análise de Causa Raiz</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted">Análise de Causa Raiz</p>
             </div>
 
             {rcaLoading && (
@@ -951,7 +951,7 @@ function KpiModalTable({ rows, onOS }) {
     <div className="overflow-auto">
       <table className="w-full text-[11px]">
         <thead>
-          <tr className="border-b border-white/[0.06] bg-surface text-left text-[10px] font-bold uppercase tracking-[0.9px] text-muted">
+          <tr className="border-b border-border bg-surface text-left text-[10px] font-bold uppercase tracking-[0.04em] text-muted">
             {MODAL_COLS.map(col => (
               <th key={col.key} onClick={() => toggleSort(col.key)}
                   className="px-4 py-2.5 whitespace-nowrap cursor-pointer select-none hover:text-secondary transition-colors">
@@ -965,13 +965,13 @@ function KpiModalTable({ rows, onOS }) {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.04]">
+        <tbody className="divide-y divide-border/50">
           {pageRows.map(os => {
             const aging = os._aging ?? 0
             const agVar = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'
             return (
               <tr key={os.numos} onClick={() => onOS(os)}
-                  className="hover:bg-white/[0.03] cursor-pointer transition-colors">
+                  className="hover:bg-surface/30 cursor-pointer transition-colors">
                 <td className="px-4 py-2.5 font-mono text-primary">{os.numos}</td>
                 <td className="px-4 py-2.5 text-text max-w-[160px] truncate">{os.nomecliente ?? '—'}</td>
                 <td className="px-4 py-2.5 text-secondary">{os.nomedacidade ?? '—'}</td>
@@ -985,14 +985,14 @@ function KpiModalTable({ rows, onOS }) {
         </tbody>
       </table>
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.06] text-[10px] text-muted">
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-border text-[10px] text-muted">
           <span>{page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} de {sorted.length}</span>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                    className="px-2 py-1 rounded border border-white/[0.08] disabled:opacity-30 hover:bg-white/[0.05] transition-colors">‹</button>
+                    className="px-2 py-1 rounded border border-border disabled:opacity-30 hover:bg-surface/40 transition-colors">‹</button>
             <span className="px-2 font-mono">{page + 1}/{totalPages}</span>
             <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1}
-                    className="px-2 py-1 rounded border border-white/[0.08] disabled:opacity-30 hover:bg-white/[0.05] transition-colors">›</button>
+                    className="px-2 py-1 rounded border border-border disabled:opacity-30 hover:bg-surface/40 transition-colors">›</button>
           </div>
         </div>
       )}

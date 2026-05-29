@@ -3,7 +3,6 @@ import { useState, useMemo, useEffect } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from 'react-leaflet'
 import { Map, Flame, Circle, AlertTriangle, TrendingUp, Users, Filter, X } from 'lucide-react'
 import L from 'leaflet'
-import 'leaflet.heat'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
 import { aggregateByCidade, buildHeatPoints } from './geo'
@@ -20,30 +19,41 @@ function MapResizer() {
   return null
 }
 
-// ── Heatmap layer (injeta o leaflet.heat no mapa) ────────────────────────────
-function HeatLayer({ points }) {
+// ── Heatmap layer — implementação nativa sem leaflet.heat ─────────────────────
+// Cada ponto recebe 3 círculos concêntricos semi-transparentes (bloom effect),
+// coloridos de acordo com a intensidade relativa ao máximo da fila.
+function HeatLayer({ points }: { points: [number, number, number][] }) {
   const map = useMap()
   useEffect(() => {
     if (!points.length) return
-    const heat = L.heatLayer(points, {
-      radius:  55,
-      blur:    40,
-      maxZoom: 14,
-      max:     10,
-      gradient: { 0.15: '#0ea5e9', 0.4: '#a855f7', 0.65: '#f97316', 1.0: '#ef4444' },
-    })
-    heat.addTo(map)
-    return () => map.removeLayer(heat)
+    const maxWeight = Math.max(...points.map(p => p[2]), 1)
+    const layers: L.CircleMarker[] = []
+
+    for (const [lat, lng, weight] of points) {
+      const t = weight / maxWeight
+      const color = t > 0.65 ? '#f87171' : t > 0.4 ? '#f97316' : t > 0.15 ? '#a855f7' : '#3b82f6'
+      const opts = (radius: number, opacity: number) => ({
+        radius, fillColor: color, fillOpacity: opacity * t,
+        stroke: false, interactive: false,
+      } as L.CircleMarkerOptions)
+
+      layers.push(
+        L.circleMarker([lat, lng] as L.LatLngExpression, opts(62, 0.06)).addTo(map),
+        L.circleMarker([lat, lng] as L.LatLngExpression, opts(38, 0.13)).addTo(map),
+        L.circleMarker([lat, lng] as L.LatLngExpression, opts(20, 0.28)).addTo(map),
+      )
+    }
+    return () => layers.forEach(l => map.removeLayer(l))
   }, [map, points])
   return null
 }
 
 // ── Cores por criticidade ─────────────────────────────────────────────────────
 function bubbleColor(g) {
-  if (g.criticos  > 0)  return { fill: '#ef4444', stroke: '#fca5a5' }
+  if (g.criticos  > 0)  return { fill: '#f87171', stroke: '#fca5a5' }
   if (g.excedidos > 0)  return { fill: '#f97316', stroke: '#fdba74' }
-  if (g.pendentes > 0)  return { fill: '#0ea5e9', stroke: '#7dd3fc' }
-  return                       { fill: '#22c55e', stroke: '#86efac' }
+  if (g.pendentes > 0)  return { fill: '#3b82f6', stroke: '#7dd3fc' }
+  return                       { fill: '#4ade80', stroke: '#86efac' }
 }
 
 // ── Radius proporcional à raiz quadrada do count ──────────────────────────────
@@ -56,9 +66,9 @@ function CidadePanel({ cidade, onClose }) {
   const _pct = cidade.count > 0 ? Math.round((cidade.criticos / cidade.count) * 100) : 0
   return (
     <div className="absolute bottom-4 left-4 z-[500] w-72 animate-fade-in">
-      <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.10] rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-elevated/95 backdrop-blur-md border border-border rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full" style={{ background: fill }} />
             <p className="text-[13px] font-bold text-text capitalize">
@@ -68,19 +78,19 @@ function CidadePanel({ cidade, onClose }) {
           <button
             onClick={onClose}
             className="w-6 h-6 rounded-lg flex items-center justify-center
-                       text-muted hover:text-text hover:bg-white/[0.08] transition-all"
+                       text-muted hover:text-text hover:bg-surface transition-all"
           >
             <X size={12} />
           </button>
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 divide-x divide-white/[0.07] border-b border-white/[0.07]">
+        <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
           <Stat label="Total OS"   value={cidade.count}              color="text-text" />
           <Stat label="Críticas"   value={cidade.criticos}           color={cidade.criticos  > 0 ? 'text-red'    : 'text-muted'} />
           <Stat label="Excedidas"  value={cidade.excedidos}          color={cidade.excedidos > 0 ? 'text-orange' : 'text-muted'} />
         </div>
-        <div className="grid grid-cols-3 divide-x divide-white/[0.07] border-b border-white/[0.07]">
+        <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
           <Stat label="Aging med." value={`${cidade.avgAging.toFixed(1)}d`} color="text-cyan" />
           <Stat label="Pendentes"  value={cidade.pendentes}   color="text-yellow" />
           <Stat label="Sem equipe" value={cidade.semEquipe}   color={cidade.semEquipe > 0 ? 'text-orange' : 'text-muted'} />
@@ -89,7 +99,7 @@ function CidadePanel({ cidade, onClose }) {
         {/* Top bairros */}
         {cidade.topBairros?.length > 0 && (
           <div className="px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[1.2px] text-muted mb-2">Top bairros</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Top bairros</p>
             <div className="space-y-1.5">
               {cidade.topBairros.map((b, i) => (
                 <div key={i} className="flex items-center gap-2">
@@ -100,12 +110,12 @@ function CidadePanel({ cidade, onClose }) {
                       </span>
                       <span className="text-[11px] font-mono text-text ml-2 flex-shrink-0">{b.count}</span>
                     </div>
-                    <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div className="h-1 rounded-full bg-surface overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
                           width: `${Math.round((b.count / cidade.count) * 100)}%`,
-                          background: b.criticos > 0 ? '#ef4444' : '#0ea5e9',
+                          background: b.criticos > 0 ? '#f87171' : '#3b82f6',
                         }}
                       />
                     </div>
@@ -124,7 +134,7 @@ function Stat({ label, value, color }) {
   return (
     <div className="flex flex-col items-center py-2.5 px-1 gap-0.5">
       <span className={`text-[18px] font-black font-mono leading-none ${color}`}>{value}</span>
-      <span className="text-[9px] font-bold uppercase tracking-[0.9px] text-muted text-center leading-tight">{label}</span>
+      <span className="text-[9px] font-bold uppercase tracking-[0.04em] text-muted text-center leading-tight">{label}</span>
     </div>
   )
 }
@@ -133,12 +143,12 @@ function Stat({ label, value, color }) {
 function RankingPanel({ cidades, onSelect, selected }) {
   return (
     <div className="absolute top-4 right-4 z-[500] w-60">
-      <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.10] rounded-2xl overflow-hidden shadow-2xl">
-        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.07]">
+      <div className="bg-elevated/90 backdrop-blur-md border border-border rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-border">
           <TrendingUp size={12} className="text-primary" />
-          <p className="text-[11px] font-black uppercase tracking-[1.2px] text-muted">Ranking de cidades</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Ranking de cidades</p>
         </div>
-        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
+        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-border/60">
           {cidades.slice(0, 15).map((g, i) => {
             const { fill } = bubbleColor(g)
             const isSelected = selected?.cidade === g.cidade
@@ -147,7 +157,7 @@ function RankingPanel({ cidades, onSelect, selected }) {
                 key={g.cidade}
                 onClick={() => onSelect(isSelected ? null : g)}
                 className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-left transition-all
-                            ${isSelected ? 'bg-primary/10' : 'hover:bg-white/[0.04]'}`}
+                            ${isSelected ? 'bg-primary/10' : 'hover:bg-surface/30'}`}
               >
                 <span className="text-[11px] font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: fill }} />
@@ -247,7 +257,7 @@ export default function MapaPage() {
 
       {/* ── Barra superior ────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2.5
-                      bg-elevated/80 backdrop-blur border-b border-white/[0.07] flex-wrap">
+                      bg-elevated/80 backdrop-blur border-b border-border flex-wrap">
 
         {/* Ícone + título */}
         <div className="flex items-center gap-2">
@@ -255,7 +265,7 @@ export default function MapaPage() {
           <span className="text-[13px] font-bold text-text">Mapa de Calor</span>
         </div>
 
-        <div className="w-px h-5 bg-white/[0.08]" />
+        <div className="w-px h-5 bg-surface" />
 
         {/* KPIs inline */}
         <KpiBadge label={filterStatus === '' ? 'OS Ativas' : 'OS'} value={rows.length} color="text-text" />
@@ -271,10 +281,10 @@ export default function MapaPage() {
         <FilterSelect value={filterTipo}   onChange={setFilterTipo}   options={tipoOpts}   placeholder="Tipo" />
         <FilterSelect value={filterAging}  onChange={setFilterAging}  options={agingOpts}  placeholder="Aging" />
 
-        <div className="w-px h-5 bg-white/[0.08]" />
+        <div className="w-px h-5 bg-surface" />
 
         {/* Toggle de visualização */}
-        <div className="flex bg-bg border border-white/[0.08] rounded-xl p-0.5">
+        <div className="flex bg-bg border border-border rounded-xl p-0.5">
           {[
             { val: 'calor',  icon: Flame,  label: 'Calor'  },
             { val: 'bolhas', icon: Circle, label: 'Bolhas' },
@@ -357,13 +367,13 @@ export default function MapaPage() {
 
         {/* Legenda */}
         <div className="absolute bottom-4 right-4 z-[500]">
-          <div className="bg-elevated/85 backdrop-blur border border-white/[0.10] rounded-xl px-3 py-2.5 space-y-1.5">
-            <p className="text-[9px] font-black uppercase tracking-[1.2px] text-muted mb-2">Criticidade</p>
+          <div className="bg-elevated/85 backdrop-blur border border-border rounded-xl px-3 py-2.5 space-y-1.5">
+            <p className="text-[9px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Criticidade</p>
             {[
-              { color: '#ef4444', label: 'SLA Crítico'   },
+              { color: '#f87171', label: 'SLA Crítico'   },
               { color: '#f97316', label: 'SLA Excedido'  },
-              { color: '#0ea5e9', label: 'Pendente/Atend.' },
-              { color: '#22c55e', label: 'Concluída/OK'  },
+              { color: '#3b82f6', label: 'Pendente/Atend.' },
+              { color: '#4ade80', label: 'Concluída/OK'  },
             ].map(({ color, label }) => (
               <div key={label} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
@@ -386,7 +396,7 @@ export default function MapaPage() {
 function KpiBadge({ label, value, color }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted">{label}:</span>
+      <span className="text-[10px] font-bold uppercase tracking-[0.04em] text-muted">{label}:</span>
       <span className={`text-[13px] font-black font-mono ${color}`}>{value}</span>
     </div>
   )

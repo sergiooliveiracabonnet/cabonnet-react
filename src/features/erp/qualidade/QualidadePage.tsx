@@ -13,16 +13,16 @@ function SectionLabel({ icon: Icon, color, children }) {
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-[11px] font-bold uppercase tracking-[1.6px]" style={{ color }}>{children}</span>
+      <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
     </div>
   )
 }
 
 function taxaColor(taxa) {
-  if (taxa >= 25) return '#ef4444'
+  if (taxa >= 25) return '#f87171'
   if (taxa >= 15) return '#f97316'
-  if (taxa >= 8)  return '#eab308'
-  return '#22c55e'
+  if (taxa >= 8)  return '#facc15'
+  return '#4ade80'
 }
 
 function taxaLabel(taxa) {
@@ -43,11 +43,11 @@ function EquipeRow({ rank, eq }) {
   const _pct  = eq.totalBase > 0 ? Math.round(eq.total / eq.totalBase * 100) : 0
 
   return (
-    <tr className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+    <tr className="border-b border-border/50 hover:bg-surface/20 transition-colors">
       <td className="px-4 py-3 w-10">
         {rank <= 3 ? (
           <span className="font-mono font-black text-[13px]"
-                style={{ color: ['#ef4444','#f97316','#eab308'][rank-1] }}>#{rank}</span>
+                style={{ color: ['#f87171','#f97316','#facc15'][rank-1] }}>#{rank}</span>
         ) : (
           <span className="font-mono text-[12px] text-muted">{rank}</span>
         )}
@@ -61,7 +61,7 @@ function EquipeRow({ rank, eq }) {
       </td>
       <td className="px-3 py-3 text-right">
         <p className="font-mono font-bold text-[18px] leading-none" style={{ color }}>{eq.taxa}%</p>
-        <div className="mt-1 h-1 w-14 ml-auto bg-white/[0.05] rounded-full overflow-hidden">
+        <div className="mt-1 h-1 w-14 ml-auto bg-surface/40 rounded-full overflow-hidden">
           <div className="h-full rounded-full" style={{ width: `${Math.min(100, eq.taxa * 3)}%`, background: color }} />
         </div>
       </td>
@@ -111,7 +111,7 @@ export default function QualidadePage() {
           custoEstimado, evitaveis, tempoMedio,
           tendencia, porEquipe } = rev
 
-  const _deltaColor = tendencia?.delta > 0 ? '#ef4444' : tendencia?.delta < 0 ? '#22c55e' : '#6b7280'
+  const _deltaColor = tendencia?.delta > 0 ? '#f87171' : tendencia?.delta < 0 ? '#4ade80' : '#6b7280'
   const DeltaIcon  = tendencia?.delta > 0 ? TrendingUp : tendencia?.delta < 0 ? TrendingDown : null
 
   const _maxRevEquipe = Math.max(...(porEquipe?.map(e => e.taxa) ?? [1]), 1)
@@ -134,7 +134,7 @@ export default function QualidadePage() {
             label: 'Revisitas no período',
             value: totalRevisitas,
             sub: `Inst: ${revInst} · Manut: ${revManut} · Serv: ${revServ}`,
-            color: totalRevisitas > 0 ? '#f97316' : '#22c55e',
+            color: totalRevisitas > 0 ? '#f97316' : '#4ade80',
           },
           {
             label: 'Taxa geral',
@@ -148,13 +148,13 @@ export default function QualidadePage() {
             label: 'Custo estimado',
             value: fmtBRL(custoEstimado ?? 0),
             sub: `R$180/revisita estimado · ${evitaveis?.pct ?? 0}% evitáveis`,
-            color: '#a78bfa',
+            color: '#c4b5fd',
           },
           {
             label: 'Tempo médio retorno',
             value: `${tempoMedio ?? 0}d`,
             sub: 'dias entre OS e revisita do cliente',
-            color: '#06b6d4',
+            color: '#22d3ee',
           },
         ].map((k, i) => (
           <div key={i}
@@ -174,9 +174,9 @@ export default function QualidadePage() {
       {/* Taxa por tipo */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Taxa Instalação', value: taxa?.inst ?? 0, color: '#0ea5e9', desc: 'clientes com revisita após inst.' },
+          { label: 'Taxa Instalação', value: taxa?.inst ?? 0, color: '#3b82f6', desc: 'clientes com revisita após inst.' },
           { label: 'Taxa Manutenção', value: taxa?.manut ?? 0, color: '#f97316', desc: 'clientes com 2ª manut. no mês' },
-          { label: 'Taxa Serviço',   value: taxa?.serv ?? 0, color: '#a78bfa', desc: 'clientes com serv. + manut.' },
+          { label: 'Taxa Serviço',   value: taxa?.serv ?? 0, color: '#c4b5fd', desc: 'clientes com serv. + manut.' },
         ].map((t, i) => {
           const cl = taxaColor(t.value)
           return (
@@ -188,7 +188,7 @@ export default function QualidadePage() {
                 <p className="text-[11px] text-muted mb-2">{t.label}</p>
                 <p className="font-mono font-black text-[32px] leading-none tabular-nums"
                    style={{ color: cl }}>{t.value}%</p>
-                <div className="mt-2 h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+                <div className="mt-2 h-1.5 bg-surface/40 rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-700"
                        style={{ width: `${Math.min(100, t.value * 3)}%`, background: cl }} />
                 </div>
@@ -203,14 +203,14 @@ export default function QualidadePage() {
       {porEquipe?.length > 0 && (
         <section className="space-y-2">
           <SectionLabel icon={Users} color="#f97316">Ranking — Revisitas por Equipe</SectionLabel>
-          <div className="rounded-2xl border border-white/[0.07] bg-card overflow-hidden">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-white/[0.05] bg-white/[0.01]">
+                  <tr className="border-b border-border/60 bg-surface/10">
                     {['#','Equipe','Revisitas','Taxa','Status','Rev. Inst','Rev. Manut','Base'].map(h => (
                       <th key={h} className="px-3 py-2.5 text-right first:text-left text-[10px]
-                                              font-bold uppercase tracking-[1px] text-muted first:px-4">
+                                              font-bold uppercase tracking-[0.05em] text-muted first:px-4">
                         {h}
                       </th>
                     ))}
@@ -233,17 +233,17 @@ export default function QualidadePage() {
         {/* Por cidade */}
         {porCidade.length > 0 && (
           <section className="space-y-2">
-            <SectionLabel icon={MapPin} color="#06b6d4">Revisitas por Cidade</SectionLabel>
-            <div className="rounded-xl border border-white/[0.07] bg-card overflow-hidden">
-              <div className="divide-y divide-white/[0.04]">
+            <SectionLabel icon={MapPin} color="#22d3ee">Revisitas por Cidade</SectionLabel>
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="divide-y divide-border/50">
                 {porCidade.map(c => {
                   const cl = taxaColor(c.taxa)
                   const maxR = porCidade[0]?.revisitas ?? 1
                   return (
-                    <div key={c.cidade} className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors">
+                    <div key={c.cidade} className="flex items-center gap-3 px-4 py-3 hover:bg-surface/20 transition-colors">
                       <MapPin size={10} className="text-muted flex-shrink-0" />
                       <span className="text-[12px] font-semibold text-text w-32 flex-shrink-0 truncate">{c.cidade}</span>
-                      <div className="flex-1 h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+                      <div className="flex-1 h-1.5 bg-surface/40 rounded-full overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${Math.round(c.revisitas/maxR*100)}%`, background: cl }} />
                       </div>
                       <span className="font-mono font-bold text-[13px] w-8 text-right flex-shrink-0" style={{ color: cl }}>{c.revisitas}</span>
@@ -259,25 +259,25 @@ export default function QualidadePage() {
         {/* Clientes crônicos */}
         {cronicos.length > 0 && (
           <section className="space-y-2">
-            <SectionLabel icon={AlertTriangle} color="#ef4444">
+            <SectionLabel icon={AlertTriangle} color="#f87171">
               Clientes Crônicos — {cronicos.length} com 3+ OS
             </SectionLabel>
-            <div className="rounded-xl border border-white/[0.07] bg-card overflow-hidden">
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
               <div className="grid grid-cols-[1fr_48px_48px] gap-2 px-4 py-2
-                              bg-white/[0.02] border-b border-white/[0.05]
-                              text-[10px] font-bold uppercase tracking-[1px] text-muted">
+                              bg-surface/20 border-b border-border/60
+                              text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
                 <span>Cliente</span>
                 <span className="text-right">OS</span>
                 <span className="text-right">Rev.</span>
               </div>
-              <div className="divide-y divide-white/[0.04] max-h-72 overflow-y-auto">
+              <div className="divide-y divide-border/50 max-h-72 overflow-y-auto">
                 {cronicos.map(c => {
                   const danger = c.count >= 5 || c.revisitas >= 2
-                  const color  = danger ? '#ef4444' : c.count >= 4 ? '#f97316' : '#eab308'
+                  const color  = danger ? '#f87171' : c.count >= 4 ? '#f97316' : '#facc15'
                   return (
                     <div key={c.cliente}
                          className="grid grid-cols-[1fr_48px_48px] gap-2 px-4 py-2.5
-                                    hover:bg-white/[0.02] transition-colors items-center">
+                                    hover:bg-surface/20 transition-colors items-center">
                       <p className="text-[11.5px] font-medium text-text truncate">{c.cliente}</p>
                       <p className="font-mono font-bold text-[13px] text-right" style={{ color }}>{c.count}</p>
                       <p className="font-mono text-[12px] text-right text-muted">{c.revisitas}</p>
@@ -291,7 +291,7 @@ export default function QualidadePage() {
       </div>
 
       {/* Nota metodológica */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+      <div className="rounded-xl border border-border bg-surface/20 px-4 py-3">
         <p className="text-[10px] text-muted/70 leading-relaxed">
           <strong className="text-muted">Metodologia:</strong> Revisita = cliente que teve instalação + manutenção no mesmo mês, ou 2+ manutenções no mesmo mês.
           Custo estimado de R$180/revisita (deslocamento + hora técnica). Taxa calculada sobre pares únicos cliente×mês.

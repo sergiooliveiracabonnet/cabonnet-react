@@ -22,10 +22,10 @@ const TIPO_MAX = { INSTALACAO: 18, MANUTENCAO: 12, REDE: 10 }
 const SEV_CFG = {
   CRITICO: {
     label: 'Crítico',
-    color: '#ef4444',
-    glow:  'rgba(239,68,68,0.18)',
-    bg:    'rgba(239,68,68,0.07)',
-    dot:   '#ef4444',
+    color: '#f87171',
+    glow:  'rgba(248,113,113,0.18)',
+    bg:    'rgba(248,113,113,0.07)',
+    dot:   '#f87171',
   },
   ALTO: {
     label: 'Alto',
@@ -36,10 +36,10 @@ const SEV_CFG = {
   },
   MEDIO: {
     label: 'Médio',
-    color: '#eab308',
-    glow:  'rgba(234,179,8,0.18)',
-    bg:    'rgba(234,179,8,0.07)',
-    dot:   '#eab308',
+    color: '#facc15',
+    glow:  'rgba(250,204,21,0.18)',
+    bg:    'rgba(250,204,21,0.07)',
+    dot:   '#facc15',
   },
 }
 
@@ -127,7 +127,7 @@ function SectionLabel({ icon: Icon, color, children }) {
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-[11px] font-bold uppercase tracking-[1.6px]" style={{ color }}>
+      <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color }}>
         {children}
       </span>
     </div>
@@ -161,7 +161,7 @@ function AlertCard({ alert, delay = 0 }) {
            style={{ background: sev.glow }} />
 
       <button
-        className="relative w-full flex items-center gap-4 p-5 text-left hover:bg-white/[0.02] transition-colors"
+        className="relative w-full flex items-center gap-4 p-5 text-left hover:bg-surface/20 transition-colors"
         onClick={() => setOpen(v => !v)}
         aria-expanded={open}
       >
@@ -175,7 +175,7 @@ function AlertCard({ alert, delay = 0 }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <p className="text-[13.5px] font-semibold text-text">{alert.title}</p>
-            <span className="text-[9px] font-black uppercase tracking-[1.2px] px-2 py-0.5 rounded-full border flex-shrink-0"
+            <span className="text-[9px] font-bold uppercase tracking-[0.05em] px-2 py-0.5 rounded-full border flex-shrink-0"
                   style={{ background: sev.bg, borderColor: `${sev.color}40`, color: sev.color }}>
               {sev.label}
             </span>
@@ -199,7 +199,7 @@ function AlertCard({ alert, delay = 0 }) {
         <div className="border-t" style={{ borderColor: `${sev.color}15` }}>
           <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
             {alert.items.slice(0, PREVIEW).map(item => (
-              <div key={item.key} className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
+              <div key={item.key} className="flex items-center gap-3 px-5 py-3 hover:bg-surface/20 transition-colors">
                 <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                      style={{ background: sev.dot, boxShadow: `0 0 5px ${sev.dot}80` }} />
                 <div className="flex-1 min-w-0">
@@ -267,7 +267,7 @@ function GrafanaCityStrip({ cidades, loading }) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-xl bg-white/[0.03] border border-white/[0.06] animate-pulse" />
+          <div key={i} className="h-24 rounded-xl bg-surface/30 border border-border animate-pulse" />
         ))}
       </div>
     )
@@ -281,7 +281,7 @@ function GrafanaCityStrip({ cidades, loading }) {
       {cidades.map((c, i) => {
         const pct     = Math.round(((c.pendentes ?? 0) / max) * 100)
         const isCrit  = (c.aging_critico ?? 0) > 0
-        const barClr  = isCrit ? '#f97316' : '#0ea5e9'
+        const barClr  = isCrit ? '#f97316' : '#3b82f6'
         return (
           <div
             key={c.cidade}
@@ -299,7 +299,7 @@ function GrafanaCityStrip({ cidades, loading }) {
             <p className="font-mono font-black text-[28px] leading-none tabular-nums text-text">
               {c.pendentes ?? 0}
             </p>
-            <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
+            <div className="h-1.5 rounded-full bg-surface/40 overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700"
                    style={{ width: `${pct}%`, background: barClr, boxShadow: `0 0 6px ${barClr}60` }} />
             </div>
@@ -351,18 +351,18 @@ function SettingsPanel({ settings, onSave, onClose }) {
   return (
     <div className="fixed inset-0 z-[300] flex items-stretch justify-end">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-xs bg-elevated border-l border-white/[0.08]
+      <div className="relative w-full max-w-xs bg-elevated border-l border-border
                       flex flex-col shadow-2xl animate-in slide-in-from-right-4 duration-200">
 
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-white/[0.07]">
+        <div className="flex items-center justify-between p-5 border-b border-border">
           <div>
             <h2 className="text-[14px] font-bold text-text">Configurar Alertas</h2>
             <p className="text-[10px] text-muted mt-0.5">Thresholds e limites de SLA</p>
           </div>
           <button onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center
-                       text-muted hover:text-text hover:bg-white/[0.06] transition-colors">
+                       text-muted hover:text-text hover:bg-surface transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -398,7 +398,7 @@ function SettingsPanel({ settings, onSave, onClose }) {
           </div>
 
           {/* ── Limites de SLA ── */}
-          <div className="pt-2 border-t border-white/[0.06]">
+          <div className="pt-2 border-t border-border">
             <div className="flex items-center justify-between mb-4">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted">
                 Limites de SLA por Tipo (dias)
@@ -418,7 +418,7 @@ function SettingsPanel({ settings, onSave, onClose }) {
                     <input
                       type="number" min={1} max={30} value={slaD[f.key] ?? 2}
                       onChange={e => setSlaD(d => ({ ...d, [f.key]: Number(e.target.value) }))}
-                      className="w-14 bg-surface border border-white/[0.10] rounded-md px-2 py-1
+                      className="w-14 bg-surface border border-border rounded-md px-2 py-1
                                  text-[12px] font-mono text-text text-center outline-none
                                  focus:border-primary/50 transition-colors"
                     />
@@ -434,10 +434,10 @@ function SettingsPanel({ settings, onSave, onClose }) {
 
         </div>
 
-        <div className="p-5 border-t border-white/[0.07] flex gap-2">
+        <div className="p-5 border-t border-border flex gap-2">
           <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-white/[0.08] text-[12px] text-secondary
-                       hover:text-text hover:border-white/[0.18] transition-colors">
+            className="flex-1 py-2.5 rounded-xl border border-border text-[12px] text-secondary
+                       hover:text-text hover:border-muted/40 transition-colors">
             Cancelar
           </button>
           <button onClick={handleSave} disabled={!isGestor}
@@ -517,12 +517,12 @@ export default function AlertasPage() {
             </h1>
             {hasAny ? (
               <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                    style={{ background: 'rgba(239,68,68,0.12)', borderColor: 'rgba(239,68,68,0.35)', color: '#ef4444' }}>
+                    style={{ background: 'rgba(248,113,113,0.12)', borderColor: 'rgba(248,113,113,0.35)', color: '#f87171' }}>
                 {totalAlerts} ativo{totalAlerts > 1 ? 's' : ''}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                    style={{ background: 'rgba(34,197,94,0.10)', borderColor: 'rgba(34,197,94,0.30)', color: '#22c55e' }}>
+                    style={{ background: 'rgba(74,222,128,0.10)', borderColor: 'rgba(74,222,128,0.30)', color: '#4ade80' }}>
                 OK
               </span>
             )}
@@ -544,8 +544,8 @@ export default function AlertasPage() {
         <button
           onClick={() => setShowSettings(true)}
           className="flex items-center gap-1.5 text-[11px] text-secondary hover:text-text
-                     px-3 py-1.5 rounded-xl border border-white/[0.08] hover:border-white/[0.18]
-                     hover:bg-white/[0.03] transition-all duration-150 flex-shrink-0"
+                     px-3 py-1.5 rounded-xl border border-border hover:border-muted/40
+                     hover:bg-surface/30 transition-all duration-150 flex-shrink-0"
         >
           <Settings size={13} /> Configurar
         </button>
@@ -579,7 +579,7 @@ export default function AlertasPage() {
                        style={{ background: s.bg, border: `1px solid ${s.color}30` }}>
                     <SIcon size={18} style={{ color: s.color }} />
                   </div>
-                  <span className="text-[9px] font-black uppercase tracking-[1.6px]"
+                  <span className="text-[9px] font-bold uppercase tracking-[0.07em]"
                         style={{ color: `${s.color}80` }}>
                     {s.label}
                   </span>
@@ -603,19 +603,19 @@ export default function AlertasPage() {
             {
               label: 'OS na Fila',
               value: totalFila,
-              color: '#0ea5e9',
+              color: '#3b82f6',
               sub: 'registros ativos',
             },
             {
               label: 'Score Saúde',
               value: `${pulso.score ?? 0}%`,
-              color: (pulso.score ?? 0) >= 80 ? '#22c55e' : (pulso.score ?? 0) >= 60 ? '#eab308' : '#ef4444',
+              color: (pulso.score ?? 0) >= 80 ? '#4ade80' : (pulso.score ?? 0) >= 60 ? '#facc15' : '#f87171',
               sub: (pulso.score ?? 0) >= 80 ? 'Operacional saudável' : 'Atenção necessária',
             },
             {
               label: 'Aging Médio',
               value: `${(pulso.agingMed ?? 0).toFixed(1)}d`,
-              color: (pulso.agingMed ?? 0) > 7 ? '#f97316' : '#0ea5e9',
+              color: (pulso.agingMed ?? 0) > 7 ? '#f97316' : '#3b82f6',
               sub: 'dias na fila ativa',
             },
           ].map((k, i) => (
@@ -643,7 +643,7 @@ export default function AlertasPage() {
       {(grafOS.cidades.length > 0 || grafOS.loading) && (
         <section>
           <div className="flex items-center justify-between mb-2">
-            <SectionLabel icon={Activity} color="#0ea5e9">
+            <SectionLabel icon={Activity} color="#3b82f6">
               OS por Cidade · Vale do Paraíba
             </SectionLabel>
             <div className="flex items-center gap-3">
@@ -659,7 +659,7 @@ export default function AlertasPage() {
               )}
               <button onClick={grafOS.refresh} title="Atualizar"
                 className="w-6 h-6 flex items-center justify-center text-muted hover:text-text
-                           transition-colors rounded-md hover:bg-white/[0.06]">
+                           transition-colors rounded-md hover:bg-surface">
                 <RefreshCw size={11} className={grafOS.loading ? 'animate-spin' : ''} />
               </button>
             </div>
@@ -677,16 +677,16 @@ export default function AlertasPage() {
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-2xl bg-white/[0.03] border border-white/[0.06] animate-pulse" />
+            <div key={i} className="h-20 rounded-2xl bg-surface/30 border border-border animate-pulse" />
           ))}
         </div>
       ) : alerts.length === 0 && ruleAlerts.length === 0 ? (
         <div className="relative overflow-hidden rounded-2xl border border-green/20 bg-card">
           <div className="absolute top-0 left-0 right-0 h-[2px]"
-               style={{ background: 'linear-gradient(90deg, transparent, #22c55e, transparent)' }} />
+               style={{ background: 'linear-gradient(90deg, transparent, #4ade80, transparent)' }} />
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-                 style={{ background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                 style={{ background: 'rgba(74,222,128,0.10)', border: '1px solid rgba(74,222,128,0.25)' }}>
               <ShieldCheck size={28} className="text-green" />
             </div>
             <p className="text-[15px] font-semibold text-text mb-1">Tudo certo!</p>
@@ -717,7 +717,7 @@ export default function AlertasPage() {
           {/* Rule-based alerts */}
           {ruleAlerts.length > 0 && (
             <section className="space-y-2">
-              <SectionLabel icon={BarChart3} color="#0ea5e9">
+              <SectionLabel icon={BarChart3} color="#3b82f6">
                 Regras de Negócio · {ruleAlerts.length} disparo{ruleAlerts.length > 1 ? 's' : ''}
               </SectionLabel>
               {ruleAlerts.map((rule, i) => (

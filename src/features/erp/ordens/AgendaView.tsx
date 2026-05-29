@@ -67,12 +67,12 @@ function MiniOSCard({ row }) {
 
   const slaCls = row._slaCritico  ? 'bg-red-500/20 text-red-400'
                : row._slaExcedido ? 'bg-orange-500/20 text-orange-400'
-               : 'bg-white/[0.05] text-muted'
+               : 'bg-surface/40 text-muted'
   const slaLabel = row._slaCritico ? 'Crítico' : row._slaExcedido ? 'SLA+' : 'OK'
 
   return (
-    <div className="bg-elevated border border-white/[0.07] rounded-md px-2 py-1.5
-                    hover:border-white/[0.16] transition-colors">
+    <div className="bg-elevated border border-border rounded-md px-2 py-1.5
+                    hover:border-muted/30 transition-colors">
       <div className="flex items-center justify-between gap-1 mb-0.5">
         <span className="font-mono text-[9px] text-primary/70">#{row.numos}</span>
         <span className={`text-[8px] font-bold px-1 rounded ${slaCls}`}>{slaLabel}</span>
@@ -98,7 +98,7 @@ function PeriodoMark({ periodo }) {
   const isTarde = lc.includes('tarde')
   const PIcon = isManha ? Sunrise : isTarde ? Sunset : Sun
   const cls   = isManha ? 'text-amber-400' : isTarde ? 'text-violet-400' : 'text-muted'
-  const line  = isManha ? 'bg-amber-500/20' : isTarde ? 'bg-violet-500/20' : 'bg-white/[0.06]'
+  const line  = isManha ? 'bg-amber-500/20' : isTarde ? 'bg-violet-500/20' : 'bg-surface'
 
   return (
     <div className="flex items-center gap-1 py-0.5">
@@ -182,11 +182,11 @@ function TeamRow({ team, teamGrid, weekDayKeys, todayKey, isEven }) {
   const accent = TIPO_ROW_ACCENT[team.tipo] || 'border-l-white/10'
 
   return (
-    <div className={`flex border-b border-white/[0.04] border-l-2 ${accent}
-                     ${isEven ? 'bg-white/[0.01]' : ''}`}>
+    <div className={`flex border-b border-border/50 border-l-2 ${accent}
+                     ${isEven ? 'bg-surface/10' : ''}`}>
       {/* Team label — sticky left */}
       <div className="sticky left-0 z-10 w-40 flex-shrink-0 flex flex-col justify-center
-                      px-3 py-2.5 border-r border-white/[0.06] bg-elevated">
+                      px-3 py-2.5 border-r border-border bg-elevated">
         <p className="text-[11px] font-bold text-text leading-none">{team.code}</p>
         <p className="text-[9px] text-secondary mt-0.5">{team.leader}</p>
       </div>
@@ -194,7 +194,7 @@ function TeamRow({ team, teamGrid, weekDayKeys, todayKey, isEven }) {
       {/* Day cells */}
       {weekDayKeys.map(dayKey => (
         <div key={dayKey}
-             className="w-40 flex-shrink-0 border-r border-white/[0.04] min-h-[52px]">
+             className="w-40 flex-shrink-0 border-r border-border/50 min-h-[52px]">
           <AgendaCell
             dayRows={teamGrid[dayKey]}
             isToday={dayKey === todayKey}
@@ -282,11 +282,11 @@ export function AgendaView({ equipeFilter, tipoFilter }) {
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           {/* Week navigation */}
-          <div className="flex items-center gap-1 bg-elevated border border-white/[0.07] rounded-lg p-0.5">
+          <div className="flex items-center gap-1 bg-elevated border border-border rounded-lg p-0.5">
             <button
               onClick={prevWeek}
               className="w-7 h-7 rounded-md flex items-center justify-center
-                         text-secondary hover:text-text hover:bg-white/[0.06] transition-colors"
+                         text-secondary hover:text-text hover:bg-surface transition-colors"
               aria-label="Semana anterior"
             >
               <ChevronLeft size={13} />
@@ -294,7 +294,7 @@ export function AgendaView({ equipeFilter, tipoFilter }) {
             <button
               onClick={nextWeek}
               className="w-7 h-7 rounded-md flex items-center justify-center
-                         text-secondary hover:text-text hover:bg-white/[0.06] transition-colors"
+                         text-secondary hover:text-text hover:bg-surface transition-colors"
               aria-label="Próxima semana"
             >
               <ChevronRight size={13} />
@@ -322,20 +322,20 @@ export function AgendaView({ equipeFilter, tipoFilter }) {
           className={`text-[11px] px-3 py-1.5 rounded-lg border transition-all duration-150
                       ${hideEmpty
                         ? 'border-primary/30 bg-primary/10 text-primary'
-                        : 'border-white/[0.07] bg-elevated text-secondary hover:text-text'}`}
+                        : 'border-border bg-elevated text-secondary hover:text-text'}`}
         >
           {hideEmpty ? 'Só com OS' : 'Todas as equipes'}
         </button>
       </div>
 
       {/* ── Grid ── */}
-      <div className="flex-1 overflow-auto rounded-xl border border-white/[0.07] min-h-0">
+      <div className="flex-1 overflow-auto rounded-xl border border-border min-h-0">
 
         {/* Sticky header */}
-        <div className="flex sticky top-0 z-20 bg-elevated border-b border-white/[0.08]">
+        <div className="flex sticky top-0 z-20 bg-elevated border-b border-border">
           {/* Corner */}
           <div className="sticky left-0 z-30 w-40 flex-shrink-0 bg-elevated
-                          border-r border-white/[0.06] px-3 py-2.5">
+                          border-r border-border px-3 py-2.5">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Equipe</p>
           </div>
 
@@ -347,7 +347,7 @@ export function AgendaView({ equipeFilter, tipoFilter }) {
 
             return (
               <div key={key}
-                   className={`w-40 flex-shrink-0 border-r border-white/[0.04] px-2 py-2 text-center
+                   className={`w-40 flex-shrink-0 border-r border-border/50 px-2 py-2 text-center
                                ${isToday ? 'bg-primary/[0.06]' : ''}`}>
                 <p className={`text-[10px] font-bold uppercase tracking-wider
                                ${isToday ? 'text-primary' : 'text-muted'}`}>

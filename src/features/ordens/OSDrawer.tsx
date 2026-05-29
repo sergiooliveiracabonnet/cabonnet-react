@@ -205,19 +205,19 @@ export default function OSDrawer({ os, onClose }) {
           <div className="px-5 py-4 space-y-4">
 
             {/* ── 1. Hero Status ───────────────────────────────────────── */}
-            <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl overflow-hidden">
-              <div className="flex items-stretch divide-x divide-white/[0.06]">
+            <div className="bg-surface/30 border border-border rounded-xl overflow-hidden">
+              <div className="flex items-stretch divide-x divide-border">
 
                 {/* Situação */}
                 <div className="flex-1 px-4 py-3 flex flex-col gap-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-[1.2px] text-muted">Situação</span>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Situação</span>
                   <Badge variant={situacaoVariant(sit)} className="w-fit">{sit ?? '—'}</Badge>
                 </div>
 
                 {/* Aging */}
                 {os._aging != null && (
                   <div className="px-4 py-3 flex flex-col gap-1 items-center justify-center min-w-[72px]">
-                    <span className="text-[11px] font-bold uppercase tracking-[1.2px] text-muted">Aging</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Aging</span>
                     <span className={`font-mono font-black text-[22px] leading-none ${agingCls}`}>
                       {os._aging}<span className="text-[12px] font-semibold ml-0.5 opacity-60">d</span>
                     </span>
@@ -226,7 +226,7 @@ export default function OSDrawer({ os, onClose }) {
 
                 {/* SLA */}
                 <div className="px-4 py-3 flex flex-col gap-1.5 items-center justify-center min-w-[80px]">
-                  <span className="text-[11px] font-bold uppercase tracking-[1.2px] text-muted">SLA</span>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">SLA</span>
                   {os._slaCritico
                     ? <Badge variant="red">Crítico</Badge>
                     : os._slaExcedido
@@ -238,7 +238,7 @@ export default function OSDrawer({ os, onClose }) {
                 {/* Fornecedor */}
                 {fornLabel && (
                   <div className="px-4 py-3 flex flex-col gap-1.5 items-center justify-center min-w-[72px]">
-                    <span className="text-[11px] font-bold uppercase tracking-[1.2px] text-muted">Frente</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Frente</span>
                     <span className="text-[11px] font-semibold text-secondary">{fornLabel}</span>
                   </div>
                 )}
@@ -249,14 +249,14 @@ export default function OSDrawer({ os, onClose }) {
             <Section label="Observações">
               {obsCrit && (
                 <div className="bg-red/[0.08] border border-red/20 rounded-xl p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[1.2px] text-red mb-2 flex items-center gap-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-red mb-2 flex items-center gap-1.5">
                     <AlertTriangle size={11} /> Observação Crítica
                   </p>
                   <p className="text-[12px] text-red/85 leading-relaxed whitespace-pre-wrap">{obsCrit}</p>
                 </div>
               )}
               {obs ? (
-                <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4">
+                <div className="bg-surface/30 border border-border rounded-xl p-4">
                   <p className="text-[12px] text-secondary leading-relaxed whitespace-pre-wrap">{obs}</p>
                 </div>
               ) : !obsCrit && (
@@ -269,8 +269,8 @@ export default function OSDrawer({ os, onClose }) {
               {/* Endereço */}
               <button
                 onClick={openMaps}
-                className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-4 py-3
-                           flex items-start gap-3 text-left hover:bg-white/[0.05] hover:border-white/[0.12]
+                className="w-full bg-surface/30 border border-border rounded-xl px-4 py-3
+                           flex items-start gap-3 text-left hover:bg-surface/40 hover:border-border
                            transition-all duration-fast group"
               >
                 <MapPin size={14} className="text-muted flex-shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
@@ -325,8 +325,8 @@ export default function OSDrawer({ os, onClose }) {
                     os._slaLimite         != null && { label: 'Limite do SLA',         value: `${os._slaLimite}d`,         color: 'text-primary' },
                     os._diasAteAgendamento!= null && { label: 'Dias até agend.',        value: `${os._diasAteAgendamento}d`, color: 'text-secondary' },
                   ].filter(Boolean).map(({ label, value, color }) => (
-                    <div key={label} className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
-                      <p className="text-[10px] font-bold uppercase tracking-[1px] text-muted mb-2 leading-tight">{label}</p>
+                    <div key={label} className="bg-surface/30 border border-border rounded-xl p-3 text-center">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 leading-tight">{label}</p>
                       <p className={`font-mono text-[20px] font-black leading-none ${color}`}>{value}</p>
                     </div>
                   ))}
@@ -370,8 +370,8 @@ function Section({ label, children }) {
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <p className="text-[11px] font-black uppercase tracking-[1.3px] text-muted whitespace-nowrap">{label}</p>
-        <div className="flex-1 h-px bg-white/[0.07]" />
+        <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap">{label}</p>
+        <div className="flex-1 h-px bg-surface" />
       </div>
       {children}
     </div>
@@ -383,10 +383,10 @@ function InfoCard({ icon: Icon, label, value, prominent, action }) {
     <div className={`rounded-xl border p-3.5 flex flex-col gap-2 min-w-0
                      ${prominent
                        ? 'bg-primary/[0.06] border-primary/20'
-                       : 'bg-white/[0.03] border-white/[0.07]'}`}>
+                       : 'bg-surface/30 border-border'}`}>
       <div className="flex items-center gap-1.5">
         <Icon size={12} className={prominent ? 'text-primary/60' : 'text-muted'} />
-        <p className={`text-[11px] font-bold uppercase tracking-[1px] leading-none
+        <p className={`text-[11px] font-bold uppercase tracking-[0.05em] leading-none
                        ${prominent ? 'text-primary/70' : 'text-muted'}`}>
           {label}
         </p>
@@ -425,7 +425,7 @@ function ActionBtn({ title, onClick, active, children }) {
       className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-fast
                   ${active
                     ? 'border-green/40 bg-green/15 text-green'
-                    : 'border-white/[0.08] text-muted hover:text-text hover:bg-white/[0.06]'}`}
+                    : 'border-border text-muted hover:text-text hover:bg-surface'}`}
     >
       {children}
     </button>

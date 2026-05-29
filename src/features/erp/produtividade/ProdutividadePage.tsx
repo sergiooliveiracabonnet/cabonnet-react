@@ -46,9 +46,9 @@ function getDayLabels(n = 14) {
 }
 
 function tipoIcon(r) {
-  if (r._tipo === 'INSTALACAO') return { color: '#0ea5e9', Icon: Package,  label: 'Instalação'  }
+  if (r._tipo === 'INSTALACAO') return { color: '#3b82f6', Icon: Package,  label: 'Instalação'  }
   if (r._tipo === 'MANUTENCAO') return { color: '#f97316', Icon: Wrench,   label: 'Manutenção'  }
-  if (r._tipo === 'REDE')       return { color: '#a78bfa', Icon: Radio,    label: 'Rede'        }
+  if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Radio,    label: 'Rede'        }
   return                               { color: '#64748b', Icon: Settings, label: 'Serviço'     }
 }
 
@@ -102,7 +102,7 @@ function SectionLabel({ icon: Icon, color, children }) {
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-[11px] font-bold uppercase tracking-[1.6px]" style={{ color }}>{children}</span>
+      <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
     </div>
   )
 }
@@ -110,7 +110,7 @@ function SectionLabel({ icon: Icon, color, children }) {
 // ─── DeltaBadge ───────────────────────────────────────────────────────────────
 
 function DeltaBadge({ delta }) {
-  const color  = delta > 0 ? '#22c55e' : delta < 0 ? '#ef4444' : '#6b7280'
+  const color  = delta > 0 ? '#4ade80' : delta < 0 ? '#f87171' : '#6b7280'
   const Icon   = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus
   const prefix = delta > 0 ? '+' : ''
   return (
@@ -160,10 +160,10 @@ function OSInlineTable({ rows, dayLabel }) {
   }).filter(c => c.count > 0)
 
   return (
-    <div className="mt-3 rounded-xl border border-white/[0.08] overflow-hidden bg-surface/50">
+    <div className="mt-3 rounded-xl border border-border overflow-hidden bg-surface/50">
       {/* Header com resumo por categoria */}
-      <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center gap-4 flex-wrap">
-        <span className="text-[10px] font-bold uppercase tracking-[1.2px] text-muted mr-1">
+      <div className="px-4 py-2.5 border-b border-border flex items-center gap-4 flex-wrap">
+        <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mr-1">
           {rows.length} OS · {dayLabel}
         </span>
         {cats.map(c => (
@@ -180,22 +180,22 @@ function OSInlineTable({ rows, dayLabel }) {
       <div className="overflow-x-auto">
         <table className="w-full text-[11px]">
           <thead>
-            <tr className="border-b border-white/[0.05] bg-white/[0.02]">
+            <tr className="border-b border-border/60 bg-surface/20">
               {OS_COLS.map(c => (
                 <th key={c.key}
-                    className="px-3 py-2 text-left text-[10px] font-bold text-muted uppercase tracking-[0.7px] whitespace-nowrap">
+                    className="px-3 py-2 text-left text-[10px] font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap">
                   {c.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.03]">
+          <tbody className="divide-y divide-border/40">
             {sorted.map(r => {
               const { color, Icon } = tipoIcon(r)
               const exec = (r.dataexecucao || r.databaixa || '').split(' ')
               const hora = exec[1]?.slice(0, 5) || '—'
               return (
-                <tr key={r.numos} className="hover:bg-white/[0.025] transition-colors">
+                <tr key={r.numos} className="hover:bg-surface/20 transition-colors">
                   {/* OS */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     <span className="font-mono font-bold text-primary">{r.numos}</span>
@@ -250,7 +250,7 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
       {/* ── Summary row ── */}
       <tr
         onClick={onToggle}
-        className="border-b border-white/[0.04] hover:bg-white/[0.02] cursor-pointer transition-colors"
+        className="border-b border-border/50 hover:bg-surface/20 cursor-pointer transition-colors"
       >
         {/* Rank */}
         <td className="px-4 py-3 w-10">
@@ -275,7 +275,7 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
             {days.map(d => {
               const val   = cnt(d.key)
               const pct   = globalMax > 0 ? (val / globalMax) * 100 : 0
-              const color = d.isToday ? '#0ea5e9' : d.isWeekend ? '#374151' : '#3b82f6'
+              const color = d.isToday ? '#3b82f6' : d.isWeekend ? '#374151' : '#3b82f6'
               return (
                 <div key={d.key} className="relative group flex-1 flex items-end">
                   <div className="w-full rounded-sm transition-all"
@@ -283,7 +283,7 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
                                 background: val > 0 ? color : 'rgba(255,255,255,0.06)' }} />
                   {val > 0 && (
                     <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2
-                                    bg-elevated border border-white/[0.10] text-text text-[9px]
+                                    bg-elevated border border-border text-text text-[9px]
                                     font-bold px-1.5 py-0.5 rounded whitespace-nowrap
                                     opacity-0 group-hover:opacity-100 pointer-events-none z-10">
                       {d.label}: {val}
@@ -324,7 +324,7 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
 
       {/* ── Mini cards + inline table ── */}
       {isExpanded && (
-        <tr className="border-b border-white/[0.04] bg-white/[0.015]">
+        <tr className="border-b border-border/50 bg-surface/15">
           <td colSpan={8} className="px-4 pt-3 pb-4">
 
             {/* Day cards */}
@@ -335,8 +335,8 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
                 const clickable = val > 0
                 const color = val === 0
                   ? 'rgba(255,255,255,0.06)'
-                  : val >= peak * 0.8 ? '#22c55e'
-                  : val >= peak * 0.4 ? '#0ea5e9'
+                  : val >= peak * 0.8 ? '#4ade80'
+                  : val >= peak * 0.4 ? '#3b82f6'
                   : '#475569'
 
                 return (
@@ -449,9 +449,9 @@ export default function ProdutividadePage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Executadas (últimos 7d)', value: totalThis,  sub: `${totalPrev} nos 7d anteriores`,  color: '#0ea5e9', delta: totalDelta },
-          { label: 'Equipes melhoraram',       value: melhorou,  sub: `${piorou} reduziram · ${teams.length - melhorou - piorou} estáveis`, color: '#22c55e' },
-          { label: 'Pior queda',               value: piorou,    sub: 'equipes com redução',              color: '#ef4444' },
+          { label: 'Executadas (últimos 7d)', value: totalThis,  sub: `${totalPrev} nos 7d anteriores`,  color: '#3b82f6', delta: totalDelta },
+          { label: 'Equipes melhoraram',       value: melhorou,  sub: `${piorou} reduziram · ${teams.length - melhorou - piorou} estáveis`, color: '#4ade80' },
+          { label: 'Pior queda',               value: piorou,    sub: 'equipes com redução',              color: '#f87171' },
           topTeam
             ? { label: 'Líder (7 dias)', value: topTeam.thisWeek, sub: topTeam.team, color: '#f59e0b' }
             : { label: '—', value: '—', sub: '', color: '#6b7280' },
@@ -475,16 +475,16 @@ export default function ProdutividadePage() {
 
       {/* Tabela */}
       <section className="space-y-2">
-        <SectionLabel icon={BarChart3} color="#0ea5e9">Ranking — {teams.length} equipes · 14 dias</SectionLabel>
+        <SectionLabel icon={BarChart3} color="#3b82f6">Ranking — {teams.length} equipes · 14 dias</SectionLabel>
 
         {teams.length === 0 ? (
-          <div className="rounded-2xl border border-white/[0.07] bg-card px-4 py-12 text-center">
+          <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center">
             <p className="text-[12px] text-muted">Nenhuma OS executada no período</p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-white/[0.07] bg-card overflow-hidden">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
             {/* Day header strip */}
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.05] bg-white/[0.015]">
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-border/60 bg-surface/15">
               <div className="w-10 flex-shrink-0" />
               <div className="w-[140px] flex-shrink-0" />
               <div className="flex flex-1 gap-[2px] min-w-0">
@@ -506,14 +506,14 @@ export default function ProdutividadePage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-white/[0.05] bg-white/[0.01]">
+                  <tr className="border-b border-border/60 bg-surface/10">
                     <th className="px-4 py-2 text-left w-10" />
-                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[1px] text-muted">Equipe</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[1px] text-muted">Últimos 14 dias</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[1px] text-muted">7d</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[1px] text-muted">Δ</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[1px] text-muted">14d</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[1px] text-muted">Pico</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Equipe</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Últimos 14 dias</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">7d</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Δ</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">14d</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Pico</th>
                     <th className="w-8" />
                   </tr>
                 </thead>
@@ -540,7 +540,7 @@ export default function ProdutividadePage() {
 
       {/* Legenda */}
       <div className="flex items-center gap-4 text-[10px] text-muted flex-wrap">
-        {[['#0ea5e9','Hoje'], ['#3b82f6','Dias úteis'], ['rgba(255,255,255,0.06)','Sem OS']].map(([c,l]) => (
+        {[['#3b82f6','Hoje'], ['#3b82f6','Dias úteis'], ['rgba(255,255,255,0.06)','Sem OS']].map(([c,l]) => (
           <span key={l} className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-sm" style={{ background: c }} />{l}
           </span>

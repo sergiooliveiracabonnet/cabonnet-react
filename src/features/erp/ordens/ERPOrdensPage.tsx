@@ -55,7 +55,7 @@ export default function ERPOrdensPage() {
         </div>
 
         {/* View switcher */}
-        <div className="flex items-center gap-1 bg-elevated border border-white/[0.07] rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-elevated border border-border rounded-lg p-1">
           {VIEWS.map(v => {
             const VIcon = v.Icon
             return (
@@ -66,7 +66,7 @@ export default function ERPOrdensPage() {
                             transition-all duration-150
                             ${erpOrdensView === v.id
                               ? 'bg-primary/20 text-primary shadow-sm'
-                              : 'text-secondary hover:text-text hover:bg-white/[0.05]'}`}
+                              : 'text-secondary hover:text-text hover:bg-surface/40'}`}
               >
                 <VIcon size={13} />{v.label}
               </button>
@@ -81,7 +81,7 @@ export default function ERPOrdensPage() {
           const KIcon = k.Icon
           return (
             <div key={k.label}
-                 className="bg-elevated border border-white/[0.07] rounded-xl px-4 py-3
+                 className="bg-elevated border border-border rounded-xl px-4 py-3
                             flex items-center gap-3">
               <div className={`w-9 h-9 rounded-lg ${k.bgCls} flex items-center justify-center flex-shrink-0`}>
                 <KIcon size={16} className={k.colorCls} />
@@ -102,7 +102,7 @@ export default function ERPOrdensPage() {
         <select
           value={filterEquipe}
           onChange={e => setFilterEquipe(e.target.value)}
-          className="text-[12px] bg-elevated border border-white/[0.07] rounded-lg px-3 py-1.5
+          className="text-[12px] bg-elevated border border-border rounded-lg px-3 py-1.5
                      text-secondary focus:outline-none focus:border-primary/40 cursor-pointer"
         >
           <option value="">Todas as equipes</option>
@@ -111,7 +111,7 @@ export default function ERPOrdensPage() {
           ))}
         </select>
 
-        <div className="flex gap-1 bg-elevated border border-white/[0.07] rounded-lg p-0.5">
+        <div className="flex gap-1 bg-elevated border border-border rounded-lg p-0.5">
           {[
             { value: '',           label: 'Todos' },
             { value: 'INSTALACAO', label: 'Instalação' },
@@ -124,7 +124,7 @@ export default function ERPOrdensPage() {
               className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-150
                           ${filterTipo === opt.value
                             ? 'bg-primary/20 text-primary'
-                            : 'text-secondary hover:text-text hover:bg-white/[0.05]'}`}
+                            : 'text-secondary hover:text-text hover:bg-surface/40'}`}
             >
               {opt.label}
             </button>
@@ -135,7 +135,7 @@ export default function ERPOrdensPage() {
           <button
             onClick={() => { setFilterEquipe(''); setFilterTipo('') }}
             className="flex items-center gap-1 text-[11px] text-muted hover:text-text
-                       px-2 py-1 rounded-md hover:bg-white/[0.05] transition-colors"
+                       px-2 py-1 rounded-md hover:bg-surface/40 transition-colors"
           >
             <X size={11} />Limpar
           </button>

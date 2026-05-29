@@ -1,7 +1,7 @@
 // Formatters e constantes compartilhados por OSDrawer, OSDetailModal e transform
 import type { Fornecedor } from './types'
 
-const EQUIPE_NAMES: Record<string, string> = {
+export const EQUIPE_NAMES: Record<string, string> = {
   'INST F01':  'INST F01 - FELIPE',
   'INST F04':  'INST F04 - THIAGO',
   'INST F05':  'INST F05 - JADIEL',
@@ -17,6 +17,7 @@ const EQUIPE_NAMES: Record<string, string> = {
   'INST F44':  'INST F44 - WILLIAM',
   'INST F45':  'INST F45 - DIMAS',
   'INST F46':  'INST F46 - VANDERLEI',
+  'INST F47':  'INST F47 - JEAN',
   'INST F48':  'INST F48 - MATHEUS',
   'INST F49':  'INST F49 - BRUNO',
   'INST F23':  'INST F23 - ANDERSON',

@@ -70,7 +70,7 @@ export default function CampoPage() {
             className={`text-[11px] font-bold px-3 py-1 rounded-full border transition-all duration-fast
                         ${fornecedor === f.value
                           ? 'border-primary bg-primary/15 text-primary'
-                          : 'border-white/[0.08] text-muted hover:text-secondary'}`}>
+                          : 'border-border text-muted hover:text-secondary'}`}>
             {f.label}
           </button>
         ))}
@@ -91,7 +91,7 @@ export default function CampoPage() {
       {/* ── Risco SLA crítico ────────────────────────────────────────── */}
       {risco.count > 0 && (
         <div className="bg-card border border-red/30 rounded-xl p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[1.5px] text-red mb-2 flex items-center gap-2">
+          <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-red mb-2 flex items-center gap-2">
             <AlertCircle size={12} /> Risco de SLA Crítico
           </p>
           <p className="text-[12px] text-secondary">{risco.desc}</p>
@@ -100,9 +100,9 @@ export default function CampoPage() {
       )}
 
       {/* ── Semáforo por equipe (com countdown SLA) ─────────────────── */}
-      <div className="bg-card border border-white/[0.07] border-l-[4px] border-l-primary rounded-xl p-5">
+      <div className="bg-card border border-border border-l-[4px] border-l-primary rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] font-bold uppercase tracking-[2px] text-primary/75 flex items-center gap-2">
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-primary/75 flex items-center gap-2">
             <span className="w-0.5 h-3 bg-primary rounded-full opacity-80 flex-shrink-0" />
             Semáforo por Equipe — Ritmo do Dia
           </p>
@@ -158,14 +158,14 @@ export default function CampoPage() {
       {/* ── Histograma de aging + Ritmo lado a lado ──────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {agingDist && (
-          <ChartCard title="Distribuição de Aging — OS Ativas" dot={agingDist.hasCritical ? '#ef4444' : '#0ea5e9'} height="h-52">
+          <ChartCard title="Distribuição de Aging — OS Ativas" dot={agingDist.hasCritical ? '#f87171' : '#3b82f6'} height="h-52">
             <BarChart data={agingDist.labels.map((name, i) => ({
               name, value: agingDist.values[i] ?? 0,
-              fill: i >= 3 ? 'rgba(239,68,68,0.7)' : 'rgba(14,165,233,0.6)',
+              fill: i >= 3 ? 'rgba(248,113,113,0.7)' : 'rgba(59,130,246,0.6)',
             }))}>
               <Bar dataKey="value">
                 {agingDist.labels.map((_, i) => (
-                  <Cell key={i} fill={i >= 3 ? 'rgba(239,68,68,0.7)' : 'rgba(14,165,233,0.6)'} />
+                  <Cell key={i} fill={i >= 3 ? 'rgba(248,113,113,0.7)' : 'rgba(59,130,246,0.6)'} />
                 ))}
               </Bar>
               <XAxis dataKey="name" />
@@ -176,10 +176,10 @@ export default function CampoPage() {
           </ChartCard>
         )}
 
-        <ChartCard title="Ritmo de Conclusões — Últimos 14 dias" dot="#0ea5e9" height="h-52">
+        <ChartCard title="Ritmo de Conclusões — Últimos 14 dias" dot="#3b82f6" height="h-52">
           {ritmo.labels.length > 0 ? (
             <AreaChart data={ritmo.labels.map((name, i) => ({ name, value: ritmo.values[i] ?? 0 }))}>
-              <Area dataKey="value" stroke="#0ea5e9" fill="rgba(14,165,233,.08)" strokeWidth={2} />
+              <Area dataKey="value" stroke="#3b82f6" fill="rgba(59,130,246,.08)" strokeWidth={2} />
               <LXAxis dataKey="name" />
               <LYAxis />
               <LGrid />
@@ -233,7 +233,7 @@ function HeroBanner({ hero, projecao }: any) {
 
       {/* Projeção do dia */}
       {projecao && (
-        <div className="hidden sm:flex flex-col items-end gap-0.5 flex-shrink-0 border-l border-white/10 pl-4">
+        <div className="hidden sm:flex flex-col items-end gap-0.5 flex-shrink-0 border-l border-border0 pl-4">
           <div className="flex items-center gap-1">
             {projecao.status === 'acima'
               ? <TrendingUp  size={11} className="text-green"  />
@@ -272,12 +272,12 @@ function HeroBanner({ hero, projecao }: any) {
 
 function EquipeTable({ title, icon: Icon, rows, col, label }: any) {
   return (
-    <div className="bg-card border border-white/[0.07] rounded-xl overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
         <Icon size={13} className="text-primary" />
         <p className="text-[12px] font-semibold text-text">{title}</p>
       </div>
-      <div className="divide-y divide-white/[0.04]">
+      <div className="divide-y divide-border/50">
         {rows.map((eq: any) => (
           <div key={eq.nome} className="flex items-center gap-3 px-4 py-3 min-h-[44px]">
             <p className="text-[11px] text-text font-semibold flex-1 truncate">{eq.nome}</p>

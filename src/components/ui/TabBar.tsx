@@ -15,7 +15,7 @@ interface TabBarProps {
 
 export function TabBar({ tabs, active, onChange, className = '' }: TabBarProps) {
   return (
-    <div className={`flex border-b border-white/[0.07] overflow-x-auto ${className}`}>
+    <div className={`flex border-b border-border overflow-x-auto ${className}`}>
       {tabs.map((tab) => (
         <button
           key={tab.id}

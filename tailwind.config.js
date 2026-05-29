@@ -32,12 +32,14 @@ export default {
         purple:         'rgb(var(--c-purple) / <alpha-value>)',
         pink:           'rgb(var(--c-pink) / <alpha-value>)',
         teal:           'rgb(var(--c-teal) / <alpha-value>)',
+        // Token semântico de borda — substitui border-white/[0.07]
+        border:         'rgb(var(--c-border) / <alpha-value>)',
       },
 
       fontFamily: {
         sans:     ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
         headline: ['"Space Grotesk"', '"Inter"', 'system-ui', 'sans-serif'],
-        mono:     ['"Outfit"', 'sans-serif'],
+        mono:     ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
 
       borderRadius: {
@@ -51,14 +53,14 @@ export default {
       },
 
       boxShadow: {
-        xs:         '0 1px 2px rgba(0,0,0,.55)',
-        sm:         '0 2px 8px rgba(0,0,0,.55), 0 1px 3px rgba(0,0,0,.40)',
-        md:         '0 4px 16px rgba(0,0,0,.60), 0 2px 6px rgba(0,0,0,.45)',
-        lg:         '0 8px 32px rgba(0,0,0,.65), 0 4px 12px rgba(0,0,0,.50)',
-        xl:         '0 16px 48px rgba(0,0,0,.70), 0 8px 20px rgba(0,0,0,.55)',
-        '2xl':      '0 32px 80px rgba(0,0,0,.80), 0 16px 32px rgba(0,0,0,.60)',
-        accent:     '0 4px 20px rgba(14,165,233,.16), 0 2px 8px rgba(14,165,233,.10)',
-        'accent-lg':'0 8px 32px rgba(14,165,233,.22), 0 4px 12px rgba(14,165,233,.14)',
+        xs:         '0 1px 2px rgba(0,0,0,.40)',
+        sm:         '0 1px 3px rgba(0,0,0,.40), 0 1px 2px rgba(0,0,0,.30)',
+        md:         '0 4px 12px rgba(0,0,0,.45), 0 2px 4px rgba(0,0,0,.30)',
+        lg:         '0 8px 24px rgba(0,0,0,.50), 0 4px 8px rgba(0,0,0,.35)',
+        xl:         '0 16px 40px rgba(0,0,0,.55), 0 8px 16px rgba(0,0,0,.40)',
+        '2xl':      '0 24px 60px rgba(0,0,0,.65), 0 12px 24px rgba(0,0,0,.50)',
+        accent:     '0 4px 16px rgba(59,130,246,.18), 0 2px 6px rgba(59,130,246,.10)',
+        'accent-lg':'0 8px 28px rgba(59,130,246,.22), 0 4px 10px rgba(59,130,246,.14)',
       },
 
       zIndex: {

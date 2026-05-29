@@ -25,8 +25,8 @@ const EMPTY_DERIVED = {
 
 type Derived = typeof EMPTY_DERIVED
 
-function safe<T>(fn: () => T, fallback: T): T {
-  try { return fn() } catch (e) { console.error('[OSData] builder error:', e); return fallback }
+function safe<T>(name: string, fn: () => T, fallback: T): T {
+  try { return fn() } catch (e) { console.error(`[OSData] ${name} builder error:`, e); return fallback }
 }
 
 interface OSDataContextValue {
@@ -68,15 +68,15 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     return hideRede ? filtered.filter(r => r._tipo !== 'REDE') : filtered
   }, [allRevisitaRows, dateFilter, hideRede])
 
-  const dashboard  = useMemo(() => safe(() => buildDashboard(activeRows, activeAllRows, activePrev) as any, EMPTY_DERIVED.dashboard), [activeRows, activeAllRows, activePrev])
-  const sla        = useMemo(() => safe(() => buildSla(activeRows) as any,        EMPTY_DERIVED.sla),        [activeRows])
-  const graficos   = useMemo(() => safe(() => buildGraficos(activeRows) as any,   EMPTY_DERIVED.graficos),   [activeRows])
-  const auditoria  = useMemo(() => safe(() => buildAuditoria(activeRows, discardedLixo, duplicadosLixo) as any, EMPTY_DERIVED.auditoria), [activeRows, discardedLixo, duplicadosLixo])
-  const anomalias  = useMemo(() => safe(() => buildAnomalias(activeRows) as any,  EMPTY_DERIVED.anomalias),  [activeRows])
-  const cidades    = useMemo(() => safe(() => buildCidades(activeRows) as any,    EMPTY_DERIVED.cidades),    [activeRows])
-  const campo      = useMemo(() => safe(() => buildCampo(activeRows) as any,      EMPTY_DERIVED.campo),      [activeRows])
-  const revisitas  = useMemo(() => safe(() => buildRevisitas(activeRevisitaRows, prevRevisitaRows) as any, EMPTY_DERIVED.revisitas), [activeRevisitaRows, prevRevisitaRows])
-  const ordens     = useMemo(() => safe(() => buildOrdens(activeRows) as any,     EMPTY_DERIVED.ordens),     [activeRows])
+  const dashboard  = useMemo(() => safe('dashboard', () => buildDashboard(activeRows, activeAllRows, activePrev) as any, EMPTY_DERIVED.dashboard), [activeRows, activeAllRows, activePrev])
+  const sla        = useMemo(() => safe('sla',        () => buildSla(activeRows) as any,        EMPTY_DERIVED.sla),        [activeRows])
+  const graficos   = useMemo(() => safe('graficos',   () => buildGraficos(activeRows) as any,   EMPTY_DERIVED.graficos),   [activeRows])
+  const auditoria  = useMemo(() => safe('auditoria',  () => buildAuditoria(activeRows, discardedLixo, duplicadosLixo) as any, EMPTY_DERIVED.auditoria), [activeRows, discardedLixo, duplicadosLixo])
+  const anomalias  = useMemo(() => safe('anomalias',  () => buildAnomalias(activeRows) as any,  EMPTY_DERIVED.anomalias),  [activeRows])
+  const cidades    = useMemo(() => safe('cidades',    () => buildCidades(activeRows) as any,    EMPTY_DERIVED.cidades),    [activeRows])
+  const campo      = useMemo(() => safe('campo',      () => buildCampo(activeRows) as any,      EMPTY_DERIVED.campo),      [activeRows])
+  const revisitas  = useMemo(() => safe('revisitas',  () => buildRevisitas(activeRevisitaRows, prevRevisitaRows) as any, EMPTY_DERIVED.revisitas), [activeRevisitaRows, prevRevisitaRows])
+  const ordens     = useMemo(() => safe('ordens',     () => buildOrdens(activeRows) as any,     EMPTY_DERIVED.ordens),     [activeRows])
 
   // Detecta falhas de builders por identidade de referência com o fallback
   const builderErrors = useMemo(() => [

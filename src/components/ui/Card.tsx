@@ -1,23 +1,22 @@
 import type { ReactNode, MouseEventHandler } from 'react'
 
 interface CardProps {
-  children:  ReactNode
+  children:   ReactNode
   className?: string
-  tilt?:      boolean
   onClick?:   MouseEventHandler<HTMLDivElement>
+  /** @deprecated removido no design system v2 — não tem efeito visual */
+  tilt?:      boolean
 }
 
-export function Card({ children, className = '', tilt = false, onClick }: CardProps) {
+export function Card({ children, className = '', onClick }: CardProps) {
   const interactive = !!onClick
   return (
     <div
       onClick={onClick}
-      className={`rounded-xl bg-card border border-white/[0.08] card-premium
-                  transition-all duration-normal
+      className={`rounded-xl bg-card border border-border card-premium
                   ${interactive
-                    ? 'hover:border-primary/35 hover:shadow-accent cursor-pointer hover:-translate-y-0.5'
-                    : 'hover:border-white/[0.14]'}
-                  ${tilt ? 'tilt-card' : ''}
+                    ? 'cursor-pointer hover:bg-card-high hover:border-muted/30 hover:shadow-md active:scale-[.995]'
+                    : ''}
                   ${className}`}
     >
       {children}
@@ -26,7 +25,7 @@ export function Card({ children, className = '', tilt = false, onClick }: CardPr
 }
 
 interface SlotProps {
-  children:  ReactNode
+  children:   ReactNode
   className?: string
 }
 

@@ -8,6 +8,10 @@ function polar(deg: number, r: number, cx: number, cy: number): { x: number; y: 
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
 }
 
+function isLight(): boolean {
+  return document.documentElement.classList.contains('light')
+}
+
 interface GaugeChartProps {
   value?:     number
   max?:       number
@@ -18,7 +22,7 @@ interface GaugeChartProps {
   className?: string
 }
 
-export function GaugeChart({ value = 0, max = 100, color = '#0ea5e9', size = 96, label, style, className = '' }: GaugeChartProps) {
+export function GaugeChart({ value = 0, max = 100, color = '#3b82f6', size = 96, label, style, className = '' }: GaugeChartProps) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100))
   const r   = size * 0.38
   const cx  = size / 2
@@ -29,27 +33,49 @@ export function GaugeChart({ value = 0, max = 100, color = '#0ea5e9', size = 96,
   const te = polar(START_DEG + SWEEP_DEG, r, cx, cy)
   const ve = polar(START_DEG + SWEEP_DEG * (pct / 100), r, cx, cy)
 
-  const trackPath = [`M ${ts.x.toFixed(2)} ${ts.y.toFixed(2)}`, `A ${r} ${r} 0 1 1 ${te.x.toFixed(2)} ${te.y.toFixed(2)}`].join(' ')
-  const vSweep    = SWEEP_DEG * (pct / 100)
-  const vLarge    = vSweep > 180 ? 1 : 0
-  const arcPath   = pct > 0.5
+  const trackPath = [
+    `M ${ts.x.toFixed(2)} ${ts.y.toFixed(2)}`,
+    `A ${r} ${r} 0 1 1 ${te.x.toFixed(2)} ${te.y.toFixed(2)}`,
+  ].join(' ')
+
+  const vSweep  = SWEEP_DEG * (pct / 100)
+  const vLarge  = vSweep > 180 ? 1 : 0
+  const arcPath = pct > 0.5
     ? [`M ${ts.x.toFixed(2)} ${ts.y.toFixed(2)}`, `A ${r} ${r} 0 ${vLarge} 1 ${ve.x.toFixed(2)} ${ve.y.toFixed(2)}`].join(' ')
     : null
 
-  const fontSize = Math.round(size * 0.27)
+  const fontSize   = Math.round(size * 0.27)
+  const trackColor = isLight() ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.07)'
 
   return (
     <div className={`flex-shrink-0 flex flex-col items-center gap-1.5 ${className}`} style={style}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
-        <path d={trackPath} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={sw} strokeLinecap="round" />
+        {/* Track */}
+        <path
+          d={trackPath}
+          fill="none"
+          stroke={trackColor}
+          strokeWidth={sw}
+          strokeLinecap="round"
+        />
+        {/* Value arc */}
         {arcPath && (
-          <path d={arcPath} fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round"
-                style={{ filter: `drop-shadow(0 0 5px ${color}55)` }} />
+          <path
+            d={arcPath}
+            fill="none"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+          />
         )}
+        {/* Center value */}
         <text
           x={cx} y={cy + fontSize * 0.15}
-          textAnchor="middle" dominantBaseline="middle"
-          fill={color} fontSize={fontSize} fontWeight="800"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill={color}
+          fontSize={fontSize}
+          fontWeight="700"
           fontFamily="Inter, system-ui, sans-serif"
           style={{ fontVariantNumeric: 'tabular-nums' }}
         >
@@ -57,7 +83,7 @@ export function GaugeChart({ value = 0, max = 100, color = '#0ea5e9', size = 96,
         </text>
       </svg>
       {label && (
-        <span className="text-[10px] font-black uppercase tracking-[1.2px]" style={{ color }}>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.05em]" style={{ color }}>
           {label}
         </span>
       )}

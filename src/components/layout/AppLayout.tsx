@@ -17,14 +17,14 @@ export function AppLayout() {
   return (
     <OSDataProvider>
       <FilterURLSync />
-      <div className="min-h-screen bg-bg text-text mesh-bg">
+      <div className="min-h-screen bg-bg text-text">
         <Sidebar />
         <Navbar />
         <DateFilterBar sidebarOpen={sidebarOpen} />
 
-        {/* pt-14 (navbar) + pt-10 (filter bar) = pt-24 */}
-        <main className={`pt-24 transition-all duration-normal
-                          ${sidebarOpen ? 'pl-[232px]' : 'pl-[52px]'}`}>
+        {/* pt-14 (navbar) + pt-10 (date filter bar) = pt-24 */}
+        <main className={`pt-24 transition-all duration-200
+                          ${sidebarOpen ? 'pl-[224px]' : 'pl-[52px]'}`}>
           <div className="p-6 animate-page-enter">
             <Outlet />
           </div>

@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest'
+import type { OSRow, DateFilter } from './types'
 import { enrichRows, getFornecedor, parseCSV, applyDateFilter } from './transform.js'
 import { buildDashboard, buildSla, buildCapacidade } from './builders.js'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeOS(overrides = {}) {
+function makeOS(overrides: Record<string, unknown> = {}): OSRow {
   return {
     numos:          '12345',
     nomecliente:    'Cliente Teste',
@@ -16,11 +17,10 @@ function makeOS(overrides = {}) {
     datacadastro:   null,
     dataagendamento: null,
     ...overrides,
-  }
+  } as unknown as OSRow
 }
 
-// Retorna uma data no formato DD/MM/YYYY com offset de dias em relação a hoje
-function daysAgo(n) {
+function daysAgo(n: number): string {
   const d = new Date()
   d.setDate(d.getDate() - n)
   const dd   = String(d.getDate()).padStart(2, '0')
@@ -29,9 +29,6 @@ function daysAgo(n) {
   return `${dd}/${mm}/${yyyy}`
 }
 
-function _daysAhead(n) {
-  return daysAgo(-n)
-}
 
 // ─── getFornecedor ─────────────────────────────────────────────────────────────
 
@@ -287,7 +284,7 @@ describe('parseCSV — numos inválidos (amostras reais)', () => {
 // ─── parseCSV — nomecliente passado do banco sem filtro ──────────────────────
 
 describe('parseCSV — nomecliente preservado como vem do banco', () => {
-  function row(nome) { return `numos,nomecliente,nomedacidade\n9069512,${nome},TAUBATE` }
+  function row(nome: string) { return `numos,nomecliente,nomedacidade\n9069512,${nome},TAUBATE` }
 
   const casos = [
     'VANDERLEI SAVIO',
@@ -346,17 +343,17 @@ describe('applyDateFilter — guarda de ano', () => {
   const rowSemData  = { numos: '3', datacadastro: '',                      descsituacao: 'Pendente' }
 
   it('aceita OS do ano anterior (MIN_YEAR = ano atual - 1)', () => {
-    const result = applyDateFilter([rowPrevYear, row2026], null)
+    const result = applyDateFilter([rowPrevYear, row2026] as OSRow[], null)
     expect(result.map(r => r.numos)).toEqual(['1', '2'])
   })
 
   it('rejeita OS de dois anos atrás', () => {
-    const result = applyDateFilter([rowOld, rowPrevYear, row2026], null)
+    const result = applyDateFilter([rowOld, rowPrevYear, row2026] as OSRow[], null)
     expect(result.map(r => r.numos)).toEqual(['1', '2'])
   })
 
   it('mantém OS sem datacadastro (não rejeita por data)', () => {
-    const result = applyDateFilter([rowSemData], null)
+    const result = applyDateFilter([rowSemData] as OSRow[], null)
     expect(result).toHaveLength(1)
   })
 
@@ -364,7 +361,8 @@ describe('applyDateFilter — guarda de ano', () => {
     const from = new Date(2026, 0, 1)
     const to   = new Date(2026, 2, 31, 23, 59, 59)
     const rowAbr = { numos: '4', datacadastro: '10/04/2026', descsituacao: 'Pendente' }
-    const result = applyDateFilter([row2026, rowAbr], { from, to })
+    const filter = { from, to, campo: 'datacadastro', preset: 'custom' } as DateFilter
+    const result = applyDateFilter([row2026, rowAbr] as OSRow[], filter)
     expect(result.map(r => r.numos)).toEqual(['2'])
   })
 })
@@ -385,13 +383,13 @@ describe('buildDashboard', () => {
 
   it('total conta apenas Pendente + Atendimento', () => {
     const { kpis } = buildDashboard(rows)
-    const total = kpis.find(k => k.id === 'total')
+    const total = kpis.find(k => k.id === 'total')!
     expect(total.value).toBe(2)
   })
 
   it('concl conta apenas Concluídas', () => {
     const { kpis } = buildDashboard(rows)
-    const concl = kpis.find(k => k.id === 'concl')
+    const concl = kpis.find(k => k.id === 'concl')!
     expect(concl.value).toBe(1)
   })
 
@@ -405,7 +403,7 @@ describe('buildDashboard', () => {
       makeOS({ numos: 'A1', descsituacao: 'Pendente', datacadastro: daysAgo(1), nomedaequipe: 'MANUTENCAO M01', tiposervico: 'MANUTENCAO' }),
     ])
     const { kpis } = buildDashboard(rows, all)
-    const total = kpis.find(k => k.id === 'total')
+    const total = kpis.find(k => k.id === 'total')!
     expect(total.value).toBe(1)
   })
 })

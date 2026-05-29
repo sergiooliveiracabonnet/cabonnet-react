@@ -16,7 +16,11 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
   try {
     res = await fetchWithTimeout(`${BASE}${path}`, {
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', ...options.headers },
+      headers: {
+        'Content-Type':  'application/json',
+        'X-Request-ID':  crypto.randomUUID(),
+        ...options.headers,
+      },
       ...options,
     })
   } catch (err) {

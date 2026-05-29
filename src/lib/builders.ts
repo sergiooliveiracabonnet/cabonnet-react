@@ -67,12 +67,12 @@ interface FornCard {
 }
 
 const FORN_CFG: Record<string, { label: string; cor: string }> = {
-  WES:        { label: 'WES',        cor: '#a78bfa' },
-  Instacable: { label: 'Instacable', cor: '#eab308' },
-  THM:        { label: 'THM',        cor: '#06b6d4' },
-  REDE:       { label: 'Rede',       cor: '#22c55e' },
+  WES:        { label: 'WES',        cor: '#c4b5fd' },
+  Instacable: { label: 'Instacable', cor: '#facc15' },
+  THM:        { label: 'THM',        cor: '#22d3ee' },
+  REDE:       { label: 'Rede',       cor: '#4ade80' },
   MANUTENCAO: { label: 'Manutenção', cor: '#f97316' },
-  INSTALACAO: { label: 'Instalação', cor: '#0ea5e9' },
+  INSTALACAO: { label: 'Instalação', cor: '#3b82f6' },
   INTERNO:    { label: 'Interno',    cor: '#94a3b8' },
 }
 
@@ -379,10 +379,10 @@ export function buildCapacidade(rows: OSRow[], opts: CapacidadeOpts = {}, allRow
   }))
 
   const cobertura = [
-    { label: 'Instalação', value: instConclHoje,  meta: metaInst,      pct: metaInst  > 0 ? Math.round(instConclHoje  / metaInst  * 100) : 0, cor: '#0ea5e9' },
-    { label: 'Manutenção', value: manutConclHoje, meta: metaManut,     pct: metaManut > 0 ? Math.round(manutConclHoje / metaManut * 100) : 0, cor: '#22c55e' },
+    { label: 'Instalação', value: instConclHoje,  meta: metaInst,      pct: metaInst  > 0 ? Math.round(instConclHoje  / metaInst  * 100) : 0, cor: '#3b82f6' },
+    { label: 'Manutenção', value: manutConclHoje, meta: metaManut,     pct: metaManut > 0 ? Math.round(manutConclHoje / metaManut * 100) : 0, cor: '#4ade80' },
     { label: 'Serviços',   value: servConclHoje,  meta: metaServ,      pct: metaServ  > 0 ? Math.round(servConclHoje  / metaServ  * 100) : 0, cor: '#f59e0b' },
-    { label: 'Total',      value: totalExec,      meta: metaTotalHoje, pct: taxaDia,                                                          cor: '#a78bfa' },
+    { label: 'Total',      value: totalExec,      meta: metaTotalHoje, pct: taxaDia,                                                          cor: '#c4b5fd' },
   ]
 
   const projecao = equipes.slice(0, 8).map(e => ({
@@ -1147,10 +1147,10 @@ export function buildRevisitas(rows: OSRow[], prevRows: OSRow[] = []) {
 // ─── Fornecedor ───────────────────────────────────────────────────────────────
 
 const FORN_DISPLAY: Partial<Record<Fornecedor, { label: string; cor: string }>> = {
-  WES:        { label: 'WES (Instalação)', cor: '#a78bfa' },
-  Instacable: { label: 'Instacable',       cor: '#eab308' },
-  THM:        { label: 'THM (Instalação)', cor: '#06b6d4' },
-  REDE:       { label: 'Rede',             cor: '#22c55e' },
+  WES:        { label: 'WES (Instalação)', cor: '#c4b5fd' },
+  Instacable: { label: 'Instacable',       cor: '#facc15' },
+  THM:        { label: 'THM (Instalação)', cor: '#22d3ee' },
+  REDE:       { label: 'Rede',             cor: '#4ade80' },
   MANUTENCAO: { label: 'Manutenção',       cor: '#f97316' },
   INTERNO:    { label: 'Interno (COPE)',   cor: '#94a3b8' },
 }

@@ -25,10 +25,10 @@ const DARK = {
   border:      'rgba(255,255,255,0.06)',
   borderSoft:  'rgba(255,255,255,0.08)',
   borderFaint: 'rgba(255,255,255,0.025)',
-  red:         '#ef4444',
-  yellow:      '#eab308',
-  green:       '#22c55e',
-  cyan:        '#0ea5e9',
+  red:         '#f87171',
+  yellow:      '#facc15',
+  green:       '#4ade80',
+  cyan:        '#3b82f6',
 }
 
 // Paleta clara
@@ -107,7 +107,7 @@ function text(ctx, str, x, y, { font = '12px Arial', color = C.text, align = 'le
  * @param {string}   accentColor   - Cor de destaque (#hex)
  * @returns {string}               - data URI "data:image/png;base64,..."
  */
-export function captureOSPorEquipe(rows, fornLabel, accentColor = '#0ea5e9') {
+export function captureOSPorEquipe(rows, fornLabel, accentColor = '#3b82f6') {
   C = getTheme()
   // ── Agrupar por equipe ────────────────────────────────────────────────────
   const map = new Map()
@@ -273,9 +273,9 @@ const D_COL_H  = 27       // cabeçalho de colunas
 const D_FOOT_H = 26
 
 const D_STATUS_COLOR = {
-  'Pendente':     '#eab308',
-  'Atendimento':  '#0ea5e9',
-  'Concluída':    '#22c55e',
+  'Pendente':     '#facc15',
+  'Atendimento':  '#3b82f6',
+  'Concluída':    '#4ade80',
   'Reagendamento':'#f97316',
 }
 
@@ -297,7 +297,7 @@ const D_COLS = [
  * @param {string}   accentColor - Cor de destaque (#hex)
  * @returns {string}             - data URI "data:image/png;base64,..."
  */
-export function captureOSDetalhado(rows, fornLabel, accentColor = '#0ea5e9') {
+export function captureOSDetalhado(rows, fornLabel, accentColor = '#3b82f6') {
   C = getTheme()
   // ── Agrupar e ordenar ─────────────────────────────────────────────────────
   const map = new Map()
@@ -455,9 +455,9 @@ const P_ROW_H  = 27
 const P_FOOT_H = 28
 
 const P_STATUS_COLORS = {
-  'Pendente':      '#eab308',
-  'Atendimento':   '#0ea5e9',
-  'Concluída':     '#22c55e',
+  'Pendente':      '#facc15',
+  'Atendimento':   '#3b82f6',
+  'Concluída':     '#4ade80',
   'Reagendamento': '#f97316',
 }
 
@@ -524,11 +524,11 @@ export function captureOSPorPeriodo(rows, equipeName) {
 
   // Cabeçalho
   rect(ctx, 0, 0, PW, P_HDR_H, C.bgHdr)
-  rect(ctx, 0, 0, 4, P_HDR_H, '#0ea5e9')
+  rect(ctx, 0, 0, 4, P_HDR_H, '#3b82f6')
   text(ctx, 'CABONNET · Relação de OS por Período', 20, 26,
     { font: 'bold 15px Arial', color: C.text })
   text(ctx, equipeName || 'Todas as Equipes', 20, 46,
-    { font: 'bold 12px Arial', color: '#0ea5e9' })
+    { font: 'bold 12px Arial', color: '#3b82f6' })
   const now = new Date()
   const ts  = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   text(ctx, ts, 20, 62, { font: '10px Arial', color: C.muted })
@@ -573,12 +573,12 @@ export function captureOSPorPeriodo(rows, equipeName) {
       const cy     = curY + P_ROW_H / 2 + 4.5
       const aging  = r._aging ?? 0
       const agColor = aging >= 6 ? C.red : aging >= 3 ? C.yellow : C.cyan
-      const agBg    = aging >= 6 ? 'rgba(239,68,68,0.15)' : aging >= 3 ? 'rgba(234,179,8,0.15)' : 'rgba(14,165,233,0.12)'
+      const agBg    = aging >= 6 ? 'rgba(248,113,113,0.15)' : aging >= 3 ? 'rgba(250,204,21,0.15)' : 'rgba(59,130,246,0.12)'
       const agCX   = P_COLS[0].x + P_COLS[0].w / 2
 
       pillRect(ctx, agCX, curY + P_ROW_H / 2, 32, 16, 8, agBg)
       text(ctx, `${aging}d`, agCX, cy, { font: 'bold 10px Arial', color: agColor, align: 'center' })
-      text(ctx, r.numos ?? '—', P_COLS[1].x, cy, { font: 'bold 10.5px Arial', color: '#0ea5e9' })
+      text(ctx, r.numos ?? '—', P_COLS[1].x, cy, { font: 'bold 10.5px Arial', color: '#3b82f6' })
       const nomeDisplay = r.nomecliente || (r.codigocliente ? `Cód. ${r.codigocliente}` : '(Sem nome)')
       const nomeColor   = r.nomecliente ? C.text : C.muted
       const nomeFont    = r.nomecliente ? '10.5px Arial' : 'italic 10px Arial'

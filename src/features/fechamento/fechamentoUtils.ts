@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { shortEquipe } from '../../lib/osFormat'
+import { shortEquipe, EQUIPE_NAMES } from '../../lib/osFormat'
 
 // ── Scope identifiers ──────────────────────────────────────────────────────────
 const INST_EQS = ['F01', 'F04', 'F05', 'F07', 'F20', 'F27', 'F45', 'F48', 'F49', 'F50']
@@ -114,7 +114,7 @@ export function filterRows(allRows, { aba, from, to }) {
 function tipoKey(r) {
   const t = (r.tiposervico || '').toUpperCase()
   if (t.includes('INSTALACAO') || t.includes('INSTALAÇÃO')) return 'Instalação'
-  if (t.includes('MANUTENCAO') || t.includes('MANUTENÇÃO')) return 'Manutenção'
+  if (t.includes('MANUTENCAO') || t.includes('MANUTENÇÃO') || t.includes('VT') || t.includes('VISITA')) return 'Manutenção'
   if (t.includes('SERVICO')    || t.includes('SERVIÇO'))    return 'Serviço'
   return 'Outros'
 }
@@ -129,14 +129,17 @@ export function calcStats(rows, aba) {
   const slaVenc    = rows.filter(r => r._slaExcedido || r._slaCritico).length
 
   // By team — pre-seed known fronts for instacable/wes so they always appear
+  // Use canonical names (with collaborator) to match what shortEquipe() returns
   const byEquipe = {}
-  if (aba === 'instacable') {
-    INST_EQS.forEach(f => { byEquipe[`INST ${f}`] = { exec: 0, semExec: 0, pend: 0, slaVenc: 0 } })
-  } else if (aba === 'wes') {
-    WES_EQS.forEach(f => { byEquipe[`INST ${f}`] = { exec: 0, semExec: 0, pend: 0, slaVenc: 0 } })
-  } else if (aba === 'thm') {
-    THM_EQS.forEach(f => { byEquipe[`INST ${f}`] = { exec: 0, semExec: 0, pend: 0, slaVenc: 0 } })
+  const seedEqs = (frentes: string[]) => {
+    frentes.forEach(f => {
+      const code = `INST ${f}`
+      byEquipe[EQUIPE_NAMES[code] ?? code] = { exec: 0, semExec: 0, pend: 0, slaVenc: 0 }
+    })
   }
+  if (aba === 'instacable') seedEqs(INST_EQS)
+  else if (aba === 'wes')   seedEqs(WES_EQS)
+  else if (aba === 'thm')   seedEqs(THM_EQS)
   rows.forEach(r => {
     const eq = shortEquipe(r.nomedaequipe) || '(sem equipe)'
     if (!byEquipe[eq]) byEquipe[eq] = { exec: 0, semExec: 0, pend: 0, slaVenc: 0 }

@@ -78,18 +78,18 @@ function buildPlanner(allRows, days) {
 }
 
 function tipoIcon(r) {
-  if (r._tipo === 'INSTALACAO') return { color: '#0ea5e9', Icon: Package }
+  if (r._tipo === 'INSTALACAO') return { color: '#3b82f6', Icon: Package }
   if (r._tipo === 'MANUTENCAO') return { color: '#f97316', Icon: Wrench  }
-  if (r._tipo === 'REDE')       return { color: '#a78bfa', Icon: Radio   }
+  if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Radio   }
   return { color: '#64748b', Icon: null }
 }
 
 function loadColor(count) {
   if (count === 0) return null
-  if (count <= 2)  return '#22c55e'
-  if (count <= 4)  return '#eab308'
+  if (count <= 2)  return '#4ade80'
+  if (count <= 4)  return '#facc15'
   if (count <= 7)  return '#f97316'
-  return '#ef4444'
+  return '#f87171'
 }
 
 function SectionLabel({ icon: Icon, color, children }) {
@@ -97,7 +97,7 @@ function SectionLabel({ icon: Icon, color, children }) {
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-[11px] font-bold uppercase tracking-[1.6px]" style={{ color }}>{children}</span>
+      <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
     </div>
   )
 }
@@ -122,11 +122,11 @@ function PlannerDrillModal({ drill, onClose }) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative bg-elevated border border-white/[0.10] rounded-2xl shadow-2xl
+      <div className="relative bg-elevated border border-border rounded-2xl shadow-2xl
                       w-full max-w-[560px] max-h-[80vh] flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-white/[0.07]">
+        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-border">
           <div>
             <p className="text-[14px] font-bold text-text leading-tight">{team}</p>
             <p className="text-[11px] text-muted mt-0.5">
@@ -149,7 +149,7 @@ function PlannerDrillModal({ drill, onClose }) {
             </div>
             <button onClick={onClose}
                     className="w-7 h-7 rounded-lg flex items-center justify-center
-                               text-muted hover:text-text hover:bg-white/[0.08] transition-colors">
+                               text-muted hover:text-text hover:bg-surface transition-colors">
               <X size={14} />
             </button>
           </div>
@@ -163,7 +163,7 @@ function PlannerDrillModal({ drill, onClose }) {
             <div>
               <div className="px-4 pt-3 pb-1.5 flex items-center gap-2">
                 <Clock size={10} className="text-yellow" />
-                <span className="text-[9px] font-bold uppercase tracking-[1.4px] text-yellow">
+                <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-yellow">
                   Pendentes / Em atendimento ({nPending})
                 </span>
               </div>
@@ -174,9 +174,9 @@ function PlannerDrillModal({ drill, onClose }) {
           {/* Concluídas */}
           {concluded.length > 0 && (
             <div>
-              <div className={`px-4 pb-1.5 flex items-center gap-2 ${pending.length > 0 ? 'pt-3 border-t border-white/[0.06] mt-1' : 'pt-3'}`}>
+              <div className={`px-4 pb-1.5 flex items-center gap-2 ${pending.length > 0 ? 'pt-3 border-t border-border mt-1' : 'pt-3'}`}>
                 <CheckCircle2 size={10} className="text-green" />
-                <span className="text-[9px] font-bold uppercase tracking-[1.4px] text-green">
+                <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-green">
                   Concluídas ({nConcluded})
                 </span>
               </div>
@@ -190,7 +190,7 @@ function PlannerDrillModal({ drill, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-white/[0.06] flex items-center justify-between">
+        <div className="px-5 py-3 border-t border-border flex items-center justify-between">
           <span className="text-[11px] text-muted">{total} OS agendadas neste dia</span>
           <button onClick={onClose}
                   className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors">
@@ -206,8 +206,8 @@ function OSRow({ r }) {
   const { color, Icon } = tipoIcon(r)
   const concl = isConcluida(r.descsituacao)
   return (
-    <div className={`flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04]
-                     last:border-b-0 hover:bg-white/[0.025] transition-colors
+    <div className={`flex items-center gap-3 px-4 py-2.5 border-b border-border/50
+                     last:border-b-0 hover:bg-surface/20 transition-colors
                      ${concl ? 'opacity-80' : ''}`}>
       {/* Tipo icon */}
       <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
@@ -259,8 +259,8 @@ function PlannerCell({ rows = [], isPast, _isToday, isWeekend, onClick }) {
 
   if (count === 0) {
     return (
-      <td className={`px-2 py-2 text-center border-r border-white/[0.06] last:border-r-0 w-[100px]
-                      ${isPast ? 'opacity-40' : ''} ${isWeekend ? 'bg-white/[0.02]' : ''}`}>
+      <td className={`px-2 py-2 text-center border-r border-border last:border-r-0 w-[100px]
+                      ${isPast ? 'opacity-40' : ''} ${isWeekend ? 'bg-surface/20' : ''}`}>
         <span className="text-[10px] text-muted/60">—</span>
       </td>
     )
@@ -268,8 +268,8 @@ function PlannerCell({ rows = [], isPast, _isToday, isWeekend, onClick }) {
 
   return (
     <td
-      className={`relative px-2 py-2 border-r border-white/[0.06] last:border-r-0 w-[100px]
-                  ${isPast ? 'opacity-60' : ''} ${isWeekend ? 'bg-white/[0.02]' : ''}
+      className={`relative px-2 py-2 border-r border-border last:border-r-0 w-[100px]
+                  ${isPast ? 'opacity-60' : ''} ${isWeekend ? 'bg-surface/20' : ''}
                   cursor-pointer group`}
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
@@ -285,14 +285,14 @@ function PlannerCell({ rows = [], isPast, _isToday, isWeekend, onClick }) {
 
         {/* Tipo mini dots */}
         <div className="flex items-center gap-0.5">
-          {tipos.inst  > 0 && <div className="w-1.5 h-1.5 rounded-full bg-[#0ea5e9]" title={`${tipos.inst} inst`} />}
+          {tipos.inst  > 0 && <div className="w-1.5 h-1.5 rounded-full bg-[#3b82f6]" title={`${tipos.inst} inst`} />}
           {tipos.manut > 0 && <div className="w-1.5 h-1.5 rounded-full bg-[#f97316]" title={`${tipos.manut} manut`} />}
           {tipos.other > 0 && <div className="w-1.5 h-1.5 rounded-full bg-[#64748b]" title={`${tipos.other} serviços`} />}
         </div>
 
         {/* Mini status bar (pendentes vs concluídas) */}
         {count > 0 && (
-          <div className="w-8 h-1 rounded-full overflow-hidden bg-white/[0.06] flex">
+          <div className="w-8 h-1 rounded-full overflow-hidden bg-surface flex">
             {nConcl > 0 && (
               <div className="h-full bg-green/60 transition-all duration-500"
                    style={{ width: `${(nConcl / count) * 100}%` }} />
@@ -304,7 +304,7 @@ function PlannerCell({ rows = [], isPast, _isToday, isWeekend, onClick }) {
       {/* Hover tooltip preview */}
       {hover && (
         <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2
-                        bg-elevated border border-white/[0.12] rounded-xl shadow-xl
+                        bg-elevated border border-border rounded-xl shadow-xl
                         min-w-[200px] max-w-[260px] p-3 pointer-events-none">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-text">{count} OS</span>
@@ -406,21 +406,21 @@ export default function PlannerPage() {
             disabled={!isGestor}
             title={!isGestor ? 'Apenas gestores podem definir metas' : undefined}
             className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed
-                        ${editMeta ? 'bg-primary/15 border-primary/40 text-primary' : 'border-white/[0.08] text-secondary hover:text-text'}`}
+                        ${editMeta ? 'bg-primary/15 border-primary/40 text-primary' : 'border-border text-secondary hover:text-text'}`}
           >
             <Target size={12} /> {editMeta ? 'Concluir' : 'Definir Metas'}
           </button>
           <button onClick={() => setWeekOffset(p => p - 1)}
-                  className="w-8 h-8 rounded-lg border border-white/[0.08] flex items-center justify-center
-                             text-muted hover:text-text hover:border-white/[0.18] transition-all">
+                  className="w-8 h-8 rounded-lg border border-border flex items-center justify-center
+                             text-muted hover:text-text hover:border-muted/40 transition-all">
             <ChevronLeft size={14} />
           </button>
           <span className="text-[12px] font-semibold text-text px-1 min-w-[160px] text-center">
             {weekOffset === 0 ? `Semana atual · ${weekLabel}` : weekOffset > 0 ? `+${weekOffset}sem · ${weekLabel}` : `${weekOffset}sem · ${weekLabel}`}
           </span>
           <button onClick={() => setWeekOffset(p => p + 1)}
-                  className="w-8 h-8 rounded-lg border border-white/[0.08] flex items-center justify-center
-                             text-muted hover:text-text hover:border-white/[0.18] transition-all">
+                  className="w-8 h-8 rounded-lg border border-border flex items-center justify-center
+                             text-muted hover:text-text hover:border-muted/40 transition-all">
             <ChevronRight size={14} />
           </button>
           {weekOffset !== 0 && (
@@ -436,10 +436,10 @@ export default function PlannerPage() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'OS na semana',     value: totalSemana,    color: '#0ea5e9'  },
-          { label: 'Equipes ativas',   value: teams.length,   color: '#22c55e' },
-          { label: 'Equipes sem OS',   value: equipesSemOS,   color: equipesSemOS > 0 ? '#eab308' : '#22c55e' },
-          { label: 'Cidades cobertas', value: cidades.length, color: '#a78bfa' },
+          { label: 'OS na semana',     value: totalSemana,    color: '#3b82f6'  },
+          { label: 'Equipes ativas',   value: teams.length,   color: '#4ade80' },
+          { label: 'Equipes sem OS',   value: equipesSemOS,   color: equipesSemOS > 0 ? '#facc15' : '#4ade80' },
+          { label: 'Cidades cobertas', value: cidades.length, color: '#c4b5fd' },
         ].map((k, i) => (
           <div key={i}
                className="relative overflow-hidden rounded-xl border bg-card animate-card-enter"
@@ -455,14 +455,14 @@ export default function PlannerPage() {
       </div>
 
       {/* Carga diária */}
-      <div className="rounded-xl border border-white/[0.07] bg-card p-4">
-        <p className="text-[10px] font-bold uppercase tracking-[1.4px] text-muted mb-3">
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted mb-3">
           Carga total por dia
         </p>
         <div className="flex gap-2">
           {loadDays.map(d => {
             const pct   = maxDayLoad > 0 ? (d.total / maxDayLoad) * 100 : 0
-            const color = d.isToday ? '#1890ff' : d.isWeekend ? '#374151' : '#3b82f6'
+            const color = d.isToday ? '#3b82f6' : d.isWeekend ? '#374151' : '#3b82f6'
             return (
               <div key={d.key} className="flex-1 flex flex-col items-center">
                 {/* Número — zona fixa 16px */}
@@ -491,11 +491,11 @@ export default function PlannerPage() {
       {/* Grade principal */}
       <section className="space-y-2">
         <div className="flex items-center justify-between">
-          <SectionLabel icon={CalendarDays} color="#0ea5e9">
+          <SectionLabel icon={CalendarDays} color="#3b82f6">
             Grade — {teams.length} equipes com OS na semana
           </SectionLabel>
           <div className="flex items-center gap-3 text-[10px] text-muted">
-            {[['#22c55e','1-2'],['#eab308','3-4'],['#f97316','5-7'],['#ef4444','8+']].map(([c,l]) => (
+            {[['#4ade80','1-2'],['#facc15','3-4'],['#f97316','5-7'],['#f87171','8+']].map(([c,l]) => (
               <span key={l} className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-sm" style={{ background: c }} />{l}
               </span>
@@ -504,26 +504,26 @@ export default function PlannerPage() {
         </div>
 
         {teams.length === 0 ? (
-          <div className="rounded-2xl border border-white/[0.07] bg-card px-4 py-12 text-center">
+          <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center">
             <p className="text-[13px] font-semibold text-text mb-1">Nenhuma OS agendada para esta semana</p>
             <p className="text-[11px] text-muted">Navegue para outra semana ou verifique os agendamentos</p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-white/[0.07] bg-card overflow-hidden">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-white/[0.08] bg-white/[0.03]">
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[1px]
+                  <tr className="border-b border-border bg-surface/30">
+                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.05em]
                                    text-muted w-[160px] flex-shrink-0">
                       Equipe
                     </th>
                     {days.map(d => (
                       <th key={d.key}
                           className={`px-2 py-3 text-center text-[10px] font-bold
-                                      border-r border-white/[0.04] last:border-r-0 w-[100px]
+                                      border-r border-border/50 last:border-r-0 w-[100px]
                                       ${d.isToday ? 'text-primary' : d.isWeekend ? 'text-muted/70' : 'text-muted'}
-                                      ${d.isWeekend ? 'bg-white/[0.01]' : ''}`}>
+                                      ${d.isWeekend ? 'bg-surface/10' : ''}`}>
                         <div>{d.dow}</div>
                         <div className={`text-[9px] font-normal mt-0.5 ${d.isToday ? 'text-primary/70' : ''}`}>
                           {d.label}
@@ -535,12 +535,12 @@ export default function PlannerPage() {
                     ))}
                     {editMeta && (
                       <th className="px-3 py-3 text-center text-[10px] font-bold uppercase
-                                     tracking-[1px] text-muted w-[70px]">
+                                     tracking-[0.05em] text-muted w-[70px]">
                         Meta/sem
                       </th>
                     )}
                     <th className="px-3 py-3 text-right text-[10px] font-bold uppercase
-                                   tracking-[1px] text-muted w-[80px]">
+                                   tracking-[0.05em] text-muted w-[80px]">
                       Total
                     </th>
                   </tr>
@@ -548,7 +548,7 @@ export default function PlannerPage() {
                 <tbody>
                   {teams.map((t, i) => (
                     <tr key={t.team}
-                        className="border-b border-white/[0.06] hover:bg-white/[0.03] transition-colors"
+                        className="border-b border-border hover:bg-surface/30 transition-colors"
                         style={{ animationDelay: `${i * 30}ms` }}>
                       <td className="px-4 py-3 w-[160px]">
                         <p className="text-[11.5px] font-semibold text-text truncate">{t.team}</p>
@@ -575,7 +575,7 @@ export default function PlannerPage() {
                             placeholder="—"
                             onChange={e => setMetaEquipeDiaria(t.team, e.target.value)}
                             onClick={e => e.stopPropagation()}
-                            className="w-14 bg-surface border border-white/[0.08] rounded-md px-1.5 py-1
+                            className="w-14 bg-surface border border-border rounded-md px-1.5 py-1
                                        text-[11px] font-mono text-text text-center outline-none
                                        focus:border-primary/50 transition-colors"
                           />
@@ -591,9 +591,9 @@ export default function PlannerPage() {
                             <div className="flex flex-col items-end gap-0.5">
                               <span className={`font-mono font-bold text-[14px] ${color}`}>{t.weekTotal}</span>
                               {meta > 0 && (
-                                <div className="w-10 h-1 rounded-full overflow-hidden bg-white/[0.06]">
+                                <div className="w-10 h-1 rounded-full overflow-hidden bg-surface">
                                   <div className="h-full rounded-full transition-all duration-500"
-                                    style={{ width: `${Math.min(100, pct)}%`, background: pct >= 100 ? '#22c55e' : pct >= 70 ? '#eab308' : '#ef4444' }} />
+                                    style={{ width: `${Math.min(100, pct)}%`, background: pct >= 100 ? '#4ade80' : pct >= 70 ? '#facc15' : '#f87171' }} />
                                 </div>
                               )}
                               {meta > 0 && (
@@ -615,11 +615,11 @@ export default function PlannerPage() {
       {/* Cidades cobertas */}
       {cidades.length > 0 && (
         <section className="space-y-2">
-          <SectionLabel icon={MapPin} color="#a78bfa">Cidades cobertas na semana</SectionLabel>
+          <SectionLabel icon={MapPin} color="#c4b5fd">Cidades cobertas na semana</SectionLabel>
           <div className="flex flex-wrap gap-2">
             {cidades.map(([cidade, cnt]) => (
               <div key={cidade}
-                   className="flex items-center gap-2 bg-card border border-white/[0.07]
+                   className="flex items-center gap-2 bg-card border border-border
                               rounded-xl px-3 py-2">
                 <MapPin size={10} className="text-muted" />
                 <span className="text-[11.5px] font-semibold text-text">{cidade}</span>
@@ -632,13 +632,13 @@ export default function PlannerPage() {
 
       {/* Legenda */}
       <div className="flex items-center gap-4 text-[10px] text-muted flex-wrap">
-        {[['#0ea5e9','Instalação'], ['#f97316','Manutenção'], ['#64748b','Serviço']].map(([c,l]) => (
+        {[['#3b82f6','Instalação'], ['#f97316','Manutenção'], ['#64748b','Serviço']].map(([c,l]) => (
           <span key={l} className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />{l}
           </span>
         ))}
         <span className="flex items-center gap-1.5">
-          <span className="w-6 h-1 rounded-full bg-white/[0.08] overflow-hidden flex">
+          <span className="w-6 h-1 rounded-full bg-surface overflow-hidden flex">
             <span className="w-1/2 h-full bg-green/60" />
           </span>
           barra verde = % concluída

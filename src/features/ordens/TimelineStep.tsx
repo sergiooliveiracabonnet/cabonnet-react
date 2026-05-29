@@ -11,7 +11,7 @@ function TimelineNode({ icon: Icon, color, filled }: TimelineNodeProps) {
   const base = 'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2'
   const cls  = filled
     ? `${base} border-${color} bg-${color}/15 text-${color}`
-    : `${base} border-white/[0.10] bg-white/[0.03] text-muted/50`
+    : `${base} border-border bg-surface/30 text-muted/50`
   return <div className={cls}><Icon size={14} /></div>
 }
 
@@ -63,7 +63,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
       <div className="flex flex-col items-center">
         <TimelineNode icon={icon} color={color} filled={done} />
         {!isLast && (
-          <div className={`w-px flex-1 my-1 min-h-[20px] ${done ? 'bg-primary/25' : 'bg-white/[0.06]'}`} />
+          <div className={`w-px flex-1 my-1 min-h-[20px] ${done ? 'bg-primary/25' : 'bg-surface'}`} />
         )}
       </div>
 
@@ -107,7 +107,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
 
         {/* Obs inline quando fechado */}
         {obs && !open && (
-          <div className="mt-1.5 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2">
+          <div className="mt-1.5 bg-surface/30 border border-border rounded-xl px-3 py-2">
             <p className="text-[11px] text-secondary leading-relaxed">{obs}</p>
           </div>
         )}
@@ -118,7 +118,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
 
             {/* Metadados em linha */}
             {(d.nomeTecnico || d.duracao || d.hora || d.periodo || d.contrato) && (
-              <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl px-3 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
+              <div className="bg-surface/30 border border-border rounded-xl px-3 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
                 {d.nomeTecnico && <Meta icon={Wrench}    label="Técnico"   value={d.nomeTecnico} />}
                 {d.duracao     && <Meta icon={Clock}     label="Duração"   value={d.duracao} />}
                 {d.hora        && <Meta icon={Clock}     label="Hora"      value={d.hora} />}
@@ -130,7 +130,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Troca de equipe — agendada vs. executante */}
             {d.equipeAgendada && (
               <div className="bg-yellow/[0.07] border border-yellow/20 rounded-xl px-3 py-2.5">
-                <p className="text-[10px] font-black uppercase tracking-[1.1px] text-yellow/80 mb-1.5 flex items-center gap-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-yellow/80 mb-1.5 flex items-center gap-1.5">
                   <Users size={10} /> Equipe diferente da agendada
                 </p>
                 <div className="flex items-center gap-3 text-[11px]">
@@ -148,7 +148,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Histórico de notas / reagendamentos */}
             {(d.historico?.length ?? 0) > 0 && (
               <div className="space-y-1.5">
-                <p className="text-[10px] font-black uppercase tracking-[1.1px] text-muted flex items-center gap-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
                   <MessageSquare size={10} /> Histórico de ocorrências
                 </p>
                 {d.historico!.map((entry, i) => (
@@ -157,14 +157,14 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
                     className={`rounded-xl px-3 py-2.5 border ${
                       entry.isReagend
                         ? 'bg-orange/[0.08] border-orange/25'
-                        : 'bg-white/[0.03] border-white/[0.08]'
+                        : 'bg-surface/30 border-border'
                     }`}
                   >
                     {/* Cabeçalho da entrada */}
                     {(entry.autor || entry.data) && (
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         {entry.isReagend && (
-                          <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wide text-orange/80">
+                          <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-orange/80">
                             <RotateCcw size={9} /> Reagendamento
                           </span>
                         )}
@@ -193,8 +193,8 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
 
             {/* Materiais utilizados */}
             {(d.materiais?.length ?? 0) > 0 && (
-              <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl px-3 py-2.5">
-                <p className="text-[10px] font-black uppercase tracking-[1.1px] text-muted mb-2 flex items-center gap-1.5">
+              <div className="bg-surface/30 border border-border rounded-xl px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
                   <Package size={10} /> Materiais utilizados
                 </p>
                 <div className="space-y-1">
@@ -212,7 +212,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Materiais retirados */}
             {(d.matRetirados?.length ?? 0) > 0 && (
               <div className="bg-red/[0.05] border border-red/15 rounded-xl px-3 py-2.5">
-                <p className="text-[10px] font-black uppercase tracking-[1.1px] text-red/70 mb-2 flex items-center gap-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-red/70 mb-2 flex items-center gap-1.5">
                   <Package size={10} /> Materiais retirados
                 </p>
                 <div className="space-y-1">
@@ -239,7 +239,7 @@ function Meta({ icon: Icon, label, value, mono }: MetaProps) {
   return (
     <div className="flex items-center gap-1.5">
       <Icon size={10} className="text-muted/40 flex-shrink-0" />
-      <span className="text-[10px] font-bold uppercase tracking-[0.9px] text-muted">{label}:</span>
+      <span className="text-[10px] font-bold uppercase tracking-[0.04em] text-muted">{label}:</span>
       <span className={`text-[11px] text-secondary font-medium ${mono ? 'font-mono' : ''}`}>{value}</span>
     </div>
   )
@@ -247,8 +247,8 @@ function Meta({ icon: Icon, label, value, mono }: MetaProps) {
 
 function InfoBlock({ label, text }: { label: string; text: string }) {
   return (
-    <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl px-3 py-2.5">
-      <p className="text-[10px] font-black uppercase tracking-[1.1px] text-muted mb-1">{label}</p>
+    <div className="bg-surface/30 border border-border rounded-xl px-3 py-2.5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-1">{label}</p>
       <p className="text-[11px] text-secondary leading-relaxed whitespace-pre-wrap">{text}</p>
     </div>
   )
