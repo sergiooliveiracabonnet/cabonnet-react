@@ -119,18 +119,18 @@ const RefreshControl = memo(function RefreshControl() {
 
       {showMenu && (
         <div className="absolute right-0 top-10 z-50 w-52
-                        bg-elevated border border-border rounded-lg shadow-accent overflow-hidden">
+                        bg-elevated border border-white/[0.08] rounded-lg shadow-accent overflow-hidden">
           <button
             onClick={handleRefresh}
             disabled={isLoading}
             className="w-full flex items-center gap-2.5 px-3 py-2.5
                        text-[11px] font-semibold text-primary hover:bg-primary/10
-                       border-b border-border transition-colors disabled:opacity-50"
+                       border-b border-white/[0.08] transition-colors disabled:opacity-50"
           >
             <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
             Atualizar agora
           </button>
-          <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border">
+          <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.08]">
             <div className="flex items-center gap-1.5">
               <Clock size={10} className="text-muted" />
               <span className="text-[11px] text-muted">
@@ -278,14 +278,14 @@ export function Navbar() {
       <button
         onClick={() => setSearchOpen(true)}
         title="Busca global (Ctrl+K)"
-        className="flex items-center gap-2 h-8 px-3 rounded-lg border border-border
+        className="flex items-center gap-2 h-8 px-3 rounded-lg border border-white/[0.08]
                    bg-surface text-muted hover:border-muted/30 hover:text-secondary
                    transition-colors duration-150 flex-shrink-0 min-w-[160px]"
       >
         <Search size={12} className="flex-shrink-0" />
         <span className="text-[11px] flex-1 text-left hidden sm:block">Buscar OS, cliente…</span>
         <kbd className="hidden md:flex items-center text-[9px] font-mono
-                        bg-surface border border-border rounded px-1.5 py-0.5 leading-none text-muted">⌃K</kbd>
+                        bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted">⌃K</kbd>
       </button>
 
       {slaCriticas.length > 0 && (
@@ -314,7 +314,7 @@ export function Navbar() {
                   {slaCriticas.length} OS com SLA 2× excedido
                 </p>
               </div>
-              <div className="max-h-72 overflow-y-auto divide-y divide-border/60">
+              <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.05]">
                 {slaCriticas.map((os, i) => (
                   <div key={(os.numos as string) ?? i} className="px-3 py-2.5">
                     <div className="flex items-center justify-between gap-2 mb-0.5">
@@ -337,7 +337,7 @@ export function Navbar() {
                   </div>
                 ))}
               </div>
-              <div className="px-3 py-2 border-t border-border">
+              <div className="px-3 py-2 border-t border-white/[0.08]">
                 <button
                   onClick={() => { navigate('/ordens'); setShowAlerta(false) }}
                   className="w-full text-center text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
@@ -367,20 +367,20 @@ export function Navbar() {
 
         {alertsOpen && (
           <div className="absolute right-0 top-10 z-50 w-80
-                          bg-elevated border border-border rounded-lg shadow-accent overflow-hidden">
-            <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border bg-surface/30">
+                          bg-elevated border border-white/[0.08] rounded-lg shadow-accent overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-white/[0.08] bg-surface/30">
               <span className="text-[12px] font-bold text-text">Motor de Alertas</span>
               <button onClick={resetRules} className="text-[10px] text-muted hover:text-secondary transition-colors">
                 Restaurar padrões
               </button>
             </div>
             {alerts.length > 0 && (
-              <div className="border-b border-border">
+              <div className="border-b border-white/[0.08]">
                 <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted px-3 pt-2.5 pb-1.5">
                   Ativos ({alerts.length})
                 </p>
                 {alerts.map(a => (
-                  <div key={a.id} className="flex items-center gap-2 px-3 py-2 border-t border-border/50">
+                  <div key={a.id} className="flex items-center gap-2 px-3 py-2 border-t border-white/[0.04]">
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                       a.severity === 'critical' ? 'bg-red' :
                       a.severity === 'warning'  ? 'bg-yellow' : 'bg-cyan'
@@ -414,14 +414,14 @@ export function Navbar() {
                     value={rule.threshold}
                     onChange={e => updateRule(rule.id, { threshold: +e.target.value })}
                     className="w-12 text-[11px] font-mono text-right tabular-nums
-                               bg-card border border-border rounded px-1.5 py-0.5
+                               bg-card border border-white/[0.08] rounded px-1.5 py-0.5
                                outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 text-text"
                   />
                 </div>
               ))}
             </div>
             {alerts.length === 0 && (
-              <p className="text-[11px] text-muted text-center px-3 py-2 border-t border-border">
+              <p className="text-[11px] text-muted text-center px-3 py-2 border-t border-white/[0.08]">
                 Nenhuma regra disparada
               </p>
             )}

@@ -122,11 +122,11 @@ function PlannerDrillModal({ drill, onClose }) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative bg-elevated border border-border rounded-2xl shadow-2xl
+      <div className="relative bg-elevated border border-white/[0.08] rounded-2xl shadow-2xl
                       w-full max-w-[560px] max-h-[80vh] flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-border">
+        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-white/[0.08]">
           <div>
             <p className="text-[14px] font-bold text-text leading-tight">{team}</p>
             <p className="text-[11px] text-muted mt-0.5">
@@ -174,7 +174,7 @@ function PlannerDrillModal({ drill, onClose }) {
           {/* Concluídas */}
           {concluded.length > 0 && (
             <div>
-              <div className={`px-4 pb-1.5 flex items-center gap-2 ${pending.length > 0 ? 'pt-3 border-t border-border mt-1' : 'pt-3'}`}>
+              <div className={`px-4 pb-1.5 flex items-center gap-2 ${pending.length > 0 ? 'pt-3 border-t border-white/[0.08] mt-1' : 'pt-3'}`}>
                 <CheckCircle2 size={10} className="text-green" />
                 <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-green">
                   Concluídas ({nConcluded})
@@ -190,7 +190,7 @@ function PlannerDrillModal({ drill, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-border flex items-center justify-between">
+        <div className="px-5 py-3 border-t border-white/[0.08] flex items-center justify-between">
           <span className="text-[11px] text-muted">{total} OS agendadas neste dia</span>
           <button onClick={onClose}
                   className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors">
@@ -206,7 +206,7 @@ function OSRow({ r }) {
   const { color, Icon } = tipoIcon(r)
   const concl = isConcluida(r.descsituacao)
   return (
-    <div className={`flex items-center gap-3 px-4 py-2.5 border-b border-border/50
+    <div className={`flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04]
                      last:border-b-0 hover:bg-surface/20 transition-colors
                      ${concl ? 'opacity-80' : ''}`}>
       {/* Tipo icon */}
@@ -259,7 +259,7 @@ function PlannerCell({ rows = [], isPast, _isToday, isWeekend, onClick }) {
 
   if (count === 0) {
     return (
-      <td className={`px-2 py-2 text-center border-r border-border last:border-r-0 w-[100px]
+      <td className={`px-2 py-2 text-center border-r border-white/[0.08] last:border-r-0 w-[100px]
                       ${isPast ? 'opacity-40' : ''} ${isWeekend ? 'bg-surface/20' : ''}`}>
         <span className="text-[10px] text-muted/60">—</span>
       </td>
@@ -268,7 +268,7 @@ function PlannerCell({ rows = [], isPast, _isToday, isWeekend, onClick }) {
 
   return (
     <td
-      className={`relative px-2 py-2 border-r border-border last:border-r-0 w-[100px]
+      className={`relative px-2 py-2 border-r border-white/[0.08] last:border-r-0 w-[100px]
                   ${isPast ? 'opacity-60' : ''} ${isWeekend ? 'bg-surface/20' : ''}
                   cursor-pointer group`}
       onClick={onClick}
@@ -304,7 +304,7 @@ function PlannerCell({ rows = [], isPast, _isToday, isWeekend, onClick }) {
       {/* Hover tooltip preview */}
       {hover && (
         <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2
-                        bg-elevated border border-border rounded-xl shadow-xl
+                        bg-elevated border border-white/[0.08] rounded-xl shadow-xl
                         min-w-[200px] max-w-[260px] p-3 pointer-events-none">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-text">{count} OS</span>
@@ -411,7 +411,7 @@ export default function PlannerPage() {
             <Target size={12} /> {editMeta ? 'Concluir' : 'Definir Metas'}
           </button>
           <button onClick={() => setWeekOffset(p => p - 1)}
-                  className="w-8 h-8 rounded-lg border border-border flex items-center justify-center
+                  className="w-8 h-8 rounded-lg border border-white/[0.08] flex items-center justify-center
                              text-muted hover:text-text hover:border-muted/40 transition-all">
             <ChevronLeft size={14} />
           </button>
@@ -419,7 +419,7 @@ export default function PlannerPage() {
             {weekOffset === 0 ? `Semana atual · ${weekLabel}` : weekOffset > 0 ? `+${weekOffset}sem · ${weekLabel}` : `${weekOffset}sem · ${weekLabel}`}
           </span>
           <button onClick={() => setWeekOffset(p => p + 1)}
-                  className="w-8 h-8 rounded-lg border border-border flex items-center justify-center
+                  className="w-8 h-8 rounded-lg border border-white/[0.08] flex items-center justify-center
                              text-muted hover:text-text hover:border-muted/40 transition-all">
             <ChevronRight size={14} />
           </button>
@@ -455,7 +455,7 @@ export default function PlannerPage() {
       </div>
 
       {/* Carga diária */}
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-xl border border-white/[0.08] bg-card p-4">
         <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted mb-3">
           Carga total por dia
         </p>
@@ -504,16 +504,16 @@ export default function PlannerPage() {
         </div>
 
         {teams.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center">
+          <div className="rounded-2xl border border-white/[0.08] bg-card px-4 py-12 text-center">
             <p className="text-[13px] font-semibold text-text mb-1">Nenhuma OS agendada para esta semana</p>
             <p className="text-[11px] text-muted">Navegue para outra semana ou verifique os agendamentos</p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border bg-surface/30">
+                  <tr className="border-b border-white/[0.08] bg-surface/30">
                     <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.05em]
                                    text-muted w-[160px] flex-shrink-0">
                       Equipe
@@ -521,7 +521,7 @@ export default function PlannerPage() {
                     {days.map(d => (
                       <th key={d.key}
                           className={`px-2 py-3 text-center text-[10px] font-bold
-                                      border-r border-border/50 last:border-r-0 w-[100px]
+                                      border-r border-white/[0.04] last:border-r-0 w-[100px]
                                       ${d.isToday ? 'text-primary' : d.isWeekend ? 'text-muted/70' : 'text-muted'}
                                       ${d.isWeekend ? 'bg-surface/10' : ''}`}>
                         <div>{d.dow}</div>
@@ -548,7 +548,7 @@ export default function PlannerPage() {
                 <tbody>
                   {teams.map((t, i) => (
                     <tr key={t.team}
-                        className="border-b border-border hover:bg-surface/30 transition-colors"
+                        className="border-b border-white/[0.08] hover:bg-surface/30 transition-colors"
                         style={{ animationDelay: `${i * 30}ms` }}>
                       <td className="px-4 py-3 w-[160px]">
                         <p className="text-[11.5px] font-semibold text-text truncate">{t.team}</p>
@@ -575,7 +575,7 @@ export default function PlannerPage() {
                             placeholder="—"
                             onChange={e => setMetaEquipeDiaria(t.team, e.target.value)}
                             onClick={e => e.stopPropagation()}
-                            className="w-14 bg-surface border border-border rounded-md px-1.5 py-1
+                            className="w-14 bg-surface border border-white/[0.08] rounded-md px-1.5 py-1
                                        text-[11px] font-mono text-text text-center outline-none
                                        focus:border-primary/50 transition-colors"
                           />
@@ -619,7 +619,7 @@ export default function PlannerPage() {
           <div className="flex flex-wrap gap-2">
             {cidades.map(([cidade, cnt]) => (
               <div key={cidade}
-                   className="flex items-center gap-2 bg-card border border-border
+                   className="flex items-center gap-2 bg-card border border-white/[0.08]
                               rounded-xl px-3 py-2">
                 <MapPin size={10} className="text-muted" />
                 <span className="text-[11.5px] font-semibold text-text">{cidade}</span>

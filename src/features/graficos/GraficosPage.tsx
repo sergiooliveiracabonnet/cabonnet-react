@@ -125,13 +125,13 @@ function DrillModal({ drill, onClose }) {
       <div className="p-4 space-y-3">
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por OS, cliente, cidade ou equipe..."
-          className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-[12px]
+          className="w-full bg-surface border border-white/[0.08] rounded-xl px-3 py-2.5 text-[12px]
                      text-text placeholder:text-muted/60 outline-none focus:border-primary/50 transition-colors"
           autoFocus />
         <div className="overflow-auto max-h-[55vh]">
           <table className="w-full text-[11px]">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-border bg-surface">
+              <tr className="border-b border-white/[0.08] bg-surface">
                 {DRILL_COLS.map(col => (
                   <th key={col.key} onClick={() => toggleSort(col.key)}
                     className="px-3 py-2 text-left text-[11px] font-bold text-muted uppercase tracking-wide
@@ -148,7 +148,7 @@ function DrillModal({ drill, onClose }) {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/40">
+            <tbody className="divide-y divide-white/[0.03]">
               {sorted.slice(0, 250).map(r => (
                 <tr key={r.numos} className="hover:bg-surface/20 transition-colors">
                   <td className="px-3 py-2 font-mono text-primary whitespace-nowrap">{r.numos}</td>
@@ -420,7 +420,7 @@ function ForecastCard({ evolucao, totalAtivo, fila }) {
             {data.previsao.map((d, i) => (
               <div key={i} className="flex flex-col items-center gap-1">
                 <span className="text-[9px] text-muted font-semibold">{d.data}</span>
-                <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-surface border border-border">
+                <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-surface border border-white/[0.08]">
                   <span className="text-[13px] font-bold text-text">{d.volume}</span>
                 </div>
                 <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${CONF_STYLE[d.confianca] ?? CONF_STYLE['media']}`}>
@@ -645,8 +645,8 @@ function TabCohort({ d, rows, onDrill }) {
       </ChartCard>
 
       {c.labels.length > 0 && (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-border">
+        <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-white/[0.08]">
             <p className="text-[11px] font-bold uppercase tracking-wide text-muted">
               Tabela Cohort Detalhada
               <span className="ml-2 font-normal normal-case tracking-normal text-muted/50">
@@ -657,13 +657,13 @@ function TabCohort({ d, rows, onDrill }) {
           <div className="overflow-x-auto">
             <table className="w-full text-[11px]">
               <thead>
-                <tr className="border-b border-border bg-surface">
+                <tr className="border-b border-white/[0.08] bg-surface">
                   {['Mês','Abertas','Concluídas','Mesmo Mês','Taxa Res.','MTTR Méd.'].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-[11px] font-bold text-muted uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
+              <tbody className="divide-y divide-white/[0.06]/50">
                 {c.labels.map((label, i) => {
                   const taxa  = c.taxaResolucao[i] ?? 0
                   const mttrV = c.mttr[i] ?? 0

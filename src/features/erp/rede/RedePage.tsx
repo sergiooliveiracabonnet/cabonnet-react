@@ -13,7 +13,7 @@ function fmtSync(d) {
 
 function KpiCard({ label, value, sub, icon: Icon, color = 'text-primary', loading }) {
   return (
-    <div className="rounded-xl border border-border bg-surface/30 p-4 flex items-start gap-3">
+    <div className="rounded-xl border border-white/[0.08] bg-surface/30 p-4 flex items-start gap-3">
       <div className={`mt-0.5 shrink-0 ${color}`}><Icon size={18} /></div>
       <div className="min-w-0">
         <p className="text-xs text-zinc-500 mb-1 truncate">{label}</p>
@@ -95,7 +95,7 @@ function PppoePanel({ pppoe }) {
   const maxTotal   = hosts[0]?.total ?? 1
 
   return (
-    <div className="rounded-xl border border-border bg-surface/20 p-5">
+    <div className="rounded-xl border border-white/[0.08] bg-surface/20 p-5">
       <SectionTitle icon={Network} title="PPPoE Conexões Ativas · por VLAN" sync={pppoe.lastSync} onRefresh={pppoe.refresh} />
 
       {pppoe.error && <ErrorBanner msg={pppoe.error} />}
@@ -132,7 +132,7 @@ function PppoePanel({ pppoe }) {
             const maxVlan  = h.vlans[0]?.conexoes ?? 1
 
             return (
-              <div key={h.host} className="rounded-lg border border-border overflow-hidden">
+              <div key={h.host} className="rounded-lg border border-white/[0.08] overflow-hidden">
                 <button
                   onClick={() => setExpandedHost(expanded ? null : idx)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/30 transition-colors"
@@ -150,7 +150,7 @@ function PppoePanel({ pppoe }) {
                 </div>
 
                 {expanded && (
-                  <div className="px-4 py-3 border-t border-border/50">
+                  <div className="px-4 py-3 border-t border-white/[0.04]">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 max-h-72 overflow-y-auto">
                       {h.vlans.map(v => {
                         const vPct = Math.round((v.conexoes / maxVlan) * 100)

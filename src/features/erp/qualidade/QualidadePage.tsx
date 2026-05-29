@@ -43,7 +43,7 @@ function EquipeRow({ rank, eq }) {
   const _pct  = eq.totalBase > 0 ? Math.round(eq.total / eq.totalBase * 100) : 0
 
   return (
-    <tr className="border-b border-border/50 hover:bg-surface/20 transition-colors">
+    <tr className="border-b border-white/[0.04] hover:bg-surface/20 transition-colors">
       <td className="px-4 py-3 w-10">
         {rank <= 3 ? (
           <span className="font-mono font-black text-[13px]"
@@ -203,11 +203,11 @@ export default function QualidadePage() {
       {porEquipe?.length > 0 && (
         <section className="space-y-2">
           <SectionLabel icon={Users} color="#f97316">Ranking — Revisitas por Equipe</SectionLabel>
-          <div className="rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border/60 bg-surface/10">
+                  <tr className="border-b border-white/[0.05] bg-surface/10">
                     {['#','Equipe','Revisitas','Taxa','Status','Rev. Inst','Rev. Manut','Base'].map(h => (
                       <th key={h} className="px-3 py-2.5 text-right first:text-left text-[10px]
                                               font-bold uppercase tracking-[0.05em] text-muted first:px-4">
@@ -234,8 +234,8 @@ export default function QualidadePage() {
         {porCidade.length > 0 && (
           <section className="space-y-2">
             <SectionLabel icon={MapPin} color="#22d3ee">Revisitas por Cidade</SectionLabel>
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="divide-y divide-border/50">
+            <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
+              <div className="divide-y divide-white/[0.06]/50">
                 {porCidade.map(c => {
                   const cl = taxaColor(c.taxa)
                   const maxR = porCidade[0]?.revisitas ?? 1
@@ -262,15 +262,15 @@ export default function QualidadePage() {
             <SectionLabel icon={AlertTriangle} color="#f87171">
               Clientes Crônicos — {cronicos.length} com 3+ OS
             </SectionLabel>
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
               <div className="grid grid-cols-[1fr_48px_48px] gap-2 px-4 py-2
-                              bg-surface/20 border-b border-border/60
+                              bg-surface/20 border-b border-white/[0.05]
                               text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
                 <span>Cliente</span>
                 <span className="text-right">OS</span>
                 <span className="text-right">Rev.</span>
               </div>
-              <div className="divide-y divide-border/50 max-h-72 overflow-y-auto">
+              <div className="divide-y divide-white/[0.06]/50 max-h-72 overflow-y-auto">
                 {cronicos.map(c => {
                   const danger = c.count >= 5 || c.revisitas >= 2
                   const color  = danger ? '#f87171' : c.count >= 4 ? '#f97316' : '#facc15'
@@ -291,7 +291,7 @@ export default function QualidadePage() {
       </div>
 
       {/* Nota metodológica */}
-      <div className="rounded-xl border border-border bg-surface/20 px-4 py-3">
+      <div className="rounded-xl border border-white/[0.08] bg-surface/20 px-4 py-3">
         <p className="text-[10px] text-muted/70 leading-relaxed">
           <strong className="text-muted">Metodologia:</strong> Revisita = cliente que teve instalação + manutenção no mesmo mês, ou 2+ manutenções no mesmo mês.
           Custo estimado de R$180/revisita (deslocamento + hora técnica). Taxa calculada sobre pares únicos cliente×mês.

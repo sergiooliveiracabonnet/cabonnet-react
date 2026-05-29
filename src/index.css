@@ -199,22 +199,23 @@ body {
    UTILITÁRIOS
 ═══════════════════════════════════════════════════════════════ */
 
-/* ── Card base — Stripe/Clerk style ── */
+/* ── Card base ──
+   A borda é definida via Tailwind (border border-white/[0.08]) nos componentes.
+   O override .light [class*="border-white/"] cuida do light mode automaticamente.
+   .card-premium só adiciona hover e sombras — não sobrescreve a borda. */
 .card-premium {
   position: relative;
-  background: rgb(var(--c-card));
-  border: 1px solid rgb(var(--c-border));
-  border-radius: 12px;
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 .card-premium:hover {
-  border-color: rgb(var(--c-muted) / 0.4);
+  border-color: rgba(255,255,255,0.14);
   box-shadow: 0 4px 16px rgba(0,0,0,.25), 0 1px 4px rgba(0,0,0,.15);
 }
 .light .card-premium {
   box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04);
 }
 .light .card-premium:hover {
+  border-color: rgb(var(--c-muted) / 0.35);
   box-shadow: 0 4px 12px rgba(0,0,0,.09), 0 1px 3px rgba(0,0,0,.06);
 }
 

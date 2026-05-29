@@ -237,7 +237,7 @@ export default function JuniperPage() {
       )}
 
       {/* ── Config API ── */}
-      <div className="bg-card border border-border border-l-[4px] border-l-primary rounded-xl p-5">
+      <div className="bg-card border border-white/[0.08] border-l-[4px] border-l-primary rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
             <Settings size={11} /> Fonte de Dados
@@ -247,7 +247,7 @@ export default function JuniperPage() {
 
         {/* Segmented control */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex bg-surface/30 border border-border rounded-lg p-0.5 gap-0.5">
+          <div className="flex bg-surface/30 border border-white/[0.08] rounded-lg p-0.5 gap-0.5">
             {[['local', Monitor, 'Servidor Local'], ['api', Zap, 'Grafana API']].map(([v, Icon, l]) => (
               <button
                 key={v}
@@ -280,7 +280,7 @@ export default function JuniperPage() {
                   value={apiConfig[f.key]}
                   placeholder={f.placeholder}
                   onChange={(e) => setApiConfig(c => ({ ...c, [f.key]: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-[11px] rounded-lg bg-card-high border border-border
+                  className="w-full px-3 py-1.5 text-[11px] rounded-lg bg-card-high border border-white/[0.08]
                              text-text outline-none focus:border-primary/40 transition-colors"
                 />
               </div>
@@ -357,7 +357,7 @@ export default function JuniperPage() {
             {interfaces.map((iface) => {
               const pct = Math.round((iface.total / maxIface) * 100)
               return (
-                <div key={iface.nome} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+                <div key={iface.nome} className="bg-card border border-white/[0.08] rounded-xl p-4 flex flex-col gap-3">
                   <div>
                     <p className="text-[11px] font-bold text-text truncate mb-0.5">{iface.nome}</p>
                     <div className="flex items-baseline gap-2">
@@ -396,8 +396,8 @@ export default function JuniperPage() {
       </ChartCard>
 
       {/* ── Tabela de clientes ── */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg">
-        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-surface/20 flex-wrap">
+      <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden shadow-lg">
+        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/[0.08] bg-surface/20 flex-wrap">
           <div className="flex items-center gap-2">
             <Users size={15} className="text-primary" />
             <span className="text-[13px] font-bold text-text">Clientes Conectados</span>
@@ -429,7 +429,7 @@ export default function JuniperPage() {
               placeholder="Buscar usuário, IP, MAC, interface…"
               className="max-w-[260px]"
             />
-            <div className="flex bg-surface/30 border border-border rounded-md p-0.5 gap-0.5">
+            <div className="flex bg-surface/30 border border-white/[0.08] rounded-md p-0.5 gap-0.5">
               {[['card', 'Cards'], ['table', 'Tabela']].map(([v, l]) => (
                 <button
                   key={v}
@@ -485,7 +485,7 @@ export default function JuniperPage() {
 
                     <div className={`rounded-xl px-3 py-2.5 mb-3 border ${isOnline
                       ? 'bg-primary/[0.08] border-primary/[0.15]'
-                      : 'bg-surface/20 border-border/60'}`}>
+                      : 'bg-surface/20 border-white/[0.05]'}`}>
                       <p className="text-[8px] font-bold uppercase tracking-[0.05em] text-muted mb-1">Endereço IP</p>
                       <p className={`text-[15px] font-mono font-bold uppercase antialiased leading-none tracking-wide
                         ${isOnline ? 'text-primary' : 'text-secondary'}`}>{c.ip}</p>
@@ -498,7 +498,7 @@ export default function JuniperPage() {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-2.5 border-t border-border/60 mt-1">
+                    <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.05] mt-1">
                       <div className="flex items-center gap-1.5">
                         {c.uptime !== '—' && (
                           <>
@@ -527,7 +527,7 @@ export default function JuniperPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
+              <tbody className="divide-y divide-white/[0.06]/50">
                 {clientesFiltrados.map((c, i) => {
                   const isOnline = c.state !== 'inactive'
                   return (
@@ -552,8 +552,8 @@ export default function JuniperPage() {
 
       {/* ── Histórico de snapshots ── */}
       <SectionTitle icon={Clipboard}>Histórico de Conexões PPPoE</SectionTitle>
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-surface/20">
+      <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] bg-surface/20">
           <div className="flex items-center gap-2">
             <Activity size={12} className="text-muted" />
             <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted">
@@ -574,7 +574,7 @@ export default function JuniperPage() {
             )}
           </div>
         </div>
-        <div className="divide-y divide-border/50 min-h-[120px] max-h-[600px] overflow-y-auto">
+        <div className="divide-y divide-white/[0.06]/50 min-h-[120px] max-h-[600px] overflow-y-auto">
           {historico.length === 0 ? (
             <p className="text-center text-muted text-[12px] py-10">
               O histórico será salvo automaticamente a cada coleta (5 min).
@@ -585,7 +585,7 @@ export default function JuniperPage() {
               const onlinePct  = snap.total > 0 ? Math.round((snap.online / snap.total) * 100) : 0
               const relTxt     = relTime(snap.ts)
               return (
-                <div key={i} className="border-b border-border/50 last:border-0">
+                <div key={i} className="border-b border-white/[0.04] last:border-0">
                   <button
                     onClick={() => setExpandedSnap(isOpen ? null : i)}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/30 transition-colors text-left"
@@ -623,16 +623,16 @@ export default function JuniperPage() {
                   </button>
 
                   {isOpen && (
-                    <div className="overflow-x-auto border-t border-border/50 bg-surface/15">
+                    <div className="overflow-x-auto border-t border-white/[0.04] bg-surface/15">
                       <table className="w-full text-[12px]">
                         <thead>
-                          <tr className="border-b border-border">
+                          <tr className="border-b border-white/[0.08]">
                             {['Usuário', 'IP', 'MAC', 'Interface', 'Uptime', 'Login'].map(h => (
                               <th key={h} className="px-4 py-2 text-left text-[11px] font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-border/40">
+                        <tbody className="divide-y divide-white/[0.03]">
                           {(snap.clientes ?? []).map((c, ci) => (
                             <tr key={ci} className="hover:bg-primary/[0.04]">
                               <td className="px-4 py-2 font-bold text-text uppercase antialiased">{c.usuario}</td>
@@ -656,7 +656,7 @@ export default function JuniperPage() {
 
       {/* ── Correlação OS × Cidade ── */}
       <SectionTitle icon={GitMerge}>Correlação — OS Técnicas Abertas por Cidade</SectionTitle>
-      <div className="bg-card border border-border rounded-xl p-4">
+      <div className="bg-card border border-white/[0.08] rounded-xl p-4">
         <p className="text-[11px] text-muted mb-4 leading-relaxed">
           Alta concentração de OS em uma cidade pode indicar degradação de infraestrutura — correlacione com alertas PPPoE.
         </p>
@@ -668,7 +668,7 @@ export default function JuniperPage() {
               const style = getOsStyle(c.total)
               const pct   = Math.round((c.total / maxOsCity) * 100)
               return (
-                <div key={c.cidade} className={`${style.bg} bg-surface border border-border rounded-xl p-3 flex flex-col gap-2`}>
+                <div key={c.cidade} className={`${style.bg} bg-surface border border-white/[0.08] rounded-xl p-3 flex flex-col gap-2`}>
                   <div className="flex items-center justify-between gap-1">
                     <p className="text-[11px] font-semibold text-text truncate flex-1">{c.cidade}</p>
                     <p className={`font-mono font-bold text-xl tabular-nums flex-shrink-0 ${style.text}`}>{c.total}</p>

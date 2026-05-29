@@ -65,7 +65,7 @@ export default function CapacidadePage() {
       )}
 
       {/* Painel executivo */}
-      <div className="bg-card border border-border rounded-xl p-5">
+      <div className="bg-card border border-white/[0.08] rounded-xl p-5">
         <div className="flex items-start justify-between flex-wrap gap-6">
           <div className="flex-1 min-w-[200px]">
             <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted mb-2">Situação do Dia</p>
@@ -79,7 +79,7 @@ export default function CapacidadePage() {
               { label: 'Fila total',      value: executivo.fila,  color: 'text-yellow',  sub: 'OS em aberto' },
               { label: 'Previsão fila',   value: executivo.prev,  color: 'text-primary', sub: 'dias p/ zerar' },
             ].map((b) => (
-              <div key={b.label} className="text-center p-3 bg-surface border border-border rounded-xl min-w-[110px]">
+              <div key={b.label} className="text-center p-3 bg-surface border border-white/[0.08] rounded-xl min-w-[110px]">
                 <p className="text-[11px] font-bold uppercase tracking-[0.04em] text-muted mb-1">{b.label}</p>
                 <p className={`font-headline font-bold text-[32px] leading-none ${b.color}`}>{b.value ?? '—'}</p>
                 <p className="text-[11px] text-muted mt-1">{b.sub}</p>
@@ -92,7 +92,7 @@ export default function CapacidadePage() {
       {/* Hipóteses */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {hipoteses.map((h, i) => (
-          <div key={i} className="bg-card border border-border rounded-xl p-4">
+          <div key={i} className="bg-card border border-white/[0.08] rounded-xl p-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-primary mb-2">❓ {h.pergunta}</p>
             <p className="text-[12px] font-bold text-text">{h.resposta ?? '—'}</p>
           </div>
@@ -100,7 +100,7 @@ export default function CapacidadePage() {
       </div>
 
       {/* Metas */}
-      <div className="bg-card border border-border rounded-xl p-5">
+      <div className="bg-card border border-white/[0.08] rounded-xl p-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted mb-4 flex items-center gap-2">
           <Target size={12} /> Configurar Metas Diárias
         </p>
@@ -115,7 +115,7 @@ export default function CapacidadePage() {
               <input
                 type="number" min={1} max={200} value={value}
                 onChange={e => set(Number(e.target.value))}
-                className="w-20 bg-surface border border-border rounded-md px-2 py-1 text-[13px] font-mono text-text text-center outline-none focus:border-primary/50"
+                className="w-20 bg-surface border border-white/[0.08] rounded-md px-2 py-1 text-[13px] font-mono text-text text-center outline-none focus:border-primary/50"
               />
             </label>
           ))}
@@ -126,7 +126,7 @@ export default function CapacidadePage() {
       <SectionTitle icon={BarChart2}>Cobertura de Metas por Tipo</SectionTitle>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {cobertura.map((c) => (
-          <div key={c.label} className="bg-card border border-border rounded-xl p-4">
+          <div key={c.label} className="bg-card border border-white/[0.08] rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[11px] font-semibold text-text">{c.label}</p>
               <span className="font-mono text-[11px] font-bold" style={{ color: c.cor }}>{c.pct}%</span>
@@ -176,23 +176,23 @@ export default function CapacidadePage() {
           </BarChart>
         </ChartCard>
       ) : (
-        <div className="bg-card border border-border rounded-xl p-6 text-center">
+        <div className="bg-card border border-white/[0.08] rounded-xl p-6 text-center">
           <p className="text-muted text-[12px]">Sem dados de equipes no período</p>
         </div>
       )}
 
       {/* Tabela de projeção */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-[11px]">
             <thead>
-              <tr className="border-b border-border bg-surface">
+              <tr className="border-b border-white/[0.08] bg-surface">
                 {['Equipe','Fila','OS/dia (período)','Dias p/ Zerar'].map(h => (
                   <th key={h} className="px-4 py-2 text-left text-[11px] font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/50">
+            <tbody className="divide-y divide-white/[0.06]/50">
               {projecao.map((p) => (
                 <tr key={p.equipe} className="text-secondary hover:bg-primary/[0.04]">
                   <td className="px-4 py-2 font-semibold text-text">{p.equipe}</td>

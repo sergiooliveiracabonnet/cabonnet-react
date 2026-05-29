@@ -160,9 +160,9 @@ function OSInlineTable({ rows, dayLabel }) {
   }).filter(c => c.count > 0)
 
   return (
-    <div className="mt-3 rounded-xl border border-border overflow-hidden bg-surface/50">
+    <div className="mt-3 rounded-xl border border-white/[0.08] overflow-hidden bg-surface/50">
       {/* Header com resumo por categoria */}
-      <div className="px-4 py-2.5 border-b border-border flex items-center gap-4 flex-wrap">
+      <div className="px-4 py-2.5 border-b border-white/[0.08] flex items-center gap-4 flex-wrap">
         <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mr-1">
           {rows.length} OS · {dayLabel}
         </span>
@@ -180,7 +180,7 @@ function OSInlineTable({ rows, dayLabel }) {
       <div className="overflow-x-auto">
         <table className="w-full text-[11px]">
           <thead>
-            <tr className="border-b border-border/60 bg-surface/20">
+            <tr className="border-b border-white/[0.05] bg-surface/20">
               {OS_COLS.map(c => (
                 <th key={c.key}
                     className="px-3 py-2 text-left text-[10px] font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap">
@@ -189,7 +189,7 @@ function OSInlineTable({ rows, dayLabel }) {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/40">
+          <tbody className="divide-y divide-white/[0.03]">
             {sorted.map(r => {
               const { color, Icon } = tipoIcon(r)
               const exec = (r.dataexecucao || r.databaixa || '').split(' ')
@@ -250,7 +250,7 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
       {/* ── Summary row ── */}
       <tr
         onClick={onToggle}
-        className="border-b border-border/50 hover:bg-surface/20 cursor-pointer transition-colors"
+        className="border-b border-white/[0.04] hover:bg-surface/20 cursor-pointer transition-colors"
       >
         {/* Rank */}
         <td className="px-4 py-3 w-10">
@@ -283,7 +283,7 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
                                 background: val > 0 ? color : 'rgba(255,255,255,0.06)' }} />
                   {val > 0 && (
                     <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2
-                                    bg-elevated border border-border text-text text-[9px]
+                                    bg-elevated border border-white/[0.08] text-text text-[9px]
                                     font-bold px-1.5 py-0.5 rounded whitespace-nowrap
                                     opacity-0 group-hover:opacity-100 pointer-events-none z-10">
                       {d.label}: {val}
@@ -324,7 +324,7 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
 
       {/* ── Mini cards + inline table ── */}
       {isExpanded && (
-        <tr className="border-b border-border/50 bg-surface/15">
+        <tr className="border-b border-white/[0.04] bg-surface/15">
           <td colSpan={8} className="px-4 pt-3 pb-4">
 
             {/* Day cards */}
@@ -478,13 +478,13 @@ export default function ProdutividadePage() {
         <SectionLabel icon={BarChart3} color="#3b82f6">Ranking — {teams.length} equipes · 14 dias</SectionLabel>
 
         {teams.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center">
+          <div className="rounded-2xl border border-white/[0.08] bg-card px-4 py-12 text-center">
             <p className="text-[12px] text-muted">Nenhuma OS executada no período</p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
             {/* Day header strip */}
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-border/60 bg-surface/15">
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.05] bg-surface/15">
               <div className="w-10 flex-shrink-0" />
               <div className="w-[140px] flex-shrink-0" />
               <div className="flex flex-1 gap-[2px] min-w-0">
@@ -506,7 +506,7 @@ export default function ProdutividadePage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border/60 bg-surface/10">
+                  <tr className="border-b border-white/[0.05] bg-surface/10">
                     <th className="px-4 py-2 text-left w-10" />
                     <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Equipe</th>
                     <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Últimos 14 dias</th>

@@ -185,7 +185,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
   }
 
   return (
-    <div className="divide-y divide-border/50">
+    <div className="divide-y divide-white/[0.06]/50">
       {groups.map((g) => {
         const primeiraData = g.sorted[0]?.datacadastro?.split(' ')[0] ?? '—'
         const ultimaData   = g.sorted[g.sorted.length - 1]?.datacadastro?.split(' ')[0] ?? '—'
@@ -193,7 +193,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
         return (
           <div key={g.codigo || g.nome}>
             {/* Header do grupo */}
-            <div className="flex items-center gap-2 px-4 py-2 bg-elevated/40 border-b border-border/60">
+            <div className="flex items-center gap-2 px-4 py-2 bg-elevated/40 border-b border-white/[0.05]">
               <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
                 <span className="text-[12px] font-bold text-text truncate">{g.nome}</span>
                 {g.codigo && (
@@ -221,7 +221,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
               <button
                 key={g.sorted[0].numos}
                 className="w-full text-left flex items-center gap-3 px-4 py-2.5
-                           hover:bg-primary/[0.04] border-b border-border/40
+                           hover:bg-primary/[0.04] border-b border-white/[0.03]
                            transition-colors text-[11px] cursor-pointer"
                 onClick={() => onRowClick(g.sorted[0])}
               >
@@ -346,7 +346,7 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
         )}
 
         {/* Cabeçalho de colunas */}
-        <div className="flex items-center gap-3 px-4 py-2 bg-elevated/40 border-b border-border
+        <div className="flex items-center gap-3 px-4 py-2 bg-elevated/40 border-b border-white/[0.08]
                         text-[10px] font-bold uppercase tracking-wide text-muted">
           <span className={`${C.aging}  text-center`}>Aging</span>
           <span className={C.numos}>Nº OS</span>
@@ -386,7 +386,7 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
                 ].filter(Boolean)
                 return (
                   <div className={`flex items-center gap-2.5 px-4 py-2.5 border-b ${border}
-                                  ${gi > 0 ? 'border-t border-border' : ''} ${bg}`}>
+                                  ${gi > 0 ? 'border-t border-white/[0.08]' : ''} ${bg}`}>
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />
                     <span className={`text-[11px] font-bold uppercase tracking-[0.06em] ${color}`}>
                       Período: {periodo}
@@ -416,7 +416,7 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
                     key={row.numos || i}
                     onClick={() => onRowClick?.(row)}
                     className={`flex items-center gap-3 px-4 ${rowPy} cursor-pointer
-                                hover:bg-surface/30 transition-all border-b border-border/40`}
+                                hover:bg-surface/30 transition-all border-b border-white/[0.03]`}
                   >
                     <span className={`${C.aging} text-center`}>
                       <span className={`inline-block font-mono font-bold text-[11px] rounded-full px-2 py-0.5 ${agingColor} ${agingBg}`}>
@@ -606,7 +606,7 @@ export default function OrdensPage() {
         <button
           onClick={() => setKpiVisible(v => !v)}
           className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary hover:text-text
-                     border border-border rounded-xl px-3 py-1.5 transition-all duration-fast"
+                     border border-white/[0.08] rounded-xl px-3 py-1.5 transition-all duration-fast"
         >
           <BarChart2 size={12} /> KPIs
           <ChevronUp size={11} className={`transition-transform ${kpiVisible ? '' : 'rotate-180'}`} />
@@ -625,7 +625,7 @@ export default function OrdensPage() {
         </button>
 
         {/* Density toggle */}
-        <div className="flex items-center gap-0.5 bg-card border border-border rounded-xl p-1">
+        <div className="flex items-center gap-0.5 bg-card border border-white/[0.08] rounded-xl p-1">
           {densityOptions.map((d) => (
             <button
               key={d.value}
@@ -750,7 +750,7 @@ export default function OrdensPage() {
       </div>
 
       {/* ── Barra de filtros ── */}
-      <div className="bg-card border border-border rounded-xl p-3 flex flex-wrap gap-2 items-center">
+      <div className="bg-card border border-white/[0.08] rounded-xl p-3 flex flex-wrap gap-2 items-center">
         <SearchBox
           value={os.search}
           onChange={os.setSearch}
@@ -803,7 +803,7 @@ export default function OrdensPage() {
       )}
 
       {/* Tabela */}
-      <div ref={tableRef} className="bg-card border border-border rounded-xl overflow-hidden">
+      <div ref={tableRef} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
         {os.isLoading ? (
           <div className="p-4"><TableSkeleton rows={8} cols={8} /></div>
         ) : os.equipe ? (
@@ -836,7 +836,7 @@ export default function OrdensPage() {
         {/* Paginação — apenas no modo flat */}
         {!os.equipe && os.totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3
-                          border-t border-border/60 text-[11px] text-muted">
+                          border-t border-white/[0.05] text-[11px] text-muted">
             <span>
               Página {os.page} de {os.totalPages} — {os.filtered.length} OS
             </span>
@@ -921,7 +921,7 @@ export default function OrdensPage() {
             const equipes = new Set(rows.map(r => r.nomedaequipe?.trim() || '(Sem Equipe)')).size
             const scopeLabel = isForn ? `agendadas hoje · ${hojeDMY.slice(0,5)}` : 'todas do período'
             return (
-              <div className="rounded-lg bg-elevated border border-border px-4 py-3 text-[12px] space-y-2">
+              <div className="rounded-lg bg-elevated border border-white/[0.08] px-4 py-3 text-[12px] space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-text">{opt?.label}</p>
                   <span className="text-[10px] text-muted">Alertas | Cabonnet</span>

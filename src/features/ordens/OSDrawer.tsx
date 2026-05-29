@@ -205,8 +205,8 @@ export default function OSDrawer({ os, onClose }) {
           <div className="px-5 py-4 space-y-4">
 
             {/* ── 1. Hero Status ───────────────────────────────────────── */}
-            <div className="bg-surface/30 border border-border rounded-xl overflow-hidden">
-              <div className="flex items-stretch divide-x divide-border">
+            <div className="bg-surface/30 border border-white/[0.08] rounded-xl overflow-hidden">
+              <div className="flex items-stretch divide-x divide-white/[0.06]">
 
                 {/* Situação */}
                 <div className="flex-1 px-4 py-3 flex flex-col gap-1.5">
@@ -256,7 +256,7 @@ export default function OSDrawer({ os, onClose }) {
                 </div>
               )}
               {obs ? (
-                <div className="bg-surface/30 border border-border rounded-xl p-4">
+                <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
                   <p className="text-[12px] text-secondary leading-relaxed whitespace-pre-wrap">{obs}</p>
                 </div>
               ) : !obsCrit && (
@@ -269,7 +269,7 @@ export default function OSDrawer({ os, onClose }) {
               {/* Endereço */}
               <button
                 onClick={openMaps}
-                className="w-full bg-surface/30 border border-border rounded-xl px-4 py-3
+                className="w-full bg-surface/30 border border-white/[0.08] rounded-xl px-4 py-3
                            flex items-start gap-3 text-left hover:bg-surface/40 hover:border-border
                            transition-all duration-fast group"
               >
@@ -325,7 +325,7 @@ export default function OSDrawer({ os, onClose }) {
                     os._slaLimite         != null && { label: 'Limite do SLA',         value: `${os._slaLimite}d`,         color: 'text-primary' },
                     os._diasAteAgendamento!= null && { label: 'Dias até agend.',        value: `${os._diasAteAgendamento}d`, color: 'text-secondary' },
                   ].filter(Boolean).map(({ label, value, color }) => (
-                    <div key={label} className="bg-surface/30 border border-border rounded-xl p-3 text-center">
+                    <div key={label} className="bg-surface/30 border border-white/[0.08] rounded-xl p-3 text-center">
                       <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 leading-tight">{label}</p>
                       <p className={`font-mono text-[20px] font-black leading-none ${color}`}>{value}</p>
                     </div>

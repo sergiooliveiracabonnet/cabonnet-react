@@ -66,7 +66,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
             return (
               <div
                 key={k.id}
-                className={`${acc.tint} bg-card border border-border rounded-xl
+                className={`${acc.tint} bg-card border border-white/[0.08] rounded-xl
                              flex flex-col items-center justify-center gap-2 p-6 relative overflow-hidden`}
               >
                 <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${acc.bar}`} />
@@ -111,7 +111,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
           return (
             <div
               key={eq.nome}
-              className="flex items-center gap-3 bg-card border border-border
+              className="flex items-center gap-3 bg-card border border-white/[0.08]
                          rounded-xl px-4 py-3.5 relative overflow-hidden"
             >
               <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${cfg.bar}`} />
@@ -200,7 +200,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
           return (
             <div
               key={f.nome}
-              className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4"
+              className="bg-card border border-white/[0.08] rounded-xl p-5 flex flex-col gap-4"
               style={{ borderLeft: `3px solid ${f.cor}` }}
             >
               <div className="flex items-center gap-2.5">
@@ -325,7 +325,7 @@ function NocInner() {
 
       {/* ── Header ── */}
       <header className="flex items-center gap-3 px-6 py-3
-                         border-b border-border bg-elevated flex-shrink-0">
+                         border-b border-white/[0.08] bg-elevated flex-shrink-0">
         {/* Live pulse */}
         <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-60" />
@@ -398,7 +398,7 @@ function NocInner() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="flex-shrink-0 bg-elevated border-t border-border px-6 py-2.5">
+      <footer className="flex-shrink-0 bg-elevated border-t border-white/[0.08] px-6 py-2.5">
         <div className="flex items-center gap-1 mb-2">
           {SLIDE_CONFIG.map(({ name, icon: Icon }, i) => (
             <button

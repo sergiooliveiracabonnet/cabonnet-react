@@ -47,7 +47,7 @@ function osRisk(row) {
 function slaBadge(row) {
   if (row._slaCritico)  return { label: 'Crítico', cls: 'bg-red-500/20 text-red-400 border border-red-500/30' }
   if (row._slaExcedido) return { label: 'SLA+',    cls: 'bg-orange-500/20 text-orange-400 border border-orange-500/30' }
-  return                       { label: 'OK',       cls: 'bg-surface/40 text-muted border border-border' }
+  return                       { label: 'OK',       cls: 'bg-surface/40 text-muted border border-white/[0.08]' }
 }
 
 function rankTeams(os, metricsByCode, slaByCode) {
@@ -214,7 +214,7 @@ function TeamSuggestionCard({ entry, rank, onConfirm, isConfirming, aiSugestao }
         <button
           onClick={onConfirm}
           disabled={isConfirming}
-          className="w-full py-2 rounded-lg border border-border
+          className="w-full py-2 rounded-lg border border-white/[0.08]
                      text-[11px] text-secondary hover:text-text hover:border-muted/40
                      transition-colors disabled:opacity-40"
         >
@@ -347,7 +347,7 @@ export default function DispatchPage() {
           <p className="text-[12px] text-secondary mt-0.5">Atribuição de equipes · ERP</p>
         </div>
 
-        <div className="flex gap-1 bg-elevated border border-border rounded-lg p-0.5">
+        <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
           {[
             { value: '',           label: 'Todos'     },
             { value: 'INSTALACAO', label: 'Instalação' },
@@ -377,7 +377,7 @@ export default function DispatchPage() {
         ].map(k => {
           const KIcon = k.Icon
           return (
-            <div key={k.label} className="bg-elevated border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+            <div key={k.label} className="bg-elevated border border-white/[0.08] rounded-xl px-4 py-3 flex items-center gap-3">
               <div className={`w-9 h-9 rounded-lg ${k.bgCls} flex items-center justify-center flex-shrink-0`}>
                 <KIcon size={16} className={k.colorCls} />
               </div>
@@ -481,7 +481,7 @@ export default function DispatchPage() {
             <div className="h-full overflow-y-auto space-y-4 pr-1">
 
               {/* OS selecionada */}
-              <div className="bg-elevated border border-border rounded-xl p-4">
+              <div className="bg-elevated border border-white/[0.08] rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-mono text-[11px] font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded">
                     #{selectedOS.numos}

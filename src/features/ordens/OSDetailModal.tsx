@@ -152,7 +152,7 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
                 </div>
               )}
               {(os.observacoes || os.obs || os.observacao) && (
-                <div className="bg-surface/30 border border-border rounded-xl p-4">
+                <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
                   <p className="text-[13px] text-secondary leading-relaxed font-sans whitespace-pre-wrap">
                     {os.observacoes || os.obs || os.observacao}
                   </p>

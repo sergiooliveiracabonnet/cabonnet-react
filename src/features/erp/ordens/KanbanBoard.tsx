@@ -83,7 +83,7 @@ function OSCard({ row, onDragStart, onInfo }) {
     <div
       draggable
       onDragStart={e => onDragStart(e, row.numos)}
-      className="group relative bg-elevated border border-border rounded-lg p-3
+      className="group relative bg-elevated border border-white/[0.08] rounded-lg p-3
                  cursor-grab active:cursor-grabbing select-none
                  hover:border-muted/40 hover:shadow-lg hover:shadow-black/25
                  transition-all duration-150"
@@ -132,7 +132,7 @@ function OSCard({ row, onDragStart, onInfo }) {
       {/* Chips: equipe · aging · cidade */}
       <div className="flex items-center flex-wrap gap-1">
         {row.nomedaequipe ? (
-          <span className="text-[9px] font-semibold bg-surface/40 border border-border px-1.5 py-0.5 rounded text-secondary">
+          <span className="text-[9px] font-semibold bg-surface/40 border border-white/[0.08] px-1.5 py-0.5 rounded text-secondary">
             {eqCode}
           </span>
         ) : (
@@ -185,12 +185,12 @@ function OSDetailDrawer({ row, onClose }) {
     <div className="fixed inset-0 z-[300] flex items-stretch justify-end">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-sm bg-elevated border-l border-border
+      <div className="relative w-full max-w-sm bg-elevated border-l border-white/[0.08]
                       flex flex-col overflow-hidden shadow-2xl
                       animate-in slide-in-from-right-4 duration-200">
 
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-border gap-3">
+        <div className="flex items-start justify-between p-5 border-b border-white/[0.08] gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-mono text-[11px] font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded">
@@ -222,7 +222,7 @@ function OSDetailDrawer({ row, onClose }) {
         <div className="flex-1 overflow-y-auto">
 
           {/* SLA / Situação */}
-          <div className="px-4 py-3 border-b border-border">
+          <div className="px-4 py-3 border-b border-white/[0.08]">
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-surface/30 rounded-lg p-3 text-center">
                 <p className={`text-xl font-headline font-bold leading-none ${agingCls}`}>
@@ -249,11 +249,11 @@ function OSDetailDrawer({ row, onClose }) {
           </div>
 
           {/* Agendamento */}
-          <div className="border-b border-border">
+          <div className="border-b border-white/[0.08]">
             <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
               <Calendar size={10} />Agendamento
             </p>
-            <div className="divide-y divide-border/50">
+            <div className="divide-y divide-white/[0.06]/50">
               <DetailRow label="Situação"    value={row._situacaoEfetiva || row.descsituacao} />
               <DetailRow label="Equipe"      value={eqDisplay} className={!row.nomedaequipe ? 'text-red-400' : ''} />
               <DetailRow label="Data"        value={row.dataagendamento || '—'} />
@@ -263,11 +263,11 @@ function OSDetailDrawer({ row, onClose }) {
           </div>
 
           {/* Localização */}
-          <div className="border-b border-border">
+          <div className="border-b border-white/[0.08]">
             <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
               <MapPin size={10} />Localização
             </p>
-            <div className="divide-y divide-border/50">
+            <div className="divide-y divide-white/[0.06]/50">
               <DetailRow label="Cidade"     value={row.nomedacidade} />
               <DetailRow label="Bairro"     value={row.bairro} />
               <DetailRow label="Logradouro" value={row.logradouro} />
@@ -275,11 +275,11 @@ function OSDetailDrawer({ row, onClose }) {
           </div>
 
           {/* Serviço */}
-          <div className="border-b border-border">
+          <div className="border-b border-white/[0.08]">
             <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
               <Building2 size={10} />Serviço
             </p>
-            <div className="divide-y divide-border/50">
+            <div className="divide-y divide-white/[0.06]/50">
               <DetailRow label="Tipo"    value={row.tiposervico} />
               <DetailRow label="Serviço" value={row.servico} />
               <DetailRow label="Empresa" value={row.empresa} />
@@ -292,7 +292,7 @@ function OSDetailDrawer({ row, onClose }) {
               <FileText size={10} />Observação
             </p>
             {obs ? (
-              <p className="text-[12px] text-text leading-relaxed bg-surface/30 border border-border rounded-lg p-3">
+              <p className="text-[12px] text-text leading-relaxed bg-surface/30 border border-white/[0.08] rounded-lg p-3">
                 {obs}
               </p>
             ) : (
@@ -325,7 +325,7 @@ function KanbanCol({ col, cards, dragOver, showPeriodos, onDragStart, onInfo, on
       onDrop={e => { e.preventDefault(); onDrop(col.id) }}
     >
       {/* Column header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08] flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className={`w-1.5 h-1.5 rounded-full ${dot}`} />
           <Icon size={13} className={iconCls} />

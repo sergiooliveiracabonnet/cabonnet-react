@@ -82,8 +82,8 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
           className="fixed inset-0 bg-black/70 backdrop-blur-[2px] z-[200]
                      flex items-start justify-center pt-[12vh] px-4"
         >
-          <div className="w-full max-w-[600px] bg-elevated border border-border rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
+          <div className="w-full max-w-[600px] bg-elevated border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.08]">
               <Search size={16} className="text-muted flex-shrink-0" />
               <input
                 ref={inputRef}
@@ -97,7 +97,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                   <X size={13} />
                 </button>
               )}
-              <kbd className="text-[9px] font-mono bg-surface border border-border
+              <kbd className="text-[9px] font-mono bg-surface border border-white/[0.08]
                               rounded px-1.5 py-0.5 text-muted flex-shrink-0 hidden sm:block leading-none">
                 ESC
               </kbd>
@@ -110,7 +110,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                   <div className="flex flex-wrap gap-2 mb-8">
                     {HINT_TAGS.map(tag => (
                       <span key={tag} className="inline-flex items-center text-[11px] font-semibold px-2.5 py-1
-                                                 bg-surface/40 border border-border rounded-full text-secondary">
+                                                 bg-surface/40 border border-white/[0.08] rounded-full text-secondary">
                         {tag}
                       </span>
                     ))}
@@ -124,7 +124,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       <div key={label} className="flex items-center gap-1.5">
                         <div className="flex gap-1">
                           {keys.map(k => (
-                            <kbd key={k} className="text-[9px] font-mono bg-surface border border-border rounded px-1.5 py-0.5 leading-none text-muted/70">
+                            <kbd key={k} className="text-[9px] font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted/70">
                               {k}
                             </kbd>
                           ))}
@@ -145,7 +145,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
               {results.length > 0 && (
                 <>
-                  <div className="divide-y divide-border/50">
+                  <div className="divide-y divide-white/[0.06]/50">
                     {results.map((os, idx) => {
                       const aging = (os._aging as number | undefined) ?? (os._agingAbertura as number | undefined)
                       const agCls = (aging ?? 0) >= 6 ? 'text-red' : (aging ?? 0) >= 3 ? 'text-yellow' : 'text-muted'
@@ -178,7 +178,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                             <span className={`text-[11px] font-mono font-bold flex-shrink-0 ${agCls}`}>{aging}d</span>
                           )}
                           {isActive && (
-                            <kbd className="text-[9px] font-mono bg-surface border border-border rounded px-1.5 py-0.5 flex-shrink-0 self-center text-muted leading-none">
+                            <kbd className="text-[9px] font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 self-center text-muted leading-none">
                               ↵
                             </kbd>
                           )}
@@ -186,7 +186,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       )
                     })}
                   </div>
-                  <div className="px-4 py-2.5 border-t border-border flex items-center justify-between">
+                  <div className="px-4 py-2.5 border-t border-white/[0.08] flex items-center justify-between">
                     <span className="text-[11px] text-muted">
                       {results.length} resultado{results.length !== 1 ? 's' : ''}
                     </span>

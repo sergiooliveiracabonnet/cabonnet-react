@@ -56,7 +56,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
   return (
     <div
       className={`fixed z-[39] right-0 top-14 h-10
-                  bg-elevated border-b border-border
+                  bg-elevated border-b border-white/[0.08]
                   flex items-center gap-1.5 px-3
                   transition-all duration-normal
                   ${sidebarOpen ? 'left-[220px]' : 'left-[52px]'}`}
@@ -94,7 +94,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             type="date"
             value={toInputVal(from)}
             onChange={e => setCustomRange(fromInputVal(e.target.value)!, to!)}
-            className="bg-surface border border-border rounded-md px-2 py-0.5 font-mono text-secondary
+            className="bg-surface border border-white/[0.08] rounded-md px-2 py-0.5 font-mono text-secondary
                        outline-none focus:border-primary/50 w-[120px] text-[11px]"
           />
           <span className="text-muted text-[10px]">→</span>
@@ -102,7 +102,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             type="date"
             value={toInputVal(to)}
             onChange={e => setCustomRange(from!, toEndOfDay(e.target.value)!)}
-            className="bg-surface border border-border rounded-md px-2 py-0.5 font-mono text-secondary
+            className="bg-surface border border-white/[0.08] rounded-md px-2 py-0.5 font-mono text-secondary
                        outline-none focus:border-primary/50 w-[120px] text-[11px]"
           />
         </div>
@@ -129,7 +129,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
         {showCampo && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setShowCampo(false)} />
-            <div className="absolute right-0 top-6 z-50 bg-elevated border border-border rounded-lg shadow-accent overflow-hidden min-w-[140px]">
+            <div className="absolute right-0 top-6 z-50 bg-elevated border border-white/[0.08] rounded-lg shadow-accent overflow-hidden min-w-[140px]">
               {CAMPOS.map(c => (
                 <button
                   key={c.value}

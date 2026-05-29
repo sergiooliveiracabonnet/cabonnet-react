@@ -18,7 +18,7 @@ const variants = {
 
   ghost: [
     'bg-transparent text-secondary',
-    'border border-border',
+    'border border-white/[0.08]',
     'hover:bg-card-high hover:text-text hover:border-muted/40',
   ].join(' '),
 

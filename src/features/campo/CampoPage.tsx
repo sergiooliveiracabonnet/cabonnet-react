@@ -100,7 +100,7 @@ export default function CampoPage() {
       )}
 
       {/* ── Semáforo por equipe (com countdown SLA) ─────────────────── */}
-      <div className="bg-card border border-border border-l-[4px] border-l-primary rounded-xl p-5">
+      <div className="bg-card border border-white/[0.08] border-l-[4px] border-l-primary rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-primary/75 flex items-center gap-2">
             <span className="w-0.5 h-3 bg-primary rounded-full opacity-80 flex-shrink-0" />
@@ -272,12 +272,12 @@ function HeroBanner({ hero, projecao }: any) {
 
 function EquipeTable({ title, icon: Icon, rows, col, label }: any) {
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+    <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.08]">
         <Icon size={13} className="text-primary" />
         <p className="text-[12px] font-semibold text-text">{title}</p>
       </div>
-      <div className="divide-y divide-border/50">
+      <div className="divide-y divide-white/[0.06]/50">
         {rows.map((eq: any) => (
           <div key={eq.nome} className="flex items-center gap-3 px-4 py-3 min-h-[44px]">
             <p className="text-[11px] text-text font-semibold flex-1 truncate">{eq.nome}</p>

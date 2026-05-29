@@ -53,11 +53,11 @@ export function OSHoverCard({ os, anchorRect }: OSHoverCardProps) {
     <div
       ref={cardRef}
       style={{ position: 'fixed', top: pos.top, left: pos.left, opacity: pos.opacity, width: 320, zIndex: 590 }}
-      className="bg-elevated border border-border rounded-xl shadow-2xl
+      className="bg-elevated border border-white/[0.08] rounded-xl shadow-2xl
                  transition-opacity duration-fast pointer-events-none overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-2 px-4 pt-3.5 pb-2.5 border-b border-border">
+      <div className="flex items-start justify-between gap-2 px-4 pt-3.5 pb-2.5 border-b border-white/[0.08]">
         <div className="min-w-0">
           <p className="text-sm font-bold text-text leading-none">OS #{o.numos}</p>
           <p className="text-[11px] text-muted truncate mt-1">{o.nomecliente || '—'}</p>
@@ -128,7 +128,7 @@ export function OSHoverCard({ os, anchorRect }: OSHoverCardProps) {
 
         {/* Regular observation */}
         {obs && (
-          <div className="flex gap-2 bg-surface/30 border border-border rounded-xl px-2.5 py-2">
+          <div className="flex gap-2 bg-surface/30 border border-white/[0.08] rounded-xl px-2.5 py-2">
             <FileText size={10} className="text-muted flex-shrink-0 mt-0.5" />
             <p className="text-[11px] text-secondary line-clamp-3 leading-relaxed">{obs}</p>
           </div>
@@ -138,7 +138,7 @@ export function OSHoverCard({ os, anchorRect }: OSHoverCardProps) {
       {/* Footer hint */}
       <div className="px-4 pb-3 flex justify-end">
         <span className="inline-flex items-center gap-1.5 text-[10px] text-muted/40">
-          <kbd className="bg-surface/40 border border-border rounded px-1.5 py-0.5 font-mono leading-none">↵</kbd>
+          <kbd className="bg-surface/40 border border-white/[0.08] rounded px-1.5 py-0.5 font-mono leading-none">↵</kbd>
           ver detalhes
         </span>
       </div>

@@ -163,7 +163,7 @@ export default function CidadesPage() {
                   }, 50)
                 }}
                 className={`bg-card bg-gradient-to-br ${PANEL_FROM[p.color]} to-transparent
-                            border border-border ${PANEL_HOVER[p.color]}
+                            border border-white/[0.08] ${PANEL_HOVER[p.color]}
                             rounded-xl p-4 text-left cursor-pointer transition-all duration-normal
                             hover:shadow-md hover:-translate-y-0.5`}
               >
@@ -174,7 +174,7 @@ export default function CidadesPage() {
                   <p className="text-[11px] text-orange font-semibold mt-1">{p.semEquipe} sem equipe</p>
                 )}
                 {(p.breakdown.inst > 0 || p.breakdown.manut > 0 || p.breakdown.serv > 0) && (
-                  <div className="mt-2 pt-2 border-t border-border space-y-0.5">
+                  <div className="mt-2 pt-2 border-t border-white/[0.08] space-y-0.5">
                     {p.breakdown.inst  > 0 && (
                       <div className="flex justify-between">
                         <span className="text-[10px] text-muted">Instalação</span>
@@ -248,7 +248,7 @@ function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, groups, se
     : cities.length === 0
 
   return (
-    <div id={`panel-${id}`} className="bg-card border border-border rounded-xl overflow-hidden">
+    <div id={`panel-${id}`} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
 
       <button
         onClick={onToggle}
@@ -269,7 +269,7 @@ function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, groups, se
       </button>
 
       {open && (
-        <div className="border-t border-border">
+        <div className="border-t border-white/[0.08]">
           {isLoading || isEmpty ? (
             <p className="text-center text-muted text-[12px] py-8">Nenhuma OS nesta categoria.</p>
           ) : groups ? (
@@ -334,7 +334,7 @@ function CidadeTable({ cities, tipos, maxTotal, color, expandedCity, setExpanded
     <div className="overflow-x-auto">
       <table className="w-full text-[12px]">
         <thead>
-          <tr className="border-b border-border bg-surface">
+          <tr className="border-b border-white/[0.08] bg-surface">
             <th className="px-4 py-2.5 text-left text-[11px] font-bold text-muted uppercase tracking-[0.04em]">
               Cidade
             </th>
@@ -381,7 +381,7 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
 
   return (
     <>
-      <tr className="border-b border-border/50 transition-colors">
+      <tr className="border-b border-white/[0.04] transition-colors">
         <td
           onClick={onToggle}
           className="px-4 py-2.5 min-w-[160px] cursor-pointer hover:bg-primary/[0.04]"
@@ -483,9 +483,9 @@ function CityOSMini({ rows, tipoFilter, onOS }) {
   }, [rows, tipoFilter, sort])
 
   return (
-    <div className="max-h-72 overflow-y-auto bg-surface/60 border-y border-border/60">
+    <div className="max-h-72 overflow-y-auto bg-surface/60 border-y border-white/[0.05]">
       {tipoFilter && (
-        <div className="px-4 py-1.5 border-b border-border/50 flex items-center gap-2 bg-surface/30">
+        <div className="px-4 py-1.5 border-b border-white/[0.04] flex items-center gap-2 bg-surface/30">
           <span className={`text-[11px] font-bold uppercase tracking-[0.05em] ${TIPO_COLOR[tipoFilter]}`}>
             {TIPO_LABEL[tipoFilter]}
           </span>
@@ -494,7 +494,7 @@ function CityOSMini({ rows, tipoFilter, onOS }) {
       )}
       <table className="w-full text-[11px]">
         <thead className="sticky top-0 bg-elevated z-10">
-          <tr className="border-b border-border">
+          <tr className="border-b border-white/[0.08]">
             {CITY_OS_COLS.map(col => (
               <th
                 key={col.key}
@@ -514,7 +514,7 @@ function CityOSMini({ rows, tipoFilter, onOS }) {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-border/40">
+        <tbody className="divide-y divide-white/[0.03]">
           {sorted.map(os => {
             const aging  = os._aging ?? 0
             const agVar  = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'

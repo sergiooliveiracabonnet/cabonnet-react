@@ -12,7 +12,7 @@ interface ChartCardProps {
 
 export function ChartCard({ title, dot, children, height = 'h-48', onExpand, className = '' }: ChartCardProps) {
   return (
-    <div className={`relative bg-card border border-border rounded-xl overflow-hidden ${className}`}>
+    <div className={`relative bg-card border border-white/[0.08] rounded-xl overflow-hidden ${className}`}>
       {/* Top accent — só quando dot está definido */}
       {dot && (
         <div

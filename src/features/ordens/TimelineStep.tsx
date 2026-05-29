@@ -107,7 +107,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
 
         {/* Obs inline quando fechado */}
         {obs && !open && (
-          <div className="mt-1.5 bg-surface/30 border border-border rounded-xl px-3 py-2">
+          <div className="mt-1.5 bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2">
             <p className="text-[11px] text-secondary leading-relaxed">{obs}</p>
           </div>
         )}
@@ -118,7 +118,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
 
             {/* Metadados em linha */}
             {(d.nomeTecnico || d.duracao || d.hora || d.periodo || d.contrato) && (
-              <div className="bg-surface/30 border border-border rounded-xl px-3 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
+              <div className="bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
                 {d.nomeTecnico && <Meta icon={Wrench}    label="Técnico"   value={d.nomeTecnico} />}
                 {d.duracao     && <Meta icon={Clock}     label="Duração"   value={d.duracao} />}
                 {d.hora        && <Meta icon={Clock}     label="Hora"      value={d.hora} />}
@@ -193,7 +193,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
 
             {/* Materiais utilizados */}
             {(d.materiais?.length ?? 0) > 0 && (
-              <div className="bg-surface/30 border border-border rounded-xl px-3 py-2.5">
+              <div className="bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2.5">
                 <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
                   <Package size={10} /> Materiais utilizados
                 </p>
@@ -247,7 +247,7 @@ function Meta({ icon: Icon, label, value, mono }: MetaProps) {
 
 function InfoBlock({ label, text }: { label: string; text: string }) {
   return (
-    <div className="bg-surface/30 border border-border rounded-xl px-3 py-2.5">
+    <div className="bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2.5">
       <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-1">{label}</p>
       <p className="text-[11px] text-secondary leading-relaxed whitespace-pre-wrap">{text}</p>
     </div>

@@ -104,7 +104,7 @@ function EquipeCard({ team, metrics, slaData, custoMensal = 0, indisponivel = fa
       role="button"
       tabIndex={0}
       onKeyDown={e => e.key === 'Enter' && onClick(team)}
-      className="group bg-elevated border border-border rounded-xl p-4 cursor-pointer
+      className="group bg-elevated border border-white/[0.08] rounded-xl p-4 cursor-pointer
                  hover:border-muted/40 hover:shadow-xl hover:shadow-black/30
                  transition-all duration-200 flex flex-col gap-3.5 outline-none
                  focus-visible:ring-2 focus-visible:ring-primary/50"
@@ -122,7 +122,7 @@ function EquipeCard({ team, metrics, slaData, custoMensal = 0, indisponivel = fa
         </div>
         <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
           {indisponivel ? (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface text-muted border border-border">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface text-muted border border-white/[0.08]">
               Indisponível
             </span>
           ) : (
@@ -173,7 +173,7 @@ function EquipeCard({ team, metrics, slaData, custoMensal = 0, indisponivel = fa
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-0.5 border-t border-border/60">
+      <div className="flex items-center justify-between pt-0.5 border-t border-white/[0.05]">
         <div className="flex items-center gap-2 text-[10px] text-muted flex-wrap">
           <span className="flex items-center gap-0.5">
             <Activity size={10} />
@@ -239,11 +239,11 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
       />
 
       {/* Drawer */}
-      <div className="relative w-full max-w-md bg-elevated border-l border-border
+      <div className="relative w-full max-w-md bg-elevated border-l border-white/[0.08]
                       flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-right-4 duration-200">
 
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-border">
+        <div className="flex items-center justify-between p-5 border-b border-white/[0.08]">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cfg.iconBg}`}>
               <Icon size={18} className={cfg.iconCls} />
@@ -279,7 +279,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
             ].map(item => {
               const DI = item.DIcon
               return (
-                <div key={item.label} className="bg-surface/30 border border-border rounded-xl px-4 py-3">
+                <div key={item.label} className="bg-surface/30 border border-white/[0.08] rounded-xl px-4 py-3">
                   <DI size={14} className={`${item.cls} mb-1.5`} />
                   <p className={`text-xl font-headline font-bold ${item.cls}`}>{item.value}</p>
                   <p className="text-[11px] text-muted mt-0.5">{item.label}</p>
@@ -289,7 +289,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
           </div>
 
           {/* Capacity */}
-          <div className="bg-surface/30 border border-border rounded-xl p-4">
+          <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[12px] font-semibold text-text">Capacidade Operacional</p>
               <span className={`text-[11px] font-bold ${pct > 85 ? 'text-red-400' : pct > 60 ? 'text-orange-400' : 'text-emerald-400'}`}>
@@ -311,7 +311,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
                 {(team.members?.length ?? 0) + 1}
               </span>
             </p>
-            <div className="bg-surface/30 border border-border rounded-xl divide-y divide-border/50">
+            <div className="bg-surface/30 border border-white/[0.08] rounded-xl divide-y divide-white/[0.06]/50">
               {/* Líder */}
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${cfg.iconBg} ${cfg.iconCls}`}>
@@ -325,11 +325,11 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
               {/* Técnicos */}
               {(team.members || []).map(name => (
                 <div key={name} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-7 h-7 rounded-full bg-surface border border-border flex items-center justify-center text-[10px] font-bold text-secondary flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-surface border border-white/[0.08] flex items-center justify-center text-[10px] font-bold text-secondary flex-shrink-0">
                     {name[0]}
                   </div>
                   <span className="text-[12px] text-text capitalize">{name.charAt(0) + name.slice(1).toLowerCase()}</span>
-                  <span className="ml-auto text-[9px] bg-surface/40 text-muted border border-border px-1.5 py-0.5 rounded-full">
+                  <span className="ml-auto text-[9px] bg-surface/40 text-muted border border-white/[0.08] px-1.5 py-0.5 rounded-full">
                     Técnico
                   </span>
                 </div>
@@ -349,7 +349,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
                        className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg
                          ${isToday
                            ? 'bg-primary/10 border border-primary/20'
-                           : 'bg-surface/30 border border-border/60'}`}>
+                           : 'bg-surface/30 border border-white/[0.05]'}`}>
                     <span className={`text-[8px] font-bold uppercase leading-none
                                       ${isToday ? 'text-primary' : 'text-muted'}`}>
                       {DAY_SHORT[dayIdx]}
@@ -381,7 +381,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
           {/* Informações */}
           <div className="space-y-2">
             <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">Informações</p>
-            <div className="bg-surface/30 border border-border rounded-xl divide-y divide-border/50">
+            <div className="bg-surface/30 border border-white/[0.08] rounded-xl divide-y divide-white/[0.06]/50">
               {[
                 { IIcon: Users,    label: 'Responsável',  value: team.leader.charAt(0) + team.leader.slice(1).toLowerCase() },
                 { IIcon: Package,  label: 'Especialidade', value: cfg.label },
@@ -424,7 +424,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
                     onChange={e => isGestor && onCustoChange?.(e.target.value)}
                     disabled={!isGestor}
                     placeholder="0"
-                    className="w-28 bg-surface border border-border rounded-md px-2 py-1
+                    className="w-28 bg-surface border border-white/[0.08] rounded-md px-2 py-1
                                text-[11px] font-mono text-text text-right outline-none
                                focus:border-primary/50 transition-colors disabled:opacity-40"
                   />
@@ -572,7 +572,7 @@ export default function EquipesPage() {
           const SI = s.SIcon
           return (
             <div key={s.label}
-                 className="bg-elevated border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+                 className="bg-elevated border border-white/[0.08] rounded-xl px-4 py-3 flex items-center gap-3">
               <div className={`w-8 h-8 rounded-lg ${s.bgCls} flex items-center justify-center flex-shrink-0`}>
                 <SI size={14} className={s.iconCls} />
               </div>
@@ -593,12 +593,12 @@ export default function EquipesPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar equipe ou técnico…"
-            className="pl-8 pr-3 py-2 text-[12px] bg-elevated border border-border rounded-lg w-64
+            className="pl-8 pr-3 py-2 text-[12px] bg-elevated border border-white/[0.08] rounded-lg w-64
                        text-text placeholder:text-muted focus:outline-none focus:border-primary/40"
           />
         </div>
 
-        <div className="flex gap-1 bg-elevated border border-border rounded-lg p-0.5">
+        <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
           {[
             { value: '',           label: 'Todas' },
             { value: 'INSTALACAO', label: 'Instalação' },

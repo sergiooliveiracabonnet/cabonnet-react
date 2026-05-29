@@ -66,9 +66,9 @@ function CidadePanel({ cidade, onClose }) {
   const _pct = cidade.count > 0 ? Math.round((cidade.criticos / cidade.count) * 100) : 0
   return (
     <div className="absolute bottom-4 left-4 z-[500] w-72 animate-fade-in">
-      <div className="bg-elevated/95 backdrop-blur-md border border-border rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full" style={{ background: fill }} />
             <p className="text-[13px] font-bold text-text capitalize">
@@ -85,12 +85,12 @@ function CidadePanel({ cidade, onClose }) {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08]">
           <Stat label="Total OS"   value={cidade.count}              color="text-text" />
           <Stat label="Críticas"   value={cidade.criticos}           color={cidade.criticos  > 0 ? 'text-red'    : 'text-muted'} />
           <Stat label="Excedidas"  value={cidade.excedidos}          color={cidade.excedidos > 0 ? 'text-orange' : 'text-muted'} />
         </div>
-        <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08]">
           <Stat label="Aging med." value={`${cidade.avgAging.toFixed(1)}d`} color="text-cyan" />
           <Stat label="Pendentes"  value={cidade.pendentes}   color="text-yellow" />
           <Stat label="Sem equipe" value={cidade.semEquipe}   color={cidade.semEquipe > 0 ? 'text-orange' : 'text-muted'} />
@@ -143,12 +143,12 @@ function Stat({ label, value, color }) {
 function RankingPanel({ cidades, onSelect, selected }) {
   return (
     <div className="absolute top-4 right-4 z-[500] w-60">
-      <div className="bg-elevated/90 backdrop-blur-md border border-border rounded-2xl overflow-hidden shadow-2xl">
-        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-border">
+      <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.08]">
           <TrendingUp size={12} className="text-primary" />
           <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Ranking de cidades</p>
         </div>
-        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-border/60">
+        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
           {cidades.slice(0, 15).map((g, i) => {
             const { fill } = bubbleColor(g)
             const isSelected = selected?.cidade === g.cidade
@@ -257,7 +257,7 @@ export default function MapaPage() {
 
       {/* ── Barra superior ────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2.5
-                      bg-elevated/80 backdrop-blur border-b border-border flex-wrap">
+                      bg-elevated/80 backdrop-blur border-b border-white/[0.08] flex-wrap">
 
         {/* Ícone + título */}
         <div className="flex items-center gap-2">
@@ -284,7 +284,7 @@ export default function MapaPage() {
         <div className="w-px h-5 bg-surface" />
 
         {/* Toggle de visualização */}
-        <div className="flex bg-bg border border-border rounded-xl p-0.5">
+        <div className="flex bg-bg border border-white/[0.08] rounded-xl p-0.5">
           {[
             { val: 'calor',  icon: Flame,  label: 'Calor'  },
             { val: 'bolhas', icon: Circle, label: 'Bolhas' },
@@ -367,7 +367,7 @@ export default function MapaPage() {
 
         {/* Legenda */}
         <div className="absolute bottom-4 right-4 z-[500]">
-          <div className="bg-elevated/85 backdrop-blur border border-border rounded-xl px-3 py-2.5 space-y-1.5">
+          <div className="bg-elevated/85 backdrop-blur border border-white/[0.08] rounded-xl px-3 py-2.5 space-y-1.5">
             <p className="text-[9px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Criticidade</p>
             {[
               { color: '#f87171', label: 'SLA Crítico'   },

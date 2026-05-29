@@ -98,7 +98,7 @@ function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
       <div className="flex flex-col" style={{ maxHeight: '72vh' }}>
 
         {/* Sub-header: count + legenda */}
-        <div className="flex items-center justify-between px-5 py-2.5 border-b border-border">
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-white/[0.08]">
           <span className="text-[12px] font-semibold" style={{ color }}>
             {rows.length} {rows.length === 1 ? 'ordem' : 'ordens'}
           </span>
@@ -117,7 +117,7 @@ function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
 
         {/* Cabeçalho da tabela */}
         <div className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3 px-5 py-2
-                        bg-surface/20 border-b border-border/60
+                        bg-surface/20 border-b border-white/[0.05]
                         text-[10px] font-bold uppercase tracking-[0.05em] text-muted flex-shrink-0">
           <span>OS #</span>
           <span>Cliente</span>
@@ -133,7 +133,7 @@ function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
               Nenhuma OS encontrada
             </div>
           ) : (
-            <div className="divide-y divide-border/50">
+            <div className="divide-y divide-white/[0.06]/50">
               {rows.map(r => {
                 const aging = r._aging ?? 0
                 const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : '#94a3b8'
@@ -213,15 +213,15 @@ function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no período'
 
   if (!cidades.length) {
     return (
-      <div className="rounded-xl border border-border bg-card px-4 py-8 text-center">
+      <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
         <p className="text-[12px] text-muted">{emptyMsg}</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="divide-y divide-border/50">
+    <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
+      <div className="divide-y divide-white/[0.06]/50">
         {cidades.map((c, i) => {
           const pct = Math.round((c.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)
@@ -265,22 +265,22 @@ function EmRotaCard({ rows, color }) {
 
   if (!rows.length) {
     return (
-      <div className="rounded-xl border border-border bg-card px-4 py-8 text-center">
+      <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
         <p className="text-[12px] text-muted">Nenhuma OS em rota agora</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_1fr_80px] gap-3 px-4 py-2 bg-surface/20
-                      border-b border-border/60 text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
+                      border-b border-white/[0.05] text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
         <span>Cliente</span>
         <span>Cidade · Equipe</span>
         <span className="text-right">Aging</span>
       </div>
-      <div className="divide-y divide-border/50 max-h-72 overflow-y-auto">
+      <div className="divide-y divide-white/[0.06]/50 max-h-72 overflow-y-auto">
         {rows.slice(0, 50).map(r => {
           const aging = r._agingAbertura ?? 0
           const pct   = Math.round((aging / max) * 100)
@@ -345,7 +345,7 @@ function ClienteSearch({ rows, color, onDrillDown }) {
           onChange={e => setQ(e.target.value)}
           placeholder="Buscar cliente em rota…"
           className="w-full pl-7 pr-7 py-1.5 rounded-lg text-[11px] bg-surface/30
-                     border border-border text-text placeholder:text-muted/50
+                     border border-white/[0.08] text-text placeholder:text-muted/50
                      focus:outline-none focus:border-muted/40 transition-colors"
         />
         {q && (
@@ -359,13 +359,13 @@ function ClienteSearch({ rows, color, onDrillDown }) {
 
       {/* Resultados */}
       {term && (
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="rounded-lg border border-white/[0.08] bg-card overflow-hidden">
           {results.length === 0 ? (
             <p className="px-3 py-2.5 text-[11px] text-muted text-center">
               Nenhum cliente em rota
             </p>
           ) : (
-            <div className="divide-y divide-border/50">
+            <div className="divide-y divide-white/[0.06]/50">
               {results.map(r => {
                 const aging = r._agingAbertura ?? 0
                 const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : color
@@ -405,17 +405,17 @@ function EquipeTable({ equipes, sourceRows, onDrillDown }) {
 
   if (!equipes.length) {
     return (
-      <div className="rounded-xl border border-border bg-card px-4 py-8 text-center">
+      <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
         <p className="text-[12px] text-muted">Sem dados de equipes no período</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_60px_60px_60px_60px_24px] gap-2 px-4 py-2.5 bg-surface/20
-                      border-b border-border/60 text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
+                      border-b border-white/[0.05] text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
         <span>Equipe</span>
         <span className="text-right">Total</span>
         <span className="text-right text-yellow">Pend.</span>
@@ -423,7 +423,7 @@ function EquipeTable({ equipes, sourceRows, onDrillDown }) {
         <span className="text-right text-green">Concl.</span>
         <span />
       </div>
-      <div className="divide-y divide-border/50 max-h-96 overflow-y-auto">
+      <div className="divide-y divide-white/[0.06]/50 max-h-96 overflow-y-auto">
         {equipes.map((e, _i) => {
           const pct = Math.round((e.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)
@@ -594,7 +594,7 @@ export default function GerencialPage() {
                 { label: 'Concluídas', drillRows: instConclRows, color: '#4ade80' },
               ].map(s => (
                 <div key={s.label}
-                     className="rounded-xl border border-border bg-card px-3 py-3
+                     className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill(`Instalações ${s.label} — ${s.drillRows.length} ordens`, s.drillRows, s.color)}>
                   <p className="font-mono font-bold text-[24px] leading-none"
@@ -654,7 +654,7 @@ export default function GerencialPage() {
                 { label: 'Concluídas', drillRows: vtManutConclRows, color: '#4ade80' },
               ].map(s => (
                 <div key={s.label}
-                     className="rounded-xl border border-border bg-card px-3 py-3
+                     className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill(`VT/Manutenção ${s.label} — ${s.drillRows.length} ordens`, s.drillRows, s.color)}>
                   <p className="font-mono font-bold text-[24px] leading-none"
@@ -714,7 +714,7 @@ export default function GerencialPage() {
                 { label: 'Concluídos', drillRows: servConclRows, color: '#4ade80' },
               ].map(s => (
                 <div key={s.label}
-                     className="rounded-xl border border-border bg-card px-3 py-3
+                     className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill(`Serviços ${s.label} — ${s.drillRows.length} ordens`, s.drillRows, s.color)}>
                   <p className="font-mono font-bold text-[24px] leading-none"

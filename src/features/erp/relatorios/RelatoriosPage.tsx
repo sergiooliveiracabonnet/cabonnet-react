@@ -36,13 +36,13 @@ function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
   return (
     <Modal open={open} onClose={onClose} title={title} maxWidth="780px">
       <div className="flex flex-col" style={{ maxHeight: '72vh' }}>
-        <div className="flex items-center justify-between px-5 py-2.5 border-b border-border flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-white/[0.08] flex-shrink-0">
           <span className="text-[12px] font-semibold" style={{ color }}>
             {rows.length} {rows.length === 1 ? 'ordem' : 'ordens'}
           </span>
         </div>
         <div className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3 px-5 py-2
-                        bg-surface/20 border-b border-border/60 flex-shrink-0
+                        bg-surface/20 border-b border-white/[0.05] flex-shrink-0
                         text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
           <span>OS #</span><span>Cliente</span><span>Cidade</span><span>Equipe</span>
           <span className="text-right">Aging</span>
@@ -50,7 +50,7 @@ function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
         <div className="overflow-y-auto flex-1">
           {rows.length === 0
             ? <div className="px-5 py-10 text-center text-[12px] text-muted">Nenhuma OS encontrada</div>
-            : <div className="divide-y divide-border/50">
+            : <div className="divide-y divide-white/[0.06]/50">
                 {rows.map(r => {
                   const aging = r._agingAbertura ?? 0
                   const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : '#94a3b8'
@@ -82,8 +82,8 @@ function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
 
 function Section({ title, subtitle, action, children, height = 'h-64' }) {
   return (
-    <div className="bg-elevated border border-border rounded-xl flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+    <div className="bg-elevated border border-white/[0.08] rounded-xl flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] flex-shrink-0">
         <div>
           <p className="text-[13px] font-semibold text-text">{title}</p>
           {subtitle && <p className="text-[11px] text-muted mt-0.5">{subtitle}</p>}
@@ -558,7 +558,7 @@ export default function RelatoriosPage() {
 
         <div className="flex flex-col items-end gap-2">
           {/* Filtro de período */}
-          <div className="flex gap-1 bg-elevated border border-border rounded-lg p-0.5">
+          <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
             {[
               { value: 'all',   label: 'Tudo'          },
               { value: 'month', label: 'Últimos 30 dias' },
@@ -578,7 +578,7 @@ export default function RelatoriosPage() {
           </div>
 
           {/* Filtro de tipo */}
-          <div className="flex gap-1 bg-elevated border border-border rounded-lg p-0.5">
+          <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
             {[
               { value: '',           label: 'Todos'      },
               { value: 'INSTALACAO', label: 'Instalação' },
@@ -620,7 +620,7 @@ export default function RelatoriosPage() {
           const KIcon = k.Icon
           return (
             <div key={k.label}
-                 className="bg-elevated border border-border rounded-xl px-4 py-3
+                 className="bg-elevated border border-white/[0.08] rounded-xl px-4 py-3
                             flex items-center gap-3 cursor-pointer hover:bg-surface/30 transition-colors"
                  onClick={() => setDrill({ title: `${k.label} — ${k.rows.length} ordens`, rows: k.rows, color: k.color })}>
               <div className={`w-9 h-9 rounded-lg ${k.bgCls} flex items-center justify-center flex-shrink-0`}>
@@ -645,8 +645,8 @@ export default function RelatoriosPage() {
         <>
           {/* ── Produção Consolidada ── */}
           {totals.execTotal > 0 && (
-            <div className="bg-elevated border border-border rounded-xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-border">
+            <div className="bg-elevated border border-white/[0.08] rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-white/[0.08]">
                 <p className="text-[13px] font-semibold text-text">Produção Consolidada do Período</p>
                 <p className="text-[11px] text-muted mt-0.5">Total de OS executadas (concluídas) por tipo de serviço</p>
               </div>
@@ -654,7 +654,7 @@ export default function RelatoriosPage() {
               {/* KPI cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4">
                 {/* Total */}
-                <div className="relative overflow-hidden rounded-xl border border-border bg-card px-5 py-4
+                <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-card px-5 py-4
                                 flex flex-col justify-between cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => setDrill({ title: `Total Executado — ${drillConcl.length} ordens`, rows: drillConcl, color: '#3b82f6' })}>
                   <div className="absolute top-0 left-0 right-0 h-[2px] bg-surface/200" />
@@ -788,8 +788,8 @@ export default function RelatoriosPage() {
           </div>
 
           {/* ── Ranking de equipes ── */}
-          <div className="bg-elevated border border-border rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="bg-elevated border border-white/[0.08] rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
               <div>
                 <p className="text-[13px] font-semibold text-text">Ranking de Equipes</p>
                 <p className="text-[11px] text-muted mt-0.5">Desempenho consolidado</p>
@@ -798,7 +798,7 @@ export default function RelatoriosPage() {
                 <button
                   onClick={handleExportRanking}
                   className="flex items-center gap-1.5 text-[11px] text-secondary hover:text-text
-                             px-3 py-1.5 rounded-lg border border-border hover:border-muted/30
+                             px-3 py-1.5 rounded-lg border border-white/[0.08] hover:border-muted/30
                              transition-colors"
                   title="Exportar tabela como CSV"
                 >
@@ -808,7 +808,7 @@ export default function RelatoriosPage() {
                 <button
                   onClick={() => exportPDF('dark')}
                   className="flex items-center gap-1.5 text-[11px] text-secondary hover:text-text
-                             px-3 py-1.5 rounded-lg border border-border hover:border-muted/30
+                             px-3 py-1.5 rounded-lg border border-white/[0.08] hover:border-muted/30
                              transition-colors"
                   title="Exportar PDF com tema escuro"
                 >
@@ -818,7 +818,7 @@ export default function RelatoriosPage() {
                 <button
                   onClick={() => exportPDF('light')}
                   className="flex items-center gap-1.5 text-[11px] text-secondary hover:text-text
-                             px-3 py-1.5 rounded-lg border border-border hover:border-muted/30
+                             px-3 py-1.5 rounded-lg border border-white/[0.08] hover:border-muted/30
                              transition-colors"
                   title="Exportar PDF com tema claro"
                 >
@@ -832,16 +832,16 @@ export default function RelatoriosPage() {
               <table className="w-full text-[12px]">
                 <thead>
                   {/* Grupo "Executadas" */}
-                  <tr className="border-b border-border/40">
+                  <tr className="border-b border-white/[0.03]">
                     <th colSpan={2} className="px-4 py-1" />
                     <th colSpan={4}
                         className="px-4 py-1.5 text-center text-[9px] font-bold uppercase tracking-widest
-                                   text-primary/70 border-l border-border">
+                                   text-primary/70 border-l border-white/[0.08]">
                       Executadas no período
                     </th>
                     <th colSpan={4} className="px-4 py-1" />
                   </tr>
-                  <tr className="border-b border-border/60">
+                  <tr className="border-b border-white/[0.05]">
                     {['#', 'Equipe'].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-muted">
                         {h}
@@ -854,7 +854,7 @@ export default function RelatoriosPage() {
                     ].map((h, i) => (
                       <th key={h.label}
                           className={`text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider
-                                      ${i === 0 ? 'border-l border-border' : ''}`}
+                                      ${i === 0 ? 'border-l border-white/[0.08]' : ''}`}
                           style={{ color: h.color }}>
                         {h.label}
                       </th>
@@ -872,7 +872,7 @@ export default function RelatoriosPage() {
                 <tbody>
                   {ranking.map((r, i) => (
                     <tr key={r.code}
-                        className="border-b border-border/50 hover:bg-surface/20 transition-colors">
+                        className="border-b border-white/[0.04] hover:bg-surface/20 transition-colors">
                       <td className="px-4 py-3 text-muted font-mono">{i + 1}</td>
                       <td className="px-4 py-3">
                         <p className="font-semibold text-text">{r.code}</p>
@@ -881,7 +881,7 @@ export default function RelatoriosPage() {
                         </p>
                       </td>
                       {/* ── Executadas ── */}
-                      <td className="px-4 py-3 border-l border-border">
+                      <td className="px-4 py-3 border-l border-white/[0.08]">
                         <span className={`font-mono font-bold tabular-nums ${r.execInst > 0 ? 'text-blue-400' : 'text-muted'}`}>
                           {r.execInst > 0 ? r.execInst : '—'}
                         </span>
@@ -935,7 +935,7 @@ export default function RelatoriosPage() {
                         <span className="text-[11px] font-bold text-text uppercase tracking-wide">Total Geral</span>
                         <span className="text-[10px] text-muted ml-1.5">· {ranking.length} equipes</span>
                       </td>
-                      <td className="px-4 py-3 border-l border-border">
+                      <td className="px-4 py-3 border-l border-white/[0.08]">
                         <span className="font-mono font-black text-[15px] tabular-nums text-blue-400">{totals.execInst}</span>
                       </td>
                       <td className="px-4 py-3">

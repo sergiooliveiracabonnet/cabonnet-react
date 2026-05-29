@@ -41,7 +41,7 @@ export function KPICard({
   return (
     <div
       onClick={onClick}
-      className={`group relative rounded-xl bg-card border border-border p-5
+      className={`group relative rounded-xl bg-card border border-white/[0.08] p-5
                   ${c.glow} transition-colors duration-150
                   ${onClick ? 'cursor-pointer hover:bg-card-high active:scale-[.99]' : ''}
                   ${className}`}

@@ -267,7 +267,7 @@ function GrafanaCityStrip({ cidades, loading }) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-xl bg-surface/30 border border-border animate-pulse" />
+          <div key={i} className="h-24 rounded-xl bg-surface/30 border border-white/[0.08] animate-pulse" />
         ))}
       </div>
     )
@@ -351,11 +351,11 @@ function SettingsPanel({ settings, onSave, onClose }) {
   return (
     <div className="fixed inset-0 z-[300] flex items-stretch justify-end">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-xs bg-elevated border-l border-border
+      <div className="relative w-full max-w-xs bg-elevated border-l border-white/[0.08]
                       flex flex-col shadow-2xl animate-in slide-in-from-right-4 duration-200">
 
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-border">
+        <div className="flex items-center justify-between p-5 border-b border-white/[0.08]">
           <div>
             <h2 className="text-[14px] font-bold text-text">Configurar Alertas</h2>
             <p className="text-[10px] text-muted mt-0.5">Thresholds e limites de SLA</p>
@@ -398,7 +398,7 @@ function SettingsPanel({ settings, onSave, onClose }) {
           </div>
 
           {/* ── Limites de SLA ── */}
-          <div className="pt-2 border-t border-border">
+          <div className="pt-2 border-t border-white/[0.08]">
             <div className="flex items-center justify-between mb-4">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted">
                 Limites de SLA por Tipo (dias)
@@ -418,7 +418,7 @@ function SettingsPanel({ settings, onSave, onClose }) {
                     <input
                       type="number" min={1} max={30} value={slaD[f.key] ?? 2}
                       onChange={e => setSlaD(d => ({ ...d, [f.key]: Number(e.target.value) }))}
-                      className="w-14 bg-surface border border-border rounded-md px-2 py-1
+                      className="w-14 bg-surface border border-white/[0.08] rounded-md px-2 py-1
                                  text-[12px] font-mono text-text text-center outline-none
                                  focus:border-primary/50 transition-colors"
                     />
@@ -434,9 +434,9 @@ function SettingsPanel({ settings, onSave, onClose }) {
 
         </div>
 
-        <div className="p-5 border-t border-border flex gap-2">
+        <div className="p-5 border-t border-white/[0.08] flex gap-2">
           <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-border text-[12px] text-secondary
+            className="flex-1 py-2.5 rounded-xl border border-white/[0.08] text-[12px] text-secondary
                        hover:text-text hover:border-muted/40 transition-colors">
             Cancelar
           </button>
@@ -544,7 +544,7 @@ export default function AlertasPage() {
         <button
           onClick={() => setShowSettings(true)}
           className="flex items-center gap-1.5 text-[11px] text-secondary hover:text-text
-                     px-3 py-1.5 rounded-xl border border-border hover:border-muted/40
+                     px-3 py-1.5 rounded-xl border border-white/[0.08] hover:border-muted/40
                      hover:bg-surface/30 transition-all duration-150 flex-shrink-0"
         >
           <Settings size={13} /> Configurar
@@ -677,7 +677,7 @@ export default function AlertasPage() {
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-2xl bg-surface/30 border border-border animate-pulse" />
+            <div key={i} className="h-20 rounded-2xl bg-surface/30 border border-white/[0.08] animate-pulse" />
           ))}
         </div>
       ) : alerts.length === 0 && ruleAlerts.length === 0 ? (

@@ -71,7 +71,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
         <button
           onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
           className="flex items-center gap-1.5 text-[11px] text-secondary hover:text-text
-                     px-3 py-1.5 rounded-lg hover:bg-surface/40 border border-border
+                     px-3 py-1.5 rounded-lg hover:bg-surface/40 border border-white/[0.08]
                      transition-all duration-150"
         >
           {sortDir === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
@@ -80,9 +80,9 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto rounded-xl border border-border min-h-0">
+      <div className="flex-1 overflow-auto rounded-xl border border-white/[0.08] min-h-0">
         <table className="w-full text-[12px] border-collapse">
-          <thead className="sticky top-0 z-10 bg-elevated border-b border-border">
+          <thead className="sticky top-0 z-10 bg-elevated border-b border-white/[0.08]">
             <tr>
               {['Prioridade', 'OS', 'Cliente', 'Tipo', 'Equipe', 'Cidade', 'Aging', 'SLA'].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-muted font-semibold uppercase tracking-wider text-[10px] whitespace-nowrap">
@@ -100,7 +100,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
 
               return (
                 <tr key={row.numos}
-                    className={`border-b border-border/50 transition-colors ${level.row}`}>
+                    className={`border-b border-white/[0.04] transition-colors ${level.row}`}>
                   {/* Priority */}
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2.5">

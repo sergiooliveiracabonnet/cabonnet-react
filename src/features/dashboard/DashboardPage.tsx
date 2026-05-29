@@ -228,7 +228,7 @@ export default function DashboardPage() {
                 exportCSV(modal.rows, `os_${modal.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
               }}
               className="flex items-center gap-1.5 text-[10px] text-muted hover:text-primary
-                         border border-border hover:border-primary/30 rounded-md px-2.5 py-1
+                         border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
                          transition-all duration-fast"
             >
               <Download size={11} /> CSV
@@ -364,7 +364,7 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
 
         {/* Insight pills */}
         {displayInsights.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-3 border-t border-border/60">
+          <div className="flex flex-wrap gap-1.5 pt-3 border-t border-white/[0.05]">
             {displayInsights.map((ins, i) => (
               <span
                 key={i}
@@ -500,7 +500,7 @@ function ExecutadasHeroBlock({ rows, onOpenModal }) {
           {total > 0 && (
             <button
               onClick={() => onOpenModal('Executadas Hoje', hojeRows)}
-              className="text-[11px] text-muted hover:text-green border border-border
+              className="text-[11px] text-muted hover:text-green border border-white/[0.08]
                          hover:border-green/30 rounded-lg px-2.5 py-1 transition-all duration-fast"
             >
               Ver todas →
@@ -533,7 +533,7 @@ function ExecutadasHeroBlock({ rows, onOpenModal }) {
                   <button
                     key={g.cat}
                     onClick={() => onOpenModal(`Hoje — ${g.label}`, g.rows)}
-                    className="bg-surface/30 hover:bg-surface border border-border
+                    className="bg-surface/30 hover:bg-surface border border-white/[0.08]
                                hover:border-muted/30 rounded-xl p-3 text-left
                                transition-all duration-150 cursor-pointer group"
                   >
@@ -649,13 +649,13 @@ function AgingPanel({ pulso }) {
   ]
 
   if (!agingTotal) return (
-    <div className="rounded-2xl border border-border bg-card p-5 flex items-center justify-center">
+    <div className="rounded-2xl border border-white/[0.08] bg-card p-5 flex items-center justify-center">
       <p className="text-muted text-[12px]">Sem dados de aging</p>
     </div>
   )
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5">
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card p-5">
       <SectionLabel icon={Clock} color="#3b82f6">Aging da Fila Ativa</SectionLabel>
 
       <div className="mt-4 space-y-3">
@@ -859,7 +859,7 @@ function AnomaliaSection({ anomalias, contexto = {} }) {
           )}
 
           {/* ── Análise de Causa Raiz (Claude) ── */}
-          <div className="border-t border-border pt-4">
+          <div className="border-t border-white/[0.08] pt-4">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles size={12} className="text-primary/70" />
               <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted">Análise de Causa Raiz</p>
@@ -951,7 +951,7 @@ function KpiModalTable({ rows, onOS }) {
     <div className="overflow-auto">
       <table className="w-full text-[11px]">
         <thead>
-          <tr className="border-b border-border bg-surface text-left text-[10px] font-bold uppercase tracking-[0.04em] text-muted">
+          <tr className="border-b border-white/[0.08] bg-surface text-left text-[10px] font-bold uppercase tracking-[0.04em] text-muted">
             {MODAL_COLS.map(col => (
               <th key={col.key} onClick={() => toggleSort(col.key)}
                   className="px-4 py-2.5 whitespace-nowrap cursor-pointer select-none hover:text-secondary transition-colors">
@@ -965,7 +965,7 @@ function KpiModalTable({ rows, onOS }) {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-border/50">
+        <tbody className="divide-y divide-white/[0.06]/50">
           {pageRows.map(os => {
             const aging = os._aging ?? 0
             const agVar = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'
@@ -985,14 +985,14 @@ function KpiModalTable({ rows, onOS }) {
         </tbody>
       </table>
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-border text-[10px] text-muted">
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.08] text-[10px] text-muted">
           <span>{page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} de {sorted.length}</span>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                    className="px-2 py-1 rounded border border-border disabled:opacity-30 hover:bg-surface/40 transition-colors">‹</button>
+                    className="px-2 py-1 rounded border border-white/[0.08] disabled:opacity-30 hover:bg-surface/40 transition-colors">‹</button>
             <span className="px-2 font-mono">{page + 1}/{totalPages}</span>
             <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1}
-                    className="px-2 py-1 rounded border border-border disabled:opacity-30 hover:bg-surface/40 transition-colors">›</button>
+                    className="px-2 py-1 rounded border border-white/[0.08] disabled:opacity-30 hover:bg-surface/40 transition-colors">›</button>
           </div>
         </div>
       )}

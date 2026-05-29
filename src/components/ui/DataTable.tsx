@@ -50,13 +50,13 @@ export function DataTable<T extends Record<string, unknown>>({
     <div className={`overflow-x-auto ${className}`}>
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b border-border">
+          <tr className="border-b-2 border-white/[0.08]">
             {columns.map((col) => (
               <th
                 key={col.key ?? col.label}
                 onClick={() => handleSort(col.key)}
                 scope="col"
-                className={`px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-muted
+                className={`px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.6px] text-muted
                             whitespace-nowrap select-none
                             ${col.key ? 'cursor-pointer hover:text-secondary' : ''}
                             ${col.align === 'right' ? 'text-right' : ''}
@@ -79,11 +79,11 @@ export function DataTable<T extends Record<string, unknown>>({
               onClick={() => onRowClick?.(row)}
               onMouseEnter={(e) => onRowHover?.(row, e.currentTarget.getBoundingClientRect())}
               onMouseLeave={() => onRowLeave?.()}
-              className={`border-b border-border/50 ${textSize[density]}
-                          transition-colors duration-100 text-secondary
-                          hover:bg-card-high hover:text-text
+              className={`border-b border-white/[0.04] ${textSize[density]}
+                          transition-colors duration-fast text-secondary
+                          hover:bg-primary/[0.07] hover:text-text
                           ${onRowClick ? 'cursor-pointer' : ''}
-                          ${row._critical ? 'bg-red/[0.06]' : ''}`}
+                          ${row._critical ? 'bg-red/[0.04]' : ''}`}
             >
               {columns.map((col) => (
                 <td
