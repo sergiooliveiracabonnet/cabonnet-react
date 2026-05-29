@@ -311,7 +311,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
                 {(team.members?.length ?? 0) + 1}
               </span>
             </p>
-            <div className="bg-surface/30 border border-white/[0.08] rounded-xl divide-y divide-white/[0.06]/50">
+            <div className="bg-surface/30 border border-white/[0.08] rounded-xl divide-y divide-white/[0.04]">
               {/* Líder */}
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${cfg.iconBg} ${cfg.iconCls}`}>
@@ -381,7 +381,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
           {/* Informações */}
           <div className="space-y-2">
             <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">Informações</p>
-            <div className="bg-surface/30 border border-white/[0.08] rounded-xl divide-y divide-white/[0.06]/50">
+            <div className="bg-surface/30 border border-white/[0.08] rounded-xl divide-y divide-white/[0.04]">
               {[
                 { IIcon: Users,    label: 'Responsável',  value: team.leader.charAt(0) + team.leader.slice(1).toLowerCase() },
                 { IIcon: Package,  label: 'Especialidade', value: cfg.label },

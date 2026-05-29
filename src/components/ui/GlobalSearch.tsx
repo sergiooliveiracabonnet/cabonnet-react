@@ -145,7 +145,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
               {results.length > 0 && (
                 <>
-                  <div className="divide-y divide-white/[0.06]/50">
+                  <div className="divide-y divide-white/[0.04]">
                     {results.map((os, idx) => {
                       const aging = (os._aging as number | undefined) ?? (os._agingAbertura as number | undefined)
                       const agCls = (aging ?? 0) >= 6 ? 'text-red' : (aging ?? 0) >= 3 ? 'text-yellow' : 'text-muted'

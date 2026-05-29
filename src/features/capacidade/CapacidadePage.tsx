@@ -192,7 +192,7 @@ export default function CapacidadePage() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06]/50">
+            <tbody className="divide-y divide-white/[0.04]">
               {projecao.map((p) => (
                 <tr key={p.equipe} className="text-secondary hover:bg-primary/[0.04]">
                   <td className="px-4 py-2 font-semibold text-text">{p.equipe}</td>

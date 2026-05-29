@@ -133,7 +133,7 @@ function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
               Nenhuma OS encontrada
             </div>
           ) : (
-            <div className="divide-y divide-white/[0.06]/50">
+            <div className="divide-y divide-white/[0.04]">
               {rows.map(r => {
                 const aging = r._aging ?? 0
                 const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : '#94a3b8'
@@ -221,7 +221,7 @@ function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no período'
 
   return (
     <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
-      <div className="divide-y divide-white/[0.06]/50">
+      <div className="divide-y divide-white/[0.04]">
         {cidades.map((c, i) => {
           const pct = Math.round((c.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)
@@ -280,7 +280,7 @@ function EmRotaCard({ rows, color }) {
         <span>Cidade · Equipe</span>
         <span className="text-right">Aging</span>
       </div>
-      <div className="divide-y divide-white/[0.06]/50 max-h-72 overflow-y-auto">
+      <div className="divide-y divide-white/[0.04] max-h-72 overflow-y-auto">
         {rows.slice(0, 50).map(r => {
           const aging = r._agingAbertura ?? 0
           const pct   = Math.round((aging / max) * 100)
@@ -365,7 +365,7 @@ function ClienteSearch({ rows, color, onDrillDown }) {
               Nenhum cliente em rota
             </p>
           ) : (
-            <div className="divide-y divide-white/[0.06]/50">
+            <div className="divide-y divide-white/[0.04]">
               {results.map(r => {
                 const aging = r._agingAbertura ?? 0
                 const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : color
@@ -423,7 +423,7 @@ function EquipeTable({ equipes, sourceRows, onDrillDown }) {
         <span className="text-right text-green">Concl.</span>
         <span />
       </div>
-      <div className="divide-y divide-white/[0.06]/50 max-h-96 overflow-y-auto">
+      <div className="divide-y divide-white/[0.04] max-h-96 overflow-y-auto">
         {equipes.map((e, _i) => {
           const pct = Math.round((e.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)

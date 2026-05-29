@@ -248,7 +248,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.06]/50">
+                <tbody className="divide-y divide-white/[0.04]">
                   {equipes.map((eq) => (
                     <tr key={eq.nome} className="text-secondary hover:bg-primary/[0.05] transition-colors">
                       <td className="px-3 py-2 font-semibold text-text max-w-[180px] truncate">{eq.nome}</td>

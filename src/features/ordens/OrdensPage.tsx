@@ -185,7 +185,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
   }
 
   return (
-    <div className="divide-y divide-white/[0.06]/50">
+    <div className="divide-y divide-white/[0.04]">
       {groups.map((g) => {
         const primeiraData = g.sorted[0]?.datacadastro?.split(' ')[0] ?? '—'
         const ultimaData   = g.sorted[g.sorted.length - 1]?.datacadastro?.split(' ')[0] ?? '—'

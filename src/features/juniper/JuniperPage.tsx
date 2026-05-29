@@ -527,7 +527,7 @@ export default function JuniperPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.06]/50">
+              <tbody className="divide-y divide-white/[0.04]">
                 {clientesFiltrados.map((c, i) => {
                   const isOnline = c.state !== 'inactive'
                   return (
@@ -574,7 +574,7 @@ export default function JuniperPage() {
             )}
           </div>
         </div>
-        <div className="divide-y divide-white/[0.06]/50 min-h-[120px] max-h-[600px] overflow-y-auto">
+        <div className="divide-y divide-white/[0.04] min-h-[120px] max-h-[600px] overflow-y-auto">
           {historico.length === 0 ? (
             <p className="text-center text-muted text-[12px] py-10">
               O histórico será salvo automaticamente a cada coleta (5 min).

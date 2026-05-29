@@ -50,7 +50,7 @@ function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
         <div className="overflow-y-auto flex-1">
           {rows.length === 0
             ? <div className="px-5 py-10 text-center text-[12px] text-muted">Nenhuma OS encontrada</div>
-            : <div className="divide-y divide-white/[0.06]/50">
+            : <div className="divide-y divide-white/[0.04]">
                 {rows.map(r => {
                   const aging = r._agingAbertura ?? 0
                   const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : '#94a3b8'

@@ -140,7 +140,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto divide-y divide-white/[0.06]/50">
+          <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
             {store.history.length === 0 ? (
               <div className="py-12 text-center">
                 <Bell size={32} className="mx-auto text-muted/30 mb-3" />

@@ -965,7 +965,7 @@ function KpiModalTable({ rows, onOS }) {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.06]/50">
+        <tbody className="divide-y divide-white/[0.04]">
           {pageRows.map(os => {
             const aging = os._aging ?? 0
             const agVar = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'

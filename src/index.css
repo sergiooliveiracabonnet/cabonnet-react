@@ -84,15 +84,6 @@
   background-image: radial-gradient(rgb(var(--c-border) / 0.8) 1px, transparent 1px);
 }
 
-/* ── Cards no tema claro — sombra é essencial para separar do bg ── */
-.light .card-premium {
-  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04);
-}
-.light .card-premium:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,.09), 0 1px 4px rgba(0,0,0,.05);
-  border-color: rgb(var(--c-muted) / 0.35);
-}
-
 /* ── Reset mínimo ─────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }

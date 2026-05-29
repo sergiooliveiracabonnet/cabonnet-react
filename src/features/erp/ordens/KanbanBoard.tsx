@@ -253,7 +253,7 @@ function OSDetailDrawer({ row, onClose }) {
             <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
               <Calendar size={10} />Agendamento
             </p>
-            <div className="divide-y divide-white/[0.06]/50">
+            <div className="divide-y divide-white/[0.04]">
               <DetailRow label="Situação"    value={row._situacaoEfetiva || row.descsituacao} />
               <DetailRow label="Equipe"      value={eqDisplay} className={!row.nomedaequipe ? 'text-red-400' : ''} />
               <DetailRow label="Data"        value={row.dataagendamento || '—'} />
@@ -267,7 +267,7 @@ function OSDetailDrawer({ row, onClose }) {
             <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
               <MapPin size={10} />Localização
             </p>
-            <div className="divide-y divide-white/[0.06]/50">
+            <div className="divide-y divide-white/[0.04]">
               <DetailRow label="Cidade"     value={row.nomedacidade} />
               <DetailRow label="Bairro"     value={row.bairro} />
               <DetailRow label="Logradouro" value={row.logradouro} />
@@ -279,7 +279,7 @@ function OSDetailDrawer({ row, onClose }) {
             <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
               <Building2 size={10} />Serviço
             </p>
-            <div className="divide-y divide-white/[0.06]/50">
+            <div className="divide-y divide-white/[0.04]">
               <DetailRow label="Tipo"    value={row.tiposervico} />
               <DetailRow label="Serviço" value={row.servico} />
               <DetailRow label="Empresa" value={row.empresa} />

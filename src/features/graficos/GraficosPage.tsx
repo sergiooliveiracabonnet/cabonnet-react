@@ -663,7 +663,7 @@ function TabCohort({ d, rows, onDrill }) {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.06]/50">
+              <tbody className="divide-y divide-white/[0.04]">
                 {c.labels.map((label, i) => {
                   const taxa  = c.taxaResolucao[i] ?? 0
                   const mttrV = c.mttr[i] ?? 0

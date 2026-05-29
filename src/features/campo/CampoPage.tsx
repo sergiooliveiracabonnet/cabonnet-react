@@ -277,7 +277,7 @@ function EquipeTable({ title, icon: Icon, rows, col, label }: any) {
         <Icon size={13} className="text-primary" />
         <p className="text-[12px] font-semibold text-text">{title}</p>
       </div>
-      <div className="divide-y divide-white/[0.06]/50">
+      <div className="divide-y divide-white/[0.04]">
         {rows.map((eq: any) => (
           <div key={eq.nome} className="flex items-center gap-3 px-4 py-3 min-h-[44px]">
             <p className="text-[11px] text-text font-semibold flex-1 truncate">{eq.nome}</p>

@@ -328,7 +328,7 @@ function EquipesTable({ byEquipe }) {
             <th className="px-2 py-2 text-center text-[10px] font-bold text-muted uppercase">Taxa</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.06]/50">
+        <tbody className="divide-y divide-white/[0.04]">
           {equipes.map((e, i) => (
             <tr key={e.eq} className="hover:bg-surface/20">
               <td className="px-2 py-2 text-center text-[11px]">{i < 3 ? medals[i] : i + 1}</td>

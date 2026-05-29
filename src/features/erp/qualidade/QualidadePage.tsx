@@ -235,7 +235,7 @@ export default function QualidadePage() {
           <section className="space-y-2">
             <SectionLabel icon={MapPin} color="#22d3ee">Revisitas por Cidade</SectionLabel>
             <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
-              <div className="divide-y divide-white/[0.06]/50">
+              <div className="divide-y divide-white/[0.04]">
                 {porCidade.map(c => {
                   const cl = taxaColor(c.taxa)
                   const maxR = porCidade[0]?.revisitas ?? 1
@@ -270,7 +270,7 @@ export default function QualidadePage() {
                 <span className="text-right">OS</span>
                 <span className="text-right">Rev.</span>
               </div>
-              <div className="divide-y divide-white/[0.06]/50 max-h-72 overflow-y-auto">
+              <div className="divide-y divide-white/[0.04] max-h-72 overflow-y-auto">
                 {cronicos.map(c => {
                   const danger = c.count >= 5 || c.revisitas >= 2
                   const color  = danger ? '#f87171' : c.count >= 4 ? '#f97316' : '#facc15'
