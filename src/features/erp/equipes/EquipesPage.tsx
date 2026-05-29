@@ -405,7 +405,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
                   disabled={!isGestor}
                   className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed
                     ${indisponivel
-                      ? 'bg-surface/30 border-border text-muted'
+                      ? 'bg-surface/30 border-white/[0.08] text-muted'
                       : 'bg-green/10 border-green/30 text-green'}`}
                 >
                   <span className={`w-1.5 h-1.5 rounded-full ${indisponivel ? 'bg-surface/200' : 'bg-green'}`} />

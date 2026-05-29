@@ -177,7 +177,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
           {/* Status do bot */}
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${store.enabled ? 'bg-green/[0.07] border-green/25' : 'bg-surface/30 border-border'}`}>
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${store.enabled ? 'bg-green/[0.07] border-green/25' : 'bg-surface/30 border-white/[0.08]'}`}>
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${store.enabled ? 'bg-green' : 'bg-muted'}`} />
             <div className="flex-1">
               <p className="text-[11px] font-bold text-text">{store.enabled ? 'Bot Telegram configurado' : 'Bot não configurado'}</p>
@@ -194,7 +194,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
               {[['critico','🔴 Apenas críticos'],['atencao','🟡 Críticos + Atenção'],['todos','🔵 Todos']].map(([v, l]) => (
                 <button key={v} onClick={() => store.setNivel(v)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-[11px] transition-all
-                    ${store.nivel === v ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border text-muted hover:text-secondary'}`}
+                    ${store.nivel === v ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/[0.08] text-muted hover:text-secondary'}`}
                 >{l}</button>
               ))}
             </div>

@@ -57,7 +57,7 @@ export default function FornecedorPage() {
         {FORNECEDORES.map((f) => (
           <button key={f.value} onClick={() => setFiltro(f.value)}
             className={`flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-pill border transition-all duration-fast cursor-pointer
-                        ${filtro === f.value ? 'text-white border-transparent' : 'border-border text-muted hover:text-secondary'}`}
+                        ${filtro === f.value ? 'text-white border-transparent' : 'border-white/[0.08] text-muted hover:text-secondary'}`}
             style={filtro === f.value ? { background: f.color, borderColor: f.color } : {}}>
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: f.color }} />
             {f.label}
@@ -242,7 +242,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
             <div className="overflow-x-auto rounded-xl border border-white/[0.08]">
               <table className="w-full text-[11px]">
                 <thead>
-                  <tr className="border-b-2 border-border bg-surface">
+                  <tr className="border-b-2 border-white/[0.08] bg-surface">
                     {['Equipe','Total','Concluídas','Críticas','SLA%','MTTR','Aging Méd.'].map(h => (
                       <th key={h} className="px-3 py-2 text-left text-[11px] font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
                     ))}

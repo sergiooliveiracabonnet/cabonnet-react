@@ -88,7 +88,7 @@ function OSQueueCard({ row, isSelected, onClick }) {
         focus-visible:ring-1 focus-visible:ring-primary/50
         ${isSelected
           ? 'bg-primary/10 border-primary/30'
-          : 'bg-surface/20 border-border hover:border-muted/30 hover:bg-surface/30'}`}
+          : 'bg-surface/20 border-white/[0.08] hover:border-muted/30 hover:bg-surface/30'}`}
     >
       <div className="flex items-center justify-between mb-1.5">
         <span className="font-mono text-[10px] font-semibold text-primary/80">#{row.numos}</span>
@@ -130,7 +130,7 @@ function TeamSuggestionCard({ entry, rank, onConfirm, isConfirming, aiSugestao }
     <div className={`rounded-xl border p-4 transition-all duration-150
       ${isBest
         ? 'bg-primary/[0.05] border-primary/20'
-        : 'bg-surface/20 border-border'}`}>
+        : 'bg-surface/20 border-white/[0.08]'}`}>
 
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">

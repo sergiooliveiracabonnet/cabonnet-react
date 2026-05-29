@@ -930,7 +930,7 @@ export default function RelatoriosPage() {
                 </tbody>
                 {ranking.length > 0 && (
                   <tfoot>
-                    <tr className="border-t-2 border-border bg-surface/20">
+                    <tr className="border-t-2 border-white/[0.08] bg-surface/20">
                       <td colSpan={2} className="px-4 py-3">
                         <span className="text-[11px] font-bold text-text uppercase tracking-wide">Total Geral</span>
                         <span className="text-[10px] text-muted ml-1.5">· {ranking.length} equipes</span>

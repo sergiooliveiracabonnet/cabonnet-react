@@ -26,7 +26,7 @@ const STATUS_STYLE = {
   alert: { text: 'text-red',    border: 'border-red/[0.20]',    bg: 'bg-red/[0.04]',    icon: 'bg-red/[0.10]'    },
 }
 function getHeroStyle(nivel) {
-  return STATUS_STYLE[nivel] ?? { text: 'text-muted', border: 'border-border', bg: '', icon: 'bg-surface/40' }
+  return STATUS_STYLE[nivel] ?? { text: 'text-muted', border: 'border-white/[0.08]', bg: '', icon: 'bg-surface/40' }
 }
 
 // OS city urgency — full class strings for Tailwind scanner
@@ -459,7 +459,7 @@ export default function JuniperPage() {
                   hover:-translate-y-0.5 hover:shadow-2xl
                   ${isOnline
                     ? 'bg-gradient-to-br from-[#0f1b2d] via-surface to-primary/[0.07] border-primary/[0.18] hover:border-primary/40 hover:shadow-primary/10'
-                    : 'bg-gradient-to-br from-[#1a0f0f] via-surface to-red/[0.05] border-border hover:border-red/25'}`}>
+                    : 'bg-gradient-to-br from-[#1a0f0f] via-surface to-red/[0.05] border-white/[0.08] hover:border-red/25'}`}>
 
                   <div className={`absolute inset-x-0 top-0 h-[2px] ${isOnline
                     ? 'bg-gradient-to-r from-primary via-cyan-400/70 to-transparent'
@@ -520,7 +520,7 @@ export default function JuniperPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="border-b-2 border-border">
+                <tr className="border-b-2 border-white/[0.08]">
                   <th className="px-4 py-2.5 text-left text-[11px] font-bold text-muted uppercase tracking-[0.04em] w-8" />
                   {['Usuário', 'IP', 'MAC', 'Interface', 'Uptime'].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-[11px] font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
@@ -695,7 +695,7 @@ function StatusPill({ nivel, txt }) {
   const isOk   = nivel === 'ok'
   const isWarn = nivel === 'warn'
   const dot    = isOk ? 'bg-green' : isWarn ? 'bg-yellow' : 'bg-muted'
-  const border = isOk ? 'border-green/20' : isWarn ? 'border-yellow/20' : 'border-border'
+  const border = isOk ? 'border-green/20' : isWarn ? 'border-yellow/20' : 'border-white/[0.08]'
   return (
     <div className={`inline-flex items-center gap-2 text-[11px] font-bold px-3 py-1.5 rounded-full
                     bg-card-high border ${border} text-secondary`}>

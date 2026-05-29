@@ -270,7 +270,7 @@ export default function OSDrawer({ os, onClose }) {
               <button
                 onClick={openMaps}
                 className="w-full bg-surface/30 border border-white/[0.08] rounded-xl px-4 py-3
-                           flex items-start gap-3 text-left hover:bg-surface/40 hover:border-border
+                           flex items-start gap-3 text-left hover:bg-surface/40 hover:border-white/[0.08]
                            transition-all duration-fast group"
               >
                 <MapPin size={14} className="text-muted flex-shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
@@ -383,7 +383,7 @@ function InfoCard({ icon: Icon, label, value, prominent, action }) {
     <div className={`rounded-xl border p-3.5 flex flex-col gap-2 min-w-0
                      ${prominent
                        ? 'bg-primary/[0.06] border-primary/20'
-                       : 'bg-surface/30 border-border'}`}>
+                       : 'bg-surface/30 border-white/[0.08]'}`}>
       <div className="flex items-center gap-1.5">
         <Icon size={12} className={prominent ? 'text-primary/60' : 'text-muted'} />
         <p className={`text-[11px] font-bold uppercase tracking-[0.05em] leading-none
@@ -425,7 +425,7 @@ function ActionBtn({ title, onClick, active, children }) {
       className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-fast
                   ${active
                     ? 'border-green/40 bg-green/15 text-green'
-                    : 'border-border text-muted hover:text-text hover:bg-surface'}`}
+                    : 'border-white/[0.08] text-muted hover:text-text hover:bg-surface'}`}
     >
       {children}
     </button>

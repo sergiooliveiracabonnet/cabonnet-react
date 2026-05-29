@@ -79,7 +79,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                             ? 'border-cyan/20 text-cyan/60 hover:text-cyan hover:border-cyan/40'
                             : p.id === 'futuro'
                               ? 'border-orange/20 text-orange/60 hover:text-orange hover:border-orange/40'
-                              : 'border-border text-muted hover:text-secondary hover:border-muted/30'}`}
+                              : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
           >
             {p.label}
           </button>
@@ -154,7 +154,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                     transition-all duration-fast flex-shrink-0
                     ${hideRede
                       ? 'border-orange/40 bg-orange/[0.07] text-orange'
-                      : 'border-border text-muted hover:text-secondary hover:border-muted/30'}`}
+                      : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
       >
         <Server size={10} className="flex-shrink-0" />
         <span>Rede</span>

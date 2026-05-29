@@ -8,7 +8,7 @@ interface FieldProps { label: string; value?: string | number | null; mono?: boo
 function Field({ label, value, mono = false, full = false, highlight = false }: FieldProps) {
   return (
     <div className={`rounded-xl p-4 border
-                     ${highlight ? 'bg-primary/5 border-primary/20' : 'bg-surface/30 border-border'}
+                     ${highlight ? 'bg-primary/5 border-primary/20' : 'bg-surface/30 border-white/[0.08]'}
                      ${full ? 'col-span-2' : ''}`}>
       <p className="font-headline text-[10px] font-bold uppercase tracking-[0.06em] text-muted mb-1.5">
         {label}

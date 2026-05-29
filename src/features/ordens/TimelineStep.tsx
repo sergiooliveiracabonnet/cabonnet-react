@@ -11,7 +11,7 @@ function TimelineNode({ icon: Icon, color, filled }: TimelineNodeProps) {
   const base = 'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2'
   const cls  = filled
     ? `${base} border-${color} bg-${color}/15 text-${color}`
-    : `${base} border-border bg-surface/30 text-muted/50`
+    : `${base} border-white/[0.08] bg-surface/30 text-muted/50`
   return <div className={cls}><Icon size={14} /></div>
 }
 
@@ -157,7 +157,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
                     className={`rounded-xl px-3 py-2.5 border ${
                       entry.isReagend
                         ? 'bg-orange/[0.08] border-orange/25'
-                        : 'bg-surface/30 border-border'
+                        : 'bg-surface/30 border-white/[0.08]'
                     }`}
                   >
                     {/* Cabeçalho da entrada */}

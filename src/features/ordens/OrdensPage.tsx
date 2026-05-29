@@ -370,7 +370,7 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
           const color   = isManha ? 'text-amber-400'          : isTarde ? 'text-indigo-400'          : 'text-secondary'
           const bg      = isManha ? 'bg-amber-400/[0.06]'     : isTarde ? 'bg-indigo-400/[0.06]'     : 'bg-surface/30'
           const dot     = isManha ? 'bg-amber-400'            : isTarde ? 'bg-indigo-400'            : 'bg-secondary'
-          const border  = isManha ? 'border-amber-400/[0.25]' : isTarde ? 'border-indigo-400/[0.25]' : 'border-border'
+          const border  = isManha ? 'border-amber-400/[0.25]' : isTarde ? 'border-indigo-400/[0.25]' : 'border-white/[0.08]'
 
           return (
             <div key={periodo}>
@@ -619,7 +619,7 @@ export default function OrdensPage() {
                      border rounded-xl px-3 py-1.5 transition-all duration-fast
                      ${groupBy === 'cliente'
                        ? 'bg-primary/15 border-primary/40 text-primary'
-                       : 'border-border text-secondary hover:text-text'}`}
+                       : 'border-white/[0.08] text-secondary hover:text-text'}`}
         >
           <Users size={12} /> Por Cliente
         </button>
@@ -891,7 +891,7 @@ export default function OrdensPage() {
                                 transition-all duration-fast
                                 ${active
                                   ? 'border-border0 bg-surface text-text'
-                                  : 'border-border text-muted hover:text-secondary hover:border-border0'}`}
+                                  : 'border-white/[0.08] text-muted hover:text-secondary hover:border-border0'}`}
                   >
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: opt.color }} />
                     {opt.label}

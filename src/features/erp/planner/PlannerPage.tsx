@@ -406,7 +406,7 @@ export default function PlannerPage() {
             disabled={!isGestor}
             title={!isGestor ? 'Apenas gestores podem definir metas' : undefined}
             className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed
-                        ${editMeta ? 'bg-primary/15 border-primary/40 text-primary' : 'border-border text-secondary hover:text-text'}`}
+                        ${editMeta ? 'bg-primary/15 border-primary/40 text-primary' : 'border-white/[0.08] text-secondary hover:text-text'}`}
           >
             <Target size={12} /> {editMeta ? 'Concluir' : 'Definir Metas'}
           </button>

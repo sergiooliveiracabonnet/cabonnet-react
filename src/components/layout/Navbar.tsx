@@ -109,7 +109,7 @@ const RefreshControl = memo(function RefreshControl() {
                     transition-all duration-fast
                     ${urgent
                       ? 'border-yellow/40 text-yellow bg-yellow/5 hover:bg-yellow/10'
-                      : 'border-border text-secondary hover:border-muted/40 hover:text-text'}`}
+                      : 'border-white/[0.08] text-secondary hover:border-muted/40 hover:text-text'}`}
         title="Atualizar dados"
       >
         <RefreshCw size={12} className={`flex-shrink-0 ${spinning ? 'animate-spin' : ''}`} />

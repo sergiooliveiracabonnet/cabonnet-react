@@ -229,7 +229,7 @@ export default function GraficosPage() {
               className={`text-[11px] font-medium px-3 py-1 rounded-md border transition-all duration-150 cursor-pointer
                           ${fornecedor === f.value
                             ? 'border-primary/40 bg-primary/10 text-primary'
-                            : 'border-border text-muted hover:text-secondary hover:border-muted/30'}`}>
+                            : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}>
               {f.label}
             </button>
           ))}

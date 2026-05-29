@@ -291,7 +291,7 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }) {
 // ── Section wrapper ────────────────────────────────────────────────────────────
 function Section({ title, children, borderColor }) {
   return (
-    <div className={`bg-card border rounded-xl p-5 ${borderColor ? `border-${borderColor}` : 'border-border'}`}>
+    <div className={`bg-card border rounded-xl p-5 ${borderColor ? `border-${borderColor}` : 'border-white/[0.08]'}`}>
       <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-4">{title}</p>
       {children}
     </div>

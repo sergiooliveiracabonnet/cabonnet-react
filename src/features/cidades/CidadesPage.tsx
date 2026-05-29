@@ -298,7 +298,7 @@ function GrupoFuturo({ group, color, onOS }) {
 
   return (
     <div>
-      <div className={`flex items-center gap-2 px-5 py-2 border-y border-border
+      <div className={`flex items-center gap-2 px-5 py-2 border-y border-white/[0.08]
                        ${group.highlight ? 'bg-cyan/[0.06]' : 'bg-surface/40'}`}>
         <span className={`text-[11px] font-bold uppercase tracking-[0.05em]
                           ${group.highlight ? 'text-cyan' : 'text-muted'}`}>

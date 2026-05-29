@@ -70,7 +70,7 @@ export default function CampoPage() {
             className={`text-[11px] font-bold px-3 py-1 rounded-full border transition-all duration-fast
                         ${fornecedor === f.value
                           ? 'border-primary bg-primary/15 text-primary'
-                          : 'border-border text-muted hover:text-secondary'}`}>
+                          : 'border-white/[0.08] text-muted hover:text-secondary'}`}>
             {f.label}
           </button>
         ))}

@@ -322,7 +322,7 @@ export function AgendaView({ equipeFilter, tipoFilter }) {
           className={`text-[11px] px-3 py-1.5 rounded-lg border transition-all duration-150
                       ${hideEmpty
                         ? 'border-primary/30 bg-primary/10 text-primary'
-                        : 'border-border bg-elevated text-secondary hover:text-text'}`}
+                        : 'border-white/[0.08] bg-elevated text-secondary hover:text-text'}`}
         >
           {hideEmpty ? 'Só com OS' : 'Todas as equipes'}
         </button>
