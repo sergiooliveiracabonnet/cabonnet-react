@@ -16,6 +16,14 @@ export default defineConfig([
     'everything-claude-code',
     'marketingskills',
     'design-system',
+    'agent-skills',
+    'claude-agentic-framework',
+    'claude-code-skills',
+    'claude-git-pr-skill',
+    'planning-with-files',
+    'studio-recipes',
+    'superpowers',
+    'web-quality-skills',
   ]),
   // JS/JSX files
   {

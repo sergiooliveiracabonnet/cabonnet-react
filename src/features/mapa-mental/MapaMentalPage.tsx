@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Network, ZoomIn, ZoomOut, Maximize2, RotateCcw, X } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'

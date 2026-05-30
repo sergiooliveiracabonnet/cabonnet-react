@@ -44,6 +44,14 @@ awesome-claude-code/
 awesome-claude-skills/
 everything-claude-code/
 marketingskills/
+agent-skills/
+claude-agentic-framework/
+claude-code-skills/
+claude-git-pr-skill/
+planning-with-files/
+studio-recipes/
+superpowers/
+web-quality-skills/
 *.apk
 *.zip
 *.db
