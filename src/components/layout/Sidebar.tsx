@@ -1,4 +1,4 @@
-import { useRef, useState, type ComponentType, type CSSProperties } from 'react'
+import { useRef, useState, useEffect, type ComponentType, type CSSProperties } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList,
@@ -159,7 +159,15 @@ export function Sidebar() {
   const logAudit    = useAuditStore(s => s.log)
   const { isLoading, error, dataUpdatedAt } = useOSDerived()
 
-  const ageMs   = dataUpdatedAt > 0 ? Date.now() - dataUpdatedAt : null
+  // nowTs actualizado a cada minuto para que a badge de status reflicta o tempo real
+  // Usamos useState com lazy initializer para não chamar Date.now() diretamente no render
+  const [nowTs, setNowTs] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNowTs(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  const ageMs   = dataUpdatedAt > 0 ? nowTs - dataUpdatedAt : null
   const isError = !!error && !isLoading
   const isStale = !isError && ageMs !== null && ageMs > 5 * 60_000
   const isNew   = dataUpdatedAt === 0 && isLoading

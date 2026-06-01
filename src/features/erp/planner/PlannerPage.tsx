@@ -176,7 +176,7 @@ function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null; onClo
                   Pendentes / Em atendimento ({nPending})
                 </span>
               </div>
-              {pending.map(r => <OSRow key={r.numos} r={r} />)}
+              {pending.map(r => <OsRowItem key={r.numos} r={r} />)}
             </div>
           )}
 
@@ -189,7 +189,7 @@ function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null; onClo
                   Concluídas ({nConcluded})
                 </span>
               </div>
-              {concluded.map(r => <OSRow key={r.numos} r={r} />)}
+              {concluded.map(r => <OsRowItem key={r.numos} r={r} />)}
             </div>
           )}
 
@@ -211,7 +211,7 @@ function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null; onClo
   )
 }
 
-function OSRow({ r }: { r: OSRow }) {
+function OsRowItem({ r }: { r: OSRow }) {
   const { color, Icon } = tipoIcon(r)
   const concl = isConcluida(r.descsituacao)
   return (
