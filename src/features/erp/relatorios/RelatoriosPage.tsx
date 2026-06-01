@@ -1,9 +1,11 @@
-// @ts-nocheck
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   BarChart2, TrendingUp, Clock, AlertTriangle,
-  Download, CheckCircle2, Printer, ChevronRight,
+  Download, Printer, ChevronRight,
 } from 'lucide-react'
+import type { OSRow } from '../../../lib/types'
+
+interface DrillState { title: string; rows: OSRow[]; color?: string }
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid, Legend, Cell } from '../../../components/ui/bar-chart'
 import { DonutChart } from '../../../components/ui/DonutChart'
 import { useOSDerived } from '../../../contexts/OSDataContext'
@@ -12,11 +14,10 @@ import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
 import { Modal } from '../../../components/ui/Modal'
 import { Badge } from '../../../components/ui/Badge'
 
-const RELO_COLORS = ['#60a5fa', '#fb923c', '#34d399', '#c4b5fd', '#f87171', '#facc15']
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function exportCSV(filename, rows) {
+function exportCSV(filename: string, rows: Record<string, unknown>[]) {
   if (!rows.length) return
   const header = Object.keys(rows[0]).join(';')
   const body   = rows.map(r => Object.values(r).join(';')).join('\n')
@@ -31,7 +32,9 @@ function exportCSV(filename, rows) {
 
 // ── OSListModal ───────────────────────────────────────────────────────────────
 
-function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
+function OSListModal({ open, onClose, title, rows = [] as OSRow[], color = '#3b82f6' }: {
+  open: boolean; onClose: () => void; title: string; rows?: OSRow[]; color?: string
+}) {
   if (!open) return null
   return (
     <Modal open={open} onClose={onClose} title={title} maxWidth="780px">
@@ -80,7 +83,9 @@ function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
 
 // ── Section wrapper ───────────────────────────────────────────────────────────
 
-function Section({ title, subtitle, action, children, height = 'h-64' }) {
+function Section({ title, subtitle, action, children, height = 'h-64' }: {
+  title: string; subtitle?: string; action?: ReactNode; children: ReactNode; height?: string
+}) {
   return (
     <div className="bg-elevated border border-white/[0.08] rounded-xl flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] flex-shrink-0">
@@ -103,7 +108,7 @@ export default function RelatoriosPage() {
   const { rows, allRows, isLoading, derived } = useOSDerived()
   const [tipoFilter, setTipoFilter]       = useState('')
   const [periodoFilter, setPeriodoFilter] = useState('all')
-  const [drill, setDrill]                 = useState(null) // { title, rows, color }
+  const [drill, setDrill]                 = useState<DrillState | null>(null)
 
   const semaforo = useMemo(() => derived?.sla?.semaforo ?? [], [derived])
 
@@ -122,14 +127,14 @@ export default function RelatoriosPage() {
     const semEquipe = filteredRows.filter(r => !r.nomedaequipe).length
     const agingRows = filteredRows.filter(r => r._agingAbertura != null)
     const avgAging  = agingRows.length > 0
-      ? agingRows.reduce((s, r) => s + r._agingAbertura, 0) / agingRows.length
+      ? agingRows.reduce((s, r) => s + (r._agingAbertura ?? 0), 0) / agingRows.length
       : 0
     return { total, criticas, semEquipe, avgAging }
   }, [filteredRows, allRows])
 
   // ── OS por equipe (top 10) ──
   const byTeam = useMemo(() => {
-    const map = {}
+    const map: Record<string, { queue: number; criticas: number }> = {}
     filteredRows.forEach(r => {
       if (!r.nomedaequipe) return
       const code = shortEquipe(r.nomedaequipe).split(' - ')[0].trim()
@@ -149,7 +154,6 @@ export default function RelatoriosPage() {
 
   // ── SLA por equipe ──
   const slaData = useMemo(() => {
-    const AGING_FILL = ['rgba(52,211,153,0.65)', 'rgba(250,204,21,0.65)', 'rgba(251,146,60,0.65)', 'rgba(248,113,113,0.65)', 'rgba(248,113,113,0.8)']
     return semaforo
       .map(s => ({ name: shortEquipe(s.nome).split(' - ')[0].trim(), value: s.sla ?? 0 }))
       .filter(e => e.value > 0)
@@ -197,7 +201,7 @@ export default function RelatoriosPage() {
 
   // Snapshot atual: OS ativas com SLA vencido por equipe (independe do filtro de período)
   const slaVencMap = useMemo(() => {
-    const map = {}
+    const map: Record<string, number> = {}
     for (const r of allRows) {
       if (!['Pendente', 'Atendimento'].includes(r.descsituacao)) continue
       if (!(r._slaExcedido || r._slaSemAgend)) continue
@@ -209,8 +213,9 @@ export default function RelatoriosPage() {
   }, [allRows])
 
   // ── Ranking de produtividade das equipes ──
+  type RankEntry = { code: string; leader: string; tipo: string; queue: number; agingSum: number; agingCount: number; execInst: number; execManut: number; execServico: number }
   const ranking = useMemo(() => {
-    const map = {}
+    const map: Record<string, RankEntry> = {}
     filteredRows.forEach(r => {
       if (!r.nomedaequipe) return
       const code = shortEquipe(r.nomedaequipe).split(' - ')[0].trim()
@@ -252,7 +257,7 @@ export default function RelatoriosPage() {
     const totalAgingSum   = ranking.reduce((s, r) => s + r.agingSum,   0)
     const totalAgingCount = ranking.reduce((s, r) => s + r.agingCount, 0)
     const avgAging        = totalAgingCount > 0 ? totalAgingSum / totalAgingCount : 0
-    const pct = v => execTotal > 0 ? Math.round((v / execTotal) * 100) : 0
+    const pct = (v: number) => execTotal > 0 ? Math.round((v / execTotal) * 100) : 0
     return { execInst, execManut, execServico, execTotal, queue, slaVenc, avgSla, avgAging,
              pctInst: pct(execInst), pctManut: pct(execManut), pctServico: pct(execServico) }
   }, [ranking])
@@ -287,7 +292,7 @@ export default function RelatoriosPage() {
     })))
   }
 
-  function exportPDF(theme) {
+  function exportPDF(theme: string) {
     const isDark = theme === 'dark'
     const c = isDark ? {
       bg:       '#06060a',
@@ -762,9 +767,9 @@ export default function RelatoriosPage() {
                       {slaData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                     </Bar>
                     <XAxis dataKey="name" />
-                    <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} />
+                    <YAxis domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
                     <Grid />
-                    <ChartTooltip suffix="%" formatter={(v) => `SLA: ${v.toFixed(1)}%`} />
+                    <ChartTooltip suffix="%" formatter={(v: number) => `SLA: ${v.toFixed(1)}%`} />
                   </BarChart>
                 )
                 : <Empty label="Sem dados de SLA" />}

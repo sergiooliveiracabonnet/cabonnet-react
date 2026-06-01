@@ -1,11 +1,23 @@
-// @ts-nocheck
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Zap, Monitor, Settings, RefreshCw, Users, Layers, TrendingUp,
+  Zap, Monitor, Settings, RefreshCw, Users, Layers,
   Clipboard, GitMerge, Clock, AlertCircle, ChevronDown, ChevronRight,
   Trash2, Activity,
 } from 'lucide-react'
+import type { OSRow } from '../../lib/types'
+
+interface HistoricoSnap {
+  ts:      string
+  hora:    string
+  data:    string
+  total:   number
+  online:  number
+  clientes: unknown[]
+}
+
+type JuniperKpis = { total: number; online: number; offline: number; interfaces: number; ips: number; ultima: string; proximo: string }
+type JuniperHero = { nivel: string; nivel_label: string; statusTxt: string; desc: string; meta: string }
 import { AreaChart, Area, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/line-chart'
 import { api, endpoints } from '../../lib/api'
 import { storage } from '../../lib/storage'
@@ -26,8 +38,8 @@ const STATUS_STYLE = {
   warn:  { text: 'text-yellow', border: 'border-yellow/[0.20]', bg: 'bg-yellow/[0.04]', icon: 'bg-yellow/[0.10]' },
   alert: { text: 'text-red',    border: 'border-red/[0.20]',    bg: 'bg-red/[0.04]',    icon: 'bg-red/[0.10]'    },
 }
-function getHeroStyle(nivel) {
-  return STATUS_STYLE[nivel] ?? { text: 'text-muted', border: 'border-white/[0.08]', bg: '', icon: 'bg-surface/40' }
+function getHeroStyle(nivel: string): { text: string; border: string; bg: string; icon: string } {
+  return (STATUS_STYLE as Record<string, typeof STATUS_STYLE[keyof typeof STATUS_STYLE]>)[nivel] ?? { text: 'text-muted', border: 'border-white/[0.08]', bg: '', icon: 'bg-surface/40' }
 }
 
 // OS city urgency — full class strings for Tailwind scanner
@@ -36,12 +48,12 @@ const OS_URGENCY = [
   { min: 8,  text: 'text-orange', bg: 'bg-orange/[0.06]', bar: 'bg-orange' },
   { min: 4,  text: 'text-yellow', bg: 'bg-yellow/[0.06]', bar: 'bg-yellow' },
 ]
-function getOsStyle(total) {
+function getOsStyle(total: number): { text: string; bg: string; bar: string } {
   for (const u of OS_URGENCY) if (total >= u.min) return u
   return { text: 'text-primary', bg: '', bar: 'bg-primary' }
 }
 
-function relTime(ts) {
+function relTime(ts: string | null | undefined): string {
   if (!ts) return ''
   const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000)
   if (diff < 60)    return `${diff}s atrás`
@@ -55,12 +67,12 @@ export default function JuniperPage() {
   const [searchTable,  setSearchTable]  = useState('')
   const [viewMode,     setViewMode]     = useState('card')
   const [apiConfig,    setApiConfig]    = useState({ url: '', dsuid: '', user: '', pass: '', cluster: 'Vale' })
-  const [expandedSnap, setExpandedSnap] = useState(null)
+  const [expandedSnap, setExpandedSnap] = useState<string | null>(null)
 
   const HISTORY_KEY = 'juniper_historico'
   const MAX_SNAPS   = 500
 
-  const [historico, setHistorico] = useState(() => storage.getJSON(HISTORY_KEY, []))
+  const [historico, setHistorico] = useState<HistoricoSnap[]>(() => storage.getJSON<HistoricoSnap[]>(HISTORY_KEY, []))
 
   const { data: raw, isLoading, refetch } = useQuery({
     queryKey: ['juniper', apiConfig.cluster],
@@ -79,8 +91,8 @@ export default function JuniperPage() {
 
   const { allRows } = useOSDerived()
   const data       = useMemo(() => transformJuniper(raw), [raw])
-  const hero       = data?.hero       ?? {}
-  const kpis       = data?.kpis       ?? {}
+  const hero       = (data?.hero       ?? {}) as Partial<JuniperHero>
+  const kpis       = (data?.kpis       ?? {}) as Partial<JuniperKpis>
   const interfaces = data?.interfaces ?? []
   const hist       = useMemo(() => {
     if (!historico.length) return { labels: [], values: [] }
@@ -91,11 +103,10 @@ export default function JuniperPage() {
     }
   }, [historico])
   const clientes  = data?.clientes ?? []
-  const _log      = data?.log      ?? []
   const osCidades = useMemo(() => {
     const hoje   = new Date().toISOString().slice(0, 10)
-    const isAtivo = r => ['Pendente', 'Atendimento'].includes(r._situacaoEfetiva ?? r.descsituacao)
-    const isHoje  = r => (r.datacadastro || '').slice(0, 10) === hoje
+    const isAtivo = (r: OSRow) => ['Pendente', 'Atendimento'].includes((r._situacaoEfetiva ?? r.descsituacao) as string)
+    const isHoje  = (r: OSRow) => (r.datacadastro || '').slice(0, 10) === hoje
     const cityMap = new Map()
     for (const r of allRows) {
       if (!isAtivo(r) || !isHoje(r)) continue
@@ -134,18 +145,19 @@ export default function JuniperPage() {
   useEffect(() => {
     if (serverHistMergedRef.current || !serverHistData) return
     serverHistMergedRef.current = true
-    const serverSnaps = Array.isArray(serverHistData)
-      ? serverHistData
-      : Array.isArray(serverHistData?.historico)
-        ? serverHistData.historico
+    const raw2 = serverHistData as { historico?: HistoricoSnap[] } | HistoricoSnap[] | unknown
+    const serverSnaps: HistoricoSnap[] = Array.isArray(raw2)
+      ? (raw2 as HistoricoSnap[])
+      : Array.isArray((raw2 as { historico?: HistoricoSnap[] })?.historico)
+        ? (raw2 as { historico: HistoricoSnap[] }).historico
         : []
     if (!serverSnaps.length) return
     setHistorico(prev => {
-      const tsSet  = new Set(prev.map(s => s.ts))
-      const extras = serverSnaps.filter(s => s.ts && !tsSet.has(s.ts))
+      const tsSet  = new Set(prev.map((s: HistoricoSnap) => s.ts))
+      const extras = serverSnaps.filter((s: HistoricoSnap) => s.ts && !tsSet.has(s.ts))
       if (!extras.length) return prev
-      const merged = [...prev, ...extras]
-        .sort((a, b) => new Date(b.ts) - new Date(a.ts))
+      const merged = ([...prev, ...extras] as HistoricoSnap[])
+        .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
         .slice(0, MAX_SNAPS)
       storage.setJSON(HISTORY_KEY, merged)
       return merged
@@ -173,7 +185,7 @@ export default function JuniperPage() {
       || (c.iface   ?? '').toLowerCase().includes(q)
   })
 
-  const heroStyle    = getHeroStyle(hero.nivel)
+  const heroStyle    = getHeroStyle(hero.nivel ?? '')
   const onlineCount  = kpis.online  ?? 0
   const offlineCount = kpis.offline ?? 0
   const maxIface     = interfaces.length ? Math.max(...interfaces.map(i => i.total), 1) : 1
@@ -240,22 +252,26 @@ export default function JuniperPage() {
           <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
             <Settings size={11} /> Fonte de Dados
           </p>
-          <StatusPill nivel={hero.nivel} txt={hero.statusTxt ?? 'Não verificado'} />
+          <StatusPill nivel={hero.nivel ?? ''} txt={hero.statusTxt ?? 'Não verificado'} />
         </div>
 
         {/* Segmented control */}
         <div className="flex items-center gap-3 mb-4">
           <div className="flex bg-surface/30 border border-white/[0.08] rounded-lg p-0.5 gap-0.5">
-            {[['local', Monitor, 'Servidor Local'], ['api', Zap, 'Grafana API']].map(([v, Icon, l]) => (
-              <button
-                key={v}
-                onClick={() => setFonte(v)}
-                className={`flex items-center gap-1.5 text-[12px] font-semibold px-4 py-1.5 rounded-md transition-all duration-fast
-                            ${fonte === v ? 'bg-primary text-white shadow-sm' : 'text-muted hover:text-secondary'}`}
-              >
-                <Icon size={13} /> {l}
-              </button>
-            ))}
+            {(['local', 'api'] as const).map((v, idx) => {
+              const Icon = [Monitor, Zap][idx]
+              const l   = ['Servidor Local', 'Grafana API'][idx]
+              return (
+                <button
+                  key={v}
+                  onClick={() => setFonte(v)}
+                  className={`flex items-center gap-1.5 text-[12px] font-semibold px-4 py-1.5 rounded-md transition-all duration-fast
+                              ${fonte === v ? 'bg-primary text-white shadow-sm' : 'text-muted hover:text-secondary'}`}
+                >
+                  <Icon size={13} /> {l}
+                </button>
+              )
+            })}
           </div>
           {fonte === 'local' && (
             <span className="text-[11px] text-muted font-mono">localhost:5000</span>
@@ -275,7 +291,7 @@ export default function JuniperPage() {
                 <label className="text-[11px] font-bold uppercase tracking-[0.04em] text-muted block mb-1">{f.label}</label>
                 <input
                   type={f.type ?? 'text'}
-                  value={apiConfig[f.key]}
+                  value={(apiConfig as Record<string, string>)[f.key]}
                   placeholder={f.placeholder}
                   onChange={(e) => setApiConfig(c => ({ ...c, [f.key]: e.target.value }))}
                   className="w-full px-3 py-1.5 text-[11px] rounded-lg bg-card-high border border-white/[0.08]
@@ -579,13 +595,13 @@ export default function JuniperPage() {
             </p>
           ) : (
             historico.map((snap, i) => {
-              const isOpen     = expandedSnap === i
+              const isOpen     = expandedSnap === snap.ts
               const onlinePct  = snap.total > 0 ? Math.round((snap.online / snap.total) * 100) : 0
               const relTxt     = relTime(snap.ts)
               return (
                 <div key={i} className="border-b border-white/[0.04] last:border-0">
                   <button
-                    onClick={() => setExpandedSnap(isOpen ? null : i)}
+                    onClick={() => setExpandedSnap(isOpen ? null : snap.ts)}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/30 transition-colors text-left"
                   >
                     {isOpen
@@ -631,16 +647,18 @@ export default function JuniperPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.03]">
-                          {(snap.clientes ?? []).map((c, ci) => (
+                          {(snap.clientes ?? []).map((c, ci) => {
+                            const cl = c as Record<string, string>
+                            return (
                             <tr key={ci} className="hover:bg-primary/[0.04]">
-                              <td className="px-4 py-2 font-bold text-text uppercase antialiased">{c.usuario}</td>
-                              <td className="px-4 py-2 font-mono font-semibold text-primary uppercase antialiased">{c.ip}</td>
-                              <td className="px-4 py-2 font-mono text-[12px] font-semibold text-text uppercase antialiased">{c.mac}</td>
-                              <td className="px-4 py-2 text-secondary uppercase">{c.iface}</td>
-                              <td className="px-4 py-2 text-muted uppercase">{c.uptime}</td>
-                              <td className="px-4 py-2 text-muted uppercase">{c.loginTime}</td>
+                              <td className="px-4 py-2 font-bold text-text uppercase antialiased">{cl.usuario}</td>
+                              <td className="px-4 py-2 font-mono font-semibold text-primary uppercase antialiased">{cl.ip}</td>
+                              <td className="px-4 py-2 font-mono text-[12px] font-semibold text-text uppercase antialiased">{cl.mac}</td>
+                              <td className="px-4 py-2 text-secondary uppercase">{cl.iface}</td>
+                              <td className="px-4 py-2 text-muted uppercase">{cl.uptime}</td>
+                              <td className="px-4 py-2 text-muted uppercase">{cl.loginTime}</td>
                             </tr>
-                          ))}
+                          )})}
                         </tbody>
                       </table>
                     </div>
@@ -689,7 +707,7 @@ export default function JuniperPage() {
   )
 }
 
-function StatusPill({ nivel, txt }) {
+function StatusPill({ nivel, txt }: { nivel: string; txt: string }) {
   const isOk   = nivel === 'ok'
   const isWarn = nivel === 'warn'
   const dot    = isOk ? 'bg-green' : isWarn ? 'bg-yellow' : 'bg-muted'

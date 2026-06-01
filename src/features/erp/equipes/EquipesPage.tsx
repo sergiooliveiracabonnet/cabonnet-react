@@ -1,20 +1,23 @@
-// @ts-nocheck
 import { useMemo, useState } from 'react'
 import {
   Package, Wrench, Network, Users, BarChart2, TrendingUp,
-  Clock, AlertTriangle, Star, ChevronRight, Search,
-  Activity, CheckCircle2, Phone, MapPin, X, DollarSign,
+  Clock, AlertTriangle, ChevronRight, Search,
+  Activity, CheckCircle2, X, DollarSign,
 } from 'lucide-react'
 import { useERPRows } from '../useERPRows'
 import { shortEquipe } from '../../../lib/osFormat'
-import { TEAMS } from '../erpConstants'
+import { TEAMS, type Team } from '../erpConstants'
 import { useERPStore } from '../../../store/erpStore'
 import { useIsGestor } from '../../../hooks/useRole'
+import type { OSRow } from '../../../lib/types'
+
+type Metrics  = { queue: number; criticas: number; concluidas: number }
+type SlaEntry = { sla?: number; agingMed?: number; nome?: string; [k: string]: unknown }
 
 /* ── Date helpers ────────────────────────────────────────────────────── */
 const DAY_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
-function getWeekStart(date) {
+function getWeekStart(date: Date): Date {
   const d = new Date(date)
   const dow = d.getDay()
   d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1))
@@ -22,11 +25,11 @@ function getWeekStart(date) {
   return d
 }
 
-function toKey(date) {
+function toKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
 }
 
-function parseLocalDate(raw) {
+function parseLocalDate(raw: string | null | undefined): Date | null {
   if (!raw) return null
   const s = raw.trim().split(/[ T]/)[0]
   try {
@@ -60,19 +63,19 @@ const TIPO = {
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
-function slaCls(v) {
+function slaCls(v: number): string {
   if (v >= 90) return 'text-green'
   if (v >= 75) return 'text-orange'
   return 'text-red'
 }
 
-function capacityBarCls(pct, tipo) {
+function capacityBarCls(pct: number, tipo: string): string {
   if (pct > 85) return 'bg-red'
   if (pct > 60) return 'bg-orange'
-  return TIPO[tipo]?.bar || 'bg-primary'
+  return (TIPO as Record<string, typeof TIPO[keyof typeof TIPO]>)[tipo]?.bar || 'bg-primary'
 }
 
-function statusDot(pct) {
+function statusDot(pct: number): { cls: string; label: string } {
   if (pct > 85) return { cls: 'bg-red', label: 'Sobrecarregada' }
   if (pct > 60) return { cls: 'bg-orange', label: 'Carregada' }
   if (pct > 0)  return { cls: 'bg-green', label: 'Disponível' }
@@ -80,8 +83,11 @@ function statusDot(pct) {
 }
 
 /* ── EquipeCard ──────────────────────────────────────────────────────── */
-function EquipeCard({ team, metrics, slaData, custoMensal = 0, indisponivel = false, onClick }) {
-  const cfg = TIPO[team.tipo]
+function EquipeCard({ team, metrics, slaData, custoMensal = 0, indisponivel = false, onClick }: {
+  team: Team; metrics: Metrics; slaData: SlaEntry | undefined
+  custoMensal?: number; indisponivel?: boolean; onClick: (t: Team) => void
+}) {
+  const cfg = (TIPO as Record<string, typeof TIPO[keyof typeof TIPO]>)[team.tipo]
   const Icon = cfg.Icon
   const queue      = metrics.queue ?? 0
   const criticas   = metrics.criticas ?? 0
@@ -197,7 +203,11 @@ function EquipeCard({ team, metrics, slaData, custoMensal = 0, indisponivel = fa
 }
 
 /* ── Team Detail Drawer ───────────────────────────────────────────────── */
-function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCustoChange, indisponivel = false, onToggleDisponivel, onClose }) {
+function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCustoChange, indisponivel = false, onToggleDisponivel, onClose }: {
+  team: Team; metrics: Metrics; slaData: SlaEntry | undefined; teamRows: OSRow[]
+  custoMensal?: number; onCustoChange?: (v: number) => void
+  indisponivel?: boolean; onToggleDisponivel?: () => void; onClose: () => void
+}) {
   const isGestor = useIsGestor()
   const weekSchedule = useMemo(() => {
     if (!team) return []
@@ -421,7 +431,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
                   <input
                     type="number" min={0} step={500}
                     value={custoMensal || ''}
-                    onChange={e => isGestor && onCustoChange?.(e.target.value)}
+                    onChange={e => isGestor && onCustoChange?.(Number(e.target.value))}
                     disabled={!isGestor}
                     placeholder="0"
                     className="w-28 bg-surface border border-white/[0.08] rounded-md px-2 py-1
@@ -449,11 +459,11 @@ export default function EquipesPage() {
   const { custoEquipe, setCustoEquipe, equipeIndisponivel, toggleEquipeDisponivel } = useERPStore()
   const [search, setSearch]     = useState('')
   const [tipoFilter, setTipo]   = useState('')
-  const [selected, setSelected] = useState(null)
+  const [selected, setSelected] = useState<Team | null>(null)
 
   const teamRows = useMemo(() => {
     if (!selected) return []
-    return rows.filter(r => {
+    return rows.filter((r: OSRow) => {
       const code = shortEquipe(r.nomedaequipe || '').split(' - ')[0].trim()
       return code === selected.code
     })
@@ -463,7 +473,7 @@ export default function EquipesPage() {
 
   // Normalize semaforo → map by team code
   const slaByCode = useMemo(() => {
-    const map = {}
+    const map: Record<string, SlaEntry> = {}
     semaforo.forEach(s => {
       const code = shortEquipe(s.nome).split(' - ')[0].trim()
       map[code] = s
@@ -474,8 +484,8 @@ export default function EquipesPage() {
   // leaderByCode: extrai o nome do líder do shortEquipe (que agora lê do banco)
   // usa a OS mais recente por equipe (_agingAbertura menor = mais nova)
   const leaderByCode = useMemo(() => {
-    const leaders = {}
-    const ages    = {}
+    const leaders: Record<string, string> = {}
+    const ages:    Record<string, number> = {}
     allRows.forEach(row => {
       if (!row.nomedaequipe) return
       const full  = shortEquipe(row.nomedaequipe)        // ex: "INST F12 - CARLOS"
@@ -495,7 +505,7 @@ export default function EquipesPage() {
 
   // metricsByCode: derivado de rows (filtrado) para refletir o período selecionado
   const metricsByCode = useMemo(() => {
-    const metrics = {}
+    const metrics: Record<string, Metrics> = {}
     rows.forEach(row => {
       if (!row.nomedaequipe) return
       const code = shortEquipe(row.nomedaequipe).split(' - ')[0].trim()
@@ -510,7 +520,7 @@ export default function EquipesPage() {
   // Merge TEAMS catalog with any team found in live data not yet catalogued
   const allTeams = useMemo(() => {
     const catalogCodes = new Set(TEAMS.map(t => t.code))
-    const extra = []
+    const extra: Team[] = []
     Object.keys(metricsByCode).forEach(code => {
       if (catalogCodes.has(code)) return
       if (!code || code === '—' || code === 'INST' || code === 'MANUT' || code === 'REDE' || code === 'COPE') return

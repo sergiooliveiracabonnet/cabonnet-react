@@ -1,8 +1,7 @@
-// @ts-nocheck
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import {
-  Wrench, Package, Radio, Users,
-  MapPin, Activity, Clock, TrendingUp, ChevronRight,
+  Wrench, Package, Users,
+  MapPin, Clock, ChevronRight,
   Briefcase, Search, X,
 } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -11,19 +10,23 @@ import { shortEquipe, situacaoVariant }  from '../../lib/osFormat'
 import { isCOPE, isReagend, isExecucaoReal } from '../../lib/transform'
 import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
+import type { OSRow } from '../../lib/types'
+
+type DrillRow = { title: string; rows: OSRow[]; color: string }
+type IconComp = ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 // Categorias de negócio (usam _categoria — calculado em enrichRows)
-const isInst    = r => r._categoria === 'INSTALACAO'
-const isVTManut = r => r._categoria === 'VT_MANUTENCAO'   // VT (Manutenção) — categoria de negócio
-const isServico = r => r._categoria === 'SERVICO'
-const isAtend   = r => r.descsituacao === 'Atendimento'
-const isAtivo   = r => ['Pendente','Atendimento'].includes(r.descsituacao)
-const skip      = r => isCOPE(r) || isReagend(r)
+const isInst    = (r: OSRow) => r._categoria === 'INSTALACAO'
+const isVTManut = (r: OSRow) => r._categoria === 'VT_MANUTENCAO'
+const isServico = (r: OSRow) => r._categoria === 'SERVICO'
+const isAtend   = (r: OSRow) => r.descsituacao === 'Atendimento'
+const isAtivo   = (r: OSRow) => ['Pendente','Atendimento'].includes(r.descsituacao)
+const skip      = (r: OSRow) => isCOPE(r) || isReagend(r)
 
 // Converte "DD/MM/YYYY ..." para Date (sem depender de transform)
-function _parseBR(s) {
+function _parseBR(s: string | null | undefined): Date | null {
   if (!s) return null
   const p = s.split(' ')[0].split('/')
   if (p.length < 3) return null
@@ -33,7 +36,7 @@ function _parseBR(s) {
 
 // Verifica se a data de execução/baixa da OS está dentro do período do filtro.
 // Usa datacadastro como fallback para OS concluídas sem data de execução registrada.
-function _isExecNoPeriodo(r, from, to) {
+function _isExecNoPeriodo(r: OSRow, from: Date | null | undefined, to: Date | null | undefined): boolean {
   const dt = _parseBR(r.dataexecucao || r.databaixa || r.datacadastro)
   if (!dt) return false
   if (from && dt < from) return false
@@ -45,8 +48,8 @@ function _isExecNoPeriodo(r, from, to) {
 }
 
 /** Agrupa rows por cidade, retorna array ordenado pelo maior volume. */
-function byCidade(rows) {
-  const map = {}
+function byCidade(rows: OSRow[]): { cidade: string; total: number }[] {
+  const map: Record<string, number> = {}
   for (const r of rows) {
     const c = (r.nomedacidade || '(sem cidade)').trim()
     map[c] = (map[c] ?? 0) + 1
@@ -57,8 +60,9 @@ function byCidade(rows) {
 }
 
 /** Agrupa rows por equipe, retorna array ordenado pelo maior volume total. */
-function byEquipe(rows) {
-  const map = {}
+type EquipeEntry = { pendente: number; atendimento: number; concluida: number; total: number }
+function byEquipe(rows: OSRow[]): ({ equipe: string } & EquipeEntry)[] {
+  const map: Record<string, EquipeEntry> = {}
   for (const r of rows) {
     if (!r.nomedaequipe?.trim()) continue
     const eq = shortEquipe(r.nomedaequipe)
@@ -76,7 +80,7 @@ function byEquipe(rows) {
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
 
-function SectionLabel({ icon: Icon, color, children }) {
+function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; color: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
@@ -90,7 +94,9 @@ function SectionLabel({ icon: Icon, color, children }) {
 
 // ─── OSListModal ──────────────────────────────────────────────────────────────
 
-function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
+function OSListModal({ open, onClose, title, rows = [] as OSRow[], color = '#3b82f6' }: {
+  open: boolean; onClose: () => void; title: string; rows?: OSRow[]; color?: string
+}) {
   if (!open) return null
 
   return (
@@ -176,7 +182,9 @@ function OSListModal({ open, onClose, title, rows = [], color = '#3b82f6' }) {
 
 // ─── HeroCount ────────────────────────────────────────────────────────────────
 
-function HeroCount({ value, label, sub, color, onClick }) {
+function HeroCount({ value, label, sub, color, onClick }: {
+  value: number | string; label: string; sub?: string; color: string; onClick?: () => void
+}) {
   const clickable = !!onClick
   return (
     <div className={`relative overflow-hidden rounded-2xl border animate-card-enter
@@ -208,7 +216,10 @@ function HeroCount({ value, label, sub, color, onClick }) {
 
 // ─── CidadeTable ──────────────────────────────────────────────────────────────
 
-function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no período', sourceRows, onDrillDown }) {
+function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no período', sourceRows, onDrillDown }: {
+  rows: { cidade: string; total: number }[]; color: string; emptyMsg?: string
+  sourceRows: OSRow[]; onDrillDown: (d: DrillRow) => void
+}) {
   const max = cidades[0]?.total ?? 1
 
   if (!cidades.length) {
@@ -234,7 +245,7 @@ function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no período'
                    const filtered = sourceRows.filter(r =>
                      (r.nomedacidade || '(sem cidade)').trim() === c.cidade
                    )
-                   onDrillDown(`${c.cidade} — ${c.total} OS`, filtered, color)
+                   onDrillDown({ title: `${c.cidade} — ${c.total} OS`, rows: filtered, color })
                  } : undefined}>
               <MapPin size={10} className="text-muted flex-shrink-0" />
               <span className="text-[12px] font-semibold text-text w-36 flex-shrink-0 truncate">
@@ -260,7 +271,7 @@ function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no período'
 
 // ─── EmRotaCard ───────────────────────────────────────────────────────────────
 /** Lista OS em Atendimento com cidade e tempo em campo */
-function EmRotaCard({ rows, color }) {
+function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
   const max = Math.max(...rows.map(r => r._agingAbertura ?? 0), 1)
 
   if (!rows.length) {
@@ -323,7 +334,7 @@ function EmRotaCard({ rows, color }) {
 
 // ─── ClienteSearch ───────────────────────────────────────────────────────────
 
-function ClienteSearch({ rows, color, onDrillDown }) {
+function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; color: string; onDrillDown: (d: DrillRow) => void }) {
   const [q, setQ] = useState('')
   const term = q.trim().toLowerCase()
 
@@ -373,7 +384,7 @@ function ClienteSearch({ rows, color, onDrillDown }) {
                   <div
                     key={r.numos}
                     className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface/30 transition-colors"
-                    onClick={() => onDrillDown(`${r.nomecliente} — OS ${r.numos}`, [r], color)}
+                    onClick={() => onDrillDown({ title: `${r.nomecliente} — OS ${r.numos}`, rows: [r], color })}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-[11.5px] font-semibold text-text truncate leading-none">
@@ -400,7 +411,7 @@ function ClienteSearch({ rows, color, onDrillDown }) {
 
 // ─── EquipeTable ──────────────────────────────────────────────────────────────
 
-function EquipeTable({ equipes, sourceRows, onDrillDown }) {
+function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ equipe: string } & EquipeEntry)[]; sourceRows: OSRow[]; onDrillDown: (d: DrillRow) => void }) {
   const max = equipes[0]?.total ?? 1
 
   if (!equipes.length) {
@@ -436,7 +447,7 @@ function EquipeTable({ equipes, sourceRows, onDrillDown }) {
                    const filtered = sourceRows.filter(r =>
                      shortEquipe(r.nomedaequipe) === e.equipe
                    )
-                   onDrillDown(`${e.equipe} — ${e.total} OS`, filtered, '#3b82f6')
+                   onDrillDown({ title: `${e.equipe} — ${e.total} OS`, rows: filtered, color: '#3b82f6' })
                  } : undefined}>
               <div className="min-w-0">
                 <p className="text-[12px] font-semibold text-text truncate">{e.equipe}</p>
@@ -465,13 +476,11 @@ function EquipeTable({ equipes, sourceRows, onDrillDown }) {
 export default function GerencialPage() {
   const { rows, allRows, isLoading } = useOSDerived()
   const { dateFilter }               = useUIStore()
-  const [drillDown, setDrillDown]    = useState(null)
+  const [drillDown, setDrillDown]    = useState<DrillRow | null>(null)
 
   const { from, to } = dateFilter ?? {}
 
-  function openDrill(title, drillRows, color) {
-    setDrillDown({ title, rows: drillRows, color })
-  }
+  const openDrill = (d: DrillRow) => setDrillDown(d)
 
   // ─── Base de OS sem COPE/Reagend ────────────────────────────────────────
   const allBase = useMemo(() => allRows.filter(r => !skip(r)), [allRows])
@@ -586,7 +595,7 @@ export default function GerencialPage() {
               label="Total de Instalações"
               sub={`${instAtivos.length} em aberto · ${instConclRows.length} concluídas`}
               color="#3b82f6"
-              onClick={() => openDrill(`Instalações — ${instRows.length} ordens`, instRows, '#3b82f6')}
+              onClick={() => openDrill({ title: `Instalações — ${instRows.length} ordens`, rows: instRows, color: '#3b82f6' })}
             />
             <div className="grid grid-cols-2 gap-2">
               {[
@@ -596,7 +605,7 @@ export default function GerencialPage() {
                 <div key={s.label}
                      className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
-                     onClick={() => openDrill(`Instalações ${s.label} — ${s.drillRows.length} ordens`, s.drillRows, s.color)}>
+                     onClick={() => openDrill({ title: `Instalações ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
                      style={{ color: s.color }}>{s.drillRows.length}</p>
                   <p className="text-[10px] text-muted mt-1">{s.label}</p>
@@ -646,7 +655,7 @@ export default function GerencialPage() {
               label="Total VT / Manutenção"
               sub={`${vtManutAtivos.length} em aberto · ${vtManutConclRows.length} concluídas`}
               color="#f97316"
-              onClick={() => openDrill(`VT / Manutenção — ${vtManutRows.length} ordens`, vtManutRows, '#f97316')}
+              onClick={() => openDrill({ title: `VT / Manutenção — ${vtManutRows.length} ordens`, rows: vtManutRows, color: '#f97316' })}
             />
             <div className="grid grid-cols-2 gap-2">
               {[
@@ -656,7 +665,7 @@ export default function GerencialPage() {
                 <div key={s.label}
                      className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
-                     onClick={() => openDrill(`VT/Manutenção ${s.label} — ${s.drillRows.length} ordens`, s.drillRows, s.color)}>
+                     onClick={() => openDrill({ title: `VT/Manutenção ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
                      style={{ color: s.color }}>{s.drillRows.length}</p>
                   <p className="text-[10px] text-muted mt-1">{s.label}</p>
@@ -706,7 +715,7 @@ export default function GerencialPage() {
               label="Total de Serviços"
               sub={`${servAtivos.length} em aberto · ${servConclRows.length} concluídos`}
               color="#c4b5fd"
-              onClick={() => openDrill(`Serviços — ${servRows.length} ordens`, servRows, '#c4b5fd')}
+              onClick={() => openDrill({ title: `Serviços — ${servRows.length} ordens`, rows: servRows, color: '#c4b5fd' })}
             />
             <div className="grid grid-cols-2 gap-2">
               {[
@@ -716,7 +725,7 @@ export default function GerencialPage() {
                 <div key={s.label}
                      className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
-                     onClick={() => openDrill(`Serviços ${s.label} — ${s.drillRows.length} ordens`, s.drillRows, s.color)}>
+                     onClick={() => openDrill({ title: `Serviços ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
                      style={{ color: s.color }}>{s.drillRows.length}</p>
                   <p className="text-[10px] text-muted mt-1">{s.label}</p>
@@ -771,7 +780,7 @@ export default function GerencialPage() {
               className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
                          hover:opacity-80 transition-opacity"
               style={{ color: '#3b82f6' }}
-              onClick={() => openDrill(`Instalação em Rota — ${rotaInst.length} ordens`, rotaInst, '#3b82f6')}
+              onClick={() => openDrill({ title: `Instalação em Rota — ${rotaInst.length} ordens`, rows: rotaInst, color: '#3b82f6' })}
               title="Ver todas as OS">
               {rotaInst.length}
               <ChevronRight size={14} className="mt-0.5 opacity-60" />
@@ -812,7 +821,7 @@ export default function GerencialPage() {
               className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
                          hover:opacity-80 transition-opacity"
               style={{ color: '#f97316' }}
-              onClick={() => openDrill(`VT/Manutenção em Rota — ${rotaVTManut.length} ordens`, rotaVTManut, '#f97316')}
+              onClick={() => openDrill({ title: `VT/Manutenção em Rota — ${rotaVTManut.length} ordens`, rows: rotaVTManut, color: '#f97316' })}
               title="Ver todas as OS">
               {rotaVTManut.length}
               <ChevronRight size={14} className="mt-0.5 opacity-60" />
@@ -854,7 +863,7 @@ export default function GerencialPage() {
               className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
                          hover:opacity-80 transition-opacity"
               style={{ color: '#c4b5fd' }}
-              onClick={() => openDrill(`Serviço em Rota — ${rotaServ.length} ordens`, rotaServ, '#c4b5fd')}
+              onClick={() => openDrill({ title: `Serviço em Rota — ${rotaServ.length} ordens`, rows: rotaServ, color: '#c4b5fd' })}
               title="Ver todas as OS">
               {rotaServ.length}
               <ChevronRight size={14} className="mt-0.5 opacity-60" />
@@ -904,7 +913,7 @@ export default function GerencialPage() {
                  className="relative overflow-hidden rounded-xl border bg-card px-4 py-3 animate-card-enter
                             cursor-pointer hover:bg-surface/20 transition-colors"
                  style={{ borderColor: `${s.color}20` }}
-                 onClick={() => openDrill(`${s.label} — ${s.drillRows.length} ordens`, s.drillRows, s.color)}>
+                 onClick={() => openDrill({ title: `${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
               <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: s.color }} />
               <p className="font-mono font-black tabular-nums text-[28px] leading-none"
                  style={{ color: s.color }}>{s.drillRows.length}</p>

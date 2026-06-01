@@ -1,7 +1,8 @@
-// @ts-nocheck
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BarChart2, ChevronUp, AlertTriangle, Download, Send, CheckCircle, XCircle, CalendarClock, FileText, Router, Wrench, HardHat, Copy, Users } from 'lucide-react'
+import { BarChart2, ChevronUp, AlertTriangle, Download, Send, CheckCircle, CalendarClock, FileText, Router, Wrench, HardHat, Copy, Users } from 'lucide-react'
+import type { OSRow } from '../../lib/types'
+type ColRender = (value: unknown, row: OSRow) => React.ReactNode
 import { useOrdens } from '../../hooks/useOrdens'
 import { KPICard } from '../../components/ui/KPICard'
 import { SearchBox } from '../../components/ui/SearchBox'
@@ -9,7 +10,6 @@ import { FilterSelect } from '../../components/ui/FilterSelect'
 import { DataTable } from '../../components/ui/DataTable'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { Modal } from '../../components/ui/Modal'
 import { TableSkeleton } from '../../components/ui/Skeleton'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { exportCSV } from '../../lib/export'
@@ -20,15 +20,6 @@ import OSDrawer from './OSDrawer'
 import { OSHoverCard } from './OSHoverCard'
 import { TelegramOrdensModal } from './TelegramOrdensModal'
 
-const FORNECEDOR_OPTS = [
-  { value: 'WES',        label: 'WES',          color: '#c4b5fd' },
-  { value: 'Instacable', label: 'Instacable',    color: '#facc15' },
-  { value: 'THM',        label: 'THM',           color: '#22d3ee' },
-  { value: 'REDE',       label: 'Rede',          color: '#4ade80' },
-  { value: 'MANUTENCAO', label: 'Manutenção',    color: '#f97316' },
-  { value: 'INSTALACAO', label: 'Instalação',    color: '#3b82f6' },
-  { value: 'INTERNO',    label: 'COPE Interno',  color: '#94a3b8' },
-]
 
 const statusOptions = [
   { value: 'Pendente',                label: 'Pendente'             },
@@ -63,17 +54,18 @@ const densityOptions = [
   { value: 'mini',    label: 'Mini' },
 ]
 
-const columns = [
+const columns: { key?: string; label: string; render?: ColRender }[] = [
   { key: 'numos',           label: 'Nº OS' },
   { key: '_aging',          label: 'Aging',
     render: (v) => {
-      const c = v >= 6 ? 'red' : v >= 3 ? 'yellow' : 'cyan'
-      return <Badge variant={c}>{v ?? 0}d</Badge>
+      const n = v as number
+      const c = n >= 6 ? 'red' : n >= 3 ? 'yellow' : 'cyan'
+      return <Badge variant={c}>{n ?? 0}d</Badge>
     }
   },
   { key: '_riskScore',      label: 'Risco',
-    render: (v: number, row) => {
-      const score = v ?? 0
+    render: (v, row) => {
+      const score = (v as number) ?? 0
       const [variant, label] =
         score >= 70 ? ['red',    'Crítico'] :
         score >= 40 ? ['orange', 'Alto']    :
@@ -94,7 +86,7 @@ const columns = [
   },
   { key: 'nomecliente',     label: 'Cliente',
     render: (v, row) => v
-      ? v
+      ? (v as string)
       : <span className="text-muted italic text-[11px]">
           {row?.codigocliente ? `Cód. ${row.codigocliente}` : '(Sem nome)'}
         </span>
@@ -103,12 +95,12 @@ const columns = [
   { key: 'bairro',          label: 'Bairro' },
   { key: 'logradouro',      label: 'Endereço' },
   { key: 'tiposervico',     label: 'Tipo' },
-  { key: 'nomedaequipe',    label: 'Equipe', render: (v) => shortEquipe(v) },
+  { key: 'nomedaequipe',    label: 'Equipe', render: (v) => shortEquipe(v as string) },
   { key: '_situacaoEfetiva', label: 'Situação',
-    render: (v) => <Badge variant={situacaoVariant(v)}>{v}</Badge>
+    render: (v) => <Badge variant={situacaoVariant(v as string)}>{v as string}</Badge>
   },
   { key: 'dataagendamento', label: 'Agend.',
-    render: (v) => v ? v.slice(0, 10) : '—'
+    render: (v) => v ? (v as string).slice(0, 10) : '—'
   },
 ]
 
@@ -118,7 +110,7 @@ const PERIOD_ORDER = ['manhã', 'tarde']
 
 // ── Agrupamento por cliente — Timeline visual ─────────────────────────────────
 
-function _parseDateStr(s) {
+function _parseDateStr(s: string | null | undefined): Date | null {
   if (!s) return null
   const p = s.split(' ')[0].split(/[/-]/)
   if (p.length < 3) return null
@@ -130,30 +122,32 @@ function _parseDateStr(s) {
   return isNaN(dt.getTime()) ? null : dt
 }
 
-function _computeGap(prev, curr) {
+function _computeGap(prev: OSRow | null, curr: OSRow): number | null {
   if (!prev) return null
   const prevClose = _parseDateStr(prev.dataexecucao || prev.databaixa)
   const currOpen  = _parseDateStr(curr.datacadastro)
   if (!prevClose || !currOpen) return null
-  const dias = Math.floor((currOpen - prevClose) / 86400000)
+  const dias = Math.floor((currOpen.getTime() - prevClose.getTime()) / 86400000)
   return dias >= 0 ? dias : null
 }
 
-function _dotColor(situacao) {
+function _dotColor(situacao: string | null | undefined): string {
   if (!situacao) return 'bg-muted/40'
   if (situacao === 'Concluída') return 'bg-green'
   if (situacao === 'Atendimento' || situacao === 'Reagendamento') return 'bg-cyan'
   return 'bg-yellow'
 }
 
-function _revisitaBadge(gapDias) {
+function _revisitaBadge(gapDias: number | null): { variant: string; label: string } | null {
   if (gapDias == null || gapDias > 30) return null
   if (gapDias < 7)  return { variant: 'red',    label: `Revisita ${gapDias}d` }
   if (gapDias < 15) return { variant: 'orange',  label: `Revisita ${gapDias}d` }
   return               { variant: 'yellow',  label: `Revisita ${gapDias}d` }
 }
 
-function ClienteGroupedTable({ rows, density, onRowClick }) {
+function ClienteGroupedTable({ rows, density, onRowClick }: {
+  rows: OSRow[]; density: string; onRowClick?: (r: OSRow) => void
+}) {
   const showGap = density !== 'mini'
 
   const groups = useMemo(() => {
@@ -225,7 +219,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
                 className="w-full text-left flex items-center gap-3 px-4 py-2.5
                            hover:bg-primary/[0.04] border-b border-white/[0.03]
                            transition-colors text-[11px] cursor-pointer"
-                onClick={() => onRowClick(g.sorted[0])}
+                onClick={() => onRowClick?.(g.sorted[0])}
               >
                 <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${_dotColor(g.sorted[0]._situacaoEfetiva)}`} />
                 <span className="font-mono text-primary w-20 flex-shrink-0">{g.sorted[0].numos}</span>
@@ -242,7 +236,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
                 {/* Rail vertical */}
                 <div className="absolute left-[22px] top-0 bottom-0 w-px bg-surface" />
 
-                {g.sorted.map((r, i) => {
+                {g.sorted.map((r: OSRow, i: number) => {
                   const gap    = _computeGap(g.sorted[i - 1], r)
                   const badge  = _revisitaBadge(gap)
                   const isLast = i === g.sorted.length - 1
@@ -272,7 +266,7 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
                       <button
                         className="relative w-full text-left flex items-center gap-3 py-2
                                    hover:bg-primary/[0.04] transition-colors text-[11px] cursor-pointer"
-                        onClick={() => onRowClick(r)}
+                        onClick={() => onRowClick?.(r)}
                       >
                         {/* Dot no rail */}
                         <span className={`absolute -left-[28px] top-1/2 -translate-y-1/2
@@ -303,9 +297,11 @@ function ClienteGroupedTable({ rows, density, onRowClick }) {
   )
 }
 
-function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
+function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
+  rows: OSRow[]; density: string; onRowClick?: (r: OSRow) => void; equipe?: string
+}) {
   const groups = useMemo(() => {
-    const map = {}
+    const map: Record<string, OSRow[]> = {}
     for (const r of rows) {
       const p = (r.periodo || '').trim() || 'Sem Período'
       ;(map[p] = map[p] || []).push(r)
@@ -381,11 +377,11 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
                 const inst  = periodoRows.filter(r => r._tipo === 'INSTALACAO').length
                 const manut = periodoRows.filter(r => r._tipo === 'MANUTENCAO').length
                 const serv  = periodoRows.length - inst - manut
-                const tipoItems = [
-                  inst  > 0 && { n: inst,  label: inst  === 1 ? 'Instalação'  : 'Instalações' },
-                  manut > 0 && { n: manut, label: manut === 1 ? 'Manutenção'  : 'Manutenções' },
-                  serv  > 0 && { n: serv,  label: serv  === 1 ? 'Serviço'     : 'Serviços'    },
-                ].filter(Boolean)
+                const tipoItems: { n: number; label: string }[] = [
+                  inst  > 0 ? { n: inst,  label: inst  === 1 ? 'Instalação'  : 'Instalações' } : null,
+                  manut > 0 ? { n: manut, label: manut === 1 ? 'Manutenção'  : 'Manutenções' } : null,
+                  serv  > 0 ? { n: serv,  label: serv  === 1 ? 'Serviço'     : 'Serviços'    } : null,
+                ].filter(Boolean) as { n: number; label: string }[]
                 return (
                   <div className={`flex items-center gap-2.5 px-4 py-2.5 border-b ${border}
                                   ${gi > 0 ? 'border-t border-white/[0.08]' : ''} ${bg}`}>
@@ -409,7 +405,7 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
 
 
               {/* Linhas */}
-              {periodoRows.map((row, i) => {
+              {(periodoRows as OSRow[]).map((row: OSRow, i: number) => {
                 const aging      = row._aging ?? 0
                 const agingColor = aging >= 6 ? 'text-red'   : aging >= 3 ? 'text-yellow'  : 'text-cyan'
                 const agingBg    = aging >= 6 ? 'bg-red/10'  : aging >= 3 ? 'bg-yellow/10' : 'bg-cyan/10'
@@ -430,7 +426,7 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
                     </span>
                     <span
                       className={`${C.cliente} text-[12px] ${row.nomecliente ? 'text-text font-medium' : 'text-muted italic'}`}
-                      title={row.nomecliente || row.codigocliente || 'Sem nome no cadastro'}
+                      title={(row.nomecliente || row.codigocliente || 'Sem nome no cadastro') as string}
                     >
                       {row.nomecliente || (row.codigocliente ? `Cód. ${row.codigocliente}` : '(Sem nome)')}
                     </span>
@@ -469,15 +465,15 @@ export default function OrdensPage() {
   const logAudit = useAuditStore(s => s.log)
   const location = useLocation()
   const navigate = useNavigate()
-  const [drawerOS,        setDrawerOS]        = useState(null)
+  const [drawerOS,        setDrawerOS]        = useState<OSRow | null>(null)
   const [kpiVisible,      setKpiVisible]      = useState(true)
-  const [groupBy,         setGroupBy]         = useState('none')  // 'none' | 'cliente'
-  const [hoverOS,         setHoverOS]         = useState(null)
-  const [hoverRect,       setHoverRect]       = useState(null)
+  const [groupBy,         setGroupBy]         = useState<'none' | 'cliente'>('none')
+  const [hoverOS,         setHoverOS]         = useState<OSRow | null>(null)
+  const [hoverRect,       setHoverRect]       = useState<DOMRect | null>(null)
   const [tgModal,         setTgModal]         = useState(false)
   const [copied,          setCopied]          = useState(false)
-  const hoverTimer = useRef(null)
-  const tableRef   = useRef(null)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tableRef   = useRef<HTMLDivElement>(null)
 
   // Recebe equipe pré-selecionada via React Router state (OSDrawer → "Ver Equipe")
   useEffect(() => {
@@ -494,8 +490,8 @@ export default function OrdensPage() {
     tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  function handleRowHover(row, rect) {
-    clearTimeout(hoverTimer.current)
+  function handleRowHover(row: OSRow, rect: DOMRect) {
+    clearTimeout(hoverTimer.current ?? undefined)
     hoverTimer.current = setTimeout(() => {
       setHoverOS(row)
       setHoverRect(rect)
@@ -503,13 +499,13 @@ export default function OrdensPage() {
   }
 
   function handleRowLeave() {
-    clearTimeout(hoverTimer.current)
+    clearTimeout(hoverTimer.current ?? undefined)
     setHoverOS(null)
     setHoverRect(null)
   }
 
-  function handleRowClick(row) {
-    clearTimeout(hoverTimer.current)
+  function handleRowClick(row: OSRow) {
+    clearTimeout(hoverTimer.current ?? undefined)
     setHoverOS(null)
     setHoverRect(null)
     setDrawerOS(row)
@@ -701,7 +697,7 @@ export default function OrdensPage() {
           <Button
             variant="outline" size="sm"
             className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
-            onClick={() => { setTgResult(null); setTgModal(true) }}
+            onClick={() => setTgModal(true)}
           >
             <Send size={11} /> Telegram
           </Button>
@@ -842,7 +838,7 @@ export default function OrdensPage() {
           /* ── Vista agrupada por período (quando equipe está selecionada) ── */
           <PeriodoGroupedTable
             rows={os.filtered}
-            density={os.density}
+            density={os.density as "normal" | "compact" | "mini"}
             onRowClick={handleRowClick}
             equipe={os.equipe}
           />
@@ -850,7 +846,7 @@ export default function OrdensPage() {
           /* ── Vista agrupada por cliente ── */
           <ClienteGroupedTable
             rows={os.filtered}
-            density={os.density}
+            density={os.density as "normal" | "compact" | "mini"}
             onRowClick={handleRowClick}
           />
         ) : (
@@ -858,7 +854,7 @@ export default function OrdensPage() {
           <DataTable
             columns={columns}
             rows={os.paginated}
-            density={os.density}
+            density={os.density as "normal" | "compact" | "mini"}
             onRowClick={handleRowClick}
             onRowHover={handleRowHover}
             onRowLeave={handleRowLeave}
