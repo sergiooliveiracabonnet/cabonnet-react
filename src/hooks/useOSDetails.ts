@@ -89,9 +89,9 @@ export function useOSDetails(numos: string | null | undefined): OSDetailsResult 
 
   if (!data) return { isLoading: !!(numos && isLoading), error: error as Error | null, details: null }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const raw = data as any
-  const osObj: Record<string, unknown> = (typeof raw.os === 'object' && raw.os) ? raw.os : {}
+  const raw = data as unknown as Record<string, unknown>
+  const rawOs = raw.os
+  const osObj: Record<string, unknown> = (typeof rawOs === 'object' && rawOs !== null) ? rawOs as Record<string, unknown> : {}
 
   const { historico, obsTecnico, nomeTecnico } = parseObs((osObj.observacoes as string) || '')
 

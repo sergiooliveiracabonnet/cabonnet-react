@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { Button } from '../components/ui/Button'
 import { LayoutDashboard } from 'lucide-react'
 
 export default function NotFound() {
@@ -12,10 +11,14 @@ export default function NotFound() {
         <p className="text-[15px] font-semibold text-text">Página não encontrada</p>
         <p className="text-[13px] text-muted max-w-xs">Esta rota não existe no sistema Cabonnet.</p>
       </div>
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <Button {...{ as: Link, to: '/' } as any} variant="outline" size="sm" className="gap-1.5">
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1.5 h-9 px-4 text-[13px] font-semibold rounded-md
+                   border border-primary/40 text-primary hover:bg-primary/10 hover:border-primary/70
+                   transition-colors duration-150"
+      >
         <LayoutDashboard size={13} /> Ir para o Resumo
-      </Button>
+      </Link>
     </div>
   )
 }

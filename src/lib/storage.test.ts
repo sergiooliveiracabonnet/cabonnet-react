@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { storage } from './storage'
 
-// jsdom provê localStorage em memória — funciona nativamente nos testes Vitest
-
 describe('storage.getString', () => {
   beforeEach(() => localStorage.clear())
 

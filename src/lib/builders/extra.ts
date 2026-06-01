@@ -136,7 +136,6 @@ export function transformAtendimento(serverData: any, opts: { period?: string; c
   const tipTot:   Record<string, number> = {}
   const ateTot:   Record<string, number> = {}
   const cidTot:   Record<string, number> = {}
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const d of filteredDias) {
     for (const [k, v] of Object.entries(d.ch || {})) canalTot[k] = (canalTot[k] ?? 0) + (v as number)
     for (const [k, v] of Object.entries(d.tp || {})) tipTot[k]   = (tipTot[k]   ?? 0) + (v as number)
@@ -165,7 +164,7 @@ export function transformAtendimento(serverData: any, opts: { period?: string; c
     .map(([idx, total]) => ({ cidade: (cidades as string[])[Number(idx)] ?? idx, total }))
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rawRegs = (registros as any[]).filter((reg: any) => {
+  const rawRegs = (registros as Array<[number, ...unknown[]]>).filter((reg) => {
     if (!cutoff) return true
     const d = (datas as string[])[reg[0]] ?? ''
     return d >= cutoff.toISOString().slice(0, 10)
@@ -187,15 +186,16 @@ export function transformAtendimento(serverData: any, opts: { period?: string; c
 // ─── Juniper ──────────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function transformJuniper(serverData: any) {
-  if (!serverData) return null
-  const { total = 0, alerta = false, clientes = [], cluster = '', ultima_coleta = '' } = serverData
+type JuniperClient = Record<string, string | undefined>
+type JuniperData = { total?: number; alerta?: boolean; clientes?: JuniperClient[]; cluster?: string; ultima_coleta?: string }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const online    = (clientes as any[]).filter((c: any) => c.state !== 'inactive').length
+export function transformJuniper(serverData: unknown) {
+  if (!serverData) return null
+  const { total = 0, alerta = false, clientes = [], cluster = '', ultima_coleta = '' } = serverData as JuniperData
+
+  const online    = (clientes as JuniperClient[]).filter((c: JuniperClient) => c.state !== 'inactive').length
   const offline   = total - online
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const uniqueIPs = [...new Set((clientes as any[]).map((c: any) => c.ip_address || c.ip).filter(Boolean))].length
+  const uniqueIPs = [...new Set((clientes as JuniperClient[]).map((c: JuniperClient) => c.ip_address || c.ip).filter(Boolean))].length
 
   const nivel       = alerta ? 'alert' : total === 0 ? 'warn' : 'ok'
   const nivel_label = nivel === 'ok' ? 'Sessões PPPoE Ativas' : nivel === 'warn' ? 'Sem dados coletados' : 'Alerta — Sessões Problemáticas'
@@ -213,8 +213,7 @@ export function transformJuniper(serverData: any) {
     : '—'
 
   const ifaceMap = new Map<string, { total: number; online: number }>()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const c of (clientes as any[])) {
+  for (const c of (clientes as JuniperClient[])) {
     const iface = (c.interface_name || c.interface || 'unknown').split('.')[0]
     if (!ifaceMap.has(iface)) ifaceMap.set(iface, { total: 0, online: 0 })
     ifaceMap.get(iface)!.total++
@@ -227,8 +226,7 @@ export function transformJuniper(serverData: any) {
     kpis: { total, online, offline, interfaces: interfaces.length, ips: uniqueIPs, ultima: ultimaHora, proximo: proximaHora },
     interfaces,
     historico: { labels: [] as string[], values: [] as number[] },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    clientes: (clientes as any[]).map((c: any) => ({
+    clientes: (clientes as JuniperClient[]).map((c: any) => ({
       usuario:   (c.user_name    || '—').toUpperCase(),
       ip:        (c.ip_address   || c.ip    || '—').toUpperCase(),
       mac:       (c.mac_address  || c.mac   || '—').toUpperCase(),

@@ -383,8 +383,7 @@ const TEND_STYLE = {
 type EvolAny = { labels?: string[]; [k: string]: unknown }
 function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown; totalAtivo: number; fila: number }) {
   const ev = evolucao as EvolAny | undefined
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, isFetching, isError } = useAIForecast({ evolucao: evolucao as any, totalAtivo, fila })
+  const { data, isFetching, isError } = useAIForecast({ evolucao: ev as unknown as import('../../lib/types').EvolucaoData ?? { labels: [], abertas: [], concluidas: [] }, totalAtivo, fila })
   const tend = data?.tendencia ? (TEND_STYLE[data.tendencia] ?? TEND_STYLE['estável']) : null
 
   if ((ev?.labels?.length ?? 0) < 7) return null

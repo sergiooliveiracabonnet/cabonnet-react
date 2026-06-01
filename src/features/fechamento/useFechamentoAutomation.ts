@@ -33,8 +33,7 @@ export function useFechamentoAutomation(
       const data = pdfDataRef.current
       if (!data) return { ok: false, error: 'Dados não carregados' }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const doc   = generateFechamentoPDF(data as any)
+      const doc   = generateFechamentoPDF(data as FechamentoSnapshot)
       const fname = `relatorio-cabonnet-${new Date().toISOString().slice(0, 10)}.pdf`
 
       if (sendToTelegram) {

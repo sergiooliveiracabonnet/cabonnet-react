@@ -53,10 +53,9 @@ export function getCityCoords(cidade: string): { lat: number; lng: number } | nu
   return CITY_COORDS[normalize(cidade)] ?? null
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function aggregateByCidade(rows: OSRow[]) {
-  const map = new Map()
-  for (const r of rows as any[]) {
+  const map = new Map<string, { cidade: string; count: number; criticos: number; excedidos: number; pendentes: number; concluidas: number; semEquipe: number; aging: number[]; bairros: Map<string, { bairro: string; count: number; criticos: number }> }>()
+  for (const r of rows) {
     const city = normalize(r.nomedacidade)
     if (!city) continue
     if (!map.has(city)) {
@@ -66,7 +65,7 @@ export function aggregateByCidade(rows: OSRow[]) {
         concluidas: 0, semEquipe: 0, aging: [], bairros: new Map(),
       })
     }
-    const g = map.get(city)
+    const g = map.get(city)!
     g.count++
     if (r._slaCritico)     g.criticos++
     else if (r._slaExcedido) g.excedidos++
@@ -91,25 +90,25 @@ export function aggregateByCidade(rows: OSRow[]) {
         ? g.aging.reduce((a: number, b: number) => a + b, 0) / g.aging.length
         : 0
       const topBairros = Array.from(g.bairros.values())
-        .sort((a: any, b: any) => b.count - a.count)
+        .sort((a, b) => b.count - a.count)
         .slice(0, 5)
       return { ...g, coords, avgAging, topBairros, bairros: undefined }
     })
-    .filter(g => g.coords)
+    .filter((g): g is typeof g & { coords: { lat: number; lng: number } } => g.coords !== null)
     .sort((a, b) => b.count - a.count)
 }
 
 // Gera pontos para o heatmap — cada OS contribui com 1 ponto ponderado
 // na coordenada da cidade, com peso baseado em criticidade e aging
-export function buildHeatPoints(rows: OSRow[]) {
-  const byCity = new Map()
-  for (const r of rows as any[]) {
+export function buildHeatPoints(rows: OSRow[]): [number, number, number][] {
+  const byCity = new Map<string, { coords: { lat: number; lng: number }; weight: number }>()
+  for (const r of rows) {
     const city   = normalize(r.nomedacidade)
     const coords = getCityCoords(city)
     if (!coords) continue
     if (!byCity.has(city)) byCity.set(city, { coords, weight: 0 })
     const w = r._slaCritico ? 3 : r._slaExcedido ? 2 : 1
-    byCity.get(city).weight += w
+    byCity.get(city)!.weight += w
   }
   return Array.from(byCity.values()).map(({ coords, weight }) => [
     coords.lat, coords.lng, weight,
