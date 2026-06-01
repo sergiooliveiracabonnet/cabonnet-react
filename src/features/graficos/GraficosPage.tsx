@@ -1,5 +1,9 @@
-// @ts-nocheck
 import { useState, useMemo, useCallback, useEffect } from 'react'
+import type { OSRow } from '../../lib/types'
+
+interface DrillState { title: string; rows: OSRow[] }
+interface ChartSeries { labels?: string[]; values?: number[]; [key: string]: unknown }
+type OnDrill = (title: string, rows: OSRow[]) => void
 import { BarChart2, TrendingUp, Sliders, ZoomIn, MousePointerClick, ChevronUp, ChevronDown, Sparkles, TrendingDown, Minus } from 'lucide-react'
 import { useOSDerived }   from '../../contexts/OSDataContext'
 import { buildGraficos }  from '../../lib/builders'
@@ -34,33 +38,33 @@ const TABS = [
 const COLORS = ['#3b82f6','#4ade80','#facc15','#f97316','#c4b5fd','#f87171','#22d3ee','#ec4899','#84cc16','#8b5cf6']
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
-const toISODate = (s) => {
+const toISODate = (s: string | null | undefined): string => {
   if (!s) return ''
   const p = (s || '').split(' ')[0].split(/[/\\]/)
   return p.length >= 3 ? `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}` : ''
 }
-const toISOMonth    = (s) => toISODate(s).slice(0, 7)
-const closeISO      = (r) => toISODate((r.databaixa || r.dataexecucao || ''))
-const closeISOMonth = (r) => closeISO(r).slice(0, 7)
+const toISOMonth    = (s: string | null | undefined): string => toISODate(s).slice(0, 7)
+const closeISO      = (r: OSRow): string => toISODate((r.databaixa || r.dataexecucao || ''))
+const closeISOMonth = (r: OSRow): string => closeISO(r).slice(0, 7)
 
 const AGING_FILTER = {
-  '0-1d':  r => r._aging != null && r._aging <= 1,
-  '2-3d':  r => r._aging != null && r._aging >= 2 && r._aging <= 3,
-  '4-7d':  r => r._aging != null && r._aging >= 4 && r._aging <= 7,
-  '8-14d': r => r._aging != null && r._aging >= 8 && r._aging <= 14,
-  '15+d':  r => r._aging != null && r._aging >= 15,
+  "0-1d":  (r: OSRow) => r._aging != null && r._aging <= 1,
+  "2-3d":  (r: OSRow) => r._aging != null && r._aging >= 2 && r._aging <= 3,
+  "4-7d":  (r: OSRow) => r._aging != null && r._aging >= 4 && r._aging <= 7,
+  "8-14d": (r: OSRow) => r._aging != null && r._aging >= 8 && r._aging <= 14,
+  "15+d":  (r: OSRow) => r._aging != null && r._aging >= 15,
 }
 
 // ─── Data converters ──────────────────────────────────────────────────────────
-const toLV = (d) =>
+const toLV = (d: ChartSeries | undefined | null): { name: string; value: number }[] =>
   d?.labels?.length ? d.labels.map((name, i) => ({ name, value: d.values?.[i] ?? 0 })) : []
 
-const toMulti = (d) => {
+const toMulti = (d: ChartSeries | undefined | null): Record<string, unknown>[] => {
   if (!d?.labels?.length) return []
   const keys = Object.keys(d).filter(k => k !== 'labels')
   return d.labels.map((name, i) => ({
     name,
-    ...Object.fromEntries(keys.map(k => [k, d[k]?.[i] ?? 0])),
+    ...Object.fromEntries(keys.map(k => [k, (d[k] as number[] | undefined)?.[i] ?? 0])),
   }))
 }
 
@@ -76,16 +80,16 @@ const DRILL_COLS = [
   { key: 'tiposervico',  label: 'Tipo'     },
 ]
 
-function drillSortValue(r, key) {
+function drillSortValue(r: OSRow, key: string): string | number {
   if (key === 'numos')        return parseInt(r.numos) || 0
   if (key === '_aging')       return r._aging ?? -1
   if (key === 'datacadastro') return toISODate(r.datacadastro ?? '')
   return (r[key] ?? '').toString().toLowerCase()
 }
 
-function DrillModal({ drill, onClose }) {
+function DrillModal({ drill, onClose }: { drill: DrillState | null; onClose: () => void }) {
   const [search, setSearch] = useState('')
-  const [sort,   setSort]   = useState({ key: '_aging', dir: 'desc' })
+  const [sort,   setSort]   = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: '_aging', dir: 'desc' })
 
   useEffect(() => {
     setSearch('')
@@ -95,7 +99,7 @@ function DrillModal({ drill, onClose }) {
   if (!drill) return null
   const { title, rows } = drill
 
-  function toggleSort(key) {
+  function toggleSort(key: string) {
     setSort(s => ({ key, dir: s.key === key && s.dir === 'desc' ? 'asc' : 'desc' }))
   }
 
@@ -113,7 +117,7 @@ function DrillModal({ drill, onClose }) {
   const sorted = [...filtered].sort((a, b) => {
     const av = drillSortValue(a, sort.key)
     const bv = drillSortValue(b, sort.key)
-    const cmp = typeof av === 'string' ? av.localeCompare(bv) : av - bv
+    const cmp = typeof av === 'string' ? av.localeCompare(bv as string) : (av as number) - (bv as number)
     return sort.dir === 'asc' ? cmp : -cmp
   })
 
@@ -194,7 +198,7 @@ function DrillModal({ drill, onClose }) {
 export default function GraficosPage() {
   const [tab,        setTab]        = useState('distribuicao')
   const [fornecedor, setFornecedor] = useState('')
-  const [drill,      setDrill]      = useState(null)
+  const [drill,      setDrill]      = useState<DrillState | null>(null)
 
   const { rows, derived: { graficos: graficosCtx } } = useOSDerived()
 
@@ -207,7 +211,7 @@ export default function GraficosPage() {
     [activeRows, fornecedor, graficosCtx]
   )
 
-  const openDrill = useCallback((title, filteredRows) => {
+  const openDrill = useCallback((title: string, filteredRows: OSRow[]) => {
     setDrill({ title, rows: filteredRows })
   }, [])
 
@@ -251,18 +255,20 @@ export default function GraficosPage() {
 }
 
 // ─── Tab: Distribuição ────────────────────────────────────────────────────────
-function TabDistribuicao({ d, rows, onDrill }) {
-  const statusData  = toLV(d.status)
-  const tipoData    = toLV(d.tipo)
-  const cidadeData  = toLV(d.cidade)
-  const equipesData = toLV(d.equipes)
-  const agingData   = toLV(d.aging)
-  const eficData    = toLV(d.eficiencia)
+function TabDistribuicao({ d, rows, onDrill }: { d: Record<string,unknown>; rows: OSRow[]; onDrill: OnDrill }) {
+  const gd = d as Record<string, ChartSeries>
+  const statusData  = toLV(gd.status)
+  const tipoData    = toLV(gd.tipo)
+  const cidadeData  = toLV(gd.cidade)
+  const equipesData = toLV(gd.equipes)
+  const agingData   = toLV(gd.aging)
+  const eficData    = toLV(gd.eficiencia)
 
-  const evolucaoData = (d.evolucao?.labels ?? []).map((name, i) => ({
+  const gev = gd.evolucao as { labels?: string[]; abertas?: number[]; concluidas?: number[] } | undefined
+  const evolucaoData = (gev?.labels ?? []).map((name: string, i: number) => ({
     name,
-    Abertas:    d.evolucao?.abertas?.[i]    ?? 0,
-    Concluídas: d.evolucao?.concluidas?.[i] ?? 0,
+    Abertas:    gev?.abertas?.[i]    ?? 0,
+    Concluídas: gev?.concluidas?.[i] ?? 0,
   }))
 
   return (
@@ -287,7 +293,7 @@ function TabDistribuicao({ d, rows, onDrill }) {
                 'Serviço':         'SERVICO',
                 'Rede':            'REDE',
               }
-              const cat = catMap[entry.name]
+              const cat = (catMap as Record<string,string>)[entry.name]
               onDrill(`${entry.name}`, cat
                 ? rows.filter(r => r._categoria === cat)
                 : rows.filter(r => entry.name === 'Serviço' ? r._categoria === 'SERVICO' : false)
@@ -299,7 +305,7 @@ function TabDistribuicao({ d, rows, onDrill }) {
         <ChartCard title="OS por Cidade" dot="#facc15" height="h-56">
           <BarChart data={cidadeData} layout="vertical">
             <Bar dataKey="value" fill="#facc15"
-              onClick={(data) => onDrill(`Cidade: ${data.name}`, rows.filter(r => (r.nomedacidade || '').trim() === data.name))} />
+              onClick={(data: Record<string,unknown>) => onDrill(`Cidade: ${data.name}`, rows.filter(r => (r.nomedacidade || '').trim() === data.name))} />
             <XAxis type="number" />
             <YAxis dataKey="name" type="category" width={130} />
             <Grid /><ChartTooltip />
@@ -314,7 +320,7 @@ function TabDistribuicao({ d, rows, onDrill }) {
         <ChartCard title="Top 10 Equipes — Volume de OS" dot="#3b82f6" height="h-64" className="lg:col-span-2">
           <BarChart data={equipesData}>
             <Bar dataKey="value" fill="#3b82f6"
-              onClick={(data) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
+              onClick={(data: Record<string,unknown>) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
             <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip />
           </BarChart>
         </ChartCard>
@@ -322,7 +328,7 @@ function TabDistribuicao({ d, rows, onDrill }) {
         <ChartCard title="SLA — Aging das OS" dot="#f97316" height="h-64">
           <BarChart data={agingData}>
             <Bar dataKey="value" fill="#f97316"
-              onClick={(data) => { const fn = AGING_FILTER[data.name]; if (fn) onDrill(`Aging: ${data.name}`, rows.filter(fn)) }} />
+              onClick={(data: {name: string}) => { const fn = (AGING_FILTER as Record<string, (r: OSRow) => boolean>)[data.name]; if (fn) onDrill(`Aging: ${data.name}`, rows.filter(fn)) }} />
             <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip />
           </BarChart>
         </ChartCard>
@@ -333,7 +339,7 @@ function TabDistribuicao({ d, rows, onDrill }) {
       <ChartCard title="Taxa de Conclusão por Equipe (%)" dot="#4ade80" height="h-96">
         <BarChart data={eficData}>
           <Bar dataKey="value" fill="#4ade80"
-            onClick={(data) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
+            onClick={(data: Record<string,unknown>) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
           <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip suffix="%" />
         </BarChart>
       </ChartCard>
@@ -341,10 +347,12 @@ function TabDistribuicao({ d, rows, onDrill }) {
       <ChartCard title="Evolução Diária — Abertas vs Concluídas por Data de Fechamento" dot="#3b82f6" height="h-80">
         <AreaChart
           data={evolucaoData}
-          onClick={(cd) => {
-            if (!cd?.activeLabel || !cd?.activePayload?.length) return
-            const label = cd.activeLabel
-            const ds    = cd.activePayload[0].name
+          onClick={(cd: Record<string,unknown>) => {
+            type CDPayload = { activeLabel?: string; activePayload?: { name?: string }[] }
+            const cdp = cd as CDPayload
+            if (!cdp?.activeLabel || !cdp?.activePayload?.length) return
+            const label = cdp.activeLabel!
+            const ds    = cdp.activePayload![0].name
             if (ds === 'Abertas')
               onDrill(`Abertas em ${label}`, rows.filter(r => toISODate(r.datacadastro) === label))
             else
@@ -372,11 +380,14 @@ const TEND_STYLE = {
   decrescente: { cls: 'text-green',  Icon: TrendingDown },
 }
 
-function ForecastCard({ evolucao, totalAtivo, fila }) {
-  const { data, isFetching, isError } = useAIForecast({ evolucao, totalAtivo, fila })
+type EvolAny = { labels?: string[]; [k: string]: unknown }
+function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown; totalAtivo: number; fila: number }) {
+  const ev = evolucao as EvolAny | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, isFetching, isError } = useAIForecast({ evolucao: evolucao as any, totalAtivo, fila })
   const tend = data?.tendencia ? (TEND_STYLE[data.tendencia] ?? TEND_STYLE['estável']) : null
 
-  if ((evolucao?.labels?.length ?? 0) < 7) return null
+  if ((ev?.labels?.length ?? 0) < 7) return null
 
   return (
     <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-5 space-y-4">
@@ -440,31 +451,35 @@ function ForecastCard({ evolucao, totalAtivo, fila }) {
 }
 
 // ─── Tab: Tendência ───────────────────────────────────────────────────────────
-function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }) {
-  const mensalData = (d.mensal?.labels ?? []).map((name, i) => ({
+function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: { d: Record<string,unknown>; rows: OSRow[]; onDrill: OnDrill; totalAtivo?: number; fila?: number }) {
+  type MensalType = { labels?: string[]; abertas?: number[]; concluidas?: number[]; slaExcedido?: number[] }
+  const mensal = (d.mensal as MensalType | undefined)
+  const mensalData = (mensal?.labels ?? []).map((name: string, i: number) => ({
     name,
-    Abertas:        d.mensal?.abertas?.[i]     ?? 0,
-    Concluídas:     d.mensal?.concluidas?.[i]  ?? 0,
-    'SLA Excedido': d.mensal?.slaExcedido?.[i] ?? 0,
+    Abertas:        mensal?.abertas?.[i]     ?? 0,
+    Concluídas:     mensal?.concluidas?.[i]  ?? 0,
+    'SLA Excedido': mensal?.slaExcedido?.[i] ?? 0,
   }))
 
-  const comparativoData = toMulti(d.comparativo)
-  const taxaDiaData     = toLV(d.taxaDia)
-  const burndownData    = toMulti(d.burndown)
+  const comparativoData = toMulti(d.comparativo as ChartSeries | undefined)
+  const taxaDiaData     = toLV(d.taxaDia as ChartSeries | undefined)
+  const burndownData    = toMulti(d.burndown as ChartSeries | undefined)
 
   return (
     <div className="space-y-4">
-      <ForecastCard evolucao={d.evolucao ?? { labels: [], abertas: [], concluidas: [] }} totalAtivo={totalAtivo} fila={fila} />
+      <ForecastCard evolucao={d.evolucao} totalAtivo={totalAtivo} fila={fila} />
 
       <SectionTitle icon={TrendingUp}>Visão Mensal — Abertura vs Conclusão</SectionTitle>
 
       <ChartCard title="Abertura × Conclusão × SLA Excedido — Mês a Mês" dot="#3b82f6" height="h-80">
         <AreaChart
           data={mensalData}
-          onClick={(cd) => {
-            if (!cd?.activeLabel || !cd?.activePayload?.length) return
-            const label = cd.activeLabel
-            const ds    = cd.activePayload[0].name
+          onClick={(cd: Record<string,unknown>) => {
+            type CDPayload = { activeLabel?: string; activePayload?: { name?: string }[] }
+            const cdp = cd as CDPayload
+            if (!cdp?.activeLabel || !cdp?.activePayload?.length) return
+            const label = cdp.activeLabel!
+            const ds    = cdp.activePayload![0].name
             if (ds === 'Concluídas')
               onDrill(`Concluídas em ${label}`, rows.filter(r => r.descsituacao === 'Concluída' && closeISOMonth(r) === label))
             else if (ds === 'SLA Excedido')
@@ -485,10 +500,12 @@ function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }) {
         <ChartCard title="OS por Dia — Comparativo de Status" dot="#3b82f6" height="h-64">
           <BarChart
             data={comparativoData}
-            onClick={(cd) => {
-              if (!cd?.activeLabel || !cd?.activePayload?.length) return
-              const label = cd.activeLabel
-              const ds    = cd.activePayload[0].name
+            onClick={(cd: Record<string,unknown>) => {
+              type CDPayload = { activeLabel?: string; activePayload?: { name?: string }[] }
+            const cdp = cd as CDPayload
+            if (!cdp?.activeLabel || !cdp?.activePayload?.length) return
+              const label = cdp.activeLabel!
+              const ds    = cdp.activePayload![0].name
               if (ds === 'concluida')
                 onDrill(`Concluídas em ${label}`, rows.filter(r => r.descsituacao === 'Concluída' && closeISO(r) === label))
               else if (ds === 'pendente')
@@ -507,7 +524,7 @@ function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }) {
         <ChartCard title="Taxa de Conclusão por Dia (%) — cohort por abertura" dot="#4ade80" height="h-64">
           <AreaChart
             data={taxaDiaData}
-            onClick={(cd) => { if (cd?.activeLabel) onDrill(`OS abertas em ${cd.activeLabel}`, rows.filter(r => toISODate(r.datacadastro) === cd.activeLabel)) }}
+            onClick={(cd: Record<string,unknown>) => { if (cd?.activeLabel) onDrill(`OS abertas em ${cd.activeLabel}`, rows.filter(r => toISODate(r.datacadastro) === cd.activeLabel)) }}
           >
             <Area dataKey="value" stroke="#4ade80" fill="#4ade80" name="Taxa %" />
             <LXAxis dataKey="name" /><LYAxis /><LGrid /><LTooltip suffix="%" />
@@ -519,10 +536,12 @@ function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }) {
       <ChartCard title="Meta vs Realizado — Concluídas por Mês de Fechamento" dot="#22d3ee" height="h-64">
         <AreaChart
           data={burndownData}
-          onClick={(cd) => {
-            if (!cd?.activeLabel || !cd?.activePayload?.length) return
-            const label = cd.activeLabel
-            const ds    = cd.activePayload[0].name
+          onClick={(cd: Record<string,unknown>) => {
+            type CDPayload = { activeLabel?: string; activePayload?: { name?: string }[] }
+            const cdp = cd as CDPayload
+            if (!cdp?.activeLabel || !cdp?.activePayload?.length) return
+            const label = cdp.activeLabel!
+            const ds    = cdp.activePayload![0].name
             if (ds === 'realizado')
               onDrill(`Concluídas em ${label}`, rows.filter(r => r.descsituacao === 'Concluída' && closeISOMonth(r) === label))
             else
@@ -540,10 +559,11 @@ function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }) {
 }
 
 // ─── Tab: Estatística ─────────────────────────────────────────────────────────
-function TabEstatistica({ d, rows, onDrill }) {
-  const agingData  = toLV(d.aging)
-  const cidadeData = toLV(d.cidade)
-  const eficData   = toLV(d.eficiencia)
+function TabEstatistica({ d, rows, onDrill }: { d: Record<string,unknown>; rows: OSRow[]; onDrill: OnDrill }) {
+  const gd = d as Record<string, ChartSeries>
+  const agingData  = toLV(gd.aging)
+  const cidadeData = toLV(gd.cidade)
+  const eficData   = toLV(gd.eficiencia)
 
   return (
     <div className="space-y-4">
@@ -552,7 +572,7 @@ function TabEstatistica({ d, rows, onDrill }) {
       <ChartCard title="Distribuição de Aging das OS Ativas" dot="#f97316" height="h-64">
         <BarChart data={agingData}>
           <Bar dataKey="value" fill="#f97316"
-            onClick={(data) => { const fn = AGING_FILTER[data.name]; if (fn) onDrill(`Aging: ${data.name}`, rows.filter(fn)) }} />
+            onClick={(data: {name: string}) => { const fn = (AGING_FILTER as Record<string, (r: OSRow) => boolean>)[data.name]; if (fn) onDrill(`Aging: ${data.name}`, rows.filter(fn)) }} />
           <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip />
         </BarChart>
       </ChartCard>
@@ -562,7 +582,7 @@ function TabEstatistica({ d, rows, onDrill }) {
         <ChartCard title="OS por Cidade" dot="#facc15" height="h-64">
           <BarChart data={cidadeData} layout="vertical">
             <Bar dataKey="value" fill="#facc15"
-              onClick={(data) => onDrill(`Cidade: ${data.name}`, rows.filter(r => (r.nomedacidade || '').trim() === data.name))} />
+              onClick={(data: Record<string,unknown>) => onDrill(`Cidade: ${data.name}`, rows.filter(r => (r.nomedacidade || '').trim() === data.name))} />
             <XAxis type="number" />
             <YAxis dataKey="name" type="category" width={130} />
             <Grid /><ChartTooltip />
@@ -572,7 +592,7 @@ function TabEstatistica({ d, rows, onDrill }) {
         <ChartCard title="Taxa por Equipe (%)" dot="#4ade80" height="h-64">
           <BarChart data={eficData}>
             <Bar dataKey="value" fill="#4ade80"
-              onClick={(data) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
+              onClick={(data: Record<string,unknown>) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
             <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip suffix="%" />
           </BarChart>
         </ChartCard>
@@ -583,8 +603,13 @@ function TabEstatistica({ d, rows, onDrill }) {
 }
 
 // ─── Tab: Cohort ──────────────────────────────────────────────────────────────
-function TabCohort({ d, rows, onDrill }) {
-  const c = d.cohort ?? { labels: [], total: [], concluidas: [], mesmoMes: [], taxaResolucao: [], mttr: [] }
+function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; rows: OSRow[]; onDrill: OnDrill }) {
+  const gd = d as Record<string, { labels?: string[]; total?: number[]; concluidas?: number[]; mesmoMes?: number[]; taxaResolucao?: number[]; mttr?: number[] }>
+  type CohortObj = { labels: string[]; total: number[]; concluidas: number[]; mesmoMes: number[]; taxaResolucao: number[]; mttr: number[] }
+  const rawC = gd.cohort
+  const c: CohortObj = rawC?.labels
+    ? { labels: rawC.labels, total: rawC.total ?? [], concluidas: rawC.concluidas ?? [], mesmoMes: rawC.mesmoMes ?? [], taxaResolucao: rawC.taxaResolucao ?? [], mttr: rawC.mttr ?? [] }
+    : { labels: [], total: [], concluidas: [], mesmoMes: [], taxaResolucao: [], mttr: [] }
 
   const cohortBarData = c.labels.map((name, i) => ({
     name,
@@ -611,11 +636,11 @@ function TabCohort({ d, rows, onDrill }) {
         <ChartCard title="Abertas vs. Concluídas por Mês de Abertura" dot="#3b82f6" height="h-64">
           <BarChart data={cohortBarData}>
             <Bar dataKey="Abertas"    fill="#3b82f6" name="Abertas"
-              onClick={(data) => onDrill(`Cohort ${data.name} — todas as OS`, rows.filter(r => toISOMonth(r.datacadastro) === data.name))} />
+              onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — todas as OS`, rows.filter(r => toISOMonth(r.datacadastro) === data.name))} />
             <Bar dataKey="Concluídas" fill="#4ade80" name="Concluídas"
-              onClick={(data) => onDrill(`Cohort ${data.name} — Concluídas`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === data.name))} />
+              onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — Concluídas`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === data.name))} />
             <Bar dataKey="Mesmo Mês"  fill="#c4b5fd" name="Mesmo Mês"
-              onClick={(data) => onDrill(`Cohort ${data.name} — Mesmo Mês`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === data.name && closeISOMonth(r) === data.name))} />
+              onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — Mesmo Mês`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === data.name && closeISOMonth(r) === data.name))} />
             <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip /><Legend />
           </BarChart>
         </ChartCard>
@@ -623,7 +648,7 @@ function TabCohort({ d, rows, onDrill }) {
         <ChartCard title="Taxa de Resolução por Cohort (%)" dot="#4ade80" height="h-64">
           <AreaChart
             data={taxaData}
-            onClick={(cd) => { if (cd?.activeLabel) onDrill(`Cohort ${cd.activeLabel} — Concluídas`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === cd.activeLabel)) }}
+            onClick={(cd: Record<string,unknown>) => { if (cd?.activeLabel) onDrill(`Cohort ${cd.activeLabel} — Concluídas`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === cd.activeLabel)) }}
             style={{ cursor: 'pointer' }}
           >
             <Area dataKey="value" stroke="#4ade80" fill="rgba(74,222,128,0.08)" name="Taxa Resolução" />
@@ -636,11 +661,11 @@ function TabCohort({ d, rows, onDrill }) {
       <ChartCard title="MTTR Médio por Mês de Abertura (dias)" dot="#f97316" height="h-56">
         <BarChart data={mttrData}>
           <Bar dataKey="value" name="MTTR (dias)"
-            onClick={(data) => onDrill(`Cohort ${data.name} — todas as OS`, rows.filter(r => toISOMonth(r.datacadastro) === data.name))}>
+            onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — todas as OS`, rows.filter(r => toISOMonth(r.datacadastro) === data.name))}>
             {mttrData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
           </Bar>
           <XAxis dataKey="name" /><YAxis /><Grid />
-          <ChartTooltip suffix=" dias" formatter={(v) => `MTTR: ${v} dias`} />
+          <ChartTooltip suffix=" dias" formatter={(v: number) => `MTTR: ${v} dias`} />
         </BarChart>
       </ChartCard>
 

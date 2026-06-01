@@ -1,10 +1,21 @@
-// @ts-nocheck
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CheckCircle, Clock, Calendar, ExternalLink, MapPin, Users, Wrench,
-  AlertTriangle, Circle, MessageSquare, Hash, Check, Filter, Phone,
+  AlertTriangle, MessageSquare, Hash, Check, Filter,
 } from 'lucide-react'
+import type { OSRow, Fornecedor } from '../../lib/types'
+
+interface StepItem {
+  icon:     React.ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
+  color:    string
+  label:    string
+  date?:    string | null
+  equipe?:  string
+  done?:    boolean
+  obs?:     string | null
+  details?: Record<string, unknown>
+}
 import { Drawer }        from '../../components/ui/Drawer'
 import { Badge }         from '../../components/ui/Badge'
 import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, calcDuracao } from '../../lib/osFormat'
@@ -12,15 +23,17 @@ import { TimelineStep }  from './TimelineStep'
 import { OSDetailModal } from './OSDetailModal'
 import { useOSDetails }  from '../../hooks/useOSDetails'
 
-export default function OSDrawer({ os, onClose }) {
+export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; onClose: () => void }) {
   const [showModal, setShowModal] = useState(false)
-  const [copied,    setCopied]    = useState(null)
+  const [copied,    setCopied]    = useState<string | null>(null)
   const navigate = useNavigate()
-  const { details: osDetails, isLoading: loadingDetails } = useOSDetails(os?.numos)
+  const { details: osDetails, isLoading: loadingDetails } = useOSDetails(osMaybe?.numos)
 
-  if (!os) return null
+  if (!osMaybe) return null
+  // Alias não-nulo — TypeScript não estreita em closures, então criamos uma const local
+  const os = osMaybe
 
-  function copyWith(key, text) {
+  function copyWith(key: string, text: string) {
     navigator.clipboard.writeText(text).catch(() => {})
     setCopied(key)
     setTimeout(() => setCopied(null), 2000)
@@ -64,20 +77,19 @@ export default function OSDrawer({ os, onClose }) {
                || os.descricaoobs || os.descricao_obs || os.historico
                || os.informacoes || os.detalhes || os.descricao || null
   const obsCrit = os.observacaocritica || os.obscritica || null
-  const fornLabel     = FORN_LABEL[os._fornecedor] ?? os._fornecedor ?? null
-  const hasAtend      = !!os.dataatendimento?.trim()
-  const hasIni        = !!os.datainicio?.trim()
+  const fornLabel     = FORN_LABEL[os._fornecedor as Fornecedor] ?? os._fornecedor ?? null
+  const hasAtend      = !!(os.dataatendimento as string | undefined)?.trim()
+  const hasIni        = !!(os.datainicio as string | undefined)?.trim()
   const hasExec       = !!os.dataexecucao?.trim()
   const hasBaixa      = !!os.databaixa?.trim()
 
   const agingVal  = os._aging ?? 0
   const agingCls  = agingVal >= 6 ? 'text-red' : agingVal >= 3 ? 'text-yellow' : 'text-cyan'
-  const _agingVar = agingVal >= 6 ? 'red'      : agingVal >= 3 ? 'yellow'      : 'cyan'
 
   // Status accent color para barra lateral
   const statusAccent = isConcluida ? 'bg-green/70' : isAtendimento ? 'bg-cyan/70' : 'bg-yellow/70'
 
-  const duracao = calcDuracao(os.datainicio, os.dataexecucao)
+  const duracao = calcDuracao(os.datainicio as string | undefined, os.dataexecucao)
 
   // Dados do técnico (mobile) vindos do /detalhes
   const d = osDetails  // atalho
@@ -89,8 +101,8 @@ export default function OSDrawer({ os, onClose }) {
   const matRetirados= d?.materiaisRetirados || []
 
   // Equipes por papel — vindas do /detalhes (mais precisas) ou fallback do CSV
-  const eqAgendada = shortEquipe(d?.equipeAgendada  || os.nomedaequipe)
-  const eqExecutou = shortEquipe(d?.equipeExecutou  || os.equipeexecutou || os.nomedaequipe)
+  const eqAgendada = shortEquipe((d?.equipeAgendada || os.nomedaequipe) as string)
+  const eqExecutou = shortEquipe((d?.equipeExecutou || (os as Record<string,unknown>).equipeexecutou || os.nomedaequipe) as string)
   // Equipes diferentes = outra equipe assumiu a OS
   const eqsDiferem = d && eqAgendada && eqExecutou && eqAgendada !== eqExecutou
 
@@ -118,7 +130,7 @@ export default function OSDrawer({ os, onClose }) {
     },
     hasAtend && {
       icon: Calendar, color: 'cyan', label: '1º Agendamento',
-      date: fmtDate(os.dataatendimento), equipe: eqAgendada,
+      date: fmtDate(os.dataatendimento as string), equipe: eqAgendada,
       done: isConcluida || isAtendimento,
       details: {
         hora:      os.horaatendimento || null,
@@ -129,7 +141,7 @@ export default function OSDrawer({ os, onClose }) {
     hasIni && {
       icon: Wrench, color: 'cyan', label: 'Início da Execução',
       // Mostra quem executou — pode ser diferente de quem foi agendado
-      date: fmtDate(os.datainicio), equipe: eqExecutou, done: true,
+      date: fmtDate(os.datainicio as string), equipe: eqExecutou, done: true,
       details: {
         nomeTecnico,
         equipeAgendada: eqsDiferem ? eqAgendada : null, // destaca troca de equipe
@@ -161,7 +173,7 @@ export default function OSDrawer({ os, onClose }) {
       color: isConcluida ? 'green' : isAtendimento ? 'cyan' : 'yellow',
       label: sit ?? 'Status atual', done: isConcluida,
     },
-  ].filter(Boolean)
+  ].filter(Boolean) as StepItem[]
 
   return (
     <>
@@ -251,12 +263,12 @@ export default function OSDrawer({ os, onClose }) {
                   <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-red mb-2 flex items-center gap-1.5">
                     <AlertTriangle size={11} /> Observação Crítica
                   </p>
-                  <p className="text-[12px] text-red/85 leading-relaxed whitespace-pre-wrap">{obsCrit}</p>
+                  <p className="text-[12px] text-red/85 leading-relaxed whitespace-pre-wrap">{obsCrit as string}</p>
                 </div>
               )}
               {obsGeral ? (
                 <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
-                  <p className="text-[12px] text-secondary leading-relaxed whitespace-pre-wrap">{obsGeral}</p>
+                  <p className="text-[12px] text-secondary leading-relaxed whitespace-pre-wrap">{obsGeral as string}</p>
                 </div>
               ) : !obsCrit && (
                 <p className="text-[12px] text-muted/60 italic px-1">Nenhuma observação registrada.</p>
@@ -306,8 +318,8 @@ export default function OSDrawer({ os, onClose }) {
 
               {/* Linha de metadados: contrato · serviço */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1">
-                {os.codigocontrato && (
-                  <MetaItem label="Contrato" value={os.codigocontrato} mono />
+                {!!os.codigocontrato && (
+                  <MetaItem label="Contrato" value={os.codigocontrato as string} mono />
                 )}
                 {os.servico && (
                   <MetaItem label="Serviço" value={os.servico} />
@@ -323,12 +335,12 @@ export default function OSDrawer({ os, onClose }) {
                     os._agingAbertura     != null && { label: 'Aging desde abertura', value: `${os._agingAbertura}d`,     color: agingCls },
                     os._slaLimite         != null && { label: 'Limite do SLA',         value: `${os._slaLimite}d`,         color: 'text-primary' },
                     os._diasAteAgendamento!= null && { label: 'Dias até agend.',        value: `${os._diasAteAgendamento}d`, color: 'text-secondary' },
-                  ].filter(Boolean).map(({ label, value, color }) => (
+                  ].filter(Boolean).map((item) => { const { label, value, color } = item as { label: string; value: string; color: string }; return (
                     <div key={label} className="bg-surface/30 border border-white/[0.08] rounded-xl p-3 text-center">
                       <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 leading-tight">{label}</p>
                       <p className={`font-mono text-[20px] font-black leading-none ${color}`}>{value}</p>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </Section>
             )}
@@ -365,7 +377,7 @@ export default function OSDrawer({ os, onClose }) {
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 
-function Section({ label, children }) {
+function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
@@ -377,7 +389,11 @@ function Section({ label, children }) {
   )
 }
 
-function InfoCard({ icon: Icon, label, value, prominent, action }) {
+function InfoCard({ icon: Icon, label, value, prominent = false, action = null }: {
+  icon: React.ComponentType<{ size?: number; className?: string }>
+  label: string; value: string | ReactNode
+  prominent?: boolean; action?: { label: string; onClick: () => void } | null
+}) {
   return (
     <div className={`rounded-xl border p-3.5 flex flex-col gap-2 min-w-0
                      ${prominent
@@ -407,7 +423,7 @@ function InfoCard({ icon: Icon, label, value, prominent, action }) {
   )
 }
 
-function MetaItem({ label, value, mono }) {
+function MetaItem({ label, value, mono = false }: { label: string; value: string | null | undefined; mono?: boolean }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-[10px] text-muted">{label}:</span>
@@ -416,7 +432,9 @@ function MetaItem({ label, value, mono }) {
   )
 }
 
-function ActionBtn({ title, onClick, active, children }) {
+function ActionBtn({ title, onClick, active = false, children }: {
+  title: string; onClick: () => void; active?: boolean; children: ReactNode
+}) {
   return (
     <button
       title={title}

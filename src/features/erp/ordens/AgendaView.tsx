@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useMemo, useState } from 'react'
 import {
   ChevronLeft, ChevronRight, CalendarDays,
@@ -7,7 +6,8 @@ import {
 } from 'lucide-react'
 import { useERPRows } from '../useERPRows'
 import { shortEquipe } from '../../../lib/osFormat'
-import { TEAMS } from '../erpConstants'
+import { TEAMS, type Team } from '../erpConstants'
+import type { OSRow, TipoEquipe } from '../../../lib/types'
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ const DAY_NAMES   = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const MONTH_NAMES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
 const PERIOD_ORDER = ['manhã', 'tarde']
 
-function getWeekStart(date) {
+function getWeekStart(date: Date): Date {
   const d = new Date(date)
   const dow = d.getDay()
   d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1))
@@ -23,7 +23,7 @@ function getWeekStart(date) {
   return d
 }
 
-function getWeekDays(ws) {
+function getWeekDays(ws: Date): Date[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(ws)
     d.setDate(ws.getDate() + i)
@@ -31,11 +31,11 @@ function getWeekDays(ws) {
   })
 }
 
-function toKey(date) {
+function toKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
 }
 
-function parseDate(raw) {
+function parseDate(raw: string | null | undefined): Date | null {
   if (!raw) return null
   const s = raw.trim().split(/[ T]/)[0]
   try {
@@ -61,8 +61,8 @@ const TIPO = {
 
 // ── Mini card ─────────────────────────────────────────────────────────────────
 
-function MiniOSCard({ row }) {
-  const t = TIPO[row._tipo] || { Icon: AlertTriangle, cls: 'text-muted' }
+function MiniOSCard({ row }: { row: OSRow }) {
+  const t = (TIPO as Partial<Record<TipoEquipe, typeof TIPO[keyof typeof TIPO]>>)[row._tipo] || { Icon: AlertTriangle, cls: 'text-muted' }
   const TIcon = t.Icon
 
   const slaCls = row._slaCritico  ? 'bg-red/20 text-red'
@@ -92,7 +92,7 @@ function MiniOSCard({ row }) {
 
 // ── Period mark ───────────────────────────────────────────────────────────────
 
-function PeriodoMark({ periodo }) {
+function PeriodoMark({ periodo }: { periodo: string }) {
   const lc = (periodo || '').toLowerCase()
   const isManha = lc.includes('manh')
   const isTarde = lc.includes('tarde')
@@ -113,10 +113,10 @@ function PeriodoMark({ periodo }) {
 
 const MAX_CARDS = 3
 
-function AgendaCell({ dayRows, isToday }) {
+function AgendaCell({ dayRows, isToday }: { dayRows: OSRow[] | undefined; isToday: boolean }) {
   const groups = useMemo(() => {
     if (!dayRows?.length) return []
-    const map = {}
+    const map: Record<string, OSRow[]> = {}
     for (const r of dayRows) {
       const p = (r.periodo || '').trim() || 'Sem período'
       ;(map[p] = map[p] || []).push(r)
@@ -138,7 +138,7 @@ function AgendaCell({ dayRows, isToday }) {
   }
 
   // Build flat item list capped at MAX_CARDS
-  const items = []
+  const items: ({ kind: 'mark'; periodo: string } | { kind: 'card'; row: OSRow })[] = []
   let cardCount = 0
   const showMarks = groups.length > 1
 
@@ -172,13 +172,15 @@ function AgendaCell({ dayRows, isToday }) {
 
 // ── Team row ──────────────────────────────────────────────────────────────────
 
-const TIPO_ROW_ACCENT = {
-  INSTALACAO: 'border-l-blue-500/40',
-  MANUTENCAO: 'border-l-orange-500/40',
-  REDE:       'border-l-emerald-500/40',
+const TIPO_ROW_ACCENT: Record<string, string> = {
+  INSTALACAO: 'border-l-primary/40',
+  MANUTENCAO: 'border-l-orange/40',
+  REDE:       'border-l-green/40',
 }
 
-function TeamRow({ team, teamGrid, weekDayKeys, todayKey, isEven }) {
+function TeamRow({ team, teamGrid, weekDayKeys, todayKey, isEven }: {
+  team: Team; teamGrid: Record<string, OSRow[]>; weekDayKeys: string[]; todayKey: string; isEven: boolean
+}) {
   const accent = TIPO_ROW_ACCENT[team.tipo] || 'border-l-white/10'
 
   return (
@@ -207,7 +209,7 @@ function TeamRow({ team, teamGrid, weekDayKeys, todayKey, isEven }) {
 
 // ── AgendaView (main export) ──────────────────────────────────────────────────
 
-export function AgendaView({ equipeFilter, tipoFilter }) {
+export function AgendaView({ equipeFilter, tipoFilter }: { equipeFilter?: string; tipoFilter?: string }) {
   const { rows } = useERPRows()
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()))
   const [hideEmpty, setHideEmpty] = useState(true)
@@ -225,7 +227,7 @@ export function AgendaView({ equipeFilter, tipoFilter }) {
       return true
     })
 
-    const map = {}
+    const map: Record<string, Record<string, OSRow[]>> = {}
     filtered.forEach(row => {
       const date = parseDate(row.dataagendamento)
       if (!date) return
@@ -256,7 +258,7 @@ export function AgendaView({ equipeFilter, tipoFilter }) {
 
   // Day totals (for header badge)
   const dayTotals = useMemo(() => {
-    const map = {}
+    const map: Record<string, number> = {}
     weekDayKeys.forEach(k => {
       map[k] = visibleTeams.reduce(
         (s, t) => s + (fullGrid[t.code]?.[k]?.length ?? 0), 0

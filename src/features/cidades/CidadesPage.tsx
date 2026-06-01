@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type ComponentType } from 'react'
 import { MapPin, Wrench, Clock, CheckCircle, Calendar, CalendarClock, List, ChevronDown, ChevronUp } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { Badge } from '../../components/ui/Badge'
@@ -7,6 +6,12 @@ import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import OSDrawer from '../ordens/OSDrawer'
 import { shortEquipe } from '../../lib/osFormat'
 import { isCOPE, isReagend } from '../../lib/transform'
+import type { OSRow } from '../../lib/types'
+
+type IconComp = ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>
+type PanelId  = 'atend' | 'pend' | 'concl' | 'futuro' | 'fila' | 'amanha'
+interface CityEntry { cidade: string; tipos: Record<string, number>; total: number }
+interface FuturoGroup { label: string; rows: OSRow[]; highlight: boolean }
 
 function hojeLocal() {
   const d = new Date()
@@ -23,15 +28,15 @@ function amanhaLocal() {
   return `${dd}/${mm}/${d.getFullYear()}`
 }
 
-function datePart(raw) {
+function datePart(raw: string | null | undefined): string {
   return (raw || '').trim().split(' ')[0]
 }
 
-const TIPO_LABEL = { INSTALACAO: 'Instalação', MANUTENCAO: 'Manutenção', OUTRO: 'Serviço' }
-const TIPO_COLOR = { INSTALACAO: 'text-cyan', MANUTENCAO: 'text-orange', OUTRO: 'text-muted' }
+const TIPO_LABEL: Record<string, string> = { INSTALACAO: 'Instalação', MANUTENCAO: 'Manutenção', OUTRO: 'Serviço' }
+const TIPO_COLOR: Record<string, string> = { INSTALACAO: 'text-cyan', MANUTENCAO: 'text-orange', OUTRO: 'text-muted' }
 const TIPO_ORDER = ['INSTALACAO', 'MANUTENCAO', 'OUTRO']
 
-function tipoBreakdown(rows) {
+function tipoBreakdown(rows: OSRow[]): { inst: number; manut: number; serv: number } {
   let inst = 0, manut = 0, serv = 0
   for (const r of rows) {
     if      (r._tipo === 'INSTALACAO') inst++
@@ -40,16 +45,16 @@ function tipoBreakdown(rows) {
   }
   return { inst, manut, serv }
 }
-function buildMatrix(rows) {
-  const cityMap = new Map()
-  const tipoSet = new Set()
+function buildMatrix(rows: OSRow[]): { cities: CityEntry[]; tipos: string[] } {
+  const cityMap = new Map<string, CityEntry>()
+  const tipoSet = new Set<string>()
   for (const r of rows) {
     const cidade = (r.nomedacidade || '').trim() || 'Não informada'
     const t = (r.tiposervico || '').toUpperCase()
     const tipo = t.includes('INSTALAC') ? 'INSTALACAO' : t.includes('MANUTENC') ? 'MANUTENCAO' : 'OUTRO'
     tipoSet.add(tipo)
     if (!cityMap.has(cidade)) cityMap.set(cidade, { cidade, tipos: {}, total: 0 })
-    const e = cityMap.get(cidade)
+    const e = cityMap.get(cidade)!
     e.tipos[tipo] = (e.tipos[tipo] ?? 0) + 1
     e.total++
   }
@@ -60,8 +65,8 @@ function buildMatrix(rows) {
 
 export default function CidadesPage() {
   const { allRows, rows, isLoading } = useOSDerived()
-  const [drawerOS,    setDrawerOS]   = useState(null)
-  const [openPanels,  setOpenPanels] = useState({ atend: true, pend: true, concl: true, futuro: true, fila: true, amanha: true })
+  const [drawerOS,    setDrawerOS]   = useState<OSRow | null>(null)
+  const [openPanels,  setOpenPanels] = useState<Record<PanelId, boolean>>({ atend: true, pend: true, concl: true, futuro: true, fila: true, amanha: true })
   const hoje  = useMemo(() => hojeLocal(), [])
   const amanha = useMemo(() => amanhaLocal(), [])
 
@@ -114,8 +119,8 @@ export default function CidadesPage() {
     })
   }, [allRows])
 
-  const PANEL_FROM = { cyan: 'from-cyan/[0.07]', yellow: 'from-yellow/[0.07]', green: 'from-green/[0.07]', purple: 'from-purple/[0.07]', red: 'from-red/[0.07]', orange: 'from-orange/[0.07]' }
-  const PANEL_HOVER = { cyan: 'hover:border-cyan/[0.30]', yellow: 'hover:border-yellow/[0.30]', green: 'hover:border-green/[0.30]', purple: 'hover:border-purple/[0.30]', red: 'hover:border-red/[0.30]', orange: 'hover:border-orange/[0.30]' }
+  const PANEL_FROM: Record<string, string>  = { cyan: 'from-cyan/[0.07]', yellow: 'from-yellow/[0.07]', green: 'from-green/[0.07]', purple: 'from-purple/[0.07]', red: 'from-red/[0.07]', orange: 'from-orange/[0.07]' }
+  const PANEL_HOVER: Record<string, string> = { cyan: 'hover:border-cyan/[0.30]', yellow: 'hover:border-yellow/[0.30]', green: 'hover:border-green/[0.30]', purple: 'hover:border-purple/[0.30]', red: 'hover:border-red/[0.30]', orange: 'hover:border-orange/[0.30]' }
 
   const panels = [
     { id: 'atend',  title: 'Em Atendimento',                  icon: Wrench,      color: 'cyan',    rows: atendRows,  defaultOpen: true,  breakdown: tipoBreakdown(atendRows) },
@@ -170,7 +175,7 @@ export default function CidadesPage() {
                 <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted mb-1">{p.title}</p>
                 <p className={`font-mono font-bold text-3xl text-${p.color}`}>{p.rows.length}</p>
                 <p className="text-[11px] text-muted mt-0.5">ordens</p>
-                {p.semEquipe > 0 && (
+                {(p.semEquipe ?? 0) > 0 && (
                   <p className="text-[11px] text-orange font-semibold mt-1">{p.semEquipe} sem equipe</p>
                 )}
                 {(p.breakdown.inst > 0 || p.breakdown.manut > 0 || p.breakdown.serv > 0) && (
@@ -202,30 +207,30 @@ export default function CidadesPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {panels.slice(0, 2).map(p => (
-            <PainelCidade key={p.id} {...p} isLoading={isLoading} onOS={os => setDrawerOS(os)}
-              open={openPanels[p.id]}
-              onToggle={() => setOpenPanels(prev => ({ ...prev, [p.id]: !prev[p.id] }))}
+            <PainelCidade key={p.id} {...p} isLoading={isLoading} onOS={(os: OSRow) => setDrawerOS(os)}
+              open={openPanels[p.id as PanelId]}
+              onToggle={() => setOpenPanels(prev => ({ ...prev, [p.id]: !prev[p.id as PanelId] }))}
             />
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {panels.slice(2, 4).map(p => (
-            <PainelCidade key={p.id} {...p} isLoading={isLoading} onOS={os => setDrawerOS(os)}
-              open={openPanels[p.id]}
-              onToggle={() => setOpenPanels(prev => ({ ...prev, [p.id]: !prev[p.id] }))}
+            <PainelCidade key={p.id} {...p} isLoading={isLoading} onOS={(os: OSRow) => setDrawerOS(os)}
+              open={openPanels[p.id as PanelId]}
+              onToggle={() => setOpenPanels(prev => ({ ...prev, [p.id]: !prev[p.id as PanelId] }))}
             />
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <PainelCidade {...panels[5]} isLoading={isLoading} onOS={os => setDrawerOS(os)}
-            open={openPanels[panels[5].id]}
-            onToggle={() => setOpenPanels(prev => ({ ...prev, [panels[5].id]: !prev[panels[5].id] }))}
+          <PainelCidade {...panels[5]} isLoading={isLoading} onOS={(os: OSRow) => setDrawerOS(os)}
+            open={openPanels[panels[5].id as PanelId]}
+            onToggle={() => setOpenPanels(prev => ({ ...prev, [panels[5].id]: !prev[panels[5].id as PanelId] }))}
           />
-          <PainelCidade {...panels[4]} isLoading={isLoading} onOS={os => setDrawerOS(os)}
-            open={openPanels[panels[4].id]}
-            onToggle={() => setOpenPanels(prev => ({ ...prev, [panels[4].id]: !prev[panels[4].id] }))}
+          <PainelCidade {...panels[4]} isLoading={isLoading} onOS={(os: OSRow) => setDrawerOS(os)}
+            open={openPanels[panels[4].id as PanelId]}
+            onToggle={() => setOpenPanels(prev => ({ ...prev, [panels[4].id]: !prev[panels[4].id as PanelId] }))}
           />
         </div>
 
@@ -238,8 +243,12 @@ export default function CidadesPage() {
 
 // ─── Painel por status ────────────────────────────────────────────────────────
 
-function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, groups, semEquipe, isLoading, onOS, open, onToggle }) {
-  const [expandedCity, setExpandedCity] = useState(null)
+function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, groups, semEquipe, isLoading, onOS, open, onToggle }: {
+  id: string; title: string; subtitle?: string; icon: IconComp; color: string; rows: OSRow[]
+  groups?: FuturoGroup[]; semEquipe?: number; isLoading: boolean
+  onOS: (os: OSRow) => void; open: boolean; onToggle: () => void
+}) {
+  const [expandedCity, setExpandedCity] = useState<string | null>(null)
   const { cities, tipos } = useMemo(() => buildMatrix(rows), [rows])
   const maxTotal = cities[0]?.total ?? 1
 
@@ -260,7 +269,7 @@ function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, groups, se
           {subtitle && <p className="text-[11px] text-muted mt-0.5 truncate">{subtitle}</p>}
         </div>
         <Badge variant={color}>{rows.length} OS</Badge>
-        {semEquipe > 0 && (
+        {(semEquipe ?? 0) > 0 && (
           <Badge variant="orange">{semEquipe} sem equipe</Badge>
         )}
         {open
@@ -291,8 +300,8 @@ function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, groups, se
 
 // ─── Sub-grupo para Agendamento Futuro (Amanhã / Próximos dias) ───────────────
 
-function GrupoFuturo({ group, color, onOS }) {
-  const [expandedCity, setExpandedCity] = useState(null)
+function GrupoFuturo({ group, color, onOS }: { group: FuturoGroup; color: string; onOS: (os: OSRow) => void }) {
+  const [expandedCity, setExpandedCity] = useState<string | null>(null)
   const { cities, tipos } = useMemo(() => buildMatrix(group.rows), [group.rows])
   const maxTotal = cities[0]?.total ?? 1
 
@@ -317,15 +326,19 @@ function GrupoFuturo({ group, color, onOS }) {
 
 // ─── Tabela de cidades (reutilizada por painel e grupos) ──────────────────────
 
-function CidadeTable({ cities, tipos, maxTotal, color, expandedCity, setExpandedCity, rows, onOS }) {
-  const [expandedTipo, setExpandedTipo] = useState(null)
+function CidadeTable({ cities, tipos, maxTotal, color, expandedCity, setExpandedCity, rows, onOS }: {
+  cities: CityEntry[]; tipos: string[]; maxTotal: number; color: string
+  expandedCity: string | null; setExpandedCity: (c: string | null) => void
+  rows: OSRow[]; onOS: (os: OSRow) => void
+}) {
+  const [expandedTipo, setExpandedTipo] = useState<string | null>(null)
 
-  const handleCityToggle = (cidade) => {
+  const handleCityToggle = (cidade: string) => {
     if (expandedCity === cidade) { setExpandedCity(null); setExpandedTipo(null) }
     else { setExpandedCity(cidade); setExpandedTipo(null) }
   }
 
-  const handleTipoClick = (cidade, tipo) => {
+  const handleTipoClick = (cidade: string, tipo: string) => {
     if (expandedCity === cidade && expandedTipo === tipo) { setExpandedCity(null); setExpandedTipo(null) }
     else { setExpandedCity(cidade); setExpandedTipo(tipo) }
   }
@@ -372,7 +385,12 @@ function CidadeTable({ cities, tipos, maxTotal, color, expandedCity, setExpanded
 
 // ─── Linha de cidade ──────────────────────────────────────────────────────────
 
-function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle, onTipoClick, rows, onOS }) {
+function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle, onTipoClick, rows, onOS }: {
+  c: CityEntry; tipos: string[]; color: string; maxTotal: number
+  expanded: boolean; tipoFilter: string | null
+  onToggle: () => void; onTipoClick: (tipo: string) => void
+  rows: OSRow[]; onOS: (os: OSRow) => void
+}) {
   const cityRows = useMemo(
     () => rows.filter(r => (r.nomedacidade || '').trim() === c.cidade),
     [rows, c.cidade]
@@ -435,7 +453,7 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
 
 // ─── Mini-tabela de OS por cidade ─────────────────────────────────────────────
 
-function tipoFromServico(tiposervico) {
+function tipoFromServico(tiposervico: string | null | undefined): string {
   const t = (tiposervico || '').toUpperCase()
   if (t.includes('INSTALAC')) return 'INSTALACAO'
   if (t.includes('MANUTENC')) return 'MANUTENCAO'
@@ -452,7 +470,7 @@ const CITY_OS_COLS = [
   { key: 'dataagendamento', label: 'Agend.'   },
 ]
 
-function cityOSSortValue(r, key) {
+function cityOSSortValue(r: OSRow, key: string): string | number {
   if (key === 'numos')  return parseInt(r.numos) || 0
   if (key === '_aging') return r._aging ?? -1
   if (key === 'dataagendamento') {
@@ -463,10 +481,12 @@ function cityOSSortValue(r, key) {
   return (r[key] ?? '').toString().toLowerCase()
 }
 
-function CityOSMini({ rows, tipoFilter, onOS }) {
-  const [sort, setSort] = useState({ key: '_aging', dir: 'desc' })
+function CityOSMini({ rows, tipoFilter, onOS }: {
+  rows: OSRow[]; tipoFilter: string | null; onOS: (os: OSRow) => void
+}) {
+  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: '_aging', dir: 'desc' })
 
-  function toggleSort(key) {
+  function toggleSort(key: string) {
     setSort(s => ({ key, dir: s.key === key && s.dir === 'desc' ? 'asc' : 'desc' }))
   }
 
@@ -477,7 +497,7 @@ function CityOSMini({ rows, tipoFilter, onOS }) {
     return [...base].sort((a, b) => {
       const av = cityOSSortValue(a, sort.key)
       const bv = cityOSSortValue(b, sort.key)
-      const cmp = typeof av === 'string' ? av.localeCompare(bv) : av - bv
+      const cmp = typeof av === 'string' ? av.localeCompare(bv as string) : (av as number) - (bv as number)
       return sort.dir === 'asc' ? cmp : -cmp
     })
   }, [rows, tipoFilter, sort])
