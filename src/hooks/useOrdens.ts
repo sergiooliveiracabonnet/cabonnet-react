@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useOSDerived } from '../contexts/OSDataContext'
-import type { OSRow } from '../lib/types'
+import type { OSRow, OrdensOptions } from '../lib/types'
 
 function parseAgend(str: string | null | undefined): Date | null {
   if (!str) return null
@@ -37,8 +37,7 @@ export function useOrdens() {
   const [page,        setPage]        = useState(1)
   const PAGE_SIZE = 50
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { ordens, options } = ordensData as any
+  const { ordens, options } = ordensData as { ordens: OSRow[]; options: OrdensOptions }
 
   const { amanhaOrdens, futuroOrdens } = useMemo(() => {
     const hoje  = new Date(); hoje.setHours(0, 0, 0, 0)

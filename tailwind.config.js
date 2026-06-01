@@ -39,7 +39,7 @@ export default {
       fontFamily: {
         sans:     ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
         headline: ['"Space Grotesk"', '"Inter"', 'system-ui', 'sans-serif'],
-        mono:     ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        mono:     ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
       },
 
       borderRadius: {

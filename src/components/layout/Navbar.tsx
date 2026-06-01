@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useMemo, memo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { RefreshCw, ChevronDown, Clock, AlertTriangle, Menu, Search, Bell, Send } from 'lucide-react'
+import { RefreshCw, ChevronDown, Clock, AlertTriangle, Menu, Search, Bell, Send, History } from 'lucide-react'
 import { AnimatedThemeToggler } from '../ui/AnimatedThemeToggler'
 import { useUIStore } from '../../store/uiStore'
 import { useOSDerived } from '../../contexts/OSDataContext'
+import { useAuditStore } from '../../store/auditStore'
 import { isCOPE, isReagend } from '../../lib/transform'
 import { shortEquipe } from '../../lib/osFormat'
 import { GlobalSearch } from '../ui/GlobalSearch'
@@ -37,6 +38,14 @@ const INTERVALS: { value: number | null; label: string }[] = [
 function fmtHora(ms: number | null | undefined): string {
   if (!ms) return '--:--'
   return new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function fmtAgeLabel(ms: number | null | undefined): string {
+  if (!ms) return 'nunca atualizado'
+  const ago = Math.floor((Date.now() - ms) / 1000)
+  if (ago < 60)  return `atualizado há ${ago}s`
+  if (ago < 3600) return `atualizado há ${Math.floor(ago / 60)}min`
+  return `atualizado às ${fmtHora(ms)}`
 }
 
 function fmtCountdown(secs: number): string {
@@ -105,12 +114,13 @@ const RefreshControl = memo(function RefreshControl() {
     <div className="relative flex-shrink-0" ref={menuRef}>
       <button
         onClick={() => setShowMenu(v => !v)}
+        aria-label={interval ? `Auto-refresh em ${fmtCountdown(countdown)}` : fmtAgeLabel(dataUpdatedAt as number | undefined)}
+        title={fmtAgeLabel(dataUpdatedAt as number | undefined)}
         className={`flex items-center gap-1.5 h-8 px-2.5 rounded-md border
                     transition-all duration-fast
                     ${urgent
                       ? 'border-yellow/40 text-yellow bg-yellow/5 hover:bg-yellow/10'
                       : 'border-white/[0.08] text-secondary hover:border-muted/40 hover:text-text'}`}
-        title="Atualizar dados"
       >
         <RefreshCw size={12} className={`flex-shrink-0 ${spinning ? 'animate-spin' : ''}`} />
         <span className="text-[11px] font-mono tabular-nums w-[36px] text-center">{btnLabel}</span>
@@ -134,7 +144,7 @@ const RefreshControl = memo(function RefreshControl() {
             <div className="flex items-center gap-1.5">
               <Clock size={10} className="text-muted" />
               <span className="text-[11px] text-muted">
-                Última: <span className="font-mono text-secondary">{fmtHora(dataUpdatedAt as number | undefined)}</span>
+                <span className="font-mono text-secondary">{fmtAgeLabel(dataUpdatedAt as number | undefined)}</span>
               </span>
             </div>
             {interval && (
@@ -195,16 +205,20 @@ export function Navbar() {
   useAlertasEngine(allRows as OSRow[], rows as OSRow[])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tg = useTelegramStore() as any
+  const tg = useTelegramStore()
   const naoLidos = (tg.history as { lido: boolean }[]).filter(a => !a.lido).length
+
+  const { entries: auditEntries, clear: clearAudit } = useAuditStore()
 
   const [showAlerta,   setShowAlerta]   = useState(false)
   const [searchOpen,   setSearchOpen]   = useState(false)
   const [alertsOpen,   setAlertsOpen]   = useState(false)
   const [telegramOpen, setTelegramOpen] = useState(false)
+  const [auditOpen,    setAuditOpen]    = useState(false)
   const alertaRef   = useRef<HTMLDivElement>(null)
   const alertsRef   = useRef<HTMLDivElement>(null)
   const telegramRef = useRef<HTMLDivElement>(null)
+  const auditRef    = useRef<HTMLDivElement>(null)
 
   const title = ROUTE_LABELS[location.pathname] ?? 'Dashboard'
 
@@ -245,6 +259,15 @@ export function Navbar() {
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
   }, [telegramOpen])
+
+  useEffect(() => {
+    if (!auditOpen) return
+    function onDown(e: MouseEvent) {
+      if (auditRef.current && !auditRef.current.contains(e.target as Node)) setAuditOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [auditOpen])
 
   const hasCritical = alerts.some(a => a.severity === 'critical')
   const hasWarning  = alerts.some(a => a.severity === 'warning')
@@ -300,7 +323,7 @@ export function Navbar() {
           >
             <AlertTriangle size={14} />
             <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
-                             bg-red text-[8px] font-bold text-white flex items-center justify-center leading-none">
+                             bg-red text-[10px] font-bold text-white flex items-center justify-center leading-none">
               {slaCriticas.length > 9 ? '9+' : slaCriticas.length}
             </span>
           </button>
@@ -359,7 +382,7 @@ export function Navbar() {
           <Bell size={14} />
           {alerts.length > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
-                             bg-yellow text-[8px] font-bold text-black flex items-center justify-center leading-none">
+                             bg-yellow text-[10px] font-bold text-black flex items-center justify-center leading-none">
               {alerts.length > 9 ? '9+' : alerts.length}
             </span>
           )}
@@ -439,7 +462,7 @@ export function Navbar() {
           <Send size={13} />
           {naoLidos > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
-                             bg-primary text-[8px] font-bold text-white flex items-center justify-center leading-none">
+                             bg-primary text-[10px] font-bold text-white flex items-center justify-center leading-none">
               {naoLidos > 9 ? '9+' : naoLidos}
             </span>
           )}
@@ -447,6 +470,72 @@ export function Navbar() {
         {telegramOpen && (
           <div className="absolute right-0 top-10 z-50">
             <TelegramPanel onClose={() => setTelegramOpen(false)} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Audit Log ── */}
+      <div className="relative flex-shrink-0" ref={auditRef}>
+        <button
+          onClick={() => setAuditOpen(v => !v)}
+          title="Log de atividade"
+          className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all duration-fast
+            ${auditEntries.length > 0 ? 'text-muted hover:text-secondary hover:bg-surface' : 'text-disabled hover:text-muted hover:bg-surface'}`}
+        >
+          <History size={14} />
+          {auditEntries.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary" />
+          )}
+        </button>
+
+        {auditOpen && (
+          <div className="absolute right-0 top-10 z-50 w-80
+                          bg-elevated border border-white/[0.08] rounded-lg shadow-accent overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.08] bg-surface/30">
+              <div className="flex items-center gap-2">
+                <History size={12} className="text-muted" />
+                <span className="text-[12px] font-bold text-text">Log de Atividade</span>
+              </div>
+              {auditEntries.length > 0 && (
+                <button onClick={clearAudit} className="text-[10px] text-muted hover:text-secondary transition-colors">
+                  Limpar
+                </button>
+              )}
+            </div>
+            {auditEntries.length === 0 ? (
+              <p className="text-[11px] text-muted text-center px-3 py-6 italic">
+                Nenhuma ação registrada nesta sessão.
+              </p>
+            ) : (
+              <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.04]">
+                {auditEntries.map(e => {
+                  const catCls: Record<string, string> = {
+                    kanban:    'bg-purple/10 text-purple',
+                    export:    'bg-green/10 text-green',
+                    telegram:  'bg-cyan/10 text-cyan',
+                    fechamento:'bg-yellow/10 text-yellow',
+                    auth:      'bg-primary/10 text-primary',
+                    other:     'bg-surface text-muted',
+                  }
+                  return (
+                    <div key={e.id} className="px-3 py-2.5">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${catCls[e.category] ?? catCls.other}`}>
+                          {e.category}
+                        </span>
+                        <span className="text-[11px] font-semibold text-text flex-1 truncate">{e.action}</span>
+                        <span className="text-[10px] font-mono text-muted flex-shrink-0">
+                          {new Date(e.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      {e.detail && (
+                        <p className="text-[10px] text-muted truncate pl-1">{e.detail}</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>

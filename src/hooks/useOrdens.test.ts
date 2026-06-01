@@ -1,0 +1,111 @@
+import { describe, it, expect } from 'vitest'
+
+// ─── Testes das funções puras extraídas de useOrdens ────────────────────────
+// O hook em si depende de React + OSDataContext e não é testado aqui.
+// Estas funções puras representam a lógica de filtragem/ordenação que pode
+// ser extraída futuramente para um módulo independente.
+
+// Reimplementação local de parseAgend para testes (idêntica à do hook)
+function parseAgend(str: string | null | undefined): Date | null {
+  if (!str) return null
+  const s = str.trim().split(' ')[0]
+  if (s.includes('/')) {
+    const [d, m, y] = s.split('/')
+    if (!d || !m || !y) return null
+    return new Date(Number(y), Number(m) - 1, Number(d))
+  }
+  const dt = new Date(s)
+  return isNaN(dt.getTime()) ? null : dt
+}
+
+// Utilitário para filtro de aging (idêntico ao do hook)
+function matchesAging(aging: number, filter: string): boolean {
+  if (filter === '1')  return aging <= 1
+  if (filter === '2')  return aging <= 2
+  if (filter === '3')  return aging >= 3 && aging <= 5
+  if (filter === '6')  return aging >= 6
+  if (filter === '11') return aging >= 11
+  return true
+}
+
+describe('parseAgend', () => {
+  it('parseia formato DD/MM/YYYY', () => {
+    const d = parseAgend('15/06/2025')
+    expect(d).not.toBeNull()
+    expect(d!.getDate()).toBe(15)
+    expect(d!.getMonth()).toBe(5)
+    expect(d!.getFullYear()).toBe(2025)
+  })
+
+  it('parseia formato DD/MM/YYYY com hora (ignora hora)', () => {
+    const d = parseAgend('10/04/2025 08:30')
+    expect(d).not.toBeNull()
+    expect(d!.getDate()).toBe(10)
+  })
+
+  it('formato ISO YYYY-MM-DD é interpretado como data local pelo Date constructor', () => {
+    // parseAgend usa new Date(s) para ISO; o resultado depende do timezone do ambiente de teste
+    const d = parseAgend('2025-06-15')
+    expect(d).not.toBeNull()
+    expect(d!.getFullYear()).toBe(2025)
+    expect(d!.getMonth()).toBe(5)  // junho = 5
+  })
+
+  it('retorna null para string vazia', () => {
+    expect(parseAgend('')).toBeNull()
+    expect(parseAgend(null)).toBeNull()
+    expect(parseAgend(undefined)).toBeNull()
+  })
+
+  it('retorna null para string inválida', () => {
+    expect(parseAgend('nao-e-data')).toBeNull()
+    expect(parseAgend('///')).toBeNull()
+  })
+
+  it('ordena corretamente por data de agendamento', () => {
+    const dates = ['20/06/2025', '10/04/2025', '01/01/2025']
+    const sorted = [...dates].sort((a, b) => {
+      const da = parseAgend(a)!.getTime()
+      const db = parseAgend(b)!.getTime()
+      return da - db
+    })
+    expect(sorted).toEqual(['01/01/2025', '10/04/2025', '20/06/2025'])
+  })
+})
+
+describe('matchesAging — filtro de aging', () => {
+  it('filtro "1" → apenas aging ≤ 1', () => {
+    expect(matchesAging(0, '1')).toBe(true)
+    expect(matchesAging(1, '1')).toBe(true)
+    expect(matchesAging(2, '1')).toBe(false)
+  })
+
+  it('filtro "2" → apenas aging ≤ 2', () => {
+    expect(matchesAging(2, '2')).toBe(true)
+    expect(matchesAging(3, '2')).toBe(false)
+  })
+
+  it('filtro "3" → aging entre 3 e 5', () => {
+    expect(matchesAging(3, '3')).toBe(true)
+    expect(matchesAging(5, '3')).toBe(true)
+    expect(matchesAging(6, '3')).toBe(false)
+    expect(matchesAging(2, '3')).toBe(false)
+  })
+
+  it('filtro "6" → aging ≥ 6', () => {
+    expect(matchesAging(6, '6')).toBe(true)
+    expect(matchesAging(10, '6')).toBe(true)
+    expect(matchesAging(5, '6')).toBe(false)
+  })
+
+  it('filtro "11" → aging ≥ 11', () => {
+    expect(matchesAging(11, '11')).toBe(true)
+    expect(matchesAging(100, '11')).toBe(true)
+    expect(matchesAging(10, '11')).toBe(false)
+  })
+
+  it('filtro vazio → todos passam', () => {
+    expect(matchesAging(0,   '')).toBe(true)
+    expect(matchesAging(100, '')).toBe(true)
+  })
+})

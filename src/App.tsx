@@ -5,13 +5,13 @@ import { LoginPage } from './features/auth/LoginPage'
 import { useAuthStore } from './store/authStore'
 import { api } from './lib/api'
 import {
-  ERPOrdensPage, ERPEquipesPage, ERPDispatchPage, ERPRelatoriosPage,
-  ERPAlertasPage, ERPRedePage,
+  ERPOrdensPage, ERPEquipesPage, ERPRelatoriosPage,
+  ERPAlertasPage,
   ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage,
   DashboardPage, OrdensPage, CapacidadePage,
   GraficosPage, CidadesPage, CampoPage,
   FornecedorPage, JuniperPage, NotFoundPage, NocPage, FechamentoPage,
-  MapaPage, GerencialPage, MapaMentalPage,
+  MapaPage, GerencialPage,
 } from './pages/index'
 
 export default function App() {
@@ -51,10 +51,8 @@ export default function App() {
         <Route path="erp">
           <Route path="ordens"        element={<ERPOrdensPage />}       />
           <Route path="equipes"       element={<ERPEquipesPage />}      />
-          <Route path="dispatch"      element={<ERPDispatchPage />}     />
           <Route path="relatorios"    element={<ERPRelatoriosPage />}   />
           <Route path="alertas"       element={<ERPAlertasPage />}      />
-          <Route path="rede"          element={<ERPRedePage />}         />
           <Route path="produtividade" element={<ERPProdutividadePage />}/>
           <Route path="qualidade"     element={<ERPQualidadePage />}    />
           <Route path="planner"       element={<ERPPlannerPage />}      />
@@ -69,9 +67,8 @@ export default function App() {
         <Route path="fornecedor" element={<FornecedorPage />} />
         <Route path="juniper"    element={<JuniperPage />}    />
         <Route path="fechamento" element={<FechamentoPage />} />
-        <Route path="mapa"         element={<MapaPage />}         />
-        <Route path="gerencial"   element={<GerencialPage />}   />
-        <Route path="mapa-mental" element={<MapaMentalPage />}  />
+        <Route path="mapa"       element={<MapaPage />}     />
+        <Route path="gerencial" element={<GerencialPage />} />
         <Route path="*"          element={<NotFoundPage />}   />
       </Route>
       <Route path="noc" element={<NocPage />} />

@@ -41,41 +41,41 @@ function parseLocalDate(raw) {
 const TIPO = {
   INSTALACAO: {
     label: 'Instalação', Icon: Package,
-    iconCls: 'text-blue-400', iconBg: 'bg-blue-500/10 border border-blue-500/20',
-    badge: 'bg-blue-500/15 text-blue-400 border border-blue-500/20',
-    bar: 'bg-blue-500', maxQueue: 18,
+    iconCls: 'text-primary', iconBg: 'bg-primary/10 border border-primary/20',
+    badge: 'bg-primary/15 text-primary border border-primary/20',
+    bar: 'bg-primary', maxQueue: 18,
   },
   MANUTENCAO: {
     label: 'Manutenção', Icon: Wrench,
-    iconCls: 'text-orange-400', iconBg: 'bg-orange-500/10 border border-orange-500/20',
-    badge: 'bg-orange-500/15 text-orange-400 border border-orange-500/20',
-    bar: 'bg-orange-500', maxQueue: 12,
+    iconCls: 'text-orange', iconBg: 'bg-orange/10 border border-orange/20',
+    badge: 'bg-orange/15 text-orange border border-orange/20',
+    bar: 'bg-orange', maxQueue: 12,
   },
   REDE: {
     label: 'Rede', Icon: Network,
-    iconCls: 'text-emerald-400', iconBg: 'bg-emerald-500/10 border border-emerald-500/20',
-    badge: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
-    bar: 'bg-emerald-500', maxQueue: 10,
+    iconCls: 'text-green', iconBg: 'bg-green/10 border border-green/20',
+    badge: 'bg-green/15 text-green border border-green/20',
+    bar: 'bg-green', maxQueue: 10,
   },
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
 function slaCls(v) {
-  if (v >= 90) return 'text-emerald-400'
-  if (v >= 75) return 'text-orange-400'
-  return 'text-red-400'
+  if (v >= 90) return 'text-green'
+  if (v >= 75) return 'text-orange'
+  return 'text-red'
 }
 
 function capacityBarCls(pct, tipo) {
-  if (pct > 85) return 'bg-red-500'
-  if (pct > 60) return 'bg-orange-500'
+  if (pct > 85) return 'bg-red'
+  if (pct > 60) return 'bg-orange'
   return TIPO[tipo]?.bar || 'bg-primary'
 }
 
 function statusDot(pct) {
-  if (pct > 85) return { cls: 'bg-red-500', label: 'Sobrecarregada' }
-  if (pct > 60) return { cls: 'bg-orange-400', label: 'Carregada' }
-  if (pct > 0)  return { cls: 'bg-emerald-400', label: 'Disponível' }
+  if (pct > 85) return { cls: 'bg-red', label: 'Sobrecarregada' }
+  if (pct > 60) return { cls: 'bg-orange', label: 'Carregada' }
+  if (pct > 0)  return { cls: 'bg-green', label: 'Disponível' }
   return { cls: 'bg-surface/200', label: 'Sem OS' }
 }
 
@@ -150,7 +150,7 @@ function EquipeCard({ team, metrics, slaData, custoMensal = 0, indisponivel = fa
           <p className="text-[9px] text-muted mt-0.5">SLA</p>
         </div>
         <div className="bg-surface/30 rounded-lg py-2 text-center">
-          <p className={`text-[18px] font-headline font-bold leading-none ${criticas > 0 ? 'text-red-400' : 'text-text'}`}>
+          <p className={`text-[18px] font-headline font-bold leading-none ${criticas > 0 ? 'text-red' : 'text-text'}`}>
             {criticas}
           </p>
           <p className="text-[9px] text-muted mt-0.5">Críticas</p>
@@ -161,7 +161,7 @@ function EquipeCard({ team, metrics, slaData, custoMensal = 0, indisponivel = fa
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[10px] text-muted">Capacidade</span>
-          <span className={`text-[10px] font-semibold ${pct > 85 ? 'text-red-400' : pct > 60 ? 'text-orange-400' : 'text-emerald-400'}`}>
+          <span className={`text-[10px] font-semibold ${pct > 85 ? 'text-red' : pct > 60 ? 'text-orange' : 'text-green'}`}>
             {Math.round(pct)}%
           </span>
         </div>
@@ -185,7 +185,7 @@ function EquipeCard({ team, metrics, slaData, custoMensal = 0, indisponivel = fa
             </span>
           )}
           {custoPorOs != null && (
-            <span className="flex items-center gap-0.5 text-orange-400 font-semibold">
+            <span className="flex items-center gap-0.5 text-orange font-semibold">
               <DollarSign size={9} />R$ {custoPorOs.toLocaleString('pt-BR')}/OS
             </span>
           )}
@@ -274,8 +274,8 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
             {[
               { label: 'OS na Fila',  value: queue,    DIcon: Activity,       cls: 'text-primary' },
               { label: 'SLA',         value: sla > 0 ? `${sla.toFixed(0)}%` : '—', DIcon: CheckCircle2, cls: slaCls(sla) },
-              { label: 'Críticas',    value: criticas, DIcon: AlertTriangle,  cls: criticas > 0 ? 'text-red-400' : 'text-secondary' },
-              { label: 'Aging Médio', value: agingMed > 0 ? `${agingMed.toFixed(1)}d` : '—', DIcon: Clock, cls: agingMed > 5 ? 'text-orange-400' : 'text-secondary' },
+              { label: 'Críticas',    value: criticas, DIcon: AlertTriangle,  cls: criticas > 0 ? 'text-red' : 'text-secondary' },
+              { label: 'Aging Médio', value: agingMed > 0 ? `${agingMed.toFixed(1)}d` : '—', DIcon: Clock, cls: agingMed > 5 ? 'text-orange' : 'text-secondary' },
             ].map(item => {
               const DI = item.DIcon
               return (
@@ -292,7 +292,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
           <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[12px] font-semibold text-text">Capacidade Operacional</p>
-              <span className={`text-[11px] font-bold ${pct > 85 ? 'text-red-400' : pct > 60 ? 'text-orange-400' : 'text-emerald-400'}`}>
+              <span className={`text-[11px] font-bold ${pct > 85 ? 'text-red' : pct > 60 ? 'text-orange' : 'text-green'}`}>
                 {Math.round(pct)}%
               </span>
             </div>
@@ -359,8 +359,8 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
                       {count > 0 ? count : '·'}
                     </span>
                     <div className="flex gap-0.5 h-1.5 items-center">
-                      {manha > 0 && <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
-                      {tarde > 0 && <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />}
+                      {manha > 0 && <div className="w-1.5 h-1.5 rounded-full bg-yellow" />}
+                      {tarde > 0 && <div className="w-1.5 h-1.5 rounded-full bg-purple" />}
                     </div>
                   </div>
                 )
@@ -368,11 +368,11 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
             </div>
             <div className="flex items-center gap-4 text-[9px] text-muted pt-0.5">
               <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow inline-block flex-shrink-0" />
                 Manhã
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-purple inline-block flex-shrink-0" />
                 Tarde
               </span>
             </div>
@@ -429,7 +429,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
                                focus:border-primary/50 transition-colors disabled:opacity-40"
                   />
                   {custoMensal > 0 && (metrics.concluidas ?? 0) > 0 && (
-                    <span className="text-[10px] text-orange-400 font-semibold whitespace-nowrap">
+                    <span className="text-[10px] text-orange font-semibold whitespace-nowrap">
                       R$ {Math.round(custoMensal / metrics.concluidas).toLocaleString('pt-BR')}/OS
                     </span>
                   )}
@@ -563,10 +563,10 @@ export default function EquipesPage() {
       {/* Summary KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: 'Instalação', value: summary.inst,  SIcon: Package,    iconCls: 'text-blue-400',    bgCls: 'bg-blue-500/10' },
-          { label: 'Manutenção', value: summary.manut, SIcon: Wrench,     iconCls: 'text-orange-400',  bgCls: 'bg-orange-500/10' },
-          { label: 'Rede',       value: summary.rede,  SIcon: Network,    iconCls: 'text-emerald-400', bgCls: 'bg-emerald-500/10' },
-          { label: 'OS na Fila', value: rows.length,   SIcon: BarChart2,  iconCls: 'text-violet-400',  bgCls: 'bg-violet-500/10' },
+          { label: 'Instalação', value: summary.inst,  SIcon: Package,    iconCls: 'text-primary',    bgCls: 'bg-primary/10' },
+          { label: 'Manutenção', value: summary.manut, SIcon: Wrench,     iconCls: 'text-orange',  bgCls: 'bg-orange/10' },
+          { label: 'Rede',       value: summary.rede,  SIcon: Network,    iconCls: 'text-green', bgCls: 'bg-green/10' },
+          { label: 'OS na Fila', value: rows.length,   SIcon: BarChart2,  iconCls: 'text-purple',  bgCls: 'bg-purple/10' },
           { label: 'SLA Médio',  value: `${summary.avgSla.toFixed(0)}%`, SIcon: TrendingUp, iconCls: 'text-primary', bgCls: 'bg-primary/10' },
         ].map(s => {
           const SI = s.SIcon

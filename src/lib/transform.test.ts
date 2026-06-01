@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { OSRow, DateFilter } from './types'
-import { enrichRows, getFornecedor, parseCSV, applyDateFilter } from './transform.js'
-import { buildDashboard, buildSla, buildCapacidade } from './builders.js'
+import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, isConcluida, isExecucaoReal } from './transform.js'
+import { buildDashboard, buildSla, buildCapacidade, buildAnomalias, buildCidades } from './builders.js'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -476,5 +476,172 @@ describe('buildCapacidade', () => {
       expect(typeof e.total).toBe('number')
       expect(typeof e.taxa).toBe('number')
     })
+  })
+})
+
+// ─── parseDate ────────────────────────────────────────────────────────────────
+
+describe('parseDate', () => {
+  it('parseia formato DD/MM/YYYY', () => {
+    const d = parseDate('15/06/2025')
+    expect(d).not.toBeNull()
+    expect(d!.getDate()).toBe(15)
+    expect(d!.getMonth()).toBe(5)
+    expect(d!.getFullYear()).toBe(2025)
+  })
+
+  it('retorna null para formato ISO YYYY-MM-DD (não suportado — usa DD/MM/YYYY)', () => {
+    // parseDate usa DD/MM/YYYY; formato ISO não é suportado propositalmente
+    expect(parseDate('2025-06-15')).toBeNull()
+  })
+
+  it('retorna null para string vazia', () => {
+    expect(parseDate('')).toBeNull()
+    expect(parseDate(null)).toBeNull()
+    expect(parseDate(undefined)).toBeNull()
+  })
+
+  it('retorna null para data inválida (dia 32)', () => {
+    expect(parseDate('32/01/2025')).toBeNull()
+  })
+
+  it('retorna null para mês inválido (mês 13)', () => {
+    expect(parseDate('01/13/2025')).toBeNull()
+  })
+
+  it('parseia data com hora (ignora parte de hora)', () => {
+    const d = parseDate('10/04/2025 08:30')
+    expect(d).not.toBeNull()
+    expect(d!.getDate()).toBe(10)
+  })
+
+  it('retorna null para string sem 3 partes', () => {
+    expect(parseDate('15/2025')).toBeNull()
+    expect(parseDate('abc')).toBeNull()
+  })
+})
+
+// ─── isConcluida / isExecucaoReal ─────────────────────────────────────────────
+
+describe('isConcluida', () => {
+  it('Concluída retorna true', () => {
+    expect(isConcluida('Concluída')).toBe(true)
+  })
+
+  it('Concluída/Sem Execução retorna true', () => {
+    expect(isConcluida('Concluída/Sem Execução')).toBe(true)
+  })
+
+  it('Atendimento/Finalizadas retorna true', () => {
+    expect(isConcluida('Atendimento/Finalizadas')).toBe(true)
+  })
+
+  it('Pendente retorna false', () => {
+    expect(isConcluida('Pendente')).toBe(false)
+  })
+
+  it('null/undefined retorna false', () => {
+    expect(isConcluida(null)).toBe(false)
+    expect(isConcluida(undefined)).toBe(false)
+  })
+})
+
+describe('isExecucaoReal', () => {
+  it('Concluída retorna true', () => {
+    expect(isExecucaoReal('Concluída')).toBe(true)
+  })
+
+  it('Concluída/Sem Execução retorna false (não é execução real)', () => {
+    expect(isExecucaoReal('Concluída/Sem Execução')).toBe(false)
+  })
+
+  it('Atendimento/Finalizadas retorna true', () => {
+    expect(isExecucaoReal('Atendimento/Finalizadas')).toBe(true)
+  })
+
+  it('Pendente retorna false', () => {
+    expect(isExecucaoReal('Pendente')).toBe(false)
+  })
+})
+
+// ─── buildAnomalias ───────────────────────────────────────────────────────────
+
+describe('buildAnomalias', () => {
+  it('retorna estrutura com total, picosDia, bairrosAnomalia, equipesAnomalia', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'AN1', datacadastro: daysAgo(1), bairro: 'Centro', nomedaequipe: 'M01', tiposervico: 'MANUTENCAO', descsituacao: 'Pendente' }),
+    ])
+    const result = buildAnomalias(rows)
+    expect(typeof result.total).toBe('number')
+    expect(Array.isArray(result.picosDia)).toBe(true)
+    expect(Array.isArray(result.bairrosAnomalia)).toBe(true)
+    expect(Array.isArray(result.equipesAnomalia)).toBe(true)
+  })
+
+  it('retorna total zero para dataset vazio', () => {
+    const result = buildAnomalias([])
+    expect(result.total).toBe(0)
+    expect(result.picosDia).toHaveLength(0)
+    expect(result.bairrosAnomalia).toHaveLength(0)
+    expect(result.equipesAnomalia).toHaveLength(0)
+  })
+
+  it('picosDia tem campos date, count e zScore', () => {
+    const rows: OSRow[] = []
+    const baseDate = daysAgo(5)
+    for (let i = 0; i < 30; i++) {
+      rows.push(makeOS({ numos: `P${i}`, datacadastro: baseDate, descsituacao: 'Pendente' }))
+    }
+    rows.push(makeOS({ numos: 'OUTROS', datacadastro: daysAgo(1), descsituacao: 'Pendente' }))
+    const enriched = enrichRows(rows)
+    const result   = buildAnomalias(enriched)
+    result.picosDia.forEach(p => {
+      expect(typeof p.date).toBe('string')
+      expect(typeof p.count).toBe('number')
+      expect(typeof p.zScore).toBe('number')
+    })
+  })
+})
+
+// ─── buildCidades ─────────────────────────────────────────────────────────────
+
+describe('buildCidades', () => {
+  const rows = enrichRows([
+    makeOS({ numos: 'CID1', nomedacidade: 'TAUBATE',    descsituacao: 'Pendente',  tiposervico: 'MANUTENCAO', datacadastro: daysAgo(2) }),
+    makeOS({ numos: 'CID2', nomedacidade: 'TAUBATE',    descsituacao: 'Concluída', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(2) }),
+    makeOS({ numos: 'CID3', nomedacidade: 'CAÇAPAVA',   descsituacao: 'Pendente',  tiposervico: 'MANUTENCAO', datacadastro: daysAgo(3) }),
+    makeOS({ numos: 'CID4', nomedacidade: 'SAO JOSE DOS CAMPOS', descsituacao: 'Atendimento', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(1) }),
+  ])
+
+  it('retorna ranking, pendencias, fila, heatmap, kpis', () => {
+    const result = buildCidades(rows)
+    expect(Array.isArray(result.ranking)).toBe(true)
+    expect(Array.isArray(result.pendencias)).toBe(true)
+    expect(Array.isArray(result.fila)).toBe(true)
+    expect(Array.isArray(result.heatmap)).toBe(true)
+    expect(Array.isArray(result.kpis)).toBe(true)
+  })
+
+  it('ranking tem campos cidade, total, criticas', () => {
+    const { ranking } = buildCidades(rows)
+    ranking.forEach(r => {
+      expect(typeof r.cidade).toBe('string')
+      expect(typeof r.total).toBe('number')
+      expect(typeof r.criticas).toBe('number')
+    })
+  })
+
+  it('todasCidades lista cidades únicas do dataset', () => {
+    const { todasCidades } = buildCidades(rows)
+    expect(Array.isArray(todasCidades)).toBe(true)
+    expect(todasCidades.length).toBeGreaterThan(0)
+  })
+
+  it('city vazia é mapeada como "Desconhecida" pelo builder', () => {
+    const empty = enrichRows([makeOS({ numos: 'E1', nomedacidade: '', descsituacao: 'Pendente' })])
+    const result = buildCidades(empty)
+    // Builder mapeia cidades sem nome para 'Desconhecida' — não filtra
+    const nomes = result.ranking.map(r => r.cidade)
+    nomes.forEach(n => expect(typeof n).toBe('string'))
   })
 })

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { useOSData } from '../hooks/useOSData'
 import { useServerEvents } from '../hooks/useServerEvents'
@@ -9,24 +9,137 @@ import {
   buildDashboard, buildSla, buildGraficos, buildAuditoria,
   buildCidades, buildCampo, buildRevisitas, buildOrdens, buildAnomalias,
 } from '../lib/builders'
-import type { OSRow } from '../lib/types'
+import type {
+  OSRow, KPI, QuickInsight, ClusterAtivo,
+  CampoSemaforo,
+  PicoDiaAnomalia, BairroAnomalia, EquipeAnomalia,
+} from '../lib/types'
+
+// Tipos inline espelham o retorno REAL dos builders — usados para inferência do Derived type.
+// Anotações explícitas nos arrays evitam inferência `never[]` downstream.
+
+type SlaHipoteseReal    = { pergunta: string; resposta: string; sub: string | null }
+type SlaResumoReal      = { status: string; total: number; pct: number }
+type SlaRankingReal     = { nome: string; tipo: string; sla: number; total: number; criticas: number; agingMed: number }
+type SlaSemaforoReal    = { nome: string; tipo: string; sla: number; total: number; criticas: number }
+type SlaClustersReal    = { bairro: string; cidade: string; total: number }
+type AuditSummaryReal   = { label: string; value: number; ok: boolean; sub?: string }
+type AuditProblemReal   = { title: string; severity: string; desc: string; rows: { numos: string; status: string; cidade: string }[] }
+type AuditTipReal       = { text: string }
+type CidadeRankReal     = { cidade: string; score: number; criticas: number; slaExc: number; total: number }
+type CidadePendReal     = { cidade: string; atend: number; pend: number; total: number; slaRisco: string }
+type CidadeFilaReal     = { cidade: string; emAberto: number; agingMed: number; criticas: number; semEquipe: number }
+type CidadeHeatReal     = { cidade: string; total: number; nivel: string }
+type CidadeExecReal     = { cidade: string; concluidas: number; total: number; taxa: number }
+type CidadeConsolidReal = { cidade: string; total: number; atend: number; pend: number; concl: number; criticas: number }
+type CidadeEntradaReal  = { cidade: string; total: number; atend: number; pend: number; reagend: number; concl: number; slaExc: number; criticas: number; semEq: number; agingMed: number; score: number; taxa: number; status: string }
+type RevisitaHipReal    = { pergunta: string; resposta: string; sub: string }
+type RevisitaCausaReal  = { causa: string; pct: number }
+type CampoAgingReal     = { labels: string[]; values: number[]; hasCritical: boolean }
+type CampoHeroReal      = { status: string; title: string; msg: string; criticoCount: number; atencaoCount: number; totalEquipes: number }
 
 const EMPTY_DERIVED = {
-  dashboard:  { kpis: [], fornecedores: [], pulso: { score: 0, scoreLabel: '—', narrativa: '—', quickInsights: [], agingMed: 0, agingDist: { '≤1d': 0, '2-3d': 0, '4-7d': 0, '8+d': 0 }, slaFila: 0, semAgendamento: 0, mttr: 0, topCidadesCriticas: [], clustersAtivos: [] } },
-  sla:        { pulso: { narrativa: '', ok: 0, atencao: 0, fora: 0, criticas: 0, score: 0, scoreLabel: '' }, hipoteses: [], resumo: [], ranking: [], agingEq: { labels: [], values: [] }, semaforo: [], clusters: [] },
-  graficos:   { status: { labels: [], values: [] }, tipo: { labels: [], values: [] }, cidade: { labels: [], values: [] }, equipes: { labels: [], values: [] }, aging: { labels: [], values: [] }, eficiencia: { labels: [], values: [] }, cohort: { labels: [], total: [], concluidas: [], mesmoMes: [], taxaResolucao: [], mttr: [] }, evolucao: { labels: [], abertas: [], concluidas: [] }, mensal: { labels: [], abertas: [], concluidas: [], slaExcedido: [] }, comparativo: { labels: [], pendente: [], atendimento: [], concluida: [] }, taxaDia: { labels: [], values: [] }, burndown: { labels: [], realizado: [], meta: [] } },
-  auditoria:  { score: { value: 0, label: '—', ts: '' }, summary: [], problems: [], tips: [] },
-  anomalias:  { total: 0, picosDia: [], bairrosAnomalia: [], equipesAnomalia: [] },
-  cidades:    { ranking: [], pendencias: [], fila: [], heatmap: [], execucoes: [], consolidado: [], kpis: [], todasCidades: [] },
-  campo:      { kpis: [], semaforo: [], risco: { count: 0, pct: 0, desc: '' }, concluidas: [], fila: [], ritmo: { labels: [], values: [] }, tecnicos: [], projecao: null, agingDist: null, hero: null },
-  revisitas:  { taxa: { inst: 0, manut: 0, serv: 0, geral: 0 }, narrativa: '', hipoteses: [], causas: [], causaRaiz: [], cronicos: [], chart: { labels: [], values: [] }, totalRevisitas: 0, revInst: 0, revManut: 0, revServ: 0, porEquipe: [], porCidade: [], evitaveis: { count: 0, pct: 0 }, tempoMedio: 0, custoEstimado: 0, diasDist: { '1-7': 0, '8-14': 0, '15-20': 0, '21-30': 0 }, base: { total: 0, inst: 0, manut: 0, serv: 0 }, tendencia: { delta: 0, prevTaxa: 0 }, intervalo: { labels: [], values: [] }, tabela: [] },
-  ordens:     { ordens: [], options: { statuses: [], tipos: [], cidades: [], equipes: [], bairros: [] } },
+  dashboard: {
+    kpis:         [] as KPI[],
+    fornecedores: [] as { nome: string; total: number; concluidas: number; sla: number; cor: string }[],
+    pulso: {
+      score: 0, scoreLabel: '—', narrativa: '—',
+      quickInsights:      [] as QuickInsight[],
+      agingMed: 0, agingDist: { '≤1d': 0, '2-3d': 0, '4-7d': 0, '8+d': 0 } as { '≤1d': number; '2-3d': number; '4-7d': number; '8+d': number },
+      slaFila: 0, semAgendamento: 0, mttr: 0,
+      topCidadesCriticas: [] as { cidade: string; count: number }[],
+      clustersAtivos:     [] as ClusterAtivo[],
+    },
+  },
+  sla: {
+    pulso:    { narrativa: '', ok: 0, atencao: 0, fora: 0, criticas: 0, score: 0, scoreLabel: '' },
+    hipoteses: [] as SlaHipoteseReal[],
+    resumo:    [] as SlaResumoReal[],
+    ranking:   [] as SlaRankingReal[],
+    agingEq:   { labels: [] as string[], values: [] as number[] },
+    semaforo:  [] as SlaSemaforoReal[],
+    clusters:  [] as SlaClustersReal[],
+  },
+  graficos: {
+    status:      { labels: [] as string[], values: [] as number[] },
+    tipo:        { labels: [] as string[], values: [] as number[] },
+    cidade:      { labels: [] as string[], values: [] as number[] },
+    equipes:     { labels: [] as string[], values: [] as number[] },
+    aging:       { labels: [] as string[], values: [] as number[] },
+    eficiencia:  { labels: [] as string[], values: [] as number[] },
+    cohort:      { labels: [] as string[], total: [] as number[], concluidas: [] as number[], mesmoMes: [] as number[], taxaResolucao: [] as number[], mttr: [] as number[] },
+    evolucao:    { labels: [] as string[], abertas: [] as number[], concluidas: [] as number[] },
+    mensal:      { labels: [] as string[], abertas: [] as number[], concluidas: [] as number[], slaExcedido: [] as number[] },
+    comparativo: { labels: [] as string[], pendente: [] as number[], atendimento: [] as number[], concluida: [] as number[] },
+    taxaDia:     { labels: [] as string[], values: [] as number[] },
+    burndown:    { labels: [] as string[], realizado: [] as number[], meta: [] as number[] },
+  },
+  auditoria: {
+    score:    { value: 0, label: '—', ts: '' },
+    summary:  [] as AuditSummaryReal[],
+    problems: [] as AuditProblemReal[],
+    tips:     [] as AuditTipReal[],
+  },
+  anomalias: {
+    total:           0,
+    picosDia:        [] as PicoDiaAnomalia[],
+    bairrosAnomalia: [] as BairroAnomalia[],
+    equipesAnomalia: [] as EquipeAnomalia[],
+  },
+  cidades: {
+    ranking:      [] as CidadeRankReal[],
+    pendencias:   [] as CidadePendReal[],
+    fila:         [] as CidadeFilaReal[],
+    heatmap:      [] as CidadeHeatReal[],
+    execucoes:    [] as CidadeExecReal[],
+    consolidado:  [] as CidadeConsolidReal[],
+    kpis:         [] as KPI[],
+    todasCidades: [] as CidadeEntradaReal[],
+  },
+  campo: {
+    kpis:       [] as KPI[],
+    semaforo:   [] as CampoSemaforo[],
+    risco:      { count: 0, pct: 0, desc: '' },
+    concluidas: [] as CampoSemaforo[],
+    fila:       [] as CampoSemaforo[],
+    ritmo:      { labels: [] as string[], values: [] as number[] },
+    tecnicos:   [] as never[],
+    projecao:   null as { equipe: string; fila: number; ritmo: number; dias: number | string }[] | null,
+    agingDist:  { labels: [] as string[], values: [] as number[], hasCritical: false } as CampoAgingReal,
+    hero:       { status: '', title: '', msg: '', criticoCount: 0, atencaoCount: 0, totalEquipes: 0 } as CampoHeroReal,
+  },
+  revisitas: {
+    taxa:      { inst: 0, manut: 0, serv: 0, geral: 0 },
+    narrativa: '',
+    hipoteses: [] as RevisitaHipReal[],
+    causas:    [] as RevisitaCausaReal[],
+    causaRaiz: [] as RevisitaCausaReal[],
+    cronicos:  [] as OSRow[],
+    chart:     { labels: [] as string[], values: [] as number[] },
+    totalRevisitas: 0, revInst: 0, revManut: 0, revServ: 0,
+    porEquipe: [] as { equipe: string; total: number; taxa: number }[],
+    porCidade: [] as { cidade: string; total: number; taxa: number }[],
+    evitaveis:    { count: 0, pct: 0 },
+    tempoMedio:   0,
+    custoEstimado: 0,
+    diasDist:  { '1-7': 0, '8-14': 0, '15-20': 0, '21-30': 0 },
+    base:      { total: 0, inst: 0, manut: 0, serv: 0 },
+    tendencia: { delta: 0, prevTaxa: 0 },
+    intervalo: { labels: [] as string[], values: [] as number[] },
+    tabela:    [] as unknown[],
+  },
+  ordens: {
+    ordens:  [] as OSRow[],
+    options: { tipos: [] as string[], cidades: [] as string[], equipes: [] as string[], bairros: [] as string[], periodos: [] as string[] },
+  },
 }
 
 type Derived = typeof EMPTY_DERIVED
 
-function safe<T>(name: string, fn: () => T, fallback: T): T {
-  try { return fn() } catch (e) { console.error(`[OSData] ${name} builder error:`, e); return fallback }
+// fn tipado como () => unknown permite que qualquer builder seja passado sem as any;
+// o cast para T é seguro porque T é inferido do fallback (EMPTY_DERIVED), que é a fonte de verdade do tipo.
+function safe<T>(name: string, fn: () => unknown, fallback: T): T {
+  try { return fn() as T } catch (e) { console.error(`[OSData] ${name} builder error:`, e); return fallback }
 }
 
 interface OSDataContextValue {
@@ -68,15 +181,15 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     return hideRede ? filtered.filter(r => r._tipo !== 'REDE') : filtered
   }, [allRevisitaRows, dateFilter, hideRede])
 
-  const dashboard  = useMemo(() => safe('dashboard', () => buildDashboard(activeRows, activeAllRows, activePrev) as any, EMPTY_DERIVED.dashboard), [activeRows, activeAllRows, activePrev])
-  const sla        = useMemo(() => safe('sla',        () => buildSla(activeRows) as any,        EMPTY_DERIVED.sla),        [activeRows])
-  const graficos   = useMemo(() => safe('graficos',   () => buildGraficos(activeRows) as any,   EMPTY_DERIVED.graficos),   [activeRows])
-  const auditoria  = useMemo(() => safe('auditoria',  () => buildAuditoria(activeRows, discardedLixo, duplicadosLixo) as any, EMPTY_DERIVED.auditoria), [activeRows, discardedLixo, duplicadosLixo])
-  const anomalias  = useMemo(() => safe('anomalias',  () => buildAnomalias(activeRows) as any,  EMPTY_DERIVED.anomalias),  [activeRows])
-  const cidades    = useMemo(() => safe('cidades',    () => buildCidades(activeRows) as any,    EMPTY_DERIVED.cidades),    [activeRows])
-  const campo      = useMemo(() => safe('campo',      () => buildCampo(activeRows) as any,      EMPTY_DERIVED.campo),      [activeRows])
-  const revisitas  = useMemo(() => safe('revisitas',  () => buildRevisitas(activeRevisitaRows, prevRevisitaRows) as any, EMPTY_DERIVED.revisitas), [activeRevisitaRows, prevRevisitaRows])
-  const ordens     = useMemo(() => safe('ordens',     () => buildOrdens(activeRows) as any,     EMPTY_DERIVED.ordens),     [activeRows])
+  const dashboard  = useMemo(() => safe('dashboard', () => buildDashboard(activeRows, activeAllRows, activePrev), EMPTY_DERIVED.dashboard), [activeRows, activeAllRows, activePrev])
+  const sla        = useMemo(() => safe('sla',        () => buildSla(activeRows),        EMPTY_DERIVED.sla),        [activeRows])
+  const graficos   = useMemo(() => safe('graficos',   () => buildGraficos(activeRows),   EMPTY_DERIVED.graficos),   [activeRows])
+  const auditoria  = useMemo(() => safe('auditoria',  () => buildAuditoria(activeRows, discardedLixo, duplicadosLixo), EMPTY_DERIVED.auditoria), [activeRows, discardedLixo, duplicadosLixo])
+  const anomalias  = useMemo(() => safe('anomalias',  () => buildAnomalias(activeRows),  EMPTY_DERIVED.anomalias),  [activeRows])
+  const cidades    = useMemo(() => safe('cidades',    () => buildCidades(activeRows),    EMPTY_DERIVED.cidades),    [activeRows])
+  const campo      = useMemo(() => safe('campo',      () => buildCampo(activeRows),      EMPTY_DERIVED.campo),      [activeRows])
+  const revisitas  = useMemo(() => safe('revisitas',  () => buildRevisitas(activeRevisitaRows, prevRevisitaRows), EMPTY_DERIVED.revisitas), [activeRevisitaRows, prevRevisitaRows])
+  const ordens     = useMemo(() => safe('ordens',     () => buildOrdens(activeRows),     EMPTY_DERIVED.ordens),     [activeRows])
 
   // Detecta falhas de builders por identidade de referência com o fallback
   const builderErrors = useMemo(() => [

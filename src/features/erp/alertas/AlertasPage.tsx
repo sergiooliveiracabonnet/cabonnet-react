@@ -1,11 +1,25 @@
-// @ts-nocheck
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ComponentType } from 'react'
 import {
   AlertTriangle, Clock, Users, TrendingDown,
-  CalendarX, ChevronDown, ChevronUp, Settings, X,
+  CalendarX, ChevronDown, Settings, X,
   ShieldAlert, ShieldCheck, Info, Zap, BarChart2, Bell,
   Activity, RefreshCw, MapPin, BarChart3,
 } from 'lucide-react'
+import type { FiredAlert } from '../../../hooks/useAlerts'
+import type { OSRow } from '../../../lib/types'
+
+// ─── Tipos locais ─────────────────────────────────────────────────────────────
+type IconComp  = ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
+type SevKey    = keyof typeof SEV_CFG
+interface AlertItem  { key: string; label: string; sub: string }
+interface AlertEntry {
+  id: string; severity: SevKey; Icon: IconComp
+  title: string; desc: string; count: number; items: AlertItem[]
+}
+interface AlertSettings {
+  agingCriticoDias: number; capacidadePct: number
+  slaEquipePct:     number; semAgendDias:  number
+}
 import { useERPRows }          from '../useERPRows'
 import { useERPStore }         from '../../../store/erpStore'
 import { useAlertStore }       from '../../../store/alertStore'
@@ -45,7 +59,12 @@ const SEV_CFG = {
 
 // ─── Alert engine ─────────────────────────────────────────────────────────────
 
-function buildAlerts(rows, settings, metricsByCode, slaByCode) {
+function buildAlerts(
+  rows:          OSRow[],
+  settings:      AlertSettings,
+  metricsByCode: Record<string, { queue: number; criticas: number }>,
+  slaByCode:     Record<string, { sla?: number; nome?: string }>,
+): AlertEntry[] {
   const { agingCriticoDias, capacidadePct, slaEquipePct, semAgendDias } = settings
 
   const slaSemEquipe    = rows.filter(r => r._slaCritico && !r.nomedaequipe?.trim())
@@ -61,9 +80,9 @@ function buildAlerts(rows, settings, metricsByCode, slaByCode) {
   })
   const semAgend = rows.filter(r => r._slaSemAgend && (r._aging ?? 0) > semAgendDias)
 
-  return [
+  return ([
     {
-      id: 'sla_sem_equipe', severity: 'CRITICO', Icon: ShieldAlert,
+      id: 'sla_sem_equipe', severity: 'CRITICO' as SevKey, Icon: ShieldAlert,
       title: 'SLA Crítico Sem Equipe',
       desc:  `${slaSemEquipe.length} OS com SLA crítico aguardando atribuição de equipe`,
       count: slaSemEquipe.length,
@@ -117,12 +136,12 @@ function buildAlerts(rows, settings, metricsByCode, slaByCode) {
         sub:   `${r._aging ?? 0}d · ${r.nomedacidade || '—'}`,
       })),
     },
-  ].filter(a => a.count > 0)
+  ] as AlertEntry[]).filter(a => a.count > 0)
 }
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
 
-function SectionLabel({ icon: Icon, color, children }) {
+function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; color: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
@@ -138,9 +157,9 @@ function SectionLabel({ icon: Icon, color, children }) {
 
 const PREVIEW = 5
 
-function AlertCard({ alert, delay = 0 }) {
+function AlertCard({ alert, delay = 0 }: { alert: AlertEntry; delay?: number }) {
   const [open, setOpen] = useState(false)
-  const sev       = SEV_CFG[alert.severity]
+  const sev       = (SEV_CFG as Record<string, typeof SEV_CFG[SevKey]>)[alert.severity]
   const AlertIcon = alert.Icon
   const extra     = alert.items.length - PREVIEW
 
@@ -198,7 +217,7 @@ function AlertCard({ alert, delay = 0 }) {
       {open && (
         <div className="border-t" style={{ borderColor: `${sev.color}15` }}>
           <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
-            {alert.items.slice(0, PREVIEW).map(item => (
+            {alert.items.slice(0, PREVIEW).map((item: AlertItem) => (
               <div key={item.key} className="flex items-center gap-3 px-5 py-3 hover:bg-surface/20 transition-colors">
                 <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                      style={{ background: sev.dot, boxShadow: `0 0 5px ${sev.dot}80` }} />
@@ -223,13 +242,14 @@ function AlertCard({ alert, delay = 0 }) {
 
 // ─── RuleCard ─────────────────────────────────────────────────────────────────
 
-const RULE_SEV_MAP  = { critical: 'CRITICO', warning: 'ALTO', info: 'MEDIO' }
-const RULE_ICONS    = { criticas: ShieldAlert, taxa: BarChart2, semEquipe: Users, total: Zap }
+const RULE_SEV_MAP: Record<string, SevKey>   = { critical: 'CRITICO', warning: 'ALTO', info: 'MEDIO' }
+const RULE_ICONS: Record<string, IconComp>    = { criticas: ShieldAlert, taxa: BarChart2, semEquipe: Users, total: Zap }
+const SEV_CFG_MAP = SEV_CFG as Record<string, typeof SEV_CFG[SevKey]>
 
-function RuleCard({ rule, delay = 0 }) {
-  const sevKey = RULE_SEV_MAP[rule.severity] || 'MEDIO'
-  const sev    = SEV_CFG[sevKey]
-  const RIcon  = RULE_ICONS[rule.metric] || Bell
+function RuleCard({ rule, delay = 0 }: { rule: FiredAlert; delay?: number }) {
+  const sevKey = RULE_SEV_MAP[rule.severity] ?? 'MEDIO'
+  const sev    = SEV_CFG_MAP[sevKey]
+  const RIcon  = RULE_ICONS[rule.metric] ?? Bell
 
   return (
     <div
@@ -262,7 +282,9 @@ function RuleCard({ rule, delay = 0 }) {
 
 // ─── GrafanaCityStrip ─────────────────────────────────────────────────────────
 
-function GrafanaCityStrip({ cidades, loading }) {
+interface GrafanaCidade { cidade: string; pendentes?: number; fechados_7d?: number; aging_critico?: number }
+
+function GrafanaCityStrip({ cidades, loading }: { cidades: GrafanaCidade[]; loading: boolean }) {
   if (loading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
@@ -278,7 +300,7 @@ function GrafanaCityStrip({ cidades, loading }) {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-      {cidades.map((c, i) => {
+      {cidades.map((c: GrafanaCidade, i: number) => {
         const pct     = Math.round(((c.pendentes ?? 0) / max) * 100)
         const isCrit  = (c.aging_critico ?? 0) > 0
         const barClr  = isCrit ? '#f97316' : '#3b82f6'
@@ -320,7 +342,9 @@ function GrafanaCityStrip({ cidades, loading }) {
 
 // ─── SettingsPanel ────────────────────────────────────────────────────────────
 
-function SettingsPanel({ settings, onSave, onClose }) {
+function SettingsPanel({ settings, onSave, onClose }: {
+  settings: AlertSettings; onSave: (s: AlertSettings) => void; onClose: () => void
+}) {
   const [draft, setDraft] = useState(settings)
   const { slaLimits, updateSlaLimit, resetSlaLimits } = useAlertStore()
   const [slaD, setSlaD]   = useState({ ...slaLimits })
@@ -344,7 +368,7 @@ function SettingsPanel({ settings, onSave, onClose }) {
 
   function handleSave() {
     onSave(draft)
-    slaFields.forEach(f => updateSlaLimit(f.key, slaD[f.key]))
+    slaFields.forEach(f => updateSlaLimit(f.key as 'INSTALACAO' | 'MANUTENCAO' | 'SERVICO' | 'VT24H' | 'VT48H' | 'VT08H', (slaD as Record<string, number>)[f.key]))
     onClose()
   }
 
@@ -380,11 +404,11 @@ function SettingsPanel({ settings, onSave, onClose }) {
                   <div className="flex items-center justify-between">
                     <label className="text-[12px] text-secondary font-medium">{f.label}</label>
                     <span className="text-[16px] font-bold text-primary tabular-nums font-mono">
-                      {draft[f.key]}{f.suffix}
+                      {(draft as unknown as Record<string, number>)[f.key]}{f.suffix}
                     </span>
                   </div>
                   <input
-                    type="range" min={f.min} max={f.max} step={f.step} value={draft[f.key]}
+                    type="range" min={f.min} max={f.max} step={f.step} value={(draft as unknown as Record<string, number>)[f.key]}
                     onChange={e => setDraft(d => ({ ...d, [f.key]: +e.target.value }))}
                     className="w-full accent-primary"
                   />
@@ -416,7 +440,7 @@ function SettingsPanel({ settings, onSave, onClose }) {
                   <label className="text-[12px] text-secondary flex-1">{f.label}</label>
                   <div className="flex items-center gap-1.5">
                     <input
-                      type="number" min={1} max={30} value={slaD[f.key] ?? 2}
+                      type="number" min={1} max={30} value={(slaD as Record<string, number>)[f.key] ?? 2}
                       onChange={e => setSlaD(d => ({ ...d, [f.key]: Number(e.target.value) }))}
                       className="w-14 bg-surface border border-white/[0.08] rounded-md px-2 py-1
                                  text-[12px] font-mono text-text text-center outline-none
@@ -463,16 +487,16 @@ export default function AlertasPage() {
   const semaforo = useMemo(() => derived?.sla?.semaforo ?? [], [derived])
 
   const slaByCode = useMemo(() => {
-    const map = {}
+    const map: Record<string, { sla?: number; nome?: string }> = {}
     semaforo.forEach(s => {
-      const code = shortEquipe(s.nome).split(' - ')[0].trim()
-      map[code] = s
+      const code = shortEquipe((s as { nome?: string }).nome ?? '').split(' - ')[0].trim()
+      map[code] = s as { sla?: number; nome?: string }
     })
     return map
   }, [semaforo])
 
   const metricsByCode = useMemo(() => {
-    const map = {}
+    const map: Record<string, { queue: number; criticas: number }> = {}
     rows.forEach(row => {
       if (!row.nomedaequipe) return
       const code = shortEquipe(row.nomedaequipe).split(' - ')[0].trim()
@@ -502,8 +526,7 @@ export default function AlertasPage() {
     [rows]
   )
 
-  const _hasCritical = counts.CRITICO > 0
-  const hasAny      = totalAlerts > 0
+  const hasAny = totalAlerts > 0
 
   return (
     <div className="space-y-4 max-w-[1600px]">
@@ -558,7 +581,7 @@ export default function AlertasPage() {
           { sev: 'ALTO',    Icon: AlertTriangle, desc: 'pontos de atenção'   },
           { sev: 'MEDIO',   Icon: Info,          desc: 'avisos preventivos'  },
         ].map(({ sev, Icon: SIcon, desc }, i) => {
-          const s = SEV_CFG[sev]
+          const s = SEV_CFG_MAP[sev]
           return (
             <div
               key={sev}
@@ -587,7 +610,7 @@ export default function AlertasPage() {
 
                 <p className="font-mono font-black tabular-nums leading-none mb-1"
                    style={{ fontSize: 'clamp(36px, 5vw, 48px)', color: s.color }}>
-                  {counts[sev]}
+                  {(counts as Record<string, number>)[sev]}
                 </p>
                 <p className="text-[11px]" style={{ color: `${s.color}70` }}>{desc}</p>
               </div>
@@ -647,11 +670,14 @@ export default function AlertasPage() {
               OS por Cidade · Vale do Paraíba
             </SectionLabel>
             <div className="flex items-center gap-3">
-              {grafOS.totais && (
-                <span className="text-[10px] text-muted tabular-nums">
-                  {grafOS.totais.pendentes ?? '—'} pendentes · {grafOS.totais.fechados_7d ?? '—'} fechados/7d
-                </span>
-              )}
+              {!!grafOS.totais && (() => {
+                const t = grafOS.totais as Record<string, unknown>
+                return (
+                  <span className="text-[10px] text-muted tabular-nums">
+                    {String(t['pendentes'] ?? '—')} pendentes · {String(t['fechados_7d'] ?? '—')} fechados/7d
+                  </span>
+                )
+              })()}
               {grafOS.lastSync && (
                 <span className="text-[9px] text-muted">
                   {grafOS.lastSync.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
@@ -664,7 +690,7 @@ export default function AlertasPage() {
               </button>
             </div>
           </div>
-          <GrafanaCityStrip cidades={grafOS.cidades} loading={grafOS.loading} />
+          <GrafanaCityStrip cidades={grafOS.cidades as GrafanaCidade[]} loading={grafOS.loading} />
           {grafOS.error && (
             <p className="text-[10px] text-muted/50 mt-1.5">
               iManager offline · usando dados ERP locais
@@ -701,7 +727,7 @@ export default function AlertasPage() {
           {['CRITICO', 'ALTO', 'MEDIO'].map(sev => {
             const group = alerts.filter(a => a.severity === sev)
             if (!group.length) return null
-            const s = SEV_CFG[sev]
+            const s = SEV_CFG_MAP[sev]
             return (
               <section key={sev} className="space-y-2">
                 <SectionLabel icon={AlertTriangle} color={s.color}>

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { BarChart2, ChevronUp, AlertTriangle, Download, Send, CheckCircle, XCircle, CalendarClock, FileText, Router, Wrench, HardHat, Copy, Users } from 'lucide-react'
 import { useOrdens } from '../../hooks/useOrdens'
 import { KPICard } from '../../components/ui/KPICard'
@@ -13,10 +14,13 @@ import { TableSkeleton } from '../../components/ui/Skeleton'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { exportCSV } from '../../lib/export'
 import { exportOrdensPDF } from '../../lib/exportOrdensPDF'
-import { captureOSPorEquipe, captureOSDetalhado, captureOSPorPeriodo } from '../../lib/captureOSTable'
+import { captureOSPorEquipe, captureOSDetalhado } from '../../lib/captureOSTable'
+import { toBlob } from 'html-to-image'
 import { telegram } from '../../lib/api'
+import { useAuditStore } from '../../store/auditStore'
 import OSDrawer from './OSDrawer'
 import { OSHoverCard } from './OSHoverCard'
+import { TelegramOrdensModal } from './TelegramOrdensModal'
 
 const FORNECEDOR_OPTS = [
   { value: 'WES',        label: 'WES',          color: '#c4b5fd' },
@@ -82,7 +86,7 @@ const columns = [
       const diasLabel = dias != null && dias <= 5 ? ` · ${dias}d` : ''
       return (
         <div className="relative inline-flex">
-          {pulse && <span className="absolute inset-0 rounded-[10px] bg-red-500/20 animate-ping pointer-events-none" />}
+          {pulse && <span className="absolute inset-0 rounded-[10px] bg-red/20 animate-ping pointer-events-none" />}
           <Badge variant={variant as 'red' | 'orange' | 'yellow' | 'green'}>
             {label} {score}{diasLabel}
           </Badge>
@@ -367,9 +371,9 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
         {groups.map(([periodo, periodoRows], gi) => {
           const isManha = periodo.toLowerCase().includes('manh')
           const isTarde = periodo.toLowerCase().includes('tarde')
-          const color   = isManha ? 'text-amber-400'          : isTarde ? 'text-indigo-400'          : 'text-secondary'
-          const bg      = isManha ? 'bg-amber-400/[0.06]'     : isTarde ? 'bg-indigo-400/[0.06]'     : 'bg-surface/30'
-          const dot     = isManha ? 'bg-amber-400'            : isTarde ? 'bg-indigo-400'            : 'bg-secondary'
+          const color   = isManha ? 'text-yellow'          : isTarde ? 'text-indigo-400'          : 'text-secondary'
+          const bg      = isManha ? 'bg-yellow/[0.06]'     : isTarde ? 'bg-purple/[0.06]'     : 'bg-surface/30'
+          const dot     = isManha ? 'bg-yellow'            : isTarde ? 'bg-purple'            : 'bg-secondary'
           const border  = isManha ? 'border-amber-400/[0.25]' : isTarde ? 'border-indigo-400/[0.25]' : 'border-white/[0.08]'
 
           return (
@@ -463,30 +467,30 @@ function PeriodoGroupedTable({ rows, density, onRowClick, equipe }) {
 }
 
 export default function OrdensPage() {
-  const os = useOrdens()
+  const os       = useOrdens()
+  const logAudit = useAuditStore(s => s.log)
+  const location = useLocation()
+  const navigate = useNavigate()
   const [drawerOS,        setDrawerOS]        = useState(null)
   const [kpiVisible,      setKpiVisible]      = useState(true)
   const [groupBy,         setGroupBy]         = useState('none')  // 'none' | 'cliente'
   const [hoverOS,         setHoverOS]         = useState(null)
   const [hoverRect,       setHoverRect]       = useState(null)
   const [tgModal,         setTgModal]         = useState(false)
-  const [tgFornecedor,    setTgFornecedor]    = useState('WES')
-  const [tgSending,       setTgSending]       = useState(null)    // null | 'resumo' | 'detalhado'
-  const [tgResult,        setTgResult]        = useState(null)   // 'ok' | 'error'
   const [copied,          setCopied]          = useState(false)
   const hoverTimer = useRef(null)
   const tableRef   = useRef(null)
 
-  // Recebe equipe pré-selecionada vinda do OSDrawer ("Ver Equipe")
+  // Recebe equipe pré-selecionada via React Router state (OSDrawer → "Ver Equipe")
   useEffect(() => {
-    const eq = sessionStorage.getItem('pendingEquipe')
+    const eq = location.state?.filterEquipe
     if (eq) {
-      sessionStorage.removeItem('pendingEquipe')
       os.setEquipe(eq)
+      navigate(location.pathname, { replace: true, state: null })
       setTimeout(scrollToTable, 150)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [location.state])
 
   function scrollToTable() {
     tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -514,13 +518,92 @@ export default function OrdensPage() {
   }
 
   async function handleCopyImage() {
+    if (!tableRef.current) return
     try {
-      const canvas = captureOSPorPeriodo(os.filtered, shortEquipe(os.equipe))
-      canvas.toBlob(async (blob) => {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2500)
-      }, 'image/png')
+      const isDark    = !document.documentElement.classList.contains('light')
+      const bg        = isDark ? '#0d1117' : '#ffffff'
+      const bgHdr     = isDark ? '#111827' : '#f0f4ff'
+      const colorText = isDark ? '#e2e8f0' : '#0f172a'
+      const colorMuted= isDark ? '#94a3b8' : '#64748b'
+      const borderClr = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
+
+      const now = new Date()
+      const ts  = now.toLocaleDateString('pt-BR') + ' · ' +
+                  now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      const equipeLabel = os.equipe ? shortEquipe(os.equipe) : 'Todas as Equipes'
+
+      const tableEl = tableRef.current
+      const capW    = Math.max(tableEl.scrollWidth, tableEl.offsetWidth)
+      const capH    = tableEl.scrollHeight
+
+      // Captura o elemento real com dimensões completas (sem modificar o DOM)
+      const contentBlob = await toBlob(tableEl, {
+        pixelRatio: 2,
+        width:  capW,
+        height: capH,
+        backgroundColor: bg,
+        style: { overflow: 'visible', borderRadius: '0' },
+      })
+      if (!contentBlob) return
+
+      // Composita: cabeçalho Canvas + conteúdo capturado
+      const SCALE  = 2
+      const HDR_H  = 60   // altura lógica do cabeçalho em px
+      const contentImg = await createImageBitmap(contentBlob)
+
+      const canvas  = document.createElement('canvas')
+      canvas.width  = contentImg.width            // já em 2×
+      canvas.height = contentImg.height + HDR_H * SCALE
+      const ctx = canvas.getContext('2d')!
+
+      // Fundo geral
+      ctx.fillStyle = bg
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      // Cabeçalho
+      ctx.fillStyle = bgHdr
+      ctx.fillRect(0, 0, canvas.width, HDR_H * SCALE)
+
+      // Barra azul lateral
+      ctx.fillStyle = '#3b82f6'
+      ctx.fillRect(0, 0, 4 * SCALE, HDR_H * SCALE)
+
+      // Linha separadora
+      ctx.strokeStyle = borderClr
+      ctx.lineWidth   = 1 * SCALE
+      ctx.beginPath()
+      ctx.moveTo(0, HDR_H * SCALE)
+      ctx.lineTo(canvas.width, HDR_H * SCALE)
+      ctx.stroke()
+
+      // Textos do cabeçalho (esquerda)
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle    = colorText
+      ctx.font = `bold ${14 * SCALE}px system-ui,-apple-system,sans-serif`
+      ctx.fillText('CABONNET · Ordens de Serviço', 18 * SCALE, 20 * SCALE)
+
+      ctx.fillStyle = '#3b82f6'
+      ctx.font = `600 ${11 * SCALE}px system-ui,-apple-system,sans-serif`
+      ctx.fillText(equipeLabel, 18 * SCALE, 43 * SCALE)
+
+      // Textos do cabeçalho (direita)
+      ctx.textAlign = 'right'
+      ctx.fillStyle = colorMuted
+      ctx.font = `${10 * SCALE}px system-ui,-apple-system,sans-serif`
+      ctx.fillText(ts, canvas.width - 16 * SCALE, 20 * SCALE)
+      ctx.fillText(`${os.filtered.length} OS`, canvas.width - 16 * SCALE, 43 * SCALE)
+      ctx.textAlign = 'left'
+
+      // Conteúdo da tabela abaixo do cabeçalho
+      ctx.drawImage(contentImg, 0, HDR_H * SCALE)
+
+      const finalBlob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png')
+      )
+
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': finalBlob })])
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
     } catch (e) {
       console.error('Clipboard error:', e)
     }
@@ -528,63 +611,16 @@ export default function OrdensPage() {
 
   function handleExport() {
     const date = new Date().toISOString().slice(0, 10)
+    logAudit('CSV exportado', `${os.filtered.length} OS · ordens_${date}.csv`, 'export')
     exportCSV(os.filtered, `ordens_${date}.csv`)
   }
 
   function handleExportPDF() {
     const date = new Date().toISOString().slice(0, 10)
+    logAudit('PDF exportado', `${os.filtered.length} OS · ordens_${date}.pdf`, 'export')
     exportOrdensPDF(os.filtered, `ordens_${date}.pdf`)
   }
 
-  async function handleSendTelegram(modo) {
-    setTgSending(modo)
-    setTgResult(null)
-    try {
-      const opt    = FORNECEDOR_OPTS.find(f => f.value === tgFornecedor)
-      const label  = opt?.label ?? tgFornecedor
-      const color  = opt?.color ?? '#3b82f6'
-      const date   = new Date().toLocaleDateString('pt-BR')
-
-      const isFornecedorGrupo = tgFornecedor === 'WES' || tgFornecedor === 'Instacable'
-
-      let rows = os.ordens.filter(r => r._fornecedor === tgFornecedor)
-
-      // Para WES e Instacable: filtrar apenas OS agendadas para hoje (suporta DD/MM/YYYY e ISO YYYY-MM-DD)
-      if (isFornecedorGrupo) {
-        const t  = new Date()
-        const dd = String(t.getDate()).padStart(2, '0')
-        const mm = String(t.getMonth() + 1).padStart(2, '0')
-        const yyyy = String(t.getFullYear())
-        const hojeDMY = `${dd}/${mm}/${yyyy}`
-        const hojeISO = `${yyyy}-${mm}-${dd}`
-        rows = rows.filter(r => {
-          const ag = (r.dataagendamento ?? '').trim()
-          return ag.startsWith(hojeDMY) || ag.startsWith(hojeISO)
-        })
-      }
-
-      if (modo === 'resumo') {
-        const png     = captureOSPorEquipe(rows, label, color)
-        const caption = isFornecedorGrupo
-          ? `<b>Cabonnet · ${label} — Resumo</b>\nOS agendadas para hoje — ${date}\n${rows.length} OS · ordenado menor → maior`
-          : `<b>Cabonnet · ${label} — Resumo</b>\nOS por equipe — ${date}\n${rows.length} OS · ordenado menor → maior`
-        await telegram.sendPhoto(png, caption, 'alertas')
-      } else {
-        const png     = captureOSDetalhado(rows, label, color)
-        const caption = isFornecedorGrupo
-          ? `<b>Cabonnet · ${label} — Relatório Detalhado</b>\nOS agendadas para hoje — ${date}\n${rows.length} OS · aging desc dentro de cada equipe`
-          : `<b>Cabonnet · ${label} — Relatório Detalhado</b>\nTodas as OS por equipe — ${date}\n${rows.length} OS · aging desc dentro de cada equipe`
-        await telegram.sendPhoto(png, caption, 'alertas', true)   // as_document=true → sem compressão
-      }
-
-      setTgResult('ok')
-      setTimeout(() => { setTgModal(false); setTgResult(null) }, 1800)
-    } catch {
-      setTgResult('error')
-    } finally {
-      setTgSending(null)
-    }
-  }
 
   const opts = os.options
   const tipoOpts    = (opts.tipos    ?? []).map(t => ({ value: t, label: t }))
@@ -642,33 +678,31 @@ export default function OrdensPage() {
 
         {/* Ações */}
         <div className="flex gap-2">
-          {os.equipe && (
-            <Button
-              variant="outline" size="sm"
-              className={`gap-1.5 transition-all duration-300
-                ${copied
-                  ? 'border-green-500/50 text-green-400 bg-green-500/10'
-                  : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'}`}
-              onClick={handleCopyImage}
-            >
-              {copied
-                ? <><CheckCircle size={11} /> Copiado!</>
-                : <><Copy size={11} /> Copiar Imagem</>}
-            </Button>
-          )}
+          <Button
+            variant="outline" size="sm"
+            className={`gap-1.5 transition-all duration-300
+              ${copied
+                ? 'border-green-500/50 text-green bg-green-500/10'
+                : 'border-green/30 text-green hover:bg-green/10'}`}
+            onClick={handleCopyImage}
+          >
+            {copied
+              ? <><CheckCircle size={11} /> Copiado!</>
+              : <><Copy size={11} /> Copiar Imagem</>}
+          </Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
             <Download size={11} /> CSV ({os.filtered.length})
           </Button>
           <Button
             variant="outline" size="sm"
-            className="gap-1.5 border-sky-500/30 text-sky-400 hover:bg-sky-500/10"
+            className="gap-1.5 border-cyan/30 text-cyan hover:bg-cyan/10"
             onClick={handleExportPDF}
           >
             <FileText size={11} /> PDF
           </Button>
           <Button
             variant="outline" size="sm"
-            className="gap-1.5 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+            className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
             onClick={() => { setTgResult(null); setTgModal(true) }}
           >
             <Send size={11} /> Telegram
@@ -866,127 +900,11 @@ export default function OrdensPage() {
       <OSDrawer os={drawerOS} onClose={() => setDrawerOS(null)} />
 
       {/* ── Modal Telegram ─────────────────────────────────────────── */}
-      <Modal
+      <TelegramOrdensModal
         open={tgModal}
-        onClose={() => { if (!tgSending) setTgModal(false) }}
-        title="Enviar via Telegram"
-        subtitle="Captura OS por equipe e envia para Alertas | Cabonnet"
-        maxWidth="480px"
-      >
-        <div className="p-6 space-y-5">
-
-          {/* Seletor de fornecedor */}
-          <div className="space-y-2">
-            <p className="text-[11px] font-bold text-muted uppercase tracking-wide">Fornecedor</p>
-            <div className="flex flex-wrap gap-2">
-              {FORNECEDOR_OPTS.map(opt => {
-                const rows  = os.ordens.filter(r => r._fornecedor === opt.value)
-                const active = tgFornecedor === opt.value
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => setTgFornecedor(opt.value)}
-                    disabled={!!tgSending}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[12px] font-semibold
-                                transition-all duration-fast
-                                ${active
-                                  ? 'border-border0 bg-surface text-text'
-                                  : 'border-white/[0.08] text-muted hover:text-secondary hover:border-border0'}`}
-                  >
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: opt.color }} />
-                    {opt.label}
-                    <span className={`text-[10px] font-normal ${active ? 'text-secondary' : 'text-muted'}`}>
-                      {rows.length}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Preview */}
-          {(() => {
-            const opt    = FORNECEDOR_OPTS.find(f => f.value === tgFornecedor)
-            const isForn = tgFornecedor === 'WES' || tgFornecedor === 'Instacable'
-            const t      = new Date()
-            const dd     = String(t.getDate()).padStart(2, '0')
-            const mm     = String(t.getMonth() + 1).padStart(2, '0')
-            const yyyy   = String(t.getFullYear())
-            const hojeDMY = `${dd}/${mm}/${yyyy}`
-            const hojeISO = `${yyyy}-${mm}-${dd}`
-            const allRows = os.ordens.filter(r => r._fornecedor === tgFornecedor)
-            const rows    = isForn
-              ? allRows.filter(r => { const ag = (r.dataagendamento ?? '').trim(); return ag.startsWith(hojeDMY) || ag.startsWith(hojeISO) })
-              : allRows
-            const equipes = new Set(rows.map(r => r.nomedaequipe?.trim() || '(Sem Equipe)')).size
-            const scopeLabel = isForn ? `agendadas hoje · ${hojeDMY.slice(0,5)}` : 'todas do período'
-            return (
-              <div className="rounded-lg bg-elevated border border-white/[0.08] px-4 py-3 text-[12px] space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-text">{opt?.label}</p>
-                  <span className="text-[10px] text-muted">Alertas | Cabonnet</span>
-                </div>
-                {isForn && (
-                  <p className="text-[10px] text-cyan font-semibold">
-                    📅 Somente OS agendadas para hoje ({rows.length} de {allRows.length} total)
-                  </p>
-                )}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-surface/30 rounded px-3 py-2 space-y-0.5">
-                    <p className="text-[11px] font-bold text-muted uppercase tracking-wide">Resumo</p>
-                    <p className="text-secondary text-[12px]">{equipes} equipes · {rows.length} OS</p>
-                    <p className="text-muted text-[11px]">Imagem · {scopeLabel}</p>
-                  </div>
-                  <div className="bg-surface/30 rounded px-3 py-2 space-y-0.5">
-                    <p className="text-[11px] font-bold text-muted uppercase tracking-wide">Detalhado</p>
-                    <p className="text-secondary text-[12px]">{rows.length} OS individualmente</p>
-                    <p className="text-muted text-[11px]">Documento · {scopeLabel}</p>
-                  </div>
-                </div>
-              </div>
-            )
-          })()}
-
-          {/* Feedback */}
-          {tgResult === 'ok' && (
-            <div className="flex items-center gap-2 text-green text-[13px] font-semibold">
-              <CheckCircle size={16} /> Enviado com sucesso!
-            </div>
-          )}
-          {tgResult === 'error' && (
-            <div className="flex items-center gap-2 text-red text-[13px] font-semibold">
-              <XCircle size={16} /> Falha ao enviar. Verifique o servidor.
-            </div>
-          )}
-
-          {/* Ações */}
-          <div className="flex gap-2 justify-end pt-1">
-            <Button variant="ghost" size="sm" onClick={() => setTgModal(false)} disabled={!!tgSending}>
-              Cancelar
-            </Button>
-            <Button
-              variant="outline" size="sm" className="gap-1.5"
-              onClick={() => handleSendTelegram('resumo')}
-              disabled={!!tgSending}
-            >
-              {tgSending === 'resumo'
-                ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Gerando…</>
-                : <><Send size={11} /> Resumo</>
-              }
-            </Button>
-            <Button
-              size="sm" className="gap-1.5"
-              onClick={() => handleSendTelegram('detalhado')}
-              disabled={!!tgSending}
-            >
-              {tgSending === 'detalhado'
-                ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Gerando…</>
-                : <><Send size={11} /> Detalhado</>
-              }
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        onClose={() => setTgModal(false)}
+        ordens={os.ordens}
+      />
     </div>
   )
 }

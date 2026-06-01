@@ -54,9 +54,9 @@ function parseDate(raw) {
 // ── Tipo config ───────────────────────────────────────────────────────────────
 
 const TIPO = {
-  INSTALACAO: { Icon: Package, cls: 'text-blue-400'    },
-  MANUTENCAO: { Icon: Wrench,  cls: 'text-orange-400'  },
-  REDE:       { Icon: Network, cls: 'text-emerald-400' },
+  INSTALACAO: { Icon: Package, cls: 'text-primary'    },
+  MANUTENCAO: { Icon: Wrench,  cls: 'text-orange'  },
+  REDE:       { Icon: Network, cls: 'text-green' },
 }
 
 // ── Mini card ─────────────────────────────────────────────────────────────────
@@ -65,8 +65,8 @@ function MiniOSCard({ row }) {
   const t = TIPO[row._tipo] || { Icon: AlertTriangle, cls: 'text-muted' }
   const TIcon = t.Icon
 
-  const slaCls = row._slaCritico  ? 'bg-red-500/20 text-red-400'
-               : row._slaExcedido ? 'bg-orange-500/20 text-orange-400'
+  const slaCls = row._slaCritico  ? 'bg-red/20 text-red'
+               : row._slaExcedido ? 'bg-orange/20 text-orange'
                : 'bg-surface/40 text-muted'
   const slaLabel = row._slaCritico ? 'Crítico' : row._slaExcedido ? 'SLA+' : 'OK'
 
@@ -97,8 +97,8 @@ function PeriodoMark({ periodo }) {
   const isManha = lc.includes('manh')
   const isTarde = lc.includes('tarde')
   const PIcon = isManha ? Sunrise : isTarde ? Sunset : Sun
-  const cls   = isManha ? 'text-amber-400' : isTarde ? 'text-violet-400' : 'text-muted'
-  const line  = isManha ? 'bg-amber-500/20' : isTarde ? 'bg-violet-500/20' : 'bg-surface'
+  const cls   = isManha ? 'text-yellow' : isTarde ? 'text-purple' : 'text-muted'
+  const line  = isManha ? 'bg-yellow/20' : isTarde ? 'bg-purple/20' : 'bg-surface'
 
   return (
     <div className="flex items-center gap-1 py-0.5">

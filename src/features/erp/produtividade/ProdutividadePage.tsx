@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ComponentType } from 'react'
 import {
   TrendingUp, TrendingDown, Minus, BarChart3,
   ChevronDown, ChevronUp, Package, Wrench, Radio, Settings,
@@ -8,23 +7,32 @@ import { useERPRows } from '../useERPRows'
 import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
 import { isCOPE, isReagend, isConcluida } from '../../../lib/transform'
 import { Badge } from '../../../components/ui/Badge'
+import type { OSRow } from '../../../lib/types'
+
+type IconComp = ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
+interface DayInfo { key: string; label: string; dow: string; isToday: boolean; isWeekend: boolean }
+interface TeamEntry {
+  team: string; daily: Record<string, OSRow[]>; total: number
+  thisWeek: number; prevWeek: number; delta: number; maxDay: number
+}
+interface DrillInfo { team: string; dayKey: string }
 
 // ─── Helpers de data ──────────────────────────────────────────────────────────
 
-function parseExecDate(r) {
+function parseExecDate(r: OSRow): Date | null {
   const raw = (r.dataexecucao || r.databaixa || '').split(' ')[0]
   if (!raw || !raw.includes('/')) return null
   const [d, m, y] = raw.split('/')
   return new Date(+y, +m - 1, +d)
 }
 
-function toKey(dt) {
+function toKey(dt: Date): string {
   const dd = String(dt.getDate()).padStart(2, '0')
   const mm = String(dt.getMonth() + 1).padStart(2, '0')
   return `${dd}/${mm}/${dt.getFullYear()}`
 }
 
-function toLabel(key) { return key.slice(0, 5) }
+function toLabel(key: string): string { return key.slice(0, 5) }
 
 const DOW_LABELS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
@@ -45,7 +53,7 @@ function getDayLabels(n = 14) {
   return days
 }
 
-function tipoIcon(r) {
+function tipoIcon(r: { _tipo?: string }): { color: string; Icon: IconComp; label: string } {
   if (r._tipo === 'INSTALACAO') return { color: '#3b82f6', Icon: Package,  label: 'Instalação'  }
   if (r._tipo === 'MANUTENCAO') return { color: '#f97316', Icon: Wrench,   label: 'Manutenção'  }
   if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Radio,    label: 'Rede'        }
@@ -54,7 +62,7 @@ function tipoIcon(r) {
 
 // ─── Build ────────────────────────────────────────────────────────────────────
 
-function buildProdutividade(allRows, days) {
+function buildProdutividade(allRows: OSRow[], days: DayInfo[]): { teams: TeamEntry[]; globalMax: number } {
   const keySet = new Set(days.map(d => d.key))
   const concl  = allRows.filter(r =>
     !isCOPE(r) && !isReagend(r) &&
@@ -62,7 +70,7 @@ function buildProdutividade(allRows, days) {
     !r.descsituacao?.includes('Sem Execução')
   )
 
-  const teamMap = new Map()
+  const teamMap = new Map<string, Record<string, OSRow[]>>()
   for (const r of concl) {
     const dt = parseExecDate(r)
     if (!dt) continue
@@ -70,7 +78,7 @@ function buildProdutividade(allRows, days) {
     if (!keySet.has(key)) continue
     const team = shortEquipe(r.nomedaequipe) || 'Sem equipe'
     if (!teamMap.has(team)) teamMap.set(team, {})
-    const td = teamMap.get(team)
+    const td = teamMap.get(team)!
     if (!td[key]) td[key] = []
     td[key].push(r)
   }
@@ -78,26 +86,26 @@ function buildProdutividade(allRows, days) {
   const half        = Math.floor(days.length / 2)
   const thisWeekDays = days.slice(half)
   const prevWeekDays = days.slice(0, half)
-  const cnt = (daily, key) => daily[key]?.length ?? 0
+  const cnt = (daily: Record<string, OSRow[]>, key: string) => daily[key]?.length ?? 0
 
   const teams = [...teamMap.entries()]
-    .map(([team, daily]) => {
-      const thisWeek = thisWeekDays.reduce((s, d) => s + cnt(daily, d.key), 0)
-      const prevWeek = prevWeekDays.reduce((s, d) => s + cnt(daily, d.key), 0)
-      const total    = days.reduce((s, d) => s + cnt(daily, d.key), 0)
-      const maxDay   = Math.max(...days.map(d => cnt(daily, d.key)), 1)
+    .map(([team, daily]: [string, Record<string, OSRow[]>]) => {
+      const thisWeek = thisWeekDays.reduce((s: number, d: DayInfo) => s + cnt(daily, d.key), 0)
+      const prevWeek = prevWeekDays.reduce((s: number, d: DayInfo) => s + cnt(daily, d.key), 0)
+      const total    = days.reduce((s: number, d: DayInfo) => s + cnt(daily, d.key), 0)
+      const maxDay   = Math.max(...days.map((d: DayInfo) => cnt(daily, d.key)), 1)
       const delta    = thisWeek - prevWeek
       return { team, daily, total, thisWeek, prevWeek, delta, maxDay }
     })
     .sort((a, b) => b.thisWeek - a.thisWeek)
 
-  const globalMax = Math.max(...teams.flatMap(t => days.map(d => cnt(t.daily, d.key))), 1)
+  const globalMax = Math.max(...teams.flatMap(t => days.map((d: DayInfo) => cnt(t.daily, d.key))), 1)
   return { teams, globalMax }
 }
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
 
-function SectionLabel({ icon: Icon, color, children }) {
+function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; color: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
@@ -109,7 +117,7 @@ function SectionLabel({ icon: Icon, color, children }) {
 
 // ─── DeltaBadge ───────────────────────────────────────────────────────────────
 
-function DeltaBadge({ delta }) {
+function DeltaBadge({ delta }: { delta: number }) {
   const color  = delta > 0 ? '#4ade80' : delta < 0 ? '#f87171' : '#6b7280'
   const Icon   = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus
   const prefix = delta > 0 ? '+' : ''
@@ -132,15 +140,15 @@ const OS_COLS = [
   { key: '_exec',       label: 'Executada' },
 ]
 
-function execTime(r) {
+function execTime(r: OSRow): string {
   const raw = (r.dataexecucao || r.databaixa || '').split(' ')[1] ?? ''
   return raw || '99:99' // sem hora vai para o fim
 }
 
-function OSInlineTable({ rows, dayLabel }) {
+function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) {
   if (!rows?.length) return null
 
-  const sorted = [...rows].sort((a, b) => execTime(a).localeCompare(execTime(b)))
+  const sorted = [...rows].sort((a: OSRow, b: OSRow) => execTime(a).localeCompare(execTime(b)))
 
   // Resumo por categoria
   const cats = [
@@ -237,12 +245,21 @@ function OSInlineTable({ rows, dayLabel }) {
 
 // ─── TeamRow ──────────────────────────────────────────────────────────────────
 
-function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDayKey, onDayClick }) {
-  const cnt  = key => entry.daily[key]?.length ?? 0
+function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDayKey, onDayClick }: {
+  rank:        number
+  entry:       TeamEntry
+  days:        DayInfo[]
+  globalMax:   number
+  isExpanded:  boolean
+  onToggle:    () => void
+  activeDayKey: string | null
+  onDayClick:  (team: string, dayKey: string) => void
+}) {
+  const cnt = (key: string) => entry.daily[key]?.length ?? 0
   const peak = entry.maxDay
 
   // Day currently drilled for this team
-  const activeDay = activeDayKey ? days.find(d => d.key === activeDayKey) : null
+  const activeDay = activeDayKey ? days.find((d: DayInfo) => d.key === activeDayKey) : null
   const drillRows = activeDayKey ? (entry.daily[activeDayKey] || []) : []
 
   return (
@@ -272,7 +289,7 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
         {/* Sparkline */}
         <td className="px-3 py-3">
           <div className="flex items-end gap-[2px] h-7">
-            {days.map(d => {
+            {days.map((d: DayInfo) => {
               const val   = cnt(d.key)
               const pct   = globalMax > 0 ? (val / globalMax) * 100 : 0
               const color = d.isToday ? '#3b82f6' : d.isWeekend ? '#374151' : '#3b82f6'
@@ -329,7 +346,7 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
 
             {/* Day cards */}
             <div className="flex flex-wrap gap-2">
-              {days.map(d => {
+              {days.map((d: DayInfo) => {
                 const val       = cnt(d.key)
                 const isActive  = activeDayKey === d.key
                 const clickable = val > 0
@@ -342,7 +359,7 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
                 return (
                   <div
                     key={d.key}
-                    onClick={clickable ? e => { e.stopPropagation(); onDayClick(d.key) } : undefined}
+                    onClick={clickable ? e => { e.stopPropagation(); onDayClick(entry.team, d.key) } : undefined}
                     className={[
                       'flex flex-col items-center gap-0.5 rounded-lg px-3 py-2 border select-none',
                       'transition-all duration-150',
@@ -354,9 +371,9 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
                     style={{
                       background:   isActive ? `${color}28` : `${color}14`,
                       borderColor:  isActive ? color         : `${color}30`,
-                      ringColor:    color,
+                      ['--ring-color' as string]: color,
                       minWidth: '44px',
-                    }}
+                    } as React.CSSProperties}
                     title={clickable ? (isActive ? 'Fechar' : `Ver ${val} OS de ${d.label}`) : undefined}
                   >
                     <span className={`text-[9px] font-bold ${d.isToday ? 'text-primary' : 'text-muted'}`}>
@@ -399,8 +416,8 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
 
 export default function ProdutividadePage() {
   const { allRows, isLoading } = useERPRows()
-  const [expanded,    setExpanded]    = useState(null) // team name
-  const [activeDrill, setActiveDrill] = useState(null) // { team, dayKey }
+  const [expanded,    setExpanded]    = useState<string | null>(null)
+  const [activeDrill, setActiveDrill] = useState<DrillInfo | null>(null)
 
   const days = useMemo(getDayLabels, [])
   const { teams, globalMax } = useMemo(() => buildProdutividade(allRows, days), [allRows, days])
@@ -412,7 +429,7 @@ export default function ProdutividadePage() {
   const piorou     = teams.filter(t => t.delta < 0).length
   const topTeam    = teams[0]
 
-  function handleDayClick(team, dayKey) {
+  function handleDayClick(team: string, dayKey: string) {
     setActiveDrill(prev =>
       prev?.team === team && prev?.dayKey === dayKey
         ? null                    // mesmo card → fecha
@@ -420,7 +437,7 @@ export default function ProdutividadePage() {
     )
   }
 
-  function handleToggle(team) {
+  function handleToggle(team: string) {
     setExpanded(prev => {
       if (prev === team) { setActiveDrill(null); return null }
       setActiveDrill(null)

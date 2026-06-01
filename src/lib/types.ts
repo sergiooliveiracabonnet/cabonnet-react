@@ -80,7 +80,7 @@ export type AccentColor = 'red' | 'orange' | 'yellow' | 'cyan' | 'primary' | 'pu
 export interface KPI {
   id:     string
   title:  string
-  value:  number
+  value:  number | string
   sub:    string
   accent: AccentColor
   trend?: { delta: number; pct: number; higherIsBetter: boolean } | null
@@ -146,23 +146,26 @@ export interface SlaPulso {
   scoreLabel: string
 }
 
+// Tipos alinhados com o retorno real de buildSla (verificados via EMPTY_DERIVED)
 export interface SlaHipotese {
-  text:  string
-  level: 'red' | 'orange' | 'yellow' | 'green'
+  pergunta: string
+  resposta: string
+  sub:      string | null
 }
 
 export interface SlaResumoItem {
-  label: string
-  value: number | string
-  icon?: string
+  status: string
+  total:  number
+  pct:    number
 }
 
 export interface SlaRankingItem {
-  equipe:  string
-  total:   number
-  fora:    number
-  taxa:    number
-  score:   number
+  nome:     string
+  tipo:     string
+  sla:      number
+  total:    number
+  criticas: number
+  agingMed: number
 }
 
 export interface SlaAgingEq {
@@ -171,17 +174,17 @@ export interface SlaAgingEq {
 }
 
 export interface SlaCluster {
-  equipe: string
   bairro: string
-  count:  number
+  cidade: string
+  total:  number
 }
 
 export interface SlaSemaforo {
-  equipe:   string
+  nome:     string
+  tipo:     string
+  sla:      number
   total:    number
-  fora:     number
   criticas: number
-  taxa:     number
 }
 
 export interface SlaData {
@@ -247,17 +250,33 @@ export interface GraficosData {
 
 // ─── Anomalias Builder ────────────────────────────────────────────────────────
 
-export interface AnomaliaItem {
-  label: string
-  value: number
-  delta: number
+export interface PicoDiaAnomalia {
+  date:   string
+  count:  number
+  zScore: number
+}
+
+export interface BairroAnomalia {
+  bairro:  string
+  total:   number
+  slaExc:  number
+  rate:    number
+  ratePct: number
+  zScore:  number
+}
+
+export interface EquipeAnomalia {
+  nome:     string
+  agingMed: number
+  count:    number
+  zScore:   number
 }
 
 export interface AnomaliasData {
   total:           number
-  picosDia:        AnomaliaItem[]
-  bairrosAnomalia: AnomaliaItem[]
-  equipesAnomalia: AnomaliaItem[]
+  picosDia:        PicoDiaAnomalia[]
+  bairrosAnomalia: BairroAnomalia[]
+  equipesAnomalia: EquipeAnomalia[]
 }
 
 // ─── Cidades Builder ──────────────────────────────────────────────────────────
@@ -290,17 +309,51 @@ export interface CampoHero {
   accent:   AccentColor
 }
 
+export interface CampoSemaforo {
+  nome:       string
+  fila:       number
+  concl:      number
+  taxa:       number
+  slaExc:     number
+  status:     'ok' | 'atencao' | 'critico'
+  diasAteSLA: number | null
+  ritmoHoje:  { atual: number; projetado: number | null; baseline: number; status: string } | null
+}
+
+// Tipos alinhados com retorno real de buildCampo
+export interface CampoProjecaoItem {
+  equipe: string
+  fila:   number
+  ritmo:  number
+  dias:   number | string
+}
+
+export interface CampoAgingDist {
+  labels:      string[]
+  values:      number[]
+  hasCritical: boolean
+}
+
+export interface CampoHeroReal {
+  status:       string
+  title:        string
+  msg:          string
+  criticoCount: number
+  atencaoCount: number
+  totalEquipes: number
+}
+
 export interface CampoData {
   kpis:       KPI[]
-  semaforo:   SlaSemaforo[]
+  semaforo:   CampoSemaforo[]
   risco:      { count: number; pct: number; desc: string }
-  concluidas: OSRow[]
-  fila:       OSRow[]
+  concluidas: CampoSemaforo[]
+  fila:       CampoSemaforo[]
   ritmo:      ChartSeries
-  tecnicos:   { nome: string; total: number; taxa: number }[]
-  projecao:   { meta: number; realizado: number; pct: number } | null
-  agingDist:  AgingDist | null
-  hero:       CampoHero | null
+  tecnicos:   never[]
+  projecao:   CampoProjecaoItem[] | null
+  agingDist:  CampoAgingDist
+  hero:       CampoHeroReal
 }
 
 // ─── Revisitas Builder ────────────────────────────────────────────────────────
@@ -312,12 +365,24 @@ export interface RevisitaTaxa {
   geral: number
 }
 
+// Tipos alinhados com retorno real de buildRevisitas
+export interface RevisitaHipotese {
+  pergunta: string
+  resposta: string
+  sub:      string | null
+}
+
+export interface RevisitaCausa {
+  causa: string
+  pct:   number
+}
+
 export interface RevisitasData {
   taxa:          RevisitaTaxa
   narrativa:     string
-  hipoteses:     SlaHipotese[]
-  causas:        string[]
-  causaRaiz:     string[]
+  hipoteses:     RevisitaHipotese[]
+  causas:        RevisitaCausa[]
+  causaRaiz:     RevisitaCausa[]
   cronicos:      OSRow[]
   chart:         ChartSeries
   totalRevisitas: number
@@ -338,21 +403,23 @@ export interface RevisitasData {
 
 // ─── Auditoria Builder ────────────────────────────────────────────────────────
 
+// Tipos alinhados com o retorno real de buildAuditoria
 export interface AuditoriaData {
   score:    { value: number; label: string; ts: string }
-  summary:  { label: string; value: number | string }[]
-  problems: { level: 'red' | 'orange' | 'yellow'; text: string }[]
-  tips:     string[]
+  summary:  { label: string; value: number; ok: boolean; sub?: string }[]
+  problems: { title: string; severity: string; desc: string; rows: { numos: string; status: string; cidade: string }[] }[]
+  tips:     { text: string }[]
 }
 
 // ─── Ordens Builder ───────────────────────────────────────────────────────────
 
+// Tipos alinhados com o retorno real de buildOrdens (inclui periodos, sem statuses)
 export interface OrdensOptions {
-  statuses: string[]
   tipos:    string[]
   cidades:  string[]
   equipes:  string[]
   bairros:  string[]
+  periodos: string[]
 }
 
 export interface OrdensData {

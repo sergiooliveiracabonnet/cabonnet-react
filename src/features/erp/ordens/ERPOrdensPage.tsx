@@ -29,10 +29,10 @@ export default function ERPOrdensPage() {
     const semEquipe = rows.filter(r => !r.nomedaequipe).length
     const aging7    = rows.filter(r => (r._aging ?? 0) > 7).length
     return [
-      { label: 'Total na Fila',  value: total,     Icon: Layers,        colorCls: 'text-primary',       bgCls: 'bg-primary/10'     },
-      { label: 'SLA Crítico',    value: criticas,  Icon: AlertTriangle, colorCls: 'text-red-400',       bgCls: 'bg-red-500/10'     },
-      { label: 'Sem Equipe',     value: semEquipe, Icon: Users,         colorCls: 'text-orange-400',    bgCls: 'bg-orange-500/10'  },
-      { label: 'Aging > 7 dias', value: aging7,    Icon: Clock,         colorCls: 'text-yellow-400',    bgCls: 'bg-yellow-500/10'  },
+      { label: 'Total na Fila',  value: total,     Icon: Layers,        colorCls: 'text-primary', bgCls: 'bg-primary/10' },
+      { label: 'SLA Crítico',    value: criticas,  Icon: AlertTriangle, colorCls: 'text-red',     bgCls: 'bg-red/10'     },
+      { label: 'Sem Equipe',     value: semEquipe, Icon: Users,         colorCls: 'text-orange',  bgCls: 'bg-orange/10'  },
+      { label: 'Aging > 7 dias', value: aging7,    Icon: Clock,         colorCls: 'text-yellow',  bgCls: 'bg-yellow/10'  },
     ]
   }, [rows])
 

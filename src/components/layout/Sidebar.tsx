@@ -3,14 +3,30 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList,
   BarChart2, PieChart, MapPin, Layout,
-  Zap, Monitor, LogOut, FileText, Map, Network,
-  Kanban, Users, Truck, Bell, Radio, ChevronRight, Briefcase,
+  Zap, Monitor, LogOut, FileText, Map,
+  Kanban, Users, Bell, ChevronRight, Briefcase,
   TrendingUp, Award, CalendarDays, Activity, Shield,
 } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
 import { useAuthStore } from '../../store/authStore'
+import { useAuditStore } from '../../store/auditStore'
+import { useOSDerived } from '../../contexts/OSDataContext'
 import { api } from '../../lib/api'
 import { LogoIcon } from '../ui/LogoIcon'
+
+const ROLE_LABELS: Record<string, string> = {
+  gestor:   'Gestor',
+  operador: 'Operador',
+  viewer:   'Viewer',
+}
+
+type StatusKey = 'loading' | 'error' | 'stale' | 'online'
+const STATUS_CFG: Record<StatusKey, { color: string; dot: string; label: string; breathe: boolean }> = {
+  loading: { color: 'text-primary', dot: 'bg-primary', label: 'Carregando',     breathe: false },
+  error:   { color: 'text-red',     dot: 'bg-red',     label: 'Sem conexão',     breathe: false },
+  stale:   { color: 'text-yellow',  dot: 'bg-yellow',  label: 'Desatualizado',   breathe: false },
+  online:  { color: 'text-green',   dot: 'bg-green',   label: 'Online',          breathe: true  },
+}
 
 interface NavLinkDef {
   to:    string
@@ -31,10 +47,8 @@ const groups: NavGroup[] = [
     links: [
       { to: '/erp/ordens',        label: 'OS · Kanban',    icon: Kanban      },
       { to: '/erp/equipes',       label: 'Equipes',        icon: Users       },
-      { to: '/erp/dispatch',      label: 'Dispatch',       icon: Truck       },
       { to: '/erp/relatorios',    label: 'Relatórios',     icon: BarChart2   },
       { to: '/erp/alertas',       label: 'Alertas',        icon: Bell        },
-      { to: '/erp/rede',          label: 'Rede',           icon: Radio       },
       { to: '/erp/produtividade', label: 'Produtividade',  icon: TrendingUp  },
       { to: '/erp/qualidade',     label: 'Qualidade',      icon: Award       },
       { to: '/erp/planner',       label: 'Planner',        icon: CalendarDays},
@@ -46,7 +60,6 @@ const groups: NavGroup[] = [
       { to: '/',             label: 'Dashboard',  icon: LayoutDashboard },
       { to: '/cidades',      label: 'Cidades',    icon: MapPin          },
       { to: '/mapa',         label: 'Mapa',       icon: Map             },
-      { to: '/mapa-mental',  label: 'Mapa Mental',icon: Network         },
       { to: '/ordens',       label: 'Ordens',     icon: ClipboardList   },
     ],
   },
@@ -142,8 +155,23 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor }: N
 export function Sidebar() {
   const { sidebarOpen } = useUIStore()
   const setUnauthed = useAuthStore(s => s.setUnauthed)
+  const role        = useAuthStore(s => s.role)
+  const logAudit    = useAuditStore(s => s.log)
+  const { isLoading, error, dataUpdatedAt } = useOSDerived()
+
+  const ageMs   = dataUpdatedAt > 0 ? Date.now() - dataUpdatedAt : null
+  const isError = !!error && !isLoading
+  const isStale = !isError && ageMs !== null && ageMs > 5 * 60_000
+  const isNew   = dataUpdatedAt === 0 && isLoading
+
+  const statusKey: StatusKey =
+    isError ? 'error' :
+    isNew   ? 'loading' :
+    isStale ? 'stale'  : 'online'
+  const status = STATUS_CFG[statusKey]
 
   async function handleLogout() {
+    logAudit('Logout', undefined, 'auth')
     try { await api.auth.logout() } catch { /* logout best-effort */ }
     setUnauthed()
   }
@@ -225,8 +253,8 @@ export function Sidebar() {
       {sidebarOpen && (
         <div className="flex-shrink-0 mx-2 mb-2 rounded-lg px-3 py-2 bg-card-high border border-white/[0.08]">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-green flex-shrink-0 breathe" />
-            <span className="text-[10px] font-semibold text-green">Online</span>
+            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}${status.breathe ? ' breathe' : ''}`} />
+            <span className={`text-[10px] font-semibold ${status.color}`}>{status.label}</span>
           </div>
           <p className="text-[10px] text-muted">Vale do Paraíba · SJC</p>
         </div>
@@ -244,7 +272,9 @@ export function Sidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-semibold text-text truncate leading-none">Admin</p>
-              <p className="text-[10px] text-muted truncate leading-none mt-0.5">Cabonnet ISP</p>
+              <p className="text-[10px] text-muted truncate leading-none mt-0.5">
+                {ROLE_LABELS[role ?? ''] ?? 'Viewer'} · ISP Ops
+              </p>
             </div>
             <button
               onClick={handleLogout}

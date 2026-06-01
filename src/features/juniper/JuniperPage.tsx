@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/line-chart'
 import { api, endpoints } from '../../lib/api'
+import { storage } from '../../lib/storage'
 import { transformJuniper } from '../../lib/builders'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { KPICard } from '../../components/ui/KPICard'
@@ -59,10 +60,7 @@ export default function JuniperPage() {
   const HISTORY_KEY = 'juniper_historico'
   const MAX_SNAPS   = 500
 
-  const [historico, setHistorico] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]') }
-    catch { return [] }
-  })
+  const [historico, setHistorico] = useState(() => storage.getJSON(HISTORY_KEY, []))
 
   const { data: raw, isLoading, refetch } = useQuery({
     queryKey: ['juniper', apiConfig.cluster],
@@ -125,7 +123,7 @@ export default function JuniperPage() {
     setHistorico(prev => {
       if (prev[0]?.ts === entry.ts) return prev
       const next = [entry, ...prev].slice(0, MAX_SNAPS)
-      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
+      storage.setJSON(HISTORY_KEY, next)
       return next
     })
   }, [raw])
@@ -149,7 +147,7 @@ export default function JuniperPage() {
       const merged = [...prev, ...extras]
         .sort((a, b) => new Date(b.ts) - new Date(a.ts))
         .slice(0, MAX_SNAPS)
-      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(merged)) } catch { /* storage unavailable */ }
+      storage.setJSON(HISTORY_KEY, merged)
       return merged
     })
   }, [serverHistData])
@@ -161,7 +159,7 @@ export default function JuniperPage() {
   }, [historico])
 
   function limparHistorico() {
-    localStorage.removeItem(HISTORY_KEY)
+    storage.remove(HISTORY_KEY)
     api.post(endpoints.juniperHist, []).catch(() => {})
     setHistorico([])
   }

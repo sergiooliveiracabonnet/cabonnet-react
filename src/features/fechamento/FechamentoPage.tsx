@@ -9,6 +9,7 @@ import {
   exportRelatorioCSV,
 } from './fechamentoUtils'
 import { generateFechamentoPDF } from './fechamentoPDF'
+import { useFechamentoAutomation, type FechamentoSnapshot } from './useFechamentoAutomation'
 
 const ABAS     = ['global', 'instacable', 'wes', 'thm', 'rede']
 const PERIODOS = [
@@ -65,45 +66,14 @@ export default function FechamentoPage() {
     return { rows, rede, stats, statsRede }
   }, [allRows, aba, from, to])
 
-  // ── Ref always holds current data for Playwright access ───────────────────
-  const pdfDataRef = useRef(null)
+  // ── Ref sempre atualizado para acesso da automação Playwright ──────────────
+  const pdfDataRef = useRef<FechamentoSnapshot | null>(null)
   useEffect(() => {
     pdfDataRef.current = { rows, rede, stats, statsRede, periodoLabel }
-    window.__cbnFechamentoReady = !isLoading
-  }, [rows, rede, stats, statsRede, periodoLabel, isLoading])
+  }, [rows, rede, stats, statsRede, periodoLabel])
 
-  // ── Expose window functions for Playwright automation ─────────────────────
-  useEffect(() => {
-    window.__cbnFechamentoReady = false
-    window.relSetAba     = (a)  => setAba(a)
-    window.relSetPeriodo = (p)  => setPeriodo(p)
-    window.relatorioGerarPDF = async (sendToTelegram, chatId) => {
-      const data = pdfDataRef.current
-      if (!data) return { ok: false, error: 'Dados não carregados' }
-      const doc  = generateFechamentoPDF(data)
-      const fname = `relatorio-cabonnet-${new Date().toISOString().slice(0, 10)}.pdf`
-      if (sendToTelegram) {
-        try {
-          const resp = await fetch('/notify/telegram/pdf', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ pdf: doc.output('datauristring'), filename: fname, ...(chatId && { chat_id: String(chatId) }) }),
-          })
-          return resp.json()
-        } catch (e) {
-          return { ok: false, error: String(e) }
-        }
-      }
-      doc.save(fname)
-      return { ok: true }
-    }
-    return () => {
-      delete window.relSetAba
-      delete window.relSetPeriodo
-      delete window.relatorioGerarPDF
-      delete window.__cbnFechamentoReady
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // ── Automação Python via window globals (encapsulada no hook) ──────────────
+  useFechamentoAutomation(pdfDataRef, isLoading, setAba, setPeriodo)
 
   function handleExportCSV() {
     exportRelatorioCSV(rows, rede, stats, statsRede, periodoLabel)

@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ComponentType } from 'react'
 import { CalendarDays, MapPin, ChevronLeft, ChevronRight, Package, Wrench, Radio, X, CheckCircle2, Clock, Target } from 'lucide-react'
 import { useERPRows } from '../useERPRows'
 import { useERPStore } from '../../../store/erpStore'
@@ -7,13 +6,23 @@ import { useIsGestor } from '../../../hooks/useRole'
 import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
 import { isCOPE, isReagend, isConcluida } from '../../../lib/transform'
 import { Badge } from '../../../components/ui/Badge'
+import type { OSRow } from '../../../lib/types'
+
+type IconComp = ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
+
+interface WeekDay {
+  dt: Date; key: string; label: string; dow: string
+  isToday: boolean; isWeekend: boolean; isPast: boolean
+}
+interface TeamSchedule { team: string; schedule: Record<string, OSRow[]>; weekTotal: number }
+interface DrillState   { team: string; day: WeekDay; rows: OSRow[] }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const MONTH_PT  = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
-function parseAgendDate(r) {
+function parseAgendDate(r: OSRow): Date | null {
   const raw = (r.dataagendamento || '').split(' ')[0]
   if (!raw || !raw.includes('/')) return null
   const [d, m, y] = raw.split('/')
@@ -21,7 +30,7 @@ function parseAgendDate(r) {
   return new Date(+y, +m - 1, +d)
 }
 
-function toKey(dt) {
+function toKey(dt: Date | null): string {
   if (!dt) return ''
   const dd = String(dt.getDate()).padStart(2, '0')
   const mm = String(dt.getMonth() + 1).padStart(2, '0')
@@ -46,11 +55,11 @@ function getWeekDays(weekOffset = 0) {
   })
 }
 
-function buildPlanner(allRows, days) {
+function buildPlanner(allRows: OSRow[], days: WeekDay[]): TeamSchedule[] {
   const keySet = new Set(days.map(d => d.key))
   const base   = allRows.filter(r => !isCOPE(r) && !isReagend(r))
 
-  const teamMap = new Map()
+  const teamMap = new Map<string, Record<string, OSRow[]>>()
   for (const r of base) {
     const dt = parseAgendDate(r)
     if (!dt) continue
@@ -58,7 +67,7 @@ function buildPlanner(allRows, days) {
     if (!keySet.has(key)) continue
     const team = shortEquipe(r.nomedaequipe) || 'Sem equipe'
     if (!teamMap.has(team)) teamMap.set(team, {})
-    const td = teamMap.get(team)
+    const td = teamMap.get(team)!
     if (!td[key]) td[key] = []
     td[key].push(r)
   }
@@ -69,22 +78,22 @@ function buildPlanner(allRows, days) {
   }
 
   return [...teamMap.entries()]
-    .map(([team, schedule]) => {
-      const weekTotal = days.reduce((s, d) => s + (schedule[d.key]?.length || 0), 0)
+    .map(([team, schedule]: [string, Record<string, OSRow[]>]) => {
+      const weekTotal = days.reduce((s: number, d: WeekDay) => s + (schedule[d.key]?.length || 0), 0)
       return { team, schedule, weekTotal }
     })
     .filter(t => t.weekTotal > 0)
     .sort((a, b) => b.weekTotal - a.weekTotal)
 }
 
-function tipoIcon(r) {
+function tipoIcon(r: OSRow): { color: string; Icon: IconComp | null } {
   if (r._tipo === 'INSTALACAO') return { color: '#3b82f6', Icon: Package }
   if (r._tipo === 'MANUTENCAO') return { color: '#f97316', Icon: Wrench  }
   if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Radio   }
   return { color: '#64748b', Icon: null }
 }
 
-function loadColor(count) {
+function loadColor(count: number): string | null {
   if (count === 0) return null
   if (count <= 2)  return '#4ade80'
   if (count <= 4)  return '#facc15'
@@ -92,7 +101,7 @@ function loadColor(count) {
   return '#f87171'
 }
 
-function SectionLabel({ icon: Icon, color, children }) {
+function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; color: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
@@ -104,13 +113,13 @@ function SectionLabel({ icon: Icon, color, children }) {
 
 // ─── Drill Modal ──────────────────────────────────────────────────────────────
 
-function PlannerDrillModal({ drill, onClose }) {
+function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null; onClose: () => void }) {
   if (!drill) return null
   const { team, day, rows } = drill
 
   // Pendentes/em atendimento no topo — concluídas embaixo
-  const pending   = rows.filter(r => !isConcluida(r.descsituacao))
-  const concluded = rows.filter(r =>  isConcluida(r.descsituacao))
+  const pending   = (rows as OSRow[]).filter(r => !isConcluida(r.descsituacao))
+  const concluded = (rows as OSRow[]).filter(r =>  isConcluida(r.descsituacao))
 
   const total      = rows.length
   const nPending   = pending.length
@@ -202,7 +211,7 @@ function PlannerDrillModal({ drill, onClose }) {
   )
 }
 
-function OSRow({ r }) {
+function OSRow({ r }: { r: OSRow }) {
   const { color, Icon } = tipoIcon(r)
   const concl = isConcluida(r.descsituacao)
   return (
@@ -242,19 +251,21 @@ function OSRow({ r }) {
 
 // ─── Cell ─────────────────────────────────────────────────────────────────────
 
-function PlannerCell({ rows = [], isPast, _isToday, isWeekend, onClick }) {
+function PlannerCell({ rows = [] as OSRow[], isPast, _isToday: _isToday = false, isWeekend, onClick }: {
+  rows?: OSRow[]; isPast: boolean; _isToday?: boolean; isWeekend: boolean; onClick: () => void
+}) {
   const count = rows.length
   const color = loadColor(count)
   const [hover, setHover] = useState(false)
 
   const tipos = useMemo(() => {
-    const inst  = rows.filter(r => r._tipo === 'INSTALACAO').length
-    const manut = rows.filter(r => r._tipo === 'MANUTENCAO').length
+    const inst  = rows.filter((r: OSRow) => r._tipo === 'INSTALACAO').length
+    const manut = rows.filter((r: OSRow) => r._tipo === 'MANUTENCAO').length
     const other = count - inst - manut
     return { inst, manut, other }
   }, [rows])
 
-  const nConcl   = rows.filter(r => isConcluida(r.descsituacao)).length
+  const nConcl   = rows.filter((r: OSRow) => isConcluida(r.descsituacao)).length
   const nPending = count - nConcl
 
   if (count === 0) {
@@ -279,7 +290,7 @@ function PlannerCell({ rows = [], isPast, _isToday, isWeekend, onClick }) {
       <div className="flex flex-col items-center gap-1">
         <div className="w-9 h-9 rounded-xl flex items-center justify-center font-mono font-black text-[17px] tabular-nums
                         group-hover:scale-110 transition-transform duration-150"
-             style={{ background: `${color}2e`, border: `1px solid ${color}66`, color }}>
+             style={{ background: `${color}2e`, border: `1px solid ${color}66`, color: color ?? undefined }}>
           {count}
         </div>
 
@@ -345,7 +356,7 @@ export default function PlannerPage() {
   const { metaEquipeDiaria, setMetaEquipeDiaria }           = useERPStore()
   const isGestor                                            = useIsGestor()
   const [weekOffset, setWeekOffset] = useState(0)
-  const [drill, setDrill]           = useState(null)
+  const [drill, setDrill]           = useState<DrillState | null>(null)
   const [editMeta, setEditMeta]     = useState(false)
 
   const days  = useMemo(() => getWeekDays(weekOffset), [weekOffset])
@@ -353,14 +364,14 @@ export default function PlannerPage() {
 
   const totalSemana  = teams.reduce((s, t) => s + t.weekTotal, 0)
   const cidades      = useMemo(() => {
-    const map = {}
+    const map: Record<string, number> = {}
     for (const t of teams)
       for (const dayRows of Object.values(t.schedule))
         for (const r of dayRows) {
           const c = (r.nomedacidade || '').trim()
           if (c) map[c] = (map[c] || 0) + 1
         }
-    return Object.entries(map).sort((a,b) => b[1]-a[1]).slice(0, 5)
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5)
   }, [teams])
 
   const equipesSemOS = useMemo(() => {
@@ -558,7 +569,7 @@ export default function PlannerPage() {
                           key={d.key}
                           rows={t.schedule[d.key] || []}
                           isPast={d.isPast}
-                          isToday={d.isToday}
+                          _isToday={d.isToday}
                           isWeekend={d.isWeekend}
                           onClick={() => {
                             const rows = t.schedule[d.key] || []
@@ -573,7 +584,7 @@ export default function PlannerPage() {
                             type="number" min={0} max={200}
                             value={metaEquipeDiaria[t.team] ?? ''}
                             placeholder="—"
-                            onChange={e => setMetaEquipeDiaria(t.team, e.target.value)}
+                            onChange={e => setMetaEquipeDiaria(t.team, Number(e.target.value))}
                             onClick={e => e.stopPropagation()}
                             className="w-14 bg-surface border border-white/[0.08] rounded-md px-1.5 py-1
                                        text-[11px] font-mono text-text text-center outline-none
@@ -583,20 +594,20 @@ export default function PlannerPage() {
                       )}
                       <td className="px-3 py-3 text-right w-[80px]">
                         {(() => {
-                          const meta = metaEquipeDiaria[t.team]
+                          const meta = metaEquipeDiaria[t.team] ?? 0
                           const pct  = meta > 0 ? Math.round((t.weekTotal / meta) * 100) : null
                           const color = pct == null ? 'text-text'
                                       : pct >= 100 ? 'text-green' : pct >= 70 ? 'text-yellow' : 'text-red'
                           return (
                             <div className="flex flex-col items-end gap-0.5">
                               <span className={`font-mono font-bold text-[14px] ${color}`}>{t.weekTotal}</span>
-                              {meta > 0 && (
+                              {meta > 0 && pct !== null && (
                                 <div className="w-10 h-1 rounded-full overflow-hidden bg-surface">
                                   <div className="h-full rounded-full transition-all duration-500"
                                     style={{ width: `${Math.min(100, pct)}%`, background: pct >= 100 ? '#4ade80' : pct >= 70 ? '#facc15' : '#f87171' }} />
                                 </div>
                               )}
-                              {meta > 0 && (
+                              {meta > 0 && pct !== null && (
                                 <span className={`text-[9px] font-mono ${color}`}>{pct}%</span>
                               )}
                             </div>
@@ -617,7 +628,7 @@ export default function PlannerPage() {
         <section className="space-y-2">
           <SectionLabel icon={MapPin} color="#c4b5fd">Cidades cobertas na semana</SectionLabel>
           <div className="flex flex-wrap gap-2">
-            {cidades.map(([cidade, cnt]) => (
+            {cidades.map(([cidade, cnt]: [string, number]) => (
               <div key={cidade}
                    className="flex items-center gap-2 bg-card border border-white/[0.08]
                               rounded-xl px-3 py-2">

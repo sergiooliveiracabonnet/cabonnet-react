@@ -1,5 +1,23 @@
 // @ts-nocheck
 // Gera imagem PNG de alta qualidade com OS agrupadas por equipe, ordenadas por volume (menor → maior)
+// @ts-nocheck suprime erros no código imperativo Canvas (617 linhas). As funções exportadas
+// têm assinaturas TypeScript válidas abaixo — o compilador extrai essas assinaturas mesmo com @ts-nocheck.
+
+// Tipo mínimo que representa os campos acessados no canvas render
+export interface CaptureOSRow {
+  nomedaequipe?:    string | unknown
+  _situacaoEfetiva?: string | unknown
+  _aging?:          number | null | unknown
+  _slaCritico?:     boolean | unknown
+  numos?:           string | unknown
+  nomecliente?:     string | unknown
+  dataagendamento?: string | unknown
+  nomedacidade?:    string | unknown
+  bairro?:          string | unknown
+  tiposervico?:     string | unknown
+  periodo?:         string | unknown
+  [key: string]:    unknown
+}
 
 const SCALE   = 2        // 2× para alta qualidade (Retina)
 const W       = 740      // largura lógica em px
@@ -70,12 +88,14 @@ const COLS = [
   { key: 'criticas', label: 'SLA CRÍTICO', x: 551, w: 80,  align: 'center' },
 ]
 
-function rect(ctx, x, y, w, h, color) {
+type Ctx2D = CanvasRenderingContext2D
+
+function rect(ctx: Ctx2D, x: number, y: number, w: number, h: number, color: string) {
   ctx.fillStyle = color
   ctx.fillRect(x, y, w, h)
 }
 
-function line(ctx, x1, y1, x2, y2, color = C.border) {
+function line(ctx: Ctx2D, x1: number, y1: number, x2: number, y2: number, color = C.border) {
   ctx.strokeStyle = color
   ctx.lineWidth   = 1
   ctx.beginPath()
@@ -84,7 +104,8 @@ function line(ctx, x1, y1, x2, y2, color = C.border) {
   ctx.stroke()
 }
 
-function text(ctx, str, x, y, { font = '12px Arial', color = C.text, align = 'left', maxW } = {}) {
+interface TextOpts { font?: string; color?: string; align?: CanvasTextAlign; maxW?: number }
+function text(ctx: Ctx2D, str: unknown, x: number, y: number, { font = '12px Arial', color = C.text, align = 'left' as CanvasTextAlign, maxW }: TextOpts = {}) {
   ctx.font      = font
   ctx.fillStyle = color
   ctx.textAlign = align
@@ -107,7 +128,7 @@ function text(ctx, str, x, y, { font = '12px Arial', color = C.text, align = 'le
  * @param {string}   accentColor   - Cor de destaque (#hex)
  * @returns {string}               - data URI "data:image/png;base64,..."
  */
-export function captureOSPorEquipe(rows, fornLabel, accentColor = '#3b82f6') {
+export function captureOSPorEquipe(rows: CaptureOSRow[], fornLabel: string, accentColor = '#3b82f6'): string {
   C = getTheme()
   // ── Agrupar por equipe ────────────────────────────────────────────────────
   const map = new Map()
@@ -297,7 +318,7 @@ const D_COLS = [
  * @param {string}   accentColor - Cor de destaque (#hex)
  * @returns {string}             - data URI "data:image/png;base64,..."
  */
-export function captureOSDetalhado(rows, fornLabel, accentColor = '#3b82f6') {
+export function captureOSDetalhado(rows: CaptureOSRow[], fornLabel: string, accentColor = '#3b82f6'): string {
   C = getTheme()
   // ── Agrupar e ordenar ─────────────────────────────────────────────────────
   const map = new Map()
@@ -495,7 +516,7 @@ function pillRect(ctx, cx, cy, w, h, r, color) {
  * Gera um canvas com as OS agrupadas por Período (Manhã / Tarde), ordenadas por bairro.
  * Retorna o elemento canvas — o chamador converte em Blob para clipboard ou download.
  */
-export function captureOSPorPeriodo(rows, equipeName) {
+export function captureOSPorPeriodo(rows: CaptureOSRow[], equipeName: string): string {
   C = getTheme()
   const map = {}
   for (const r of rows) {

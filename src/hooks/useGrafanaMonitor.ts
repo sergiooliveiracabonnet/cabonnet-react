@@ -21,7 +21,7 @@ export function useGrafanaMonitor() {
   const refresh = useCallback(async () => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const r = await grafana.incidentes() as any
+      const r = await grafana.incidentes() as { ok: boolean; data?: any[] }
       if (r.ok) setIncidents(r.data ?? [])
       setLastSync(new Date())
       setError(null)

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { api } from '../../lib/api'
 import {
   Monitor, Pause, Play, X, Maximize2, Minimize2,
   Activity, Users, Package, AlertCircle,
@@ -249,10 +250,8 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
 
 function NocInner() {
   const { derived, allRows, isLoading } = useOSDerived()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { dashboard, campo } = derived as any
-  const { kpis, fornecedores } = dashboard
-  const { semaforo } = campo
+  const { kpis, fornecedores } = derived.dashboard as unknown as { kpis: unknown[]; fornecedores: unknown[] }
+  const { semaforo } = derived.campo as unknown as { semaforo: unknown[] }
 
   const navigate     = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -455,10 +454,34 @@ function NocInner() {
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
+function NocAuthGuard({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate()
+  const [checked, setChecked] = React.useState(false)
+  const [allowed, setAllowed] = React.useState(false)
+
+  React.useEffect(() => {
+    api.auth.check()
+      .then(() => setAllowed(true))
+      .catch(() => navigate('/', { replace: true }))
+      .finally(() => setChecked(true))
+  }, [navigate])
+
+  if (!checked) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-bg">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+  return allowed ? <>{children}</> : null
+}
+
 export default function NocPage() {
   return (
-    <OSDataProvider>
-      <NocInner />
-    </OSDataProvider>
+    <NocAuthGuard>
+      <OSDataProvider>
+        <NocInner />
+      </OSDataProvider>
+    </NocAuthGuard>
   )
 }

@@ -7,10 +7,10 @@ import { useERPRows } from '../useERPRows'
 import { shortEquipe } from '../../../lib/osFormat'
 
 const RISCO_LEVELS = [
-  { min: 70, label: 'Crítico', cls: 'bg-red-500/20 text-red-400 border-red-500/30',     bar: 'bg-red-500',     row: 'hover:bg-red-500/[0.03]' },
-  { min: 40, label: 'Alto',    cls: 'bg-orange-500/20 text-orange-400 border-orange-500/30', bar: 'bg-orange-500',  row: 'hover:bg-orange-500/[0.03]' },
-  { min: 20, label: 'Médio',   cls: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', bar: 'bg-yellow-500',  row: 'hover:bg-yellow-500/[0.03]' },
-  { min: 0,  label: 'Baixo',   cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', bar: 'bg-emerald-500', row: 'hover:bg-surface/20' },
+  { min: 70, label: 'Crítico', cls: 'bg-red/20 text-red border-red/30',     bar: 'bg-red',     row: 'hover:bg-red/[0.03]' },
+  { min: 40, label: 'Alto',    cls: 'bg-orange/20 text-orange border-orange/30', bar: 'bg-orange',  row: 'hover:bg-orange/[0.03]' },
+  { min: 20, label: 'Médio',   cls: 'bg-yellow/20 text-yellow border-yellow/30', bar: 'bg-yellow',  row: 'hover:bg-yellow/[0.03]' },
+  { min: 0,  label: 'Baixo',   cls: 'bg-green/20 text-green border-green/30', bar: 'bg-green', row: 'hover:bg-surface/20' },
 ]
 
 function getRiscoLevel(score: any) {
@@ -18,9 +18,9 @@ function getRiscoLevel(score: any) {
 }
 
 const TIPO_ICON = {
-  INSTALACAO: { Icon: Package, cls: 'text-blue-400',    label: 'Instalação' },
-  MANUTENCAO: { Icon: Wrench,  cls: 'text-orange-400',  label: 'Manutenção' },
-  REDE:       { Icon: Network, cls: 'text-emerald-400', label: 'Rede' },
+  INSTALACAO: { Icon: Package, cls: 'text-primary',    label: 'Instalação' },
+  MANUTENCAO: { Icon: Wrench,  cls: 'text-orange',  label: 'Manutenção' },
+  REDE:       { Icon: Network, cls: 'text-green', label: 'Rede' },
 }
 
 export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: string; tipoFilter: string }) {
@@ -57,10 +57,10 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
           </div>
           <div className="flex items-center gap-2 text-[11px]">
             {[
-              { label: 'Crítico', count: buckets.critico, cls: 'bg-red-500/15 text-red-400' },
-              { label: 'Alto',    count: buckets.alto,    cls: 'bg-orange-500/15 text-orange-400' },
-              { label: 'Médio',   count: buckets.medio,   cls: 'bg-yellow-500/15 text-yellow-400' },
-              { label: 'Baixo',   count: buckets.baixo,   cls: 'bg-emerald-500/15 text-emerald-400' },
+              { label: 'Crítico', count: buckets.critico, cls: 'bg-red/15 text-red' },
+              { label: 'Alto',    count: buckets.alto,    cls: 'bg-orange/15 text-orange' },
+              { label: 'Médio',   count: buckets.medio,   cls: 'bg-yellow/15 text-yellow' },
+              { label: 'Baixo',   count: buckets.baixo,   cls: 'bg-green/15 text-green' },
             ].map(b => b.count > 0 && (
               <span key={b.label} className={`px-2 py-0.5 rounded-full font-semibold ${b.cls}`}>
                 {b.count} {b.label}
@@ -142,7 +142,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
                         {shortEquipe(row.nomedaequipe).split(' - ')[0]}
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-[11px] text-red-400">
+                      <span className="flex items-center gap-1 text-[11px] text-red">
                         <User size={10} />Sem equipe
                       </span>
                     )}
@@ -161,7 +161,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
                   {/* Aging */}
                   <td className="px-4 py-2.5 whitespace-nowrap">
                     <span className={`flex items-center gap-1 text-[11px] font-medium
-                      ${aging > 7 ? 'text-red-400' : aging > 3 ? 'text-orange-400' : 'text-secondary'}`}>
+                      ${aging > 7 ? 'text-red' : aging > 3 ? 'text-orange' : 'text-secondary'}`}>
                       <Clock size={10} />{aging}d
                     </span>
                   </td>
@@ -169,8 +169,8 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
                   {/* SLA */}
                   <td className="px-4 py-2.5 whitespace-nowrap">
                     <span className={`text-[11px] font-semibold ${
-                      row._slaCritico  ? 'text-red-400' :
-                      row._slaExcedido ? 'text-orange-400' : 'text-emerald-400'
+                      row._slaCritico  ? 'text-red' :
+                      row._slaExcedido ? 'text-orange' : 'text-green'
                     }`}>
                       {row._slaCritico ? 'Crítico' : row._slaExcedido ? 'Excedido' : 'OK'}
                     </span>

@@ -1,5 +1,8 @@
-// @ts-nocheck
 import { useState, useMemo } from 'react'
+import type { ComponentType, CSSProperties, ReactNode } from 'react'
+import type {
+  OSRow, KPI, Pulso, AnomaliasData, ClusterAtivo, AccentColor,
+} from '../../lib/types'
 import {
   AlertCircle, ChevronDown, ChevronUp, Activity, MapPin, Clock,
   Sparkles, CheckCircle2, Zap, TrendingUp, TrendingDown, Minus,
@@ -18,23 +21,44 @@ import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import OSDrawer from '../ordens/OSDrawer'
 
+// ─── Tipos locais ─────────────────────────────────────────────────────────────
+
+interface ModalState        { title: string; rows: OSRow[] }
+interface AINarrativeResult { ok?: boolean; narrativa?: string; insights?: string[] }
+type IconComp = ComponentType<{ size?: number; className?: string; style?: CSSProperties }>
+
+interface CatCfgItem {
+  cat:   string
+  label: string
+  icon:  IconComp | null
+  color: string
+}
+
+interface AnomaliaContextType {
+  total:     number
+  sla_pct:   number
+  criticas:  number
+  aging_med: number
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const isRede  = r => r._tipo === 'REDE'
-const isAtivo = r => ['Pendente','Atendimento'].includes(r.descsituacao)
+const isRede  = (r: OSRow): boolean => r._tipo === 'REDE'
+const isAtivo = (r: OSRow): boolean => ['Pendente','Atendimento'].includes(r.descsituacao)
 
-const KPI_FILTERS = {
+const KPI_FILTERS: Record<string, (r: OSRow) => boolean> = {
   total:    r => !isCOPE(r) && !isReagend(r) && isAtivo(r) && !isRede(r),
   rede:     r => !isCOPE(r) && !isReagend(r) && isAtivo(r) &&  isRede(r),
   concl:    r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Concluída',
   pend:     r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Pendente'    && !isRede(r),
   atend:    r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Atendimento' && !isRede(r),
-  criticas: r => !isCOPE(r) && !isReagend(r) && r._slaCritico && !isRede(r),
+  criticas: r => !isCOPE(r) && !isReagend(r) && r._slaCritico  && !isRede(r),
   semEq:    r => !isCOPE(r) && !isReagend(r) && !r.nomedaequipe?.trim() && isAtivo(r) && !isRede(r),
 }
 const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq'])
 
-const ACCENT_COLORS = {
+type AccentConfig = { solid: string; glow: string; bg: string }
+const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
   red:     { solid: '#f87171', glow: 'rgba(248,113,113,0.18)', bg: 'rgba(248,113,113,0.10)' },
   orange:  { solid: '#fb923c', glow: 'rgba(251,146,60,0.18)',  bg: 'rgba(251,146,60,0.10)'  },
   yellow:  { solid: '#facc15', glow: 'rgba(250,204,21,0.16)',  bg: 'rgba(250,204,21,0.10)'  },
@@ -44,24 +68,27 @@ const ACCENT_COLORS = {
   green:   { solid: '#4ade80', glow: 'rgba(74,222,128,0.18)',  bg: 'rgba(74,222,128,0.10)'  },
 }
 
-const KPI_ICONS = {
+const KPI_ICONS: Partial<Record<string, IconComp>> = {
   criticas: AlertCircle, semEq: Users, pend: Clock, atend: Activity,
   total: BarChart3, rede: Radio, concl: CheckCircle2, taxa: Target,
 }
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 
+interface DashFornCard { nome: string; total: number; concluidas: number; sla: number; cor: string }
+interface TypedDashboard { kpis: KPI[]; fornecedores: DashFornCard[]; pulso: Pulso }
+
 export default function DashboardPage() {
   const { derived: { dashboard, anomalias }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
-  const { kpis, fornecedores, pulso = {} } = dashboard
+  const { kpis, fornecedores, pulso } = dashboard as unknown as TypedDashboard
   const { clustersAtivos = [] } = pulso
-  const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso, fornecedores, anomalias })
+  const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso: pulso as unknown as Record<string, unknown>, fornecedores, anomalias })
   const { data: stats } = useStats()
 
-  const [modal,    setModal]    = useState(null)
-  const [drawerOS, setDrawerOS] = useState(null)
+  const [modal,    setModal]    = useState<ModalState | null>(null)
+  const [drawerOS, setDrawerOS] = useState<OSRow | null>(null)
 
-  function openKpi(kpi) {
+  function openKpi(kpi: KPI) {
     const filter = KPI_FILTERS[kpi.id]
     if (!filter) return
     const source   = ALLROWS_KPIS.has(kpi.id) ? allRows : rows
@@ -77,7 +104,7 @@ export default function DashboardPage() {
         </div>
         <p className="text-[14px] font-semibold text-text">Servidor indisponível</p>
         <p className="text-[12px] text-muted text-center max-w-xs leading-relaxed">
-          {error?.message ?? String(error)}
+          {(error as Error)?.message ?? String(error)}
         </p>
       </div>
     )
@@ -86,16 +113,16 @@ export default function DashboardPage() {
   if (isLoading) {
     const f = stats?.fila
     if (f) {
-      const slaAccent = f.sla_pct >= 90 ? 'green' : f.sla_pct >= 75 ? 'yellow' : 'red'
-      const statsKpis = [
-        { id: 'criticas', title: 'OS Críticas',   value: f.criticas,        sub: 'SLA 2× excedido',   accent: 'red'      },
-        { id: 'semEq',    title: 'Sem Equipe',     value: f.sem_equipe,      sub: 'sem atribuição',    accent: 'orange'   },
-        { id: 'pend',     title: 'Pendentes',      value: f.pendente,        sub: 'aguardando',        accent: 'yellow'   },
-        { id: 'atend',    title: 'Em Atendimento', value: f.atendimento,     sub: 'em campo',          accent: 'cyan'     },
-        { id: 'total',    title: 'Fila Total',     value: f.total,           sub: 'OS ativas',         accent: 'primary'  },
-        { id: 'rede',     title: 'Rede',           value: f.rede,            sub: 'OS de rede',        accent: 'green'    },
-        { id: 'sla',      title: 'SLA da Fila',    value: `${f.sla_pct}%`,   sub: 'dentro do prazo',  accent: slaAccent  },
-        { id: 'aging',    title: 'Aging Médio',    value: `${f.aging_med}d`, sub: 'dias em aberto',   accent: 'purple'   },
+      const slaAccent: AccentColor = f.sla_pct >= 90 ? 'green' : f.sla_pct >= 75 ? 'yellow' : 'red'
+      const statsKpis: KPI[] = [
+        { id: 'criticas', title: 'OS Críticas',   value: f.criticas,        sub: 'SLA 2× excedido',  accent: 'red'     },
+        { id: 'semEq',    title: 'Sem Equipe',     value: f.sem_equipe,      sub: 'sem atribuição',   accent: 'orange'  },
+        { id: 'pend',     title: 'Pendentes',      value: f.pendente,        sub: 'aguardando',       accent: 'yellow'  },
+        { id: 'atend',    title: 'Em Atendimento', value: f.atendimento,     sub: 'em campo',         accent: 'cyan'    },
+        { id: 'total',    title: 'Fila Total',     value: f.total,           sub: 'OS ativas',        accent: 'primary' },
+        { id: 'rede',     title: 'Rede',           value: f.rede,            sub: 'OS de rede',       accent: 'green'   },
+        { id: 'sla',      title: 'SLA da Fila',    value: `${f.sla_pct}%`,  sub: 'dentro do prazo',  accent: slaAccent },
+        { id: 'aging',    title: 'Aging Médio',    value: `${f.aging_med}d`, sub: 'dias em aberto',  accent: 'purple'  },
       ]
       return (
         <div className="space-y-4 max-w-[1600px]">
@@ -203,9 +230,9 @@ export default function DashboardPage() {
           <AnomaliaSection
             anomalias={anomalias}
             contexto={{
-              total:     pulso.total      ?? 0,
+              total:     (kpis.find(k => k.id === 'total')?.value    as number) ?? 0,
               sla_pct:   pulso.slaFila    ?? 0,
-              criticas:  pulso.criticas   ?? 0,
+              criticas:  (kpis.find(k => k.id === 'criticas')?.value as number) ?? 0,
               aging_med: pulso.agingMed   ?? 0,
             }}
           />
@@ -221,11 +248,11 @@ export default function DashboardPage() {
         subtitle={`${modal?.rows?.length ?? 0} ordens de serviço`}
         maxWidth="900px"
         headerAction={
-          modal?.rows?.length > 0 && (
+          (modal?.rows?.length ?? 0) > 0 && (
             <button
               onClick={() => {
                 const date = new Date().toISOString().slice(0, 10)
-                exportCSV(modal.rows, `os_${modal.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
+                exportCSV(modal!.rows, `os_${modal!.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
               }}
               className="flex items-center gap-1.5 text-[10px] text-muted hover:text-primary
                          border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
@@ -246,7 +273,9 @@ export default function DashboardPage() {
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
 
-function SectionLabel({ icon: Icon, color, children }) {
+function SectionLabel({ icon: Icon, color, children }: {
+  icon: IconComp; color: string; children: ReactNode
+}) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
@@ -260,7 +289,9 @@ function SectionLabel({ icon: Icon, color, children }) {
 
 // ─── PulsoHero ────────────────────────────────────────────────────────────────
 
-function PulsoHero({ pulso, aiData, isLoadingAI }) {
+function PulsoHero({ pulso, aiData, isLoadingAI }: {
+  pulso: Pulso; aiData: AINarrativeResult | null | undefined; isLoadingAI: boolean
+}) {
   const {
     score = 0, scoreLabel = '—', narrativa = '', quickInsights = [],
     agingMed = 0, slaFila = 0, mttr = 0, semAgendamento = 0,
@@ -270,8 +301,9 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
     score >= 85 ? '#4ade80' :
     score >= 65 ? '#facc15' : '#f87171'
 
+  type DisplayInsight = { level: string; text: string; ai?: boolean }
   const displayNarrative = aiData?.narrativa || narrativa
-  const displayInsights  = aiData?.insights?.length
+  const displayInsights: DisplayInsight[] = aiData?.insights?.length
     ? aiData.insights.map(text => ({ level: 'cyan', text, ai: true }))
     : quickInsights
 
@@ -288,7 +320,7 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
     yellow: 'bg-yellow/10 text-yellow border-yellow/25',
     green:  'bg-green/10 text-green border-green/25',
     cyan:   'bg-cyan/10 text-cyan border-cyan/25',
-  }
+  } as Record<string, string>
 
   return (
     <div
@@ -329,7 +361,7 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
                 Pulso Operacional
               </span>
               {aiData && (
-                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-primary/80
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary/80
                                  bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full">
                   <Sparkles size={7} /> IA
                 </span>
@@ -387,7 +419,9 @@ function PulsoHero({ pulso, aiData, isLoadingAI }) {
 
 // ─── BentoKPICard ─────────────────────────────────────────────────────────────
 
-function BentoKPICard({ kpi, icon: Icon, delay = 0, onClick }) {
+function BentoKPICard({ kpi, icon: Icon, delay = 0, onClick }: {
+  kpi: KPI; icon: IconComp | undefined; delay?: number; onClick?: () => void
+}) {
   const { title, value, sub, accent, trend } = kpi
   const ac = ACCENT_COLORS[accent] ?? ACCENT_COLORS.primary
 
@@ -446,7 +480,7 @@ function BentoKPICard({ kpi, icon: Icon, delay = 0, onClick }) {
   )
 }
 
-function TrendPill({ trend }) {
+function TrendPill({ trend }: { trend: KPI['trend'] }) {
   const { delta, pct, higherIsBetter } = trend ?? {}
   if (delta == null) return null
   const positive = (delta > 0) === (higherIsBetter !== false)
@@ -464,19 +498,22 @@ function TrendPill({ trend }) {
 // ─── ExecutadasHeroBlock ──────────────────────────────────────────────────────
 
 // Categorias de negócio do provedor — usa _categoria (calculado em enrichRows)
-const CAT_CFG = [
+const CAT_CFG: CatCfgItem[] = [
   { cat: 'INSTALACAO',    label: 'Instalação',      icon: Package, color: '#3b82f6' },
   { cat: 'VT_MANUTENCAO', label: 'VT / Manutenção', icon: Wrench,  color: '#fb923c' },
   { cat: 'SERVICO',       label: 'Serviço',          icon: null,    color: '#c4b5fd' },
   { cat: 'REDE',          label: 'Rede',             icon: Radio,   color: '#71717a' },
 ]
 
-function ExecutadasHeroBlock({ rows, onOpenModal }) {
+function ExecutadasHeroBlock({ rows, onOpenModal }: {
+  rows: OSRow[]
+  onOpenModal: (title: string, rows: OSRow[]) => void
+}) {
   const hojeRows = useMemo(() => rows.filter(r => r._executadaHoje), [rows])
   const total    = hojeRows.length
 
   const grupos = useMemo(() => {
-    const map = {}
+    const map: Record<string, OSRow[]> = {}
     for (const cfg of CAT_CFG) map[cfg.cat] = []
     for (const r of hojeRows) {
       const cat = r._categoria || 'SERVICO'
@@ -580,7 +617,7 @@ function ExecutadasHeroBlock({ rows, onOpenModal }) {
 
 // ─── ClustersBairroPanel ──────────────────────────────────────────────────────
 
-function ClustersBairroPanel({ clusters }) {
+function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) {
   if (!clusters?.length) {
     return (
       <div className="relative overflow-hidden rounded-2xl border border-green/15 bg-card p-5">
@@ -637,11 +674,12 @@ function ClustersBairroPanel({ clusters }) {
 
 // ─── AgingPanel ───────────────────────────────────────────────────────────────
 
-function AgingPanel({ pulso }) {
-  const { agingDist = {} } = pulso
-  const agingTotal = Object.values(agingDist).reduce((s, v) => s + v, 0)
+function AgingPanel({ pulso }: { pulso: Pulso }) {
+  const { agingDist } = pulso
+  const agingTotals = agingDist as unknown as Record<string, number>
+  const agingTotal  = Object.values(agingTotals).reduce((s, v) => s + v, 0)
 
-  const agingEntries = [
+  const agingEntries: { key: string; label: string; color: string }[] = [
     { key: '≤1d',  label: '≤ 1 dia',  color: '#4ade80' },
     { key: '2-3d', label: '2–3 dias', color: '#facc15' },
     { key: '4-7d', label: '4–7 dias', color: '#f97316' },
@@ -660,7 +698,7 @@ function AgingPanel({ pulso }) {
 
       <div className="mt-4 space-y-3">
         {agingEntries.map(e => {
-          const val = agingDist[e.key] ?? 0
+          const val = agingTotals[e.key] ?? 0
           const pct = agingTotal > 0 ? Math.round(val / agingTotal * 100) : 0
           return (
             <div key={e.key} className="flex items-center gap-3">
@@ -684,7 +722,7 @@ function AgingPanel({ pulso }) {
       {/* Stacked bar total */}
       <div className="mt-4 flex h-1.5 rounded-full overflow-hidden bg-surface/30">
         {agingEntries.map(e => {
-          const val = agingDist[e.key] ?? 0
+          const val = agingTotals[e.key] ?? 0
           const pct = agingTotal > 0 ? Math.round(val / agingTotal * 100) : 0
           return pct > 0 ? (
             <div key={e.key} className="h-full" style={{ width: `${pct}%`, background: e.color }} />
@@ -697,7 +735,7 @@ function AgingPanel({ pulso }) {
 
 // ─── CidadesPanel ─────────────────────────────────────────────────────────────
 
-function CidadesPanel({ cidades }) {
+function CidadesPanel({ cidades }: { cidades: { cidade: string; count: number }[] }) {
   const max = Math.max(...cidades.map(c => c.count), 1)
   return (
     <div className="relative overflow-hidden rounded-2xl border border-red/15 bg-card p-5">
@@ -724,7 +762,9 @@ function CidadesPanel({ cidades }) {
 
 const SLA_TIER = { ok: { cls: 'badge-green', label: 'No SLA' }, warn: { cls: 'badge-yellow', label: 'Atenção' }, crit: { cls: 'badge-red', label: 'Crítico' } }
 
-function FornecedorCard({ nome, total, concluidas, sla, cor }) {
+function FornecedorCard({ nome, total, concluidas, sla, cor }: {
+  nome: string; total: number; concluidas: number; sla: number; cor: string
+}) {
   const tier = sla >= 85 ? 'ok' : sla >= 65 ? 'warn' : 'crit'
   const t    = SLA_TIER[tier]
 
@@ -777,12 +817,18 @@ const PRIORIDADE_STYLE = {
   baixa: { color: '#4ade80', bg: 'rgba(74,222,128,0.08)',   border: 'rgba(74,222,128,0.25)'   },
 }
 
-function AnomaliaSection({ anomalias, contexto = {} }) {
+function AnomaliaSection({ anomalias, contexto }: {
+  anomalias: AnomaliasData; contexto: AnomaliaContextType
+}) {
   const { total = 0, picosDia = [], bairrosAnomalia = [], equipesAnomalia = [] } = anomalias ?? {}
   const [open, setOpen] = useState(total > 0)
 
+  type HookAnomItem = { zScore: number; [k: string]: unknown }
   const { data: rcaData, isLoading: rcaLoading } = useAIAnomalias({
-    picosDia, bairrosAnomalia, equipesAnomalia, contexto,
+    picosDia:        picosDia        as unknown as HookAnomItem[],
+    bairrosAnomalia: bairrosAnomalia as unknown as HookAnomItem[],
+    equipesAnomalia: equipesAnomalia as unknown as HookAnomItem[],
+    contexto,
   })
 
   const pri    = rcaData?.prioridade ?? 'média'
@@ -920,24 +966,27 @@ const MODAL_COLS = [
   { key: 'dataagendamento', label: 'Agendamento'  },
 ]
 
-function KpiModalTable({ rows, onOS }) {
-  const [sort, setSort] = useState({ key: '_aging', dir: 'desc' })
+function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow) => void }) {
+  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: '_aging', dir: 'desc' })
   const [page, setPage] = useState(0)
   const PAGE_SIZE = 50
 
-  function toggleSort(key) { setSort(s => ({ key, dir: s.key === key && s.dir === 'desc' ? 'asc' : 'desc' })); setPage(0) }
-  function agendSort(s) { if (!s) return ''; const p = s.split(' ')[0].split('/'); return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : s }
+  function toggleSort(key: string) { setSort(s => ({ key, dir: s.key === key && s.dir === 'desc' ? 'asc' : 'desc' })); setPage(0) }
+  function agendSort(s: string | null | undefined): string { if (!s) return ''; const p = s.split(' ')[0].split('/'); return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : s }
 
   const sorted = useMemo(() => {
     if (!rows.length) return []
     return [...rows].sort((a, b) => {
       const { key, dir } = sort
-      let av, bv
-      if (key === 'numos')           { av = parseInt(a.numos) || 0; bv = parseInt(b.numos) || 0 }
+      let av: number | string, bv: number | string
+      if (key === 'numos')                { av = parseInt(a.numos) || 0; bv = parseInt(b.numos) || 0 }
       else if (key === 'dataagendamento') { av = agendSort(a.dataagendamento ?? ''); bv = agendSort(b.dataagendamento ?? '') }
-      else if (key === '_aging')     { av = a._aging ?? -1; bv = b._aging ?? -1 }
-      else                           { av = (a[key] ?? '').toString().toLowerCase(); bv = (b[key] ?? '').toString().toLowerCase() }
-      const cmp = typeof av === 'string' ? av.localeCompare(bv) : av - bv
+      else if (key === '_aging')          { av = a._aging ?? -1; bv = b._aging ?? -1 }
+      else                               {
+        av = String((a as Record<string, unknown>)[key] ?? '').toLowerCase()
+        bv = String((b as Record<string, unknown>)[key] ?? '').toLowerCase()
+      }
+      const cmp = typeof av === 'string' ? av.localeCompare(bv as string) : (av as number) - (bv as number)
       return dir === 'asc' ? cmp : -cmp
     })
   }, [rows, sort])

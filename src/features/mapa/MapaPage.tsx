@@ -1,13 +1,24 @@
-// @ts-nocheck
 import { useState, useMemo, useEffect } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from 'react-leaflet'
-import { Map, Flame, Circle, AlertTriangle, TrendingUp, Users, Filter, X } from 'lucide-react'
+import { Map, Flame, Circle, TrendingUp, X } from 'lucide-react'
 import L from 'leaflet'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
 import { aggregateByCidade, buildHeatPoints } from './geo'
-import { Badge } from '../../components/ui/Badge'
 import { FilterSelect } from '../../components/ui/FilterSelect'
+
+// Tipo do objeto retornado por aggregateByCidade
+interface CidadeAgg {
+  cidade:     string
+  count:      number
+  criticos:   number
+  excedidos:  number
+  pendentes:  number
+  semEquipe:  number
+  avgAging:   number
+  coords:     { lat: number; lng: number }
+  topBairros: { bairro: string; count: number; criticos: number }[]
+}
 
 // ── Força o Leaflet a recalcular tamanho após montagem lazy ──────────────────
 function MapResizer() {
@@ -49,7 +60,7 @@ function HeatLayer({ points }: { points: [number, number, number][] }) {
 }
 
 // ── Cores por criticidade ─────────────────────────────────────────────────────
-function bubbleColor(g) {
+function bubbleColor(g: CidadeAgg): { fill: string; stroke: string } {
   if (g.criticos  > 0)  return { fill: '#f87171', stroke: '#fca5a5' }
   if (g.excedidos > 0)  return { fill: '#f97316', stroke: '#fdba74' }
   if (g.pendentes > 0)  return { fill: '#3b82f6', stroke: '#7dd3fc' }
@@ -57,13 +68,12 @@ function bubbleColor(g) {
 }
 
 // ── Radius proporcional à raiz quadrada do count ──────────────────────────────
-const bubbleRadius = count => Math.max(10, Math.min(42, 6 + Math.sqrt(count) * 3.2))
+const bubbleRadius = (count: number): number => Math.max(10, Math.min(42, 6 + Math.sqrt(count) * 3.2))
 
 // ── Painel lateral de detalhes da cidade ──────────────────────────────────────
-function CidadePanel({ cidade, onClose }) {
+function CidadePanel({ cidade, onClose }: { cidade: CidadeAgg | null; onClose: () => void }) {
   if (!cidade) return null
   const { fill } = bubbleColor(cidade)
-  const _pct = cidade.count > 0 ? Math.round((cidade.criticos / cidade.count) * 100) : 0
   return (
     <div className="absolute bottom-4 left-4 z-[500] w-72 animate-fade-in">
       <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
@@ -101,7 +111,7 @@ function CidadePanel({ cidade, onClose }) {
           <div className="px-4 py-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Top bairros</p>
             <div className="space-y-1.5">
-              {cidade.topBairros.map((b, i) => (
+              {cidade.topBairros.map((b: { bairro: string; count: number; criticos: number }, i: number) => (
                 <div key={i} className="flex items-center gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
@@ -130,7 +140,7 @@ function CidadePanel({ cidade, onClose }) {
   )
 }
 
-function Stat({ label, value, color }) {
+function Stat({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
     <div className="flex flex-col items-center py-2.5 px-1 gap-0.5">
       <span className={`text-[18px] font-black font-mono leading-none ${color}`}>{value}</span>
@@ -140,7 +150,11 @@ function Stat({ label, value, color }) {
 }
 
 // ── Ranking lateral (glassmorphism) ───────────────────────────────────────────
-function RankingPanel({ cidades, onSelect, selected }) {
+function RankingPanel({ cidades, onSelect, selected }: {
+  cidades:  CidadeAgg[]
+  onSelect: (g: CidadeAgg | null) => void
+  selected: CidadeAgg | null
+}) {
   return (
     <div className="absolute top-4 right-4 z-[500] w-60">
       <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
@@ -149,7 +163,7 @@ function RankingPanel({ cidades, onSelect, selected }) {
           <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Ranking de cidades</p>
         </div>
         <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
-          {cidades.slice(0, 15).map((g, i) => {
+          {cidades.slice(0, 15).map((g: CidadeAgg, i: number) => {
             const { fill } = bubbleColor(g)
             const isSelected = selected?.cidade === g.cidade
             return (
@@ -162,7 +176,7 @@ function RankingPanel({ cidades, onSelect, selected }) {
                 <span className="text-[11px] font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: fill }} />
                 <span className="flex-1 text-[11px] text-secondary truncate capitalize">
-                  {g.cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                  {g.cidade.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
                 </span>
                 <span className="text-[11px] font-mono font-semibold text-text flex-shrink-0">{g.count}</span>
                 {g.criticos > 0 && (
@@ -188,7 +202,7 @@ export default function MapaPage() {
   const [filterTipo,   setFilterTipo]   = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterAging,  setFilterAging]  = useState('')
-  const [selected, setSelected] = useState(null)
+  const [selected, setSelected] = useState<CidadeAgg | null>(null)
 
   // Aplica filtros locais sobre o rows já filtrado por data e por hideRede (via contexto).
   // Padrão sem filtro de status = apenas OS ativas (pendente + atendimento),
@@ -326,11 +340,11 @@ export default function MapaPage() {
 
           {/* Heatmap layer */}
           {(view === 'calor' || view === 'ambos') && heatPoints.length > 0 && (
-            <HeatLayer points={heatPoints} />
+            <HeatLayer points={heatPoints as [number, number, number][]} />
           )}
 
           {/* Bubble markers por cidade */}
-          {(view === 'bolhas' || view === 'ambos') && cidades.map(g => {
+          {(view === 'bolhas' || view === 'ambos') && (cidades as CidadeAgg[]).map(g => {
             const { fill, stroke } = bubbleColor(g)
             const isSelected = selected?.cidade === g.cidade
             return (
@@ -354,7 +368,7 @@ export default function MapaPage() {
                   className="map-tooltip"
                 >
                   <span className="font-semibold">
-                    {g.cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                    {g.cidade.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
                   </span>
                   {' '}
                   <span className="font-mono">{g.count}</span>
@@ -393,7 +407,7 @@ export default function MapaPage() {
   )
 }
 
-function KpiBadge({ label, value, color }) {
+function KpiBadge({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-[10px] font-bold uppercase tracking-[0.04em] text-muted">{label}:</span>

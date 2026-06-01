@@ -2,9 +2,11 @@ import { useState, useRef, type FormEvent } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { api } from '../../lib/api'
 import { useAuthStore } from '../../store/authStore'
+import { useAuditStore } from '../../store/auditStore'
 
 export function LoginPage() {
-  const setAuthed = useAuthStore(s => s.setAuthed)
+  const setAuthed  = useAuthStore(s => s.setAuthed)
+  const logAudit   = useAuditStore(s => s.log)
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -21,16 +23,17 @@ export function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await api.auth.login(username.trim(), password) as any
+      const res = await api.auth.login(username.trim(), password) as { ok: boolean; role?: string; error?: string }
       if (res.ok) {
+        logAudit(`Login realizado`, `role: ${res.role ?? 'gestor'}`, 'auth')
         setSuccess(true)
-        setTimeout(() => setAuthed(res.role ?? 'gestor'), 600)
+        setTimeout(() => setAuthed((res.role ?? 'gestor') as 'gestor' | 'operador' | 'viewer'), 600)
         return
       } else {
         setError(res.error || 'Credenciais inválidas')
       }
     } catch (err) {
-      const msg = (err as any)?.message ?? ''
+      const msg = (err instanceof Error ? err.message : String(err)) ?? ''
       if (msg.startsWith('401')) {
         setError('Usuário ou senha incorretos')
       } else if (msg.startsWith('Timeout')) {

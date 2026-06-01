@@ -52,16 +52,15 @@ export default function OSDrawer({ os, onClose }) {
 
   function handleVerEquipe() {
     if (!os.nomedaequipe) return
-    sessionStorage.setItem('pendingEquipe', os.nomedaequipe)
     onClose()
-    navigate('/ordens')
+    navigate('/ordens', { state: { filterEquipe: os.nomedaequipe } })
   }
 
   const sit           = os._situacaoEfetiva ?? os.descsituacao
   const isConcluida   = sit === 'Concluída'
   const isAtendimento = sit === 'Atendimento'
   const hasAgend      = !!os.dataagendamento?.trim()
-  const obs     = os.observacoes || os.obs || os.observacao || os.nota
+  const obsGeral = os.observacoes || os.obs || os.observacao || os.nota
                || os.descricaoobs || os.descricao_obs || os.historico
                || os.informacoes || os.detalhes || os.descricao || null
   const obsCrit = os.observacaocritica || os.obscritica || null
@@ -83,7 +82,7 @@ export default function OSDrawer({ os, onClose }) {
   // Dados do técnico (mobile) vindos do /detalhes
   const d = osDetails  // atalho
 
-  const obsTecnico  = loadingDetails ? '⏳ Carregando…' : (d?.obsTecnico || obs || null)
+  const obsTecnico  = loadingDetails ? '⏳ Carregando…' : (d?.obsTecnico || obsGeral || null)
   const nomeTecnico = d?.nomeTecnico || null
   const historico   = d?.historico   || []
   const materiais   = d?.materiais   || []
@@ -255,9 +254,9 @@ export default function OSDrawer({ os, onClose }) {
                   <p className="text-[12px] text-red/85 leading-relaxed whitespace-pre-wrap">{obsCrit}</p>
                 </div>
               )}
-              {obs ? (
+              {obsGeral ? (
                 <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
-                  <p className="text-[12px] text-secondary leading-relaxed whitespace-pre-wrap">{obs}</p>
+                  <p className="text-[12px] text-secondary leading-relaxed whitespace-pre-wrap">{obsGeral}</p>
                 </div>
               ) : !obsCrit && (
                 <p className="text-[12px] text-muted/60 italic px-1">Nenhuma observação registrada.</p>

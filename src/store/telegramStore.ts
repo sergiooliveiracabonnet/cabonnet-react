@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { storage } from '../lib/storage'
 
 interface TelegramAlert {
   ts:     number
@@ -40,22 +41,16 @@ const AGING_KEY   = 'cabonet_tg_aging_sent'
 const AGING_DATE  = 'cabonet_tg_aging_date'
 const MAX_HISTORY = 50
 
-function ls(key: string, def: string): string {
-  try { const v = localStorage.getItem(key); return v !== null ? v : def } catch { return def }
-}
-function lsInt(key: string, def: number): number {
-  try { const v = parseInt(localStorage.getItem(key) ?? ''); return isNaN(v) ? def : v } catch { return def }
-}
 function loadHistory(): TelegramAlert[] {
-  try { return JSON.parse(ls(HISTORY_KEY, '[]')) } catch { return [] }
+  return storage.getJSON<TelegramAlert[]>(HISTORY_KEY, [])
 }
 
 export const useTelegramStore = create<TelegramState>((set, get) => ({
   enabled:       false,
-  nivel:         ls('cfg_telegram_nivel', 'atencao'),
-  alertaAging:   ls('cfg_telegram_aging', '1') === '1',
-  filaThreshold: lsInt('cfg_alerta_fila', 30),
-  pollMin:       lsInt('cfg_alerta_poll_min', 5),
+  nivel:         storage.getString('cfg_telegram_nivel', 'atencao'),
+  alertaAging:   storage.getString('cfg_telegram_aging', '1') === '1',
+  filaThreshold: storage.getInt('cfg_alerta_fila', 30),
+  pollMin:       storage.getInt('cfg_alerta_poll_min', 5),
   ativo:         false,
   history:       loadHistory(),
 
@@ -63,37 +58,37 @@ export const useTelegramStore = create<TelegramState>((set, get) => ({
   setAtivo:      (v) => set({ ativo: v }),
 
   setNivel: (v) => {
-    localStorage.setItem('cfg_telegram_nivel', v)
+    storage.set('cfg_telegram_nivel', v)
     set({ nivel: v })
   },
   setAlertaAging: (v) => {
-    localStorage.setItem('cfg_telegram_aging', v ? '1' : '0')
+    storage.set('cfg_telegram_aging', v ? '1' : '0')
     set({ alertaAging: v })
   },
   setFilaThreshold: (v) => {
-    localStorage.setItem('cfg_alerta_fila', String(v))
+    storage.set('cfg_alerta_fila', String(v))
     set({ filaThreshold: v })
   },
   setPollMin: (v) => {
-    localStorage.setItem('cfg_alerta_poll_min', String(v))
+    storage.set('cfg_alerta_poll_min', String(v))
     set({ pollMin: v })
   },
 
   addAlert: (alerta) => {
     const entry = { ...alerta, ts: Date.now(), lido: false }
     const novo  = [entry, ...get().history].slice(0, MAX_HISTORY)
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(novo)) } catch { /* storage unavailable */ }
+    storage.setJSON(HISTORY_KEY, novo)
     set({ history: novo })
   },
 
   markAllRead: () => {
     const novo = get().history.map(a => ({ ...a, lido: true }))
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(novo)) } catch { /* storage unavailable */ }
+    storage.setJSON(HISTORY_KEY, novo)
     set({ history: novo })
   },
 
   clearHistory: () => {
-    localStorage.removeItem(HISTORY_KEY)
+    storage.remove(HISTORY_KEY)
     set({ history: [] })
   },
 
@@ -107,15 +102,15 @@ export const useTelegramStore = create<TelegramState>((set, get) => ({
   // Controle diário de aging OS individuais
   getAgingEnviados: () => {
     const hojeStr = new Date().toDateString()
-    if (localStorage.getItem(AGING_DATE) !== hojeStr) {
-      localStorage.setItem(AGING_DATE, hojeStr)
-      localStorage.removeItem(AGING_KEY)
+    if (storage.getString(AGING_DATE, '') !== hojeStr) {
+      storage.set(AGING_DATE, hojeStr)
+      storage.remove(AGING_KEY)
       return new Set()
     }
-    try { return new Set(JSON.parse(localStorage.getItem(AGING_KEY) ?? '[]')) } catch { return new Set() }
+    return storage.getJSON<unknown[]>(AGING_KEY, []).reduce((s: Set<unknown>, v) => s.add(v), new Set<unknown>())
   },
   saveAgingEnviados: (enviados) => {
-    try { localStorage.setItem(AGING_KEY, JSON.stringify([...enviados])) } catch { /* storage unavailable */ }
+    storage.setJSON(AGING_KEY, [...enviados])
   },
 
   // Filtra alertas por nível de verbosidade configurado

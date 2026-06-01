@@ -1,14 +1,14 @@
-// @ts-nocheck
-import { useMemo } from 'react'
-import {
-  Award, AlertTriangle, TrendingUp, TrendingDown,
-  DollarSign, Users, RefreshCw, Clock, MapPin,
-} from 'lucide-react'
+import { useMemo, type ComponentType, type ReactNode } from 'react'
+import { AlertTriangle, Users, MapPin } from 'lucide-react'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function SectionLabel({ icon: Icon, color, children }) {
+function SectionLabel({ icon: Icon, color, children }: {
+  icon: ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
+  color: string
+  children: ReactNode
+}) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
@@ -18,29 +18,30 @@ function SectionLabel({ icon: Icon, color, children }) {
   )
 }
 
-function taxaColor(taxa) {
+function taxaColor(taxa: number): string {
   if (taxa >= 25) return '#f87171'
   if (taxa >= 15) return '#f97316'
   if (taxa >= 8)  return '#facc15'
   return '#4ade80'
 }
 
-function taxaLabel(taxa) {
+function taxaLabel(taxa: number): string {
   if (taxa >= 25) return 'Crítico'
   if (taxa >= 15) return 'Alto'
   if (taxa >= 8)  return 'Médio'
   return 'OK'
 }
 
-function fmtBRL(v) {
+function fmtBRL(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 }
 
 // ─── EquipeRow ────────────────────────────────────────────────────────────────
 
-function EquipeRow({ rank, eq }) {
+interface EqRow { equipe: string; total: number; taxa: number; revInst?: number; revManut?: number; totalBase?: number }
+
+function EquipeRow({ rank, eq }: { rank: number; eq: EqRow }) {
   const color = taxaColor(eq.taxa)
-  const _pct  = eq.totalBase > 0 ? Math.round(eq.total / eq.totalBase * 100) : 0
 
   return (
     <tr className="border-b border-white/[0.04] hover:bg-surface/20 transition-colors">
@@ -91,7 +92,7 @@ export default function QualidadePage() {
   const rev = derived?.revisitas
 
   const cronicos = useMemo(
-    () => (rev?.cronicos ?? []).sort((a, b) => b.count - a.count).slice(0, 20),
+    () => (rev?.cronicos ?? []).sort((a, b) => ((b as unknown as { count: number }).count ?? 0) - ((a as unknown as { count: number }).count ?? 0)).slice(0, 20),
     [rev]
   )
 
@@ -111,10 +112,6 @@ export default function QualidadePage() {
           custoEstimado, evitaveis, tempoMedio,
           tendencia, porEquipe } = rev
 
-  const _deltaColor = tendencia?.delta > 0 ? '#f87171' : tendencia?.delta < 0 ? '#4ade80' : '#6b7280'
-  const DeltaIcon  = tendencia?.delta > 0 ? TrendingUp : tendencia?.delta < 0 ? TrendingDown : null
-
-  const _maxRevEquipe = Math.max(...(porEquipe?.map(e => e.taxa) ?? [1]), 1)
 
   return (
     <div className="space-y-4 max-w-[1600px]">
@@ -236,17 +233,19 @@ export default function QualidadePage() {
             <SectionLabel icon={MapPin} color="#22d3ee">Revisitas por Cidade</SectionLabel>
             <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
               <div className="divide-y divide-white/[0.04]">
-                {porCidade.map(c => {
-                  const cl = taxaColor(c.taxa)
-                  const maxR = porCidade[0]?.revisitas ?? 1
+                {(porCidade as unknown as { cidade: string; taxa: number; revisitas?: number; total?: number }[]).map(c => {
+                  const cl   = taxaColor(c.taxa)
+                  const rev  = c.revisitas ?? c.total ?? 0
+                  const maxR = (porCidade[0] as unknown as { revisitas?: number; total?: number })?.revisitas ??
+                               (porCidade[0] as unknown as { revisitas?: number; total?: number })?.total ?? 1
                   return (
                     <div key={c.cidade} className="flex items-center gap-3 px-4 py-3 hover:bg-surface/20 transition-colors">
                       <MapPin size={10} className="text-muted flex-shrink-0" />
                       <span className="text-[12px] font-semibold text-text w-32 flex-shrink-0 truncate">{c.cidade}</span>
                       <div className="flex-1 h-1.5 bg-surface/40 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${Math.round(c.revisitas/maxR*100)}%`, background: cl }} />
+                        <div className="h-full rounded-full" style={{ width: `${Math.round(rev/maxR*100)}%`, background: cl }} />
                       </div>
-                      <span className="font-mono font-bold text-[13px] w-8 text-right flex-shrink-0" style={{ color: cl }}>{c.revisitas}</span>
+                      <span className="font-mono font-bold text-[13px] w-8 text-right flex-shrink-0" style={{ color: cl }}>{rev}</span>
                       <span className="text-[10px] text-muted w-10 text-right flex-shrink-0">{c.taxa}%</span>
                     </div>
                   )
@@ -271,16 +270,16 @@ export default function QualidadePage() {
                 <span className="text-right">Rev.</span>
               </div>
               <div className="divide-y divide-white/[0.04] max-h-72 overflow-y-auto">
-                {cronicos.map(c => {
-                  const danger = c.count >= 5 || c.revisitas >= 2
+                {(cronicos as unknown as { cliente?: string; nome?: string; count: number; revisitas?: number }[]).map(c => {
+                  const danger = c.count >= 5 || (c.revisitas ?? 0) >= 2
                   const color  = danger ? '#f87171' : c.count >= 4 ? '#f97316' : '#facc15'
                   return (
-                    <div key={c.cliente}
+                    <div key={c.cliente ?? c.nome}
                          className="grid grid-cols-[1fr_48px_48px] gap-2 px-4 py-2.5
                                     hover:bg-surface/20 transition-colors items-center">
-                      <p className="text-[11.5px] font-medium text-text truncate">{c.cliente}</p>
+                      <p className="text-[11.5px] font-medium text-text truncate">{c.cliente ?? c.nome}</p>
                       <p className="font-mono font-bold text-[13px] text-right" style={{ color }}>{c.count}</p>
-                      <p className="font-mono text-[12px] text-right text-muted">{c.revisitas}</p>
+                      <p className="font-mono text-[12px] text-right text-muted">{c.revisitas ?? '—'}</p>
                     </div>
                   )
                 })}

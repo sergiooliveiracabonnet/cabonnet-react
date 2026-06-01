@@ -613,9 +613,9 @@ export default function RelatoriosPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Total de OS',  value: kpis.total,                     Icon: BarChart2,     colorCls: 'text-primary',     bgCls: 'bg-primary/10',    rows: drillTotal,   color: '#3b82f6' },
-          { label: 'SLA Vencido',  value: kpis.criticas,                  Icon: AlertTriangle, colorCls: 'text-red-400',     bgCls: 'bg-red-500/10',    rows: drillSlaVenc, color: '#f87171' },
-          { label: 'Sem Equipe',   value: kpis.semEquipe,                 Icon: Clock,         colorCls: 'text-orange-400',  bgCls: 'bg-orange-500/10', rows: drillSemEq,   color: '#f97316' },
-          { label: 'Aging Médio',  value: `${kpis.avgAging.toFixed(1)}d`, Icon: TrendingUp,    colorCls: 'text-emerald-400', bgCls: 'bg-emerald-500/10',rows: drillAging,   color: '#4ade80' },
+          { label: 'SLA Vencido',  value: kpis.criticas,                  Icon: AlertTriangle, colorCls: 'text-red',     bgCls: 'bg-red/10',    rows: drillSlaVenc, color: '#f87171' },
+          { label: 'Sem Equipe',   value: kpis.semEquipe,                 Icon: Clock,         colorCls: 'text-orange',  bgCls: 'bg-orange/10', rows: drillSemEq,   color: '#f97316' },
+          { label: 'Aging Médio',  value: `${kpis.avgAging.toFixed(1)}d`, Icon: TrendingUp,    colorCls: 'text-green', bgCls: 'bg-green/10',rows: drillAging,   color: '#4ade80' },
         ].map(k => {
           const KIcon = k.Icon
           return (
@@ -882,17 +882,17 @@ export default function RelatoriosPage() {
                       </td>
                       {/* ── Executadas ── */}
                       <td className="px-4 py-3 border-l border-white/[0.08]">
-                        <span className={`font-mono font-bold tabular-nums ${r.execInst > 0 ? 'text-blue-400' : 'text-muted'}`}>
+                        <span className={`font-mono font-bold tabular-nums ${r.execInst > 0 ? 'text-primary' : 'text-muted'}`}>
                           {r.execInst > 0 ? r.execInst : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`font-mono font-bold tabular-nums ${r.execManut > 0 ? 'text-orange-400' : 'text-muted'}`}>
+                        <span className={`font-mono font-bold tabular-nums ${r.execManut > 0 ? 'text-orange' : 'text-muted'}`}>
                           {r.execManut > 0 ? r.execManut : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`font-mono font-bold tabular-nums ${r.execServico > 0 ? 'text-emerald-400' : 'text-muted'}`}>
+                        <span className={`font-mono font-bold tabular-nums ${r.execServico > 0 ? 'text-green' : 'text-muted'}`}>
                           {r.execServico > 0 ? r.execServico : '—'}
                         </span>
                       </td>
@@ -906,12 +906,12 @@ export default function RelatoriosPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`font-mono font-bold tabular-nums
-                          ${r.sla >= 90 ? 'text-emerald-400' : r.sla >= 75 ? 'text-orange-400' : 'text-red-400'}`}>
+                          ${r.sla >= 90 ? 'text-green' : r.sla >= 75 ? 'text-orange' : 'text-red'}`}>
                           {r.sla > 0 ? `${r.sla.toFixed(0)}%` : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`font-mono font-bold tabular-nums ${r.criticas > 0 ? 'text-red-400' : 'text-muted'}`}>
+                        <span className={`font-mono font-bold tabular-nums ${r.criticas > 0 ? 'text-red' : 'text-muted'}`}>
                           {r.criticas}
                         </span>
                       </td>
@@ -936,13 +936,13 @@ export default function RelatoriosPage() {
                         <span className="text-[10px] text-muted ml-1.5">· {ranking.length} equipes</span>
                       </td>
                       <td className="px-4 py-3 border-l border-white/[0.08]">
-                        <span className="font-mono font-black text-[15px] tabular-nums text-blue-400">{totals.execInst}</span>
+                        <span className="font-mono font-black text-[15px] tabular-nums text-primary">{totals.execInst}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-mono font-black text-[15px] tabular-nums text-orange-400">{totals.execManut}</span>
+                        <span className="font-mono font-black text-[15px] tabular-nums text-orange">{totals.execManut}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-mono font-black text-[15px] tabular-nums text-emerald-400">{totals.execServico}</span>
+                        <span className="font-mono font-black text-[15px] tabular-nums text-green">{totals.execServico}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-mono font-black text-[15px] tabular-nums text-text">{totals.execTotal}</span>
@@ -952,12 +952,12 @@ export default function RelatoriosPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`font-mono font-bold text-[13px] tabular-nums
-                          ${totals.avgSla >= 90 ? 'text-emerald-400' : totals.avgSla >= 75 ? 'text-orange-400' : 'text-red-400'}`}>
+                          ${totals.avgSla >= 90 ? 'text-green' : totals.avgSla >= 75 ? 'text-orange' : 'text-red'}`}>
                           {totals.avgSla > 0 ? `${totals.avgSla.toFixed(0)}%` : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`font-mono font-bold text-[13px] tabular-nums ${totals.slaVenc > 0 ? 'text-red-400' : 'text-muted'}`}>
+                        <span className={`font-mono font-bold text-[13px] tabular-nums ${totals.slaVenc > 0 ? 'text-red' : 'text-muted'}`}>
                           {totals.slaVenc}
                         </span>
                       </td>

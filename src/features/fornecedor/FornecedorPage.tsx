@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useMemo } from 'react'
 import { Home, Award, Clock, Target, DollarSign } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/bar-chart'
@@ -21,14 +20,14 @@ const FORNECEDORES = [
   { value: 'INTERNO',    label: 'Interno (COPE)',     color: '#94a3b8' },
 ]
 
-function scoreColor(s) {
+function scoreColor(s: number): { text: string; bg: string; border: string; label: string } {
   if (s >= 80) return { text: 'text-green',   bg: 'bg-green/10',   border: 'border-green/20',   label: 'Excelente' }
   if (s >= 60) return { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', label: 'Bom'       }
   if (s >= 40) return { text: 'text-yellow',  bg: 'bg-yellow/10',  border: 'border-yellow/20',  label: 'Regular'   }
   return              { text: 'text-red',     bg: 'bg-red/10',     border: 'border-red/20',     label: 'Crítico'   }
 }
 
-function fmtCusto(v) {
+function fmtCusto(v: number | null | undefined): string {
   if (!v || v <= 0) return '—'
   return `R$ ${v.toLocaleString('pt-BR')}`
 }
@@ -111,7 +110,7 @@ export default function FornecedorPage() {
                         <input
                           type="number" min={0} max={100}
                           value={meta ?? ''}
-                          onChange={e => isGestor && updateMetaScore(f.nome, e.target.value)}
+                          onChange={e => isGestor && updateMetaScore(f.nome, Number(e.target.value))}
                           disabled={!isGestor}
                           placeholder="Meta"
                           className="w-14 bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 text-[10px] font-mono
@@ -155,13 +154,26 @@ export default function FornecedorPage() {
   )
 }
 
-function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCustoChange, meta, isGestor }) {
+interface PanelKpis { total: number; concluidas: number; criticas: number; sla: number; mttr: number; score: number; custoMensal?: number; custoPorOs?: number | null }
+interface PanelEquipe { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }
+interface PanelChart  { labels: unknown[]; total: unknown[]; concluidas: unknown[] }
+
+function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCustoChange, meta, isGestor }: {
+  nome: string; cor: string
+  equipes: PanelEquipe[]
+  kpis:    PanelKpis | null
+  chart:   PanelChart
+  custoMensal: number
+  onCustoChange: (v: number) => void
+  meta:    number | null
+  isGestor: boolean
+}) {
   const [expanded, setExpanded] = useState(true)
   const sc = scoreColor(kpis?.score ?? 0)
   const acimaDoMeta = meta != null && kpis?.score != null && kpis.score >= meta
 
-  const FROM = { primary: 'from-primary/[0.07]', green: 'from-green/[0.07]', red: 'from-red/[0.07]', yellow: 'from-yellow/[0.07]', orange: 'from-orange/[0.07]' }
-  const TEXT = { primary: 'text-primary', green: 'text-green', red: 'text-red', yellow: 'text-yellow', orange: 'text-orange' }
+  const FROM: Record<string, string> = { primary: 'from-primary/[0.07]', green: 'from-green/[0.07]', red: 'from-red/[0.07]', yellow: 'from-yellow/[0.07]', orange: 'from-orange/[0.07]' }
+  const TEXT: Record<string, string> = { primary: 'text-primary', green: 'text-green', red: 'text-red', yellow: 'text-yellow', orange: 'text-orange' }
 
   const kpiCards = kpis ? [
     { label: 'Total OS',       value: kpis.total,      accent: 'primary' },
@@ -212,7 +224,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
             <input
               type="number" min={0} step={500}
               value={custoMensal || ''}
-              onChange={e => isGestor && onCustoChange(e.target.value)}
+              onChange={e => isGestor && onCustoChange(Number(e.target.value))}
               disabled={!isGestor}
               placeholder="0"
               className="w-32 bg-surface border border-white/[0.08] rounded-md px-2 py-1 text-[12px] font-mono
@@ -249,7 +261,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
-                  {equipes.map((eq) => (
+                  {(equipes as { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }[]).map((eq) => (
                     <tr key={eq.nome} className="text-secondary hover:bg-primary/[0.05] transition-colors">
                       <td className="px-3 py-2 font-semibold text-text max-w-[180px] truncate">{eq.nome}</td>
                       <td className="px-3 py-2 font-mono">{eq.total}</td>
@@ -274,7 +286,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
           {/* Gráfico total vs. concluídas */}
           {chart?.labels?.length > 0 && (
             <div className="bg-surface border border-white/[0.08] rounded-xl p-4 h-48">
-              <BarChart data={chart.labels.map((name, i) => ({ name, Total: chart.total[i] ?? 0, Concluídas: chart.concluidas[i] ?? 0 }))}>
+              <BarChart data={(chart.labels as string[]).map((name: string, i: number) => ({ name, Total: (chart.total as number[])[i] ?? 0, Concluídas: (chart.concluidas as number[])[i] ?? 0 }))}>
                 <Bar dataKey="Total" fill={cor} name="Total" />
                 <Bar dataKey="Concluídas" fill="#4ade80" name="Concluídas" />
                 <XAxis dataKey="name" />

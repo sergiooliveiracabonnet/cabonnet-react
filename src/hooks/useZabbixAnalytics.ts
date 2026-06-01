@@ -27,8 +27,7 @@ function useZabbixEndpoint<T = unknown>(
 
   const refresh = useCallback(async () => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const r = await fetcher() as any
+      const r = await fetcher() as { ok: boolean; data?: T; error?: string }
       if (r.ok) { setData(r.data as T); setError(null) }
       else setError((r.error as string) ?? 'Erro desconhecido')
     } catch (e) {

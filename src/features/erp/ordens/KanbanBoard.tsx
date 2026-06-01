@@ -1,5 +1,6 @@
-// @ts-nocheck
 import { useMemo, useRef, useState } from 'react'
+import type { ComponentType } from 'react'
+import type { OSRow, TipoEquipe } from '../../../lib/types'
 import {
   Clock, AlertTriangle, CheckCircle2, XCircle, Zap, Plus,
   User, MapPin, Package, Wrench, Network, GripVertical,
@@ -7,23 +8,35 @@ import {
   FileText, ShieldAlert,
 } from 'lucide-react'
 import { useERPRows } from '../useERPRows'
-import { useERPStore, getKanbanColumn } from '../../../store/erpStore'
+import { useERPStore, getKanbanColumn, type KanbanColumnId } from '../../../store/erpStore'
+import { useAuditStore } from '../../../store/auditStore'
 import { shortEquipe } from '../../../lib/osFormat'
 import { useIsOperador } from '../../../hooks/useRole'
 
-const COLS = [
-  { id: 'nova',        label: 'Nova',           Icon: Plus,         iconCls: 'text-blue-400',    border: 'border-blue-500/30',    bg: 'bg-blue-500/[0.04]',    badge: 'bg-blue-500/20 text-blue-300',    dot: 'bg-blue-400' },
-  { id: 'agendada',    label: 'Agendada',        Icon: Clock,        iconCls: 'text-amber-400',   border: 'border-amber-500/30',   bg: 'bg-amber-500/[0.04]',   badge: 'bg-amber-500/20 text-amber-300',   dot: 'bg-amber-400' },
-  { id: 'atendimento', label: 'Em Atendimento',  Icon: Zap,          iconCls: 'text-violet-400',  border: 'border-violet-500/30',  bg: 'bg-violet-500/[0.04]',  badge: 'bg-violet-500/20 text-violet-300',  dot: 'bg-violet-400' },
-  { id: 'concluida',   label: 'Concluída',       Icon: CheckCircle2, iconCls: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/[0.04]', badge: 'bg-emerald-500/20 text-emerald-300', dot: 'bg-emerald-400' },
-  { id: 'cancelada',   label: 'Cancelada',       Icon: XCircle,      iconCls: 'text-red-400',     border: 'border-red-500/30',     bg: 'bg-red-500/[0.04]',     badge: 'bg-red-500/20 text-red-300',      dot: 'bg-red-400' },
+// ─── Tipos locais ────────────────────────────────────────────────────────────
+
+type IconComp = ComponentType<{ size?: number; className?: string }>
+
+interface ColDef {
+  id:      string; label: string; Icon: IconComp
+  iconCls: string; border: string; bg: string; badge: string; dot: string
+}
+
+interface SlaBadge { label: string; cls: string }
+
+const COLS: ColDef[] = [
+  { id: 'nova',        label: 'Nova',          Icon: Plus,         iconCls: 'text-primary', border: 'border-primary/30', bg: 'bg-primary/[0.04]', badge: 'bg-primary/20 text-primary',  dot: 'bg-primary' },
+  { id: 'agendada',    label: 'Agendada',       Icon: Clock,        iconCls: 'text-yellow',  border: 'border-yellow/30',  bg: 'bg-yellow/[0.04]',  badge: 'bg-yellow/20 text-yellow',    dot: 'bg-yellow'  },
+  { id: 'atendimento', label: 'Em Atendimento', Icon: Zap,          iconCls: 'text-purple',  border: 'border-purple/30',  bg: 'bg-purple/[0.04]',  badge: 'bg-purple/20 text-purple',    dot: 'bg-purple'  },
+  { id: 'concluida',   label: 'Concluída',      Icon: CheckCircle2, iconCls: 'text-green',   border: 'border-green/30',   bg: 'bg-green/[0.04]',   badge: 'bg-green/20 text-green',      dot: 'bg-green'   },
+  { id: 'cancelada',   label: 'Cancelada',      Icon: XCircle,      iconCls: 'text-red',     border: 'border-red/30',     bg: 'bg-red/[0.04]',     badge: 'bg-red/20 text-red',          dot: 'bg-red'     },
 ]
 
 // ── Period grouping ───────────────────────────────────────────────────────────
 const PERIOD_ORDER = ['manhã', 'tarde']
 
-function groupCardsByPeriodo(cards) {
-  const map = {}
+function groupCardsByPeriodo(cards: OSRow[]): [string, OSRow[]][] {
+  const map: Record<string, OSRow[]> = {}
   for (const row of cards) {
     const p = (row.periodo || '').trim() || 'Sem período'
     ;(map[p] = map[p] || []).push(row)
@@ -35,58 +48,87 @@ function groupCardsByPeriodo(cards) {
   })
 }
 
-function PeriodoSeparator({ periodo, count }) {
+function PeriodoSeparator({ periodo, count }: { periodo: string; count: number }) {
   const lc = periodo.toLowerCase()
   const isManha = lc.includes('manh')
   const isTarde = lc.includes('tarde')
 
   const PIcon   = isManha ? Sunrise : isTarde ? Sunset : Sun
-  const iconCls = isManha ? 'text-amber-400' : isTarde ? 'text-violet-400'   : 'text-muted'
-  const lineCls = isManha ? 'bg-amber-500/30' : isTarde ? 'bg-violet-500/30' : 'bg-surface'
-  const textCls = isManha ? 'text-amber-400' : isTarde ? 'text-violet-400'   : 'text-muted'
+  const iconCls = isManha ? 'text-yellow'   : isTarde ? 'text-purple'   : 'text-muted'
+  const lineCls = isManha ? 'bg-yellow/30'  : isTarde ? 'bg-purple/30'  : 'bg-surface'
+  const textCls = isManha ? 'text-yellow'   : isTarde ? 'text-purple'   : 'text-muted'
 
   return (
     <div className="flex items-center gap-1.5 pt-3 pb-1 first:pt-0">
       <PIcon size={10} className={iconCls} />
-      <span className={`text-[9px] font-bold uppercase tracking-[0.04em] ${textCls}`}>
+      <span className={`text-[10px] font-bold uppercase tracking-[0.04em] ${textCls}`}>
         {periodo}
       </span>
       <div className={`flex-1 h-px ${lineCls}`} />
-      <span className="text-[9px] text-muted tabular-nums">{count}</span>
+      <span className="text-[10px] text-muted tabular-nums">{count}</span>
     </div>
   )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TIPO_ICONS = {
-  INSTALACAO: { Icon: Package, cls: 'text-blue-400' },
-  MANUTENCAO: { Icon: Wrench,  cls: 'text-orange-400' },
-  REDE:       { Icon: Network, cls: 'text-emerald-400' },
+// (TIPO_ICONS now defined after slaBadge as a typed partial record)
+
+function slaBadge(row: OSRow): SlaBadge {
+  if (row._slaCritico)  return { label: 'Crítico',  cls: 'bg-red/20 text-red border border-red/30'          }
+  if (row._slaExcedido) return { label: 'Excedido', cls: 'bg-orange/20 text-orange border border-orange/30'  }
+  if (row._slaSemAgend) return { label: 'S/Agend',  cls: 'bg-yellow/20 text-yellow border border-yellow/30'  }
+  return { label: 'OK',   cls: 'bg-green/20 text-green border border-green/30' }
 }
 
-function slaBadge(row) {
-  if (row._slaCritico)  return { label: 'Crítico',  cls: 'bg-red-500/20 text-red-400 border border-red-500/30' }
-  if (row._slaExcedido) return { label: 'Excedido', cls: 'bg-orange-500/20 text-orange-400 border border-orange-500/30' }
-  if (row._slaSemAgend) return { label: 'S/Agend',  cls: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' }
-  return { label: 'OK', cls: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' }
+const TIPO_ICONS: Partial<Record<TipoEquipe, { Icon: IconComp; cls: string }>> = {
+  INSTALACAO: { Icon: Package, cls: 'text-primary' },
+  MANUTENCAO: { Icon: Wrench,  cls: 'text-orange'  },
+  REDE:       { Icon: Network, cls: 'text-green'    },
 }
 
-function OSCard({ row, onDragStart, onInfo }) {
+interface OSCardProps {
+  row:          OSRow
+  onDragStart:  (e: React.DragEvent, numos: string) => void
+  onInfo:       (row: OSRow) => void
+  isGrabbed:    boolean
+  onKeyGrab:    (numos: string) => void
+  onKeyMove:    (dir: 'left' | 'right') => void
+  onKeyRelease: () => void
+}
+
+function OSCard({ row, onDragStart, onInfo, isGrabbed, onKeyGrab, onKeyMove, onKeyRelease }: OSCardProps) {
   const sla = slaBadge(row)
-  const { Icon: TipoIcon, cls: tipoCls } = TIPO_ICONS[row._tipo] || { Icon: AlertTriangle, cls: 'text-muted' }
-  const aging = row._aging ?? row._agingAbertura ?? 0
-  const eq    = shortEquipe(row.nomedaequipe)
+  const tipoEntry = TIPO_ICONS[row._tipo as TipoEquipe]
+  const TipoIcon  = tipoEntry?.Icon ?? AlertTriangle
+  const tipoCls   = tipoEntry?.cls  ?? 'text-muted'
+  const aging  = row._aging ?? row._agingAbertura ?? 0
+  const eq     = shortEquipe(row.nomedaequipe)
   const eqCode = eq.includes(' - ') ? eq.split(' - ')[0] : eq
 
   return (
     <div
       draggable
+      tabIndex={0}
+      role="article"
+      aria-label={`OS ${row.numos} — ${row.nomecliente || 'Cliente não informado'} — SLA ${sla.label}${isGrabbed ? ' — capturada, use setas para mover' : ''}`}
+      aria-grabbed={isGrabbed || undefined}
       onDragStart={e => onDragStart(e, row.numos)}
-      className="group relative bg-elevated border border-white/[0.08] rounded-lg p-3
+      onKeyDown={e => {
+        if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onKeyGrab(row.numos) }
+        if (e.key === 'ArrowRight') { e.preventDefault(); onKeyMove('right') }
+        if (e.key === 'ArrowLeft')  { e.preventDefault(); onKeyMove('left')  }
+        if (e.key === 'Escape')     { e.preventDefault(); onKeyRelease()     }
+        if (e.key === 'i' || e.key === 'I') { e.preventDefault(); onInfo(row) }
+      }}
+      className={`group relative bg-elevated border rounded-lg p-3
                  cursor-grab active:cursor-grabbing select-none
                  hover:border-muted/40 hover:shadow-lg hover:shadow-black/25
-                 transition-all duration-150"
+                 transition-all duration-150
+                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60
+                 ${isGrabbed
+                   ? 'border-primary/60 ring-2 ring-primary/40 shadow-lg shadow-primary/10'
+                   : 'border-white/[0.08]'}`}
     >
       <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-20 transition-opacity pointer-events-none">
         <GripVertical size={11} className="text-muted" />
@@ -98,7 +140,7 @@ function OSCard({ row, onDragStart, onInfo }) {
           #{row.numos}
         </span>
         <div className="flex items-center gap-1">
-          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${sla.cls}`}>
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${sla.cls}`}>
             {sla.label}
           </span>
           <button
@@ -132,22 +174,22 @@ function OSCard({ row, onDragStart, onInfo }) {
       {/* Chips: equipe · aging · cidade */}
       <div className="flex items-center flex-wrap gap-1">
         {row.nomedaequipe ? (
-          <span className="text-[9px] font-semibold bg-surface/40 border border-white/[0.08] px-1.5 py-0.5 rounded text-secondary">
+          <span className="text-[10px] font-semibold bg-surface/40 border border-white/[0.08] px-1.5 py-0.5 rounded text-secondary">
             {eqCode}
           </span>
         ) : (
-          <span className="flex items-center gap-0.5 text-[9px] font-semibold bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded text-red-400">
+          <span className="flex items-center gap-0.5 text-[10px] font-semibold bg-red/10 border border-red/20 px-1.5 py-0.5 rounded text-red">
             <User size={8} />Sem equipe
           </span>
         )}
         {aging > 0 && (
-          <span className={`flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded
-            ${aging > 7 ? 'text-red-400 bg-red-500/10' : aging > 3 ? 'text-orange-400 bg-orange-500/10' : 'text-secondary bg-surface/30'}`}>
+          <span className={`flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded
+            ${aging > 7 ? 'text-red bg-red/10' : aging > 3 ? 'text-orange bg-orange/10' : 'text-secondary bg-surface/30'}`}>
             <Clock size={8} />{aging}d
           </span>
         )}
         {row.nomedacidade && (
-          <span className="flex items-center gap-0.5 text-[9px] text-muted">
+          <span className="flex items-center gap-0.5 text-[10px] text-muted">
             <MapPin size={8} />{row.nomedacidade}
           </span>
         )}
@@ -158,7 +200,7 @@ function OSCard({ row, onDragStart, onInfo }) {
 
 // ── OS Detail Drawer ──────────────────────────────────────────────────────────
 
-function DetailRow({ label, value, className = '' }) {
+function DetailRow({ label, value, className = '' }: { label: string; value: string | null | undefined; className?: string }) {
   if (!value) return null
   return (
     <div className="flex items-start gap-3 px-4 py-2.5">
@@ -168,18 +210,20 @@ function DetailRow({ label, value, className = '' }) {
   )
 }
 
-function OSDetailDrawer({ row, onClose }) {
+function OSDetailDrawer({ row, onClose }: { row: OSRow | null; onClose: () => void }) {
   if (!row) return null
 
-  const sla = slaBadge(row)
-  const { Icon: TipoIcon, cls: tipoCls } = TIPO_ICONS[row._tipo] || { Icon: AlertTriangle, cls: 'text-muted' }
+  const sla      = slaBadge(row)
+  const tipoE    = TIPO_ICONS[row._tipo as TipoEquipe]
+  const TipoIcon = tipoE?.Icon ?? AlertTriangle
+  const tipoCls  = tipoE?.cls  ?? 'text-muted'
   const aging     = row._aging ?? row._agingAbertura ?? 0
   const eq        = shortEquipe(row.nomedaequipe)
   const eqDisplay = eq || 'Sem equipe'
 
-  const obs = row.observacao || row.obs || row.descricao || row.complemento || ''
+  const obs = (row.observacao || row.obs || row.descricao || row.complemento || '') as string
 
-  const agingCls = aging > 7 ? 'text-red-400' : aging > 3 ? 'text-orange-400' : 'text-secondary'
+  const agingCls = aging > 7 ? 'text-red' : aging > 3 ? 'text-orange' : 'text-secondary'
 
   return (
     <div className="fixed inset-0 z-[300] flex items-stretch justify-end">
@@ -196,7 +240,7 @@ function OSDetailDrawer({ row, onClose }) {
               <span className="font-mono text-[11px] font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded">
                 #{row.numos}
               </span>
-              <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${sla.cls}`}>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${sla.cls}`}>
                 {sla.label}
               </span>
             </div>
@@ -228,20 +272,20 @@ function OSDetailDrawer({ row, onClose }) {
                 <p className={`text-xl font-headline font-bold leading-none ${agingCls}`}>
                   {aging > 0 ? `${aging}d` : '—'}
                 </p>
-                <p className="text-[9px] text-muted mt-1">Aging</p>
+                <p className="text-[10px] text-muted mt-1">Aging</p>
               </div>
               <div className="bg-surface/30 rounded-lg p-3 text-center">
                 <p className="text-xl font-headline font-bold text-text leading-none">
                   {row._slaLimite ? `${row._slaLimite}d` : '—'}
                 </p>
-                <p className="text-[9px] text-muted mt-1">Limite SLA · {row._slaTipoLabel || ''}</p>
+                <p className="text-[10px] text-muted mt-1">Limite SLA · {row._slaTipoLabel || ''}</p>
               </div>
             </div>
             {row._slaCritico && row._diasAcimaSLA > 0 && (
-              <div className="mt-2 flex items-center gap-1.5 bg-red-500/10 border border-red-500/20
+              <div className="mt-2 flex items-center gap-1.5 bg-red/10 border border-red/20
                               rounded-lg px-3 py-2">
-                <ShieldAlert size={12} className="text-red-400 flex-shrink-0" />
-                <span className="text-[11px] text-red-400 font-semibold">
+                <ShieldAlert size={12} className="text-red flex-shrink-0" />
+                <span className="text-[11px] text-red font-semibold">
                   {row._diasAcimaSLA} dias acima do SLA
                 </span>
               </div>
@@ -255,7 +299,7 @@ function OSDetailDrawer({ row, onClose }) {
             </p>
             <div className="divide-y divide-white/[0.04]">
               <DetailRow label="Situação"    value={row._situacaoEfetiva || row.descsituacao} />
-              <DetailRow label="Equipe"      value={eqDisplay} className={!row.nomedaequipe ? 'text-red-400' : ''} />
+              <DetailRow label="Equipe"      value={eqDisplay} className={!row.nomedaequipe ? 'text-red' : ''} />
               <DetailRow label="Data"        value={row.dataagendamento || '—'} />
               <DetailRow label="Período"     value={row.periodo} />
               <DetailRow label="Abertura"    value={row.datacadastro} />
@@ -306,7 +350,19 @@ function OSDetailDrawer({ row, onClose }) {
   )
 }
 
-function KanbanCol({ col, cards, dragOver, showPeriodos, onDragStart, onInfo, onDrop, onDragOver, onDragLeave }) {
+interface KanbanColProps {
+  col: ColDef; cards: OSRow[]; dragOver: string | null; showPeriodos: boolean; grabbedNumos: string | null
+  onDragStart:  (e: React.DragEvent, numos: string) => void
+  onInfo:       (row: OSRow) => void
+  onDrop:       (colId: string) => void
+  onDragOver:   (colId: string) => void
+  onDragLeave:  () => void
+  onKeyGrab:    (numos: string) => void
+  onKeyMove:    (dir: 'left' | 'right') => void
+  onKeyRelease: () => void
+}
+
+function KanbanCol({ col, cards, dragOver, showPeriodos, grabbedNumos, onDragStart, onInfo, onDrop, onDragOver, onDragLeave, onKeyGrab, onKeyMove, onKeyRelease }: KanbanColProps) {
   const { Icon, iconCls, border, bg, badge, dot } = col
   const isOver = dragOver === col.id
   const groups = useMemo(
@@ -316,6 +372,8 @@ function KanbanCol({ col, cards, dragOver, showPeriodos, onDragStart, onInfo, on
 
   return (
     <div
+      role="group"
+      aria-label={`${col.label} — ${cards.length} OS`}
       className={`flex flex-col flex-shrink-0 w-[268px] rounded-xl border overflow-hidden
                   transition-all duration-150
                   ${border} ${bg}
@@ -331,7 +389,7 @@ function KanbanCol({ col, cards, dragOver, showPeriodos, onDragStart, onInfo, on
           <Icon size={13} className={iconCls} />
           <span className="text-[12px] font-semibold text-text">{col.label}</span>
           {showPeriodos && groups && (
-            <span className="text-[9px] text-muted bg-surface/40 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] text-muted bg-surface/40 px-1.5 py-0.5 rounded">
               por período
             </span>
           )}
@@ -342,10 +400,14 @@ function KanbanCol({ col, cards, dragOver, showPeriodos, onDragStart, onInfo, on
       </div>
 
       {/* Cards list */}
-      <div className="flex-1 overflow-y-auto p-3 min-h-[140px]"
-           style={{ maxHeight: 'calc(100vh - 336px)' }}>
+      <div
+        role="list"
+        aria-label={`OS em ${col.label}`}
+        className="flex-1 overflow-y-auto p-3 min-h-[140px]"
+        style={{ maxHeight: 'calc(100vh - 336px)' }}
+      >
         {cards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 opacity-30">
+          <div className="flex flex-col items-center justify-center py-10 opacity-30" aria-hidden="true">
             <Icon size={22} className={iconCls} />
             <p className="text-[10px] text-muted mt-2">Vazia</p>
           </div>
@@ -353,11 +415,13 @@ function KanbanCol({ col, cards, dragOver, showPeriodos, onDragStart, onInfo, on
           /* Agrupado por período */
           <div className="space-y-1">
             {groups.map(([periodo, periodoCards]) => (
-              <div key={periodo}>
+              <div key={periodo} role="listitem">
                 <PeriodoSeparator periodo={periodo} count={periodoCards.length} />
                 <div className="space-y-2">
                   {periodoCards.map(row => (
-                    <OSCard key={row.numos} row={row} onDragStart={onDragStart} onInfo={onInfo} />
+                    <OSCard key={row.numos} row={row} isGrabbed={grabbedNumos === row.numos}
+                      onDragStart={onDragStart} onInfo={onInfo}
+                      onKeyGrab={onKeyGrab} onKeyMove={onKeyMove} onKeyRelease={onKeyRelease} />
                   ))}
                 </div>
               </div>
@@ -367,7 +431,11 @@ function KanbanCol({ col, cards, dragOver, showPeriodos, onDragStart, onInfo, on
           /* Lista plana */
           <div className="space-y-2">
             {cards.map(row => (
-              <OSCard key={row.numos} row={row} onDragStart={onDragStart} onInfo={onInfo} />
+              <div key={row.numos} role="listitem">
+                <OSCard row={row} isGrabbed={grabbedNumos === row.numos}
+                  onDragStart={onDragStart} onInfo={onInfo}
+                  onKeyGrab={onKeyGrab} onKeyMove={onKeyMove} onKeyRelease={onKeyRelease} />
+              </div>
             ))}
           </div>
         )}
@@ -376,13 +444,16 @@ function KanbanCol({ col, cards, dragOver, showPeriodos, onDragStart, onInfo, on
   )
 }
 
-export function KanbanBoard({ equipeFilter, tipoFilter }) {
+export function KanbanBoard({ equipeFilter, tipoFilter }: { equipeFilter?: string; tipoFilter?: string }) {
   const { rows }  = useERPRows()
   const { statusOverrides, setStatusOverride } = useERPStore()
   const isOperador = useIsOperador()
-  const dragRef   = useRef(null)
-  const [dragOver,  setDragOver]  = useState(null)
-  const [detailOS,  setDetailOS]  = useState(null)
+  const logAudit   = useAuditStore(s => s.log)
+  const dragRef    = useRef<string | null>(null)
+  const [dragOver,   setDragOver]   = useState<string | null>(null)
+  const [detailOS,   setDetailOS]   = useState<OSRow | null>(null)
+  const [keyGrabbed, setKeyGrabbed] = useState<string | null>(null)
+  const liveRef = useRef<HTMLDivElement>(null)
 
   const columns = useMemo(() => {
     const filtered = rows.filter(r => {
@@ -390,7 +461,7 @@ export function KanbanBoard({ equipeFilter, tipoFilter }) {
       if (tipoFilter   && r._tipo !== tipoFilter) return false
       return true
     })
-    const map = {}
+    const map: Record<string, OSRow[]> = {}
     COLS.forEach(c => { map[c.id] = [] })
     filtered.forEach(row => {
       const id = getKanbanColumn(row, statusOverrides)
@@ -399,36 +470,98 @@ export function KanbanBoard({ equipeFilter, tipoFilter }) {
     return map
   }, [rows, equipeFilter, tipoFilter, statusOverrides])
 
-  function handleDragStart(e, numos) {
+  function announce(msg: string) {
+    if (liveRef.current) liveRef.current.textContent = msg
+  }
+
+  function handleDragStart(e: React.DragEvent, numos: string) {
     if (!isOperador) { e.preventDefault(); return }
     dragRef.current = numos
     e.dataTransfer.effectAllowed = 'move'
   }
 
-  function handleDrop(colId) {
+  function handleDrop(colId: string) {
     if (!isOperador) return
     if (dragRef.current) {
-      setStatusOverride(dragRef.current, colId)
+      const colLabel = COLS.find(c => c.id === colId)?.label ?? colId
+      logAudit(`OS movida → ${colLabel}`, `numos ${dragRef.current}`, 'kanban')
+      setStatusOverride(dragRef.current, colId as KanbanColumnId)
       dragRef.current = null
     }
     setDragOver(null)
   }
 
+  // Teclado: Space/Enter captura ou solta o card
+  function handleKeyGrab(numos: string) {
+    if (!isOperador) return
+    setKeyGrabbed(prev => {
+      if (prev === numos) {
+        announce('Card solto.')
+        return null
+      }
+      announce(`OS ${numos} capturada. Use ← → para mover entre colunas. Escape para cancelar.`)
+      return numos
+    })
+  }
+
+  // Teclado: mover card para coluna adjacente
+  function handleKeyMove(direction: 'left' | 'right') {
+    if (!isOperador || !keyGrabbed) return
+    const curColIdx = COLS.findIndex(c => (columns[c.id] || []).some(r => r.numos === keyGrabbed))
+    if (curColIdx === -1) return
+    const targetIdx = direction === 'right' ? curColIdx + 1 : curColIdx - 1
+    if (targetIdx < 0 || targetIdx >= COLS.length) {
+      announce(`Já na ${direction === 'right' ? 'última' : 'primeira'} coluna.`)
+      return
+    }
+    logAudit(`OS movida → ${COLS[targetIdx].label} (teclado)`, `numos ${keyGrabbed}`, 'kanban')
+    setStatusOverride(keyGrabbed, COLS[targetIdx].id as KanbanColumnId)
+    announce(`Movida para ${COLS[targetIdx].label}.`)
+  }
+
+  function handleKeyRelease() {
+    setKeyGrabbed(null)
+    announce('Operação cancelada.')
+  }
+
   return (
     <>
-      <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0">
+      {/* Região aria-live para screen readers */}
+      <div ref={liveRef} role="status" aria-live="polite" aria-atomic="true"
+           className="sr-only" />
+
+      {keyGrabbed && (
+        <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 mb-1
+                        bg-primary/10 border border-primary/30 rounded-lg text-[11px] text-primary">
+          <kbd className="font-mono bg-primary/15 px-1 rounded">←</kbd>
+          <kbd className="font-mono bg-primary/15 px-1 rounded">→</kbd>
+          <span>para mover — </span>
+          <kbd className="font-mono bg-primary/15 px-1 rounded">Esc</kbd>
+          <span>para cancelar</span>
+        </div>
+      )}
+
+      <div
+        role="region"
+        aria-label="Quadro Kanban de Ordens de Serviço"
+        className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0"
+      >
         {COLS.map(col => (
           <KanbanCol
             key={col.id}
             col={col}
             cards={columns[col.id] || []}
             dragOver={dragOver}
+            grabbedNumos={keyGrabbed}
             showPeriodos={col.id === 'atendimento' && !!equipeFilter}
             onDragStart={handleDragStart}
             onInfo={setDetailOS}
             onDrop={handleDrop}
             onDragOver={setDragOver}
             onDragLeave={() => setDragOver(null)}
+            onKeyGrab={handleKeyGrab}
+            onKeyMove={handleKeyMove}
+            onKeyRelease={handleKeyRelease}
           />
         ))}
       </div>

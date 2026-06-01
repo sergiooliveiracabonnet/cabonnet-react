@@ -367,9 +367,9 @@ const CONF_STYLE = {
   baixa: 'bg-orange/15 text-orange border-orange/25',
 }
 const TEND_STYLE = {
-  crescente:   { cls: 'text-red-400',    Icon: TrendingUp   },
+  crescente:   { cls: 'text-red',    Icon: TrendingUp   },
   estável:     { cls: 'text-cyan-400',   Icon: Minus        },
-  decrescente: { cls: 'text-green-400',  Icon: TrendingDown },
+  decrescente: { cls: 'text-green',  Icon: TrendingDown },
 }
 
 function ForecastCard({ evolucao, totalAtivo, fila }) {
@@ -673,15 +673,15 @@ function TabCohort({ d, rows, onDrill }) {
                       onClick={() => onDrill(`Cohort ${label}`, rows.filter(r => toISOMonth(r.datacadastro) === label))}>
                       <td className="px-4 py-2.5 font-mono text-primary">{label}</td>
                       <td className="px-4 py-2.5 font-mono">{c.total[i] ?? 0}</td>
-                      <td className="px-4 py-2.5 font-mono text-green-400">{c.concluidas[i] ?? 0}</td>
+                      <td className="px-4 py-2.5 font-mono text-green">{c.concluidas[i] ?? 0}</td>
                       <td className="px-4 py-2.5 font-mono text-purple-400">{c.mesmoMes[i] ?? 0}</td>
                       <td className="px-4 py-2.5">
-                        <span className={`font-mono text-[11px] font-semibold ${taxa >= 80 ? 'text-green-400' : taxa >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+                        <span className={`font-mono text-[11px] font-semibold ${taxa >= 80 ? 'text-green' : taxa >= 50 ? 'text-yellow' : 'text-red'}`}>
                           {taxa}%
                         </span>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className={`font-mono text-[11px] ${mttrV <= 2 ? 'text-green-400' : mttrV <= 5 ? 'text-yellow-400' : 'text-red-400'}`}>
+                        <span className={`font-mono text-[11px] ${mttrV <= 2 ? 'text-green' : mttrV <= 5 ? 'text-yellow' : 'text-red'}`}>
                           {mttrV}d
                         </span>
                       </td>

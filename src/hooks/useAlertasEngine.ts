@@ -39,8 +39,7 @@ function msProximaHora(): number {
 }
 
 export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSRow[] | null | undefined) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const store = useTelegramStore() as any
+  const store = useTelegramStore()
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
