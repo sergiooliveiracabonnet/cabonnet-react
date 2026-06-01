@@ -34,7 +34,7 @@ function SectionDivider({ children }: { children: ReactNode }) {
 interface OSDetailModalProps { os?: OSRow | null; open: boolean; onClose: () => void }
 export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) {
   if (!osRow) return null
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const os: any = osRow
   const fornLabel = (FORN_LABEL as Record<string, string>)[os._fornecedor] ?? os._fornecedor ?? '—'
 

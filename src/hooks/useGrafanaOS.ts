@@ -12,7 +12,7 @@ export function useGrafanaOS() {
 
   const refresh = useCallback(async () => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const [t, c] = await Promise.all([grafana.osTotais(), grafana.osCidades()]) as [any, any]
       if (t.ok) setTotais(t.data)
       if (c.ok) setCidades(c.data ?? [])

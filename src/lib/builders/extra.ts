@@ -84,7 +84,7 @@ export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<
 
 // ─── Atendimento ──────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function transformAtendimento(serverData: any, opts: { period?: string; cidade?: string; canal?: string } = {}) {
   if (!serverData) return null
   const { period = 'mes', cidade: cidFilter = '', canal: canalFilter = '' } = opts
@@ -100,7 +100,7 @@ export function transformAtendimento(serverData: any, opts: { period?: string; c
     hoje:  new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()),
   } as Record<string, Date | null>)[period] ?? null
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const filteredDias = dias.filter((d: any) => {
     if (cutoff && new Date(d.d) < cutoff) return false
     if (cidFilter) {
@@ -117,18 +117,18 @@ export function transformAtendimento(serverData: any, opts: { period?: string; c
     return true
   })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const filteredLabels = filteredDias.map((d: any) => d.d)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const filteredTotal  = filteredDias.map((d: any) => d.tot)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const filteredPresc  = filteredDias.map((d: any) => d.pre)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const totalFilt = filteredDias.reduce((s: number, d: any) => s + d.tot, 0)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const prescFilt = filteredDias.reduce((s: number, d: any) => s + d.pre, 0)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const fidFilt   = filteredDias.reduce((s: number, d: any) => s + d.fid, 0)
   const diasCnt   = filteredDias.length || 1
 
@@ -163,7 +163,7 @@ export function transformAtendimento(serverData: any, opts: { period?: string; c
     .sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 10)
     .map(([idx, total]) => ({ cidade: (cidades as string[])[Number(idx)] ?? idx, total }))
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const rawRegs = (registros as Array<[number, ...unknown[]]>).filter((reg) => {
     if (!cutoff) return true
     const d = (datas as string[])[reg[0]] ?? ''
@@ -185,7 +185,7 @@ export function transformAtendimento(serverData: any, opts: { period?: string; c
 
 // ─── Juniper ──────────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type JuniperClient = Record<string, string | undefined>
 type JuniperData = { total?: number; alerta?: boolean; clientes?: JuniperClient[]; cluster?: string; ultima_coleta?: string }
 

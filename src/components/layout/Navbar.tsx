@@ -204,7 +204,7 @@ export function Navbar() {
   const alerts = useAlerts(rows as OSRow[], allRows as OSRow[])
   useAlertasEngine(allRows as OSRow[], rows as OSRow[])
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const tg = useTelegramStore()
   const naoLidos = (tg.history as { lido: boolean }[]).filter(a => !a.lido).length
 

@@ -34,7 +34,7 @@ export function OSHoverCard({ os, anchorRect }: OSHoverCardProps) {
   }, [os, anchorRect])
 
   if (!os) return null
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const o: any = os
 
   const sit      = o._situacaoEfetiva ?? o.descsituacao

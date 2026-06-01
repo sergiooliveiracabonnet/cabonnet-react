@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { Badge } from '../../components/ui/Badge'
 import type { OSRow } from '../../lib/types'
-import { PERIOD_ORDER } from './ClienteGroupedTable'
+
+const PERIOD_ORDER = ['manhã', 'tarde']
 
 export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
   rows: OSRow[]; density: string; onRowClick?: (r: OSRow) => void; equipe?: string

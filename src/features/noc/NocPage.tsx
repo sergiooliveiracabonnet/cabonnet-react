@@ -46,7 +46,7 @@ function useNowClock() {
 
 // ─── Slide 0 — Visão Operacional ─────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean }) {
   return (
     <div className="h-full p-6 flex flex-col gap-4">
@@ -91,7 +91,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
 
 // ─── Slide 1 — SLA & Equipes ─────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas: any[] }) {
   return (
     <div className="h-full p-6 grid grid-cols-2 gap-6 overflow-hidden">
@@ -179,7 +179,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
 
 // ─── Slide 2 — Fornecedores ───────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
   return (
     <div className="h-full p-6 flex flex-col gap-4 overflow-y-auto">

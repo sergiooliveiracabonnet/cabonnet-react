@@ -40,7 +40,7 @@ export default function CapacidadePage() {
     [equipeIndisponivel]
   )
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const { executivo, hipoteses, cobertura, equipes: _equipes, semaforo, projecao } = useMemo(
     () => buildCapacidade(rowsDisponiveis, { metaInst, metaManut, metaServ, dateFilter }, allRows),
     [rowsDisponiveis, allRows, metaInst, metaManut, metaServ, dateFilter]

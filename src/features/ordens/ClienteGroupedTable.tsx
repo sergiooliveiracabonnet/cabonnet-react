@@ -3,8 +3,6 @@ import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { Badge } from '../../components/ui/Badge'
 import type { OSRow } from '../../lib/types'
 
-export const PERIOD_ORDER = ['manhã', 'tarde']
-
 // ── Agrupamento por cliente — Timeline visual ─────────────────────────────────
 
 function _parseDateStr(s: string | null | undefined): Date | null {
