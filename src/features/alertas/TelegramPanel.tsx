@@ -47,7 +47,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
     telegram.status()
       .then((d: any) => store.setEnabled(d?.enabled === true))
       .catch(() => store.setEnabled(false))
-  }, [])
+  }, [store])
 
   useEffect(() => {
     if (tab === 'config') {

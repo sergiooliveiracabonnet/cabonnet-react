@@ -84,4 +84,12 @@ export default defineConfig([
       'react-hooks/exhaustive-deps': 'warn',
     },
   },
+  // Component library files: co-locate types/constants/utilities with their components.
+  // react-refresh fast-refresh applies to page entry points, not library files.
+  {
+    files: ['**/*Components.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

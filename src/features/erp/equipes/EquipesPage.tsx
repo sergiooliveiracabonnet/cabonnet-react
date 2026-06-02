@@ -228,7 +228,7 @@ function TeamDrawer({ team, metrics, slaData, teamRows, custoMensal = 0, onCusto
         tarde: dayRows.filter(r => (r.periodo || '').toLowerCase().includes('tarde')).length,
       }
     })
-  }, [teamRows])
+  }, [team, teamRows])
 
   if (!team) return null
   const cfg      = TIPO[team.tipo]
@@ -543,7 +543,7 @@ export default function EquipesPage() {
       return t.code.toLowerCase().includes(q) || t.leader.toLowerCase().includes(q)
     }
     return true
-  }), [search, tipoFilter])
+  }), [allTeams, search, tipoFilter])
 
   // Summary
   const summary = useMemo(() => {

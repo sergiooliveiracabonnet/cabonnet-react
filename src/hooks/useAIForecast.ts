@@ -33,7 +33,10 @@ function buildSerie(evolucao: EvolucaoData) {
 }
 
 export function useAIForecast({ evolucao, totalAtivo = 0, fila = 0 }: UseAIForecastInput) {
-  const serie = useMemo(() => buildSerie(evolucao), [evolucao.labels.join(',')])
+  // Stable key from label list content — avoids rebuilding serie on unrelated re-renders
+  const evolucaoKey = evolucao.labels.join(',')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const serie = useMemo(() => buildSerie(evolucao), [evolucaoKey])
 
   const mediaDiaria = useMemo(() => {
     if (!serie.length) return 0

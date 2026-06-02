@@ -263,7 +263,7 @@ function PlannerCell({ rows = [] as OSRow[], isPast, _isToday: _isToday = false,
     const manut = rows.filter((r: OSRow) => r._tipo === 'MANUTENCAO').length
     const other = count - inst - manut
     return { inst, manut, other }
-  }, [rows])
+  }, [count, rows])
 
   const nConcl   = rows.filter((r: OSRow) => isConcluida(r.descsituacao)).length
   const nPending = count - nConcl
