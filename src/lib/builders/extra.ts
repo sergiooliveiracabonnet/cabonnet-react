@@ -185,7 +185,16 @@ export function transformAtendimento(serverData: any, opts: { period?: string; c
 
 // ─── Juniper ──────────────────────────────────────────────────────────────────
 
- 
+// Converte formato brasileiro "dd/mm/yyyy HH:MM:SS" para timestamp UTC.
+// new Date("02/06/2026 ...") é interpretado como 2 de fevereiro (mm/dd) — incorreto.
+function parseBRDate(s: string): number {
+  if (!s) return NaN
+  const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/)
+  if (!m) return NaN
+  const [, dd, mm, yyyy, HH, MM, SS] = m
+  return new Date(`${yyyy}-${mm}-${dd}T${HH}:${MM}:${SS}`).getTime()
+}
+
 type JuniperClient = Record<string, string | undefined>
 type JuniperData = { total?: number; alerta?: boolean; clientes?: JuniperClient[]; cluster?: string; ultima_coleta?: string }
 
@@ -237,7 +246,7 @@ export function transformJuniper(serverData: unknown) {
     })),
     log:       [] as unknown[],
     osCidades: [] as unknown[],
-    isStale:   ultima_coleta ? (Date.now() - new Date(ultima_coleta).getTime()) > 15 * 60 * 1000 : false,
+    isStale:   ultima_coleta ? (Date.now() - parseBRDate(ultima_coleta)) > 15 * 60 * 1000 : false,
     hasAlert:  alerta,
   }
 }
