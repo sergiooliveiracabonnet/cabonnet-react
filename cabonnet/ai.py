@@ -15,6 +15,62 @@ from cabonnet import state
 
 log = logging.getLogger("CaboNetServer")
 
+# Preços Haiku 4.5 por milhão de tokens (USD)
+_PRICE_IN  = 0.80   # input
+_PRICE_OUT = 4.00   # output
+
+
+def _register_usage(resp_json: dict, error: bool = False) -> None:
+    """Acumula tokens e erros de cada chamada à API Anthropic."""
+    with state._ai_usage_lock:
+        if error:
+            state._ai_usage["errors"] += 1
+            return
+        usage = resp_json.get("usage", {})
+        state._ai_usage["input_tokens"]  += usage.get("input_tokens",  0)
+        state._ai_usage["output_tokens"] += usage.get("output_tokens", 0)
+        state._ai_usage["calls"]         += 1
+
+
+def ai_status() -> dict:
+    """Valida a chave Anthropic e retorna métricas de uso acumuladas."""
+    if not ANTHROPIC_API_KEY:
+        return {"ok": False, "valid": False, "reason": "ANTHROPIC_API_KEY não configurada no .env"}
+    try:
+        resp = requests.get(
+            "https://api.anthropic.com/v1/models",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01"},
+            timeout=8, verify=False,
+        )
+        valid = resp.ok
+        model_count = len(resp.json().get("data", [])) if valid else 0
+    except Exception as ex:
+        return {"ok": False, "valid": False, "reason": str(ex)[:100]}
+
+    with state._ai_usage_lock:
+        inp  = state._ai_usage["input_tokens"]
+        out  = state._ai_usage["output_tokens"]
+        calls  = state._ai_usage["calls"]
+        errors = state._ai_usage["errors"]
+
+    cost_usd = (inp / 1_000_000 * _PRICE_IN) + (out / 1_000_000 * _PRICE_OUT)
+    return {
+        "ok":            True,
+        "valid":         valid,
+        "model":         "claude-haiku-4-5-20251001",
+        "models_avail":  model_count,
+        "console_url":   "https://console.anthropic.com/settings/billing",
+        "usage": {
+            "calls":         calls,
+            "errors":        errors,
+            "input_tokens":  inp,
+            "output_tokens": out,
+            "total_tokens":  inp + out,
+            "cost_usd":      round(cost_usd, 4),
+            "cost_brl":      round(cost_usd * 5.75, 2),
+        },
+    }
+
 
 def _ai_narrative(payload):
     """Gera análise operacional estruturada via Claude API com cache de 5 minutos por hash de payload."""
@@ -80,7 +136,9 @@ def _ai_narrative(payload):
             log.warning("[AI] Anthropic API %s: %s", resp.status_code, resp.text[:200])
             return None
 
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -197,7 +255,9 @@ def _ai_revisitas(payload):
             log.warning("[AI] Revisitas API %s: %s", resp.status_code, resp.text[:200])
             return None
 
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -295,7 +355,9 @@ def _ai_anomalias(payload):
             log.warning("[AI] Anomalias API %s: %s", resp.status_code, resp.text[:200])
             return None
 
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -400,7 +462,9 @@ def _ai_forecast(payload: dict):
             log.warning("[AI] Forecast API %s: %s", resp.status_code, resp.text[:200])
             return None
 
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -498,7 +562,9 @@ def _ai_daily_briefing(payload: dict):
             log.warning("[AI] Briefing API %s: %s", resp.status_code, resp.text[:200])
             return None
 
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -582,7 +648,9 @@ def _ai_suggest_team(payload: dict):
             log.warning("[AI] suggest-team %s: %s", resp.status_code, resp.text[:200])
             return None
 
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -652,7 +720,9 @@ def _ai_alertas(payload):
         if not resp.ok:
             log.warning("[AI] alertas %s: %s", resp.status_code, resp.text[:200])
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
@@ -718,7 +788,9 @@ def _ai_capacidade(payload):
         if not resp.ok:
             log.warning("[AI] capacidade %s: %s", resp.status_code, resp.text[:200])
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
@@ -781,7 +853,9 @@ def _ai_campo_previsao(payload):
         if not resp.ok:
             log.warning("[AI] campo-previsao %s: %s", resp.status_code, resp.text[:200])
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
@@ -843,7 +917,9 @@ def _ai_fornecedor_rec(payload):
         if not resp.ok:
             log.warning("[AI] fornecedor-rec %s: %s", resp.status_code, resp.text[:200])
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
@@ -908,7 +984,9 @@ def _ai_planner(payload):
         if not resp.ok:
             log.warning("[AI] planner %s: %s", resp.status_code, resp.text[:200])
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
@@ -973,7 +1051,9 @@ def _ai_proxima_os(payload):
         if not resp.ok:
             log.warning("[AI] proxima-os %s: %s", resp.status_code, resp.text[:200])
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
@@ -1036,7 +1116,9 @@ def _ai_cidades_cluster(payload):
         if not resp.ok:
             log.warning("[AI] cidades-cluster %s: %s", resp.status_code, resp.text[:200])
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
@@ -1102,7 +1184,9 @@ def _ai_produtividade_analise(payload):
         if not resp.ok:
             log.warning("[AI] produtividade-analise %s: %s", resp.status_code, resp.text[:200])
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
@@ -1173,7 +1257,9 @@ def _ai_juniper_correlacao(payload):
         if not resp.ok:
             log.warning("[AI] juniper-correlacao %s: %s", resp.status_code, resp.text[:200])
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]

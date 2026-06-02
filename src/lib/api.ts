@@ -90,6 +90,12 @@ export const ai = {
   juniperCorrelacao: (payload: unknown) => request('/ai/juniper-correlacao',   { method: 'POST', body: JSON.stringify(payload) }),
 }
 
+export const aiStatus = () => request<{
+  ok: boolean; valid: boolean; reason?: string
+  model?: string; models_avail?: number; console_url?: string
+  usage?: { calls: number; errors: number; input_tokens: number; output_tokens: number; total_tokens: number; cost_usd: number; cost_brl: number }
+}>('/ai/status')
+
 export const telegram = {
   status:    ()                                                             => request('/notify/telegram/status'),
   send:      (text: string, chat?: string)                                 => request('/notify/telegram',            { method: 'POST', body: JSON.stringify({ text, ...(chat && { chat }) }) }),

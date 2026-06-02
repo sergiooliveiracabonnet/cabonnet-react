@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useMemo, memo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { RefreshCw, ChevronDown, Clock, AlertTriangle, Menu, Search, Bell, Send, History } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { RefreshCw, ChevronDown, Clock, AlertTriangle, Menu, Search, Bell, Send, History, Sparkles, ExternalLink, X as XIcon } from 'lucide-react'
+import { aiStatus } from '../../lib/api'
 import { AnimatedThemeToggler } from '../ui/AnimatedThemeToggler'
 import { useUIStore } from '../../store/uiStore'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -182,6 +184,128 @@ function severityCls(s: string): string {
   if (s === 'critical') return 'text-red'
   if (s === 'warning')  return 'text-yellow'
   return 'text-cyan'
+}
+
+// ─── AI Status Badge ─────────────────────────────────────────────────────────
+
+function AIStatusBadge() {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  const { data, isLoading } = useQuery({
+    queryKey:        ['ai-status'],
+    queryFn:         aiStatus,
+    staleTime:       5 * 60_000,
+    refetchInterval: 10 * 60_000,
+    retry:           false,
+  })
+
+  useEffect(() => {
+    if (!open) return
+    const fn = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [open])
+
+  const valid   = data?.valid ?? null
+  const usage   = data?.usage
+  const dotCls  = isLoading ? 'bg-muted animate-pulse' : valid ? 'bg-green' : 'bg-red'
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        title="Status da API Anthropic"
+        className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-surface transition-colors"
+      >
+        <Sparkles size={13} className={valid ? 'text-green' : valid === false ? 'text-red' : 'text-muted'} />
+        <span className={`w-1.5 h-1.5 rounded-full ${dotCls}`} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 z-[600] w-72 animate-fade-in">
+          <div className="bg-elevated border border-white/[0.10] rounded-2xl shadow-2xl overflow-hidden">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <Sparkles size={13} className="text-primary" />
+                <span className="text-[12px] font-bold text-text">Anthropic API</span>
+              </div>
+              <button onClick={() => setOpen(false)} className="text-muted hover:text-text transition-colors">
+                <XIcon size={13} />
+              </button>
+            </div>
+
+            {/* Status */}
+            <div className="px-4 py-3 border-b border-white/[0.05]">
+              {isLoading ? (
+                <p className="text-[11px] text-muted animate-pulse">Verificando chave…</p>
+              ) : valid ? (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green" />
+                  <span className="text-[12px] text-green font-semibold">Chave válida</span>
+                  <span className="text-[10px] text-muted ml-auto">{data?.model?.replace('claude-', 'Claude ')}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red" />
+                  <span className="text-[12px] text-red font-semibold">Chave inválida</span>
+                </div>
+              )}
+            </div>
+
+            {/* Uso desta sessão */}
+            {usage && (
+              <div className="px-4 py-3 border-b border-white/[0.05] space-y-2">
+                <p className="text-[9px] font-bold uppercase tracking-[0.06em] text-muted">Esta sessão do servidor</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                  <div>
+                    <p className="text-[9px] text-muted">Chamadas</p>
+                    <p className="text-[14px] font-mono font-bold text-text">{usage.calls}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-muted">Tokens totais</p>
+                    <p className="text-[14px] font-mono font-bold text-text">{usage.total_tokens.toLocaleString('pt-BR')}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-muted">Custo estimado</p>
+                    <p className="text-[14px] font-mono font-bold text-cyan">USD {usage.cost_usd.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-muted">Em reais (est.)</p>
+                    <p className="text-[14px] font-mono font-bold text-cyan">R$ {usage.cost_brl.toFixed(2)}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between text-[9px] text-muted/60 pt-1">
+                  <span>Entrada: {usage.input_tokens.toLocaleString('pt-BR')} tokens</span>
+                  <span>Saída: {usage.output_tokens.toLocaleString('pt-BR')} tokens</span>
+                </div>
+              </div>
+            )}
+
+            {/* Link para saldo real */}
+            <div className="px-4 py-3">
+              <p className="text-[10px] text-muted mb-2">
+                O saldo real só está disponível no console da Anthropic.
+              </p>
+              <a
+                href={data?.console_url ?? 'https://console.anthropic.com/settings/billing'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg
+                           bg-primary/10 border border-primary/30 text-primary text-[11px] font-semibold
+                           hover:bg-primary/20 transition-colors"
+              >
+                Ver saldo no Console Anthropic
+                <ExternalLink size={11} />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
@@ -540,6 +664,7 @@ export function Navbar() {
         )}
       </div>
 
+      <AIStatusBadge />
       <AnimatedThemeToggler />
       <RefreshControl />
     </header>

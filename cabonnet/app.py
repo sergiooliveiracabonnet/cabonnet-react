@@ -950,6 +950,12 @@ async def ai_juniper_correlacao(request: Request):
 
 # ── Grafana / Zabbix ──────────────────────────────────────────────────────────
 
+@router.get("/ai/status")
+async def ai_status_endpoint():
+    from cabonnet.ai import ai_status
+    return ai_status()
+
+
 @router.get("/grafana/os-totais")
 async def grafana_os_totais():
     try:

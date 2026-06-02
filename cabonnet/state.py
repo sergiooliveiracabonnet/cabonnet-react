@@ -62,6 +62,10 @@ _sessions_lock = threading.Lock()
 _ate_cache      = {"data": None, "ts": 0}
 _ate_cache_lock = threading.Lock()
 
+# ── Uso acumulado da AI (tokens + custo estimado) ────────────────────────────
+_ai_usage           = {"input_tokens": 0, "output_tokens": 0, "calls": 0, "errors": 0}
+_ai_usage_lock      = threading.Lock()
+
 # ── Cache AI ──────────────────────────────────────────────────────────────────
 _ai_cache           = {"hash": "", "narrativa": "", "insights": [], "ts": 0.0}
 _ai_cache_lock      = threading.Lock()
