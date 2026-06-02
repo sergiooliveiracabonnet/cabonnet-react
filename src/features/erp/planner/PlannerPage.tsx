@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { CalendarDays, MapPin, ChevronLeft, ChevronRight, Target } from 'lucide-react'
+import { CalendarDays, MapPin, ChevronLeft, ChevronRight, Target, Sparkles } from 'lucide-react'
 import { useERPRows }  from '../useERPRows'
 import { useERPStore } from '../../../store/erpStore'
 import { useIsGestor } from '../../../hooks/useRole'
 import { shortEquipe } from '../../../lib/osFormat'
 import { isCOPE, isReagend } from '../../../lib/transform'
+import { useAIPlanner } from '../../../hooks/useAIPlanner'
 import {
   SectionLabel, PlannerDrillModal, PlannerCell,
   getWeekDays, buildPlanner, MONTH_PT,
@@ -44,6 +45,29 @@ export default function PlannerPage() {
     )
     return [...all].filter(e => !inPlan.has(e)).length
   }, [allRows, teams])
+
+  const aiEquipes = useMemo(() =>
+    teams.map(t => ({
+      nome:         t.team,
+      total_semana: t.weekTotal,
+      por_dia:      Object.fromEntries(
+        days.map(d => [d.key, t.schedule[d.key]?.length ?? 0])
+      ),
+    }))
+  , [teams, days])
+
+  const aiDias = useMemo(() => days.map(d => d.key), [days])
+
+  const metaGlobal = useMemo(() => {
+    const vals = Object.values(metaEquipeDiaria).filter(v => v > 0)
+    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
+  }, [metaEquipeDiaria])
+
+  const { data: aiData, isFetching: aiLoading } = useAIPlanner({
+    equipes:     aiEquipes,
+    meta_diaria: metaGlobal,
+    dias:        aiDias,
+  })
 
   const weekLabel = (() => {
     const first = days[0]; const last = days[6]
@@ -275,6 +299,51 @@ export default function PlannerPage() {
                 <span className="font-mono text-[11px] text-primary font-bold">{cnt}</span>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── AI Planner — apenas para gestores ── */}
+      {isGestor && (
+        <section className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Sparkles size={13} className="text-primary" />
+            <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
+              Sugestao de balanceamento
+            </span>
+          </div>
+          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4">
+            {aiLoading && !aiData ? (
+              <p className="text-[12px] text-muted animate-pulse">Consultando IA…</p>
+            ) : !aiData ? (
+              <p className="text-[12px] text-muted">
+                {teams.length >= 2
+                  ? 'Sem sugestão disponível para esta semana.'
+                  : 'São necessárias ao menos 2 equipes com OS para gerar sugestão.'}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {aiData.narrativa && (
+                  <p className="text-[12px] text-secondary leading-relaxed">{aiData.narrativa}</p>
+                )}
+                {aiData.sugestoes.length > 0 && (
+                  <div className="space-y-2">
+                    {aiData.sugestoes.map((s, i) => (
+                      <div key={i} className="flex items-start gap-3 bg-card border border-white/[0.08] rounded-lg px-3 py-2.5">
+                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-[10px] font-bold text-primary">{i + 1}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-semibold text-text">{s.equipe}</p>
+                          <p className="text-[11px] text-secondary mt-0.5">{s.acao}</p>
+                        </div>
+                        <p className="text-[11px] text-muted text-right max-w-[160px] flex-shrink-0">{s.impacto}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       )}

@@ -2,11 +2,12 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Zap, Monitor, Settings, RefreshCw, Users, Layers,
-  Clipboard, GitMerge, Trash2, Activity, Clock, AlertCircle,
+  Clipboard, GitMerge, Trash2, Activity, Clock, AlertCircle, Sparkles,
 } from 'lucide-react'
 import type { OSRow } from '../../lib/types'
 import { AreaChart, Area, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/line-chart'
 import { api, endpoints } from '../../lib/api'
+import { useAIJuniper } from '../../hooks/useAIJuniper'
 import { storage } from '../../lib/storage'
 import { transformJuniper } from '../../lib/builders'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -58,6 +59,31 @@ export default function JuniperPage() {
   const clientes   = data?.clientes ?? []
   const isStale    = data?.isStale  ?? false
   const hasAlert   = data?.hasAlert ?? false
+
+  // Clientes inativos = state 'inactive'
+  const inativosPayload = useMemo(() =>
+    clientes
+      .filter((c: Record<string, string | undefined>) => c.state === 'inactive')
+      .map((c: Record<string, string | undefined>) => ({
+        nome:   c.usuario ?? '',
+        cidade: c.cidade  ?? '',
+      }))
+  , [clientes])
+
+  const osAtivasPayload = useMemo(() =>
+    allRows
+      .filter(r => ['Pendente', 'Atendimento'].includes((r._situacaoEfetiva ?? r.descsituacao) as string))
+      .map(r => ({
+        numos:  r.numos,
+        cidade: (r.nomedacidade ?? '') as string,
+        tipo:   (r._tipo ?? '') as string,
+      }))
+  , [allRows])
+
+  const { data: aiJuniper } = useAIJuniper({
+    inativos:  inativosPayload,
+    os_ativas: osAtivasPayload,
+  })
 
   const hist = useMemo(() => {
     if (!historico.length) return { labels: [], values: [] }
@@ -472,6 +498,41 @@ export default function JuniperPage() {
           </div>
         )}
       </div>
+
+      {/* ── Correlação IA — Inativos × OS ── */}
+      {(inativosPayload.length > 0 || aiJuniper) && (
+        <>
+          <SectionTitle icon={Sparkles}>Correlacao IA — Inativos sem OS</SectionTitle>
+          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+            {!aiJuniper ? (
+              <p className="text-[12px] text-muted animate-pulse">Consultando IA…</p>
+            ) : (
+              <>
+                {aiJuniper.narrativa && (
+                  <p className="text-[12px] text-secondary leading-relaxed">{aiJuniper.narrativa}</p>
+                )}
+                {aiJuniper.sem_os.length === 0 ? (
+                  <p className="text-[12px] text-green font-semibold">Nenhum cliente inativo sem OS ativa identificado.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {aiJuniper.sem_os.map((item, i) => (
+                      <div key={i}
+                           className="flex items-start gap-3 bg-card border border-orange/20 rounded-lg px-3 py-2.5">
+                        <span className="w-2 h-2 rounded-full bg-orange mt-1.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-semibold text-text">{item.nome}</p>
+                          <p className="text-[11px] text-muted">{item.cidade}</p>
+                        </div>
+                        <p className="text-[11px] text-orange text-right max-w-[200px] flex-shrink-0">{item.alerta}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </>
+      )}
 
     </div>
   )
