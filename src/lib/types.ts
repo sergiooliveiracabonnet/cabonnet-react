@@ -281,23 +281,84 @@ export interface AnomaliasData {
 
 // ─── Cidades Builder ──────────────────────────────────────────────────────────
 
-export interface CidadeRankingItem {
+// Registro completo de uma cidade (todasCidades)
+export interface CidadeItem {
   cidade:   string
   total:    number
-  concluidas: number
+  atend:    number
+  pend:     number
+  reagend:  number
+  concl:    number
+  slaExc:   number
+  criticas: number
+  semEq:    number
+  agingMed: number
+  score:    number
   taxa:     number
+  status:   'critico' | 'alto' | 'medio' | 'baixo'
+}
+
+// Top-10 por score (ranking)
+export interface CidadeRankItem {
+  cidade:   string
+  score:    number
+  criticas: number
+  slaExc:   number
+  total:    number
+}
+
+// Top-15 por total em aberto (pendencias)
+export interface CidadePendItem {
+  cidade:   string
+  atend:    number
+  pend:     number
+  total:    number
+  slaRisco: string
+}
+
+// Top-15 por aging médio (fila)
+export interface CidadeFilaItem {
+  cidade:    string
+  emAberto:  number
+  agingMed:  number
+  criticas:  number
+  semEquipe: number
+}
+
+// Todas as cidades com nível de risco (heatmap)
+export interface CidadeHeatmapItem {
+  cidade: string
+  total:  number
+  nivel:  'critico' | 'alto' | 'medio' | 'baixo'
+}
+
+// Top-10 com concluídas > 0 (execucoes)
+export interface CidadeExecItem {
+  cidade:     string
+  concluidas: number
+  total:      number
+  taxa:       number
+}
+
+// Top-15 por volume total (consolidado)
+export interface CidadeConsolidItem {
+  cidade:   string
+  total:    number
+  atend:    number
+  pend:     number
+  concl:    number
   criticas: number
 }
 
 export interface CidadesData {
-  ranking:      CidadeRankingItem[]
-  pendencias:   { cidade: string; count: number }[]
-  fila:         { cidade: string; count: number }[]
-  heatmap:      { cidade: string; lat: number; lng: number; weight: number }[]
-  execucoes:    { cidade: string; count: number }[]
-  consolidado:  CidadeRankingItem[]
+  ranking:      CidadeRankItem[]
+  pendencias:   CidadePendItem[]
+  fila:         CidadeFilaItem[]
+  heatmap:      CidadeHeatmapItem[]
+  execucoes:    CidadeExecItem[]
+  consolidado:  CidadeConsolidItem[]
   kpis:         KPI[]
-  todasCidades: string[]
+  todasCidades: CidadeItem[]
 }
 
 // ─── Campo Builder ────────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ import { useIsGestor } from '../../../hooks/useRole'
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export type Metrics  = { queue: number; criticas: number; concluidas: number }
-export type SlaEntry = { sla?: number; agingMed?: number; nome?: string; [k: string]: unknown }
+export type SlaEntry = { sla?: number; agingMed?: number; nome?: string; tipo?: string; total?: number; criticas?: number }
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 

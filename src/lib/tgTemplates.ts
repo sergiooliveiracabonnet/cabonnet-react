@@ -1,33 +1,28 @@
-// @ts-nocheck
-// Templates de mensagens Telegram — portados de C:\Cabonnet\js\navigation.js
 import { shortEquipe } from './osFormat'
 import { getSlaLimite } from './transform'
+import type { OSRow } from './types'
 
 const DIV  = '─'.repeat(24)
 const DIVS = '─'.repeat(20)
 const EMP  = 'CABONNET'
 
-const esc   = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-const hoje  = () => new Date().toLocaleDateString('pt-BR')
-const hora  = () => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-const rod   = () => `<i>${EMP} · Gestão de OS · ${hoje()}</i>`
-
-// data no formato dd/mm/aaaa para comparar com campos de data das OS
-const toHojeStr = () => {
+const esc       = (s: unknown): string => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+const hoje      = (): string => new Date().toLocaleDateString('pt-BR')
+const hora      = (): string => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+const rod       = (): string => `<i>${EMP} · Gestão de OS · ${hoje()}</i>`
+const toHojeStr = (): string => {
   const n = new Date()
   return `${String(n.getDate()).padStart(2,'0')}/${String(n.getMonth()+1).padStart(2,'0')}/${n.getFullYear()}`
 }
-const isHoje = r => (r.dataexecucao ?? r.dataagendamento ?? '').startsWith(toHojeStr())
-
-const isCampo = eq => {
+const isHoje  = (r: OSRow): boolean => (r.dataexecucao ?? r.dataagendamento ?? '').startsWith(toHojeStr())
+const isCampo = (eq: string | null | undefined): boolean => {
   const u = (eq ?? '').toUpperCase()
   return !u.includes('COPE') && !u.includes('ATENDIMENTO') && !u.includes('REAGENDAMENTO') && !u.includes('MIGRADO') && !u.includes('REDE')
 }
-
-const semRede = rows => rows.filter(r => r._tipo !== 'REDE')
+const semRede = (rows: OSRow[]): OSRow[] => rows.filter(r => r._tipo !== 'REDE')
 
 // ─── Template 1: OS Críticas ─────────────────────────────────────────────────
-export function tgCriticas(rows) {
+export function tgCriticas(rows: OSRow[]): string {
   rows = semRede(rows)
   const criticasAll = rows
     .filter(r => ['Atendimento','Pendente'].includes(r.descsituacao))
@@ -41,8 +36,7 @@ export function tgCriticas(rows) {
   const instCrit   = criticasAll.filter(r => (r.tiposervico ?? '').toUpperCase().includes('INSTALACAO')).length
   const manutCrit  = criticasAll.filter(r => (r.tiposervico ?? '').toUpperCase().includes('MANUTENCAO')).length
 
-  // resumo por equipe (top 4 mais afetadas)
-  const byEq = {}
+  const byEq: Record<string, number> = {}
   criticasAll.forEach(r => {
     const eq = shortEquipe(r.nomedaequipe) ?? 'Sem equipe'
     byEq[eq] = (byEq[eq] ?? 0) + 1
@@ -52,12 +46,11 @@ export function tgCriticas(rows) {
   let m = `🔴 <b>${EMP} — OS CRÍTICAS</b>\n`
   m += `📅 <i>${hoje()} às ${hora()}</i>\n${DIV}\n\n`
 
-  // bloco de resumo
   m += `🔴 <b>${nivelCrit}</b> nível crítico  ·  🟡 <b>${nivelExc}</b> excedidas`
   if (criticasAll.length > 20) m += `  <i>(top 20 de ${criticasAll.length})</i>`
   m += '\n'
 
-  const tags = []
+  const tags: string[] = []
   if (vtCrit)    tags.push(`${vtCrit} VT`)
   if (instCrit)  tags.push(`${instCrit} Inst`)
   if (manutCrit) tags.push(`${manutCrit} Manut`)
@@ -68,7 +61,6 @@ export function tgCriticas(rows) {
   if (!criticas.length) {
     m += '🟢 <i>Nenhuma OS com SLA excedido no momento.</i>\n'
   } else {
-    // 2 linhas por OS, sem divisores internos — melhora escaneabilidade
     criticas.forEach(r => {
       const sla    = getSlaLimite(r.tiposervico, r.servico)
       const aging  = r._agingAbertura ?? 0
@@ -86,12 +78,13 @@ export function tgCriticas(rows) {
 }
 
 // ─── Template 2: Carga por Equipe ────────────────────────────────────────────
-export function tgEquipes(rows) {
+interface EqLoad { inst: number; manut: number; serv: number; crit: number; total: number }
+
+export function tgEquipes(rows: OSRow[]): string {
   rows = semRede(rows)
   const ativas = rows.filter(r => ['Atendimento','Pendente'].includes(r.descsituacao) && r.nomedaequipe && isCampo(r.nomedaequipe))
 
-  // execuções de hoje por equipe (para marcar paradas)
-  const execByEq = {}
+  const execByEq: Record<string, number> = {}
   rows.forEach(r => {
     const eq = shortEquipe(r.nomedaequipe)
     if (!eq || !isCampo(r.nomedaequipe)) return
@@ -99,7 +92,7 @@ export function tgEquipes(rows) {
     if (r.descsituacao === 'Concluída' && isHoje(r)) execByEq[eq]++
   })
 
-  const byEq = {}
+  const byEq: Record<string, EqLoad> = {}
   ativas.forEach(r => {
     const eq = shortEquipe(r.nomedaequipe)
     if (!byEq[eq]) byEq[eq] = { inst: 0, manut: 0, serv: 0, crit: 0, total: 0 }
@@ -120,7 +113,6 @@ export function tgEquipes(rows) {
   let m = `📋 <b>${EMP} — CARGA POR EQUIPE</b>\n`
   m += `📅 <i>${hoje()} às ${hora()}</i>\n${DIV}\n\n`
 
-  // sumário executivo
   m += `📦 <b>${totalGeral} OS em campo</b>`
   if (semEq)     m += `  ·  ⚠️ <b>${semEq} sem equipe</b>`
   if (totalCrit) m += `  ·  🔴 <b>${totalCrit} crítica${totalCrit > 1 ? 's' : ''}</b>`
@@ -131,15 +123,15 @@ export function tgEquipes(rows) {
     m += '<i>Nenhuma OS ativa no período.</i>\n'
   } else {
     sorted.forEach(([eq, d]) => {
-      const parts = []
+      const parts: string[] = []
       if (d.inst)  parts.push(`${d.inst} Inst`)
       if (d.manut) parts.push(`${d.manut} Manut`)
       if (d.serv)  parts.push(`${d.serv} Serv`)
-      const critTag  = d.crit > 0 ? `  🔴 ${d.crit}` : ''
+      const critTag   = d.crit > 0 ? `  🔴 ${d.crit}` : ''
       const paradaTag = (execByEq[eq] ?? 0) === 0 ? ' ⛔' : ''
-      const bar      = Math.round(d.total / Math.max(totalGeral, 1) * 10)
-      const barStr   = '▓'.repeat(bar) + '░'.repeat(10 - bar)
-      const pct      = Math.round(d.total / Math.max(totalGeral, 1) * 100)
+      const bar       = Math.round(d.total / Math.max(totalGeral, 1) * 10)
+      const barStr    = '▓'.repeat(bar) + '░'.repeat(10 - bar)
+      const pct       = Math.round(d.total / Math.max(totalGeral, 1) * 100)
       m += `<b>${esc(eq)}</b>${paradaTag}  ${parts.join(' · ')}${critTag}\n`
       m += `<code>${barStr}</code> ${d.total} OS (${pct}%)\n`
     })
@@ -149,11 +141,13 @@ export function tgEquipes(rows) {
 }
 
 // ─── Template 3: Semáforo SLA ─────────────────────────────────────────────────
-export function tgSLA(rows) {
+interface SlaLoad { total: number; criticas: number; excedidas: number; ok: number }
+
+export function tgSLA(rows: OSRow[]): string {
   rows = semRede(rows)
   const ativas = rows.filter(r => ['Atendimento','Pendente'].includes(r.descsituacao) && r.nomedaequipe && isCampo(r.nomedaequipe))
 
-  const byEq = {}
+  const byEq: Record<string, SlaLoad> = {}
   ativas.forEach(r => {
     const eq = shortEquipe(r.nomedaequipe)
     if (!byEq[eq]) byEq[eq] = { total: 0, criticas: 0, excedidas: 0, ok: 0 }
@@ -176,7 +170,6 @@ export function tgSLA(rows) {
   let m = `🚦 <b>${EMP} — SEMÁFORO SLA</b>\n`
   m += `📅 <i>${hoje()} às ${hora()}</i>\n${DIV}\n\n`
 
-  // painel de totais
   m += `🔴 <b>${tC}</b> crítica${tC !== 1 ? 's' : ''}  ·  🟡 <b>${tE}</b> excedida${tE !== 1 ? 's' : ''}  ·  🟢 <b>${tO}</b> no prazo\n`
   m += `${confIco} Conformidade: <b>${pctOk}%</b>  ·  ${total} OS ativas\n\n`
 
@@ -193,14 +186,14 @@ export function tgSLA(rows) {
 }
 
 // ─── Template 4: Pulso Operacional ───────────────────────────────────────────
-export function tgPulso(rows) {
+export function tgPulso(rows: OSRow[]): string {
   rows = semRede(rows)
   const ativas   = rows.filter(r => ['Atendimento','Pendente'].includes(r.descsituacao))
   const execHoje = rows.filter(r => r.descsituacao === 'Concluída' && isHoje(r))
   const criticas = ativas.filter(r => r._slaCritico || r._slaExcedido)
   const semEq    = ativas.filter(r => !r.nomedaequipe?.trim())
 
-  const byEq = {}
+  const byEq: Record<string, { exec: number; fila: number }> = {}
   rows.forEach(r => {
     const eq = shortEquipe(r.nomedaequipe)
     if (!eq || !isCampo(r.nomedaequipe)) return
@@ -214,7 +207,6 @@ export function tgPulso(rows) {
   const taxa     = totalOp > 0 ? Math.round(execHoje.length / totalOp * 100) : 0
   const taxaIco  = taxa >= 80 ? '🟢' : taxa >= 60 ? '🟡' : '🔴'
 
-  // status geral calculado a partir dos alertas ativos
   const statusGeral = criticas.length === 0 && paradas.length === 0
     ? '🟢 Normal'
     : criticas.length > 5 || paradas.length > 2
@@ -226,7 +218,6 @@ export function tgPulso(rows) {
 
   m += `Status: <b>${statusGeral}</b>\n\n`
 
-  // alinhamento fixo para facilitar leitura em monospace
   m += `✅ Executadas hoje:     <b>${execHoje.length}</b>\n`
   m += `⏳ Fila ativa:         <b>${ativas.length}</b>\n`
   m += `${taxaIco} Taxa conclusão:    <b>${taxa}%</b>\n`
@@ -239,11 +230,11 @@ export function tgPulso(rows) {
 }
 
 // ─── Template 5: Executadas Hoje por Cidade ──────────────────────────────────
-export function tgExecutadas(rows) {
+export function tgExecutadas(rows: OSRow[]): string {
   rows = semRede(rows)
   const execHoje = rows.filter(r => r.descsituacao === 'Concluída' && isHoje(r))
 
-  const byCidade = {}
+  const byCidade: Record<string, { inst: number; manut: number; serv: number; total: number }> = {}
   execHoje.forEach(r => {
     const c = (r.nomedacidade ?? '').trim() || 'Não informada'
     if (!byCidade[c]) byCidade[c] = { inst: 0, manut: 0, serv: 0, total: 0 }
@@ -262,7 +253,7 @@ export function tgExecutadas(rows) {
   m += `📅 <i>${hoje()} às ${hora()}</i>\n${DIV}\n\n`
 
   m += `<b>${execHoje.length} OS concluídas</b>`
-  const tags = []
+  const tags: string[] = []
   if (totalInst)  tags.push(`${totalInst} Inst`)
   if (totalManut) tags.push(`${totalManut} Manut`)
   if (totalServ)  tags.push(`${totalServ} Serv`)
@@ -273,7 +264,7 @@ export function tgExecutadas(rows) {
     m += '<i>Nenhuma OS concluída ainda hoje.</i>\n'
   } else {
     sorted.forEach(([cidade, d]) => {
-      const parts = []
+      const parts: string[] = []
       if (d.inst)  parts.push(`${d.inst} Inst`)
       if (d.manut) parts.push(`${d.manut} Manut`)
       if (d.serv)  parts.push(`${d.serv} Serv`)
@@ -285,9 +276,9 @@ export function tgExecutadas(rows) {
 }
 
 // ─── Template 6: Equipes Inativas ────────────────────────────────────────────
-export function tgEquipeInativa(rows) {
+export function tgEquipeInativa(rows: OSRow[]): string {
   rows = semRede(rows)
-  const byEq = {}
+  const byEq: Record<string, { exec: number; fila: number }> = {}
   rows.forEach(r => {
     const eq = shortEquipe(r.nomedaequipe)
     if (!eq || !isCampo(r.nomedaequipe ?? '')) return
@@ -308,7 +299,6 @@ export function tgEquipeInativa(rows) {
   } else {
     m += `<b>${paradas.length} equipe${paradas.length > 1 ? 's' : ''} sem OS concluída</b>  ·  ${totalRepresado} OS represadas\n\n`
     paradas.forEach(([eq, d]) => {
-      // urgência graduada: crítico ≥6, atenção ≥4, observação <4
       const ico = d.fila >= 6 ? '🔴' : d.fila >= 4 ? '🟡' : '🟠'
       m += `${ico} <b>${esc(eq)}</b>  —  ${d.fila} na fila\n`
     })
@@ -318,12 +308,12 @@ export function tgEquipeInativa(rows) {
 }
 
 // ─── Template 7: Fila Residual ────────────────────────────────────────────────
-export function tgFilaResidual(rows) {
+export function tgFilaResidual(rows: OSRow[]): string {
   rows = semRede(rows)
-  const ativas = rows.filter(r => ['Atendimento','Pendente'].includes(r.descsituacao) && r.nomedaequipe && isCampo(r.nomedaequipe))
+  const ativas   = rows.filter(r => ['Atendimento','Pendente'].includes(r.descsituacao) && r.nomedaequipe && isCampo(r.nomedaequipe))
   const execHoje = rows.filter(r => r.descsituacao === 'Concluída' && isHoje(r)).length
 
-  const byEq = {}
+  const byEq: Record<string, number> = {}
   ativas.forEach(r => {
     const eq = shortEquipe(r.nomedaequipe)
     byEq[eq] = (byEq[eq] ?? 0) + 1
@@ -333,7 +323,6 @@ export function tgFilaResidual(rows) {
   let m = `⏰ <b>${EMP} — FILA RESIDUAL 16:30</b>\n`
   m += `📅 <i>${hoje()} às ${hora()}</i>\n${DIV}\n\n`
 
-  // contexto do dia junto com o pendente
   m += `📦 <b>${ativas.length} OS em aberto</b>  ·  ✅ ${execHoje} concluídas no dia\n\n`
 
   if (!sorted.length) {

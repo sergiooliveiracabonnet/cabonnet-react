@@ -11,32 +11,20 @@ import {
 } from '../lib/builders'
 import type {
   OSRow, KPI, QuickInsight, ClusterAtivo,
-  CampoSemaforo,
+  CampoSemaforo, CampoAgingDist, CampoHeroReal,
   PicoDiaAnomalia, BairroAnomalia, EquipeAnomalia,
+  SlaHipotese, SlaResumoItem, SlaRankingItem, SlaSemaforo, SlaCluster,
+  CidadeItem, CidadeRankItem, CidadePendItem, CidadeFilaItem,
+  CidadeHeatmapItem, CidadeExecItem, CidadeConsolidItem,
+  RevisitaHipotese, RevisitaCausa,
 } from '../lib/types'
 
-// Tipos inline espelham o retorno REAL dos builders — usados para inferência do Derived type.
+// Tipos locais não exportados de types.ts — espelham retorno real dos builders.
 // Anotações explícitas nos arrays evitam inferência `never[]` downstream.
 
-type SlaHipoteseReal    = { pergunta: string; resposta: string; sub: string | null }
-type SlaResumoReal      = { status: string; total: number; pct: number }
-type SlaRankingReal     = { nome: string; tipo: string; sla: number; total: number; criticas: number; agingMed: number }
-type SlaSemaforoReal    = { nome: string; tipo: string; sla: number; total: number; criticas: number }
-type SlaClustersReal    = { bairro: string; cidade: string; total: number }
-type AuditSummaryReal   = { label: string; value: number; ok: boolean; sub?: string }
-type AuditProblemReal   = { title: string; severity: string; desc: string; rows: { numos: string; status: string; cidade: string }[] }
-type AuditTipReal       = { text: string }
-type CidadeRankReal     = { cidade: string; score: number; criticas: number; slaExc: number; total: number }
-type CidadePendReal     = { cidade: string; atend: number; pend: number; total: number; slaRisco: string }
-type CidadeFilaReal     = { cidade: string; emAberto: number; agingMed: number; criticas: number; semEquipe: number }
-type CidadeHeatReal     = { cidade: string; total: number; nivel: string }
-type CidadeExecReal     = { cidade: string; concluidas: number; total: number; taxa: number }
-type CidadeConsolidReal = { cidade: string; total: number; atend: number; pend: number; concl: number; criticas: number }
-type CidadeEntradaReal  = { cidade: string; total: number; atend: number; pend: number; reagend: number; concl: number; slaExc: number; criticas: number; semEq: number; agingMed: number; score: number; taxa: number; status: string }
-type RevisitaHipReal    = { pergunta: string; resposta: string; sub: string }
-type RevisitaCausaReal  = { causa: string; pct: number }
-type CampoAgingReal     = { labels: string[]; values: number[]; hasCritical: boolean }
-type CampoHeroReal      = { status: string; title: string; msg: string; criticoCount: number; atencaoCount: number; totalEquipes: number }
+type AuditSummaryReal = { label: string; value: number; ok: boolean; sub?: string }
+type AuditProblemReal = { title: string; severity: string; desc: string; rows: { numos: string; status: string; cidade: string }[] }
+type AuditTipReal     = { text: string }
 
 const EMPTY_DERIVED = {
   dashboard: {
@@ -53,12 +41,12 @@ const EMPTY_DERIVED = {
   },
   sla: {
     pulso:    { narrativa: '', ok: 0, atencao: 0, fora: 0, criticas: 0, score: 0, scoreLabel: '' },
-    hipoteses: [] as SlaHipoteseReal[],
-    resumo:    [] as SlaResumoReal[],
-    ranking:   [] as SlaRankingReal[],
+    hipoteses: [] as SlaHipotese[],
+    resumo:    [] as SlaResumoItem[],
+    ranking:   [] as SlaRankingItem[],
     agingEq:   { labels: [] as string[], values: [] as number[] },
-    semaforo:  [] as SlaSemaforoReal[],
-    clusters:  [] as SlaClustersReal[],
+    semaforo:  [] as SlaSemaforo[],
+    clusters:  [] as SlaCluster[],
   },
   graficos: {
     status:      { labels: [] as string[], values: [] as number[] },
@@ -87,14 +75,14 @@ const EMPTY_DERIVED = {
     equipesAnomalia: [] as EquipeAnomalia[],
   },
   cidades: {
-    ranking:      [] as CidadeRankReal[],
-    pendencias:   [] as CidadePendReal[],
-    fila:         [] as CidadeFilaReal[],
-    heatmap:      [] as CidadeHeatReal[],
-    execucoes:    [] as CidadeExecReal[],
-    consolidado:  [] as CidadeConsolidReal[],
+    ranking:      [] as CidadeRankItem[],
+    pendencias:   [] as CidadePendItem[],
+    fila:         [] as CidadeFilaItem[],
+    heatmap:      [] as CidadeHeatmapItem[],
+    execucoes:    [] as CidadeExecItem[],
+    consolidado:  [] as CidadeConsolidItem[],
     kpis:         [] as KPI[],
-    todasCidades: [] as CidadeEntradaReal[],
+    todasCidades: [] as CidadeItem[],
   },
   campo: {
     kpis:       [] as KPI[],
@@ -105,15 +93,15 @@ const EMPTY_DERIVED = {
     ritmo:      { labels: [] as string[], values: [] as number[] },
     tecnicos:   [] as never[],
     projecao:   null as { equipe: string; fila: number; ritmo: number; dias: number | string }[] | null,
-    agingDist:  { labels: [] as string[], values: [] as number[], hasCritical: false } as CampoAgingReal,
+    agingDist:  { labels: [] as string[], values: [] as number[], hasCritical: false } as CampoAgingDist,
     hero:       { status: '', title: '', msg: '', criticoCount: 0, atencaoCount: 0, totalEquipes: 0 } as CampoHeroReal,
   },
   revisitas: {
     taxa:      { inst: 0, manut: 0, serv: 0, geral: 0 },
     narrativa: '',
-    hipoteses: [] as RevisitaHipReal[],
-    causas:    [] as RevisitaCausaReal[],
-    causaRaiz: [] as RevisitaCausaReal[],
+    hipoteses: [] as RevisitaHipotese[],
+    causas:    [] as RevisitaCausa[],
+    causaRaiz: [] as RevisitaCausa[],
     cronicos:  [] as OSRow[],
     chart:     { labels: [] as string[], values: [] as number[] },
     totalRevisitas: 0, revInst: 0, revManut: 0, revServ: 0,

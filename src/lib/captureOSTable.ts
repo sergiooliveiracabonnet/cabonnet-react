@@ -1,23 +1,28 @@
-// @ts-nocheck
 // Gera imagem PNG de alta qualidade com OS agrupadas por equipe, ordenadas por volume (menor → maior)
-// @ts-nocheck suprime erros no código imperativo Canvas (617 linhas). As funções exportadas
-// têm assinaturas TypeScript válidas abaixo — o compilador extrai essas assinaturas mesmo com @ts-nocheck.
 
-// Tipo mínimo que representa os campos acessados no canvas render
 export interface CaptureOSRow {
-  nomedaequipe?:    string | unknown
-  _situacaoEfetiva?: string | unknown
-  _aging?:          number | null | unknown
-  _slaCritico?:     boolean | unknown
-  numos?:           string | unknown
-  nomecliente?:     string | unknown
-  dataagendamento?: string | unknown
-  nomedacidade?:    string | unknown
-  bairro?:          string | unknown
-  tiposervico?:     string | unknown
-  periodo?:         string | unknown
+  nomedaequipe?:    string | null
+  _situacaoEfetiva?: string | null
+  _aging?:          number | null
+  _slaCritico?:     boolean
+  numos?:           string | null
+  nomecliente?:     string | null
+  dataagendamento?: string | null
+  nomedacidade?:    string | null
+  bairro?:          string | null
+  tiposervico?:     string | null
+  periodo?:         string | null
+  codigocliente?:   string | null
+  logradouro?:      string | null
+  numero?:          string | null
+  complemento?:     string | null
+  descsituacao?:    string | null
   [key: string]:    unknown
 }
+
+interface GroupAccum { pendente: number; atend: number; aging: number[]; criticas: number }
+interface GroupSummary { equipe: string; total: number; pendente: number; atend: number; aging: string | null; criticas: number }
+type ColDef = { key: string; label: string; x: number; w: number; align: CanvasTextAlign }
 
 const SCALE   = 2        // 2× para alta qualidade (Retina)
 const W       = 740      // largura lógica em px
@@ -79,7 +84,7 @@ function getTheme() {
 }
 
 // Definição das colunas
-const COLS = [
+const COLS: ColDef[] = [
   { key: 'equipe',   label: 'EQUIPE',       x: 16,  w: 218, align: 'left'   },
   { key: 'total',    label: 'OS',           x: 238, w: 52,  align: 'center' },
   { key: 'pendente', label: 'PENDENTE',     x: 294, w: 80,  align: 'center' },
@@ -131,18 +136,18 @@ function text(ctx: Ctx2D, str: unknown, x: number, y: number, { font = '12px Ari
 export function captureOSPorEquipe(rows: CaptureOSRow[], fornLabel: string, accentColor = '#3b82f6'): string {
   C = getTheme()
   // ── Agrupar por equipe ────────────────────────────────────────────────────
-  const map = new Map()
+  const map = new Map<string, GroupAccum>()
   for (const r of rows) {
     const eq = r.nomedaequipe?.trim() || '(Sem Equipe)'
     if (!map.has(eq)) map.set(eq, { pendente: 0, atend: 0, aging: [], criticas: 0 })
-    const g = map.get(eq)
-    if (r._situacaoEfetiva === 'Pendente')     g.pendente++
-    if (r._situacaoEfetiva === 'Atendimento')  g.atend++
-    if (r._aging != null)                       g.aging.push(r._aging)
-    if (r._slaCritico)                          g.criticas++
+    const g = map.get(eq)!
+    if (r._situacaoEfetiva === 'Pendente')    g.pendente++
+    if (r._situacaoEfetiva === 'Atendimento') g.atend++
+    if (r._aging != null)                     g.aging.push(r._aging)
+    if (r._slaCritico)                        g.criticas++
   }
 
-  const groups = [...map.entries()]
+  const groups: GroupSummary[] = [...map.entries()]
     .sort((a, b) => (a[1].pendente + a[1].atend) - (b[1].pendente + b[1].atend))
     .map(([equipe, g]) => {
       const total = g.pendente + g.atend
@@ -153,7 +158,7 @@ export function captureOSPorEquipe(rows: CaptureOSRow[], fornLabel: string, acce
     })
 
   // Totais
-  const allAging = rows.filter(r => r._aging != null).map(r => r._aging)
+  const allAging = rows.filter(r => r._aging != null).map(r => r._aging as number)
   const totalAging = allAging.length
     ? (allAging.reduce((s, v) => s + v, 0) / allAging.length).toFixed(1)
     : null
@@ -166,7 +171,7 @@ export function captureOSPorEquipe(rows: CaptureOSRow[], fornLabel: string, acce
   const canvas  = document.createElement('canvas')
   canvas.width  = W * SCALE
   canvas.height = HEIGHT * SCALE
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d')!
   ctx.scale(SCALE, SCALE)
 
   // Fundo geral
@@ -234,7 +239,7 @@ export function captureOSPorEquipe(rows: CaptureOSRow[], fornLabel: string, acce
         text(ctx, v != null ? `${v}d` : '—', tx, cy, { font: '12px Arial', color: agColor, align: al })
 
       } else {
-        const v = row[col.key]
+        const v = (row as unknown as Record<string, number>)[col.key]
         text(ctx, v > 0 ? v : '—', tx, cy,
           { font: '12px Arial', color: v > 0 ? C.dim : C.muted, align: al })
       }
@@ -293,14 +298,14 @@ const D_HDR_H  = 70       // cabeçalho principal
 const D_COL_H  = 27       // cabeçalho de colunas
 const D_FOOT_H = 26
 
-const D_STATUS_COLOR = {
+const D_STATUS_COLOR: Record<string, string> = {
   'Pendente':     '#facc15',
   'Atendimento':  '#3b82f6',
   'Concluída':    '#4ade80',
   'Reagendamento':'#f97316',
 }
 
-const D_COLS = [
+const D_COLS: ColDef[] = [
   { key: 'numos',    label: 'Nº OS',    x: 16,  w: 72,  align: 'left'   },
   { key: 'cliente',  label: 'Cliente',  x: 92,  w: 175, align: 'left'   },
   { key: 'cidade',   label: 'Cidade',   x: 271, w: 100, align: 'left'   },
@@ -321,11 +326,11 @@ const D_COLS = [
 export function captureOSDetalhado(rows: CaptureOSRow[], fornLabel: string, accentColor = '#3b82f6'): string {
   C = getTheme()
   // ── Agrupar e ordenar ─────────────────────────────────────────────────────
-  const map = new Map()
+  const map = new Map<string, CaptureOSRow[]>()
   for (const r of rows) {
     const eq = r.nomedaequipe?.trim() || '(Sem Equipe)'
     if (!map.has(eq)) map.set(eq, [])
-    map.get(eq).push(r)
+    map.get(eq)!.push(r)
   }
 
   // Equipes: menor → maior; dentro de cada equipe, aging desc (mais crítico primeiro)
@@ -343,7 +348,7 @@ export function captureOSDetalhado(rows: CaptureOSRow[], fornLabel: string, acce
   const canvas  = document.createElement('canvas')
   canvas.width  = DW * SCALE
   canvas.height = HEIGHT * SCALE
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d')!
   ctx.scale(SCALE, SCALE)
 
   // Fundo geral
@@ -475,7 +480,7 @@ const P_PER_H  = 34
 const P_ROW_H  = 27
 const P_FOOT_H = 28
 
-const P_STATUS_COLORS = {
+const P_STATUS_COLORS: Record<string, string> = {
   'Pendente':      '#facc15',
   'Atendimento':   '#3b82f6',
   'Concluída':     '#4ade80',
@@ -484,7 +489,7 @@ const P_STATUS_COLORS = {
 
 const P_PERIOD_ORDER = ['manhã', 'tarde']
 
-const P_COLS = [
+const P_COLS: ColDef[] = [
   { key: 'aging',   label: 'AGING',    x: 16,  w: 46,  align: 'center' },
   { key: 'numos',   label: 'Nº OS',    x: 66,  w: 68,  align: 'left'   },
   { key: 'cliente', label: 'CLIENTE',  x: 138, w: 148, align: 'left'   },
@@ -495,7 +500,7 @@ const P_COLS = [
   { key: 'status',  label: 'SITUAÇÃO', x: 748, w: 116, align: 'left'   },
 ]
 
-function pillRect(ctx, cx, cy, w, h, r, color) {
+function pillRect(ctx: CanvasRenderingContext2D, cx: number, cy: number, w: number, h: number, r: number, color: string) {
   const x = cx - w / 2, y = cy - h / 2
   ctx.fillStyle = color
   ctx.beginPath()
@@ -516,9 +521,9 @@ function pillRect(ctx, cx, cy, w, h, r, color) {
  * Gera um canvas com as OS agrupadas por Período (Manhã / Tarde), ordenadas por bairro.
  * Retorna o elemento canvas — o chamador converte em Blob para clipboard ou download.
  */
-export function captureOSPorPeriodo(rows: CaptureOSRow[], equipeName: string): string {
+export function captureOSPorPeriodo(rows: CaptureOSRow[], equipeName: string): HTMLCanvasElement {
   C = getTheme()
-  const map = {}
+  const map: Record<string, CaptureOSRow[]> = {}
   for (const r of rows) {
     const p = (r.periodo || '').trim() || 'Sem Período'
     ;(map[p] = map[p] || []).push(r)
@@ -538,7 +543,7 @@ export function captureOSPorPeriodo(rows: CaptureOSRow[], equipeName: string): s
   const canvas  = document.createElement('canvas')
   canvas.width  = PW * SCALE
   canvas.height = HEIGHT * SCALE
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d')!
   ctx.scale(SCALE, SCALE)
 
   rect(ctx, 0, 0, PW, HEIGHT, C.bg)

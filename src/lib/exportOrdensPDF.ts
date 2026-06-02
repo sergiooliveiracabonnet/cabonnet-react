@@ -1,24 +1,26 @@
-// @ts-nocheck
 import jsPDF from 'jspdf'
 import { shortEquipe } from './osFormat'
 import { isConcluida } from './transform'
+import type { OSRow } from './types'
+
+type RGB = readonly [number, number, number]
 
 // ── Palette ───────────────────────────────────────────────────────────────
-const DARK   = [8,   15,  30]
-const NAVY   = [12,  20,  38]
-const CARD   = [18,  28,  50]
-const CARD2  = [22,  34,  58]
-const BORDER = [32,  45,  72]
-const ACCENT = [14,  165, 233]
-const GREEN  = [34,  197, 94]
-const YELLOW = [234, 179, 8]
-const ORANGE = [249, 115, 22]
-const RED    = [239, 68,  68]
-const CYAN   = [6,   182, 212]
-const WHITE  = [255, 255, 255]
-const TEXT   = [226, 232, 240]
-const SUB    = [148, 163, 184]
-const MUTED  = [100, 116, 139]
+const DARK:   RGB = [8,   15,  30]
+const NAVY:   RGB = [12,  20,  38]
+const CARD:   RGB = [18,  28,  50]
+const CARD2:  RGB = [22,  34,  58]
+const BORDER: RGB = [32,  45,  72]
+const ACCENT: RGB = [14,  165, 233]
+const GREEN:  RGB = [34,  197, 94]
+const YELLOW: RGB = [234, 179, 8]
+const ORANGE: RGB = [249, 115, 22]
+const RED:    RGB = [239, 68,  68]
+const CYAN:   RGB = [6,   182, 212]
+const WHITE:  RGB = [255, 255, 255]
+const TEXT:   RGB = [226, 232, 240]
+const SUB:    RGB = [148, 163, 184]
+const MUTED:  RGB = [100, 116, 139]
 
 // ── Page geometry ─────────────────────────────────────────────────────────
 const PW   = 297   // landscape A4 width
@@ -46,7 +48,8 @@ const COLS = [
   { x: 275, w: 10, h: 'Agd.'     },   // → 285
 ]
 
-let _doc, _y
+let _doc!: jsPDF
+let _y!: number
 
 // ── Page helpers ──────────────────────────────────────────────────────────
 
@@ -91,19 +94,19 @@ function _tableHeader() {
 
 // ── Text helpers ──────────────────────────────────────────────────────────
 
-function _t(val, max) {
+function _t(val: unknown, max: number): string {
   if (val == null || val === '') return '—'
   const s = String(val)
   return s.length > max ? s.slice(0, max - 1) + '…' : s
 }
 
-function _agingColor(v) {
+function _agingColor(v: number): RGB {
   if (v >= 6) return RED
   if (v >= 3) return YELLOW
   return GREEN
 }
 
-function _sitColor(sit) {
+function _sitColor(sit: string | null | undefined): RGB {
   if (!sit) return MUTED
   const s = sit.toLowerCase()
   if (s.startsWith('concluída') && !s.includes('sem')) return GREEN
@@ -114,9 +117,9 @@ function _sitColor(sit) {
   return YELLOW
 }
 
-function _sitLabel(sit) {
+function _sitLabel(sit: string | null | undefined): string {
   if (!sit) return '—'
-  const map = {
+  const map: Record<string, string> = {
     'Concluída':               'Concluída',
     'Concluída/Sem Execução':  'Sem Execução',
     'Atendimento/Finalizadas': 'Finalizada',
@@ -127,46 +130,44 @@ function _sitLabel(sit) {
   return map[sit] ?? _t(sit, 13)
 }
 
+type ColEntry = { x: number; w: number; h?: string }
+
 // Filled rect pill with centered white text
-function _pill(label, color, col) {
+function _pill(label: string, color: RGB, col: ColEntry): void {
   const pillH  = 4
   const pillY  = _y + (ROW_H - pillH) / 2
   const prevSz = _doc.getFontSize()
   _doc.setFontSize(5.8)
   const tw     = _doc.getTextWidth(label)
   const pillW  = Math.min(tw + 5, col.w - 3)
-  _doc.setFillColor(...color)
+  _doc.setFillColor(color[0], color[1], color[2])
   _doc.rect(col.x + 1.5, pillY, pillW, pillH, 'F')
   _doc.setFont('helvetica', 'bold')
-  _doc.setTextColor(...WHITE)
+  _doc.setTextColor(WHITE[0], WHITE[1], WHITE[2])
   _doc.text(label, col.x + 1.5 + pillW / 2, pillY + 2.95, { align: 'center' })
   _doc.setFontSize(prevSz)
 }
 
 // ── Cover KPI tile ────────────────────────────────────────────────────────
 
-function _kpiTile(x, y, w, h, label, value, color) {
-  // Background
-  _doc.setFillColor(...CARD)
+function _kpiTile(x: number, y: number, w: number, h: number, label: string, value: number, color: RGB): void {
+  _doc.setFillColor(CARD[0], CARD[1], CARD[2])
   _doc.rect(x, y, w, h, 'F')
-  // Top accent bar
-  _doc.setFillColor(...color)
+  _doc.setFillColor(color[0], color[1], color[2])
   _doc.rect(x, y, w, 2.5, 'F')
-  // Large value
   _doc.setFont('helvetica', 'bold')
   _doc.setFontSize(22)
-  _doc.setTextColor(...color)
+  _doc.setTextColor(color[0], color[1], color[2])
   _doc.text(String(value), x + w / 2, y + h * 0.63, { align: 'center' })
-  // Label
   _doc.setFont('helvetica', 'normal')
   _doc.setFontSize(6)
-  _doc.setTextColor(...MUTED)
+  _doc.setTextColor(MUTED[0], MUTED[1], MUTED[2])
   _doc.text(label.toUpperCase(), x + w / 2, y + h - 5, { align: 'center' })
 }
 
 // ── Main export ───────────────────────────────────────────────────────────
 
-export function exportOrdensPDF(rows, filename) {
+export function exportOrdensPDF(rows: OSRow[], filename: string): void {
   _doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
   const now      = new Date()
@@ -334,7 +335,7 @@ export function exportOrdensPDF(rows, filename) {
   })
 
   // ── Footer: page numbers on all table pages ────────────────────────────
-  const nPages = _doc.internal.getNumberOfPages()
+  const nPages = (_doc.internal as unknown as { getNumberOfPages(): number }).getNumberOfPages()
   for (let p = 2; p <= nPages; p++) {
     _doc.setPage(p)
     const tableP = p - 1

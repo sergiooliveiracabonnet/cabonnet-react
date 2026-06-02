@@ -1,12 +1,13 @@
 import { type RefObject, useEffect } from 'react'
 import { generateFechamentoPDF } from './fechamentoPDF'
+import type { OSRow } from '../../lib/types'
+import type { FechamentoStats } from './fechamentoUtils'
 
-// Dados necessários para geração do PDF — tipagem mínima para o hook ser testável.
 export interface FechamentoSnapshot {
-  rows:        unknown[]
-  rede:        unknown[]
-  stats:       unknown
-  statsRede:   unknown | null
+  rows:         OSRow[]
+  rede:         OSRow[]
+  stats:        FechamentoStats
+  statsRede:    FechamentoStats | null
   periodoLabel: string
 }
 
@@ -33,7 +34,7 @@ export function useFechamentoAutomation(
       const data = pdfDataRef.current
       if (!data) return { ok: false, error: 'Dados não carregados' }
 
-      const doc   = generateFechamentoPDF(data as FechamentoSnapshot)
+      const doc   = generateFechamentoPDF(data)
       const fname = `relatorio-cabonnet-${new Date().toISOString().slice(0, 10)}.pdf`
 
       if (sendToTelegram) {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { FileText, Download, Printer, ChevronRight } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -7,25 +6,27 @@ import {
   getPeriodDates, getPeriodoNome,
   filterRows, calcStats, isRede,
   exportRelatorioCSV,
+  type TeamStats, type CidadeStats, type FechamentoStats,
 } from './fechamentoUtils'
 import { generateFechamentoPDF } from './fechamentoPDF'
 import { useFechamentoAutomation, type FechamentoSnapshot } from './useFechamentoAutomation'
+import type { OSRow } from '../../lib/types'
 
 const ABAS     = ['global', 'instacable', 'wes', 'thm', 'rede']
 const PERIODOS = [
-  { key: 'diario',       label: 'Hoje'         },
-  { key: 'ontem',        label: 'Ontem'         },
-  { key: 'semanal',      label: '7 dias'        },
-  { key: 'quinzenal',    label: '15 dias'       },
-  { key: 'mensal',       label: 'Mês atual'     },
-  { key: 'fechamento',   label: 'Fechamento'    },
-  { key: 'personalizado',label: 'Personalizado' },
+  { key: 'diario',        label: 'Hoje'          },
+  { key: 'ontem',         label: 'Ontem'         },
+  { key: 'semanal',       label: '7 dias'        },
+  { key: 'quinzenal',     label: '15 dias'       },
+  { key: 'mensal',        label: 'Mês atual'     },
+  { key: 'fechamento',    label: 'Fechamento'    },
+  { key: 'personalizado', label: 'Personalizado' },
 ]
 
-const TIPO_COR = { Instalação: 'text-primary', Manutenção: 'text-green', Serviço: 'text-purple', Outros: 'text-muted' }
-const TIPO_BORDER = { Instalação: 'border-primary', Manutenção: 'border-green', Serviço: 'border-purple', Outros: 'border-muted' }
+const TIPO_COR:    Record<string, string> = { Instalação: 'text-primary', Manutenção: 'text-green', Serviço: 'text-purple', Outros: 'text-muted' }
+const TIPO_BORDER: Record<string, string> = { Instalação: 'border-primary', Manutenção: 'border-green', Serviço: 'border-purple', Outros: 'border-muted' }
 
-function taxaCor(taxa) {
+function taxaCor(taxa: number): string {
   if (taxa >= SLA_MIN)      return 'text-green'
   if (taxa >= SLA_MIN - 15) return 'text-yellow'
   return 'text-red'
@@ -47,12 +48,12 @@ export default function FechamentoPage() {
 
   const periodoNome = useMemo(() => getPeriodoNome(periodo), [periodo])
 
-  const fmtDate = d => d ? d.toLocaleDateString('pt-BR') : '—'
+  const fmtDate = (d: Date | null): string => d ? d.toLocaleDateString('pt-BR') : '—'
   const periodoLabel = `${ABA_LABEL[aba]} · ${periodoNome} (${fmtDate(from)} – ${fmtDate(to)})`
 
   const { rows, rede, stats, statsRede } = useMemo(() => {
     const filtered = filterRows(allRows, { aba, from, to })
-    let rows, rede
+    let rows: OSRow[], rede: OSRow[]
     if (aba === 'rede') {
       rows = []; rede = filtered
     } else if (aba === 'global') {
@@ -66,13 +67,11 @@ export default function FechamentoPage() {
     return { rows, rede, stats, statsRede }
   }, [allRows, aba, from, to])
 
-  // ── Ref sempre atualizado para acesso da automação Playwright ──────────────
   const pdfDataRef = useRef<FechamentoSnapshot | null>(null)
   useEffect(() => {
     pdfDataRef.current = { rows, rede, stats, statsRede, periodoLabel }
   }, [rows, rede, stats, statsRede, periodoLabel])
 
-  // ── Automação Python via window globals (encapsulada no hook) ──────────────
   useFechamentoAutomation(pdfDataRef, isLoading, setAba, setPeriodo)
 
   function handleExportCSV() {
@@ -159,20 +158,17 @@ export default function FechamentoPage() {
         </div>
       </div>
 
-      {/* ── Relatório (Aba Rede como escopo principal) ── */}
+      {/* ── Relatório ── */}
       {aba === 'rede' && rede.length > 0 ? (
-        <RedeBlock rows={rede} stats={statsRede} periodoLabel={periodoLabel} isMain />
+        <RedeBlock rows={rede} stats={stats} periodoLabel={periodoLabel} isMain />
       ) : (
         <>
-          {/* KPIs */}
           <KPIHeader stats={stats} periodoLabel={periodoLabel} onCSV={handleExportCSV} onPDF={handleExportPDF} onPrint={handlePrint} />
 
-          {/* Equipes */}
           <Section title="Ranking de Equipes — Produtividade">
             <EquipesTable byEquipe={stats.byEquipe} />
           </Section>
 
-          {/* Cidades + Tipos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Section title="Produtividade por Cidade">
               <CidadesChart byCidade={stats.byCidade} />
@@ -182,14 +178,13 @@ export default function FechamentoPage() {
             </Section>
           </div>
 
-          {/* Rede (bloco independente dentro do Global) */}
           {statsRede && rede.length > 0 && (
             <RedeBlock rows={rede} stats={statsRede} periodoLabel={periodoLabel} />
           )}
         </>
       )}
 
-      {/* Botões de exportação flutuantes (mobile-friendly) */}
+      {/* Botões de exportação flutuantes */}
       <div className="flex gap-2 justify-end pt-2">
         <button
           onClick={handleExportPDF}
@@ -219,7 +214,10 @@ export default function FechamentoPage() {
 }
 
 // ── KPI Header ─────────────────────────────────────────────────────────────────
-function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }) {
+function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }: {
+  stats: FechamentoStats; periodoLabel: string
+  onCSV: () => void; onPDF: () => void; onPrint: () => void
+}) {
   const kpis = [
     { label: 'Total OS',     value: stats.total,      cls: 'text-primary' },
     { label: 'Concluídas',   value: stats.concluidas, cls: 'text-green'   },
@@ -259,7 +257,7 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }) {
 }
 
 // ── Section wrapper ────────────────────────────────────────────────────────────
-function Section({ title, children, borderColor }) {
+function Section({ title, children, borderColor }: { title: string; children: React.ReactNode; borderColor?: string }) {
   return (
     <div className={`bg-card border rounded-xl p-5 ${borderColor ? `border-${borderColor}` : 'border-white/[0.08]'}`}>
       <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-4">{title}</p>
@@ -269,7 +267,7 @@ function Section({ title, children, borderColor }) {
 }
 
 // ── Equipes table ──────────────────────────────────────────────────────────────
-function EquipesTable({ byEquipe }) {
+function EquipesTable({ byEquipe }: { byEquipe: Record<string, TeamStats> }) {
   const equipes = Object.entries(byEquipe)
     .map(([eq, d]) => {
       const totalOp = d.exec + d.semExec + d.pend
@@ -319,7 +317,7 @@ function EquipesTable({ byEquipe }) {
 }
 
 // ── Cidades chart (bar rows) ───────────────────────────────────────────────────
-function CidadesChart({ byCidade }) {
+function CidadesChart({ byCidade }: { byCidade: Record<string, CidadeStats> }) {
   const cidades = Object.entries(byCidade)
     .filter(([, d]) => d.exec + d.semExec > 0)
     .map(([cidade, d]) => {
@@ -348,7 +346,7 @@ function CidadesChart({ byCidade }) {
               </span>
               <div className="flex items-center gap-2 flex-shrink-0 text-[10px]">
                 <span className="font-bold text-green">{c.exec}</span>
-                {c.pend   > 0 && <span className="text-yellow">{c.pend} pend</span>}
+                {c.pend    > 0 && <span className="text-yellow">{c.pend} pend</span>}
                 {c.slaVenc > 0 && <span className="text-red font-semibold">{c.slaVenc} SLA</span>}
                 <span className={`font-bold ${tc}`}>{c.taxa}%</span>
               </div>
@@ -367,7 +365,7 @@ function CidadesChart({ byCidade }) {
 }
 
 // ── Tipos cards ────────────────────────────────────────────────────────────────
-function TiposCards({ byTipo }) {
+function TiposCards({ byTipo }: { byTipo: Record<string, TeamStats> }) {
   const ORDEM = ['Instalação', 'Manutenção', 'Serviço', 'Outros']
   const tipos = ORDEM.filter(t => byTipo[t]).map(t => {
     const d = byTipo[t]
@@ -391,8 +389,8 @@ function TiposCards({ byTipo }) {
               <span className={`text-[13px] font-bold ${tc}`}>{t.taxa}%</span>
             </div>
             <div className="flex gap-4 flex-wrap">
-              <Stat label="Exec."   value={t.exec}   cls="text-green" />
-              <Stat label="Pend."   value={t.pend}   cls="text-yellow" />
+              <Stat label="Exec."   value={t.exec}    cls="text-green" />
+              <Stat label="Pend."   value={t.pend}    cls="text-yellow" />
               <Stat label="S/Exec"  value={t.semExec} cls="text-orange" />
               {t.slaVenc > 0 && <Stat label="SLA Venc." value={t.slaVenc} cls="text-red" />}
             </div>
@@ -409,7 +407,7 @@ function TiposCards({ byTipo }) {
   )
 }
 
-function Stat({ label, value, cls }) {
+function Stat({ label, value, cls }: { label: string; value: number; cls: string }) {
   return (
     <div className="text-center">
       <p className={`text-base font-bold leading-none ${cls}`}>{value}</p>
@@ -419,7 +417,9 @@ function Stat({ label, value, cls }) {
 }
 
 // ── Rede block ─────────────────────────────────────────────────────────────────
-function RedeBlock({ rows, stats, periodoLabel, isMain = false }) {
+function RedeBlock({ rows, stats, periodoLabel, isMain = false }: {
+  rows: OSRow[]; stats: FechamentoStats; periodoLabel: string; isMain?: boolean
+}) {
   const kpisRede = [
     { label: 'Total OS',     value: stats.total,      cls: 'text-cyan'   },
     { label: 'Concluídas',   value: stats.concluidas, cls: 'text-green'  },
@@ -471,13 +471,13 @@ function RedeBlock({ rows, stats, periodoLabel, isMain = false }) {
 }
 
 // ── Clientes atendidos (Rede) ──────────────────────────────────────────────────
-function ClientesRedeList({ rows }) {
+function ClientesRedeList({ rows }: { rows: OSRow[] }) {
   const concl = rows
     .filter(r => r.descsituacao === 'Concluída')
     .sort((a, b) => {
       const da = new Date(a.dataexecucao || a.databaixa || a.dataagendamento || 0)
       const db = new Date(b.dataexecucao || b.databaixa || b.dataagendamento || 0)
-      return da - db
+      return da.getTime() - db.getTime()
     })
 
   if (!concl.length) {
