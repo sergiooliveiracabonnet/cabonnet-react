@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Home, Award, Clock, Target, DollarSign } from 'lucide-react'
+import { Home, Award, Clock, Target, DollarSign, Sparkles } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/bar-chart'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { buildFornecedor } from '../../lib/builders'
@@ -9,6 +9,7 @@ import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import { useAlertStore } from '../../store/alertStore'
 import { useERPStore } from '../../store/erpStore'
 import { useIsGestor } from '../../hooks/useRole'
+import { useAIFornecedor } from '../../hooks/useAIFornecedor'
 
 const FORNECEDORES = [
   { value: '',           label: 'Todos',              color: '#3b82f6' },
@@ -43,6 +44,32 @@ export default function FornecedorPage() {
     () => buildFornecedor(rows, filtro, custoFornecedor),
     [rows, filtro, custoFornecedor]
   )
+
+  const aiFornecedoresInput = useMemo(() => ranking.map(f => ({
+    nome:         f.nome,
+    score:        f.score,
+    sla:          f.sla,
+    mttr:         f.mttr,
+    total:        f.total,
+    criticas:     paineis.find(p => p.nome === f.nome)?.kpis?.criticas ?? 0,
+    custo_por_os: paineis.find(p => p.nome === f.nome)?.kpis?.custoPorOs ?? 0,
+  })), [ranking, paineis])
+
+  const { data: aiFornecedor, isLoading: aiLoading } = useAIFornecedor({
+    fornecedores: aiFornecedoresInput,
+  })
+
+  const TIER_CFG: Record<'A' | 'B' | 'C', { text: string; bg: string; border: string }> = {
+    A: { text: 'text-green',  bg: 'bg-green/10',  border: 'border-green/20'  },
+    B: { text: 'text-yellow', bg: 'bg-yellow/10', border: 'border-yellow/20' },
+    C: { text: 'text-red',    bg: 'bg-red/10',    border: 'border-red/20'    },
+  }
+
+  const REC_LABEL: Record<string, string> = {
+    aumentar: 'Aumentar contrato',
+    manter:   'Manter',
+    reduzir:  'Reduzir contrato',
+  }
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -129,6 +156,50 @@ export default function FornecedorPage() {
               <p className="text-[10px] text-muted/50 mt-3">
                 * Edite o campo "Meta" para definir a meta de score de cada operadora. O marcador vertical aparece na barra.
               </p>
+            </div>
+          )}
+
+          {/* ── AI Fornecedor ─────────────────────────────────────────── */}
+          {(aiLoading || aiFornecedor) && (
+            <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={12} className="text-primary" />
+                <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
+                  Recomendações por Fornecedor · IA
+                </span>
+                {aiLoading && (
+                  <span className="text-[10px] text-muted animate-pulse ml-auto">Analisando…</span>
+                )}
+              </div>
+              {aiFornecedor && (
+                <>
+                  {aiFornecedor.narrativa && (
+                    <p className="text-[12px] text-secondary leading-relaxed">{aiFornecedor.narrativa}</p>
+                  )}
+                  {aiFornecedor.ranking && aiFornecedor.ranking.length > 0 && (
+                    <div className="space-y-2">
+                      {aiFornecedor.ranking.map((r, i) => {
+                        const tier = TIER_CFG[r.tier] ?? TIER_CFG.C
+                        return (
+                          <div key={i} className="flex items-start gap-3 py-2 border-b border-white/[0.05] last:border-0">
+                            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${tier.text} ${tier.bg} ${tier.border}`}>
+                              Tier {r.tier}
+                            </span>
+                            <span className="text-[12px] font-semibold text-text w-28 flex-shrink-0 truncate">{r.nome}</span>
+                            <span className={`text-[11px] font-bold flex-shrink-0 ${
+                              r.recomendacao === 'aumentar' ? 'text-green' :
+                              r.recomendacao === 'manter'   ? 'text-muted' : 'text-red'
+                            }`}>
+                              {REC_LABEL[r.recomendacao] ?? r.recomendacao}
+                            </span>
+                            <span className="text-[11px] text-secondary flex-1">{r.motivo}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 

@@ -1,13 +1,14 @@
 import { useMemo, useState, type ComponentType } from 'react'
 import {
   TrendingUp, TrendingDown, Minus, BarChart3,
-  ChevronDown, ChevronUp, Package, Wrench, Radio, Settings,
+  ChevronDown, ChevronUp, Package, Wrench, Radio, Settings, Sparkles,
 } from 'lucide-react'
 import { useERPRows } from '../useERPRows'
 import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
 import { isCOPE, isReagend, isConcluida } from '../../../lib/transform'
 import { Badge } from '../../../components/ui/Badge'
 import type { OSRow } from '../../../lib/types'
+import { useAIProdutividade } from '../../../hooks/useAIProdutividade'
 
 type IconComp = ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
 interface DayInfo { key: string; label: string; dow: string; isToday: boolean; isWeekend: boolean }
@@ -429,6 +430,29 @@ export default function ProdutividadePage() {
   const piorou     = teams.filter(t => t.delta < 0).length
   const topTeam    = teams[0]
 
+  // Equipes com queda > 20% na semana atual vs anterior
+  const quedas = useMemo(() => teams
+    .filter(t => t.prevWeek > 0 && t.thisWeek < t.prevWeek)
+    .map(t => {
+      const delta_pct = t.prevWeek > 0
+        ? Math.round(((t.thisWeek - t.prevWeek) / t.prevWeek) * 100)
+        : 0
+      return { equipe: t.team, atual: t.thisWeek, anterior: t.prevWeek, delta_pct }
+    })
+    .filter(q => q.delta_pct <= -20),
+    [teams]
+  )
+
+  const aiContexto = useMemo(() => {
+    const total = teams.reduce((s, t) => s + t.total, 0)
+    return `${teams.length} equipes · ${total} OS em 14 dias · semana atual ${totalThis} vs anterior ${totalPrev}`
+  }, [teams, totalThis, totalPrev])
+
+  const { data: aiProdutividade, isLoading: aiLoading } = useAIProdutividade({
+    quedas,
+    contexto: aiContexto,
+  })
+
   function handleDayClick(team: string, dayKey: string) {
     setActiveDrill(prev =>
       prev?.team === team && prev?.dayKey === dayKey
@@ -554,6 +578,48 @@ export default function ProdutividadePage() {
           </div>
         )}
       </section>
+
+      {/* ── AI Produtividade ──────────────────────────────────────────────── */}
+      {(aiLoading || aiProdutividade) && (
+        <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles size={12} className="text-primary" />
+            <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
+              Análise de Quedas de Produtividade · IA
+            </span>
+            {aiLoading && (
+              <span className="text-[10px] text-muted animate-pulse ml-auto">Analisando…</span>
+            )}
+          </div>
+          {aiProdutividade && (
+            <>
+              {aiProdutividade.narrativa && (
+                <p className="text-[12px] text-secondary leading-relaxed">{aiProdutividade.narrativa}</p>
+              )}
+              {aiProdutividade.analises && aiProdutividade.analises.length > 0 && (
+                <div className="space-y-2">
+                  {aiProdutividade.analises.map((a, i) => (
+                    <div key={i} className="rounded-lg border border-white/[0.06] bg-surface/30 p-3 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <TrendingDown size={12} className="text-red flex-shrink-0" />
+                        <span className="text-[12px] font-semibold text-text">{a.equipe}</span>
+                      </div>
+                      <p className="text-[11px] text-muted pl-5">
+                        <span className="font-semibold text-secondary">Causa: </span>
+                        {a.causa}
+                      </p>
+                      <p className="text-[11px] text-muted pl-5">
+                        <span className="font-semibold text-primary/70">Recomendação: </span>
+                        {a.recomendacao}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Legenda */}
       <div className="flex items-center gap-4 text-[10px] text-muted flex-wrap">

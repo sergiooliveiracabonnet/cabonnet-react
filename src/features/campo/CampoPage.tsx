@@ -1,5 +1,5 @@
 ﻿import { useState, useMemo } from 'react'
-import { Layout, AlertCircle, CheckCircle, Clock, TrendingUp, TrendingDown } from 'lucide-react'
+import { Layout, AlertCircle, CheckCircle, Clock, TrendingUp, TrendingDown, Sparkles } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid, Cell } from '../../components/ui/bar-chart'
 import { AreaChart, Area } from '../../components/ui/line-chart'
 import { XAxis as LXAxis, YAxis as LYAxis, Grid as LGrid, ChartTooltip as LChartTooltip } from '../../components/ui/line-chart'
@@ -10,6 +10,7 @@ import { KPICard } from '../../components/ui/KPICard'
 import { ChartCard } from '../../components/ui/ChartCard'
 import { Badge } from '../../components/ui/Badge'
 import { KPIGridSkeleton } from '../../components/ui/Skeleton'
+import { useAICampo } from '../../hooks/useAICampo'
 
 const FORN_PILLS = [
   { value: '',           label: 'Todos'      },
@@ -53,6 +54,30 @@ export default function CampoPage() {
 
   const { kpis, semaforo, risco, concluidas, fila, ritmo, projecao, agingDist, hero } = campo
 
+  const aiFornecedores = useMemo(() => {
+    const FORNECEDORES = ['WES', 'Instacable', 'THM', 'REDE', 'MANUTENCAO']
+    return FORNECEDORES.map(nome => {
+      const subset = rows.filter(r =>
+        nome === 'REDE'       ? r._tipo === 'REDE' :
+        nome === 'MANUTENCAO' ? r._tipo === 'MANUTENCAO' :
+        r._fornecedor === nome
+      )
+      const filaF    = subset.filter(r => ['Pendente','Atendimento'].includes(r.descsituacao)).length
+      const conclF   = subset.filter(r => r._situacaoEfetiva === 'Concluída').length
+      const criticasF = subset.filter(r => r._slaCritico).length
+      const ritmoF   = parseFloat((conclF / Math.max(1, 30)).toFixed(1))
+      const sla_pct  = subset.length > 0 ? Math.round(conclF / subset.length * 100) : 0
+      return { nome, fila: filaF, ritmo: ritmoF, sla_pct, criticas: criticasF }
+    }).filter(f => f.fila > 0 || f.ritmo > 0)
+  }, [rows])
+
+  const { data: aiCampo, isLoading: aiLoading } = useAICampo({
+    fornecedores: aiFornecedores,
+    meta_sla: 90,
+  })
+
+  const STATUS_AI_ICON: Record<string, string> = { ok: '🟢', risco: '🟡', critico: '🔴' }
+
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center gap-2">
@@ -78,6 +103,61 @@ export default function CampoPage() {
 
       {/* ── Hero Banner ─────────────────────────────────────────────── */}
       {!isLoading && hero && <HeroBanner hero={hero} projecao={projecao} />}
+
+      {/* ── AI Campo ─────────────────────────────────────────────────── */}
+      {(aiLoading || aiCampo) && (
+        <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles size={12} className="text-primary" />
+            <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
+              Previsão por Fornecedor · IA
+            </span>
+            {aiLoading && (
+              <span className="text-[10px] text-muted animate-pulse ml-auto">Analisando…</span>
+            )}
+          </div>
+          {aiCampo && (
+            <>
+              {aiCampo.analises && aiCampo.analises.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[11px]">
+                    <thead>
+                      <tr className="border-b border-white/[0.06]">
+                        <th className="text-left py-1.5 pr-4 text-[10px] font-bold uppercase tracking-wide text-muted">Fornecedor</th>
+                        <th className="text-left py-1.5 pr-4 text-[10px] font-bold uppercase tracking-wide text-muted">Status</th>
+                        <th className="text-left py-1.5 text-[10px] font-bold uppercase tracking-wide text-muted">Análise</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.04]">
+                      {aiCampo.analises.map((a, i) => (
+                        <tr key={i}>
+                          <td className="py-2 pr-4 font-semibold text-text whitespace-nowrap">{a.nome}</td>
+                          <td className="py-2 pr-4 whitespace-nowrap">
+                            <span>{STATUS_AI_ICON[a.status] ?? '⚪'}</span>
+                            <span className={`ml-1 font-bold ${
+                              a.status === 'ok'     ? 'text-green'  :
+                              a.status === 'risco'  ? 'text-yellow' : 'text-red'
+                            }`}>
+                              {a.status === 'ok' ? 'OK' : a.status === 'risco' ? 'Risco' : 'Crítico'}
+                            </span>
+                          </td>
+                          <td className="py-2 text-secondary leading-relaxed">{a.narrativa}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {aiCampo.recomendacao && (
+                <div className="border-t border-primary/10 pt-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-primary/60 mb-1">Recomendação geral</p>
+                  <p className="text-[12px] text-text font-semibold">{aiCampo.recomendacao}</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── KPIs ────────────────────────────────────────────────────── */}
       {isLoading ? <KPIGridSkeleton count={4} /> : (

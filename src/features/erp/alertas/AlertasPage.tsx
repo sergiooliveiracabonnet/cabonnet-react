@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   AlertTriangle, ShieldAlert, ShieldCheck, Info,
-  Activity, RefreshCw, Settings, BarChart3,
+  Activity, RefreshCw, Settings, BarChart3, Sparkles,
 } from 'lucide-react'
 import { useERPRows }    from '../useERPRows'
 import { useERPStore }   from '../../../store/erpStore'
@@ -13,6 +13,7 @@ import {
   SectionLabel, AlertCard, RuleCard, GrafanaCityStrip, SettingsPanel,
   type GrafanaCidade,
 } from './AlertasComponents'
+import { useAIAlertas } from '../../../hooks/useAIAlertas'
 
 export default function AlertasPage() {
   const { rows, allRows, isLoading, derived } = useERPRows()
@@ -62,6 +63,25 @@ export default function AlertasPage() {
     [rows]
   )
   const hasAny = totalAlerts > 0
+
+  // ── AI Alertas ──────────────────────────────────────────────────────────────
+  const aiAlertasInput = useMemo(() => ({
+    alertas: alerts.map(a => ({
+      tipo:   a.id,
+      ref:    a.title,
+      nivel:  a.severity,
+      titulo: a.title,
+      msg:    a.desc,
+    })),
+    contexto: {
+      total:     totalFila,
+      criticas:  counts.CRITICO,
+      semEquipe: (pulso as { semAgendamento?: number } | undefined)?.semAgendamento ?? 0,
+      aging:     (pulso as { agingMed?: number } | undefined)?.agingMed ?? 0,
+    },
+  }), [alerts, totalFila, counts.CRITICO, pulso])
+
+  const { data: aiAlertas, isLoading: aiLoading } = useAIAlertas(aiAlertasInput)
 
   return (
     <div className="space-y-4 max-w-[1600px]">
@@ -171,6 +191,64 @@ export default function AlertasPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── AI Alertas ───────────────────────────────────────────────────── */}
+      {(aiLoading || aiAlertas) && (
+        <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles size={12} className="text-primary" />
+            <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
+              Análise de Alertas · IA
+            </span>
+            {aiLoading && (
+              <span className="text-[10px] text-muted animate-pulse ml-auto">Analisando…</span>
+            )}
+          </div>
+          {aiAlertas && (
+            <>
+              {aiAlertas.prioridade && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-muted">Prioridade</span>
+                  <span
+                    className="text-[11px] font-bold px-2 py-0.5 rounded-full border"
+                    style={{
+                      background: aiAlertas.prioridade === 'CRITICA' ? 'rgba(248,113,113,0.12)' : 'rgba(249,115,22,0.10)',
+                      borderColor: aiAlertas.prioridade === 'CRITICA' ? 'rgba(248,113,113,0.35)' : 'rgba(249,115,22,0.30)',
+                      color: aiAlertas.prioridade === 'CRITICA' ? '#f87171' : '#f97316',
+                    }}
+                  >
+                    {aiAlertas.prioridade}
+                  </span>
+                </div>
+              )}
+              {aiAlertas.causa_raiz && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-1">Causa raiz</p>
+                  <p className="text-[12px] text-secondary leading-relaxed">{aiAlertas.causa_raiz}</p>
+                </div>
+              )}
+              {aiAlertas.acao_imediata && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-1">Ação imediata</p>
+                  <p className="text-[12px] text-text font-semibold leading-relaxed">{aiAlertas.acao_imediata}</p>
+                </div>
+              )}
+              {aiAlertas.insights && aiAlertas.insights.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {aiAlertas.insights.map((ins, i) => (
+                    <span
+                      key={i}
+                      className="text-[11px] px-2.5 py-1 rounded-full border border-primary/20 bg-primary/[0.06] text-primary/80"
+                    >
+                      {ins}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 

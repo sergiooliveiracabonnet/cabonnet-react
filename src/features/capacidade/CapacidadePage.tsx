@@ -1,5 +1,5 @@
 ﻿import { useState, useMemo } from 'react'
-import { BarChart2, Target, AlertCircle } from 'lucide-react'
+import { BarChart2, Target, AlertCircle, Sparkles, Clock, Zap } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid, Legend } from '../../components/ui/bar-chart'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useUIStore } from '../../store/uiStore'
@@ -8,6 +8,7 @@ import { buildCapacidade } from '../../lib/builders'
 import { shortEquipe } from '../../lib/osFormat'
 import { SectionTitle } from '../../components/ui/SectionTitle'
 import { ChartCard } from '../../components/ui/ChartCard'
+import { useAICapacidade } from '../../hooks/useAICapacidade'
 
 const SEMAFORO_CFG = {
   ok:      { border: 'border-green/20',  value: 'text-green',  badge: 'OK'      },
@@ -40,11 +41,26 @@ export default function CapacidadePage() {
     [equipeIndisponivel]
   )
 
-   
+
   const { executivo, hipoteses, cobertura, equipes: _equipes, semaforo, projecao } = useMemo(
     () => buildCapacidade(rowsDisponiveis, { metaInst, metaManut, metaServ, dateFilter }, allRows),
     [rowsDisponiveis, allRows, metaInst, metaManut, metaServ, dateFilter]
   )
+
+  const aiCapacidadeInput = useMemo(() => ({
+    fila:           executivo.fila,
+    ritmo_dia:      parseFloat((executivo.total / Math.max(1, 30)).toFixed(1)),
+    meta_dia:       metaInst + metaManut + metaServ,
+    dias_previstos: executivo.prev,
+    equipes_ativas: _equipes.filter(e => e.fila > 0).length,
+    por_tipo:       {
+      Instalação: cobertura[0]?.value ?? 0,
+      Manutenção: cobertura[1]?.value ?? 0,
+      Serviços:   cobertura[2]?.value ?? 0,
+    },
+  }), [executivo, metaInst, metaManut, metaServ, _equipes, cobertura])
+
+  const { data: aiCapacidade, isLoading: aiLoading } = useAICapacidade(aiCapacidadeInput)
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -88,6 +104,52 @@ export default function CapacidadePage() {
           </div>
         </div>
       </div>
+
+      {/* ── AI Capacidade ─────────────────────────────────────────────────── */}
+      {(aiLoading || aiCapacidade) && (
+        <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles size={12} className="text-primary" />
+            <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
+              Diagnóstico de Capacidade · IA
+            </span>
+            {aiLoading && (
+              <span className="text-[10px] text-muted animate-pulse ml-auto">Analisando…</span>
+            )}
+          </div>
+          {aiCapacidade && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {aiCapacidade.diagnostico && (
+                <div className="flex gap-2.5">
+                  <AlertCircle size={14} className="text-red flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-red/70 mb-0.5">Diagnóstico</p>
+                    <p className="text-[12px] text-secondary leading-relaxed">{aiCapacidade.diagnostico}</p>
+                  </div>
+                </div>
+              )}
+              {aiCapacidade.projecao && (
+                <div className="flex gap-2.5">
+                  <Clock size={14} className="text-yellow flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-yellow/70 mb-0.5">Projeção</p>
+                    <p className="text-[12px] text-secondary leading-relaxed">{aiCapacidade.projecao}</p>
+                  </div>
+                </div>
+              )}
+              {aiCapacidade.recomendacao && (
+                <div className="flex gap-2.5">
+                  <Zap size={14} className="text-green flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-green/70 mb-0.5">Recomendação</p>
+                    <p className="text-[12px] text-secondary leading-relaxed">{aiCapacidade.recomendacao}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Hipóteses */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
