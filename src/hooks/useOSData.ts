@@ -1,20 +1,45 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, endpoints } from '../lib/api'
 import { parseCSV, enrichRows, applyDateFilter } from '../lib/transform'
 import { useUIStore } from '../store/uiStore'
 import { useAlertStore } from '../store/alertStore'
+import { persistSave, persistLoad, broadcastData, subscribeSync } from '../lib/queryPersist'
+import { useMemo } from 'react'
+
+const STALE_MS = 1000 * 60 * 5   // 5 minutos
+const GC_MS    = 1000 * 60 * 30  // 30 minutos
 
 export function useOSData() {
   const { dateFilter } = useUIStore()
   const { slaLimits }  = useAlertStore()
+  const queryClient    = useQueryClient()
+
+  // Recebe dados frescos de outras abas via BroadcastChannel.
+  // Só quem recebe do servidor faz broadcast — sem loops.
+  useEffect(() => {
+    return subscribeSync((payload, ts) => {
+      queryClient.setQueryData(['os-query'], payload)
+      queryClient.setQueryDefaults(['os-query'], { initialDataUpdatedAt: ts })
+      persistSave(payload)
+    })
+  }, [queryClient])
 
   const { data, isLoading, error, dataUpdatedAt } = useQuery({
     queryKey:  ['os-query'],
-    queryFn:   () => api.get(endpoints.query),
-    staleTime: 1000 * 60 * 5,
-    gcTime:    1000 * 60 * 30,
+    queryFn:   async () => {
+      const result = await api.get(endpoints.query) as Record<string, string>
+      persistSave(result)
+      broadcastData(result)
+      return result
+    },
+    staleTime: STALE_MS,
+    gcTime:    GC_MS,
     retry:     2,
+    // Dados do localStorage servem como cache inicial — aba duplicada mostra
+    // dados instantaneamente sem spinner. Se o dado tiver < 5 min não refetch.
+    initialData:          () => persistLoad()?.payload,
+    initialDataUpdatedAt: () => persistLoad()?.ts,
   })
 
   const { allRows, discardedLixo, duplicadosLixo } = useMemo(() => {
