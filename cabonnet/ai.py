@@ -602,3 +602,590 @@ def _ai_suggest_team(payload: dict):
     except Exception as ex:
         log.warning("[AI] Erro suggest-team: %s", str(ex)[:200])
         return None
+
+
+def _ai_alertas(payload):
+    """Analisa alertas operacionais ativos e identifica o mais urgente com causa raiz e ação imediata."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_alertas_lock:
+        c = state._ai_alertas_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: c[k] for k in c if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    alertas = payload.get("alertas", [])
+    ctx     = payload.get("contexto", {})
+
+    alertas_txt = "\n".join(
+        f"  - [{a.get('nivel','?').upper()}] {a.get('titulo','?')}: {a.get('msg','?')} (ref: {a.get('ref','?')})"
+        for a in alertas
+    ) or "  nenhum alerta"
+
+    prompt = (
+        "Você é um analista de operações de ISP regional. Analise os alertas operacionais abaixo "
+        "e identifique qual é o mais urgente, sua causa raiz e a ação imediata necessária.\n\n"
+        "=== ALERTAS ATIVOS ===\n"
+        f"{alertas_txt}\n\n"
+        "=== CONTEXTO ===\n"
+        f"Total OS: {ctx.get('total', 0)} | Críticas: {ctx.get('criticas', 0)} | "
+        f"Sem equipe: {ctx.get('semEquipe', 0)} | Aging médio: {ctx.get('aging', 0):.1f}d\n\n"
+        "Cite os dados reais dos alertas. Identifique causa raiz (não sintoma). "
+        "A ação imediata deve especificar quem faz o quê agora.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"prioridade": "nome do alerta mais urgente", '
+        '"causa_raiz": "1 frase com hipótese de causa raiz", '
+        '"acao_imediata": "1 frase de ação específica (quem, o quê)", '
+        '"insights": ["dado relevante 1", "dado relevante 2"]}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 500, "messages": [{"role": "user", "content": prompt}]},
+            timeout=20, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] alertas %s: %s", resp.status_code, resp.text[:200])
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "prioridade":    result.get("prioridade", ""),
+            "causa_raiz":    result.get("causa_raiz", ""),
+            "acao_imediata": result.get("acao_imediata", ""),
+            "insights":      result.get("insights", [])[:2],
+        }
+        with state._ai_alertas_lock:
+            state._ai_alertas_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] alertas gerado — prioridade=%s", out["prioridade"])
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] alertas erro: %s", str(ex)[:200])
+        return None
+
+
+def _ai_capacidade(payload):
+    """Diagnóstico de capacidade operacional: fila vs ritmo vs meta."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_capacidade_lock:
+        c = state._ai_capacidade_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: c[k] for k in c if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    por_tipo_txt = ", ".join(
+        f"{t}: {n}" for t, n in payload.get("por_tipo", {}).items()
+    ) or "sem dados"
+
+    prompt = (
+        "Você é um analista de capacidade de ISP regional. "
+        "Com os dados de fila, ritmo e meta diária, diagnostique a situação e recomende ação concreta.\n\n"
+        "=== CAPACIDADE ATUAL ===\n"
+        f"Fila total: {payload.get('fila', 0)} OS | "
+        f"Ritmo atual: {payload.get('ritmo_dia', 0):.1f} OS/dia | "
+        f"Meta: {payload.get('meta_dia', 0)} OS/dia | "
+        f"Dias previstos para zerar: {payload.get('dias_previstos', 0):.1f}d | "
+        f"Equipes ativas: {payload.get('equipes_ativas', 0)}\n"
+        f"Por tipo: {por_tipo_txt}\n\n"
+        "Cite os números reais. O diagnóstico deve ser 1 frase com a situação atual. "
+        "A projeção deve dizer o que acontece se nada mudar. "
+        "A recomendação deve ser 1 ação concreta e específica.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"diagnostico": "1 frase: situação real com números", '
+        '"projecao": "1 frase: o que acontece se nada mudar", '
+        '"recomendacao": "1 frase: ação concreta"}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 400, "messages": [{"role": "user", "content": prompt}]},
+            timeout=20, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] capacidade %s: %s", resp.status_code, resp.text[:200])
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "diagnostico":  result.get("diagnostico", ""),
+            "projecao":     result.get("projecao", ""),
+            "recomendacao": result.get("recomendacao", ""),
+        }
+        with state._ai_capacidade_lock:
+            state._ai_capacidade_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] capacidade gerado")
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] capacidade erro: %s", str(ex)[:200])
+        return None
+
+
+def _ai_campo_previsao(payload):
+    """Analisa desempenho de fornecedores de campo e prevê fechamento semanal de SLA."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_campo_lock:
+        c = state._ai_campo_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: c[k] for k in c if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    forn_txt = "\n".join(
+        f"  - {f['nome']}: fila={f.get('fila',0)}, ritmo={f.get('ritmo',0):.1f}/dia, "
+        f"SLA={f.get('sla_pct',0)}%, críticas={f.get('criticas',0)}"
+        for f in payload.get("fornecedores", [])
+    ) or "  sem dados"
+
+    prompt = (
+        "Você é um especialista em campo de ISP regional. "
+        "Analise o desempenho de cada fornecedor e preveja se vai fechar a semana no SLA.\n\n"
+        f"Meta SLA: {payload.get('meta_sla', 80)}%\n\n"
+        "=== FORNECEDORES ===\n"
+        f"{forn_txt}\n\n"
+        "Para cada fornecedor, classifique: ok (SLA acima da meta e tendência positiva), "
+        "risco (próximo da meta ou queda), crítico (abaixo da meta). "
+        "A recomendação deve indicar a ação mais urgente.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"analises": [{"nome": "WES", "status": "ok|risco|critico", '
+        '"narrativa": "1 frase com dado específico", "risco": "baixo|médio|alto"}], '
+        '"recomendacao": "1 frase com ação mais urgente"}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 500, "messages": [{"role": "user", "content": prompt}]},
+            timeout=20, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] campo-previsao %s: %s", resp.status_code, resp.text[:200])
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "analises":     result.get("analises", []),
+            "recomendacao": result.get("recomendacao", ""),
+        }
+        with state._ai_campo_lock:
+            state._ai_campo_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] campo-previsao gerado — %d fornecedores", len(out["analises"]))
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] campo-previsao erro: %s", str(ex)[:200])
+        return None
+
+
+def _ai_fornecedor_rec(payload):
+    """Avalia portfolio de fornecedores (score, SLA, MTTR, custo) e recomenda realocação."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_fornecedor_lock:
+        c = state._ai_fornecedor_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: c[k] for k in c if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    forn_txt = "\n".join(
+        f"  - {f['nome']}: score={f.get('score',0)}, SLA={f.get('sla',0)}%, "
+        f"MTTR={f.get('mttr',0):.1f}d, total={f.get('total',0)} OS, "
+        f"críticas={f.get('criticas',0)}, custo/OS=R${f.get('custo_por_os',0)}"
+        for f in payload.get("fornecedores", [])
+    ) or "  sem dados"
+
+    prompt = (
+        "Você é um analista de fornecedores de ISP regional. "
+        "Avalie o portfolio considerando score composto, SLA, MTTR e custo por OS. "
+        "Identifique o melhor, o pior e recomende onde aumentar ou reduzir alocação.\n\n"
+        "=== FORNECEDORES ===\n"
+        f"{forn_txt}\n\n"
+        "Tier A: alto score, baixo custo, SLA acima da meta. "
+        "Tier B: performance mediana. Tier C: baixo score ou custo elevado sem contrapartida.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"narrativa": "1-2 frases: diagnóstico do portfolio com dados", '
+        '"ranking": [{"nome": "...", "tier": "A|B|C", '
+        '"recomendacao": "aumentar|manter|reduzir", "motivo": "1 frase"}]}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 600, "messages": [{"role": "user", "content": prompt}]},
+            timeout=20, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] fornecedor-rec %s: %s", resp.status_code, resp.text[:200])
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "narrativa": result.get("narrativa", ""),
+            "ranking":   result.get("ranking", []),
+        }
+        with state._ai_fornecedor_lock:
+            state._ai_fornecedor_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] fornecedor-rec gerado — %d fornecedores ranqueados", len(out["ranking"]))
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] fornecedor-rec erro: %s", str(ex)[:200])
+        return None
+
+
+def _ai_planner(payload):
+    """Analisa distribuição de carga semanal por equipe e por dia, sugere redistribuição."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_planner_lock:
+        c = state._ai_planner_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: c[k] for k in c if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    dias = payload.get("dias", ["seg", "ter", "qua", "qui", "sex"])
+    meta = payload.get("meta_diaria", 4)
+
+    equipes_txt = "\n".join(
+        f"  - {e['nome']}: total={e.get('total_semana', 0)} | " +
+        " | ".join(f"{d}={e.get('por_dia', {}).get(d, 0)}" for d in dias)
+        for e in payload.get("equipes", [])
+    ) or "  sem dados"
+
+    prompt = (
+        "Você é um gestor de escalonamento de ISP regional. "
+        "Analise a distribuição de carga semanal por equipe e por dia. "
+        f"Meta diária por equipe: {meta} OS.\n\n"
+        "=== DISTRIBUIÇÃO SEMANAL ===\n"
+        f"{equipes_txt}\n\n"
+        "Identifique desbalanceamento entre dias (picos e vales) e entre equipes. "
+        "Sugira redistribuição específica com impacto esperado.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"narrativa": "1 frase: diagnóstico do desbalanceamento com dados", '
+        '"sugestoes": [{"equipe": "F01 - JOAO", '
+        '"acao": "1 frase de ação específica", '
+        '"impacto": "1 frase de impacto esperado"}]}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 700, "messages": [{"role": "user", "content": prompt}]},
+            timeout=20, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] planner %s: %s", resp.status_code, resp.text[:200])
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "narrativa": result.get("narrativa", ""),
+            "sugestoes": result.get("sugestoes", []),
+        }
+        with state._ai_planner_lock:
+            state._ai_planner_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] planner gerado — %d sugestões", len(out["sugestoes"]))
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] planner erro: %s", str(ex)[:200])
+        return None
+
+
+def _ai_proxima_os(payload):
+    """Seleciona as próximas N OS a executar por prioridade (SLA risco, aging, tipo)."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_proxima_lock:
+        c = state._ai_proxima_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: c[k] for k in c if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    n    = payload.get("n", 3)
+    fila = payload.get("fila", [])
+
+    fila_txt = "\n".join(
+        f"  - OS#{o.get('numos','?')}: tipo={o.get('tipo','?')}, cidade={o.get('cidade','?')}, "
+        f"bairro={o.get('bairro','?')}, aging={o.get('aging',0)}d, "
+        f"sla_risco={o.get('sla_risco',0)}, equipe={o.get('equipe','?')}"
+        for o in fila[:20]
+    ) or "  fila vazia"
+
+    prompt = (
+        "Você é um despachante sênior de ISP regional. "
+        f"Da fila fornecida, selecione as próximas {n} OS a executar com prioridade. "
+        "Critérios: SLA risco (quanto maior mais urgente), aging (maior = mais urgente), "
+        "tipo (críticos: INSTALACAO com aging alto, MANUTENCAO com SLA alto primeiro).\n\n"
+        "=== FILA ===\n"
+        f"{fila_txt}\n\n"
+        "Justifique cada escolha em 1 frase com dados concretos.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"proximas": [{"numos": "1234567", "motivo": "1 frase de justificativa", '
+        '"urgencia": "critica|alta|normal"}], '
+        '"narrativa": "1 frase explicando o critério de priorização"}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 500, "messages": [{"role": "user", "content": prompt}]},
+            timeout=20, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] proxima-os %s: %s", resp.status_code, resp.text[:200])
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "proximas":  result.get("proximas", [])[:n],
+            "narrativa": result.get("narrativa", ""),
+        }
+        with state._ai_proxima_lock:
+            state._ai_proxima_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] proxima-os gerado — %d OS priorizadas", len(out["proximas"]))
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] proxima-os erro: %s", str(ex)[:200])
+        return None
+
+
+def _ai_cidades_cluster(payload):
+    """Identifica clusters geográficos de OS pendentes para otimização logística."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_cluster_lock:
+        c = state._ai_cluster_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: c[k] for k in c if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    pendentes = payload.get("pendentes", [])
+
+    pendentes_txt = "\n".join(
+        f"  - OS#{o.get('numos','?')}: {o.get('cidade','?')} / {o.get('bairro','?')}, "
+        f"tipo={o.get('tipo','?')}, aging={o.get('aging',0)}d"
+        for o in pendentes[:30]
+    ) or "  sem pendentes"
+
+    prompt = (
+        "Você é um analista logístico de ISP regional. "
+        "Identifique concentrações (clusters) de OS pendentes no mesmo bairro/cidade "
+        "que poderiam ser atendidas por uma única ida de equipe, reduzindo deslocamento.\n\n"
+        "=== OS PENDENTES ===\n"
+        f"{pendentes_txt}\n\n"
+        "Agrupe por bairro+cidade. Clusters com 2+ OS têm oportunidade logística. "
+        "Priorize clusters com maior count e aging mais alto.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"clusters": [{"bairro": "Centro", "cidade": "Taubaté", "count": 5, '
+        '"tipos": ["MANUTENCAO"], "sugestao": "1 frase de ação logística"}], '
+        '"narrativa": "1 frase: maior oportunidade de otimização"}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 500, "messages": [{"role": "user", "content": prompt}]},
+            timeout=20, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] cidades-cluster %s: %s", resp.status_code, resp.text[:200])
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "clusters":  result.get("clusters", []),
+            "narrativa": result.get("narrativa", ""),
+        }
+        with state._ai_cluster_lock:
+            state._ai_cluster_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] cidades-cluster gerado — %d clusters", len(out["clusters"]))
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] cidades-cluster erro: %s", str(ex)[:200])
+        return None
+
+
+def _ai_produtividade_analise(payload):
+    """Analisa quedas de produtividade por equipe e identifica causa mais provável."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_produtiv_lock:
+        c = state._ai_produtiv_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: c[k] for k in c if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    quedas = payload.get("quedas", [])
+    ctx    = payload.get("contexto", "semana normal")
+
+    quedas_txt = "\n".join(
+        f"  - {q['equipe']}: atual={q.get('atual', 0)} OS, anterior={q.get('anterior', 0)} OS, "
+        f"variação={q.get('delta_pct', 0):+.0f}%"
+        for q in quedas
+    ) or "  sem quedas detectadas"
+
+    prompt = (
+        "Você é um gestor de RH de ISP regional especializado em performance de campo. "
+        "Analise as quedas de produtividade por equipe e identifique a causa mais provável "
+        "(feriado, equipe reduzida, demanda baixa, problema de performance, recesso).\n\n"
+        f"Contexto da semana: {ctx}\n\n"
+        "=== QUEDAS DE PRODUTIVIDADE ===\n"
+        f"{quedas_txt}\n\n"
+        "Para cada equipe, aponte a hipótese de causa raiz mais provável com base nos dados. "
+        "O diagnóstico geral deve resumir o padrão observado.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"analises": [{"equipe": "F01 - JOAO", '
+        '"causa": "1 frase com hipótese de causa raiz", '
+        '"recomendacao": "1 frase de ação específica"}], '
+        '"narrativa": "1 frase: diagnóstico geral"}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 500, "messages": [{"role": "user", "content": prompt}]},
+            timeout=20, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] produtividade-analise %s: %s", resp.status_code, resp.text[:200])
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "analises":  result.get("analises", []),
+            "narrativa": result.get("narrativa", ""),
+        }
+        with state._ai_produtiv_lock:
+            state._ai_produtiv_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] produtividade-analise gerado — %d equipes", len(out["analises"]))
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] produtividade-analise erro: %s", str(ex)[:200])
+        return None
+
+
+def _ai_juniper_correlacao(payload):
+    """Correlaciona clientes inativos no Juniper com OS abertas, detectando quedas sem OS."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_juniper_lock:
+        c = state._ai_juniper_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: c[k] for k in c if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    inativos  = payload.get("inativos", [])
+    os_ativas = payload.get("os_ativas", [])
+
+    inativos_txt = "\n".join(
+        f"  - {c['nome']} ({c.get('cidade', '?')})"
+        for c in inativos[:30]
+    ) or "  nenhum inativo"
+
+    os_txt = "\n".join(
+        f"  - OS#{o.get('numos','?')}: {o.get('cidade','?')}, tipo={o.get('tipo','?')}"
+        for o in os_ativas[:30]
+    ) or "  nenhuma OS ativa"
+
+    prompt = (
+        "Você é um analista NOC de ISP regional. "
+        "Compare clientes inativos no Juniper (PPPoE offline) com OS abertas no sistema. "
+        "Identifique clientes inativos SEM OS correspondente — estes são possíveis incidentes "
+        "não reportados que precisam de abertura de OS proativa.\n\n"
+        "=== CLIENTES INATIVOS NO JUNIPER ===\n"
+        f"{inativos_txt}\n\n"
+        "=== OS ATIVAS NO SISTEMA ===\n"
+        f"{os_txt}\n\n"
+        "Um cliente inativo tem OS correspondente se houver OS da mesma cidade/bairro com tipo MANUTENCAO ou INSTALACAO. "
+        "Liste apenas os sem OS. O resumo deve ser 1 frase sobre a situação geral.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"sem_os": [{"nome": "CLI-001", "cidade": "Taubaté", '
+        '"alerta": "Cliente inativo sem OS — possível queda não reportada"}], '
+        '"narrativa": "1 frase: resumo da situação de correlação"}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 400, "messages": [{"role": "user", "content": prompt}]},
+            timeout=20, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] juniper-correlacao %s: %s", resp.status_code, resp.text[:200])
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "sem_os":    result.get("sem_os", []),
+            "narrativa": result.get("narrativa", ""),
+        }
+        with state._ai_juniper_lock:
+            state._ai_juniper_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] juniper-correlacao gerado — %d sem OS", len(out["sem_os"]))
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] juniper-correlacao erro: %s", str(ex)[:200])
+        return None

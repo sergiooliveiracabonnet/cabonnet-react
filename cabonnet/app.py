@@ -840,6 +840,114 @@ async def ai_suggest_team(request: Request):
     return {"ok": True, **result}
 
 
+@router.post("/ai/alertas")
+async def ai_alertas(request: Request):
+    from cabonnet.ai import _ai_alertas
+    body = await request.json()
+    result = _ai_alertas(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
+@router.post("/ai/capacidade")
+async def ai_capacidade(request: Request):
+    from cabonnet.ai import _ai_capacidade
+    body = await request.json()
+    result = _ai_capacidade(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
+@router.post("/ai/campo-previsao")
+async def ai_campo_previsao(request: Request):
+    from cabonnet.ai import _ai_campo_previsao
+    body = await request.json()
+    result = _ai_campo_previsao(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
+@router.post("/ai/fornecedor-rec")
+async def ai_fornecedor_rec(request: Request):
+    from cabonnet.ai import _ai_fornecedor_rec
+    body = await request.json()
+    result = _ai_fornecedor_rec(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
+@router.post("/ai/planner")
+async def ai_planner(request: Request):
+    from cabonnet.ai import _ai_planner
+    body = await request.json()
+    result = _ai_planner(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
+@router.post("/ai/proxima-os")
+async def ai_proxima_os(request: Request):
+    from cabonnet.ai import _ai_proxima_os
+    body = await request.json()
+    result = _ai_proxima_os(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
+@router.post("/ai/cidades-cluster")
+async def ai_cidades_cluster(request: Request):
+    from cabonnet.ai import _ai_cidades_cluster
+    body = await request.json()
+    result = _ai_cidades_cluster(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
+@router.post("/ai/produtividade-analise")
+async def ai_produtividade_analise(request: Request):
+    from cabonnet.ai import _ai_produtividade_analise
+    body = await request.json()
+    result = _ai_produtividade_analise(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
+@router.post("/ai/juniper-correlacao")
+async def ai_juniper_correlacao(request: Request):
+    from cabonnet.ai import _ai_juniper_correlacao
+    body = await request.json()
+    result = _ai_juniper_correlacao(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
 # ── Grafana / Zabbix ──────────────────────────────────────────────────────────
 
 @router.get("/grafana/os-totais")
