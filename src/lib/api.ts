@@ -77,6 +77,11 @@ export const ai = {
   briefingCreate: ()                 => request('/ai/daily-briefing',  { method: 'POST', body: '{}' }),
   forecast:       (payload: unknown) => request('/ai/forecast',        { method: 'POST', body: JSON.stringify(payload) }),
   suggestTeam:    (payload: unknown) => request('/ai/suggest-team',    { method: 'POST', body: JSON.stringify(payload) }),
+  alertas:        (payload: unknown) => request('/ai/alertas',              { method: 'POST', body: JSON.stringify(payload) }),
+  capacidade:     (payload: unknown) => request('/ai/capacidade',           { method: 'POST', body: JSON.stringify(payload) }),
+  campoPrevisao:  (payload: unknown) => request('/ai/campo-previsao',       { method: 'POST', body: JSON.stringify(payload) }),
+  fornecedorRec:  (payload: unknown) => request('/ai/fornecedor-rec',       { method: 'POST', body: JSON.stringify(payload) }),
+  produtividade:  (payload: unknown) => request('/ai/produtividade-analise',{ method: 'POST', body: JSON.stringify(payload) }),
 }
 
 export const telegram = {
