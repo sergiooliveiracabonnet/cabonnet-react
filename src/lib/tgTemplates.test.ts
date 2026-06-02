@@ -70,7 +70,7 @@ describe('tgCriticas', () => {
 
   it('exclui OS de tipo REDE', () => {
     const os = makeEnrichedOS({ datacadastro: daysAgo(10), descsituacao: 'Pendente' })
-    const rede = { ...os, _tipo: 'REDE', _slaCritico: true, numos: '8888888' }
+    const rede = { ...os, _tipo: 'REDE' as const, _slaCritico: true, numos: '8888888' }
     const result = tgCriticas([rede])
     expect(result).toContain('Nenhuma OS com SLA excedido')
   })
