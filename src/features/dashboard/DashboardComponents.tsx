@@ -5,6 +5,7 @@ import {
   ChevronDown, ChevronUp, Activity, Users,
 } from 'lucide-react'
 import { useAIAnomalias } from '../../hooks/useAIAnomalias'
+import type { AINarrativeResult } from '../../hooks/useAINarrative'
 import { GaugeChart } from '../../components/ui/GaugeChart'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
@@ -14,7 +15,7 @@ import type {
 } from '../../lib/types'
 
 export interface ModalState        { title: string; rows: OSRow[] }
-export interface AINarrativeResult { ok?: boolean; narrativa?: string; insights?: string[] }
+export type { AINarrativeResult }
 export type IconComp = ComponentType<{ size?: number; className?: string; style?: CSSProperties }>
 
 export interface CatCfgItem {
@@ -98,7 +99,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI }: {
     score >= 65 ? '#facc15' : '#f87171'
 
   type DisplayInsight = { level: string; text: string; ai?: boolean }
-  const displayNarrative = aiData?.narrativa || narrativa
+  const displayNarrative = narrativa
   const displayInsights: DisplayInsight[] = aiData?.insights?.length
     ? aiData.insights.map(text => ({ level: 'cyan', text, ai: true }))
     : quickInsights
@@ -150,11 +151,11 @@ export function PulsoHero({ pulso, aiData, isLoadingAI }: {
           </div>
 
           {/* Narrativa */}
-          <div className="flex-1 min-w-[180px]">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="flex-1 min-w-[200px]">
+            <div className="flex items-center gap-2 mb-3">
               <Activity size={10} className="text-muted" />
               <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">
-                Pulso Operacional
+                Análise Operacional
               </span>
               {aiData && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary/80
@@ -164,13 +165,50 @@ export function PulsoHero({ pulso, aiData, isLoadingAI }: {
               )}
             </div>
 
-            {isLoadingAI && !narrativa ? (
-              <div className="space-y-2">
-                <div className="h-3 bg-surface rounded animate-pulse w-full" />
-                <div className="h-3 bg-surface rounded animate-pulse w-3/4" />
+            {isLoadingAI && !aiData ? (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <div className="h-2 bg-surface rounded animate-pulse w-16" />
+                  <div className="h-3 bg-surface rounded animate-pulse w-full" />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-2 bg-surface rounded animate-pulse w-16" />
+                  <div className="h-3 bg-surface rounded animate-pulse w-5/6" />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-2 bg-surface rounded animate-pulse w-16" />
+                  <div className="h-3 bg-surface rounded animate-pulse w-4/5" />
+                </div>
+              </div>
+            ) : aiData?.problema ? (
+              <div className="space-y-2.5">
+                {/* Problema */}
+                <div className="flex gap-2.5 items-start">
+                  <span className="mt-[3px] flex-shrink-0 w-1.5 h-1.5 rounded-full bg-red" />
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-red/70 mb-0.5">Problema</p>
+                    <p className="text-[12px] text-secondary leading-snug">{aiData.problema}</p>
+                  </div>
+                </div>
+                {/* Sugestão */}
+                <div className="flex gap-2.5 items-start">
+                  <span className="mt-[3px] flex-shrink-0 w-1.5 h-1.5 rounded-full bg-yellow" />
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-yellow/70 mb-0.5">Sugestão</p>
+                    <p className="text-[12px] text-secondary leading-snug">{aiData.sugestao}</p>
+                  </div>
+                </div>
+                {/* Ação */}
+                <div className="flex gap-2.5 items-start">
+                  <Zap size={10} className="mt-[2px] flex-shrink-0 text-green" />
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-green/70 mb-0.5">Ação Imediata</p>
+                    <p className="text-[12px] font-semibold text-text leading-snug">{aiData.acao}</p>
+                  </div>
+                </div>
               </div>
             ) : (
-              <p className="text-[13.5px] text-secondary leading-[1.7]">
+              <p className="text-[12px] text-secondary leading-[1.7]">
                 {displayNarrative || 'Carregando análise operacional…'}
               </p>
             )}

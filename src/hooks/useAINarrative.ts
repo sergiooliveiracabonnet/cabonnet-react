@@ -50,3 +50,12 @@ export function useAINarrative({ kpis = [], pulso = {}, fornecedores = [], anoma
     },
   })
 }
+
+export interface AINarrativeResult {
+  ok?:       boolean
+  problema?: string
+  sugestao?: string
+  acao?:     string
+  insights?: string[]
+  cached?:   boolean
+}

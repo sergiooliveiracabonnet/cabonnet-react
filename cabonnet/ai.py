@@ -17,13 +17,18 @@ log = logging.getLogger("CaboNetServer")
 
 
 def _ai_narrative(payload):
-    """Gera narrativa operacional via Claude API com cache de 5 minutos por hash de payload."""
+    """Gera análise operacional estruturada via Claude API com cache de 5 minutos por hash de payload."""
     data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
     now = _time_mod.time()
 
     with state._ai_cache_lock:
-        if state._ai_cache["hash"] == data_hash and (now - state._ai_cache["ts"]) < _AI_CACHE_TTL:
-            return {"narrativa": state._ai_cache["narrativa"], "insights": state._ai_cache["insights"], "cached": True}
+        c = state._ai_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {
+                "problema": c.get("problema", ""), "sugestao": c.get("sugestao", ""),
+                "acao":     c.get("acao", ""),     "insights": c.get("insights", []),
+                "cached": True,
+            }
 
     if not ANTHROPIC_API_KEY:
         return None
@@ -36,8 +41,8 @@ def _ai_narrative(payload):
     ) or "nenhuma"
 
     prompt = (
-        "Você é um analista sênior de operações de ISP. Analise os dados abaixo e gere uma narrativa "
-        "operacional concisa e acionável em português brasileiro.\n\n"
+        "Você é um analista sênior de operações de ISP. Analise os dados abaixo e responda em "
+        "português brasileiro com três seções distintas e objetivas.\n\n"
         f"OS ativas: {payload.get('total', 0)} | Críticas (SLA 2×): {payload.get('criticas', 0)} | "
         f"Sem equipe: {payload.get('semEquipe', 0)} | Em atendimento: {payload.get('atend', 0)} | "
         f"Pendentes: {payload.get('pend', 0)}\n"
@@ -48,9 +53,11 @@ def _ai_narrative(payload):
         f"Fornecedores: {fornecedores_txt}\n"
         f"Anomalias detectadas: {payload.get('anomalias', {}).get('total', 0)}\n\n"
         "Responda SOMENTE com JSON válido, sem markdown:\n"
-        '{"narrativa": "2-3 frases diretas sobre estado real, gargalo principal e ação urgente", '
-        '"insights": ["insight 1", "insight 2", "insight 3"]}\n\n'
-        "Regras: seja cirúrgico, identifique causas (não sintomas), priorize por urgência."
+        '{"problema": "1 frase identificando o principal gargalo com dados concretos (ex: N OS críticas, aging Xd)", '
+        '"sugestao": "1 frase sobre o que precisa ser feito para resolver (estratégia, não tática)", '
+        '"acao": "1 frase de ação imediata e específica (quem faz o quê agora)", '
+        '"insights": ["dado relevante 1", "dado relevante 2", "dado relevante 3"]}\n\n'
+        "Regras: cite números reais dos dados, identifique causas (não sintomas), seja cirúrgico."
     )
 
     try:
@@ -78,15 +85,21 @@ def _ai_narrative(payload):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
                 raw = raw[4:]
-        result    = json.loads(raw)
-        narrativa = result.get("narrativa", "")
-        insights  = result.get("insights", [])[:3]
+        result   = json.loads(raw)
+        problema = result.get("problema", "")
+        sugestao = result.get("sugestao", "")
+        acao     = result.get("acao", "")
+        insights = result.get("insights", [])[:3]
 
         with state._ai_cache_lock:
-            state._ai_cache.update({"hash": data_hash, "narrativa": narrativa, "insights": insights, "ts": now})
+            state._ai_cache.update({
+                "hash": data_hash, "ts": now,
+                "problema": problema, "sugestao": sugestao,
+                "acao": acao, "insights": insights,
+            })
 
-        log.info("[AI] Narrativa gerada — %d chars, %d insights", len(narrativa), len(insights))
-        return {"narrativa": narrativa, "insights": insights, "cached": False}
+        log.info("[AI] Análise gerada — problema:%d, sugestao:%d, acao:%d", len(problema), len(sugestao), len(acao))
+        return {"problema": problema, "sugestao": sugestao, "acao": acao, "insights": insights, "cached": False}
 
     except Exception as ex:
         log.warning("[AI] Erro ao gerar narrativa: %s", str(ex)[:200])
