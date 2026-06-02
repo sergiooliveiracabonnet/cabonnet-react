@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react'
 import {
   AlertTriangle, Clock, User, ChevronUp, ChevronDown,
   Package, Wrench, Network, MapPin, TrendingUp,
+  Sparkles, RefreshCw,
 } from 'lucide-react'
 import { useERPRows } from '../useERPRows'
 import { shortEquipe } from '../../../lib/osFormat'
+import { useAIProximaOS, type Urgencia } from '../../../hooks/useAIProximaOS'
 
 const RISCO_LEVELS = [
   { min: 70, label: 'Crítico', cls: 'bg-red/20 text-red border-red/30',     bar: 'bg-red',     row: 'hover:bg-red/[0.03]' },
@@ -23,9 +25,16 @@ const TIPO_ICON = {
   REDE:       { Icon: Network, cls: 'text-green', label: 'Rede' },
 }
 
+const URGENCIA_CFG: Record<Urgencia, { cls: string; label: string }> = {
+  critica: { cls: 'bg-red/15 text-red border-red/25',       label: 'Crítica' },
+  alta:    { cls: 'bg-orange/15 text-orange border-orange/25', label: 'Alta'   },
+  normal:  { cls: 'bg-cyan/15 text-cyan border-cyan/25',     label: 'Normal' },
+}
+
 export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: string; tipoFilter: string }) {
   const { rows }  = useERPRows()
-  const [sortDir, setSortDir] = useState('desc')
+  const [sortDir,      setSortDir]      = useState('desc')
+  const [aiCollapsed,  setAiCollapsed]  = useState(false)
 
   const sorted = useMemo(() => {
     let r = rows.filter(row => {
@@ -46,8 +55,95 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
     baixo:   sorted.filter(r => r._riskScore < 20).length,
   }), [sorted])
 
+  // Build fila payload for AI (top 50 by risk score)
+  const filaPayload = useMemo(() =>
+    sorted.slice(0, 50).map(r => ({
+      numos:     r.numos,
+      tipo:      (r._tipo ?? '') as string,
+      cidade:    (r.nomedacidade ?? '') as string,
+      bairro:    (r.bairro ?? '') as string,
+      aging:     r._aging ?? r._agingAbertura ?? 0,
+      sla_risco: r._riskScore,
+      equipe:    (r.nomedaequipe ?? '') as string,
+    }))
+  , [sorted])
+
+  const { data: aiData, isFetching: aiLoading, refetch: aiRefetch } = useAIProximaOS({ fila: filaPayload })
+
   return (
     <div className="flex flex-col gap-4 flex-1 min-h-0">
+
+      {/* ── AI Panel ── */}
+      <div className="flex-shrink-0 rounded-xl border border-primary/20 bg-primary/[0.03] overflow-hidden">
+        <button
+          onClick={() => setAiCollapsed(v => !v)}
+          className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-primary/[0.04] transition-colors"
+        >
+          <Sparkles size={13} className="text-primary flex-shrink-0" />
+          <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide flex-1 text-left">
+            Proximas a executar — recomendacao IA
+          </span>
+          <div className="flex items-center gap-2 ml-auto">
+            {aiData && (
+              <button
+                onClick={e => { e.stopPropagation(); void aiRefetch() }}
+                className="p-1 rounded-md hover:bg-primary/10 text-muted hover:text-primary transition-colors"
+                title="Recarregar sugestão"
+              >
+                <RefreshCw size={11} className={aiLoading ? 'animate-spin' : ''} />
+              </button>
+            )}
+            <ChevronDown
+              size={13}
+              className={`text-muted transition-transform duration-200 ${aiCollapsed ? '-rotate-90' : ''}`}
+            />
+          </div>
+        </button>
+
+        {!aiCollapsed && (
+          <div className="px-4 pb-3">
+            {aiLoading && !aiData ? (
+              <p className="text-[12px] text-muted animate-pulse py-2">Consultando IA…</p>
+            ) : !aiData ? (
+              <p className="text-[12px] text-muted py-2">
+                {sorted.length >= 3
+                  ? 'Sem sugestão disponível — tente recarregar.'
+                  : 'Adicione ao menos 3 OS na fila para ativar a recomendação.'}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {aiData.proximas.map(item => {
+                    const cfg = URGENCIA_CFG[item.urgencia] ?? URGENCIA_CFG.normal
+                    return (
+                      <div
+                        key={item.numos}
+                        className={`flex items-start gap-3 flex-1 min-w-[200px] rounded-lg border px-3 py-2 ${cfg.cls}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="font-mono text-[12px] font-bold">#{item.numos}</span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${cfg.cls}`}>
+                              {cfg.label}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-secondary leading-snug">{item.motivo}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                {aiData.narrativa && (
+                  <p className="text-[11px] text-muted leading-relaxed border-t border-primary/10 pt-2 mt-1">
+                    {aiData.narrativa}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Summary + sort */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">

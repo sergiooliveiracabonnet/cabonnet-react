@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import {
@@ -257,10 +257,11 @@ function NocInner() {
   const containerRef = useRef<HTMLDivElement>(null)
   const slideRef     = useRef(0)
 
-  const [slide,        setSlide]        = useState(0)
-  const [elapsed,      setElapsed]      = useState(0)
-  const [paused,       setPaused]       = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [slide,          setSlide]          = useState(0)
+  const [elapsed,        setElapsed]        = useState(0)
+  const [paused,         setPaused]         = useState(false)
+  const [isFullscreen,   setIsFullscreen]   = useState(false)
+  const [critOverlay,    setCritOverlay]    = useState(true)
   const now = useNowClock()
 
   useEffect(() => { slideRef.current = slide }, [slide])
@@ -307,6 +308,24 @@ function NocInner() {
   const slaCriticas = allRows.filter(
     r => r._slaCritico && r._tipo !== 'REDE' && !isCOPE(r) && !isReagend(r)
   )
+
+  // Extract dashboard KPI values for critical detection
+  const kpiMap = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const k of (kpis as Array<{ id: string; value: number | string }>)) {
+      map[k.id] = typeof k.value === 'number' ? k.value : parseInt(String(k.value)) || 0
+    }
+    return map
+  }, [kpis])
+
+  const criticas   = kpiMap['criticas']  ?? 0
+  const semEquipe  = kpiMap['semEq']     ?? 0
+  const isCritical = criticas > 10 || semEquipe > 5
+
+  // Auto-pause carousel when situation is critical
+  useEffect(() => {
+    if (isCritical && critOverlay) setPaused(true)
+  }, [isCritical, critOverlay])
 
   function goSlide(i: number) { setSlide(i); setElapsed(0) }
 
@@ -382,6 +401,23 @@ function NocInner() {
           <X size={16} />
         </button>
       </header>
+
+      {/* ── Critical overlay ── */}
+      {isCritical && critOverlay && (
+        <div className="flex items-center gap-4 px-5 py-3 bg-red/10 border-b border-red/30 flex-shrink-0">
+          <AlertCircle size={18} className="text-red flex-shrink-0 animate-pulse" />
+          <p className="text-[12px] font-semibold text-red flex-1">
+            Situacao critica detectada — {criticas} OS criticas, {semEquipe} sem equipe
+          </p>
+          <button
+            onClick={() => { setCritOverlay(false); setPaused(false) }}
+            className="text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red/30
+                       text-red hover:bg-red/10 transition-colors flex-shrink-0"
+          >
+            Retomar slides
+          </button>
+        </div>
+      )}
 
       {/* ── Slide area ── */}
       <main className="flex-1 overflow-hidden">
