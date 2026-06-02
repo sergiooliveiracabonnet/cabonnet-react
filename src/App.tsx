@@ -18,13 +18,20 @@ export default function App() {
   const { status, setAuthed, setUnauthed } = useAuthStore()
 
   useEffect(() => {
+    // Verifica sessão com o servidor sempre — mas só mostra spinner se ainda não
+    // temos estado do sessionStorage (aba nova). Em aba duplicada, 'status' já
+    // é 'authed' e a verificação acontece em background sem bloquear a UI.
     api.auth.check()
       .then((res) => {
         const { ok, role } = res as { ok: boolean; role?: string }
         ok ? setAuthed((role ?? 'viewer') as 'gestor' | 'operador' | 'viewer') : setUnauthed()
       })
-      .catch(() => setUnauthed())
-  }, [setAuthed, setUnauthed])
+      .catch(() => {
+        // Erro de rede: só desloga se ainda estava em 'checking'
+        // (aba nova sem sessionStorage). Aba duplicada mantém conteúdo visível.
+        if (status === 'checking') setUnauthed()
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const handle = () => setUnauthed()
