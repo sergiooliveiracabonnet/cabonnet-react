@@ -100,6 +100,77 @@ export function aggregateByCidade(rows: OSRow[]) {
 
 // Gera pontos para o heatmap — cada OS contribui com 1 ponto ponderado
 // na coordenada da cidade, com peso baseado em criticidade e aging
+// ── Agrupamento por bairro ────────────────────────────────────────────────────
+
+export interface BairroAgg {
+  bairro:    string
+  cidade:    string
+  count:     number
+  criticos:  number
+  excedidos: number
+  pendentes: number
+  semEquipe: number
+  avgAging:  number
+  coords:    { lat: number; lng: number }
+}
+
+// Offset determinístico: espalha bairros ao redor do centro da cidade em
+// posições consistentes (ângulo e raio derivados do nome, sem geocoding externo).
+function bairroOffset(bairro: string): { dlat: number; dlng: number } {
+  let h = 2166136261
+  for (let i = 0; i < bairro.length; i++) h = Math.imul(h ^ bairro.charCodeAt(i), 16777619)
+  const angle = (h >>> 0) % 360 * (Math.PI / 180)
+  const dist  = 0.006 + ((h >>> 0) % 800) / 80000   // ~700m a 1.7km do centro
+  return { dlat: Math.sin(angle) * dist, dlng: Math.cos(angle) * dist }
+}
+
+export function aggregateByBairro(rows: OSRow[]): BairroAgg[] {
+  type Acc = {
+    bairro: string; cidade: string; cityCoords: { lat: number; lng: number }
+    count: number; criticos: number; excedidos: number; pendentes: number
+    semEquipe: number; aging: number[]
+  }
+  const map = new Map<string, Acc>()
+
+  for (const r of rows) {
+    const city   = normalize(r.nomedacidade)
+    const bairro = (r.bairro || '').trim()
+    if (!city || !bairro) continue
+    const cityCoords = getCityCoords(city)
+    if (!cityCoords) continue
+
+    const key = `${city}::${normalize(bairro)}`
+    if (!map.has(key)) {
+      map.set(key, {
+        bairro, cidade: (r.nomedacidade || '').trim(), cityCoords,
+        count: 0, criticos: 0, excedidos: 0, pendentes: 0, semEquipe: 0, aging: [],
+      })
+    }
+    const g = map.get(key)!
+    g.count++
+    if (r._slaCritico)        g.criticos++
+    else if (r._slaExcedido)  g.excedidos++
+    if (r._situacaoEfetiva === 'Pendente' || r._situacaoEfetiva === 'Atendimento') g.pendentes++
+    if (!r.nomedaequipe?.trim()) g.semEquipe++
+    if (r._aging != null) g.aging.push(r._aging)
+  }
+
+  return Array.from(map.values())
+    .filter(g => g.count > 0)
+    .map(g => {
+      const { dlat, dlng } = bairroOffset(normalize(g.bairro))
+      const avgAging = g.aging.length
+        ? g.aging.reduce((a, b) => a + b, 0) / g.aging.length : 0
+      return {
+        bairro: g.bairro, cidade: g.cidade,
+        count: g.count, criticos: g.criticos, excedidos: g.excedidos,
+        pendentes: g.pendentes, semEquipe: g.semEquipe, avgAging,
+        coords: { lat: g.cityCoords.lat + dlat, lng: g.cityCoords.lng + dlng },
+      }
+    })
+    .sort((a, b) => b.count - a.count)
+}
+
 export function buildHeatPoints(rows: OSRow[]): [number, number, number][] {
   const byCity = new Map<string, { coords: { lat: number; lng: number }; weight: number }>()
   for (const r of rows) {

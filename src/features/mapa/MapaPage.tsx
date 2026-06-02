@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from 'react-leaflet'
-import { Map, Flame, Circle, TrendingUp, X } from 'lucide-react'
+import { Map, Flame, Circle, TrendingUp, X, LayoutGrid, Layers } from 'lucide-react'
 import L from 'leaflet'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
-import { aggregateByCidade, buildHeatPoints } from './geo'
+import { aggregateByCidade, aggregateByBairro, buildHeatPoints, type BairroAgg } from './geo'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 
 // Tipo do objeto retornado por aggregateByCidade
@@ -198,11 +198,20 @@ function RankingPanel({ cidades, onSelect, selected }: {
 export default function MapaPage() {
   const { rows: globalRows } = useOSDerived()
 
-  const [view,     setView]     = useState('ambos')   // 'calor' | 'bolhas' | 'ambos'
+  const [view,        setView]        = useState('ambos')    // 'calor' | 'bolhas' | 'ambos'
+  const [granularity, setGranularity] = useState<'cidade' | 'bairro'>('cidade')
   const [filterTipo,   setFilterTipo]   = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterAging,  setFilterAging]  = useState('')
-  const [selected, setSelected] = useState<CidadeAgg | null>(null)
+  const [selectedCidade, setSelectedCidade] = useState<CidadeAgg | null>(null)
+  const [selectedBairro, setSelectedBairro] = useState<BairroAgg | null>(null)
+
+  // Reset seleção ao trocar granularidade
+  const handleGranularity = (g: 'cidade' | 'bairro') => {
+    setGranularity(g)
+    setSelectedCidade(null)
+    setSelectedBairro(null)
+  }
 
   // Aplica filtros locais sobre o rows já filtrado por data e por hideRede (via contexto).
   // Padrão sem filtro de status = apenas OS ativas (pendente + atendimento),
@@ -233,6 +242,7 @@ export default function MapaPage() {
   }, [globalRows, filterStatus, filterTipo, filterAging])
 
   const cidades    = useMemo(() => aggregateByCidade(rows), [rows])
+  const bairros    = useMemo(() => aggregateByBairro(rows), [rows])
   const heatPoints = useMemo(() => buildHeatPoints(rows),   [rows])
 
   // KPIs globais
@@ -242,6 +252,9 @@ export default function MapaPage() {
     const vals = rows.map(r => r._aging).filter(v => v != null)
     return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : '—'
   }, [rows])
+
+  // Marcadores ativos dependendo da granularidade
+  const markers = granularity === 'cidade' ? cidades : bairros
 
   const tipoOpts = [
     { value: '',           label: 'Todos os tipos'   },
@@ -286,7 +299,10 @@ export default function MapaPage() {
         <KpiBadge label="Críticas"  value={totalCriticos}  color="text-red"    />
         <KpiBadge label="Excedidas" value={totalExcedidos} color="text-orange" />
         <KpiBadge label="Aging med" value={`${avgAging}d`} color="text-cyan"   />
-        <KpiBadge label="Cidades"   value={cidades.length} color="text-primary"/>
+        {granularity === 'cidade'
+          ? <KpiBadge label="Cidades" value={cidades.length} color="text-primary"/>
+          : <KpiBadge label="Bairros" value={bairros.length} color="text-purple"/>
+        }
 
         <div className="flex-1" />
 
@@ -294,6 +310,30 @@ export default function MapaPage() {
         <FilterSelect value={filterStatus} onChange={setFilterStatus} options={statusOpts} placeholder="Status" />
         <FilterSelect value={filterTipo}   onChange={setFilterTipo}   options={tipoOpts}   placeholder="Tipo" />
         <FilterSelect value={filterAging}  onChange={setFilterAging}  options={agingOpts}  placeholder="Aging" />
+
+        <div className="w-px h-5 bg-surface" />
+
+        {/* Toggle de granularidade */}
+        <div className="flex bg-bg border border-white/[0.08] rounded-xl p-0.5">
+          {([
+            { val: 'cidade', icon: LayoutGrid, label: 'Cidade' },
+            { val: 'bairro', icon: Layers,     label: 'Bairro' },
+          ] as { val: 'cidade' | 'bairro'; icon: typeof LayoutGrid; label: string }[]).map(({ val, icon: Icon, label }) => (
+            <button
+              key={val}
+              onClick={() => handleGranularity(val)}
+              title={`Agrupar por ${label}`}
+              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-[11px] font-semibold
+                          transition-all duration-fast
+                          ${granularity === val
+                            ? 'bg-primary/20 text-primary border border-primary/30'
+                            : 'text-muted hover:text-text'}`}
+            >
+              <Icon size={11} />
+              {label}
+            </button>
+          ))}
+        </div>
 
         <div className="w-px h-5 bg-surface" />
 
@@ -343,36 +383,50 @@ export default function MapaPage() {
             <HeatLayer points={heatPoints as [number, number, number][]} />
           )}
 
-          {/* Bubble markers por cidade */}
-          {(view === 'bolhas' || view === 'ambos') && (cidades as CidadeAgg[]).map(g => {
-            const { fill, stroke } = bubbleColor(g)
-            const isSelected = selected?.cidade === g.cidade
+          {/* Bubble markers */}
+          {(view === 'bolhas' || view === 'ambos') && markers.map(g => {
+            const isCidade = granularity === 'cidade'
+            const gc = g as CidadeAgg
+            const gb = g as BairroAgg
+            const label = isCidade
+              ? gc.cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+              : gb.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+            const key = isCidade ? gc.cidade : `${gb.cidade}::${gb.bairro}`
+            const isSelected = isCidade
+              ? selectedCidade?.cidade === gc.cidade
+              : selectedBairro?.bairro === gb.bairro && selectedBairro?.cidade === gb.cidade
+
+            const criticos  = g.criticos
+            const excedidos = g.excedidos
+            const fill   = criticos > 0 ? '#f87171' : excedidos > 0 ? '#f97316' : g.pendentes > 0 ? '#3b82f6' : '#4ade80'
+            const stroke = criticos > 0 ? '#fca5a5' : excedidos > 0 ? '#fdba74' : g.pendentes > 0 ? '#7dd3fc' : '#86efac'
+            const radius = isCidade ? bubbleRadius(g.count) : Math.max(6, Math.min(28, 4 + Math.sqrt(g.count) * 2.5))
+
             return (
               <CircleMarker
-                key={g.cidade}
+                key={key}
                 center={[g.coords.lat, g.coords.lng]}
-                radius={bubbleRadius(g.count)}
+                radius={radius}
                 pathOptions={{
-                  fillColor:   fill,
-                  fillOpacity: isSelected ? 0.9 : 0.55,
-                  color:       stroke,
-                  weight:      isSelected ? 2.5 : 1.5,
-                  opacity:     0.9,
+                  fillColor: fill, fillOpacity: isSelected ? 0.9 : 0.55,
+                  color: stroke, weight: isSelected ? 2.5 : 1.5, opacity: 0.9,
                 }}
-                eventHandlers={{ click: () => setSelected(isSelected ? null : g) }}
+                eventHandlers={{
+                  click: () => isCidade
+                    ? setSelectedCidade(isSelected ? null : gc)
+                    : setSelectedBairro(isSelected ? null : gb),
+                }}
               >
                 <Tooltip
-                  permanent={g.count >= 5}
+                  permanent={g.count >= (isCidade ? 5 : 3)}
                   direction="top"
-                  offset={[0, -bubbleRadius(g.count) - 4]}
+                  offset={[0, -radius - 4]}
                   className="map-tooltip"
                 >
-                  <span className="font-semibold">
-                    {g.cidade.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
-                  </span>
+                  <span className="font-semibold">{label}</span>
                   {' '}
                   <span className="font-mono">{g.count}</span>
-                  {g.criticos > 0 && <span className="text-red ml-1">⚠{g.criticos}</span>}
+                  {criticos > 0 && <span className="text-red ml-1">⚠{criticos}</span>}
                 </Tooltip>
               </CircleMarker>
             )
@@ -398,10 +452,100 @@ export default function MapaPage() {
         </div>
 
         {/* Ranking lateral */}
-        <RankingPanel cidades={cidades} onSelect={setSelected} selected={selected} />
+        {granularity === 'cidade'
+          ? <RankingPanel cidades={cidades} onSelect={setSelectedCidade} selected={selectedCidade} />
+          : <BairroRankingPanel bairros={bairros} onSelect={setSelectedBairro} selected={selectedBairro} />
+        }
 
-        {/* Painel da cidade selecionada */}
-        <CidadePanel cidade={selected} onClose={() => setSelected(null)} />
+        {/* Painel de detalhe */}
+        {granularity === 'cidade'
+          ? <CidadePanel cidade={selectedCidade} onClose={() => setSelectedCidade(null)} />
+          : <BairroPanel bairro={selectedBairro}  onClose={() => setSelectedBairro(null)} />
+        }
+      </div>
+    </div>
+  )
+}
+
+// ── Painel lateral de bairro ──────────────────────────────────────────────────
+function BairroPanel({ bairro, onClose }: { bairro: BairroAgg | null; onClose: () => void }) {
+  if (!bairro) return null
+  const fill = bairro.criticos > 0 ? '#f87171' : bairro.excedidos > 0 ? '#f97316' : bairro.pendentes > 0 ? '#3b82f6' : '#4ade80'
+  const cidadeFmt = bairro.cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+  const bairroFmt = bairro.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+  return (
+    <div className="absolute bottom-4 left-4 z-[500] w-72 animate-fade-in">
+      <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: fill }} />
+            <div className="min-w-0">
+              <p className="text-[13px] font-bold text-text leading-tight truncate">{bairroFmt}</p>
+              <p className="text-[10px] text-muted">{cidadeFmt}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-6 h-6 rounded-lg flex items-center justify-center text-muted hover:text-text hover:bg-surface transition-all flex-shrink-0">
+            <X size={12} />
+          </button>
+        </div>
+        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08]">
+          <Stat label="Total OS"  value={bairro.count}                            color="text-text" />
+          <Stat label="Críticas"  value={bairro.criticos}  color={bairro.criticos  > 0 ? 'text-red'    : 'text-muted'} />
+          <Stat label="Excedidas" value={bairro.excedidos} color={bairro.excedidos > 0 ? 'text-orange' : 'text-muted'} />
+        </div>
+        <div className="grid grid-cols-3 divide-x divide-white/[0.06]">
+          <Stat label="Aging med." value={`${bairro.avgAging.toFixed(1)}d`} color="text-cyan" />
+          <Stat label="Pendentes"  value={bairro.pendentes}   color="text-yellow" />
+          <Stat label="Sem equipe" value={bairro.semEquipe}   color={bairro.semEquipe > 0 ? 'text-orange' : 'text-muted'} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Ranking de bairros ────────────────────────────────────────────────────────
+function BairroRankingPanel({ bairros, onSelect, selected }: {
+  bairros:  BairroAgg[]
+  onSelect: (b: BairroAgg | null) => void
+  selected: BairroAgg | null
+}) {
+  return (
+    <div className="absolute top-4 right-4 z-[500] w-64">
+      <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.08]">
+          <TrendingUp size={12} className="text-primary" />
+          <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Ranking por bairro</p>
+        </div>
+        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
+          {bairros.slice(0, 20).map((b, i) => {
+            const fill = b.criticos > 0 ? '#f87171' : b.excedidos > 0 ? '#f97316' : '#3b82f6'
+            const isSelected = selected?.bairro === b.bairro && selected?.cidade === b.cidade
+            return (
+              <button
+                key={`${b.cidade}::${b.bairro}`}
+                onClick={() => onSelect(isSelected ? null : b)}
+                className={`w-full flex items-center gap-2 px-3.5 py-2 text-left transition-all
+                            ${isSelected ? 'bg-primary/10' : 'hover:bg-surface/30'}`}
+              >
+                <span className="text-[10px] font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
+                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: fill }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-secondary truncate capitalize">
+                    {b.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                  </p>
+                  <p className="text-[9px] text-muted/60 truncate capitalize">
+                    {b.cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                  </p>
+                </div>
+                <span className="text-[11px] font-mono font-semibold text-text flex-shrink-0">{b.count}</span>
+                {b.criticos > 0 && <span className="text-[10px] font-bold text-red flex-shrink-0">{b.criticos}⚠</span>}
+              </button>
+            )
+          })}
+          {bairros.length === 0 && (
+            <p className="text-[11px] text-muted/50 italic px-4 py-3">Nenhum bairro com OS no filtro atual.</p>
+          )}
+        </div>
       </div>
     </div>
   )
