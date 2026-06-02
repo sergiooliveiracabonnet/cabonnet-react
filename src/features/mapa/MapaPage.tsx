@@ -1,11 +1,15 @@
 import { useState, useMemo, useEffect } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from 'react-leaflet'
-import { Map, Flame, Circle, TrendingUp, X, LayoutGrid, Layers } from 'lucide-react'
+import { Map, Flame, Circle, TrendingUp, X, LayoutGrid, Layers, ChevronDown, ChevronUp } from 'lucide-react'
 import L from 'leaflet'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
 import { aggregateByCidade, aggregateByBairro, buildHeatPoints, type BairroAgg } from './geo'
 import { FilterSelect } from '../../components/ui/FilterSelect'
+import { Badge } from '../../components/ui/Badge'
+import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
+import OSDrawer from '../ordens/OSDrawer'
+import type { OSRow } from '../../lib/types'
 
 // Tipo do objeto retornado por aggregateByCidade
 interface CidadeAgg {
@@ -205,6 +209,7 @@ export default function MapaPage() {
   const [filterAging,  setFilterAging]  = useState('')
   const [selectedCidade, setSelectedCidade] = useState<CidadeAgg | null>(null)
   const [selectedBairro, setSelectedBairro] = useState<BairroAgg | null>(null)
+  const [drawerOS,       setDrawerOS]       = useState<OSRow | null>(null)
 
   // Reset seleção ao trocar granularidade
   const handleGranularity = (g: 'cidade' | 'bairro') => {
@@ -460,23 +465,71 @@ export default function MapaPage() {
         {/* Painel de detalhe */}
         {granularity === 'cidade'
           ? <CidadePanel cidade={selectedCidade} onClose={() => setSelectedCidade(null)} />
-          : <BairroPanel bairro={selectedBairro}  onClose={() => setSelectedBairro(null)} />
+          : <BairroPanel
+              bairro={selectedBairro}
+              rows={rows}
+              onClose={() => setSelectedBairro(null)}
+              onOS={os => setDrawerOS(os)}
+            />
         }
       </div>
+
+      <OSDrawer os={drawerOS} onClose={() => setDrawerOS(null)} />
     </div>
   )
 }
 
-// ── Painel lateral de bairro ──────────────────────────────────────────────────
-function BairroPanel({ bairro, onClose }: { bairro: BairroAgg | null; onClose: () => void }) {
+// ── Painel lateral de bairro com lista de OS ──────────────────────────────────
+function BairroPanel({ bairro, rows, onClose, onOS }: {
+  bairro: BairroAgg | null
+  rows:   OSRow[]
+  onClose: () => void
+  onOS:    (os: OSRow) => void
+}) {
+  const [sortKey, setSortKey] = useState<'_aging' | 'numos' | 'descsituacao'>('_aging')
+  const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc')
+
+  const bairroRows = useMemo(() => {
+    if (!bairro) return []
+    const norm = (s: string) => (s || '').trim().toUpperCase()
+    return rows.filter(r =>
+      norm(r.bairro) === norm(bairro.bairro) &&
+      norm(r.nomedacidade) === norm(bairro.cidade)
+    )
+  }, [bairro, rows])
+
+  const sorted = useMemo(() => {
+    return [...bairroRows].sort((a, b) => {
+      let av: number | string = 0, bv: number | string = 0
+      if (sortKey === '_aging')       { av = a._aging ?? -1; bv = b._aging ?? -1 }
+      else if (sortKey === 'numos')   { av = parseInt(a.numos) || 0; bv = parseInt(b.numos) || 0 }
+      else                            { av = a.descsituacao ?? ''; bv = b.descsituacao ?? '' }
+      const cmp = typeof av === 'string' ? av.localeCompare(bv as string) : (av as number) - (bv as number)
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [bairroRows, sortKey, sortDir])
+
+  function toggleSort(key: typeof sortKey) {
+    if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
+    else { setSortKey(key); setSortDir('desc') }
+  }
+
   if (!bairro) return null
   const fill = bairro.criticos > 0 ? '#f87171' : bairro.excedidos > 0 ? '#f97316' : bairro.pendentes > 0 ? '#3b82f6' : '#4ade80'
   const cidadeFmt = bairro.cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
   const bairroFmt = bairro.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+
+  const SortIcon = ({ k }: { k: typeof sortKey }) =>
+    sortKey !== k ? <ChevronDown size={8} className="opacity-30" /> :
+    sortDir === 'asc' ? <ChevronUp size={8} className="text-primary" /> :
+    <ChevronDown size={8} className="text-primary" />
+
   return (
-    <div className="absolute bottom-4 left-4 z-[500] w-72 animate-fade-in">
-      <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
+    <div className="absolute bottom-4 left-4 z-[500] w-80 animate-fade-in">
+      <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[70vh]">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08] flex-shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: fill }} />
             <div className="min-w-0">
@@ -488,16 +541,67 @@ function BairroPanel({ bairro, onClose }: { bairro: BairroAgg | null; onClose: (
             <X size={12} />
           </button>
         </div>
-        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08]">
-          <Stat label="Total OS"  value={bairro.count}                            color="text-text" />
-          <Stat label="Críticas"  value={bairro.criticos}  color={bairro.criticos  > 0 ? 'text-red'    : 'text-muted'} />
+
+        {/* KPIs */}
+        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08] flex-shrink-0">
+          <Stat label="Total OS"  value={bairro.count}    color="text-text" />
+          <Stat label="Críticas"  value={bairro.criticos} color={bairro.criticos  > 0 ? 'text-red'    : 'text-muted'} />
           <Stat label="Excedidas" value={bairro.excedidos} color={bairro.excedidos > 0 ? 'text-orange' : 'text-muted'} />
         </div>
-        <div className="grid grid-cols-3 divide-x divide-white/[0.06]">
+        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08] flex-shrink-0">
           <Stat label="Aging med." value={`${bairro.avgAging.toFixed(1)}d`} color="text-cyan" />
-          <Stat label="Pendentes"  value={bairro.pendentes}   color="text-yellow" />
-          <Stat label="Sem equipe" value={bairro.semEquipe}   color={bairro.semEquipe > 0 ? 'text-orange' : 'text-muted'} />
+          <Stat label="Pendentes"  value={bairro.pendentes} color="text-yellow" />
+          <Stat label="Sem equipe" value={bairro.semEquipe} color={bairro.semEquipe > 0 ? 'text-orange' : 'text-muted'} />
         </div>
+
+        {/* Lista de OS */}
+        {sorted.length > 0 && (
+          <>
+            {/* Cabeçalho da tabela */}
+            <div className="flex items-center px-3 py-1.5 border-b border-white/[0.05] bg-surface/30 flex-shrink-0">
+              <button onClick={() => toggleSort('numos')} className="flex items-center gap-0.5 text-[9px] font-bold uppercase text-muted hover:text-secondary w-14 flex-shrink-0">
+                Nº OS <SortIcon k="numos" />
+              </button>
+              <span className="flex-1 text-[9px] font-bold uppercase text-muted">Cliente / Equipe</span>
+              <button onClick={() => toggleSort('descsituacao')} className="flex items-center gap-0.5 text-[9px] font-bold uppercase text-muted hover:text-secondary mr-2">
+                Status <SortIcon k="descsituacao" />
+              </button>
+              <button onClick={() => toggleSort('_aging')} className="flex items-center gap-0.5 text-[9px] font-bold uppercase text-muted hover:text-secondary w-8 text-right">
+                Age <SortIcon k="_aging" />
+              </button>
+            </div>
+
+            {/* Linhas */}
+            <div className="overflow-y-auto flex-1 divide-y divide-white/[0.04]">
+              {sorted.map(os => {
+                const aging  = os._aging ?? 0
+                const agVar  = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'
+                const sit    = os._situacaoEfetiva ?? os.descsituacao ?? '—'
+                const sVar   = situacaoVariant(sit)
+                const semEq  = !os.nomedaequipe?.trim()
+                return (
+                  <button
+                    key={os.numos}
+                    onClick={() => onOS(os)}
+                    className="w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-primary/[0.05] transition-colors"
+                  >
+                    <span className="text-[11px] font-mono font-bold text-primary flex-shrink-0 w-14 pt-0.5">{os.numos}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] text-text truncate leading-tight">{os.nomecliente || '—'}</p>
+                      <p className={`text-[9px] truncate ${semEq ? 'text-orange font-semibold' : 'text-muted'}`}>
+                        {semEq ? 'Sem equipe' : shortEquipe(os.nomedaequipe)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <Badge variant={sVar} dot={false}>{sit.split('/')[0]}</Badge>
+                      {os._aging != null && <Badge variant={agVar} dot={false}>{aging}d</Badge>}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
