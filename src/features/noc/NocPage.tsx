@@ -249,9 +249,12 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
 // ─── NocInner ─────────────────────────────────────────────────────────────────
 
 function NocInner() {
-  const { derived, allRows, isLoading } = useOSDerived()
+  const { derived, allRows, isLoading, error } = useOSDerived()
   const { kpis, fornecedores } = derived.dashboard as unknown as { kpis: unknown[]; fornecedores: unknown[] }
   const { semaforo } = derived.campo as unknown as { semaforo: unknown[] }
+
+  // Sessão expirada / servidor reiniciado → mostra tela de erro clara
+  const noData = !isLoading && (kpis as unknown[]).length === 0
 
   const navigate     = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -402,8 +405,28 @@ function NocInner() {
         </button>
       </header>
 
+      {/* ── Sem dados (sessão expirada / servidor reiniciado) ── */}
+      {noData && !error && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-8">
+          <div className="w-12 h-12 rounded-full bg-yellow/10 border border-yellow/30 flex items-center justify-center">
+            <AlertCircle size={24} className="text-yellow" />
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-text mb-1">Sem dados disponíveis</p>
+            <p className="text-[12px] text-muted">Sessão pode ter expirado após reinício do servidor.</p>
+            <p className="text-[12px] text-muted mt-0.5">Volte ao painel principal e faça login novamente.</p>
+          </div>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-[12px] font-semibold hover:bg-primary/20 transition-colors"
+          >
+            Ir para o Login
+          </button>
+        </div>
+      )}
+
       {/* ── Critical overlay ── */}
-      {isCritical && critOverlay && (
+      {!noData && isCritical && critOverlay && (
         <div className="flex items-center gap-4 px-5 py-3 bg-red/10 border-b border-red/30 flex-shrink-0">
           <AlertCircle size={18} className="text-red flex-shrink-0 animate-pulse" />
           <p className="text-[12px] font-semibold text-red flex-1">
@@ -420,7 +443,8 @@ function NocInner() {
       )}
 
       {/* ── Slide area ── */}
-      <main className="flex-1 overflow-hidden">
+      {!noData && <main className="flex-1 overflow-hidden">
+
         <div
           key={slide}
           className="h-full"
@@ -430,7 +454,7 @@ function NocInner() {
           {slide === 1 && <SlideEquipes semaforo={semaforo} slaCriticas={slaCriticas} />}
           {slide === 2 && <SlideFornecedores fornecedores={fornecedores} />}
         </div>
-      </main>
+      </main>}
 
       {/* ── Footer ── */}
       <footer className="flex-shrink-0 bg-elevated border-t border-white/[0.08] px-6 py-2.5">
