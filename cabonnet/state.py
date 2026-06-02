@@ -75,6 +75,24 @@ _ai_forecast_cache  = {"hash": "", "tendencia": "", "narrativa": "", "previsao":
 _ai_forecast_lock   = threading.Lock()
 _ai_suggest_cache   = {}   # key: data_hash → {"data": {...}, "ts": float}
 _ai_suggest_lock    = threading.Lock()
+_ai_alertas_cache      = {"hash": "", "ts": 0.0}
+_ai_alertas_lock       = threading.Lock()
+_ai_capacidade_cache   = {"hash": "", "ts": 0.0}
+_ai_capacidade_lock    = threading.Lock()
+_ai_campo_cache        = {"hash": "", "ts": 0.0}
+_ai_campo_lock         = threading.Lock()
+_ai_fornecedor_cache   = {"hash": "", "ts": 0.0}
+_ai_fornecedor_lock    = threading.Lock()
+_ai_planner_cache      = {"hash": "", "ts": 0.0}
+_ai_planner_lock       = threading.Lock()
+_ai_proxima_cache      = {"hash": "", "ts": 0.0}
+_ai_proxima_lock       = threading.Lock()
+_ai_cluster_cache      = {"hash": "", "ts": 0.0}
+_ai_cluster_lock       = threading.Lock()
+_ai_produtiv_cache     = {"hash": "", "ts": 0.0}
+_ai_produtiv_lock      = threading.Lock()
+_ai_juniper_cache      = {"hash": "", "ts": 0.0}
+_ai_juniper_lock       = threading.Lock()
 
 # ── PIL fontes pré-carregadas ─────────────────────────────────────────────────
 _F = {}
