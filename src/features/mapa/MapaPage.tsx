@@ -479,6 +479,15 @@ export default function MapaPage() {
   )
 }
 
+type SortKey = '_aging' | 'numos' | 'descsituacao'
+
+function SortIcon({ k, sortKey, sortDir }: { k: SortKey, sortKey: SortKey, sortDir: 'desc' | 'asc' }) {
+  if (sortKey !== k) return <ChevronDown size={8} className="opacity-30" />
+  return sortDir === 'asc'
+    ? <ChevronUp size={8} className="text-primary" />
+    : <ChevronDown size={8} className="text-primary" />
+}
+
 // ── Painel lateral de bairro com lista de OS ──────────────────────────────────
 function BairroPanel({ bairro, rows, onClose, onOS }: {
   bairro: BairroAgg | null
@@ -486,7 +495,7 @@ function BairroPanel({ bairro, rows, onClose, onOS }: {
   onClose: () => void
   onOS:    (os: OSRow) => void
 }) {
-  const [sortKey, setSortKey] = useState<'_aging' | 'numos' | 'descsituacao'>('_aging')
+  const [sortKey, setSortKey] = useState<SortKey>('_aging')
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc')
 
   const bairroRows = useMemo(() => {
@@ -509,7 +518,7 @@ function BairroPanel({ bairro, rows, onClose, onOS }: {
     })
   }, [bairroRows, sortKey, sortDir])
 
-  function toggleSort(key: typeof sortKey) {
+  function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
     else { setSortKey(key); setSortDir('desc') }
   }
@@ -518,11 +527,6 @@ function BairroPanel({ bairro, rows, onClose, onOS }: {
   const fill = bairro.criticos > 0 ? '#f87171' : bairro.excedidos > 0 ? '#f97316' : bairro.pendentes > 0 ? '#3b82f6' : '#4ade80'
   const cidadeFmt = bairro.cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
   const bairroFmt = bairro.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
-
-  const SortIcon = ({ k }: { k: typeof sortKey }) =>
-    sortKey !== k ? <ChevronDown size={8} className="opacity-30" /> :
-    sortDir === 'asc' ? <ChevronUp size={8} className="text-primary" /> :
-    <ChevronDown size={8} className="text-primary" />
 
   return (
     <div className="absolute bottom-4 left-4 z-[500] w-80 animate-fade-in">
@@ -560,14 +564,14 @@ function BairroPanel({ bairro, rows, onClose, onOS }: {
             {/* Cabeçalho da tabela */}
             <div className="flex items-center px-3 py-1.5 border-b border-white/[0.05] bg-surface/30 flex-shrink-0">
               <button onClick={() => toggleSort('numos')} className="flex items-center gap-0.5 text-[9px] font-bold uppercase text-muted hover:text-secondary w-14 flex-shrink-0">
-                Nº OS <SortIcon k="numos" />
+                Nº OS <SortIcon k="numos" sortKey={sortKey} sortDir={sortDir} />
               </button>
               <span className="flex-1 text-[9px] font-bold uppercase text-muted">Cliente / Equipe</span>
               <button onClick={() => toggleSort('descsituacao')} className="flex items-center gap-0.5 text-[9px] font-bold uppercase text-muted hover:text-secondary mr-2">
-                Status <SortIcon k="descsituacao" />
+                Status <SortIcon k="descsituacao" sortKey={sortKey} sortDir={sortDir} />
               </button>
               <button onClick={() => toggleSort('_aging')} className="flex items-center gap-0.5 text-[9px] font-bold uppercase text-muted hover:text-secondary w-8 text-right">
-                Age <SortIcon k="_aging" />
+                Age <SortIcon k="_aging" sortKey={sortKey} sortDir={sortDir} />
               </button>
             </div>
 
