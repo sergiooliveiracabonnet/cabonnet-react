@@ -1,0 +1,32 @@
+# Unit systemd para rodar o Cabonnet em produção sem Docker.
+#
+# Instalação:
+#   sudo cp deploy/cabonnet.service /etc/systemd/system/cabonnet.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now cabonnet
+#
+# Ajuste WorkingDirectory, Environment (PATH do venv) e User conforme o servidor.
+
+[Unit]
+Description=Cabonnet React Dashboard (servidor.js + cabonnet_server.py)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/cabonnet
+Environment=PATH=/opt/cabonnet/venv/bin:/usr/bin:/bin
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node servidor.js
+Restart=on-failure
+RestartSec=5
+User=cabonnet
+Group=cabonnet
+
+# Hardening básico
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

@@ -71,3 +71,8 @@ src/
 ```bash
 npm run lint
 ```
+
+## Deploy em produção
+
+Veja [`DEPLOY.md`](DEPLOY.md) para o passo a passo completo de instalação em um servidor
+Debian (Docker Compose ou systemd nativo, Nginx + HTTPS, firewall).
