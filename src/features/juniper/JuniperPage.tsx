@@ -57,7 +57,7 @@ export default function JuniperPage() {
   const hero       = (data?.hero       ?? {}) as Partial<JuniperHero>
   const kpis       = (data?.kpis       ?? {}) as Partial<JuniperKpis>
   const interfaces = data?.interfaces ?? []
-  const clientes   = data?.clientes ?? []
+  const clientes   = useMemo(() => data?.clientes ?? [], [data])
   const isStale    = data?.isStale  ?? false
   const hasAlert   = data?.hasAlert ?? false
 
