@@ -19,7 +19,9 @@ export default function DashboardPage() {
   const { derived: { dashboard, anomalias }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
   const { kpis, fornecedores, pulso } = dashboard as unknown as TypedDashboard
   const { clustersAtivos = [] } = pulso
-  const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso: pulso as unknown as Record<string, unknown>, fornecedores, anomalias })
+  const [aiEnabled, setAiEnabled] = useState(false)
+  const [observacao, setObservacao] = useState('')
+  const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso: pulso as unknown as Record<string, unknown>, fornecedores, anomalias, observacao, enabled: aiEnabled })
   const { data: stats } = useStats()
 
   const [modal,    setModal]    = useState<ModalState | null>(null)
@@ -101,7 +103,12 @@ export default function DashboardPage() {
         )}
 
         {/* ── 1. HERO — Pulso Operacional ──────────────────────────────── */}
-        <PulsoHero pulso={pulso} aiData={aiData} isLoadingAI={isLoadingAI} />
+        <PulsoHero
+          pulso={pulso}
+          aiData={aiData}
+          isLoadingAI={isLoadingAI}
+          onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
+        />
 
         {/* ── 2. KPI BENTO — Alertas & Risco ───────────────────────────── */}
         <section>

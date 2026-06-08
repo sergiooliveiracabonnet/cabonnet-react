@@ -31,7 +31,7 @@ interface UseAIJuniperInput {
   os_ativas: OSAtiva[]
 }
 
-export function useAIJuniper({ inativos, os_ativas }: UseAIJuniperInput) {
+export function useAIJuniper({ inativos, os_ativas, enabled = false }: UseAIJuniperInput & { enabled?: boolean }) {
   const payload = useMemo(() => ({ inativos, os_ativas }), [inativos, os_ativas])
 
   return useQuery<AIJuniperResult>({
@@ -40,7 +40,7 @@ export function useAIJuniper({ inativos, os_ativas }: UseAIJuniperInput) {
     staleTime: 5 * 60_000,
     gcTime:    15 * 60_000,
     retry:     false,
-    enabled:   inativos.length > 0,
+    enabled:   enabled && inativos.length > 0,
     select:    (data) => (data?.ok ? data : null) as AIJuniperResult,
   })
 }

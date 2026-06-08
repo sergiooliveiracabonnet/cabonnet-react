@@ -19,6 +19,7 @@ export default function AlertasPage() {
   const { rows, allRows, isLoading, derived } = useERPRows()
   const { alertSettings, setAlertSettings }   = useERPStore()
   const [showSettings, setShowSettings]       = useState(false)
+  const [aiEnabled,    setAiEnabled]           = useState(false)
   const grafOS = useGrafanaOS()
 
   const semaforo = useMemo(() => derived?.sla?.semaforo ?? [], [derived])
@@ -81,7 +82,7 @@ export default function AlertasPage() {
     },
   }), [alerts, totalFila, counts.CRITICO, pulso])
 
-  const { data: aiAlertas, isLoading: aiLoading } = useAIAlertas(aiAlertasInput)
+  const { data: aiAlertas, isLoading: aiLoading } = useAIAlertas({ ...aiAlertasInput, enabled: aiEnabled })
 
   return (
     <div className="space-y-4 max-w-[1600px]">
@@ -195,7 +196,22 @@ export default function AlertasPage() {
       )}
 
       {/* ── AI Alertas ───────────────────────────────────────────────────── */}
-      {(aiLoading || aiAlertas) && (
+      {!aiEnabled ? (
+        <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles size={12} className="text-primary/40" />
+            <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Análise de Alertas · IA</span>
+          </div>
+          <button
+            onClick={() => setAiEnabled(true)}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                       px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                       transition-all duration-fast"
+          >
+            <Sparkles size={11} /> Analisar com IA
+          </button>
+        </div>
+      ) : (aiLoading || aiAlertas) && (
         <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles size={12} className="text-primary" />

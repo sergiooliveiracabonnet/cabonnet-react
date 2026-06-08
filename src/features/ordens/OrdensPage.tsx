@@ -15,6 +15,7 @@ import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { exportCSV } from '../../lib/export'
 import { exportOrdensPDF } from '../../lib/exportOrdensPDF'
 import { toBlob } from 'html-to-image'
+import { captureOSPorPeriodo, type CaptureOSRow } from '../../lib/captureOSTable'
 import { useAuditStore } from '../../store/auditStore'
 import OSDrawer from './OSDrawer'
 import { OSHoverCard } from './OSHoverCard'
@@ -159,89 +160,115 @@ export default function OrdensPage() {
   }
 
   async function handleCopyImage() {
-    if (!tableRef.current) return
     try {
-      const isDark    = !document.documentElement.classList.contains('light')
-      const bg        = isDark ? '#0d1117' : '#ffffff'
-      const bgHdr     = isDark ? '#111827' : '#f0f4ff'
-      const colorText = isDark ? '#e2e8f0' : '#0f172a'
-      const colorMuted= isDark ? '#94a3b8' : '#64748b'
-      const borderClr = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
+      const isDark     = !document.documentElement.classList.contains('light')
+      const bg         = isDark ? '#0d1117' : '#ffffff'
+      const bgHdr      = isDark ? '#111827' : '#f0f4ff'
+      const colorText  = isDark ? '#e2e8f0' : '#0f172a'
+      const colorMuted = isDark ? '#94a3b8' : '#64748b'
+      const borderClr  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
+      const now        = new Date()
+      const ts         = now.toLocaleDateString('pt-BR') + ' · ' +
+                         now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
-      const now = new Date()
-      const ts  = now.toLocaleDateString('pt-BR') + ' · ' +
-                  now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      const equipeLabel = os.equipe ? shortEquipe(os.equipe) : 'Todas as Equipes'
+      // ── Equipe selecionada: canvas puro (sem captura de DOM) ──────────────
+      if (os.equipe) {
+        const canvas = captureOSPorPeriodo(os.filtered as CaptureOSRow[], shortEquipe(os.equipe))
+        const blob   = await new Promise<Blob>((resolve, reject) =>
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png')
+        )
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2500)
+        return
+      }
 
+      // ── Tabela flat/cliente: clone off-screen sem overflow ────────────────
+      if (!tableRef.current) return
       const tableEl = tableRef.current
-      const capW    = Math.max(tableEl.scrollWidth, tableEl.offsetWidth)
-      const capH    = tableEl.scrollHeight
 
-      // Captura o elemento real com dimensões completas (sem modificar o DOM)
-      const contentBlob = await toBlob(tableEl, {
+      // Largura real: o overflow-hidden pai esconde o scrollWidth dos filhos;
+      // percorre a subárvore para encontrar o maior scrollWidth real.
+      const getTrueWidth = (el: HTMLElement): number => {
+        let w = el.scrollWidth
+        for (const c of el.children) w = Math.max(w, getTrueWidth(c as HTMLElement))
+        return w
+      }
+      const capW = getTrueWidth(tableEl)
+
+      // Clone off-screen sem constraints de overflow/maxHeight.
+      // O wrapper é o fixed off-screen; o clone em si fica estático para que
+      // getComputedStyle não copie position:fixed para o render do html-to-image.
+      const stripOverflow = (el: HTMLElement) => {
+        el.style.overflow  = 'visible'
+        el.style.overflowX = 'visible'
+        el.style.overflowY = 'visible'
+        el.style.maxHeight = 'none'
+        el.style.maxWidth  = 'none'
+        for (const c of el.children) stripOverflow(c as HTMLElement)
+      }
+      const wrapper = document.createElement('div')
+      wrapper.style.cssText = `position:fixed;top:-99999px;left:0;width:${capW}px;pointer-events:none;`
+
+      const clone = tableEl.cloneNode(true) as HTMLDivElement
+      clone.style.width        = `${capW}px`
+      clone.style.borderRadius = '0'
+      stripOverflow(clone)
+
+      wrapper.appendChild(clone)
+      document.body.appendChild(wrapper)
+
+      // Dois frames para o browser recalcular o layout no clone
+      await new Promise<void>(r => requestAnimationFrame(() => { requestAnimationFrame(() => r()) }))
+      const capH = clone.scrollHeight
+
+      const contentBlob = await toBlob(clone, {
         pixelRatio: 2,
         width:  capW,
         height: capH,
         backgroundColor: bg,
-        style: { overflow: 'visible', borderRadius: '0' },
+        style:  { borderRadius: '0' },
       })
+      document.body.removeChild(wrapper)
       if (!contentBlob) return
 
-      // Composita: cabeçalho Canvas + conteúdo capturado
-      const SCALE  = 2
-      const HDR_H  = 60   // altura lógica do cabeçalho em px
+      // Composita cabeçalho Canvas + conteúdo capturado
+      const SCALE      = 2
+      const HDR_H      = 60
       const contentImg = await createImageBitmap(contentBlob)
+      const canvas     = document.createElement('canvas')
+      canvas.width     = contentImg.width
+      canvas.height    = contentImg.height + HDR_H * SCALE
+      const ctx        = canvas.getContext('2d')!
 
-      const canvas  = document.createElement('canvas')
-      canvas.width  = contentImg.width            // já em 2×
-      canvas.height = contentImg.height + HDR_H * SCALE
-      const ctx = canvas.getContext('2d')!
-
-      // Fundo geral
       ctx.fillStyle = bg
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      // Cabeçalho
       ctx.fillStyle = bgHdr
       ctx.fillRect(0, 0, canvas.width, HDR_H * SCALE)
-
-      // Barra azul lateral
       ctx.fillStyle = '#3b82f6'
       ctx.fillRect(0, 0, 4 * SCALE, HDR_H * SCALE)
-
-      // Linha separadora
       ctx.strokeStyle = borderClr
       ctx.lineWidth   = 1 * SCALE
-      ctx.beginPath()
-      ctx.moveTo(0, HDR_H * SCALE)
-      ctx.lineTo(canvas.width, HDR_H * SCALE)
-      ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(0, HDR_H * SCALE); ctx.lineTo(canvas.width, HDR_H * SCALE); ctx.stroke()
 
-      // Textos do cabeçalho (esquerda)
       ctx.textBaseline = 'middle'
       ctx.fillStyle    = colorText
-      ctx.font = `bold ${14 * SCALE}px system-ui,-apple-system,sans-serif`
+      ctx.font         = `bold ${14 * SCALE}px system-ui,-apple-system,sans-serif`
       ctx.fillText('CABONNET · Ordens de Serviço', 18 * SCALE, 20 * SCALE)
-
       ctx.fillStyle = '#3b82f6'
-      ctx.font = `600 ${11 * SCALE}px system-ui,-apple-system,sans-serif`
-      ctx.fillText(equipeLabel, 18 * SCALE, 43 * SCALE)
-
-      // Textos do cabeçalho (direita)
+      ctx.font      = `600 ${11 * SCALE}px system-ui,-apple-system,sans-serif`
+      ctx.fillText('Todas as Equipes', 18 * SCALE, 43 * SCALE)
       ctx.textAlign = 'right'
       ctx.fillStyle = colorMuted
-      ctx.font = `${10 * SCALE}px system-ui,-apple-system,sans-serif`
+      ctx.font      = `${10 * SCALE}px system-ui,-apple-system,sans-serif`
       ctx.fillText(ts, canvas.width - 16 * SCALE, 20 * SCALE)
       ctx.fillText(`${os.filtered.length} OS`, canvas.width - 16 * SCALE, 43 * SCALE)
       ctx.textAlign = 'left'
-
-      // Conteúdo da tabela abaixo do cabeçalho
       ctx.drawImage(contentImg, 0, HDR_H * SCALE)
 
       const finalBlob = await new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png')
       )
-
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': finalBlob })])
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)

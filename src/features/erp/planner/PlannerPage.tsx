@@ -19,6 +19,7 @@ export default function PlannerPage() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [drill, setDrill]           = useState<DrillState | null>(null)
   const [editMeta, setEditMeta]     = useState(false)
+  const [aiEnabled, setAiEnabled]   = useState(false)
 
   const days  = useMemo(() => getWeekDays(weekOffset), [weekOffset])
   const teams = useMemo(() => buildPlanner(allRows, days), [allRows, days])
@@ -67,6 +68,7 @@ export default function PlannerPage() {
     equipes:     aiEquipes,
     meta_diaria: metaGlobal,
     dias:        aiDias,
+    enabled:     aiEnabled,
   })
 
   const weekLabel = (() => {
@@ -306,14 +308,28 @@ export default function PlannerPage() {
       {/* ── AI Planner — apenas para gestores ── */}
       {isGestor && (
         <section className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Sparkles size={13} className="text-primary" />
-            <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
-              Sugestao de balanceamento
-            </span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles size={13} className="text-primary/70" />
+              <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
+                Sugestao de balanceamento
+              </span>
+            </div>
+            {!aiEnabled && (
+              <button
+                onClick={() => setAiEnabled(true)}
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                           px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                           transition-all duration-fast"
+              >
+                <Sparkles size={11} /> Analisar com IA
+              </button>
+            )}
           </div>
           <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4">
-            {aiLoading && !aiData ? (
+            {!aiEnabled ? (
+              <p className="text-[12px] text-muted/50 italic">Clique em "Analisar com IA" para gerar sugestão de balanceamento.</p>
+            ) : aiLoading && !aiData ? (
               <p className="text-[12px] text-muted animate-pulse">Consultando IA…</p>
             ) : !aiData ? (
               <p className="text-[12px] text-muted">

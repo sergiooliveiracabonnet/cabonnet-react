@@ -27,7 +27,7 @@ export interface AIProdutividadeResult {
   cached?:   boolean
 }
 
-export function useAIProdutividade({ quedas, contexto }: AIProdutividadeInput) {
+export function useAIProdutividade({ quedas, contexto, enabled = false }: AIProdutividadeInput & { enabled?: boolean }) {
   const payload = useMemo(
     () => ({ quedas, contexto }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -40,7 +40,7 @@ export function useAIProdutividade({ quedas, contexto }: AIProdutividadeInput) {
     staleTime: 5 * 60_000,
     gcTime:    15 * 60_000,
     retry:     false,
-    enabled:   quedas.length > 0,
+    enabled:   enabled && quedas.length > 0,
     select:    (data: unknown): AIProdutividadeResult | null => {
       const d = data as { ok?: boolean } | null
       return d?.ok ? (d as AIProdutividadeResult) : null

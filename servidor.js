@@ -67,7 +67,7 @@ const MIME = {
   '.webp' : 'image/webp',
 }
 
-const API_PREFIXES = ['/api', '/query', '/revisitas', '/atendimento', '/juniper', '/notify', '/detalhes', '/health', '/ai', '/grafana']
+const API_PREFIXES = ['/api', '/query', '/revisitas', '/backlog', '/atendimento', '/juniper', '/notify', '/detalhes', '/health', '/ai', '/grafana']
 
 function isApiRoute(url) {
   const p = url.split('?')[0]

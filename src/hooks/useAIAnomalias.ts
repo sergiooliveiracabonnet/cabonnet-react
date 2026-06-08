@@ -32,7 +32,8 @@ export function useAIAnomalias({
   bairrosAnomalia = [],
   equipesAnomalia = [],
   contexto,
-}: AIAnomaliasInput = {}) {
+  enabled         = false,
+}: AIAnomaliasInput & { enabled?: boolean } = {}) {
   const payload = useMemo(() => ({
     picosDia,
     bairrosAnomalia,
@@ -52,7 +53,7 @@ export function useAIAnomalias({
     staleTime: 5 * 60_000,
     gcTime:    10 * 60_000,
     retry:     false,
-    enabled:   total > 0,
+    enabled:   enabled && total > 0,
     select:    (data) => (data?.ok ? data : null) as AIAnomaliasData,
   })
 }

@@ -61,6 +61,7 @@ export const api = {
 export const endpoints = {
   query:       '/query',
   revisitas:   '/revisitas',
+  backlog:     '/backlog',
   atendimento: '/atendimento',
   juniper:     '/juniper',
   juniperHist: '/juniper/historico',

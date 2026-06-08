@@ -32,7 +32,7 @@ function buildSerie(evolucao: EvolucaoData) {
   }))
 }
 
-export function useAIForecast({ evolucao, totalAtivo = 0, fila = 0 }: UseAIForecastInput) {
+export function useAIForecast({ evolucao, totalAtivo = 0, fila = 0, enabled = false }: UseAIForecastInput & { enabled?: boolean }) {
   // Stable key from label list content — avoids rebuilding serie on unrelated re-renders
   const evolucaoKey = evolucao.labels.join(',')
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -55,7 +55,7 @@ export function useAIForecast({ evolucao, totalAtivo = 0, fila = 0 }: UseAIForec
     staleTime: 60 * 60_000,
     gcTime:    2 * 60 * 60_000,
     retry:     false,
-    enabled:   serie.length >= 7,
+    enabled:   enabled && serie.length >= 7,
     select:    (data) => (data?.ok ? data : null) as AIForecastData,
   })
 }

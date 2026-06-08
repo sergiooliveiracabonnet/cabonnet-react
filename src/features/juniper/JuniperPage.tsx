@@ -32,6 +32,7 @@ export default function JuniperPage() {
   const [viewMode,     setViewMode]     = useState('card')
   const [apiConfig,    setApiConfig]    = useState({ url: '', dsuid: '', user: '', pass: '', cluster: 'Vale' })
   const [expandedSnap, setExpandedSnap] = useState<string | null>(null)
+  const [aiEnabled,    setAiEnabled]    = useState(false)
   const [historico,    setHistorico]    = useState<HistoricoSnap[]>(
     () => storage.getJSON<HistoricoSnap[]>(HISTORY_KEY, [])
   )
@@ -80,9 +81,10 @@ export default function JuniperPage() {
       }))
   , [allRows])
 
-  const { data: aiJuniper } = useAIJuniper({
+  const { data: aiJuniper, isLoading: aiLoading } = useAIJuniper({
     inativos:  inativosPayload,
     os_ativas: osAtivasPayload,
+    enabled:   aiEnabled,
   })
 
   const hist = useMemo(() => {
@@ -500,13 +502,28 @@ export default function JuniperPage() {
       </div>
 
       {/* ── Correlação IA — Inativos × OS ── */}
-      {(inativosPayload.length > 0 || aiJuniper) && (
-        <>
-          <SectionTitle icon={Sparkles}>Correlacao IA — Inativos sem OS</SectionTitle>
+      <>
+        <SectionTitle icon={Sparkles}>Correlacao IA — Inativos sem OS</SectionTitle>
+        {!aiEnabled ? (
+          <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles size={12} className="text-primary/40" />
+              <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Correlação Inativos × OS · IA</span>
+            </div>
+            <button
+              onClick={() => setAiEnabled(true)}
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                         px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                         transition-all duration-fast"
+            >
+              <Sparkles size={11} /> Analisar com IA
+            </button>
+          </div>
+        ) : (
           <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
-            {!aiJuniper ? (
+            {aiLoading && !aiJuniper ? (
               <p className="text-[12px] text-muted animate-pulse">Consultando IA…</p>
-            ) : (
+            ) : aiJuniper ? (
               <>
                 {aiJuniper.narrativa && (
                   <p className="text-[12px] text-secondary leading-relaxed">{aiJuniper.narrativa}</p>
@@ -529,10 +546,10 @@ export default function JuniperPage() {
                   </div>
                 )}
               </>
-            )}
+            ) : null}
           </div>
-        </>
-      )}
+        )}
+      </>
 
     </div>
   )

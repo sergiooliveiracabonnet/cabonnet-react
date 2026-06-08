@@ -30,7 +30,7 @@ export interface AIFornecedorResult {
   cached?:   boolean
 }
 
-export function useAIFornecedor({ fornecedores }: AIFornecedorInput) {
+export function useAIFornecedor({ fornecedores, enabled = false }: AIFornecedorInput & { enabled?: boolean }) {
   const payload = useMemo(
     () => ({ fornecedores }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -43,7 +43,7 @@ export function useAIFornecedor({ fornecedores }: AIFornecedorInput) {
     staleTime: 5 * 60_000,
     gcTime:    15 * 60_000,
     retry:     false,
-    enabled:   fornecedores.length >= 2,
+    enabled:   enabled && fornecedores.length >= 2,
     select:    (data: unknown): AIFornecedorResult | null => {
       const d = data as { ok?: boolean } | null
       return d?.ok ? (d as AIFornecedorResult) : null

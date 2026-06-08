@@ -419,6 +419,7 @@ export default function ProdutividadePage() {
   const { allRows, isLoading } = useERPRows()
   const [expanded,    setExpanded]    = useState<string | null>(null)
   const [activeDrill, setActiveDrill] = useState<DrillInfo | null>(null)
+  const [aiEnabled,   setAiEnabled]   = useState(false)
 
   const days = useMemo(getDayLabels, [])
   const { teams, globalMax } = useMemo(() => buildProdutividade(allRows, days), [allRows, days])
@@ -451,6 +452,7 @@ export default function ProdutividadePage() {
   const { data: aiProdutividade, isLoading: aiLoading } = useAIProdutividade({
     quedas,
     contexto: aiContexto,
+    enabled:  aiEnabled,
   })
 
   function handleDayClick(team: string, dayKey: string) {
@@ -580,7 +582,22 @@ export default function ProdutividadePage() {
       </section>
 
       {/* ── AI Produtividade ──────────────────────────────────────────────── */}
-      {(aiLoading || aiProdutividade) && (
+      {!aiEnabled ? (
+        <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles size={12} className="text-primary/40" />
+            <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Análise de Quedas de Produtividade · IA</span>
+          </div>
+          <button
+            onClick={() => setAiEnabled(true)}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                       px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                       transition-all duration-fast"
+          >
+            <Sparkles size={11} /> Analisar com IA
+          </button>
+        </div>
+      ) : (aiLoading || aiProdutividade) && (
         <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles size={12} className="text-primary" />

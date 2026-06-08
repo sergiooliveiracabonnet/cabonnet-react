@@ -29,7 +29,7 @@ export interface AICampoResult {
   cached?:       boolean
 }
 
-export function useAICampo({ fornecedores, meta_sla }: AICAMPOInput) {
+export function useAICampo({ fornecedores, meta_sla, enabled = false }: AICAMPOInput & { enabled?: boolean }) {
   const payload = useMemo(
     () => ({ fornecedores, meta_sla }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -42,7 +42,7 @@ export function useAICampo({ fornecedores, meta_sla }: AICAMPOInput) {
     staleTime: 5 * 60_000,
     gcTime:    15 * 60_000,
     retry:     false,
-    enabled:   fornecedores.length > 0,
+    enabled:   enabled && fornecedores.length > 0,
     select:    (data: unknown): AICampoResult | null => {
       const d = data as { ok?: boolean } | null
       return d?.ok ? (d as AICampoResult) : null

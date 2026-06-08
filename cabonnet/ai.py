@@ -33,33 +33,68 @@ def _register_usage(resp_json: dict, error: bool = False) -> None:
 
 
 def ai_status() -> dict:
-    """Valida a chave Anthropic e retorna métricas de uso acumuladas."""
+    """Valida a chave Anthropic via /v1/messages (rota real) e retorna métricas de uso."""
     if not ANTHROPIC_API_KEY:
         return {"ok": False, "valid": False, "reason": "ANTHROPIC_API_KEY não configurada no .env"}
+
+    valid  = False
+    status = "invalid_key"
+    reason = ""
     try:
-        resp = requests.get(
-            "https://api.anthropic.com/v1/models",
-            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01"},
-            timeout=8, verify=False,
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key":         ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type":      "application/json",
+            },
+            json={
+                "model":      "claude-haiku-4-5-20251001",
+                "max_tokens": 1,
+                "messages":   [{"role": "user", "content": "ok"}],
+            },
+            timeout=10, verify=False,
         )
-        valid = resp.ok
-        model_count = len(resp.json().get("data", [])) if valid else 0
+        if resp.ok or resp.status_code == 529:
+            # 529 = overloaded mas chave válida
+            valid = True
+            status = "ok"
+        elif resp.status_code == 401:
+            status = "invalid_key"
+            reason = "Chave inválida ou expirada"
+        elif resp.status_code == 403:
+            status = "invalid_key"
+            reason = "Chave sem permissão para este recurso"
+        else:
+            status = "invalid_key"
+            reason = f"HTTP {resp.status_code}"
     except Exception as ex:
-        return {"ok": False, "valid": False, "reason": str(ex)[:100]}
+        err_msg = str(ex)
+        # Extrai apenas a parte legível (evita stacktrace na UI)
+        if "ConnectionResetError" in err_msg or "ConnectionAbortedError" in err_msg:
+            reason = "Conexão recusada pelo servidor Anthropic"
+        elif "timeout" in err_msg.lower() or "timed out" in err_msg.lower():
+            reason = "Timeout ao conectar com a Anthropic"
+        elif "Name or service not known" in err_msg or "getaddrinfo" in err_msg:
+            reason = "Sem resolução DNS — verifique a conexão com a internet"
+        else:
+            reason = err_msg[:100]
+        return {"ok": False, "valid": False, "status": "no_connection", "reason": reason}
 
     with state._ai_usage_lock:
-        inp  = state._ai_usage["input_tokens"]
-        out  = state._ai_usage["output_tokens"]
+        inp    = state._ai_usage["input_tokens"]
+        out    = state._ai_usage["output_tokens"]
         calls  = state._ai_usage["calls"]
         errors = state._ai_usage["errors"]
 
     cost_usd = (inp / 1_000_000 * _PRICE_IN) + (out / 1_000_000 * _PRICE_OUT)
     return {
-        "ok":            True,
-        "valid":         valid,
-        "model":         "claude-haiku-4-5-20251001",
-        "models_avail":  model_count,
-        "console_url":   "https://console.anthropic.com/settings/billing",
+        "ok":          True,
+        "valid":       valid,
+        "status":      status,
+        "reason":      reason,
+        "model":       "claude-haiku-4-5-20251001",
+        "console_url": "https://console.anthropic.com/settings/billing",
         "usage": {
             "calls":         calls,
             "errors":        errors,
@@ -96,6 +131,13 @@ def _ai_narrative(payload):
         f"{c['cidade']} ({c['count']} críticas)" for c in payload.get("topCidadesCriticas", [])
     ) or "nenhuma"
 
+    observacao = (payload.get("observacao") or "").strip()
+    contexto_extra = (
+        f"\nCONTEXTO DO OPERADOR: {observacao}\n"
+        "(Leve este contexto em conta na análise — pode explicar anomalias nos dados.)"
+        if observacao else ""
+    )
+
     prompt = (
         "Você é um analista sênior de operações de ISP. Analise os dados abaixo e responda em "
         "português brasileiro com três seções distintas e objetivas.\n\n"
@@ -107,7 +149,8 @@ def _ai_narrative(payload):
         f"Sem agendamento: {payload.get('semAgendamento', 0)}\n"
         f"Top cidades críticas: {cidades_txt}\n"
         f"Fornecedores: {fornecedores_txt}\n"
-        f"Anomalias detectadas: {payload.get('anomalias', {}).get('total', 0)}\n\n"
+        f"Anomalias detectadas: {payload.get('anomalias', {}).get('total', 0)}"
+        f"{contexto_extra}\n\n"
         "Responda SOMENTE com JSON válido, sem markdown:\n"
         '{"problema": "1 frase identificando o principal gargalo com dados concretos (ex: N OS críticas, aging Xd)", '
         '"sugestao": "1 frase sobre o que precisa ser feito para resolver (estratégia, não tática)", '

@@ -32,7 +32,7 @@ interface UseAIProximaOSInput {
   n?:   number
 }
 
-export function useAIProximaOS({ fila, n = 3 }: UseAIProximaOSInput) {
+export function useAIProximaOS({ fila, n = 3, enabled = false }: UseAIProximaOSInput & { enabled?: boolean }) {
   const payload = useMemo(() => ({ fila, n }), [fila, n])
 
   return useQuery<AIProximaOSResult>({
@@ -41,7 +41,7 @@ export function useAIProximaOS({ fila, n = 3 }: UseAIProximaOSInput) {
     staleTime: 2 * 60_000,
     gcTime:    10 * 60_000,
     retry:     false,
-    enabled:   fila.length >= 3,
+    enabled:   enabled && fila.length >= 3,
     select:    (data) => (data?.ok ? data : null) as AIProximaOSResult,
   })
 }

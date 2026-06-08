@@ -29,7 +29,7 @@ export interface AIAlertasResult {
   cached?:        boolean
 }
 
-export function useAIAlertas({ alertas, contexto }: AIAlertasInput) {
+export function useAIAlertas({ alertas, contexto, enabled = false }: AIAlertasInput & { enabled?: boolean }) {
   const payload = useMemo(
     () => ({ alertas, contexto }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -42,7 +42,7 @@ export function useAIAlertas({ alertas, contexto }: AIAlertasInput) {
     staleTime: 5 * 60_000,
     gcTime:    15 * 60_000,
     retry:     false,
-    enabled:   alertas.length > 0,
+    enabled:   enabled && alertas.length > 0,
     select:    (data: unknown): AIAlertasResult | null => {
       const d = data as { ok?: boolean } | null
       return d?.ok ? (d as AIAlertasResult) : null

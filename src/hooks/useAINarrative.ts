@@ -8,13 +8,14 @@ interface KPI {
 }
 
 interface AINarrativeInput {
-  kpis?:        KPI[]
-  pulso?:       Record<string, unknown>
+  kpis?:         KPI[]
+  pulso?:        Record<string, unknown>
   fornecedores?: { nome: string; total: number; concluidas: number; sla: number }[]
-  anomalias?:   { total?: number }
+  anomalias?:    { total?: number }
+  observacao?:   string
 }
 
-export function useAINarrative({ kpis = [], pulso = {}, fornecedores = [], anomalias = {} }: AINarrativeInput = {}) {
+export function useAINarrative({ kpis = [], pulso = {}, fornecedores = [], anomalias = {}, observacao = '', enabled = false }: AINarrativeInput & { enabled?: boolean } = {}) {
   const payload = useMemo(() => {
     const get = (id: string): number => {
       const kpi = kpis.find(k => k.id === id)
@@ -34,8 +35,9 @@ export function useAINarrative({ kpis = [], pulso = {}, fornecedores = [], anoma
       topCidadesCriticas: (pulso.topCidadesCriticas as unknown[]) ?? [],
       fornecedores:       fornecedores.map(f => ({ nome: f.nome, total: f.total, concluidas: f.concluidas, sla: f.sla })),
       anomalias:          { total: (anomalias as { total?: number }).total ?? 0 },
+      observacao:         observacao.trim() || undefined,
     }
-  }, [kpis, pulso, fornecedores, anomalias])
+  }, [kpis, pulso, fornecedores, anomalias, observacao])
 
   return useQuery({
     queryKey:  ['ai-narrative', payload],
@@ -43,7 +45,7 @@ export function useAINarrative({ kpis = [], pulso = {}, fornecedores = [], anoma
     staleTime: 5 * 60 * 1000,
     gcTime:    10 * 60 * 1000,
     retry:     false,
-    enabled:   payload.total > 0,
+    enabled:   enabled && payload.total > 0,
     select:    (data: unknown) => {
       const d = data as { ok?: boolean } | null
       return d?.ok ? d : null

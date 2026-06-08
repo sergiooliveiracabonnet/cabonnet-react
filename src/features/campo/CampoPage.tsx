@@ -45,6 +45,7 @@ function fmtDiasAteSLA(dias: any) {
 
 export default function CampoPage() {
   const [fornecedor, setFornecedor] = useState('')
+  const [aiEnabled,  setAiEnabled]  = useState(false)
   const { rows, isLoading, derived: { campo: campoCtx } } = useOSDerived()
 
   const campo = useMemo(() => {
@@ -74,6 +75,7 @@ export default function CampoPage() {
   const { data: aiCampo, isLoading: aiLoading } = useAICampo({
     fornecedores: aiFornecedores,
     meta_sla: 90,
+    enabled: aiEnabled,
   })
 
   const STATUS_AI_ICON: Record<string, string> = { ok: '🟢', risco: '🟡', critico: '🔴' }
@@ -105,7 +107,22 @@ export default function CampoPage() {
       {!isLoading && hero && <HeroBanner hero={hero} projecao={projecao} />}
 
       {/* ── AI Campo ─────────────────────────────────────────────────── */}
-      {(aiLoading || aiCampo) && (
+      {!aiEnabled ? (
+        <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles size={12} className="text-primary/40" />
+            <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Previsão por Fornecedor · IA</span>
+          </div>
+          <button
+            onClick={() => setAiEnabled(true)}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                       px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                       transition-all duration-fast"
+          >
+            <Sparkles size={11} /> Analisar com IA
+          </button>
+        </div>
+      ) : (aiLoading || aiCampo) && (
         <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles size={12} className="text-primary" />

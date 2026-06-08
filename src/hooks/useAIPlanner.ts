@@ -27,7 +27,7 @@ interface UseAIPlannerInput {
   dias:         string[]
 }
 
-export function useAIPlanner({ equipes, meta_diaria, dias }: UseAIPlannerInput) {
+export function useAIPlanner({ equipes, meta_diaria, dias, enabled = false }: UseAIPlannerInput & { enabled?: boolean }) {
   const totalSemana = useMemo(
     () => equipes.reduce((s, e) => s + e.total_semana, 0),
     [equipes],
@@ -44,7 +44,7 @@ export function useAIPlanner({ equipes, meta_diaria, dias }: UseAIPlannerInput) 
     staleTime: 5 * 60_000,
     gcTime:    15 * 60_000,
     retry:     false,
-    enabled:   equipes.length >= 2 && totalSemana > 0,
+    enabled:   enabled && equipes.length >= 2 && totalSemana > 0,
     select:    (data) => (data?.ok ? data : null) as AIPlannerResult,
   })
 }

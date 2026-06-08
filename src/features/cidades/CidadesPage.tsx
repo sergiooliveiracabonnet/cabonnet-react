@@ -17,6 +17,7 @@ export default function CidadesPage() {
   const { allRows, rows, isLoading } = useOSDerived()
   const [drawerOS,    setDrawerOS]   = useState<OSRow | null>(null)
   const [openPanels,  setOpenPanels] = useState<Record<PanelId, boolean>>({ atend: true, pend: true, concl: true, futuro: true, fila: true, amanha: true })
+  const [aiEnabled, setAiEnabled]   = useState(false)
   const hoje  = useMemo(() => hojeLocal(), [])
   const amanha = useMemo(() => amanhaLocal(), [])
 
@@ -42,7 +43,7 @@ export default function CidadesPage() {
     }))
   , [pendRows])
 
-  const { data: aiClusters } = useAICidades({ pendRows: cidadesPendPayload })
+  const { data: aiClusters } = useAICidades({ pendRows: cidadesPendPayload, enabled: aiEnabled })
 
   const conclRows = useMemo(() => allRows.filter(r => r._executadaHoje), [allRows])
 
@@ -109,7 +110,22 @@ export default function CidadesPage() {
         </div>
 
         {/* ── AI Clusters Panel ── */}
-        {aiClusters && aiClusters.clusters.length > 0 && (
+        {!aiEnabled ? (
+          <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles size={12} className="text-primary/40" />
+              <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Clusters de Pendências · IA</span>
+            </div>
+            <button
+              onClick={() => setAiEnabled(true)}
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                         px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                         transition-all duration-fast"
+            >
+              <Sparkles size={11} /> Analisar com IA
+            </button>
+          </div>
+        ) : aiClusters && aiClusters.clusters.length > 0 && (
           <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Sparkles size={13} className="text-primary" />

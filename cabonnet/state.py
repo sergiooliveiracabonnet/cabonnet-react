@@ -58,9 +58,17 @@ _jun_diario_lock = threading.Lock()
 _sessions      = {}   # { token: expiry_timestamp }
 _sessions_lock = threading.Lock()
 
+# ── Cache fallback para /revisitas ───────────────────────────────────────────
+_revisitas_cache      = {"csv": "", "n": 0, "ts": 0}
+_revisitas_cache_lock = threading.Lock()
+
 # ── Cache atendimento ─────────────────────────────────────────────────────────
 _ate_cache      = {"data": None, "ts": 0}
 _ate_cache_lock = threading.Lock()
+
+# ── Cache backlog iManager (SLA + Recorrência) ────────────────────────────────
+_backlog_cache      = {"data": None, "ts": 0, "meses": 0}
+_backlog_cache_lock = threading.Lock()
 
 # ── Uso acumulado da AI (tokens + custo estimado) ────────────────────────────
 _ai_usage           = {"input_tokens": 0, "output_tokens": 0, "calls": 0, "errors": 0}

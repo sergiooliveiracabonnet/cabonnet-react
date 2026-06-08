@@ -30,7 +30,14 @@ with analitico as (
   ts.descricao as tiposervico,
   o.codigocontrato,
   o.codigoassinante as codigocliente,
-  c.nomedacidade,
+  case t.nome
+    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
+    when 'CACAPAVA'            then 'Caçapava'
+    when 'TAUBATE'             then 'Taubaté'
+    when 'TREMEMBE'            then 'Tremembé'
+    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    else t.nome
+  end as nomedacidade,
   coalesce(ende.tipodologradouro || ' ' || ende.nomelogradouro, '') as logradouro,
   ct.numeroconexao as numero,
   ct.complementoconexao as complemento,
@@ -68,7 +75,6 @@ with analitico as (
     join contratos ct on ct.cidade = o.cidade and ct.codempresa = o.codempresa and ct.contrato = o.codigocontrato
   left join enderecos ende on ende.codigodacidade = ct.cidade and ende.codigodologradouro = ct.enderecoconexao
         join clientes cli on cli.codigocliente = o.codigoassinante and cli.cidade = o.cidade
-  left join cidade c on c.codigodacidade = o.cidade
   left join equipe eq  on eq.codigodaequipe  = o.equipe         and eq.codigocidade  = o.cidade
   left join equipe eqe on eqe.codigodaequipe = o.equipeexecutou and eqe.codigocidade = o.cidade
   left join lanceservicos l on l.codigodoserv_lanc = o.codservsolicitado
@@ -109,7 +115,14 @@ with analitico as (
   ts.descricao as tiposervico,
   o.codigocontrato,
   o.codigoassinante as codigocliente,
-  c.nomedacidade,
+  case t.nome
+    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
+    when 'CACAPAVA'            then 'Caçapava'
+    when 'TAUBATE'             then 'Taubaté'
+    when 'TREMEMBE'            then 'Tremembé'
+    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    else t.nome
+  end as nomedacidade,
   coalesce(ende.tipodologradouro || ' ' || ende.nomelogradouro, '') as logradouro,
   ct.numeroconexao as numero,
   ct.complementoconexao as complemento,
@@ -147,7 +160,6 @@ with analitico as (
     join contratos ct on ct.cidade = o.cidade and ct.codempresa = o.codempresa and ct.contrato = o.codigocontrato
   left join enderecos ende on ende.codigodacidade = ct.cidade and ende.codigodologradouro = ct.enderecoconexao
         join clientes cli on cli.codigocliente = o.codigoassinante and cli.cidade = o.cidade
-  left join cidade c on c.codigodacidade = o.cidade
   left join equipe eq  on eq.codigodaequipe  = o.equipe         and eq.codigocidade  = o.cidade
   left join equipe eqe on eqe.codigodaequipe = o.equipeexecutou and eqe.codigocidade = o.cidade
   left join lanceservicos l on l.codigodoserv_lanc = o.codservsolicitado
@@ -188,7 +200,14 @@ with analitico as (
   ts.descricao as tiposervico,
   o.codigocontrato,
   o.codigoassinante as codigocliente,
-  c.nomedacidade,
+  case t.nome
+    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
+    when 'CACAPAVA'            then 'Caçapava'
+    when 'TAUBATE'             then 'Taubaté'
+    when 'TREMEMBE'            then 'Tremembé'
+    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    else t.nome
+  end as nomedacidade,
   coalesce(ende.tipodologradouro || ' ' || ende.nomelogradouro, '') as logradouro,
   ct.numeroconexao as numero,
   ct.complementoconexao as complemento,
@@ -224,7 +243,6 @@ with analitico as (
     join contratos ct on ct.cidade = o.cidade and ct.codempresa = o.codempresa and ct.contrato = o.codigocontrato
   left join enderecos ende on ende.codigodacidade = ct.cidade and ende.codigodologradouro = ct.enderecoconexao
         join clientes cli on cli.codigocliente = o.codigoassinante and cli.cidade = o.cidade
-  left join cidade c on c.codigodacidade = o.cidade
   left join equipe eq  on eq.codigodaequipe  = o.equipe         and eq.codigocidade  = o.cidade
   left join equipe eqe on eqe.codigodaequipe = o.equipeexecutou and eqe.codigocidade = o.cidade
   left join lanceservicos l on l.codigodoserv_lanc = o.codservsolicitado
@@ -266,7 +284,14 @@ with analitico as (
   ts.descricao as tiposervico,
   o.codigocontrato,
   o.codigoassinante as codigocliente,
-  c.nomedacidade,
+  case t.nome
+    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
+    when 'CACAPAVA'            then 'Caçapava'
+    when 'TAUBATE'             then 'Taubaté'
+    when 'TREMEMBE'            then 'Tremembé'
+    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    else t.nome
+  end as nomedacidade,
   o.situacao,
   'Concluída' as descsituacao,
   o.equipe,
@@ -283,7 +308,6 @@ with analitico as (
   from ordemservico o
     join contratos ct on ct.cidade = o.cidade and ct.codempresa = o.codempresa and ct.contrato = o.codigocontrato
     join clientes cli on cli.codigocliente = o.codigoassinante and cli.cidade = o.cidade
-  left join cidade c on c.codigodacidade = o.cidade
   left join equipe eq  on eq.codigodaequipe  = o.equipe         and eq.codigocidade  = o.cidade
   left join equipe eqe on eqe.codigodaequipe = o.equipeexecutou and eqe.codigocidade = o.cidade
   left join lanceservicos l on l.codigodoserv_lanc = o.codservsolicitado
@@ -324,7 +348,14 @@ SELECT
   o.codigoassinante                                                  as codigocliente,
   l.descricaodoserv_lanc                                             as servico,
   ts.descricao                                                       as tiposervico,
-  c.nomedacidade,
+  case t.nome
+    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
+    when 'CACAPAVA'            then 'Caçapava'
+    when 'TAUBATE'             then 'Taubaté'
+    when 'TREMEMBE'            then 'Tremembé'
+    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    else t.nome
+  end as nomedacidade,
   coalesce(ende.tipodologradouro || ' ' || ende.nomelogradouro, '')  as logradouro,
   ct.numeroconexao                                                   as numero,
   ct.complementoconexao                                              as complemento,
@@ -359,7 +390,6 @@ SELECT
 FROM ordemservico o
   JOIN contratos ct  ON ct.cidade = o.cidade AND ct.codempresa = o.codempresa AND ct.contrato = o.codigocontrato
   JOIN clientes  cli ON cli.codigocliente = o.codigoassinante AND cli.cidade = o.cidade
-  LEFT JOIN cidade c    ON c.codigodacidade = o.cidade
   LEFT JOIN equipe eq   ON eq.codigodaequipe  = o.equipe         AND eq.codigocidade  = o.cidade
   LEFT JOIN equipe eqe  ON eqe.codigodaequipe = o.equipeexecutou AND eqe.codigocidade = o.cidade
   LEFT JOIN lanceservicos l  ON l.codigodoserv_lanc = o.codservsolicitado
@@ -421,7 +451,14 @@ SQL_ATENDIMENTO = """
 SELECT
     h.d_data,
     h.atendente,
-    c.nomedacidade  AS cidade,
+    case t.nome
+      when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
+      when 'CACAPAVA'            then 'Caçapava'
+      when 'TAUBATE'             then 'Taubaté'
+      when 'TREMEMBE'            then 'Tremembé'
+      when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+      else t.nome
+    end AS cidade,
     tc.descricao    AS canal,
     h.assinante     AS codigo_cliente,
     cli.nome        AS nomecliente,
@@ -437,7 +474,7 @@ SELECT
         ) THEN 1 ELSE 0
     END AS fidelizado
 FROM public.historicogeral h
-LEFT JOIN public.cidade        c   ON c.codigodacidade  = h.codigocidade
+LEFT JOIN public.tablocal      t   ON t.codigo            = h.codigocidade
 LEFT JOIN public.tipodecontato tc  ON tc.codigo         = h.codigocontato
 LEFT JOIN (SELECT DISTINCT ON (codigocliente) codigocliente, nome FROM public.clientes ORDER BY codigocliente) cli ON cli.codigocliente::text = h.assinante::text
 WHERE h.d_data >= '2026-01-01'
@@ -476,6 +513,203 @@ WHERE l.nomecategoriaservico IN ('INSTALAÇÃO','MANUTENÇÃO','REDE')
 GROUP BY tl.nomedacidade
 ORDER BY pendentes DESC
 """
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  SQL — BACKLOG iManager (SLA + Recorrência)
+#  Parâmetros: {inicio} e {fim} — datas ISO (ex: '2026-05-01', '2026-06-01')
+# ══════════════════════════════════════════════════════════════════════════════
+SQL_BACKLOG_TEMPLATE = """
+WITH base AS (
+  SELECT
+    coalesce(nullif(trim(cli.nome),''), o.nomecliente, '')        AS nomecliente,
+    o.numos,
+    o.codigoassinante                                             AS codigocliente,
+    o.codigocontrato,
+    l.descricaodoserv_lanc                                        AS servico,
+    ts.descricao                                                  AS tiposervico,
+    case t.nome
+    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
+    when 'CACAPAVA'            then 'Caçapava'
+    when 'TAUBATE'             then 'Taubaté'
+    when 'TREMEMBE'            then 'Tremembé'
+    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    else t.nome
+    end                                                           AS nomedacidade,
+    coalesce(ct.bairroconexao::text, cli.bairroresidencial::text) AS bairro,
+    coalesce(o.periodo, '')                                       AS periodo,
+    CASE
+      WHEN o.d_databaixa IS NOT NULL AND o.situacao != 3 THEN 'Cancelada/Sem Exec.'
+      WHEN o.situacao = 1                                THEN 'Pendente'
+      WHEN o.situacao = 2 AND o.d_dataexecucao IS NOT NULL THEN 'Atendimento/Finalizada'
+      WHEN o.situacao = 2                                THEN 'Atendimento'
+      WHEN o.situacao = 3 AND o.d_dataexecucao IS NULL   THEN 'Finalizada/Sem Exec.'
+      WHEN o.situacao = 3                                THEN 'Executada'
+      ELSE 'Outros'
+    END                                                           AS descsituacao,
+    eq.nomedaequipe,
+    eqe.nomedaequipe                                              AS equipeexecutou,
+    to_char(o.d_datacadastro,    'DD/MM/YYYY')                    AS datacadastro,
+    to_char(o.d_dataagendamento, 'DD/MM/YYYY')                    AS dataagendamento,
+    CASE WHEN o.t_horafinal IS NOT NULL
+         THEN to_char(o.d_dataexecucao, 'DD/MM/YYYY') || ' ' || to_char(o.t_horafinal, 'HH24:MI')
+         ELSE to_char(o.d_dataexecucao, 'DD/MM/YYYY')
+    END                                                           AS dataexecucao,
+    ROUND((EXTRACT(EPOCH FROM (
+      COALESCE(o.d_dataexecucao::timestamp, NOW())
+      - o.d_datacadastro::timestamp
+    )) / 3600.0)::numeric, 1)                                     AS horas_resolucao,
+    -- revisita_inst: OS de manutenção onde o cliente também teve instalação executada no mesmo mês
+    CASE WHEN
+      (upper(ts.descricao) LIKE '%MANUTENC%'
+       OR upper(l.descricaodoserv_lanc) LIKE '%VT%'
+       OR upper(l.descricaodoserv_lanc) LIKE '%ASSISTENCIA%')
+      AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%REDE -%'
+      AND EXISTS (
+        SELECT 1 FROM ordemservico o2
+        JOIN lanceservicos l2  ON l2.codigodoserv_lanc = o2.codservsolicitado
+        JOIN tiposervico   ts2 ON ts2.codigo = l2.codigotiposervico
+        WHERE o2.codigoassinante = o.codigoassinante
+          AND o2.cidade          = o.cidade
+          AND o2.numos           != o.numos
+          AND o2.situacao        = 3
+          AND o2.d_dataexecucao  IS NOT NULL
+          AND upper(ts2.descricao) LIKE '%INSTALAC%'
+          AND date_trunc('month', o2.d_dataexecucao) = date_trunc('month', o.d_dataexecucao)
+      )
+    THEN 1 ELSE 0 END                                             AS revisita_inst,
+    -- revisita_manut: OS de manutenção onde o cliente já teve outra manutenção no mesmo mês
+    CASE WHEN
+      (upper(ts.descricao) LIKE '%MANUTENC%'
+       OR upper(l.descricaodoserv_lanc) LIKE '%VT%'
+       OR upper(l.descricaodoserv_lanc) LIKE '%ASSISTENCIA%')
+      AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%REDE -%'
+      AND EXISTS (
+        SELECT 1 FROM ordemservico o2
+        JOIN lanceservicos l2  ON l2.codigodoserv_lanc = o2.codservsolicitado
+        JOIN tiposervico   ts2 ON ts2.codigo = l2.codigotiposervico
+        WHERE o2.codigoassinante = o.codigoassinante
+          AND o2.cidade          = o.cidade
+          AND o2.numos           < o.numos
+          AND o2.situacao        = 3
+          AND o2.d_dataexecucao  IS NOT NULL
+          AND (upper(ts2.descricao) LIKE '%MANUTENC%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%VT%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%ASSISTENCIA%')
+          AND upper(coalesce(l2.descricaodoserv_lanc,'')) NOT LIKE '%REDE -%'
+          AND date_trunc('month', o2.d_dataexecucao) = date_trunc('month', o.d_dataexecucao)
+      )
+    THEN 1 ELSE 0 END                                             AS revisita_manut,
+    -- revisita_serv: OS de manutenção onde o cliente teve serviço técnico (troca/cabeamento) no mesmo mês
+    CASE WHEN
+      (upper(ts.descricao) LIKE '%MANUTENC%'
+       OR upper(l.descricaodoserv_lanc) LIKE '%VT%'
+       OR upper(l.descricaodoserv_lanc) LIKE '%ASSISTENCIA%')
+      AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%REDE -%'
+      AND EXISTS (
+        SELECT 1 FROM ordemservico o2
+        JOIN lanceservicos l2 ON l2.codigodoserv_lanc = o2.codservsolicitado
+        WHERE o2.codigoassinante = o.codigoassinante
+          AND o2.cidade          = o.cidade
+          AND o2.numos           != o.numos
+          AND o2.situacao        = 3
+          AND o2.d_dataexecucao  IS NOT NULL
+          AND (upper(l2.descricaodoserv_lanc) LIKE '%TRANSFERENCIA%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%MUDANCA PONTO%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%CABEAMENTO%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%ROTEADOR%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%TROCA DE ONU%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%TROCA DE ONT%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%EQUIPAMENTO - TROCA%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%TROCA DE EQUIPAMENTO%')
+          AND date_trunc('month', o2.d_dataexecucao) = date_trunc('month', o.d_dataexecucao)
+      )
+    THEN 1 ELSE 0 END                                             AS revisita_serv
+  FROM ordemservico o
+  LEFT JOIN contratos    ct   ON ct.cidade = o.cidade AND ct.codempresa = o.codempresa AND ct.contrato = o.codigocontrato
+  LEFT JOIN clientes     cli  ON cli.codigocliente = o.codigoassinante AND cli.cidade = o.cidade
+  LEFT JOIN equipe    eq   ON eq.codigodaequipe  = o.equipe          AND eq.codigocidade  = o.cidade
+  LEFT JOIN equipe    eqe  ON eqe.codigodaequipe = o.equipeexecutou  AND eqe.codigocidade = o.cidade
+  LEFT JOIN lanceservicos  l   ON l.codigodoserv_lanc  = o.codservsolicitado
+  LEFT JOIN tiposervico    ts  ON l.codigotiposervico  = ts.codigo
+  LEFT JOIN tablocal       t   ON o.cidade = t.codigo
+  LEFT JOIN carteiracidade cc  ON cc.codigocarteira = ct.codcarteira AND cc.codigocidade = o.cidade
+  LEFT JOIN carteira       cart ON cart.codigo = cc.codigocarteira
+  WHERE
+    o.situacao         = 3
+    AND o.d_dataexecucao >= '{inicio}'
+    AND o.d_dataexecucao <  '{fim}'
+    AND CASE WHEN t.estado IS NULL THEN 'N/A' ELSE t.estado END IN ('SP')
+    AND CASE WHEN t.nome   IS NULL THEN 'N/A' ELSE t.nome   END IN ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
+    AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%INADIMPLENCIA%'
+    AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%RECONEXAO AUTOMATICA%'
+    AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%REGUA DE CONFIANCA%'
+    AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%RETIRADA DE EQUIPAMENTO%'
+)
+SELECT
+  *,
+  CASE WHEN horas_resolucao > 24 THEN 1 ELSE 0 END AS tempo_maior_24h,
+  CASE WHEN horas_resolucao > 4  THEN 1 ELSE 0 END AS tempo_maior_4h,
+  CASE WHEN horas_resolucao > 3  THEN 1 ELSE 0 END AS tempo_maior_3h
+FROM base
+ORDER BY dataexecucao DESC
+"""
+
+
+def build_backlog_json(rows):
+    """Agrega linhas do SQL_BACKLOG em KPIs + rankings por equipe e cidade."""
+    import collections
+
+    total = len(rows)
+    def _i(r, k): return int(r.get(k) or 0)
+
+    kpis = {
+        "total":         total,
+        "rev_inst":      sum(_i(r, "revisita_inst")  for r in rows),
+        "rev_manut":     sum(_i(r, "revisita_manut") for r in rows),
+        "rev_serv":      sum(_i(r, "revisita_serv")  for r in rows),
+        "violacoes_24h": sum(_i(r, "tempo_maior_24h") for r in rows),
+        "violacoes_4h":  sum(_i(r, "tempo_maior_4h")  for r in rows),
+        "violacoes_3h":  sum(_i(r, "tempo_maior_3h")  for r in rows),
+    }
+
+    equipe_map = collections.defaultdict(lambda: {"total": 0, "ri": 0, "rm": 0, "rs": 0})
+    cidade_map = collections.defaultdict(lambda: {"total": 0, "ri": 0, "rm": 0, "rs": 0})
+
+    for r in rows:
+        eq = (r.get("nomedaequipe") or "Sem equipe").strip()
+        ci = (r.get("nomedacidade") or "Sem cidade").strip()
+        ri = _i(r, "revisita_inst")
+        rm = _i(r, "revisita_manut")
+        rs = _i(r, "revisita_serv")
+
+        equipe_map[eq]["total"] += 1
+        equipe_map[eq]["ri"] += ri
+        equipe_map[eq]["rm"] += rm
+        equipe_map[eq]["rs"] += rs
+
+        cidade_map[ci]["total"] += 1
+        cidade_map[ci]["ri"] += ri
+        cidade_map[ci]["rm"] += rm
+        cidade_map[ci]["rs"] += rs
+
+    por_equipe = sorted(
+        [{"equipe": k, **v} for k, v in equipe_map.items()],
+        key=lambda x: x["ri"] + x["rm"] + x["rs"], reverse=True
+    )
+    por_cidade = sorted(
+        [{"cidade": k, **v} for k, v in cidade_map.items()],
+        key=lambda x: x["total"], reverse=True
+    )
+    por_tipo = []  # calculado no frontend com dados mais ricos
+
+    return {
+        "rows":       rows,
+        "kpis":       kpis,
+        "por_equipe": por_equipe,
+        "por_cidade": por_cidade,
+        "por_tipo":   por_tipo,
+        "n":          total,
+    }
 
 
 def grafana_post(sql, ref_id="A"):

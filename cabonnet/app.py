@@ -58,6 +58,7 @@ from cabonnet.db import _db_init, _db_load_cache, _db_save_cache
 from cabonnet.grafana import (
     SQL_AGENDADO,
     SQL_ATENDIMENTO,
+    SQL_BACKLOG_TEMPLATE,
     SQL_DETALHES_TEMPLATE,
     SQL_EQUIPE_REAGENDOU_TEMPLATE,
     SQL_ERP_OS_CIDADES,
@@ -69,6 +70,7 @@ from cabonnet.grafana import (
     SQL_PENDENTE,
     SQL_REVISITAS,
     build_atendimento_json,
+    build_backlog_json,
     frames_to_csv,
     frames_to_dict_list,
     grafana_post,
@@ -522,56 +524,108 @@ async def query(request: Request, date: str = "hoje", _role: str = Depends(_requ
                 "cached": True, "cache_age_sec": int(cache_age)}
 
     # ── Cache vazio ou muito velho → busca do Grafana de forma síncrona ──────
-    try:
-        log.info("[/query] Cache frio — buscando do Grafana...")
-        ok = _refresh_cache_from_grafana("/query-sync")
-        if ok:
-            with state._query_cache_lock:
-                cached = dict(state._query_cache)
-            def _n(t): return len(t.splitlines()) - 1 if t else 0
-            return {"pendente": cached["pendente"], "agendado": cached["agendado"], "futuro": cached["futuro"],
-                    "n_pendente": _n(cached["pendente"]), "n_agendado": _n(cached["agendado"]),
-                    "n_futuro":   _n(cached["futuro"]),   "date": data_iso}
-
-    except Exception as ex:
-        # Fallback 1: cache em memória
+    # _refresh_cache_from_grafana nunca relança exceção — retorna False quando falha.
+    # Os fallbacks ficam no fluxo normal (não em except) para serem sempre alcançáveis.
+    log.info("[/query] Cache frio — buscando do Grafana...")
+    ok = _refresh_cache_from_grafana("/query-sync")
+    if ok:
         with state._query_cache_lock:
-            cached_ts = state._query_cache["ts"]
-            if cached_ts > 0:
-                cache_age = int((_time_mod.time() - cached_ts) / 60)
-                log.warning("[/query] Grafana indisponível — cache de %d min atrás", cache_age)
-                return {
-                    "pendente": state._query_cache["pendente"],
-                    "agendado": state._query_cache["agendado"],
-                    "futuro":   state._query_cache["futuro"],
-                    "n_pendente": len(state._query_cache["pendente"].splitlines()) - 1 if state._query_cache["pendente"] else 0,
-                    "n_agendado": len(state._query_cache["agendado"].splitlines()) - 1 if state._query_cache["agendado"] else 0,
-                    "n_futuro":   len(state._query_cache["futuro"].splitlines()) - 1   if state._query_cache["futuro"]   else 0,
-                    "date": data_iso, "cached": True, "cache_age_min": cache_age,
-                }
-        # Fallback 2: SQLite
-        csv_a_db, ts_db = _db_load_cache("agendado")
-        if csv_a_db:
-            csv_p_db, _ = _db_load_cache("pendente")
-            csv_f_db, _ = _db_load_cache("futuro")
-            cache_age   = int((_time_mod.time() - ts_db) / 60) if ts_db else -1
-            log.warning("[/query] Servindo cache SQLite de %d min atrás", cache_age)
-            return {"pendente": csv_p_db, "agendado": csv_a_db, "futuro": csv_f_db or "",
-                    "n_pendente": len(csv_p_db.splitlines()) - 1 if csv_p_db else 0,
-                    "n_agendado": len(csv_a_db.splitlines()) - 1,
-                    "n_futuro":   len(csv_f_db.splitlines()) - 1 if csv_f_db else 0,
-                    "date": data_iso, "cached": True, "cached_source": "sqlite", "cache_age_min": cache_age}
-        log.exception("Erro /query")
-        raise HTTPException(502, str(ex))
+            cached = dict(state._query_cache)
+        def _n(t): return len(t.splitlines()) - 1 if t else 0
+        return {"pendente": cached["pendente"], "agendado": cached["agendado"], "futuro": cached["futuro"],
+                "n_pendente": _n(cached["pendente"]), "n_agendado": _n(cached["agendado"]),
+                "n_futuro":   _n(cached["futuro"]),   "date": data_iso}
+
+    # Fallback 1: cache em memória (expirado mas disponível)
+    with state._query_cache_lock:
+        mem_ts   = state._query_cache["ts"]
+        mem_copy = dict(state._query_cache) if mem_ts > 0 else None
+    if mem_copy:
+        cache_age = int((_time_mod.time() - mem_ts) / 60)
+        log.warning("[/query] Grafana indisponível — servindo cache de %d min atrás", cache_age)
+        def _n(t): return len(t.splitlines()) - 1 if t else 0
+        return {"pendente": mem_copy["pendente"], "agendado": mem_copy["agendado"],
+                "futuro":   mem_copy["futuro"],
+                "n_pendente": _n(mem_copy["pendente"]), "n_agendado": _n(mem_copy["agendado"]),
+                "n_futuro":   _n(mem_copy["futuro"]),
+                "date": data_iso, "cached": True, "cache_age_min": cache_age}
+
+    # Fallback 2: SQLite
+    csv_a_db, ts_db = _db_load_cache("agendado")
+    if csv_a_db:
+        csv_p_db, _ = _db_load_cache("pendente")
+        csv_f_db, _ = _db_load_cache("futuro")
+        cache_age   = int((_time_mod.time() - ts_db) / 60) if ts_db else -1
+        log.warning("[/query] Servindo cache SQLite de %d min atrás", cache_age)
+        return {"pendente": csv_p_db or "", "agendado": csv_a_db, "futuro": csv_f_db or "",
+                "n_pendente": len(csv_p_db.splitlines()) - 1 if csv_p_db else 0,
+                "n_agendado": len(csv_a_db.splitlines()) - 1,
+                "n_futuro":   len(csv_f_db.splitlines()) - 1 if csv_f_db else 0,
+                "date": data_iso, "cached": True, "cached_source": "sqlite", "cache_age_min": cache_age}
+
+    raise HTTPException(502, "Grafana indisponível e sem cache persistido")
 
 
 @router.get("/revisitas")
 async def revisitas(_role: str = Depends(_require_auth)):
     try:
         csv_r = frames_to_csv(grafana_post(SQL_REVISITAS))
-        return {"concluidas": csv_r or "", "n": len(csv_r.splitlines()) - 1 if csv_r else 0}
+        n = len(csv_r.splitlines()) - 1 if csv_r else 0
+        with state._revisitas_cache_lock:
+            state._revisitas_cache.update({"csv": csv_r or "", "n": n, "ts": _time_mod.time()})
+        return {"concluidas": csv_r or "", "n": n}
     except Exception as ex:
-        log.exception("Erro /revisitas")
+        log.warning("[/revisitas] Grafana indisponível — tentando cache")
+        with state._revisitas_cache_lock:
+            cached = dict(state._revisitas_cache)
+        if cached["ts"] > 0:
+            cache_age = int((_time_mod.time() - cached["ts"]) / 60)
+            log.warning("[/revisitas] Servindo cache de %d min atrás", cache_age)
+            return {"concluidas": cached["csv"], "n": cached["n"], "cached": True, "cache_age_min": cache_age}
+        log.exception("Erro /revisitas sem cache disponível")
+        raise HTTPException(502, str(ex))
+
+
+_BACKLOG_CACHE_TTL = 5 * 60  # 5 minutos
+
+
+@router.get("/backlog")
+async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require_auth)):
+    from datetime import date, timedelta
+    import re
+    _date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    today      = date.today()
+    first_this = today.replace(day=1)
+    first_prev = (first_this - timedelta(days=1)).replace(day=1)
+    fim_default = (today + timedelta(days=1)).isoformat()
+
+    if inicio and _date_re.match(inicio) and fim and _date_re.match(fim):
+        inicio_use = inicio
+        fim_use    = fim
+    else:
+        inicio_use = first_this.isoformat()
+        fim_use    = fim_default
+
+    cache_key = f"{inicio_use}|{fim_use}"
+    now = _time_mod.time()
+    with state._backlog_cache_lock:
+        cached = state._backlog_cache
+        if (cached["data"] is not None
+                and cached.get("key") == cache_key
+                and (now - cached["ts"]) < _BACKLOG_CACHE_TTL):
+            return cached["data"]
+    try:
+        rows   = frames_to_dict_list(grafana_post(SQL_BACKLOG_TEMPLATE.format(inicio=inicio_use, fim=fim_use)))
+        result = build_backlog_json(rows)
+        result["periodo"] = inicio_use
+        result["fim"]     = fim_use
+        with state._backlog_cache_lock:
+            state._backlog_cache["data"] = result
+            state._backlog_cache["ts"]   = now
+            state._backlog_cache["key"]  = cache_key
+        return result
+    except Exception as ex:
+        log.exception("Erro /backlog")
         raise HTTPException(502, str(ex))
 
 

@@ -86,9 +86,12 @@ export function SectionLabel({ icon: Icon, color, children }: {
 
 // ─── PulsoHero ────────────────────────────────────────────────────────────────
 
-export function PulsoHero({ pulso, aiData, isLoadingAI }: {
-  pulso: Pulso; aiData: AINarrativeResult | null | undefined; isLoadingAI: boolean
+export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI }: {
+  pulso: Pulso; aiData: AINarrativeResult | null | undefined; isLoadingAI: boolean; onRequestAI?: (obs: string) => void
 }) {
+  const [draftObs, setDraftObs] = useState('')
+  const [showReanalysis, setShowReanalysis] = useState(false)
+
   const {
     score = 0, scoreLabel = '—', narrativa = '', quickInsights = [],
     agingMed = 0, slaFila = 0, mttr = 0, semAgendamento = 0,
@@ -165,7 +168,28 @@ export function PulsoHero({ pulso, aiData, isLoadingAI }: {
               )}
             </div>
 
-            {isLoadingAI && !aiData ? (
+            {!isLoadingAI && !aiData && onRequestAI ? (
+              <div className="space-y-2">
+                <textarea
+                  value={draftObs}
+                  onChange={e => setDraftObs(e.target.value)}
+                  placeholder="Contexto opcional para a IA: ex. tivemos queda de energia hoje, o que pode justificar menor fluxo de atendimentos."
+                  rows={2}
+                  className="w-full text-[11px] text-secondary placeholder:text-muted/50
+                             bg-surface/60 border border-white/[0.08] rounded-lg px-3 py-2
+                             resize-none focus:outline-none focus:border-primary/30
+                             leading-relaxed"
+                />
+                <button
+                  onClick={() => onRequestAI(draftObs)}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                             px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                             transition-all duration-fast"
+                >
+                  <Sparkles size={11} /> Analisar com IA
+                </button>
+              </div>
+            ) : isLoadingAI && !aiData ? (
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <div className="h-2 bg-surface rounded animate-pulse w-16" />
@@ -206,6 +230,47 @@ export function PulsoHero({ pulso, aiData, isLoadingAI }: {
                     <p className="text-[12px] font-semibold text-text leading-snug">{aiData.acao}</p>
                   </div>
                 </div>
+
+                {/* Reanalisar */}
+                {onRequestAI && !showReanalysis && (
+                  <button
+                    onClick={() => setShowReanalysis(true)}
+                    className="mt-1 flex items-center gap-1 text-[10px] text-muted/60 hover:text-primary
+                               transition-colors duration-fast"
+                  >
+                    <Sparkles size={9} /> Reanalisar com novo contexto
+                  </button>
+                )}
+                {showReanalysis && onRequestAI && (
+                  <div className="pt-1 space-y-1.5 border-t border-white/[0.05]">
+                    <textarea
+                      value={draftObs}
+                      onChange={e => setDraftObs(e.target.value)}
+                      placeholder="Novo contexto para a IA..."
+                      rows={2}
+                      className="w-full text-[11px] text-secondary placeholder:text-muted/50
+                                 bg-surface/60 border border-white/[0.08] rounded-lg px-3 py-2
+                                 resize-none focus:outline-none focus:border-primary/30
+                                 leading-relaxed"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { onRequestAI(draftObs); setShowReanalysis(false) }}
+                        className="flex items-center gap-1 text-[10px] font-semibold text-primary/70 hover:text-primary
+                                   px-2.5 py-1 rounded-md border border-primary/20 hover:border-primary/40
+                                   hover:bg-primary/[0.08] transition-all duration-fast"
+                      >
+                        <Sparkles size={9} /> Analisar
+                      </button>
+                      <button
+                        onClick={() => setShowReanalysis(false)}
+                        className="text-[10px] text-muted/60 hover:text-muted px-2 py-1 transition-colors duration-fast"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-[12px] text-secondary leading-[1.7]">
@@ -656,6 +721,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
 }) {
   const { total = 0, picosDia = [], bairrosAnomalia = [], equipesAnomalia = [] } = anomalias ?? {}
   const [open, setOpen] = useState(total > 0)
+  const [aiEnabled, setAiEnabled] = useState(false)
 
   type HookAnomItem = { zScore: number; [k: string]: unknown }
   const { data: rcaData, isLoading: rcaLoading } = useAIAnomalias({
@@ -663,6 +729,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
     bairrosAnomalia: bairrosAnomalia as unknown as HookAnomItem[],
     equipesAnomalia: equipesAnomalia as unknown as HookAnomItem[],
     contexto,
+    enabled: aiEnabled,
   })
 
   const pri    = rcaData?.prioridade ?? 'média'
@@ -740,9 +807,21 @@ export function AnomaliaSection({ anomalias, contexto }: {
 
           {/* ── Análise de Causa Raiz (Claude) ── */}
           <div className="border-t border-white/[0.08] pt-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles size={12} className="text-primary/70" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted">Análise de Causa Raiz</p>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={12} className="text-primary/70" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted">Análise de Causa Raiz</p>
+              </div>
+              {!aiEnabled && (
+                <button
+                  onClick={() => setAiEnabled(true)}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                             px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                             transition-all duration-fast"
+                >
+                  <Sparkles size={11} /> Analisar com IA
+                </button>
+              )}
             </div>
 
             {rcaLoading && (
@@ -774,12 +853,6 @@ export function AnomaliaSection({ anomalias, contexto }: {
                   </div>
                 )}
               </div>
-            )}
-
-            {!rcaLoading && !rcaData && (
-              <p className="text-[11px] text-muted/40 italic">
-                Configure ANTHROPIC_API_KEY no .env para ativar a análise de causa raiz.
-              </p>
             )}
           </div>
         </div>

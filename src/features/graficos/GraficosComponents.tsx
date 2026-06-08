@@ -211,13 +211,33 @@ type EvolAny = { labels?: string[]; [k: string]: unknown }
 
 export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown; totalAtivo: number; fila: number }) {
   const ev = evolucao as EvolAny | undefined
+  const [aiEnabled, setAiEnabled] = useState(false)
   const { data, isFetching, isError } = useAIForecast({
     evolucao: ev as unknown as import('../../lib/types').EvolucaoData ?? { labels: [], abertas: [], concluidas: [] },
-    totalAtivo, fila,
+    totalAtivo, fila, enabled: aiEnabled,
   })
   const tend = data?.tendencia ? (TEND_STYLE[data.tendencia] ?? TEND_STYLE['estável']) : null
 
   if ((ev?.labels?.length ?? 0) < 7) return null
+
+  if (!aiEnabled) {
+    return (
+      <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles size={12} className="text-primary/40" />
+          <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Previsão de Demanda · IA</span>
+        </div>
+        <button
+          onClick={() => setAiEnabled(true)}
+          className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                     px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                     transition-all duration-fast"
+        >
+          <Sparkles size={11} /> Analisar com IA
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-5 space-y-4">

@@ -207,9 +207,19 @@ function AIStatusBadge() {
     return () => document.removeEventListener('mousedown', fn)
   }, [open])
 
-  const valid   = data?.valid ?? null
-  const usage   = data?.usage
-  const dotCls  = isLoading ? 'bg-muted animate-pulse' : valid ? 'bg-green' : 'bg-red'
+  type AIStatusData = { valid?: boolean; status?: string; reason?: string; model?: string; console_url?: string; usage?: { calls: number; errors: number; input_tokens: number; output_tokens: number; total_tokens: number; cost_usd: number; cost_brl: number } }
+  const d        = data as AIStatusData | undefined
+  const valid    = d?.valid ?? null
+  const connStatus = d?.status ?? null
+  const usage    = d?.usage
+  const noConn   = connStatus === 'no_connection'
+  const dotCls   = isLoading
+    ? 'bg-muted animate-pulse'
+    : valid
+    ? 'bg-green'
+    : noConn
+    ? 'bg-orange'
+    : 'bg-red'
 
   return (
     <div ref={ref} className="relative">
@@ -218,7 +228,7 @@ function AIStatusBadge() {
         title="Status da API Anthropic"
         className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-surface transition-colors"
       >
-        <Sparkles size={13} className={valid ? 'text-green' : valid === false ? 'text-red' : 'text-muted'} />
+        <Sparkles size={13} className={valid ? 'text-green' : noConn ? 'text-orange' : valid === false ? 'text-red' : 'text-muted'} />
         <span className={`w-1.5 h-1.5 rounded-full ${dotCls}`} />
       </button>
 
@@ -245,12 +255,27 @@ function AIStatusBadge() {
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-green" />
                   <span className="text-[12px] text-green font-semibold">Chave válida</span>
-                  <span className="text-[10px] text-muted ml-auto">{data?.model?.replace('claude-', 'Claude ')}</span>
+                  <span className="text-[10px] text-muted ml-auto">{d?.model?.replace('claude-', 'Claude ')}</span>
+                </div>
+              ) : noConn ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-orange flex-shrink-0" />
+                    <span className="text-[12px] text-orange font-semibold">Sem conexão com a Anthropic</span>
+                  </div>
+                  {d?.reason && (
+                    <p className="text-[10px] text-muted/70 pl-4">{d.reason}</p>
+                  )}
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red" />
-                  <span className="text-[12px] text-red font-semibold">Chave inválida</span>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red flex-shrink-0" />
+                    <span className="text-[12px] text-red font-semibold">Chave inválida</span>
+                  </div>
+                  {d?.reason && (
+                    <p className="text-[10px] text-muted/70 pl-4">{d.reason}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -290,7 +315,7 @@ function AIStatusBadge() {
                 O saldo real só está disponível no console da Anthropic.
               </p>
               <a
-                href={data?.console_url ?? 'https://console.anthropic.com/settings/billing'}
+                href={d?.console_url ?? 'https://console.anthropic.com/settings/billing'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full py-2 rounded-lg

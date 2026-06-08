@@ -26,7 +26,8 @@ export function useAICapacidade({
   dias_previstos,
   equipes_ativas,
   por_tipo,
-}: AICapacidadeInput) {
+  enabled = false,
+}: AICapacidadeInput & { enabled?: boolean }) {
   const payload = useMemo(
     () => ({ fila, ritmo_dia, meta_dia, dias_previstos, equipes_ativas, por_tipo }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -39,7 +40,7 @@ export function useAICapacidade({
     staleTime: 5 * 60_000,
     gcTime:    15 * 60_000,
     retry:     false,
-    enabled:   fila > 0,
+    enabled:   enabled && fila > 0,
     select:    (data: unknown): AICapacidadeResult | null => {
       const d = data as { ok?: boolean } | null
       return d?.ok ? (d as AICapacidadeResult) : null

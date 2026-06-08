@@ -29,7 +29,7 @@ interface UseAICidadesInput {
   pendRows: PendItem[]
 }
 
-export function useAICidades({ pendRows }: UseAICidadesInput) {
+export function useAICidades({ pendRows, enabled = false }: UseAICidadesInput & { enabled?: boolean }) {
   const payload = useMemo(() => ({ pendentes: pendRows }), [pendRows])
 
   return useQuery<AICidadesResult>({
@@ -38,7 +38,7 @@ export function useAICidades({ pendRows }: UseAICidadesInput) {
     staleTime: 3 * 60_000,
     gcTime:    15 * 60_000,
     retry:     false,
-    enabled:   pendRows.length >= 5,
+    enabled:   enabled && pendRows.length >= 5,
     select:    (data) => (data?.ok ? data : null) as AICidadesResult,
   })
 }

@@ -35,6 +35,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
   const { rows }  = useERPRows()
   const [sortDir,      setSortDir]      = useState('desc')
   const [aiCollapsed,  setAiCollapsed]  = useState(false)
+  const [aiEnabled,    setAiEnabled]    = useState(false)
 
   const sorted = useMemo(() => {
     let r = rows.filter(row => {
@@ -68,7 +69,7 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
     }))
   , [sorted])
 
-  const { data: aiData, isFetching: aiLoading, refetch: aiRefetch } = useAIProximaOS({ fila: filaPayload })
+  const { data: aiData, isFetching: aiLoading, refetch: aiRefetch } = useAIProximaOS({ fila: filaPayload, enabled: aiEnabled })
 
   return (
     <div className="flex flex-col gap-4 flex-1 min-h-0">
@@ -76,31 +77,44 @@ export function FilaInteligente({ equipeFilter, tipoFilter }: { equipeFilter: st
       {/* ── AI Panel ── */}
       <div className="flex-shrink-0 rounded-xl border border-primary/20 bg-primary/[0.03] overflow-hidden">
         <button
-          onClick={() => setAiCollapsed(v => !v)}
+          onClick={() => aiEnabled && setAiCollapsed(v => !v)}
           className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-primary/[0.04] transition-colors"
         >
-          <Sparkles size={13} className="text-primary flex-shrink-0" />
+          <Sparkles size={13} className={`flex-shrink-0 ${aiEnabled ? 'text-primary' : 'text-primary/40'}`} />
           <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide flex-1 text-left">
             Proximas a executar — recomendacao IA
           </span>
           <div className="flex items-center gap-2 ml-auto">
-            {aiData && (
+            {!aiEnabled ? (
               <button
-                onClick={e => { e.stopPropagation(); void aiRefetch() }}
-                className="p-1 rounded-md hover:bg-primary/10 text-muted hover:text-primary transition-colors"
-                title="Recarregar sugestão"
+                onClick={e => { e.stopPropagation(); setAiEnabled(true) }}
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                           px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                           transition-all duration-fast"
               >
-                <RefreshCw size={11} className={aiLoading ? 'animate-spin' : ''} />
+                <Sparkles size={11} /> Analisar com IA
               </button>
+            ) : (
+              <>
+                {aiData && (
+                  <button
+                    onClick={e => { e.stopPropagation(); void aiRefetch() }}
+                    className="p-1 rounded-md hover:bg-primary/10 text-muted hover:text-primary transition-colors"
+                    title="Recarregar sugestão"
+                  >
+                    <RefreshCw size={11} className={aiLoading ? 'animate-spin' : ''} />
+                  </button>
+                )}
+                <ChevronDown
+                  size={13}
+                  className={`text-muted transition-transform duration-200 ${aiCollapsed ? '-rotate-90' : ''}`}
+                />
+              </>
             )}
-            <ChevronDown
-              size={13}
-              className={`text-muted transition-transform duration-200 ${aiCollapsed ? '-rotate-90' : ''}`}
-            />
           </div>
         </button>
 
-        {!aiCollapsed && (
+        {aiEnabled && !aiCollapsed && (
           <div className="px-4 pb-3">
             {aiLoading && !aiData ? (
               <p className="text-[12px] text-muted animate-pulse py-2">Consultando IA…</p>
