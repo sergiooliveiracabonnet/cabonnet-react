@@ -58,7 +58,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   }
 
   function openMaps() {
-    const addr = [os.logradouro || os.enderecoconexao, os.bairro, os.nomedacidade].filter(Boolean).join(', ')
+    const addr = [os.logradouro || os.enderecoconexao, os.numero, os.bairro, os.nomedacidade].filter(Boolean).join(', ')
     if (!addr) return
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`, '_blank')
   }
