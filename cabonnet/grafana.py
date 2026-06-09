@@ -386,7 +386,11 @@ SELECT
   case when o.t_horaatendimento is not null
        then to_char(o.t_horaatendimento, 'HH24:MI') else '' end         as horaatendimento,
   coalesce(o.observacoes, '')                                            as observacoes,
-  coalesce(o.observacaocritica, '')                                      as observacaocritica
+  coalesce(o.observacaocritica, '')                                      as observacaocritica,
+  to_char(ct.d_datadavenda,      'DD/MM/YYYY')                          as datacontratacao,
+  to_char(ct.d_datadainstalacao, 'DD/MM/YYYY')                          as datainstalacao,
+  ct.situacao                                                            as situacaocontrato,
+  ct.valordocontrato                                                     as valorcontrato
 FROM ordemservico o
   JOIN contratos ct  ON ct.cidade = o.cidade AND ct.codempresa = o.codempresa AND ct.contrato = o.codigocontrato
   JOIN clientes  cli ON cli.codigocliente = o.codigoassinante AND cli.cidade = o.cidade

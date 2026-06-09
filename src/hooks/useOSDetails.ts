@@ -75,6 +75,10 @@ interface OSDetailsResult {
     equipeReagend:     string | null
     materiais:         Material[]
     materiaisRetirados:Material[]
+    datacontratacao:   string | null
+    datainstalacao:    string | null
+    situacaocontrato:  number | null
+    valorcontrato:     number | null
   } | null
 }
 
@@ -116,12 +120,16 @@ export function useOSDetails(numos: string | null | undefined): OSDetailsResult 
       historico,
       obsTecnico,
       nomeTecnico,
-      reagendada:     raw.reagendada === true || raw.reagendada === 'true',
-      equipeAgendada: (osObj.nomedaequipe   as string) || null,
-      equipeExecutou: (osObj.equipeexecutou as string) || null,
-      equipeReagend:  (raw.equipe_reagendou as string) || null,
+      reagendada:        raw.reagendada === true || raw.reagendada === 'true',
+      equipeAgendada:    (osObj.nomedaequipe   as string) || null,
+      equipeExecutou:    (osObj.equipeexecutou as string) || null,
+      equipeReagend:     (raw.equipe_reagendou as string) || null,
       materiais,
       materiaisRetirados,
+      datacontratacao:   (osObj.datacontratacao as string) || null,
+      datainstalacao:    (osObj.datainstalacao  as string) || null,
+      situacaocontrato:  typeof osObj.situacaocontrato === 'number' ? osObj.situacaocontrato : null,
+      valorcontrato:     typeof osObj.valorcontrato    === 'number' ? osObj.valorcontrato    : null,
     },
   }
 }

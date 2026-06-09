@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CheckCircle, Clock, Calendar, ExternalLink, MapPin, Users, Wrench,
-  AlertTriangle, MessageSquare, Hash, Check, Filter,
+  AlertTriangle, MessageSquare, Hash, Check, Filter, FileText,
 } from 'lucide-react'
 import type { OSRow, Fornecedor } from '../../lib/types'
 
@@ -94,11 +94,22 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   // Dados do técnico (mobile) vindos do /detalhes
   const d = osDetails  // atalho
 
-  const obsTecnico  = loadingDetails ? '⏳ Carregando…' : (d?.obsTecnico || obsGeral || null)
-  const nomeTecnico = d?.nomeTecnico || null
-  const historico   = d?.historico   || []
-  const materiais   = d?.materiais   || []
-  const matRetirados= d?.materiaisRetirados || []
+  const obsTecnico       = loadingDetails ? '⏳ Carregando…' : (d?.obsTecnico || obsGeral || null)
+  const nomeTecnico      = d?.nomeTecnico || null
+  const historico        = d?.historico   || []
+  const materiais        = d?.materiais   || []
+  const matRetirados     = d?.materiaisRetirados || []
+  const dataContratacao  = d?.datacontratacao || null
+  const dataInstalacao   = d?.datainstalacao  || null
+  const situacaoContrato = d?.situacaocontrato ?? null
+  const valorContrato    = d?.valorcontrato    ?? null
+
+  const SITUACAO_CONTRATO: Record<number, string> = {
+    1: 'Prospecto', 2: 'Ativo', 3: 'Suspenso', 4: 'Bloqueado', 5: 'Cancelado', 6: 'Desistência',
+  }
+  const situacaoContratoLabel = situacaoContrato != null
+    ? (SITUACAO_CONTRATO[situacaoContrato] ?? `Código ${situacaoContrato}`)
+    : null
 
   // Equipes por papel — vindas do /detalhes (mais precisas) ou fallback do CSV
   const eqAgendada = shortEquipe((d?.equipeAgendada || os.nomedaequipe) as string)
@@ -345,7 +356,65 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
               </Section>
             )}
 
-            {/* ── 4. Linha do Tempo ────────────────────────────────────── */}
+            {/* ── 4. Contrato do Cliente ───────────────────────────────── */}
+            {(loadingDetails || dataContratacao || dataInstalacao || situacaoContratoLabel) && (
+              <Section label="Contrato do cliente">
+                {loadingDetails ? (
+                  <p className="text-[12px] text-muted/60 italic px-1">Carregando dados do contrato…</p>
+                ) : (
+                  <div className="bg-surface/30 border border-white/[0.08] rounded-xl overflow-hidden">
+                    <div className="grid grid-cols-2 divide-x divide-white/[0.06]">
+                      {dataContratacao && (
+                        <div className="px-4 py-3 flex flex-col gap-1">
+                          <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
+                            <FileText size={10} /> Contratação
+                          </span>
+                          <span className="text-[13px] font-semibold text-text font-mono tabular-nums">
+                            {dataContratacao}
+                          </span>
+                        </div>
+                      )}
+                      {dataInstalacao && (
+                        <div className="px-4 py-3 flex flex-col gap-1">
+                          <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
+                            <Wrench size={10} /> Instalação
+                          </span>
+                          <span className="text-[13px] font-semibold text-text font-mono tabular-nums">
+                            {dataInstalacao}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {(situacaoContratoLabel || (valorContrato != null && valorContrato > 0)) && (
+                      <div className="border-t border-white/[0.06] grid grid-cols-2 divide-x divide-white/[0.06]">
+                        {situacaoContratoLabel && (
+                          <div className="px-4 py-3 flex flex-col gap-1">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Situação</span>
+                            <span className={`text-[12px] font-semibold ${
+                              situacaoContrato === 2 ? 'text-green' :
+                              situacaoContrato === 5 ? 'text-red' :
+                              situacaoContrato === 3 || situacaoContrato === 4 ? 'text-yellow' : 'text-secondary'
+                            }`}>
+                              {situacaoContratoLabel}
+                            </span>
+                          </div>
+                        )}
+                        {valorContrato != null && valorContrato > 0 && (
+                          <div className="px-4 py-3 flex flex-col gap-1">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Valor mensal</span>
+                            <span className="text-[13px] font-semibold text-text tabular-nums">
+                              {valorContrato.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Section>
+            )}
+
+            {/* ── 5. Linha do Tempo ────────────────────────────────────── */}
             <Section label="Linha do tempo">
               <div className="pl-0.5">
                 {steps.map((s, i) => (
