@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, memo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useQuery } from '@tanstack/react-query'
-import { RefreshCw, ChevronDown, Clock, AlertTriangle, Menu, Search, Bell, Send, History, Sparkles, ExternalLink, X as XIcon } from 'lucide-react'
+import { RefreshCw, ChevronDown, Clock, AlertTriangle, Menu, Search, Bell, Send, History, Sparkles, ExternalLink, X as XIcon, MessageSquare } from 'lucide-react'
 import { aiStatus } from '../../lib/api'
 import { AnimatedThemeToggler } from '../ui/AnimatedThemeToggler'
 import { useUIStore } from '../../store/uiStore'
@@ -16,6 +16,7 @@ import { useAlertStore } from '../../store/alertStore'
 import { useAlertasEngine } from '../../hooks/useAlertasEngine'
 import { useTelegramStore } from '../../store/telegramStore'
 import TelegramPanel from '../../features/alertas/TelegramPanel'
+import { ChatDrawer } from '../../features/ai/ChatDrawer'
 import type { OSRow } from '../../lib/types'
 
 const ROUTE_LABELS: Record<string, string> = {
@@ -364,6 +365,7 @@ export function Navbar() {
   const [alertsOpen,   setAlertsOpen]   = useState(false)
   const [telegramOpen, setTelegramOpen] = useState(false)
   const [auditOpen,    setAuditOpen]    = useState(false)
+  const [chatOpen,     setChatOpen]     = useState(false)
   const alertaRef   = useRef<HTMLDivElement>(null)
   const alertsRef   = useRef<HTMLDivElement>(null)
   const telegramRef = useRef<HTMLDivElement>(null)
@@ -376,6 +378,10 @@ export function Navbar() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault()
         setSearchOpen(v => !v)
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
+        e.preventDefault()
+        setChatOpen(v => !v)
       }
     }
     document.addEventListener('keydown', onKey)
@@ -689,12 +695,22 @@ export function Navbar() {
         )}
       </div>
 
+      <button
+        onClick={() => setChatOpen(true)}
+        title="Assistente IA (Ctrl+Shift+A)"
+        className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0
+                   text-primary bg-primary/10 hover:bg-primary/20 transition-all duration-fast"
+      >
+        <MessageSquare size={14} />
+      </button>
+
       <AIStatusBadge />
       <AnimatedThemeToggler />
       <RefreshControl />
     </header>
 
     <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+    <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />
     </>
   )
 }

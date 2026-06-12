@@ -7,6 +7,7 @@ import hashlib
 import json
 import logging
 import time as _time_mod
+from datetime import date
 
 import requests
 
@@ -1318,3 +1319,321 @@ def _ai_juniper_correlacao(payload):
     except Exception as ex:
         log.warning("[AI] juniper-correlacao erro: %s", str(ex)[:200])
         return None
+
+
+# ── Chat com tool use ─────────────────────────────────────────────────────────
+
+_CHAT_TOOLS = [
+    {
+        "name": "get_os_resumo",
+        "description": "Retorna resumo geral das OS em aberto: totais, aging médio, distribuição por cidade, por status, e as OS mais antigas.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "listar_os",
+        "description": "Lista OS com filtros opcionais, ordenadas por aging (mais antigas primeiro).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "status":     {"type": "string",  "description": "Filtrar por situação (ex: 'Pendente', 'Atendimento')"},
+                "cidade":     {"type": "string",  "description": "Filtrar por cidade (ex: 'Taubaté', 'SJC', 'Caçapava')"},
+                "equipe":     {"type": "string",  "description": "Filtrar por equipe (busca parcial, ex: 'F01', 'THM', 'WES')"},
+                "tipo":       {"type": "string",  "description": "Filtrar por tipo de serviço (busca parcial no campo servico)"},
+                "sem_equipe": {"type": "boolean", "description": "Se true, retorna apenas OS sem equipe atribuída"},
+                "limit":      {"type": "integer", "description": "Máximo de registros a retornar (padrão 20, máx 50)"},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "metricas_equipe",
+        "description": "Retorna métricas detalhadas de uma equipe: total OS, aging médio/máximo, distribuição por cidade e top serviços.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "equipe": {"type": "string", "description": "Nome ou código da equipe (ex: 'F01', 'F08', 'INSTACABLE')"},
+            },
+            "required": ["equipe"],
+        },
+    },
+    {
+        "name": "status_juniper",
+        "description": "Retorna quantidade de clientes PPPoE ativos no Juniper por cluster.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "cluster": {"type": "string", "description": "Cluster específico (ex: 'sjc', 'taubate'). Omitir retorna todos."},
+            },
+            "required": [],
+        },
+    },
+]
+
+_CHAT_SYSTEM = (
+    "Você é o assistente de operações Cabonnet — sistema de gestão de OS para ISP no Vale do Paraíba (SP).\n\n"
+    "CONTEXTO:\n"
+    "- 5 cidades: São José dos Campos (SJC), Caçapava, Taubaté, Tremembé, Pindamonhangaba\n"
+    "- OS = Ordem de Serviço | Data atual: {today}\n\n"
+    "OPERADORAS:\n"
+    "- INSTACABLE: frentes F01, F04, F05, F07, F20, F27, F45, F48, F49, F50\n"
+    "- WES: frentes F08, F11, F36, F39, F44\n"
+    "- THM: frentes F12 a F19\n\n"
+    "CAMPOS: numos (7 dígitos), nomecliente, nomedacidade, nomedaequipe, descsituacao, "
+    "servico, datacadastro (DD/MM/YYYY), aging_dias (calculado).\n\n"
+    "Use sempre as ferramentas para buscar dados atualizados antes de responder. "
+    "Responda em português brasileiro de forma direta e com números concretos."
+)
+
+
+def _chat_tool_resumo() -> dict:
+    from cabonnet.utils import _parse_csv_rows, _parse_data_br
+    with state._query_cache_lock:
+        c = dict(state._query_cache)
+
+    pendentes = _parse_csv_rows(c.get("pendente", ""))
+    agendados = _parse_csv_rows(c.get("agendado", ""))
+    all_os    = pendentes + agendados
+
+    if not all_os:
+        return {"msg": "Sem dados de OS em cache. Aguarde a próxima atualização (intervalo 4 min)."}
+
+    today = date.today()
+
+    def aging(row):
+        d = _parse_data_br(row.get("datacadastro", ""))
+        return (today - d).days if d else 0
+
+    sem_equipe = sum(1 for r in all_os if not (r.get("nomedaequipe") or "").strip())
+    agings     = [aging(r) for r in all_os]
+    aging_med  = round(sum(agings) / len(agings), 1) if agings else 0
+
+    por_cidade = {}
+    for r in all_os:
+        k = r.get("nomedacidade") or "?"
+        por_cidade[k] = por_cidade.get(k, 0) + 1
+
+    por_status = {}
+    for r in all_os:
+        k = r.get("descsituacao") or "?"
+        por_status[k] = por_status.get(k, 0) + 1
+
+    oldest = sorted(all_os, key=aging, reverse=True)[:5]
+    return {
+        "total_abertas":    len(all_os),
+        "pendentes":        len(pendentes),
+        "agendadas":        len(agendados),
+        "sem_equipe":       sem_equipe,
+        "aging_medio_dias": aging_med,
+        "aging_max_dias":   max(agings) if agings else 0,
+        "por_cidade":       por_cidade,
+        "por_status":       por_status,
+        "os_mais_antigas":  [
+            {"numos": r.get("numos"), "nomecliente": r.get("nomecliente"),
+             "nomedacidade": r.get("nomedacidade"), "aging_dias": aging(r),
+             "nomedaequipe": r.get("nomedaequipe") or "sem equipe",
+             "descsituacao": r.get("descsituacao")}
+            for r in oldest
+        ],
+        "cache_age_seg": int(_time_mod.time() - c.get("ts", 0)),
+    }
+
+
+def _chat_tool_listar(status=None, cidade=None, equipe=None, tipo=None, sem_equipe=False, limit=20) -> dict:
+    from cabonnet.utils import _parse_csv_rows, _parse_data_br
+    with state._query_cache_lock:
+        c = dict(state._query_cache)
+
+    all_os = _parse_csv_rows(c.get("pendente", "")) + _parse_csv_rows(c.get("agendado", ""))
+    today  = date.today()
+
+    def aging(row):
+        d = _parse_data_br(row.get("datacadastro", ""))
+        return (today - d).days if d else 0
+
+    filtered = all_os
+    if status:
+        filtered = [r for r in filtered if status.lower() in (r.get("descsituacao") or "").lower()]
+    if cidade:
+        filtered = [r for r in filtered if cidade.lower() in (r.get("nomedacidade") or "").lower()]
+    if equipe:
+        filtered = [r for r in filtered if equipe.lower() in (r.get("nomedaequipe") or "").lower()]
+    if tipo:
+        filtered = [r for r in filtered if tipo.lower() in (r.get("servico") or "").lower()]
+    if sem_equipe:
+        filtered = [r for r in filtered if not (r.get("nomedaequipe") or "").strip()]
+
+    limit    = min(int(limit or 20), 50)
+    sorted_r = sorted(filtered, key=aging, reverse=True)[:limit]
+
+    return {
+        "total_encontradas": len(filtered),
+        "exibindo":          len(sorted_r),
+        "os": [
+            {"numos": r.get("numos"), "nomecliente": r.get("nomecliente"),
+             "nomedacidade": r.get("nomedacidade"), "nomedaequipe": r.get("nomedaequipe") or "sem equipe",
+             "descsituacao": r.get("descsituacao"), "servico": r.get("servico"),
+             "datacadastro": r.get("datacadastro"), "aging_dias": aging(r)}
+            for r in sorted_r
+        ],
+    }
+
+
+def _chat_tool_metricas(equipe: str) -> dict:
+    from cabonnet.utils import _parse_csv_rows, _parse_data_br
+    with state._query_cache_lock:
+        c = dict(state._query_cache)
+
+    all_os   = _parse_csv_rows(c.get("pendente", "")) + _parse_csv_rows(c.get("agendado", ""))
+    eq_lower = equipe.lower()
+    da_eq    = [r for r in all_os if eq_lower in (r.get("nomedaequipe") or "").lower()]
+
+    if not da_eq:
+        return {"equipe": equipe, "total": 0, "msg": "Nenhuma OS encontrada para esta equipe."}
+
+    today = date.today()
+
+    def aging(row):
+        d = _parse_data_br(row.get("datacadastro", ""))
+        return (today - d).days if d else 0
+
+    agings = [aging(r) for r in da_eq]
+
+    por_cidade  = {}
+    por_status  = {}
+    por_servico = {}
+    for r in da_eq:
+        k = r.get("nomedacidade") or "?"
+        por_cidade[k] = por_cidade.get(k, 0) + 1
+        k = r.get("descsituacao") or "?"
+        por_status[k] = por_status.get(k, 0) + 1
+        k = (r.get("servico") or "?")[:50]
+        por_servico[k] = por_servico.get(k, 0) + 1
+
+    top_servicos = dict(sorted(por_servico.items(), key=lambda x: -x[1])[:5])
+
+    return {
+        "equipe":           equipe,
+        "total_os":         len(da_eq),
+        "aging_medio_dias": round(sum(agings) / len(agings), 1),
+        "aging_max_dias":   max(agings),
+        "por_cidade":       por_cidade,
+        "por_status":       por_status,
+        "top_servicos":     top_servicos,
+        "os_mais_antigas":  sorted(
+            [{"numos": r.get("numos"), "nomecliente": r.get("nomecliente"), "aging_dias": aging(r)}
+             for r in da_eq],
+            key=lambda x: -x["aging_dias"]
+        )[:3],
+    }
+
+
+def _chat_tool_juniper(cluster=None) -> dict:
+    with state._jun_known_lock:
+        known = {k: set(v) for k, v in state._jun_known.items()}
+
+    if not known:
+        return {"msg": "Nenhum dado Juniper disponível — aguarde a próxima coleta."}
+
+    if cluster:
+        if cluster not in known:
+            return {"cluster_solicitado": cluster, "clusters_disponiveis": list(known.keys()),
+                    "msg": f"Cluster '{cluster}' não encontrado."}
+        return {"cluster": cluster, "clientes_pppoe_ativos": len(known[cluster])}
+
+    return {
+        "resumo_por_cluster": {k: len(v) for k, v in known.items()},
+        "total_clientes":     sum(len(v) for v in known.values()),
+    }
+
+
+def _exec_chat_tool(name: str, tool_input: dict) -> dict:
+    if name == "get_os_resumo":
+        return _chat_tool_resumo()
+    if name == "listar_os":
+        return _chat_tool_listar(**{k: v for k, v in tool_input.items()
+                                    if k in ("status", "cidade", "equipe", "tipo", "sem_equipe", "limit")})
+    if name == "metricas_equipe":
+        return _chat_tool_metricas(tool_input.get("equipe", ""))
+    if name == "status_juniper":
+        return _chat_tool_juniper(tool_input.get("cluster"))
+    return {"error": f"Ferramenta desconhecida: {name}"}
+
+
+def _ai_chat_with_tools(messages: list) -> dict | None:
+    """Loop de tool use: chama a API Anthropic até obter resposta final (stop_reason=end_turn)."""
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    today  = date.today().strftime("%d/%m/%Y")
+    system = _CHAT_SYSTEM.format(today=today)
+    msgs   = [{"role": m["role"], "content": m["content"]} for m in messages]
+    tool_calls_used: list[str] = []
+
+    for _ in range(8):
+        try:
+            resp = requests.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key":         ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "content-type":      "application/json",
+                },
+                json={
+                    "model":      "claude-haiku-4-5-20251001",
+                    "max_tokens": 1024,
+                    "system":     system,
+                    "tools":      _CHAT_TOOLS,
+                    "messages":   msgs,
+                },
+                timeout=30,
+                verify=False,
+            )
+        except Exception as ex:
+            log.warning("[AI/chat] Erro na chamada: %s", str(ex)[:200])
+            return None
+
+        if not resp.ok:
+            log.warning("[AI/chat] API %s: %s", resp.status_code, resp.text[:200])
+            return None
+
+        resp_data   = resp.json()
+        _register_usage(resp_data)
+        stop_reason = resp_data.get("stop_reason")
+        content     = resp_data.get("content", [])
+
+        msgs.append({"role": "assistant", "content": content})
+
+        if stop_reason == "end_turn":
+            text = next((b["text"] for b in content if b.get("type") == "text"), "")
+            log.info("[AI/chat] Resposta final (%d chars, %d tools usadas)", len(text), len(tool_calls_used))
+            return {"response": text, "tool_calls": tool_calls_used}
+
+        if stop_reason == "tool_use":
+            tool_results = []
+            for block in content:
+                if block.get("type") != "tool_use":
+                    continue
+                name       = block["name"]
+                tool_input = block.get("input", {})
+                tool_id    = block["id"]
+
+                tool_calls_used.append(name)
+                log.info("[AI/chat] Tool: %s(%s)", name, str(tool_input)[:120])
+
+                try:
+                    result_data = _exec_chat_tool(name, tool_input)
+                except Exception as tex:
+                    result_data = {"error": str(tex)[:200]}
+
+                tool_results.append({
+                    "type":        "tool_result",
+                    "tool_use_id": tool_id,
+                    "content":     json.dumps(result_data, ensure_ascii=False),
+                })
+            msgs.append({"role": "user", "content": tool_results})
+        else:
+            text = next((b["text"] for b in content if b.get("type") == "text"), "")
+            return {"response": text, "tool_calls": tool_calls_used}
+
+    log.warning("[AI/chat] Máximo de iterações atingido")
+    return {"response": "Limite de iterações atingido. Tente reformular a pergunta.", "tool_calls": tool_calls_used}
