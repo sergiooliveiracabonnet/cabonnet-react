@@ -102,9 +102,10 @@ export default function JustificativaPage() {
       .map(([date, count]) => ({ date, count, isPico: picoSet.has(date), zScore: picoMap.get(date) }))
   }, [rows, data.picosDia])
 
-  const [iaResult,  setIaResult]  = useState<JustificativaIA | null>(null)
-  const [iaLoading, setIaLoading] = useState(false)
-  const [iaError,   setIaError]   = useState('')
+  const [iaResult,      setIaResult]      = useState<JustificativaIA | null>(null)
+  const [iaLoading,     setIaLoading]     = useState(false)
+  const [iaError,       setIaError]       = useState('')
+  const [contextoReal,  setContextoReal]  = useState('')
 
   const analisar = useCallback(async () => {
     setIaLoading(true)
@@ -119,6 +120,7 @@ export default function JustificativaPage() {
           mediaAberturasDia: data.mediaAberturas,
           totalRede:         data.totalRede,
         },
+        contexto_real: contextoReal.trim() || undefined,
       }
       const res = await ai.justificativaBacklog(payload) as JustificativaIA
       setIaResult(res)
@@ -127,7 +129,7 @@ export default function JustificativaPage() {
     } finally {
       setIaLoading(false)
     }
-  }, [data])
+  }, [data, contextoReal])
 
   if (isLoading) {
     return (
@@ -172,9 +174,31 @@ export default function JustificativaPage() {
                        transition-all disabled:opacity-50
                        border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20">
             <Sparkles size={13} className={iaLoading ? 'animate-pulse' : ''} />
-            {iaLoading ? 'Gerando justificativa…' : iaResult ? 'Regerar com IA' : 'Gerar Justificativa (IA)'}
+            {iaLoading ? 'Gerando justificativa…' : iaResult ? 'Regerar com IA' : contextoReal.trim() ? 'Gerar com meu Contexto (IA)' : 'Gerar Justificativa (IA)'}
           </button>
         </div>
+      </div>
+
+      {/* Campo de contexto real */}
+      <div className="rounded-2xl border border-white/[0.08] bg-card p-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="w-[3px] h-4 rounded-full bg-amber-500 flex-shrink-0" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
+            O que realmente aconteceu? <span className="font-normal normal-case tracking-normal text-muted/60">(opcional)</span>
+          </span>
+        </div>
+        <textarea
+          value={contextoReal}
+          onChange={e => setContextoReal(e.target.value)}
+          placeholder="Ex: As OS foram abertas para troca de roteadores Zyxel contaminados com firmware defeituoso, afetando 37 clientes do Jardim Ana Rosa…"
+          rows={3}
+          className="w-full rounded-xl border border-white/[0.08] bg-surface/30 px-3 py-2.5
+                     text-[12px] text-text placeholder:text-muted/40 resize-none
+                     focus:outline-none focus:border-violet-500/40 transition-colors"
+        />
+        <p className="text-[11px] text-muted/60">
+          Informe aqui a causa real conhecida. A IA incorpora esse contexto na justificativa e não precisa adivinhar.
+        </p>
       </div>
 
       {/* KPIs */}

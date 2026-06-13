@@ -1343,12 +1343,13 @@ def _ai_justificativa_backlog(payload):
     if not ANTHROPIC_API_KEY:
         return None
 
-    picos   = payload.get("picosDia",       [])
-    bairros = payload.get("bairrosAnomalia", [])
-    equipes = payload.get("equipesAnomalia", [])
-    clusters = payload.get("clustersAtivos", [])
-    os_rede  = payload.get("osRede",         [])
-    ctx      = payload.get("contexto",       {})
+    picos        = payload.get("picosDia",       [])
+    bairros      = payload.get("bairrosAnomalia", [])
+    equipes      = payload.get("equipesAnomalia", [])
+    clusters     = payload.get("clustersAtivos", [])
+    os_rede      = payload.get("osRede",         [])
+    ctx          = payload.get("contexto",       {})
+    contexto_real = (payload.get("contexto_real") or "").strip()
 
     picos_txt = "\n".join(
         f"  - {p['date']}: {p['count']} OS abertas (Z={p['zScore']}σ, desvio anômalo)"
@@ -1375,6 +1376,11 @@ def _ai_justificativa_backlog(payload):
     media_dia    = ctx.get('mediaAberturasDia', ctx.get('aging_med', 0))
     total_rede   = ctx.get('totalRede', 0)
 
+    contexto_real_bloco = (
+        f"\n=== CAUSA REAL INFORMADA PELO OPERADOR ===\n  {contexto_real}\n"
+        "  ⚠️ Use essa informação como verdade absoluta da causa. Não contrarie nem relativize.\n"
+    ) if contexto_real else ""
+
     prompt = (
         "Você é um gerente sênior de operações de ISP regional. "
         "Gere uma justificativa técnica e profissional para apresentar à diretoria, "
@@ -1384,17 +1390,21 @@ def _ai_justificativa_backlog(payload):
         f"=== PICOS DE ABERTURA ANÔMALA (Z-score ≥ 2σ) ===\n{picos_txt}\n\n"
         f"=== CLUSTERS DE BAIRRO COM CONCENTRAÇÃO DE OS ===\n{clusters_txt}\n\n"
         f"=== OS DE REDE/ROMPIMENTO NO PERÍODO ===\n{rede_txt}\n\n"
-        f"=== BAIRROS COM SLA ANÔMALO ===\n{bairros_txt}\n\n"
+        f"=== BAIRROS COM SLA ANÔMALO ===\n{bairros_txt}\n"
+        f"{contexto_real_bloco}\n"
         "INSTRUÇÕES:\n"
-        "1. Identifique a causa principal do atraso/backlog com base nos dados (pico de demanda, "
-        "rompimento, concentração geográfica, sazonalidade).\n"
-        "2. Quantifique o impacto com dados reais do relatório.\n"
-        "3. Proponha 3 ações concretas de resposta imediata para a gestão.\n"
+        + ("1. A causa real já foi informada pelo operador (veja bloco acima). "
+           "Use-a como base da justificativa, complementada pelos dados quantitativos.\n"
+           if contexto_real else
+           "1. Identifique a causa principal do atraso/backlog com base nos dados (pico de demanda, "
+           "rompimento, concentração geográfica, sazonalidade).\n")
+        + "2. Quantifique o impacto com dados reais do relatório.\n"
+        "3. Proponha 3 ações concretas de resposta/prevenção para a gestão.\n"
         "Seja objetivo, técnico e use os dados fornecidos.\n\n"
         "Responda SOMENTE com JSON válido, sem markdown:\n"
         '{"causa_principal": "1-2 frases: causa raiz do backlog/atraso com dados", '
         '"impacto": "1 frase: dimensionamento do impacto com números", '
-        '"contexto": "1 frase: o que motivou — pico de demanda, rompimento ou concentração", '
+        '"contexto": "1 frase: o que motivou — pico de demanda, rompimento, falha de equipamento ou concentração", '
         '"acoes": ["Ação imediata 1 (quem, o quê)", "Ação 2", "Ação 3"], '
         '"recomendacao_gestao": "1 frase: recomendação estratégica para a diretoria"}'
     )
