@@ -376,9 +376,9 @@ describe('buildDashboard', () => {
     makeOS({ numos: 'D3', descsituacao: 'Concluída',   datacadastro: daysAgo(1), nomedaequipe: 'MANUTENCAO M01', tiposervico: 'MANUTENCAO' }),
   ])
 
-  it('retorna 8 KPIs', () => {
+  it('retorna 9 KPIs', () => {
     const { kpis } = buildDashboard(rows)
-    expect(kpis).toHaveLength(8)
+    expect(kpis).toHaveLength(9)
   })
 
   it('total conta apenas Pendente + Atendimento', () => {

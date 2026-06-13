@@ -390,7 +390,7 @@ function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string }) {
   const [pagina,     setPagina]      = useState(1)
   const PAGE = 30
 
-  const pares = data?.pares ?? []
+  const pares = useMemo(() => data?.pares ?? [], [data])
   const totalPares = data?.n ?? 0
 
   const analisar = useCallback(async () => {
