@@ -105,6 +105,10 @@ _ai_produtiv_cache     = {"hash": "", "ts": 0.0}
 _ai_produtiv_lock      = threading.Lock()
 _ai_juniper_cache      = {"hash": "", "ts": 0.0}
 _ai_juniper_lock       = threading.Lock()
+_ai_revisitas_causa_cache = {"hash": "", "ts": 0.0}
+_ai_revisitas_causa_lock  = threading.Lock()
+_ai_justificativa_cache   = {"hash": "", "ts": 0.0}
+_ai_justificativa_lock    = threading.Lock()
 
 # ── PIL fontes pré-carregadas ─────────────────────────────────────────────────
 _F = {}

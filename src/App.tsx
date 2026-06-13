@@ -7,7 +7,7 @@ import { api } from './lib/api'
 import {
   ERPOrdensPage, ERPEquipesPage, ERPRelatoriosPage,
   ERPAlertasPage,
-  ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage,
+  ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage, ERPJustificativaPage,
   DashboardPage, OrdensPage, CapacidadePage,
   GraficosPage, CidadesPage, CampoPage,
   FornecedorPage, JuniperPage, NotFoundPage, NocPage, FechamentoPage,
@@ -61,8 +61,9 @@ export default function App() {
           <Route path="relatorios"    element={<ERPRelatoriosPage />}   />
           <Route path="alertas"       element={<ERPAlertasPage />}      />
           <Route path="produtividade" element={<ERPProdutividadePage />}/>
-          <Route path="qualidade"     element={<ERPQualidadePage />}    />
-          <Route path="planner"       element={<ERPPlannerPage />}      />
+          <Route path="qualidade"      element={<ERPQualidadePage />}       />
+          <Route path="justificativa" element={<ERPJustificativaPage />}  />
+          <Route path="planner"       element={<ERPPlannerPage />}         />
         </Route>
 
         <Route index             element={<DashboardPage />}  />

@@ -487,6 +487,205 @@ WHERE h.d_data >= '2026-01-01'
 ORDER BY h.d_data ASC
 """.format(ate="','".join(_ATE_ATENDENTES))
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  SQL — REVISITAS COM OBSERVAÇÕES (para análise de causa raiz por IA)
+#  Parâmetros: {inicio} e {fim} — datas ISO (ex: '2026-05-01', '2026-06-01')
+# ══════════════════════════════════════════════════════════════════════════════
+SQL_REVISITAS_COM_OBS = """
+with analitico as (
+  select
+  cart.descricao as empresa,
+  coalesce(nullif(trim(cli.nome),''), o.nomecliente, '') as nomecliente,
+  o.numos,
+  l.descricaodoserv_lanc as servico,
+  ts.descricao as tiposervico,
+  o.codigocontrato,
+  o.codigoassinante as codigocliente,
+  case t.nome
+    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
+    when 'CACAPAVA'            then 'Caçapava'
+    when 'TAUBATE'             then 'Taubaté'
+    when 'TREMEMBE'            then 'Tremembé'
+    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    else t.nome
+  end as nomedacidade,
+  o.situacao,
+  'Concluída' as descsituacao,
+  o.equipe,
+  eq.nomedaequipe,
+  eqe.nomedaequipe as equipeexecutou,
+  to_char(o.d_datacadastro,    'DD/MM/YYYY') as datacadastro,
+  to_char(o.d_dataagendamento, 'DD/MM/YYYY') as dataagendamento,
+  case when o.t_horafinal is not null
+       then to_char(o.d_dataexecucao, 'DD/MM/YYYY') || ' ' || to_char(o.t_horafinal, 'HH24:MI')
+       else to_char(o.d_dataexecucao, 'DD/MM/YYYY') end as dataexecucao,
+  case when o.t_horabaixa is not null
+       then to_char(o.d_databaixa,    'DD/MM/YYYY') || ' ' || to_char(o.t_horabaixa, 'HH24:MI')
+       else to_char(o.d_databaixa,    'DD/MM/YYYY') end as databaixa,
+  coalesce(o.observacoes, '') as observacoes,
+  coalesce(o.observacaocritica, '') as observacaocritica
+  from ordemservico o
+    join contratos ct on ct.cidade = o.cidade and ct.codempresa = o.codempresa and ct.contrato = o.codigocontrato
+    join clientes cli on cli.codigocliente = o.codigoassinante and cli.cidade = o.cidade
+  left join equipe eq  on eq.codigodaequipe  = o.equipe         and eq.codigocidade  = o.cidade
+  left join equipe eqe on eqe.codigodaequipe = o.equipeexecutou and eqe.codigocidade = o.cidade
+  left join lanceservicos l on l.codigodoserv_lanc = o.codservsolicitado
+  left join tiposervico ts on l.codigotiposervico = ts.codigo
+  left join tablocal t on o.cidade = t.codigo
+  left join carteiracidade cc on cc.codigocarteira = ct.codcarteira and cc.codigocidade = o.cidade
+  left join carteira cart on cart.codigo = cc.codigocarteira
+  where
+  o.situacao = 3
+  and o.d_dataexecucao is not null
+  and o.d_dataexecucao >= '{inicio}'
+  and o.d_dataexecucao <  '{fim}'
+  and case when t.estado is null then 'N/A' else t.estado end in ('SP')
+  and case when t.nome is null then 'N/A' else t.nome end in ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
+)
+select * from analitico a
+  where upper(coalesce(a.nomedaequipe,'')) not in (
+    'ESTOQUE','COPE - RETIRADA','ATENDIMENTO','REGUA DE COBRANCA','MIGRADO'
+  )
+  and upper(coalesce(a.servico,'')) not like '%INADIMPLENCIA%'
+  and upper(coalesce(a.servico,'')) not like '%RECONEXAO AUTOMATICA%'
+  and upper(coalesce(a.servico,'')) not like '%LIBERACAO DE CONFIANCA%'
+  and upper(coalesce(a.servico,'')) not like '%ALTERACAO DE PROGRAMACAO%'
+  and upper(coalesce(a.servico,'')) not like '%REGUA DE CONFIANCA%'
+  and upper(coalesce(a.servico,'')) not like '%RETIRADA DE EQUIPAMENTO%'
+  and upper(coalesce(a.servico,'')) not like '%CONTRATO - UPGRADE%'
+order by dataexecucao desc
+"""
+
+
+def build_pares_revisita(rows):
+    """Detecta pares de revisita a partir das OS concluídas com observações.
+    Porta a lógica de src/lib/builders/revisitas.ts para Python."""
+    from datetime import datetime
+    from collections import defaultdict
+
+    def _parse_dt(s):
+        if not s:
+            return None
+        try:
+            return datetime.strptime(s[:10], "%d/%m/%Y")
+        except Exception:
+            return None
+
+    def _classifica(row):
+        servico = (row.get("servico") or "").upper()
+        tipo    = (row.get("tiposervico") or "").upper()
+        equipe  = (row.get("nomedaequipe") or "").upper()
+        if "REDE" in equipe:
+            return "REDE"
+        if ("INSTALAC" in tipo or "INSTALAC" in servico or
+                "INSTALAÇÃO" in servico or "PRIMEIRA CONEXAO" in servico):
+            return "INSTALACAO"
+        if ("MANUTENC" in tipo or " VT " in servico or "VT-" in servico
+                or "-VT" in servico or "VT24" in servico
+                or "ASSISTENCIA" in servico or "ASSISTÊNCIA" in servico
+                or "MANUTENC" in servico or "MANUTEN" in servico):
+            return "MANUTENCAO"
+        return "OUTRO"
+
+    def _exec_month(row):
+        dt = _parse_dt(row.get("dataexecucao") or row.get("databaixa"))
+        if not dt:
+            return None
+        return dt.strftime("%Y-%m")
+
+    # Excluir equipes internas
+    filtered = [
+        r for r in rows
+        if "COPE" not in (r.get("nomedaequipe") or "").upper()
+        and "REAGEND" not in (r.get("nomedaequipe") or "").upper()
+        and _classifica(r) != "REDE"
+    ]
+
+    cm_map = defaultdict(lambda: {"inst": [], "manut": [], "serv": []})
+    for r in filtered:
+        client_key = str(r.get("codigocliente") or r.get("nomecliente") or "").strip()
+        mes = _exec_month(r)
+        if not client_key or not mes:
+            continue
+        tipo = _classifica(r)
+        key  = f"{client_key}|{mes}"
+        if tipo == "INSTALACAO":
+            cm_map[key]["inst"].append(r)
+        elif tipo == "MANUTENCAO":
+            cm_map[key]["manut"].append(r)
+        elif tipo == "OUTRO":
+            cm_map[key]["serv"].append(r)
+
+    pares = []
+
+    for entry in cm_map.values():
+        inst_rows  = sorted(entry["inst"],  key=lambda r: r.get("dataexecucao") or "")
+        manut_rows = sorted(entry["manut"], key=lambda r: r.get("dataexecucao") or "")
+
+        if not manut_rows:
+            continue
+
+        def _obs(r):
+            return (r.get("observacoes") or "").strip() or (r.get("observacaocritica") or "").strip()
+
+        def _eq(r):
+            return r.get("equipeexecutou") or r.get("nomedaequipe") or ""
+
+        # Pares inst → manut
+        if inst_rows:
+            orig    = inst_rows[0]
+            dt_orig = _parse_dt(orig.get("dataexecucao") or orig.get("databaixa"))
+            for rev in manut_rows:
+                dt_rev = _parse_dt(rev.get("dataexecucao") or rev.get("databaixa"))
+                dias   = max(0, (dt_rev - dt_orig).days) if dt_orig and dt_rev else 0
+                pares.append({
+                    "tipo":          "inst",
+                    "nomecliente":   rev.get("nomecliente") or orig.get("nomecliente") or "",
+                    "codigocliente": str(rev.get("codigocliente") or ""),
+                    "nomedacidade":  rev.get("nomedacidade") or "",
+                    "equipe_orig":   _eq(orig),
+                    "equipe_rev":    _eq(rev),
+                    "numos_orig":    str(orig.get("numos") or ""),
+                    "servico_orig":  orig.get("servico") or "",
+                    "obs_orig":      _obs(orig),
+                    "data_orig":     orig.get("dataexecucao") or "",
+                    "numos_rev":     str(rev.get("numos") or ""),
+                    "servico_rev":   rev.get("servico") or "",
+                    "obs_rev":       _obs(rev),
+                    "data_rev":      rev.get("dataexecucao") or "",
+                    "dias_entre":    dias,
+                })
+
+        # Pares manut → manut
+        if len(manut_rows) >= 2:
+            for i in range(1, len(manut_rows)):
+                orig   = manut_rows[i - 1]
+                rev    = manut_rows[i]
+                dt_orig = _parse_dt(orig.get("dataexecucao") or orig.get("databaixa"))
+                dt_rev  = _parse_dt(rev.get("dataexecucao") or rev.get("databaixa"))
+                dias    = max(0, (dt_rev - dt_orig).days) if dt_orig and dt_rev else 0
+                pares.append({
+                    "tipo":          "manut",
+                    "nomecliente":   rev.get("nomecliente") or orig.get("nomecliente") or "",
+                    "codigocliente": str(rev.get("codigocliente") or ""),
+                    "nomedacidade":  rev.get("nomedacidade") or "",
+                    "equipe_orig":   _eq(orig),
+                    "equipe_rev":    _eq(rev),
+                    "numos_orig":    str(orig.get("numos") or ""),
+                    "servico_orig":  orig.get("servico") or "",
+                    "obs_orig":      _obs(orig),
+                    "data_orig":     orig.get("dataexecucao") or "",
+                    "numos_rev":     str(rev.get("numos") or ""),
+                    "servico_rev":   rev.get("servico") or "",
+                    "obs_rev":       _obs(rev),
+                    "data_rev":      rev.get("dataexecucao") or "",
+                    "dias_entre":    dias,
+                })
+
+    pares.sort(key=lambda p: p.get("data_rev") or "", reverse=True)
+    return {"pares": pares[:200], "n": len(pares)}
+
+
 SQL_ERP_OS_TOTAIS = """
 SELECT
   COUNT(DISTINCT o.numos) FILTER (WHERE o.situacao IN ('P','A'))                                        AS pendentes,

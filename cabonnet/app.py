@@ -69,8 +69,10 @@ from cabonnet.grafana import (
     SQL_OCORRENCIAS_TEMPLATE,
     SQL_PENDENTE,
     SQL_REVISITAS,
+    SQL_REVISITAS_COM_OBS,
     build_atendimento_json,
     build_backlog_json,
+    build_pares_revisita,
     frames_to_csv,
     frames_to_dict_list,
     grafana_post,
@@ -629,6 +631,38 @@ async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require
         raise HTTPException(502, str(ex))
 
 
+_REVISITAS_DETALHE_CACHE_TTL = 5 * 60  # 5 minutos
+
+
+@router.get("/revisitas-detalhe")
+async def revisitas_detalhe(inicio: str = "", fim: str = "", _role: str = Depends(_require_auth)):
+    import re
+    _date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    today      = date.today()
+    first_this = today.replace(day=1)
+    fim_default = (today.replace(day=1).__class__(today.year, today.month + 1, 1)
+                   if today.month < 12
+                   else today.replace(year=today.year + 1, month=1, day=1)).isoformat()
+
+    if inicio and _date_re.match(inicio) and fim and _date_re.match(fim):
+        inicio_use = inicio
+        fim_use    = fim
+    else:
+        from datetime import timedelta
+        inicio_use = first_this.isoformat()
+        fim_use    = (today + timedelta(days=1)).isoformat()
+
+    try:
+        rows   = frames_to_dict_list(grafana_post(SQL_REVISITAS_COM_OBS.format(inicio=inicio_use, fim=fim_use)))
+        result = build_pares_revisita(rows)
+        result["periodo"] = inicio_use
+        result["fim"]     = fim_use
+        return result
+    except Exception as ex:
+        log.exception("Erro /revisitas-detalhe")
+        raise HTTPException(502, str(ex))
+
+
 @router.get("/atendimento")
 async def atendimento():
     try:
@@ -805,6 +839,30 @@ async def juniper_historico_post(request: Request):
 
 
 # ── AI (Claude) ───────────────────────────────────────────────────────────────
+
+@router.post("/ai/revisitas-causa")
+async def ai_revisitas_causa(request: Request):
+    from cabonnet.ai import _ai_revisitas_causa
+    body   = await request.json()
+    result = _ai_revisitas_causa(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg  = "ANTHROPIC_API_KEY não configurada no .env" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
+@router.post("/ai/justificativa-backlog")
+async def ai_justificativa_backlog(request: Request):
+    from cabonnet.ai import _ai_justificativa_backlog
+    body   = await request.json()
+    result = _ai_justificativa_backlog(body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg  = "ANTHROPIC_API_KEY não configurada no .env" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
 
 @router.post("/ai/revisitas")
 async def ai_revisitas(request: Request):

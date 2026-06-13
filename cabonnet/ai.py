@@ -1248,6 +1248,187 @@ def _ai_produtividade_analise(payload):
         return None
 
 
+def _ai_revisitas_causa(payload):
+    """Classifica causa raiz de pares de revisita e gera distribuição real de causas."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_revisitas_causa_lock:
+        c = state._ai_revisitas_causa_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: v for k, v in c.items() if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    pares = payload.get("pares", [])[:25]
+    if not pares:
+        return None
+
+    pares_txt = "\n".join(
+        f"PAR {i+1} [{p.get('tipo','?').upper()}] {p.get('nomecliente','')} ({p.get('nomedacidade','')}) — "
+        f"1ª OS #{p.get('numos_orig','')} ({p.get('servico_orig','')[:60]}): "
+        f"obs='{(p.get('obs_orig') or '')[:150]}' | "
+        f"Revisita #{p.get('numos_rev','')} ({p.get('servico_rev','')[:60]}, {p.get('dias_entre',0)}d depois): "
+        f"obs='{(p.get('obs_rev') or '')[:150]}'"
+        for i, p in enumerate(pares)
+    )
+
+    prompt = (
+        "Você é um especialista em qualidade de campo de ISP regional com 15 anos de experiência. "
+        "Analise os pares de revisita (1ª OS + OS de retorno) e classifique a causa raiz de cada par.\n\n"
+        f"=== PARES DE REVISITA ({len(pares)}) ===\n{pares_txt}\n\n"
+        "CATEGORIAS DE CAUSA (use exatamente um desses rótulos):\n"
+        "- Conectorização/Sinal: problema de sinal, conector solto, CTO, perda óptica\n"
+        "- Equipamento: ONU/ONT/roteador com defeito, incompatível ou sem atualização\n"
+        "- Configuração: configuração incorreta, VLAN, PPPoE, senha, perfil de velocidade\n"
+        "- Rede/Infraestrutura: quebra de fibra, CTO saturada, splitter, problema externo\n"
+        "- Execução Incompleta: serviço feito pela metade, cliente ausente, retorno prometido\n"
+        "- Cliente/Uso: equipamento do cliente com defeito, uso incorreto, solicitação recorrente\n"
+        "- Sem Informação: observações vazias ou insuficientes para diagnóstico\n\n"
+        "Para cada par, forneça: causa, feito_primeira (o que foi feito na 1ª OS em 1 frase curta), "
+        "o_que_faltou (o que não foi resolvido e motivou a revisita, 1 frase curta).\n"
+        "Seja direto e específico. Se as observações forem vazias, classifique como 'Sem Informação'.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"analises": [{"par": 1, "numos_orig": "1234567", "numos_rev": "7654321", '
+        '"causa": "Conectorização/Sinal", '
+        '"feito_primeira": "frase do que foi feito na 1ª OS", '
+        '"o_que_faltou": "frase do que não foi resolvido"}], '
+        '"causas_distribuicao": [{"causa": "Conectorização/Sinal", "count": 5, "pct": 40}], '
+        '"narrativa": "1-2 frases: diagnóstico geral das causas com dado numérico"}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 3000,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=60, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] revisitas-causa %s: %s", resp.status_code, resp.text[:200])
+            return None
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "analises":            result.get("analises", []),
+            "causas_distribuicao": result.get("causas_distribuicao", []),
+            "narrativa":           result.get("narrativa", ""),
+        }
+        with state._ai_revisitas_causa_lock:
+            state._ai_revisitas_causa_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] revisitas-causa gerado — %d pares, %d causas", len(out["analises"]), len(out["causas_distribuicao"]))
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] revisitas-causa erro: %s", str(ex)[:200])
+        return None
+
+
+def _ai_justificativa_backlog(payload):
+    """Gera narrativa de justificativa de atrasos/backlog para apresentar à gestão."""
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_justificativa_lock:
+        c = state._ai_justificativa_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: v for k, v in c.items() if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    picos   = payload.get("picosDia",       [])
+    bairros = payload.get("bairrosAnomalia", [])
+    equipes = payload.get("equipesAnomalia", [])
+    clusters = payload.get("clustersAtivos", [])
+    os_rede  = payload.get("osRede",         [])
+    ctx      = payload.get("contexto",       {})
+
+    picos_txt = "\n".join(
+        f"  - {p['date']}: {p['count']} OS abertas (Z={p['zScore']}σ, desvio anômalo)"
+        for p in picos[:5]
+    ) or "  nenhum pico anômalo"
+
+    clusters_txt = "\n".join(
+        f"  - {c['bairro']} ({c['cidade']}): {c['count']} OS ativas, aging médio {c['aging']}d"
+        for c in clusters[:5]
+    ) or "  nenhum cluster"
+
+    rede_txt = "\n".join(
+        f"  - {r['dia']}: {r['count']} OS REDE ({r['cidade']})"
+        for r in os_rede[-7:]
+    ) or "  nenhuma OS de rompimento no período"
+
+    bairros_txt = "\n".join(
+        f"  - {b['bairro']}: {b['ratePct']}% SLA excedido ({b['slaExc']}/{b['total']} OS, Z={b['zScore']}σ)"
+        for b in bairros[:3]
+    ) or "  nenhum"
+
+    prompt = (
+        "Você é um gerente sênior de operações de ISP regional. "
+        "Gere uma justificativa técnica e profissional para apresentar à diretoria, "
+        "explicando causas de atrasos no atendimento e/ou excesso de OS abertas.\n\n"
+        "=== SITUAÇÃO ATUAL ===\n"
+        f"OS ativas: {ctx.get('total', 0)} | Críticas (SLA 2×): {ctx.get('criticas', 0)} | "
+        f"Aging médio: {ctx.get('aging_med', 0):.1f}d | SLA da fila: {ctx.get('sla_pct', 0)}%\n\n"
+        f"=== PICOS DE ABERTURA ANÔMALA (Z-score ≥ 2σ) ===\n{picos_txt}\n\n"
+        f"=== CLUSTERS DE BAIRRO COM CONCENTRAÇÃO DE OS ===\n{clusters_txt}\n\n"
+        f"=== OS DE REDE/ROMPIMENTO NO PERÍODO ===\n{rede_txt}\n\n"
+        f"=== BAIRROS COM SLA ANÔMALO ===\n{bairros_txt}\n\n"
+        "INSTRUÇÕES:\n"
+        "1. Identifique a causa principal do atraso/backlog com base nos dados (pico de demanda, "
+        "rompimento, concentração geográfica, sazonalidade).\n"
+        "2. Quantifique o impacto com dados reais do relatório.\n"
+        "3. Proponha 3 ações concretas de resposta imediata para a gestão.\n"
+        "Seja objetivo, técnico e use os dados fornecidos.\n\n"
+        "Responda SOMENTE com JSON válido, sem markdown:\n"
+        '{"causa_principal": "1-2 frases: causa raiz do backlog/atraso com dados", '
+        '"impacto": "1 frase: dimensionamento do impacto com números", '
+        '"contexto": "1 frase: o que motivou — pico de demanda, rompimento ou concentração", '
+        '"acoes": ["Ação imediata 1 (quem, o quê)", "Ação 2", "Ação 3"], '
+        '"recomendacao_gestao": "1 frase: recomendação estratégica para a diretoria"}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 700,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=25, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] justificativa-backlog %s: %s", resp.status_code, resp.text[:200])
+            return None
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        out = {
+            "causa_principal":     result.get("causa_principal", ""),
+            "impacto":             result.get("impacto", ""),
+            "contexto":            result.get("contexto", ""),
+            "acoes":               result.get("acoes", [])[:3],
+            "recomendacao_gestao": result.get("recomendacao_gestao", ""),
+        }
+        with state._ai_justificativa_lock:
+            state._ai_justificativa_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] justificativa-backlog gerado")
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] justificativa-backlog erro: %s", str(ex)[:200])
+        return None
+
+
 def _ai_juniper_correlacao(payload):
     """Correlaciona clientes inativos no Juniper com OS abertas, detectando quedas sem OS."""
     data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()

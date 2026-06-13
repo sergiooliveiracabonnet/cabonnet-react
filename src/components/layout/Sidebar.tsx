@@ -50,8 +50,9 @@ const groups: NavGroup[] = [
       { to: '/erp/relatorios',    label: 'Relatórios',     icon: BarChart2   },
       { to: '/erp/alertas',       label: 'Alertas',        icon: Bell        },
       { to: '/erp/produtividade', label: 'Produtividade',  icon: TrendingUp  },
-      { to: '/erp/qualidade',     label: 'Qualidade',      icon: Award       },
-      { to: '/erp/planner',       label: 'Planner',        icon: CalendarDays},
+      { to: '/erp/qualidade',      label: 'Qualidade',      icon: Award       },
+      { to: '/erp/justificativa',  label: 'Justificativa',  icon: FileText    },
+      { to: '/erp/planner',        label: 'Planner',        icon: CalendarDays},
     ],
   },
   {
