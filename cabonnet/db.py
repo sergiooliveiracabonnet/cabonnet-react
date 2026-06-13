@@ -59,6 +59,16 @@ def _db_init():
             )
         """)
         con.execute("CREATE INDEX IF NOT EXISTS idx_jus_pico ON justificativas(data_pico)")
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS pico_alertas (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                data      TEXT    NOT NULL UNIQUE,
+                count_os  INTEGER NOT NULL,
+                zscore    REAL    NOT NULL,
+                status    TEXT    NOT NULL DEFAULT 'pending',
+                criado_em TEXT    NOT NULL
+            )
+        """)
         con.commit()
         con.close()
 
@@ -155,6 +165,52 @@ def _db_delete_justificativa(jid):
         return affected > 0
     except Exception as ex:
         log_db.warning("Falha ao deletar justificativa %s: %s", jid, ex)
+        return False
+
+
+def _db_save_pico_alerta(data_str, count_os, zscore):
+    """Insere alerta de pico (UNIQUE por data — ignora se já existir)."""
+    criado_em = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            con.execute(
+                "INSERT OR IGNORE INTO pico_alertas(data, count_os, zscore, status, criado_em) VALUES(?,?,?,?,?)",
+                (data_str, count_os, round(zscore, 2), "pending", criado_em)
+            )
+            con.commit()
+            con.close()
+        log_db.info("[PicoAlerta] Alerta salvo — %s | %d OS | Z=%.2f", data_str, count_os, zscore)
+    except Exception as ex:
+        log_db.warning("Falha ao salvar pico_alerta: %s", ex)
+
+
+def _db_list_pico_alertas_pending():
+    """Lista alertas com status='pending'."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            rows = con.execute(
+                "SELECT id, data, count_os, zscore, status, criado_em FROM pico_alertas WHERE status='pending' ORDER BY data DESC"
+            ).fetchall()
+            con.close()
+        return [{"id": r[0], "data": r[1], "count_os": r[2], "zscore": r[3], "status": r[4], "criado_em": r[5]} for r in rows]
+    except Exception as ex:
+        log_db.warning("Falha ao listar pico_alertas: %s", ex)
+        return []
+
+
+def _db_update_pico_alerta_status(alerta_id, status):
+    """Atualiza status de um alerta (dismissed | justified)."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            con.execute("UPDATE pico_alertas SET status=? WHERE id=?", (status, alerta_id))
+            con.commit()
+            con.close()
+        return True
+    except Exception as ex:
+        log_db.warning("Falha ao atualizar pico_alerta %s: %s", alerta_id, ex)
         return False
 
 

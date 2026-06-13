@@ -890,6 +890,26 @@ async def delete_justificativa(jid: int, _role: str = Depends(_require_auth)):
     return {"ok": True}
 
 
+@router.get("/api/pico-alertas")
+async def list_pico_alertas(_role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_list_pico_alertas_pending
+    return {"ok": True, "items": _db_list_pico_alertas_pending()}
+
+
+@router.post("/api/pico-alertas/{alerta_id}/dismiss")
+async def dismiss_pico_alerta(alerta_id: int, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_update_pico_alerta_status
+    _db_update_pico_alerta_status(alerta_id, "dismissed")
+    return {"ok": True}
+
+
+@router.post("/api/pico-alertas/{alerta_id}/justified")
+async def justified_pico_alerta(alerta_id: int, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_update_pico_alerta_status
+    _db_update_pico_alerta_status(alerta_id, "justified")
+    return {"ok": True}
+
+
 @router.post("/ai/justificativa-backlog")
 async def ai_justificativa_backlog(request: Request):
     from cabonnet.ai import _ai_justificativa_backlog

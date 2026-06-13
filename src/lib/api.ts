@@ -58,6 +58,12 @@ export const api = {
   },
 }
 
+export const picoAlertas = {
+  list:      ()          => request<{ ok: boolean; items: unknown[] }>('/api/pico-alertas'),
+  dismiss:   (id: number) => request(`/api/pico-alertas/${id}/dismiss`,   { method: 'POST', body: '{}' }),
+  justified: (id: number) => request(`/api/pico-alertas/${id}/justified`, { method: 'POST', body: '{}' }),
+}
+
 export const justificativas = {
   list:   (limit = 100)   => request<{ ok: boolean; items: unknown[] }>(`/api/justificativas?limit=${limit}`),
   save:   (body: unknown) => request<{ ok: boolean; id: number }>('/api/justificativas', { method: 'POST', body: JSON.stringify(body) }),

@@ -8,6 +8,7 @@ import { useUIStore } from '../../store/uiStore'
 import { OSDataProvider } from '../../contexts/OSDataContext'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useFilterURL } from '../../hooks/useFilterURL'
+import { PicoAlertaModal } from '../global/PicoAlertaModal'
 
 function FilterURLSync() {
   useFilterURL()
@@ -71,6 +72,7 @@ export function AppLayout() {
     <OSDataProvider>
       <FilterURLSync />
       <BuilderErrorBanner />
+      <PicoAlertaModal />
       <div className="min-h-screen bg-bg text-text">
         <Sidebar />
         <Navbar />

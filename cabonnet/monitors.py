@@ -34,6 +34,76 @@ log_sla = logging.getLogger("CaboNetServer.SLA")
 log_db  = logging.getLogger("CaboNetServer.DB")
 
 
+# ─── Detecção de pico diário (17h) ───────────────────────────────────────────
+
+def _check_pico_diario():
+    """Conta OS abertas hoje, compara com média móvel 30d e salva alerta se Z ≥ 2σ."""
+    import math
+    from cabonnet.utils import _parse_csv_rows
+    from cabonnet.db import _db_save_pico_alerta
+
+    try:
+        with state._query_cache_lock:
+            csv_pend = state._query_cache.get("pendente", "")
+            csv_agen = state._query_cache.get("agendado", "")
+            csv_fut  = state._query_cache.get("futuro",   "")
+
+        all_rows = (
+            _parse_csv_rows(csv_pend) +
+            _parse_csv_rows(csv_agen) +
+            _parse_csv_rows(csv_fut)
+        )
+
+        if not all_rows:
+            log.info("[PicoCheck] Cache vazio, análise ignorada")
+            return
+
+        # Contar OS por dia de abertura (datacadastro)
+        dia_cnt: dict[str, int] = {}
+        for r in all_rows:
+            dc = (r.get("datacadastro") or "").split(" ")[0]
+            if dc and len(dc) == 10:
+                dia_cnt[dc] = dia_cnt.get(dc, 0) + 1
+
+        if len(dia_cnt) < 5:
+            log.info("[PicoCheck] Dados insuficientes para calcular pico (%d dias)", len(dia_cnt))
+            return
+
+        hoje_str = date.today().strftime("%Y-%m-%d")
+        count_hoje = dia_cnt.get(hoje_str, 0)
+
+        if count_hoje == 0:
+            log.info("[PicoCheck] Sem OS abertas hoje, análise ignorada")
+            return
+
+        # Média e desvio padrão (exclui hoje do baseline)
+        baseline = [v for k, v in dia_cnt.items() if k != hoje_str]
+        if len(baseline) < 3:
+            log.info("[PicoCheck] Baseline insuficiente (%d dias)", len(baseline))
+            return
+
+        media = sum(baseline) / len(baseline)
+        variancia = sum((x - media) ** 2 for x in baseline) / len(baseline)
+        desvio = math.sqrt(variancia) if variancia > 0 else 0
+
+        if desvio == 0:
+            log.info("[PicoCheck] Desvio padrão zero, análise ignorada")
+            return
+
+        zscore = (count_hoje - media) / desvio
+        log.info("[PicoCheck] %s: %d OS | média=%.1f | σ=%.1f | Z=%.2f",
+                 hoje_str, count_hoje, media, desvio, zscore)
+
+        if zscore >= 2.0:
+            _db_save_pico_alerta(hoje_str, count_hoje, zscore)
+            log.info("[PicoCheck] ⚠️ Pico anômalo detectado — alerta salvo")
+        else:
+            log.info("[PicoCheck] Volume normal, sem alerta")
+
+    except Exception as ex:
+        log.warning("[PicoCheck] Erro: %s", str(ex)[:200])
+
+
 def _sla_monitor_loop():
     log.info("[SLAMonitor] Iniciado")
     while True:
@@ -331,6 +401,7 @@ def _resumo_scheduler_loop():
         chave_alerta_15h   = f"{agora.date()}_alerta15h"
         chave_ritmo_14h    = f"{agora.date()}_ritmo14h"
         chave_briefing_7h  = f"{agora.date()}_briefing7h"
+        chave_pico_17h     = f"{agora.date()}_pico17h"
 
         if agora.hour == 7 and agora.minute < 2 and chave_briefing_7h not in enviados:
             enviados.add(chave_briefing_7h)
@@ -465,6 +536,10 @@ def _resumo_scheduler_loop():
                     except Exception as ex:
                         log.warning("[Scheduler] Erro alerta 15h: %s", str(ex)[:120])
                 threading.Thread(target=_alerta_equipes_15h, daemon=True).start()
+
+        if agora.hour == 17 and agora.minute < 2 and chave_pico_17h not in enviados:
+            enviados.add(chave_pico_17h)
+            threading.Thread(target=_check_pico_diario, daemon=True).start()
 
         if agora.hour == 14 and agora.minute < 2 and chave_ritmo_14h not in enviados:
             enviados.add(chave_ritmo_14h)
