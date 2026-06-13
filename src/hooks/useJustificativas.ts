@@ -21,12 +21,15 @@ const QK = ['justificativas']
 
 export function useJustificativas() {
   return useQuery<JustificativaRecord[]>({
-    queryKey:  QK,
-    queryFn:   async () => {
+    queryKey:        QK,
+    queryFn:         async () => {
       const res = await justificativas.list()
       return res.items as JustificativaRecord[]
     },
-    staleTime: 60_000,
+    staleTime:       30_000,
+    retry:           1,
+    refetchOnMount:  true,
+    refetchOnWindowFocus: false,
   })
 }
 

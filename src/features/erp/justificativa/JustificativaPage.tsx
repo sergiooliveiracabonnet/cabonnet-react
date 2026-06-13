@@ -139,6 +139,7 @@ function PainelDia({
   const [iaLoading,  setIaLoading]  = useState(false)
   const [iaError,    setIaError]    = useState('')
   const [saving,     setSaving]     = useState(false)
+  const [saveError,  setSaveError]  = useState('')
   const [deleting,   setDeleting]   = useState(false)
   const [savedId,    setSavedId]    = useState<number | undefined>(existente?.id)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -185,6 +186,7 @@ function PainelDia({
   const salvar = useCallback(async () => {
     if (!iaResult) return
     setSaving(true)
+    setSaveError('')
     try {
       const res = await save({
         data_pico:      date,
@@ -208,6 +210,8 @@ function PainelDia({
         recomendacao: iaResult.recomendacao_gestao,
         criado_em: new Date().toLocaleString('pt-BR'),
       })
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : 'Erro ao salvar — tente novamente')
     } finally {
       setSaving(false)
     }
@@ -216,12 +220,15 @@ function PainelDia({
   const excluir = useCallback(async () => {
     if (!savedId) return
     setDeleting(true)
+    setSaveError('')
     try {
       await remove(savedId)
       onDeleted(savedId)
       setSavedId(undefined)
       setIaResult(null)
       setContextoReal('')
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : 'Erro ao excluir')
     } finally {
       setDeleting(false)
     }
@@ -324,6 +331,11 @@ function PainelDia({
 
       {iaError && (
         <p className="text-[12px] text-red-400 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2">{iaError}</p>
+      )}
+      {saveError && (
+        <p className="text-[12px] text-red-400 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2">
+          Erro ao salvar: {saveError}
+        </p>
       )}
 
       {/* Resultado IA */}
@@ -460,7 +472,7 @@ function HistoricoCard({ record, onDelete }: { record: JustificativaRecord; onDe
 
 export default function JustificativaPage() {
   const { rows, allRows, isLoading, error } = useOSDerived()
-  const { data: historico = [], refetch: refetchHistorico } = useJustificativas()
+  const { data: historico = [], refetch: refetchHistorico, error: historicoError } = useJustificativas()
 
   const data = useMemo<JustificativaData>(
     () => buildJustificativa(rows, allRows),
@@ -586,7 +598,7 @@ export default function JustificativaPage() {
           count={selectedCount}
           pico={selectedPico}
           existente={savedByDate.get(selectedDate)}
-          periodo={{ inicio: data.picosDia[0]?.date ?? '', fim: data.picosDia[data.picosDia.length - 1]?.date ?? '' }}
+          periodo={{ inicio: timelineAll[0]?.date ?? '', fim: timelineAll[timelineAll.length - 1]?.date ?? '' }}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
           onClose={() => setSelectedDate(null)}
@@ -594,6 +606,15 @@ export default function JustificativaPage() {
       )}
 
       {/* Histórico de justificativas */}
+      {historicoError && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-[12px] text-red-400 flex items-start justify-between gap-3">
+          <span>Erro ao carregar histórico: {(historicoError as Error).message}</span>
+          <button onClick={() => refetchHistorico()} className="text-red-400/70 hover:text-red-400 flex-shrink-0 underline">
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
       {historico.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
