@@ -933,7 +933,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                 <td className="px-4 py-2.5 text-text max-w-[160px] truncate">{os.nomecliente ?? '—'}</td>
                 <td className="px-4 py-2.5 text-secondary">{os.nomedacidade ?? '—'}</td>
                 <td className="px-4 py-2.5 text-secondary max-w-[140px] truncate">{shortEquipe(os.nomedaequipe) || '—'}</td>
-                <td className="px-4 py-2.5"><Badge variant={situacaoVariant(os.descsituacao)}>{os.descsituacao ?? '—'}</Badge></td>
+                <td className="px-4 py-2.5"><Badge variant={situacaoVariant(os._situacaoEfetiva ?? os.descsituacao)}>{os._situacaoEfetiva ?? os.descsituacao ?? '—'}</Badge></td>
                 <td className="px-4 py-2.5">{os._aging != null ? <Badge variant={agVar}>{aging}d</Badge> : <span className="text-muted">—</span>}</td>
                 <td className="px-4 py-2.5 font-mono text-muted">{os.dataagendamento ? os.dataagendamento.slice(0, 10) : '—'}</td>
               </tr>
