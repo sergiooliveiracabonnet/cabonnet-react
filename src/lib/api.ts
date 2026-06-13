@@ -58,6 +58,12 @@ export const api = {
   },
 }
 
+export const justificativas = {
+  list:   (limit = 100)   => request<{ ok: boolean; items: unknown[] }>(`/api/justificativas?limit=${limit}`),
+  save:   (body: unknown) => request<{ ok: boolean; id: number }>('/api/justificativas', { method: 'POST', body: JSON.stringify(body) }),
+  delete: (id: number)    => request<{ ok: boolean }>(`/api/justificativas/${id}`, { method: 'DELETE' }),
+}
+
 export const endpoints = {
   query:            '/query',
   revisitas:        '/revisitas',

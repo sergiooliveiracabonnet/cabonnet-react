@@ -852,6 +852,44 @@ async def ai_revisitas_causa(request: Request):
     return {"ok": True, **result}
 
 
+@router.get("/api/justificativas")
+async def list_justificativas(limit: int = 100, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_list_justificativas
+    return {"ok": True, "items": _db_list_justificativas(limit)}
+
+
+@router.post("/api/justificativas")
+async def save_justificativa(request: Request, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_save_justificativa
+    body = await request.json()
+    ia   = body.get("ia_result") or {}
+    new_id = _db_save_justificativa(
+        data_pico       = body.get("data_pico", ""),
+        periodo_inicio  = body.get("periodo_inicio", ""),
+        periodo_fim     = body.get("periodo_fim", ""),
+        count_os        = int(body.get("count_os", 0)),
+        zscore          = body.get("zscore"),
+        contexto_real   = body.get("contexto_real", ""),
+        causa_principal = ia.get("causa_principal", ""),
+        impacto         = ia.get("impacto", ""),
+        contexto_ia     = ia.get("contexto", ""),
+        acoes           = ia.get("acoes", []),
+        recomendacao    = ia.get("recomendacao_gestao", ""),
+    )
+    if new_id is None:
+        raise HTTPException(500, "Falha ao salvar justificativa")
+    return {"ok": True, "id": new_id}
+
+
+@router.delete("/api/justificativas/{jid}")
+async def delete_justificativa(jid: int, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_delete_justificativa
+    ok = _db_delete_justificativa(jid)
+    if not ok:
+        raise HTTPException(404, "Justificativa não encontrada")
+    return {"ok": True}
+
+
 @router.post("/ai/justificativa-backlog")
 async def ai_justificativa_backlog(request: Request):
     from cabonnet.ai import _ai_justificativa_backlog
