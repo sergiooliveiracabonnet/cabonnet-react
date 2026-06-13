@@ -1356,12 +1356,14 @@ def _ai_justificativa_backlog(payload):
     ) or "  nenhum pico anômalo"
 
     clusters_txt = "\n".join(
-        f"  - {c['bairro']} ({c['cidade']}): {c['count']} OS ativas, aging médio {c['aging']}d"
+        f"  - {c['bairro']} ({c['cidade']}): {c.get('total', c.get('count', 0))} OS ativas"
+        + (f", {c['redeTotal']} OS REDE" if c.get('redeTotal') else "")
         for c in clusters[:5]
     ) or "  nenhum cluster"
 
     rede_txt = "\n".join(
-        f"  - {r['dia']}: {r['count']} OS REDE ({r['cidade']})"
+        f"  - {r.get('date', r.get('dia', '?'))}: {r['count']} OS REDE"
+        + (f" ({r['cidade']})" if r.get('cidade') else "")
         for r in os_rede[-7:]
     ) or "  nenhuma OS de rompimento no período"
 
@@ -1370,13 +1372,15 @@ def _ai_justificativa_backlog(payload):
         for b in bairros[:3]
     ) or "  nenhum"
 
+    media_dia    = ctx.get('mediaAberturasDia', ctx.get('aging_med', 0))
+    total_rede   = ctx.get('totalRede', 0)
+
     prompt = (
         "Você é um gerente sênior de operações de ISP regional. "
         "Gere uma justificativa técnica e profissional para apresentar à diretoria, "
         "explicando causas de atrasos no atendimento e/ou excesso de OS abertas.\n\n"
         "=== SITUAÇÃO ATUAL ===\n"
-        f"OS ativas: {ctx.get('total', 0)} | Críticas (SLA 2×): {ctx.get('criticas', 0)} | "
-        f"Aging médio: {ctx.get('aging_med', 0):.1f}d | SLA da fila: {ctx.get('sla_pct', 0)}%\n\n"
+        f"Média de aberturas/dia: {media_dia} | Total OS REDE no período: {total_rede}\n\n"
         f"=== PICOS DE ABERTURA ANÔMALA (Z-score ≥ 2σ) ===\n{picos_txt}\n\n"
         f"=== CLUSTERS DE BAIRRO COM CONCENTRAÇÃO DE OS ===\n{clusters_txt}\n\n"
         f"=== OS DE REDE/ROMPIMENTO NO PERÍODO ===\n{rede_txt}\n\n"
