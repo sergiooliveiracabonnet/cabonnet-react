@@ -44,6 +44,7 @@ from cabonnet.config import (
     JUN_HIST_FILE,
     LOGIN_PASS,
     MONITOR_CONFIG,
+    PG_CONFIG,
     PORT,
     SESSION_DURATION,
     TELEGRAM_BOT_TOKEN,
@@ -55,6 +56,7 @@ from cabonnet.config import (
     TELEGRAM_CHAT_WES,
 )
 from cabonnet.db import _db_init, _db_load_cache, _db_save_cache
+from cabonnet.postgres import pg_init, pg_is_available, pg_load_snapshot, pg_sync_grafana
 from cabonnet.grafana import (
     SQL_AGENDADO,
     SQL_ATENDIMENTO,
@@ -196,6 +198,12 @@ def _refresh_cache_from_grafana(origem: str = "manual") -> bool:
         for chave, csv_val in [("pendente", csv_p), ("agendado", csv_a), ("futuro", csv_f)]:
             if csv_val:
                 threading.Thread(target=_db_save_cache, args=(chave, csv_val, ts_now), daemon=True).start()
+        if pg_is_available():
+            threading.Thread(
+                target=pg_sync_grafana,
+                args=(csv_p or "", csv_a or "", csv_f or "", ts_now),
+                daemon=True,
+            ).start()
         threading.Thread(target=_dados_cache_update, args=(csv_p or "", csv_a or "", csv_f or ""), daemon=True).start()
         import csv as _csv, io as _io
         def _n(t): return sum(1 for _ in _csv.reader(_io.StringIO(t or ""))) - 1
@@ -236,6 +244,7 @@ async def lifespan(app: FastAPI):
     )
 
     _db_init()
+    pg_init(PG_CONFIG)
 
     # H4 — validação de configuração obrigatória no startup
     _missing_creds = [k for k, v in {
@@ -564,6 +573,21 @@ async def query(request: Request, date: str = "hoje", _role: str = Depends(_requ
                 "n_agendado": len(csv_a_db.splitlines()) - 1,
                 "n_futuro":   len(csv_f_db.splitlines()) - 1 if csv_f_db else 0,
                 "date": data_iso, "cached": True, "cached_source": "sqlite", "cache_age_min": cache_age}
+
+    # Fallback 3: PostgreSQL
+    if pg_is_available():
+        csv_a_pg, ts_pg = pg_load_snapshot("agendado")
+        if csv_a_pg:
+            csv_p_pg, _ = pg_load_snapshot("pendente")
+            csv_f_pg, _ = pg_load_snapshot("futuro")
+            cache_age   = int((_time_mod.time() - ts_pg) / 60) if ts_pg else -1
+            log.warning("[/query] Servindo snapshot PostgreSQL de %d min atrás", cache_age)
+            return {"pendente": csv_p_pg or "", "agendado": csv_a_pg, "futuro": csv_f_pg or "",
+                    "n_pendente": len(csv_p_pg.splitlines()) - 1 if csv_p_pg else 0,
+                    "n_agendado": len(csv_a_pg.splitlines()) - 1,
+                    "n_futuro":   len(csv_f_pg.splitlines()) - 1 if csv_f_pg else 0,
+                    "date": data_iso, "cached": True, "cached_source": "postgresql",
+                    "cache_age_min": cache_age}
 
     raise HTTPException(502, "Grafana indisponível e sem cache persistido")
 

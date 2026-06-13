@@ -159,6 +159,15 @@ ZABBIX_DS_UID  = _env("ZABBIX_DS_UID",  "") or MONITOR_DS_UID
 # ── AI ────────────────────────────────────────────────────────────────────────
 ANTHROPIC_API_KEY = _env("ANTHROPIC_API_KEY", "")
 
+# ── PostgreSQL — banco local (histórico de OS + fallback) ─────────────────────
+PG_CONFIG = {
+    "host":     _env("PG_HOST",  ""),
+    "port":     int(_env("PG_PORT", "5432")),
+    "dbname":   _env("PG_DB",    "cabonnet"),
+    "user":     _env("PG_USER",  ""),
+    "password": _env("PG_PASS",  ""),
+}
+
 # ── Lockfile ──────────────────────────────────────────────────────────────────
 LOCK_FILE = os.path.join(_PROJECT_DIR, "cabonnet_server.lock")
 
