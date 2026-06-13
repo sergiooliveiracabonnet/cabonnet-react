@@ -6,14 +6,15 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const isAtivo = (r: OSRow) => ['Pendente','Atendimento'].includes(r.descsituacao)
   const isRede  = (r: OSRow) => r._tipo === 'REDE'
 
-  let pend = 0, atend = 0, redeCount = 0, criticas = 0, semEquipe = 0
+  let pend = 0, atend = 0, redeCount = 0, criticas = 0, semEquipe = 0, reagend = 0
   let slaExcFila = 0, semAgendamento = 0
   const agingArr: number[] = []
   const agingDist = { '≤1d': 0, '2-3d': 0, '4-7d': 0, '8+d': 0 }
   const cidCritMap = new Map<string, number>()
 
   for (const r of allRows) {
-    if (isCOPE(r) || isReagend(r)) continue
+    if (isReagend(r)) { if (isAtivo(r)) reagend++; continue }
+    if (isCOPE(r)) continue
     if (!isAtivo(r)) continue
     if (isRede(r)) { redeCount++; continue }
     if (r._situacaoEfetiva === 'Pendente')    pend++
@@ -134,6 +135,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     { id: 'semEq',    title: 'Sem Equipe',        value: semEquipe,  sub: 'pendente atribuição',            accent: 'orange' },
     { id: 'pend',     title: 'Pendentes',         value: pend,       sub: 'aguardando campo',               accent: 'yellow' },
     { id: 'atend',    title: 'Em Atendimento',    value: atend,      sub: 'em campo + agend. futuro',       accent: 'cyan'   },
+    { id: 'reagend',  title: 'Reagendamentos',      value: reagend,    sub: 'aguardando rescheduling',        accent: 'orange' },
     { id: 'total',    title: 'Total OS',          value: total,      sub: 'fila ativa (pend. + atend.)',    accent: 'primary'},
     { id: 'rede',     title: 'OS Rede',           value: rede,       sub: 'fila ativa de rede',             accent: 'purple' },
     { id: 'concl',    title: 'Concluídas',        value: concl,      sub: `${taxa}% de conclusão`,          accent: 'green', trend: mkTrend(concl, prevConcl, true) },

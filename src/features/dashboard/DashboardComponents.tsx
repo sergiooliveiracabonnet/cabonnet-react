@@ -2,7 +2,7 @@ import { useState, useMemo, type ComponentType, type CSSProperties, type ReactNo
 import {
   AlertCircle, CheckCircle2, Zap, TrendingUp, TrendingDown, Minus,
   MapPin, Clock, BarChart3, Package, Wrench, Radio, Target, Sparkles,
-  ChevronDown, ChevronUp, Activity, Users,
+  ChevronDown, ChevronUp, Activity, Users, RotateCcw,
 } from 'lucide-react'
 import { useAIAnomalias } from '../../hooks/useAIAnomalias'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
@@ -45,8 +45,9 @@ export const KPI_FILTERS: Record<string, (r: OSRow) => boolean> = {
   atend:    r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Atendimento' && !isRede(r),
   criticas: r => !isCOPE(r) && !isReagend(r) && r._slaCritico  && !isRede(r),
   semEq:    r => !isCOPE(r) && !isReagend(r) && !r.nomedaequipe?.trim() && isAtivo(r) && !isRede(r),
+  reagend:  r => isReagend(r) && isAtivo(r),
 }
-export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq'])
+export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq','reagend'])
 
 type AccentConfig = { solid: string; glow: string; bg: string }
 export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
@@ -61,7 +62,7 @@ export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
 
 export const KPI_ICONS: Partial<Record<string, IconComp>> = {
   criticas: AlertCircle, semEq: Users, pend: Clock, atend: Activity,
-  total: BarChart3, rede: Radio, concl: CheckCircle2, taxa: Target,
+  reagend: RotateCcw, total: BarChart3, rede: Radio, concl: CheckCircle2, taxa: Target,
 }
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@ export interface StatsFila {
   criticas:        number
   sem_equipe:      number
   sem_agendamento: number
+  reagend:         number
   sla_pct:         number
   aging_med:       number
   aging_dist: {

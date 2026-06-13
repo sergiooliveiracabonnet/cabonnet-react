@@ -152,13 +152,15 @@ def compute_stats(csv_pendente: str, csv_agendado: str, csv_futuro: str) -> dict
 
     rows = [_enrich(r, hoje) for r in unique if _row_valido(r)]
 
-    pendente = atend = rede = criticas = sem_equipe = sem_agend = sla_exc_fila = 0
+    pendente = atend = rede = criticas = sem_equipe = sem_agend = sla_exc_fila = reagend = 0
     aging_arr: list[int] = []
     aging_dist = {"le1d": 0, "d2a3": 0, "d4a7": 0, "d8mais": 0}
     por_cidade: dict = defaultdict(lambda: {"pendente": 0, "atendimento": 0, "criticas": 0})
     por_tipo:   dict = defaultdict(lambda: {"n": 0, "sla_exc": 0})
 
     for r in rows:
+        if r["_reagend"] and r["_ativo"]:
+            reagend += 1
         if r["_cope"] or r["_reagend"]:
             continue
         if not r["_ativo"]:
@@ -216,6 +218,7 @@ def compute_stats(csv_pendente: str, csv_agendado: str, csv_futuro: str) -> dict
             "criticas":        criticas,
             "sem_equipe":      sem_equipe,
             "sem_agendamento": sem_agend,
+            "reagend":         reagend,
             "sla_pct":         sla_pct,
             "aging_med":       aging_med,
             "aging_dist":      aging_dist,

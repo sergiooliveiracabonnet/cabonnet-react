@@ -58,6 +58,7 @@ export default function DashboardPage() {
         { id: 'semEq',    title: 'Sem Equipe',     value: f.sem_equipe,      sub: 'sem atribuição',   accent: 'orange'  },
         { id: 'pend',     title: 'Pendentes',      value: f.pendente,        sub: 'aguardando',       accent: 'yellow'  },
         { id: 'atend',    title: 'Em Atendimento', value: f.atendimento,     sub: 'em campo',         accent: 'cyan'    },
+        { id: 'reagend',  title: 'Reagendamentos', value: f.reagend ?? 0,    sub: 'aguardando rescheduling', accent: 'orange' },
         { id: 'total',    title: 'Fila Total',     value: f.total,           sub: 'OS ativas',        accent: 'primary' },
         { id: 'rede',     title: 'Rede',           value: f.rede,            sub: 'OS de rede',       accent: 'green'   },
         { id: 'sla',      title: 'SLA da Fila',    value: `${f.sla_pct}%`,  sub: 'dentro do prazo',  accent: slaAccent },
@@ -67,8 +68,8 @@ export default function DashboardPage() {
         <div className="space-y-4 max-w-[1600px]">
           <section>
             <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
-              {statsKpis.slice(0, 4).map((k, i) => (
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-2">
+              {statsKpis.slice(0, 5).map((k, i) => (
                 <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} />
               ))}
             </div>
@@ -76,7 +77,7 @@ export default function DashboardPage() {
           <section>
             <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
-              {statsKpis.slice(4).map((k, i) => (
+              {statsKpis.slice(5).map((k, i) => (
                 <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} />
               ))}
             </div>
@@ -87,8 +88,8 @@ export default function DashboardPage() {
     return <KPIGridSkeleton count={8} />
   }
 
-  const riskKpis = kpis.slice(0, 4)
-  const perfKpis = kpis.slice(4)
+  const riskKpis = kpis.slice(0, 5)
+  const perfKpis = kpis.slice(5)
 
   return (
     <>
@@ -113,7 +114,7 @@ export default function DashboardPage() {
         {/* ── 2. KPI BENTO — Alertas & Risco ───────────────────────────── */}
         <section>
           <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-2">
             {riskKpis.map((k, i) => (
               <BentoKPICard
                 key={k.id}
