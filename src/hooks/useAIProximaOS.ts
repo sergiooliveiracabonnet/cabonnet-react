@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 
 export type Urgencia = 'critica' | 'alta' | 'normal'
 
@@ -33,15 +32,12 @@ interface UseAIProximaOSInput {
 }
 
 export function useAIProximaOS({ fila, n = 3, enabled = false }: UseAIProximaOSInput & { enabled?: boolean }) {
-  const payload = useMemo(() => ({ fila, n }), [fila, n])
-
-  return useQuery<AIProximaOSResult>({
-    queryKey:  ['ai-proxima-os', payload],
-    queryFn:   () => ai.proximaOs(payload) as Promise<AIProximaOSResult>,
+  const payload = { fila, n }
+  return useAIQuery<AIProximaOSResult>({
+    key:       ['ai-proxima-os', payload],
+    fn:        () => ai.proximaOs(payload),
+    enabled:   enabled && fila.length >= 3,
     staleTime: 2 * 60_000,
     gcTime:    10 * 60_000,
-    retry:     false,
-    enabled:   enabled && fila.length >= 3,
-    select:    (data) => (data?.ok ? data : null) as AIProximaOSResult,
   })
 }

@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 
 interface AICapacidadeInput {
   fila:           number
@@ -28,22 +27,10 @@ export function useAICapacidade({
   por_tipo,
   enabled = false,
 }: AICapacidadeInput & { enabled?: boolean }) {
-  const payload = useMemo(
-    () => ({ fila, ritmo_dia, meta_dia, dias_previstos, equipes_ativas, por_tipo }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fila, ritmo_dia, meta_dia, dias_previstos, equipes_ativas, JSON.stringify(por_tipo)]
-  )
-
-  return useQuery({
-    queryKey:  ['ai-capacidade', payload],
-    queryFn:   () => ai.capacidade(payload),
-    staleTime: 5 * 60_000,
-    gcTime:    15 * 60_000,
-    retry:     false,
-    enabled:   enabled && fila > 0,
-    select:    (data: unknown): AICapacidadeResult | null => {
-      const d = data as { ok?: boolean } | null
-      return d?.ok ? (d as AICapacidadeResult) : null
-    },
+  const payload = { fila, ritmo_dia, meta_dia, dias_previstos, equipes_ativas, por_tipo }
+  return useAIQuery<AICapacidadeResult>({
+    key:     ['ai-capacidade', payload],
+    fn:      () => ai.capacidade(payload),
+    enabled: enabled && fila > 0,
   })
 }

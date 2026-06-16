@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 
 interface AnomaliaItem {
   zScore: number
@@ -34,26 +33,13 @@ export function useAIAnomalias({
   contexto,
   enabled         = false,
 }: AIAnomaliasInput & { enabled?: boolean } = {}) {
-  const payload = useMemo(() => ({
-    picosDia,
-    bairrosAnomalia,
-    equipesAnomalia,
-    contexto: contexto ?? {},
-  }), // eslint-disable-next-line react-hooks/exhaustive-deps
-  [
-    picosDia.length, bairrosAnomalia.length, equipesAnomalia.length,
-    contexto?.total, contexto?.sla_pct, contexto?.criticas,
-  ])
-
+  const payload = { picosDia, bairrosAnomalia, equipesAnomalia, contexto: contexto ?? {} }
   const total = picosDia.length + bairrosAnomalia.length + equipesAnomalia.length
 
-  return useQuery<AIAnomaliasData>({
-    queryKey:  ['ai-anomalias', payload],
-    queryFn:   () => ai.anomalias(payload) as Promise<AIAnomaliasData>,
-    staleTime: 5 * 60_000,
-    gcTime:    10 * 60_000,
-    retry:     false,
-    enabled:   enabled && total > 0,
-    select:    (data) => (data?.ok ? data : null) as AIAnomaliasData,
+  return useAIQuery<AIAnomaliasData>({
+    key:     ['ai-anomalias', payload],
+    fn:      () => ai.anomalias(payload),
+    enabled: enabled && total > 0,
+    gcTime:  10 * 60_000,
   })
 }

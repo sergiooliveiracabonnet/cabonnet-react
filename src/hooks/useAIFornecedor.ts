@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 
 interface FornecedorRankItem {
   nome:         string
@@ -31,22 +30,10 @@ export interface AIFornecedorResult {
 }
 
 export function useAIFornecedor({ fornecedores, enabled = false }: AIFornecedorInput & { enabled?: boolean }) {
-  const payload = useMemo(
-    () => ({ fornecedores }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(fornecedores)]
-  )
-
-  return useQuery({
-    queryKey:  ['ai-fornecedor', payload],
-    queryFn:   () => ai.fornecedorRec(payload),
-    staleTime: 5 * 60_000,
-    gcTime:    15 * 60_000,
-    retry:     false,
-    enabled:   enabled && fornecedores.length >= 2,
-    select:    (data: unknown): AIFornecedorResult | null => {
-      const d = data as { ok?: boolean } | null
-      return d?.ok ? (d as AIFornecedorResult) : null
-    },
+  const payload = { fornecedores }
+  return useAIQuery<AIFornecedorResult>({
+    key:     ['ai-fornecedor', payload],
+    fn:      () => ai.fornecedorRec(payload),
+    enabled: enabled && fornecedores.length >= 2,
   })
 }

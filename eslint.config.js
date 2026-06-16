@@ -9,6 +9,8 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores([
     'dist',
+    'coverage',
+    '.claude',
     'android',
     'servidor.js',
     'awesome-claude-code',

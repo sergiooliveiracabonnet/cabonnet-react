@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 
 export interface CidadesCluster {
   bairro:   string
@@ -30,15 +29,11 @@ interface UseAICidadesInput {
 }
 
 export function useAICidades({ pendRows, enabled = false }: UseAICidadesInput & { enabled?: boolean }) {
-  const payload = useMemo(() => ({ pendentes: pendRows }), [pendRows])
-
-  return useQuery<AICidadesResult>({
-    queryKey:  ['ai-cidades-cluster', payload],
-    queryFn:   () => ai.cidadesCluster(payload) as Promise<AICidadesResult>,
-    staleTime: 3 * 60_000,
-    gcTime:    15 * 60_000,
-    retry:     false,
+  const payload = { pendentes: pendRows }
+  return useAIQuery<AICidadesResult>({
+    key:       ['ai-cidades-cluster', payload],
+    fn:        () => ai.cidadesCluster(payload),
     enabled:   enabled && pendRows.length >= 5,
-    select:    (data) => (data?.ok ? data : null) as AICidadesResult,
+    staleTime: 3 * 60_000,
   })
 }

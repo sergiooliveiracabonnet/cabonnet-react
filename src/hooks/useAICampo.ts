@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 
 interface FornecedorItem {
   nome:     string
@@ -30,22 +29,10 @@ export interface AICampoResult {
 }
 
 export function useAICampo({ fornecedores, meta_sla, enabled = false }: AICAMPOInput & { enabled?: boolean }) {
-  const payload = useMemo(
-    () => ({ fornecedores, meta_sla }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(fornecedores), meta_sla]
-  )
-
-  return useQuery({
-    queryKey:  ['ai-campo', payload],
-    queryFn:   () => ai.campoPrevisao(payload),
-    staleTime: 5 * 60_000,
-    gcTime:    15 * 60_000,
-    retry:     false,
-    enabled:   enabled && fornecedores.length > 0,
-    select:    (data: unknown): AICampoResult | null => {
-      const d = data as { ok?: boolean } | null
-      return d?.ok ? (d as AICampoResult) : null
-    },
+  const payload = { fornecedores, meta_sla }
+  return useAIQuery<AICampoResult>({
+    key:     ['ai-campo', payload],
+    fn:      () => ai.campoPrevisao(payload),
+    enabled: enabled && fornecedores.length > 0,
   })
 }

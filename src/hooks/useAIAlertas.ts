@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 
 interface AlertaItem {
   tipo:    string
@@ -30,22 +29,10 @@ export interface AIAlertasResult {
 }
 
 export function useAIAlertas({ alertas, contexto, enabled = false }: AIAlertasInput & { enabled?: boolean }) {
-  const payload = useMemo(
-    () => ({ alertas, contexto }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(alertas), JSON.stringify(contexto)]
-  )
-
-  return useQuery({
-    queryKey:  ['ai-alertas', payload],
-    queryFn:   () => ai.alertas(payload),
-    staleTime: 5 * 60_000,
-    gcTime:    15 * 60_000,
-    retry:     false,
-    enabled:   enabled && alertas.length > 0,
-    select:    (data: unknown): AIAlertasResult | null => {
-      const d = data as { ok?: boolean } | null
-      return d?.ok ? (d as AIAlertasResult) : null
-    },
+  const payload = { alertas, contexto }
+  return useAIQuery<AIAlertasResult>({
+    key:     ['ai-alertas', payload],
+    fn:      () => ai.alertas(payload),
+    enabled: enabled && alertas.length > 0,
   })
 }

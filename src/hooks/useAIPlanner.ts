@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 
 export interface PlannerSugestao {
   equipe:  string
@@ -28,23 +27,11 @@ interface UseAIPlannerInput {
 }
 
 export function useAIPlanner({ equipes, meta_diaria, dias, enabled = false }: UseAIPlannerInput & { enabled?: boolean }) {
-  const totalSemana = useMemo(
-    () => equipes.reduce((s, e) => s + e.total_semana, 0),
-    [equipes],
-  )
-
-  const payload = useMemo(
-    () => ({ equipes, meta_diaria, dias }),
-    [equipes, meta_diaria, dias],
-  )
-
-  return useQuery<AIPlannerResult>({
-    queryKey:  ['ai-planner', payload],
-    queryFn:   () => ai.planner(payload) as Promise<AIPlannerResult>,
-    staleTime: 5 * 60_000,
-    gcTime:    15 * 60_000,
-    retry:     false,
-    enabled:   enabled && equipes.length >= 2 && totalSemana > 0,
-    select:    (data) => (data?.ok ? data : null) as AIPlannerResult,
+  const totalSemana = equipes.reduce((s, e) => s + e.total_semana, 0)
+  const payload = { equipes, meta_diaria, dias }
+  return useAIQuery<AIPlannerResult>({
+    key:     ['ai-planner', payload],
+    fn:      () => ai.planner(payload),
+    enabled: enabled && equipes.length >= 2 && totalSemana > 0,
   })
 }

@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 import type { EvolucaoData } from '../lib/types'
 
 export interface ForecastDay {
@@ -33,29 +32,18 @@ function buildSerie(evolucao: EvolucaoData) {
 }
 
 export function useAIForecast({ evolucao, totalAtivo = 0, fila = 0, enabled = false }: UseAIForecastInput & { enabled?: boolean }) {
-  // Stable key from label list content — avoids rebuilding serie on unrelated re-renders
-  const evolucaoKey = evolucao.labels.join(',')
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const serie = useMemo(() => buildSerie(evolucao), [evolucaoKey])
-
-  const mediaDiaria = useMemo(() => {
-    if (!serie.length) return 0
-    const sum = serie.reduce((a, p) => a + p.abertas, 0)
-    return sum / serie.length
-  }, [serie])
-
-  const payload = useMemo(() => ({
+  const serie = buildSerie(evolucao)
+  const mediaDiaria = serie.length ? serie.reduce((a, p) => a + p.abertas, 0) / serie.length : 0
+  const payload = {
     serie,
     contexto: { total_ativo: totalAtivo, fila, media_diaria: mediaDiaria },
-  }), [serie, totalAtivo, fila, mediaDiaria])
+  }
 
-  return useQuery<AIForecastData>({
-    queryKey:  ['ai-forecast', payload],
-    queryFn:   () => ai.forecast(payload) as Promise<AIForecastData>,
+  return useAIQuery<AIForecastData>({
+    key:       ['ai-forecast', payload],
+    fn:        () => ai.forecast(payload),
+    enabled:   enabled && serie.length >= 7,
     staleTime: 60 * 60_000,
     gcTime:    2 * 60 * 60_000,
-    retry:     false,
-    enabled:   enabled && serie.length >= 7,
-    select:    (data) => (data?.ok ? data : null) as AIForecastData,
   })
 }

@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 
 export interface JuniperSemOS {
   nome:   string
@@ -32,15 +31,10 @@ interface UseAIJuniperInput {
 }
 
 export function useAIJuniper({ inativos, os_ativas, enabled = false }: UseAIJuniperInput & { enabled?: boolean }) {
-  const payload = useMemo(() => ({ inativos, os_ativas }), [inativos, os_ativas])
-
-  return useQuery<AIJuniperResult>({
-    queryKey:  ['ai-juniper-correlacao', payload],
-    queryFn:   () => ai.juniperCorrelacao(payload) as Promise<AIJuniperResult>,
-    staleTime: 5 * 60_000,
-    gcTime:    15 * 60_000,
-    retry:     false,
-    enabled:   enabled && inativos.length > 0,
-    select:    (data) => (data?.ok ? data : null) as AIJuniperResult,
+  const payload = { inativos, os_ativas }
+  return useAIQuery<AIJuniperResult>({
+    key:     ['ai-juniper-correlacao', payload],
+    fn:      () => ai.juniperCorrelacao(payload),
+    enabled: enabled && inativos.length > 0,
   })
 }

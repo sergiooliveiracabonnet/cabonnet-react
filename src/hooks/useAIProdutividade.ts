@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ai } from '../lib/api'
+import { useAIQuery } from './useAIQuery'
 
 interface EquipeQueda {
   equipe:    string
@@ -28,22 +27,10 @@ export interface AIProdutividadeResult {
 }
 
 export function useAIProdutividade({ quedas, contexto, enabled = false }: AIProdutividadeInput & { enabled?: boolean }) {
-  const payload = useMemo(
-    () => ({ quedas, contexto }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(quedas), contexto]
-  )
-
-  return useQuery({
-    queryKey:  ['ai-produtividade', payload],
-    queryFn:   () => ai.produtividade(payload),
-    staleTime: 5 * 60_000,
-    gcTime:    15 * 60_000,
-    retry:     false,
-    enabled:   enabled && quedas.length > 0,
-    select:    (data: unknown): AIProdutividadeResult | null => {
-      const d = data as { ok?: boolean } | null
-      return d?.ok ? (d as AIProdutividadeResult) : null
-    },
+  const payload = { quedas, contexto }
+  return useAIQuery<AIProdutividadeResult>({
+    key:     ['ai-produtividade', payload],
+    fn:      () => ai.produtividade(payload),
+    enabled: enabled && quedas.length > 0,
   })
 }
