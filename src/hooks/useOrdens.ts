@@ -80,7 +80,7 @@ export function useOrdens() {
     }
     if (aging) {
       r = r.filter(x => {
-        const a = (x._aging as number) ?? 0
+        const a = x._aging ?? x._agingAbertura ?? 0
         if (aging === '1')  return a <= 1
         if (aging === '2')  return a <= 2
         if (aging === '3')  return a >= 3 && a <= 5
