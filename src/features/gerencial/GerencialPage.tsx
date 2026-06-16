@@ -22,8 +22,11 @@ export default function GerencialPage() {
 
   const openDrill = (d: DrillRow) => setDrillDown(d)
 
-  // ─── Base de OS sem COPE/Reagend ────────────────────────────────────────
-  const allBase = useMemo(() => allRows.filter(r => !skip(r)), [allRows])
+  // ─── Bases de OS sem COPE/Reagend ───────────────────────────────────────
+  // allBase  = snapshot ao vivo (ignora o filtro de data) → usado só na seção "Em Rota agora"
+  // baseRows = respeita o filtro global → usado nas contagens "em aberto", KPIs e equipes
+  const allBase  = useMemo(() => allRows.filter(r => !skip(r)), [allRows])
+  const baseRows = useMemo(() => rows.filter(r => !skip(r)),    [rows])
 
   // ─── Concluídas no período: filtradas por data de EXECUÇÃO ──────────────
   // Usa allRows (não allBase) para incluir instalações concluídas pela COPE.
@@ -33,8 +36,8 @@ export default function GerencialPage() {
     [allRows, from, to]
   )
 
-  // ─── Ativas: snapshot atual (sem filtro de data) ─────────────────────────
-  const ativas = useMemo(() => allBase.filter(isAtivo), [allBase])
+  // ─── Ativas: em aberto dentro do filtro global de data ───────────────────
+  const ativas = useMemo(() => baseRows.filter(isAtivo), [baseRows])
 
   // ─── Instalação ──────────────────────────────────────────────────────────
   const instConclRows = useMemo(() => concluidas.filter(isInst), [concluidas])
@@ -77,11 +80,10 @@ export default function GerencialPage() {
   const rotaVTManutCidades = useMemo(() => byCidade(rotaVTManut), [rotaVTManut])
   const rotaServCidades    = useMemo(() => byCidade(rotaServ),    [rotaServ])
 
-  // ─── Volume por Equipe e KPIs — baseados nas concluídas do período ────────
-  const baseRows      = useMemo(() => rows.filter(r => !skip(r)), [rows])
+  // ─── Volume por Equipe e KPIs — baseados no filtro global ─────────────────
   const equipes       = useMemo(() => byEquipe(baseRows), [baseRows])
-  const kpiPendentes  = useMemo(() => allBase.filter(r => r.descsituacao === 'Pendente'), [allBase])
-  const kpiAtendendo  = useMemo(() => allBase.filter(isAtend), [allBase])
+  const kpiPendentes  = useMemo(() => baseRows.filter(r => r.descsituacao === 'Pendente'), [baseRows])
+  const kpiAtendendo  = useMemo(() => baseRows.filter(isAtend), [baseRows])
   const kpiConcluidas = useMemo(() => concluidas, [concluidas])
 
   if (isLoading) {
@@ -445,8 +447,8 @@ export default function GerencialPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             { label: 'Concluídas no período', drillRows: kpiConcluidas, color: '#4ade80' },
-            { label: 'Pendentes agora',        drillRows: kpiPendentes,  color: '#facc15' },
-            { label: 'Em Atendimento agora',   drillRows: kpiAtendendo,  color: '#22d3ee' },
+            { label: 'Pendentes no período',   drillRows: kpiPendentes,  color: '#facc15' },
+            { label: 'Em Atendimento',         drillRows: kpiAtendendo,  color: '#22d3ee' },
             { label: 'Total OS período',       drillRows: baseRows,      color: '#3b82f6' },
           ].map(s => (
             <div key={s.label}
