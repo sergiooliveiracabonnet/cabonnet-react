@@ -1,12 +1,16 @@
-import { useMemo, useState, useCallback } from 'react'
-import { AlertTriangle, MapPin, Users, RefreshCw, Search, Wrench, Home, Star, Sparkles, Download, ChevronDown, ChevronUp } from 'lucide-react'
+﻿import { useMemo, useState } from 'react'
+import { AlertTriangle, MapPin, Users, RefreshCw, Wrench, Home, Star, Search, Sparkles } from 'lucide-react'
 import { useBacklog, type BacklogRow } from '../../../hooks/useBacklog'
-import { useRevisitasDetalhe, type ParRevisita } from '../../../hooks/useRevisitasDetalhe'
-import { ai } from '../../../lib/api'
 import { AreaChart, Area, XAxis, YAxis, Grid, ChartTooltip, Legend } from '../../../components/ui/line-chart'
 import { BarChart, Bar, XAxis as BXAxis, YAxis as BYAxis, Grid as BGrid, ChartTooltip as BTip } from '../../../components/ui/bar-chart'
+import {
+  KpiCard, EquipeRow, DrillTable,
+  type Tipo, TIPO_LABEL, TIPO_COLOR,
+  taxaColor,
+} from './QualidadeComponents'
+import { CausaRaizSection } from './CausaRaizSection'
 
-// ─── Datas (hora local, sem desvio UTC) ───────────────────────────────────────
+// â”€â”€â”€ Datas (hora local, sem desvio UTC) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function isoDate(d: Date): string {
   const y   = d.getFullYear()
@@ -34,82 +38,16 @@ function fmtPeriodo(ini: string): string {
 
 type Preset = 'atual' | 'anterior' | 'custom'
 
-// ─── Classificação por tipo ───────────────────────────────────────────────────
-
-type Tipo = 'todos' | 'instalacao' | 'manutencao' | 'servico'
-
-// Serviços técnicos pontuais (não VT, não instalação)
-const SERVICO_KEYWORDS = [
-  'TRANSF',           // transferência de endereço
-  'MUDANCA PONTO', 'MUDANÇA PONTO',
-  'MUDANCA DE ENDER', 'MUDANÇA DE ENDER',
-  'CABEAMENTO',
-  'ROTEADOR',
-  'TROCA DE ONU', 'TROCA DE ONT',
-  ' ONU ', '-ONU', 'ONU-',
-  'TROCA DE EQUIPAMENTO', 'EQUIPAMENTO - TROCA', 'EQUIP - TROCA',
-  'TROCA DE CABO',
-  'CONFIGURACAO', 'CONFIGURAÇÃO',
-  'PONTO EXTRA',
-  'MUDANCA PONTO DE CONEXAO',
-]
-
-// VT = Visita Técnica → Manutenção
-const VT_KEYWORDS = [
-  ' VT ', '-VT', 'VT-', 'VT 24', 'VT24',
-  'VISITA TEC', 'VISITA TÉC',
-  'ASSISTENCIA', 'ASSISTÊNCIA',
-]
-
-function classificaTipo(servico: string, tiposervico: string): Exclude<Tipo, 'todos'> {
-  const s = (servico     ?? '').toUpperCase().trim()
-  const t = (tiposervico ?? '').toUpperCase().trim()
-
-  // Instalação — checa servico primeiro, depois tiposervico
-  if (s.includes('INSTALAC') || s.includes('INSTALAÇÃO') ||
-      s.includes('PRIMEIRA CONEXAO') || s.includes('PRIMEIRA CONEXÃO') ||
-      t.includes('INSTALAC'))
-    return 'instalacao'
-
-  // Serviços técnicos pontuais
-  if (SERVICO_KEYWORDS.some(k => s.includes(k)))
-    return 'servico'
-
-  // VT / Manutenção
-  if (VT_KEYWORDS.some(k => s.includes(k)) ||
-      s.includes('MANUTENC') || s.includes('MANUTEN') ||
-      t.includes('MANUTENC'))
-    return 'manutencao'
-
-  // Fallback pelo tiposervico genérico
-  if (t.includes('INSTALAC')) return 'instalacao'
-  if (t.includes('SERVIC'))   return 'servico'
-
-  return 'manutencao' // default técnico
-}
-
-const TIPO_LABEL: Record<Tipo, string> = {
-  todos:      'Todos',
-  instalacao: 'Instalação',
-  manutencao: 'Manutenção',
-  servico:    'Serviço / Interno',
-}
-const TIPO_COLOR: Record<Tipo, string> = {
-  todos:      '#c4b5fd',
-  instalacao: '#3b82f6',
-  manutencao: '#f97316',
-  servico:    '#22d3ee',
-}
 const TIPO_ICON: Record<Exclude<Tipo,'todos'>, typeof Wrench> = {
   instalacao: Home,
   manutencao: Wrench,
   servico:    Star,
 }
 
-// ─── Helpers de dados ────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers de dados â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function parseDMY(s: string): string {
-  // "DD/MM/YYYY" → "YYYY-MM-DD"
+  // "DD/MM/YYYY" â†’ "YYYY-MM-DD"
   if (!s || !s.includes('/')) return s
   const [d, m, y] = s.split('/')
   return `${y}-${m}-${d}`
@@ -139,7 +77,7 @@ interface OcorrenciaItem { servico: string; count: number; os: BacklogRow[] }
 function buildOcorrencias(rows: BacklogRow[]): OcorrenciaItem[] {
   const map: Record<string, BacklogRow[]> = {}
   for (const r of rows) {
-    const key = (r.servico || 'Sem descrição').trim()
+    const key = (r.servico || 'Sem descriÃ§Ã£o').trim()
     if (!map[key]) map[key] = []
     map[key].push(r)
   }
@@ -149,468 +87,11 @@ function buildOcorrencias(rows: BacklogRow[]): OcorrenciaItem[] {
     .slice(0, 12)
 }
 
-// ─── Helpers visuais ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers visuais â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function fmt(n: number): string { return n.toLocaleString('pt-BR') }
 
-function taxaColor(taxa: number): string {
-  if (taxa >= 25) return '#f87171'
-  if (taxa >= 15) return '#f97316'
-  if (taxa >= 8)  return '#facc15'
-  return '#4ade80'
-}
-function taxaLabel(taxa: number): string {
-  if (taxa >= 25) return 'Crítico'
-  if (taxa >= 15) return 'Alto'
-  if (taxa >= 8)  return 'Médio'
-  return 'OK'
-}
-
-// ─── Componentes ─────────────────────────────────────────────────────────────
-
-function KpiCard({ label, value, sub, color, delay = 0 }: {
-  label: string; value: string | number; sub: string; color: string; delay?: number
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-xl border bg-card animate-card-enter"
-         style={{ borderColor: `${color}22`, animationDelay: `${delay}ms` }}>
-      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: color }} />
-      <div className="p-4">
-        <p className="text-[11px] text-muted mb-2">{label}</p>
-        <p className="font-mono font-black tabular-nums text-[28px] leading-none" style={{ color }}>
-          {typeof value === 'number' ? fmt(value) : value}
-        </p>
-        <p className="text-[10px] text-muted mt-1">{sub}</p>
-      </div>
-    </div>
-  )
-}
-
-interface EquipeStats { equipe: string; total: number; rev: number; taxa: number }
-
-function EquipeRow({ rank, eq, max }: { rank: number; eq: EquipeStats; max: number }) {
-  const color = taxaColor(eq.taxa)
-  const barW  = max > 0 ? Math.round((eq.rev / max) * 100) : 0
-  return (
-    <tr className="border-b border-white/[0.04] hover:bg-surface/20 transition-colors">
-      <td className="px-4 py-3 w-10">
-        {rank <= 3
-          ? <span className="font-mono font-black text-[13px]"
-                  style={{ color: ['#f87171','#f97316','#facc15'][rank - 1] }}>#{rank}</span>
-          : <span className="font-mono text-[12px] text-muted">{rank}</span>}
-      </td>
-      <td className="px-3 py-3 max-w-[180px]">
-        <p className="text-[12px] font-semibold text-text truncate">{eq.equipe}</p>
-      </td>
-      <td className="px-3 py-3 text-right font-mono text-[13px] text-muted">{fmt(eq.total)}</td>
-      <td className="px-3 py-3 text-right">
-        <p className="font-mono font-bold text-[16px] leading-none" style={{ color }}>{fmt(eq.rev)}</p>
-        <div className="mt-1 h-1 w-16 ml-auto bg-surface/40 rounded-full overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: `${barW}%`, background: color }} />
-        </div>
-      </td>
-      <td className="px-3 py-3 text-right">
-        <p className="font-mono font-bold text-[16px] leading-none" style={{ color }}>{eq.taxa}%</p>
-      </td>
-      <td className="px-3 py-3 text-right">
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-              style={{ background: `${color}12`, borderColor: `${color}30`, color }}>
-          {taxaLabel(eq.taxa)}
-        </span>
-      </td>
-    </tr>
-  )
-}
-
-function DrillTable({ rows }: { rows: BacklogRow[] }) {
-  const [search, setSearch] = useState('')
-  const [cidade, setCidade] = useState('Todas')
-  const [page,   setPage]   = useState(1)
-  const PAGE = 50
-
-  const cidades = useMemo(() => ['Todas', ...Array.from(new Set(rows.map(r => r.nomedacidade).filter(Boolean))).sort()], [rows])
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase()
-    return rows.filter(r => {
-      if (cidade !== 'Todas' && r.nomedacidade !== cidade) return false
-      if (q && !r.numos.includes(q) && !r.nomecliente.toLowerCase().includes(q)) return false
-      return true
-    })
-  }, [rows, cidade, search])
-
-  const totalPages = Math.ceil(filtered.length / PAGE)
-  const slice      = filtered.slice((page - 1) * PAGE, page * PAGE)
-
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-2 items-center">
-        <div className="relative flex-1 min-w-[160px] max-w-[260px]">
-          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-                 placeholder="Buscar numos ou cliente…"
-                 className="w-full pl-8 pr-3 py-2 rounded-lg border border-white/[0.08] bg-surface/40
-                            text-[12px] text-text placeholder-muted focus:outline-none focus:border-primary/40" />
-        </div>
-        <select value={cidade} onChange={e => { setCidade(e.target.value); setPage(1) }}
-                className="px-3 py-2 rounded-lg border border-white/[0.08] bg-surface/40 text-[12px] text-text focus:outline-none">
-          {cidades.map(c => <option key={c}>{c}</option>)}
-        </select>
-        <span className="text-[11px] text-muted ml-auto">{fmt(filtered.length)} revisitas</span>
-      </div>
-
-      <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-[11.5px]">
-            <thead>
-              <tr className="border-b border-white/[0.05] bg-surface/10">
-                {['N° OS','Cliente','Cidade','Tipo','Serviço','Equipe','Cadastro','Situação'].map(h => (
-                  <th key={h} className="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {slice.map(r => {
-                const tc = TIPO_COLOR[classificaTipo(r.servico, r.tiposervico)]
-                return (
-                  <tr key={r.numos} className="border-b border-white/[0.03] hover:bg-surface/15 transition-colors">
-                    <td className="px-3 py-2.5 font-mono text-primary">{r.numos}</td>
-                    <td className="px-3 py-2.5 max-w-[140px]"><p className="truncate text-text">{r.nomecliente}</p></td>
-                    <td className="px-3 py-2.5 text-muted whitespace-nowrap">{r.nomedacidade}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <span className="text-[10px] font-bold" style={{ color: tc }}>
-                        {TIPO_LABEL[classificaTipo(r.servico, r.tiposervico)]}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2.5 max-w-[140px]"><p className="truncate text-muted">{r.servico}</p></td>
-                    <td className="px-3 py-2.5 max-w-[120px]"><p className="truncate text-muted">{r.nomedaequipe || '—'}</p></td>
-                    <td className="px-3 py-2.5 text-muted whitespace-nowrap">{r.datacadastro}</td>
-                    <td className="px-3 py-2.5">
-                      <span className="text-[10px] text-muted">{r.descsituacao}</span>
-                    </td>
-                  </tr>
-                )
-              })}
-              {slice.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-muted text-[12px]">
-                    Nenhuma revisita encontrada.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-2 border-t border-white/[0.05] bg-surface/10">
-            <span className="text-[11px] text-muted">Página {page} de {totalPages}</span>
-            <div className="flex gap-1">
-              <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
-                      className="px-3 py-1 rounded text-[11px] border border-white/[0.08] text-muted
-                                 disabled:opacity-30 hover:bg-surface/30 transition-colors">‹</button>
-              <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)}
-                      className="px-3 py-1 rounded text-[11px] border border-white/[0.08] text-muted
-                                 disabled:opacity-30 hover:bg-surface/30 transition-colors">›</button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── Tipos da análise de causa raiz ─────────────────────────────────────────
-
-interface CausaDistribuicao { causa: string; count: number; pct: number }
-interface AnaliseIA {
-  analises:            Array<{par: number; numos_orig: string; numos_rev: string; causa: string; feito_primeira: string; o_que_faltou: string}>
-  causas_distribuicao: CausaDistribuicao[]
-  narrativa:           string
-  cached?:             boolean
-}
-
-const CAUSA_COLOR: Record<string, string> = {
-  'Conectorização/Sinal':   '#f87171',
-  'Equipamento':            '#f97316',
-  'Configuração':           '#facc15',
-  'Rede/Infraestrutura':    '#c084fc',
-  'Execução Incompleta':    '#fb923c',
-  'Cliente/Uso':            '#22d3ee',
-  'Sem Informação':         '#6b7280',
-}
-
-function causaColor(c: string): string {
-  return CAUSA_COLOR[c] ?? '#94a3b8'
-}
-
-// ─── Exportação CSV de pares ──────────────────────────────────────────────────
-
-function exportParesCsv(pares: ParRevisita[], analises: AnaliseIA['analises']): void {
-  const mapaAnalise = new Map(analises.map(a => [a.numos_orig + '|' + a.numos_rev, a]))
-  const headers = ['Tipo','Cliente','Cidade','OS Origem','Serviço Origem','Equipe Orig.','Data Origem','Obs. Origem',
-                   'OS Revisita','Serviço Revisita','Equipe Rev.','Data Revisita','Obs. Revisita','Dias Entre',
-                   'Causa (IA)','O que foi feito (1ª OS)','O que faltou']
-  function cell(v: string): string {
-    return v?.includes(';') || v?.includes('"') || v?.includes('\n') ? `"${v.replace(/"/g, '""')}"` : (v ?? '')
-  }
-  const lines = [
-    headers.join(';'),
-    ...pares.map(p => {
-      const ia = mapaAnalise.get(p.numos_orig + '|' + p.numos_rev)
-      return [
-        p.tipo === 'inst' ? 'Instalação→Manut.' : 'Manut. Repetida',
-        p.nomecliente, p.nomedacidade,
-        p.numos_orig, p.servico_orig, p.equipe_orig, p.data_orig, p.obs_orig,
-        p.numos_rev,  p.servico_rev,  p.equipe_rev,  p.data_rev,  p.obs_rev,
-        String(p.dias_entre),
-        ia?.causa ?? '',
-        ia?.feito_primeira ?? '',
-        ia?.o_que_faltou ?? '',
-      ].map(cell).join(';')
-    }),
-  ]
-  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' })
-  const url  = URL.createObjectURL(blob)
-  const a    = document.createElement('a')
-  a.href = url; a.download = 'revisitas-causa-raiz.csv'
-  document.body.appendChild(a); a.click(); document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
-
-// ─── Seção de causa raiz por IA ──────────────────────────────────────────────
-
-function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string }) {
-  const { data, isLoading: loadingPares } = useRevisitasDetalhe(inicio, fim)
-  const [analisando, setAnalisando]  = useState(false)
-  const [analise,    setAnalise]     = useState<AnaliseIA | null>(null)
-  const [errMsg,     setErrMsg]      = useState('')
-  const [showTabela, setShowTabela]  = useState(false)
-  const [pagina,     setPagina]      = useState(1)
-  const PAGE = 30
-
-  const pares = useMemo(() => data?.pares ?? [], [data])
-  const totalPares = data?.n ?? 0
-
-  const analisar = useCallback(async () => {
-    if (!pares.length) return
-    setAnalisando(true)
-    setErrMsg('')
-    try {
-      const res = await ai.revisitasCausa({ pares: pares.slice(0, 25) }) as { ok: boolean } & AnaliseIA
-      setAnalise(res)
-    } catch (e: unknown) {
-      setErrMsg(e instanceof Error ? e.message : 'Erro ao chamar IA')
-    } finally {
-      setAnalisando(false)
-    }
-  }, [pares])
-
-  const paginadas     = pares.slice((pagina - 1) * PAGE, pagina * PAGE)
-  const totalPages    = Math.ceil(pares.length / PAGE)
-  const mapaAnalise   = new Map((analise?.analises ?? []).map(a => [a.numos_orig + '|' + a.numos_rev, a]))
-
-  if (loadingPares) {
-    return (
-      <div className="flex items-center gap-2 py-4 text-[12px] text-muted">
-        <div className="w-3.5 h-3.5 border border-primary border-t-transparent rounded-full animate-spin" />
-        Carregando pares de revisita…
-      </div>
-    )
-  }
-
-  if (!pares.length) {
-    return (
-      <p className="text-[12px] text-muted py-4">
-        Nenhum par de revisita encontrado no período.
-      </p>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-
-      {/* Header + botão */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <p className="text-[12px] text-text">
-            <span className="font-mono font-bold text-primary">{totalPares}</span>
-            {' '}par{totalPares !== 1 ? 'es' : ''} de revisita detectado{totalPares !== 1 ? 's' : ''} no período.
-          </p>
-          <p className="text-[11px] text-muted mt-0.5">
-            Cada par relaciona a OS de origem (instalação/1ª manutenção) com a OS de revisita, incluindo as observações técnicas.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {analise && (
-            <button
-              onClick={() => exportParesCsv(pares, analise.analises)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08]
-                         bg-surface/40 text-[12px] text-muted hover:text-text transition-colors">
-              <Download size={11} />
-              Exportar CSV
-            </button>
-          )}
-          <button
-            onClick={analisar}
-            disabled={analisando}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-[12px]
-                       transition-all disabled:opacity-50
-                       border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20">
-            <Sparkles size={13} className={analisando ? 'animate-pulse' : ''} />
-            {analisando ? 'Analisando com IA…' : analise ? 'Reanalisar com IA' : 'Analisar Causa Raiz (IA)'}
-          </button>
-        </div>
-      </div>
-
-      {errMsg && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-[12px] text-red-400">
-          {errMsg}
-        </div>
-      )}
-
-      {/* Resultado da IA */}
-      {analise && (
-        <div className="space-y-3">
-
-          {/* Narrativa */}
-          <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
-            <div className="flex items-start gap-2">
-              <Sparkles size={13} className="text-violet-400 flex-shrink-0 mt-0.5" />
-              <p className="text-[12px] text-text leading-relaxed">{analise.narrativa}</p>
-            </div>
-            {analise.cached && (
-              <p className="text-[10px] text-muted mt-1 ml-5">Resultado em cache</p>
-            )}
-          </div>
-
-          {/* Distribuição de causas */}
-          {analise.causas_distribuicao.length > 0 && (
-            <div className="rounded-xl border border-white/[0.08] bg-card p-4 space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted mb-3">
-                Distribuição Real de Causas
-              </p>
-              {analise.causas_distribuicao
-                .sort((a, b) => b.count - a.count)
-                .map(c => (
-                  <div key={c.causa} className="flex items-center gap-3">
-                    <span className="text-[11px] text-text w-48 flex-shrink-0 truncate">{c.causa}</span>
-                    <div className="flex-1 h-1.5 bg-surface/40 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${c.pct}%`, background: causaColor(c.causa) }}
-                      />
-                    </div>
-                    <span className="font-mono font-bold text-[13px] w-6 text-right"
-                          style={{ color: causaColor(c.causa) }}>{c.count}</span>
-                    <span className="text-[10px] text-muted w-9 text-right">{c.pct}%</span>
-                  </div>
-                ))
-              }
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tabela de pares */}
-      <div>
-        <button
-          onClick={() => setShowTabela(v => !v)}
-          className="flex items-center gap-1.5 text-[12px] text-muted hover:text-text transition-colors py-1">
-          {showTabela ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          {showTabela ? 'Ocultar' : 'Ver'} tabela de pares ({pares.length})
-        </button>
-      </div>
-
-      {showTabela && (
-        <div className="space-y-2">
-          <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-[11px]">
-                <thead>
-                  <tr className="border-b border-white/[0.05] bg-surface/10">
-                    {['Tipo','Cliente','Cidade','OS Origem','Serviço 1ª OS','Data Orig.',
-                      'OS Revisita','Serviço Revisita','Dias','Causa (IA)','O que foi feito','O que faltou'].map(h => (
-                      <th key={h} className="px-2.5 py-2.5 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginadas.map((p, i) => {
-                    const ia  = mapaAnalise.get(p.numos_orig + '|' + p.numos_rev)
-                    const cor = p.tipo === 'inst' ? '#3b82f6' : '#f97316'
-                    return (
-                      <tr key={i} className="border-b border-white/[0.03] hover:bg-surface/10 transition-colors">
-                        <td className="px-2.5 py-2">
-                          <span className="text-[10px] font-bold" style={{ color: cor }}>
-                            {p.tipo === 'inst' ? 'Inst→M' : 'M→M'}
-                          </span>
-                        </td>
-                        <td className="px-2.5 py-2 max-w-[120px]"><p className="truncate text-text">{p.nomecliente}</p></td>
-                        <td className="px-2.5 py-2 text-muted whitespace-nowrap">{p.nomedacidade}</td>
-                        <td className="px-2.5 py-2 font-mono text-primary">{p.numos_orig}</td>
-                        <td className="px-2.5 py-2 max-w-[120px]">
-                          <p className="truncate text-muted" title={p.servico_orig}>{p.servico_orig || '—'}</p>
-                          {p.obs_orig && (
-                            <p className="truncate text-[10px] text-muted/60 mt-0.5" title={p.obs_orig}>{p.obs_orig}</p>
-                          )}
-                        </td>
-                        <td className="px-2.5 py-2 text-muted whitespace-nowrap">{p.data_orig.slice(0, 10)}</td>
-                        <td className="px-2.5 py-2 font-mono text-amber-400">{p.numos_rev}</td>
-                        <td className="px-2.5 py-2 max-w-[120px]">
-                          <p className="truncate text-muted" title={p.servico_rev}>{p.servico_rev || '—'}</p>
-                          {p.obs_rev && (
-                            <p className="truncate text-[10px] text-muted/60 mt-0.5" title={p.obs_rev}>{p.obs_rev}</p>
-                          )}
-                        </td>
-                        <td className="px-2.5 py-2 text-center font-mono font-bold"
-                            style={{ color: p.dias_entre <= 7 ? '#f87171' : p.dias_entre <= 14 ? '#f97316' : '#94a3b8' }}>
-                          {p.dias_entre}d
-                        </td>
-                        <td className="px-2.5 py-2 whitespace-nowrap">
-                          {ia ? (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
-                                  style={{ color: causaColor(ia.causa), background: causaColor(ia.causa) + '18' }}>
-                              {ia.causa}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-muted/40">—</span>
-                          )}
-                        </td>
-                        <td className="px-2.5 py-2 max-w-[180px]">
-                          <p className="truncate text-muted text-[10px]" title={ia?.feito_primeira}>{ia?.feito_primeira || '—'}</p>
-                        </td>
-                        <td className="px-2.5 py-2 max-w-[180px]">
-                          <p className="truncate text-red-400 text-[10px]" title={ia?.o_que_faltou}>{ia?.o_que_faltou || '—'}</p>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-2 border-t border-white/[0.05] bg-surface/10">
-                <span className="text-[11px] text-muted">Página {pagina} de {totalPages}</span>
-                <div className="flex gap-1">
-                  <button disabled={pagina === 1} onClick={() => setPagina(p => p - 1)}
-                          className="px-3 py-1 rounded text-[11px] border border-white/[0.08] text-muted disabled:opacity-30 hover:bg-surface/30">‹</button>
-                  <button disabled={pagina === totalPages} onClick={() => setPagina(p => p + 1)}
-                          className="px-3 py-1 rounded text-[11px] border border-white/[0.08] text-muted disabled:opacity-30 hover:bg-surface/30">›</button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── QualidadePage ────────────────────────────────────────────────────────────
+// â”€â”€â”€ QualidadePage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function QualidadePage() {
   const [preset,    setPreset]    = useState<Preset>('atual')
@@ -623,13 +104,13 @@ export default function QualidadePage() {
     if (preset === 'atual')    return mesAtualRange()
     if (preset === 'anterior') return mesAnteriorRange()
     const f   = customFim < customIni ? customIni : customFim
-    const amanhã = isoDate(new Date(new Date(f).getTime() + 86_400_000))
-    return [customIni, amanhã]
+    const amanha = isoDate(new Date(new Date(f).getTime() + 86_400_000))
+    return [customIni, amanha]
   }, [preset, customIni, customFim])
 
   const { data, isLoading, isError, refetch, isFetching } = useBacklog(inicio, fim)
 
-  // ── Revisitas = qualquer flag de revisita ativo ───────────────────────
+  // â”€â”€ Revisitas = qualquer flag de revisita ativo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const revisitas = useMemo(
     () => (data?.rows ?? []).filter(r =>
       Number(r.revisita_inst) === 1 ||
@@ -640,7 +121,7 @@ export default function QualidadePage() {
   )
   const totalOS   = data?.kpis.total ?? 0
 
-  // Filtradas pelo tipo ativo — usa os flags do SQL
+  // Filtradas pelo tipo ativo â€” usa os flags do SQL
   const revisitasFiltradas = useMemo(() => {
     if (tipoAtivo === 'todos')       return revisitas
     if (tipoAtivo === 'instalacao')  return revisitas.filter(r => Number(r.revisita_inst)  === 1)
@@ -656,7 +137,7 @@ export default function QualidadePage() {
     servico:    revisitas.filter(r => Number(r.revisita_serv)  === 1).length,
   }), [revisitas])
 
-  // Ranking por equipe — usa revisitasFiltradas vs total do mesmo tipo
+  // Ranking por equipe â€” usa revisitasFiltradas vs total do mesmo tipo
   const rankingEquipe = useMemo(() => {
     const allRows = data?.rows ?? []
     const totalMap: Record<string, number> = {}
@@ -683,7 +164,7 @@ export default function QualidadePage() {
       .slice(0, 15)
   }, [data, tipoAtivo])
 
-  // Clientes crônicos (3+ revisitas no período)
+  // Clientes crÃ´nicos (3+ revisitas no perÃ­odo)
   const cronicos = useMemo(() => {
     const cnt: Record<string, { nome: string; count: number }> = {}
     for (const r of revisitasFiltradas) {
@@ -720,9 +201,9 @@ export default function QualidadePage() {
   const taxaGeral = totalOS > 0 ? Math.round((revisitasFiltradas.length / totalOS) * 100) : 0
   const cor       = TIPO_COLOR[tipoAtivo]
 
-  // Gráfico diário — sempre inst + manut independente do filtro de tipo
+  // GrÃ¡fico diÃ¡rio â€” sempre inst + manut independente do filtro de tipo
   const diario      = useMemo(() => buildDiario(revisitas), [revisitas])
-  // Ocorrências — no tipo ativo
+  // OcorrÃªncias â€” no tipo ativo
   const ocorrencias = useMemo(() => buildOcorrencias(revisitasFiltradas), [revisitasFiltradas])
   const [ocSelecionada, setOcSelecionada] = useState<OcorrenciaItem | null>(null)
 
@@ -732,13 +213,13 @@ export default function QualidadePage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-headline font-bold text-text mb-0.5">Qualidade — Revisitas</h1>
+          <h1 className="text-[20px] font-headline font-bold text-text mb-0.5">Qualidade â€” Revisitas</h1>
           <p className="text-[12px] text-muted">
-            Clientes que abriram nova OS após atendimento recente · instalação · manutenção · serviço
+            Clientes que abriram nova OS apÃ³s atendimento recente Â· instalaÃ§Ã£o Â· manutenÃ§Ã£o Â· serviÃ§o
           </p>
         </div>
 
-        {/* Controles de período */}
+        {/* Controles de perÃ­odo */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-[12px]">
             {(['atual','anterior','custom'] as Preset[]).map((v, i) => (
@@ -746,7 +227,7 @@ export default function QualidadePage() {
                       className={`px-3 py-1.5 transition-colors ${
                         preset === v ? 'bg-primary/20 text-primary font-semibold' : 'text-muted hover:text-text'
                       }`}>
-                {['Mês Atual','Mês Anterior','Personalizado'][i]}
+                {['MÃªs Atual','MÃªs Anterior','Personalizado'][i]}
               </button>
             ))}
           </div>
@@ -755,7 +236,7 @@ export default function QualidadePage() {
               <input type="date" value={customIni} onChange={e => setCustomIni(e.target.value)}
                      className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
                                 text-[12px] text-text focus:outline-none" />
-              <span className="text-[11px] text-muted">até</span>
+              <span className="text-[11px] text-muted">atÃ©</span>
               <input type="date" value={customFim} onChange={e => setCustomFim(e.target.value)}
                      className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
                                 text-[12px] text-text focus:outline-none" />
@@ -774,7 +255,7 @@ export default function QualidadePage() {
       {isLoading && !data && (
         <div className="flex items-center justify-center py-24 gap-3 text-secondary text-sm">
           <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          Consultando iManager…
+          Consultando iManagerâ€¦
         </div>
       )}
 
@@ -789,24 +270,24 @@ export default function QualidadePage() {
       {data && (
         <div className={`space-y-4 transition-opacity duration-200 ${isFetching ? 'opacity-60' : ''}`}>
 
-          {/* Período + status */}
+          {/* PerÃ­odo + status */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted">Período:</span>
+            <span className="text-[11px] text-muted">PerÃ­odo:</span>
             <span className="text-[11px] font-semibold text-text">{fmtPeriodo(data.periodo)}</span>
             {isFetching && (
               <span className="flex items-center gap-1 text-[10px] text-primary">
-                <RefreshCw size={10} className="animate-spin" /> Atualizando…
+                <RefreshCw size={10} className="animate-spin" /> Atualizandoâ€¦
               </span>
             )}
           </div>
 
-          {/* ── Gráfico diário ───────────────────────────────────────────── */}
+          {/* â”€â”€ GrÃ¡fico diÃ¡rio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           {diario.length > 0 && (
             <section className="space-y-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-[3px] h-4 rounded-full bg-violet-400 flex-shrink-0" />
                 <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-violet-400">
-                  Acompanhamento Diário — Instalação vs Manutenção
+                  Acompanhamento DiÃ¡rio â€” InstalaÃ§Ã£o vs ManutenÃ§Ã£o
                 </span>
               </div>
               <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
@@ -827,8 +308,8 @@ export default function QualidadePage() {
                     <YAxis allowDecimals={false} />
                     <ChartTooltip suffix=" revisitas" />
                     <Legend />
-                    <Area dataKey="inst"  name="Instalação" stroke="#3b82f6" fill="url(#gradInst)"  strokeWidth={2} />
-                    <Area dataKey="manut" name="Manutenção" stroke="#f97316" fill="url(#gradManut)" strokeWidth={2} />
+                    <Area dataKey="inst"  name="InstalaÃ§Ã£o" stroke="#3b82f6" fill="url(#gradInst)"  strokeWidth={2} />
+                    <Area dataKey="manut" name="ManutenÃ§Ã£o" stroke="#f97316" fill="url(#gradManut)" strokeWidth={2} />
                   </AreaChart>
                 </div>
               </div>
@@ -860,42 +341,42 @@ export default function QualidadePage() {
 
           {/* KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <KpiCard label={`Revisitas${tipoAtivo !== 'todos' ? ` · ${TIPO_LABEL[tipoAtivo]}` : ' · Total'}`}
+            <KpiCard label={`Revisitas${tipoAtivo !== 'todos' ? ` Â· ${TIPO_LABEL[tipoAtivo]}` : ' Â· Total'}`}
                      value={revisitasFiltradas.length}
-                     sub={`${taxaGeral}% do total de ${fmt(totalOS)} OS no período`}
+                     sub={`${taxaGeral}% do total de ${fmt(totalOS)} OS no perÃ­odo`}
                      color={cor} delay={0} />
-            <KpiCard label="Inst → Manut (BI)"
+            <KpiCard label="Inst â†’ Manut (BI)"
                      value={data?.kpis.rev_inst ?? 0}
-                     sub="instalações que geraram VT no mesmo mês"
+                     sub="instalaÃ§Ãµes que geraram VT no mesmo mÃªs"
                      color="#3b82f6" delay={60} />
             <KpiCard label="Manut Repetida (BI)"
                      value={data?.kpis.rev_manut ?? 0}
-                     sub="2ª+ manutenção do mesmo cliente no mês"
+                     sub="2Âª+ manutenÃ§Ã£o do mesmo cliente no mÃªs"
                      color="#f97316" delay={120} />
-            <KpiCard label="Serviço → Manut (BI)"
+            <KpiCard label="ServiÃ§o â†’ Manut (BI)"
                      value={data?.kpis.rev_serv ?? 0}
-                     sub="serviço técnico que gerou VT no mesmo mês"
+                     sub="serviÃ§o tÃ©cnico que gerou VT no mesmo mÃªs"
                      color="#22d3ee" delay={180} />
           </div>
 
-          {/* ── Ocorrências que causam revisitas ────────────────────────── */}
+          {/* â”€â”€ OcorrÃªncias que causam revisitas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           {ocorrencias.length > 0 && (
             <section className="space-y-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: cor }} />
                 <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
-                  Principais Ocorrências — clique para ver as OS
+                  Principais OcorrÃªncias â€” clique para ver as OS
                 </span>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-4">
 
-                {/* Gráfico horizontal */}
+                {/* GrÃ¡fico horizontal */}
                 <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div style={{ height: Math.max(180, ocorrencias.length * 34) }}>
                     <BarChart
                       data={ocorrencias.map(o => ({
-                        servico: o.servico.length > 32 ? o.servico.slice(0, 32) + '…' : o.servico,
+                        servico: o.servico.length > 32 ? o.servico.slice(0, 32) + 'â€¦' : o.servico,
                         _full:   o.servico,
                         count:   o.count,
                       }))}
@@ -920,7 +401,7 @@ export default function QualidadePage() {
                   <p className="text-[10px] text-muted mt-2 text-center">Clique numa barra para ver as OS</p>
                 </div>
 
-                {/* Painel de OS da ocorrência selecionada */}
+                {/* Painel de OS da ocorrÃªncia selecionada */}
                 <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
                   {ocSelecionada ? (
                     <>
@@ -930,7 +411,7 @@ export default function QualidadePage() {
                           <p className="text-[10px] text-muted mt-0.5">{ocSelecionada.count} revisitas</p>
                         </div>
                         <button onClick={() => setOcSelecionada(null)}
-                                className="text-[11px] text-muted hover:text-text transition-colors flex-shrink-0">✕</button>
+                                className="text-[11px] text-muted hover:text-text transition-colors flex-shrink-0">âœ•</button>
                       </div>
                       <div className="overflow-y-auto max-h-[340px] divide-y divide-white/[0.04]">
                         {ocSelecionada.os.map(r => (
@@ -942,9 +423,9 @@ export default function QualidadePage() {
                             <p className="text-[11.5px] text-text truncate mt-0.5">{r.nomecliente}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-[10px] text-muted">{r.nomedacidade}</span>
-                              <span className="text-[10px] text-muted/50">·</span>
-                              <span className="text-[10px] text-muted truncate">{r.nomedaequipe || '—'}</span>
-                              <span className="text-[10px] text-muted/50 ml-auto flex-shrink-0">·</span>
+                              <span className="text-[10px] text-muted/50">Â·</span>
+                              <span className="text-[10px] text-muted truncate">{r.nomedaequipe || 'â€”'}</span>
+                              <span className="text-[10px] text-muted/50 ml-auto flex-shrink-0">Â·</span>
                               <span className="text-[10px] text-muted flex-shrink-0">{r.descsituacao}</span>
                             </div>
                           </div>
@@ -954,7 +435,7 @@ export default function QualidadePage() {
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted">
                       <Search size={24} className="opacity-30" />
-                      <p className="text-[12px]">Selecione uma ocorrência no gráfico</p>
+                      <p className="text-[12px]">Selecione uma ocorrÃªncia no grÃ¡fico</p>
                       <p className="text-[10px] opacity-60">para ver as OS associadas</p>
                     </div>
                   )}
@@ -963,7 +444,7 @@ export default function QualidadePage() {
             </section>
           )}
 
-          {/* Ranking equipe + Cidades + Crônicos */}
+          {/* Ranking equipe + Cidades + CrÃ´nicos */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4">
 
             {/* Ranking por equipe */}
@@ -973,7 +454,7 @@ export default function QualidadePage() {
                   <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: cor }} />
                   <Users size={12} style={{ color: cor }} className="flex-shrink-0" />
                   <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
-                    Ranking — Revisitas por Equipe
+                    Ranking â€” Revisitas por Equipe
                   </span>
                 </div>
                 <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
@@ -1000,7 +481,7 @@ export default function QualidadePage() {
               </section>
             )}
 
-            {/* Coluna direita: cidades + crônicos */}
+            {/* Coluna direita: cidades + crÃ´nicos */}
             <div className="space-y-3">
 
               {/* Por cidade */}
@@ -1033,14 +514,14 @@ export default function QualidadePage() {
                 </section>
               )}
 
-              {/* Clientes crônicos */}
+              {/* Clientes crÃ´nicos */}
               {cronicos.length > 0 && (
                 <section className="space-y-2">
                   <div className="flex items-center gap-2.5">
                     <div className="w-[3px] h-4 rounded-full bg-red-400 flex-shrink-0" />
                     <AlertTriangle size={12} className="text-red-400 flex-shrink-0" />
                     <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-red-400">
-                      Crônicos — 2+ revisitas
+                      CrÃ´nicos â€” 2+ revisitas
                     </span>
                   </div>
                   <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
@@ -1050,7 +531,7 @@ export default function QualidadePage() {
                         return (
                           <div key={c.nome} className="flex items-center gap-2 px-4 py-2.5 hover:bg-surface/20 transition-colors">
                             <p className="flex-1 text-[11.5px] text-text truncate">{c.nome}</p>
-                            <span className="font-mono font-bold text-[13px]" style={{ color }}>{c.count}×</span>
+                            <span className="font-mono font-bold text-[13px]" style={{ color }}>{c.count}Ã—</span>
                           </div>
                         )
                       })}
@@ -1065,12 +546,12 @@ export default function QualidadePage() {
           <div>
             <button onClick={() => setShowDrill(v => !v)}
                     className="text-[12px] text-muted hover:text-text transition-colors py-1 flex items-center gap-1">
-              {showDrill ? '▲ Ocultar' : '▼ Ver'} lista completa de revisitas ({fmt(revisitasFiltradas.length)})
+              {showDrill ? 'â–² Ocultar' : 'â–¼ Ver'} lista completa de revisitas ({fmt(revisitasFiltradas.length)})
             </button>
           </div>
           {showDrill && <DrillTable rows={revisitasFiltradas} />}
 
-          {/* ── Causa Raiz por IA ──────────────────────────────────── */}
+          {/* â”€â”€ Causa Raiz por IA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <section className="space-y-2 pt-2">
             <div className="flex items-center gap-2.5">
               <div className="w-[3px] h-4 rounded-full bg-violet-500 flex-shrink-0" />
