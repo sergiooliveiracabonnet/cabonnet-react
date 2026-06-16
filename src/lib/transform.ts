@@ -254,9 +254,12 @@ export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): O
 
     const dtAbertura = parseDate(row.datacadastro)
     const dtAgend    = parseDate(row.dataagendamento)
-    row._agingAbertura    = dtAbertura ? Math.max(0, Math.floor((now.getTime() - dtAbertura.getTime()) / 86400000)) : null
-    row._agingAgendamento = (dtAgend && dtAgend <= now) ? Math.max(0, Math.floor((now.getTime() - dtAgend.getTime()) / 86400000)) : null
-    row._agingHoras       = dtAbertura ? Math.max(0, (now.getTime() - dtAbertura.getTime()) / 3600000) : null
+    // Para OS concluídas, congela o aging na data de encerramento real
+    const dtFechamento = parseDate(row.dataexecucao || row.databaixa)
+    const dtRef = (isConcluida(row.descsituacao) && dtFechamento) ? dtFechamento : now
+    row._agingAbertura    = dtAbertura ? Math.max(0, Math.floor((dtRef.getTime() - dtAbertura.getTime()) / 86400000)) : null
+    row._agingAgendamento = (dtAgend && dtAgend <= dtRef) ? Math.max(0, Math.floor((dtRef.getTime() - dtAgend.getTime()) / 86400000)) : null
+    row._agingHoras       = dtAbertura ? Math.max(0, (dtRef.getTime() - dtAbertura.getTime()) / 3600000) : null
 
     const isAtiva = ['Atendimento', 'Pendente'].includes(row.descsituacao)
     row._aging = isAtiva ? row._agingAbertura : null
