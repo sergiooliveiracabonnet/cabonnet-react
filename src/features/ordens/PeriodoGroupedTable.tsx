@@ -114,9 +114,10 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
 
               {/* Linhas */}
               {(periodoRows as OSRow[]).map((row: OSRow, i: number) => {
-                const aging      = row._aging ?? 0
-                const agingColor = aging >= 6 ? 'text-red'   : aging >= 3 ? 'text-yellow'  : 'text-cyan'
-                const agingBg    = aging >= 6 ? 'bg-red/10'  : aging >= 3 ? 'bg-yellow/10' : 'bg-cyan/10'
+                const isActive    = row._aging != null
+                const aging      = row._aging ?? row._agingAbertura ?? 0
+                const agingColor = !isActive ? 'text-teal'  : aging >= 6 ? 'text-red'   : aging >= 3 ? 'text-yellow'  : 'text-cyan'
+                const agingBg    = !isActive ? 'bg-teal/10' : aging >= 6 ? 'bg-red/10'  : aging >= 3 ? 'bg-yellow/10' : 'bg-cyan/10'
                 return (
                   <div
                     key={row.numos || i}

@@ -60,10 +60,11 @@ const densityOptions = [
 const columns: { key?: string; label: string; render?: ColRender }[] = [
   { key: 'numos',           label: 'Nº OS' },
   { key: '_aging',          label: 'Aging',
-    render: (v) => {
-      const n = v as number
-      const c = n >= 6 ? 'red' : n >= 3 ? 'yellow' : 'cyan'
-      return <Badge variant={c}>{n ?? 0}d</Badge>
+    render: (v, row) => {
+      const active = v as number | null
+      const n = active ?? (row._agingAbertura ?? 0)
+      const c = active == null ? 'teal' : n >= 6 ? 'red' : n >= 3 ? 'yellow' : 'cyan'
+      return <Badge variant={c}>{n}d</Badge>
     }
   },
   { key: '_riskScore',      label: 'Risco',
