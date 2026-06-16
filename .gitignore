@@ -21,6 +21,7 @@ coverage/
 __pycache__/
 *.pyc
 cabonnet_server.log
+cabonnet_server.log.*
 cabonnet_server.lock
 jun_historico.json
 
