@@ -6,13 +6,15 @@ import {
 } from 'lucide-react'
 import { useAIAnomalias } from '../../hooks/useAIAnomalias'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
-import { GaugeChart } from '../../components/ui/GaugeChart'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { isCOPE, isReagend } from '../../lib/transform'
 import type {
   OSRow, KPI, Pulso, AnomaliasData, ClusterAtivo, AccentColor,
 } from '../../lib/types'
+export { PulsoHero } from './PulsoHero'
+export type { AnomaliaContextType } from './PulsoHero'
+import type { AnomaliaContextType } from './PulsoHero'
 
 export interface ModalState        { title: string; rows: OSRow[] }
 export type { AINarrativeResult }
@@ -23,13 +25,6 @@ export interface CatCfgItem {
   label: string
   icon:  IconComp | null
   color: string
-}
-
-export interface AnomaliaContextType {
-  total:     number
-  sla_pct:   number
-  criticas:  number
-  aging_med: number
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -81,238 +76,6 @@ export function SectionLabel({ icon: Icon, color, children }: {
       <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color }}>
         {children}
       </span>
-    </div>
-  )
-}
-
-// ─── PulsoHero ────────────────────────────────────────────────────────────────
-
-export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI }: {
-  pulso: Pulso; aiData: AINarrativeResult | null | undefined; isLoadingAI: boolean; onRequestAI?: (obs: string) => void
-}) {
-  const [draftObs, setDraftObs] = useState('')
-  const [showReanalysis, setShowReanalysis] = useState(false)
-
-  const {
-    score = 0, scoreLabel = '—', narrativa = '', quickInsights = [],
-    agingMed = 0, slaFila = 0, mttr = 0, semAgendamento = 0,
-  } = pulso
-
-  const scoreColor =
-    score >= 85 ? '#4ade80' :
-    score >= 65 ? '#facc15' : '#f87171'
-
-  type DisplayInsight = { level: string; text: string; ai?: boolean }
-  const displayNarrative = narrativa
-  const displayInsights: DisplayInsight[] = aiData?.insights?.length
-    ? aiData.insights.map(text => ({ level: 'cyan', text, ai: true }))
-    : quickInsights
-
-  const miniStats = [
-    { label: 'Aging Médio', value: agingMed > 0 ? `${agingMed}d` : '—',      warn: agingMed > 3, danger: agingMed > 7  },
-    { label: 'SLA da Fila', value: `${slaFila}%`,                              warn: slaFila < 90, danger: slaFila < 75  },
-    { label: 'MTTR',        value: mttr > 0 ? `${mttr}d` : '—',               warn: mttr > 2,     danger: mttr > 5      },
-    { label: 'Sem Agend.',  value: String(semAgendamento),                      warn: semAgendamento > 5, danger: semAgendamento > 20 },
-  ]
-
-  const INSIGHT_CLS = {
-    red:    'bg-red/10 text-red border-red/25',
-    orange: 'bg-orange/10 text-orange border-orange/25',
-    yellow: 'bg-yellow/10 text-yellow border-yellow/25',
-    green:  'bg-green/10 text-green border-green/25',
-    cyan:   'bg-cyan/10 text-cyan border-cyan/25',
-  } as Record<string, string>
-
-  return (
-    <div
-      className="relative overflow-hidden rounded-2xl border"
-      style={{
-        background: 'rgb(var(--c-card))',
-        borderColor: `${scoreColor}28`,
-      }}
-    >
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: `linear-gradient(90deg, transparent, ${scoreColor}, transparent)` }} />
-
-      {/* Atmospheric glow */}
-      <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full blur-3xl pointer-events-none"
-           style={{ background: `${scoreColor}0e` }} />
-      <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full blur-3xl pointer-events-none"
-           style={{ background: 'rgba(59,130,246,0.05)' }} />
-
-      <div className="relative p-5 space-y-4">
-        {/* Main row */}
-        <div className="flex items-start gap-6 flex-wrap">
-
-          {/* Gauge */}
-          <div className="flex flex-col items-center gap-1 flex-shrink-0">
-            <GaugeChart value={score} color={scoreColor} label={scoreLabel} size={100} />
-            <span className="text-[10px] font-bold uppercase tracking-[0.06em]"
-                  style={{ color: `${scoreColor}99` }}>
-              Score
-            </span>
-          </div>
-
-          {/* Narrativa */}
-          <div className="flex-1 min-w-[200px]">
-            <div className="flex items-center gap-2 mb-3">
-              <Activity size={10} className="text-muted" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">
-                Análise Operacional
-              </span>
-              {aiData && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary/80
-                                 bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full">
-                  <Sparkles size={7} /> IA
-                </span>
-              )}
-            </div>
-
-            {!isLoadingAI && !aiData && onRequestAI ? (
-              <div className="space-y-2">
-                <textarea
-                  value={draftObs}
-                  onChange={e => setDraftObs(e.target.value)}
-                  placeholder="Contexto opcional para a IA: ex. tivemos queda de energia hoje, o que pode justificar menor fluxo de atendimentos."
-                  rows={2}
-                  className="w-full text-[11px] text-secondary placeholder:text-muted/50
-                             bg-surface/60 border border-white/[0.08] rounded-lg px-3 py-2
-                             resize-none focus:outline-none focus:border-primary/30
-                             leading-relaxed"
-                />
-                <button
-                  onClick={() => onRequestAI(draftObs)}
-                  className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
-                             px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
-                             transition-all duration-fast"
-                >
-                  <Sparkles size={11} /> Analisar com IA
-                </button>
-              </div>
-            ) : isLoadingAI && !aiData ? (
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <div className="h-2 bg-surface rounded animate-pulse w-16" />
-                  <div className="h-3 bg-surface rounded animate-pulse w-full" />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="h-2 bg-surface rounded animate-pulse w-16" />
-                  <div className="h-3 bg-surface rounded animate-pulse w-5/6" />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="h-2 bg-surface rounded animate-pulse w-16" />
-                  <div className="h-3 bg-surface rounded animate-pulse w-4/5" />
-                </div>
-              </div>
-            ) : aiData?.problema ? (
-              <div className="space-y-2.5">
-                {/* Problema */}
-                <div className="flex gap-2.5 items-start">
-                  <span className="mt-[3px] flex-shrink-0 w-1.5 h-1.5 rounded-full bg-red" />
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-red/70 mb-0.5">Problema</p>
-                    <p className="text-[12px] text-secondary leading-snug">{aiData.problema}</p>
-                  </div>
-                </div>
-                {/* Sugestão */}
-                <div className="flex gap-2.5 items-start">
-                  <span className="mt-[3px] flex-shrink-0 w-1.5 h-1.5 rounded-full bg-yellow" />
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-yellow/70 mb-0.5">Sugestão</p>
-                    <p className="text-[12px] text-secondary leading-snug">{aiData.sugestao}</p>
-                  </div>
-                </div>
-                {/* Ação */}
-                <div className="flex gap-2.5 items-start">
-                  <Zap size={10} className="mt-[2px] flex-shrink-0 text-green" />
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-green/70 mb-0.5">Ação Imediata</p>
-                    <p className="text-[12px] font-semibold text-text leading-snug">{aiData.acao}</p>
-                  </div>
-                </div>
-
-                {/* Reanalisar */}
-                {onRequestAI && !showReanalysis && (
-                  <button
-                    onClick={() => setShowReanalysis(true)}
-                    className="mt-1 flex items-center gap-1 text-[10px] text-muted/60 hover:text-primary
-                               transition-colors duration-fast"
-                  >
-                    <Sparkles size={9} /> Reanalisar com novo contexto
-                  </button>
-                )}
-                {showReanalysis && onRequestAI && (
-                  <div className="pt-1 space-y-1.5 border-t border-white/[0.05]">
-                    <textarea
-                      value={draftObs}
-                      onChange={e => setDraftObs(e.target.value)}
-                      placeholder="Novo contexto para a IA..."
-                      rows={2}
-                      className="w-full text-[11px] text-secondary placeholder:text-muted/50
-                                 bg-surface/60 border border-white/[0.08] rounded-lg px-3 py-2
-                                 resize-none focus:outline-none focus:border-primary/30
-                                 leading-relaxed"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { onRequestAI(draftObs); setShowReanalysis(false) }}
-                        className="flex items-center gap-1 text-[10px] font-semibold text-primary/70 hover:text-primary
-                                   px-2.5 py-1 rounded-md border border-primary/20 hover:border-primary/40
-                                   hover:bg-primary/[0.08] transition-all duration-fast"
-                      >
-                        <Sparkles size={9} /> Analisar
-                      </button>
-                      <button
-                        onClick={() => setShowReanalysis(false)}
-                        className="text-[10px] text-muted/60 hover:text-muted px-2 py-1 transition-colors duration-fast"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-[12px] text-secondary leading-[1.7]">
-                {displayNarrative || 'Carregando análise operacional…'}
-              </p>
-            )}
-          </div>
-
-          {/* Mini stats */}
-          <div className="flex-shrink-0 grid grid-cols-2 gap-x-8 gap-y-3">
-            {miniStats.map(s => (
-              <div key={s.label} className="text-right">
-                <p className="text-[10px] text-muted mb-0.5">{s.label}</p>
-                <p className={`font-mono font-bold text-[18px] leading-none tabular-nums
-                               ${s.danger ? 'text-red' : s.warn ? 'text-yellow' : 'text-text'}`}>
-                  {s.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Insight pills */}
-        {displayInsights.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-3 border-t border-white/[0.05]">
-            {displayInsights.map((ins, i) => (
-              <span
-                key={i}
-                className={`inline-flex items-center gap-1.5 text-[11px] font-semibold
-                            px-2.5 py-[5px] rounded-full border ${INSIGHT_CLS[ins.level] ?? INSIGHT_CLS.cyan}`}
-              >
-                {ins.ai
-                  ? <Sparkles size={8} className="flex-shrink-0 opacity-70" />
-                  : <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
-                }
-                {ins.text}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   )
 }
