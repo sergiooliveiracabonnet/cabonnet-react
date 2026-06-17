@@ -1,7 +1,7 @@
 import { useState, useMemo, type ComponentType, type CSSProperties, type ReactNode } from 'react'
 import {
   AlertCircle, CheckCircle2, Zap, TrendingUp, TrendingDown, Minus,
-  MapPin, Clock, BarChart3, Package, Wrench, Radio, Target,
+  MapPin, Clock, BarChart3, Package, Wrench, Radio, Target, Calendar,
   ChevronDown, ChevronUp, Activity, Users, RotateCcw, ArrowDownRight, ArrowUpRight, Gauge,
 } from 'lucide-react'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
@@ -9,7 +9,7 @@ import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { isCOPE, isReagend } from '../../lib/transform'
 import type {
-  OSRow, KPI, Pulso, ClusterAtivo, AccentColor, CampoSemaforo, PulsoMetaMes,
+  OSRow, KPI, Pulso, ClusterAtivo, AccentColor, CampoSemaforo, PulsoMetaMes, PulsoRitmoIntradiario,
 } from '../../lib/types'
 export { PulsoHero } from './PulsoHero'
 export type { AnomaliaContextType } from './PulsoHero'
@@ -81,8 +81,9 @@ export function SectionLabel({ icon: Icon, color, children }: {
 
 // ─── BentoKPICard ─────────────────────────────────────────────────────────────
 
-export function BentoKPICard({ kpi, icon: Icon, delay = 0, onClick }: {
+export function BentoKPICard({ kpi, icon: Icon, delay = 0, onClick, scope }: {
   kpi: KPI; icon: IconComp | undefined; delay?: number; onClick?: () => void
+  scope?: 'aovivo' | 'periodo'
 }) {
   const { title, value, sub, accent, trend } = kpi
   const ac = ACCENT_COLORS[accent] ?? ACCENT_COLORS.primary
@@ -131,6 +132,15 @@ export function BentoKPICard({ kpi, icon: Icon, delay = 0, onClick }: {
 
         {/* Sub */}
         <p className="text-[11px] text-muted leading-snug">{sub}</p>
+
+        {/* Escopo: ao vivo (ignora filtro de data) vs no período selecionado */}
+        {scope && (
+          <p className="flex items-center gap-1 text-[8.5px] uppercase tracking-wide text-muted/45 mt-1.5">
+            {scope === 'aovivo'
+              ? <><span className="w-1 h-1 rounded-full bg-green animate-pulse flex-shrink-0" /> Ao vivo</>
+              : <><Calendar size={8} className="flex-shrink-0" /> No período</>}
+          </p>
+        )}
       </div>
 
       {/* Bottom indicator when clickable */}
@@ -214,10 +224,48 @@ function FluxoIndicator({ f }: { f: FluxoHoje }) {
   )
 }
 
-export function ExecutadasHeroBlock({ rows, projecao, fluxo, onOpenModal }: {
+function RitmoIntradiarioBar({ r }: { r: PulsoRitmoIntradiario }) {
+  const tot = r.manha + r.tarde
+  if (tot === 0) return null
+  const pctManha = Math.round((r.manha / tot) * 100)
+  const pctTarde = 100 - pctManha
+  return (
+    <div className="mt-4 pt-3 border-t border-white/[0.05]">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Ritmo por turno hoje</span>
+        {r.alerta && (
+          <span className="text-[10px] font-semibold text-yellow flex items-center gap-1">
+            <AlertCircle size={9} /> Queda no turno da tarde
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-4 mb-1.5">
+        <span className="flex items-center gap-1.5 text-[11px]">
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#f59e0b' }} />
+          <span className="text-muted">Manhã</span>
+          <span className="font-mono font-bold text-text">{r.manha}</span>
+        </span>
+        <span className="flex items-center gap-1.5 text-[11px]">
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#818cf8' }} />
+          <span className="text-muted">Tarde</span>
+          <span className={`font-mono font-bold ${r.alerta ? 'text-yellow' : 'text-text'}`}>
+            {r.tardeIniciada ? r.tarde : '—'}
+          </span>
+        </span>
+      </div>
+      <div className="flex h-1.5 rounded-full overflow-hidden bg-surface/30">
+        <div className="h-full" style={{ width: `${pctManha}%`, background: '#f59e0b' }} />
+        <div className="h-full" style={{ width: `${pctTarde}%`, background: '#818cf8' }} />
+      </div>
+    </div>
+  )
+}
+
+export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, onOpenModal }: {
   rows: OSRow[]
   projecao?: CampoProjecaoReal | null
   fluxo?:    FluxoHoje | null
+  ritmoIntradiario?: PulsoRitmoIntradiario | null
   onOpenModal: (title: string, rows: OSRow[]) => void
 }) {
   const hojeRows = useMemo(() => rows.filter(r => r._executadaHoje), [rows])
@@ -328,6 +376,8 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, onOpenModal }: {
             ))}
           </div>
         )}
+
+        {ritmoIntradiario && <RitmoIntradiarioBar r={ritmoIntradiario} />}
       </div>
     </div>
   )

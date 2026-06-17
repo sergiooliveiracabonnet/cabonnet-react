@@ -122,6 +122,14 @@ export interface PulsoMetaMes {
   status:            'acima' | 'abaixo' | 'neutro'
 }
 
+export interface PulsoRitmoIntradiario {
+  manha:         number
+  tarde:         number
+  semPeriodo:    number
+  tardeIniciada: boolean
+  alerta:        boolean
+}
+
 export interface Pulso {
   score:             number
   scoreLabel:        string
@@ -139,6 +147,7 @@ export interface Pulso {
   saidasHoje:        number
   fluxoHoje:         number
   metaMes:           PulsoMetaMes
+  ritmoIntradiario:  PulsoRitmoIntradiario
 }
 
 export interface FornecedorCard {

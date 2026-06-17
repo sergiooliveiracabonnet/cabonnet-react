@@ -74,7 +74,7 @@ export default function DashboardPage() {
             <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-2">
               {statsKpis.slice(0, 5).map((k, i) => (
-                <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} />
+                <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} scope="aovivo" />
               ))}
             </div>
           </section>
@@ -82,7 +82,7 @@ export default function DashboardPage() {
             <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
               {statsKpis.slice(5).map((k, i) => (
-                <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} />
+                <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} scope="aovivo" />
               ))}
             </div>
           </section>
@@ -134,6 +134,7 @@ export default function DashboardPage() {
                 icon={KPI_ICONS[k.id]}
                 delay={i * 60}
                 onClick={KPI_FILTERS[k.id] ? () => openKpi(k) : undefined}
+                scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
               />
             ))}
           </div>
@@ -144,6 +145,7 @@ export default function DashboardPage() {
           rows={allRows}
           projecao={projecaoHoje}
           fluxo={fluxoHoje}
+          ritmoIntradiario={pulso.ritmoIntradiario}
           onOpenModal={(title, filtered) => setModal({ title, rows: filtered })}
         />
 
@@ -158,6 +160,7 @@ export default function DashboardPage() {
                 icon={KPI_ICONS[k.id]}
                 delay={i * 60}
                 onClick={KPI_FILTERS[k.id] ? () => openKpi(k) : undefined}
+                scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
               />
             ))}
           </div>

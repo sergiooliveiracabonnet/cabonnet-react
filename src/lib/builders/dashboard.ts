@@ -55,6 +55,22 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   }
   const fluxoHoje = entradasHoje - saidasHoje
 
+  // ─── Ritmo intradiário: conclusões de hoje por turno (manhã/tarde) ────────
+  let manhaHoje = 0, tardeHoje = 0, semPeriodoHoje = 0
+  for (const r of allRows) {
+    if (!r._executadaHoje) continue
+    const p = (r.periodo || '').toLowerCase()
+    if      (p.includes('manh'))  manhaHoje++
+    else if (p.includes('tarde')) tardeHoje++
+    else                           semPeriodoHoje++
+  }
+  const tardeIniciada = now.getHours() >= 13
+  const ritmoIntradiario = {
+    manha: manhaHoje, tarde: tardeHoje, semPeriodo: semPeriodoHoje,
+    tardeIniciada,
+    alerta: tardeIniciada && manhaHoje >= 5 && tardeHoje < manhaHoje * 0.4,
+  }
+
   // ─── Meta do mês: concluídas no mês atual vs média dos 3 meses anteriores ─
   const monthKey   = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   const curMonthKey = monthKey(now)
@@ -187,7 +203,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     narrativa: narrativaPulso, quickInsights,
     agingMed, agingDist, slaFila, semAgendamento, mttr,
     topCidadesCriticas, clustersAtivos,
-    entradasHoje, saidasHoje, fluxoHoje, metaMes,
+    entradasHoje, saidasHoje, fluxoHoje, metaMes, ritmoIntradiario,
   }
 
   const mkTrend = (cur: number, prev: number, higherIsBetter = true) => {

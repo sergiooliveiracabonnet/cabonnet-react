@@ -44,6 +44,9 @@ const EMPTY_DERIVED = {
         diasUteisRestantes: 0, diasUteisTotal: 0, projecaoFinal: null as number | null,
         status: 'neutro' as 'acima' | 'abaixo' | 'neutro',
       },
+      ritmoIntradiario: {
+        manha: 0, tarde: 0, semPeriodo: 0, tardeIniciada: false, alerta: false,
+      },
     },
   },
   sla: {
