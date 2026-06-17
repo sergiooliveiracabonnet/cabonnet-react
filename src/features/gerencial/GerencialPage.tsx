@@ -1,22 +1,24 @@
 import { useState, useMemo } from 'react'
-import { Briefcase, MapPin, Clock, ChevronRight, Package, Wrench, Users } from 'lucide-react'
+import { Briefcase, MapPin, Clock, ChevronRight, Package, Wrench, Users, Copy, Check } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
-import { useUIStore }    from '../../store/uiStore'
+import { useUIStore, PRESETS } from '../../store/uiStore'
 import { isReagend, isExecucaoReal } from '../../lib/transform'
 import {
   isInst, isVTManut, isServico, isAtend, isAtivo, skip,
-  _parseBR, _isExecNoPeriodo, byCidade, byEquipe,
+  _parseBR, _isExecNoPeriodo, byCidade, byEquipe, buildProdutividadeText,
   type DrillRow,
 } from './gerencialUtils'
 import {
   OSListModal, HeroCount, CidadeTable, EmRotaCard, ClienteSearch, EquipeTable,
   SectionLabel,
 } from './GerencialComponents'
+import { Button } from '../../components/ui/Button'
 
 export default function GerencialPage() {
   const { rows, allRows, isLoading } = useOSDerived()
   const { dateFilter }               = useUIStore()
   const [drillDown, setDrillDown]    = useState<DrillRow | null>(null)
+  const [copied,    setCopied]       = useState(false)
 
   const { from, to } = dateFilter ?? {}
 
@@ -86,6 +88,35 @@ export default function GerencialPage() {
   const kpiAtendendo  = useMemo(() => baseRows.filter(isAtend), [baseRows])
   const kpiConcluidas = useMemo(() => concluidas, [concluidas])
 
+  // ─── Copiar produtividade (Instalação / VT-Manutenção / Serviço) ─────────
+  function handleCopyProdutividade() {
+    const presetLabel = PRESETS.find(p => p.id === dateFilter?.preset)?.label ?? dateFilter?.preset ?? '—'
+    const fmt = (d: Date | null | undefined) => d ? d.toLocaleDateString('pt-BR') : '—'
+    const periodoLabel = `${presetLabel} (${fmt(from)} – ${fmt(to)})`
+
+    const text = buildProdutividadeText([
+      {
+        label: '📦 INSTALAÇÕES — executadas no período',
+        total: instRows.length, ativos: instAtivos.length, concluidos: instConclRows.length,
+        cidadesAtivos: instAtivosCidades, cidadesConcluidos: instCidades,
+      },
+      {
+        label: '🔧 VT / MANUTENÇÃO — executadas no período',
+        total: vtManutRows.length, ativos: vtManutAtivos.length, concluidos: vtManutConclRows.length,
+        cidadesAtivos: vtManutAtivosCidades, cidadesConcluidos: vtManutCidades,
+      },
+      {
+        label: '💼 SERVIÇO — executados no período',
+        total: servRows.length, ativos: servAtivos.length, concluidos: servConclRows.length,
+        cidadesAtivos: servAtivosCidades, cidadesConcluidos: servCidades,
+      },
+    ], periodoLabel)
+
+    navigator.clipboard.writeText(text).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24 gap-3 text-secondary text-sm">
@@ -108,20 +139,35 @@ export default function GerencialPage() {
       />
 
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-1">
-          <h1 className="text-[20px] font-headline font-bold text-text">Visão Gerencial</h1>
-          <span className="flex items-center gap-1.5 text-[10px] text-muted">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green" />
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-[20px] font-headline font-bold text-text">Visão Gerencial</h1>
+            <span className="flex items-center gap-1.5 text-[10px] text-muted">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green" />
+              </span>
+              Ao vivo
             </span>
-            Ao vivo
-          </span>
+          </div>
+          <p className="text-[12px] text-muted">
+            Concluídas filtradas por <strong className="text-secondary">data de execução</strong> · Em Rota = snapshot ao vivo
+          </p>
         </div>
-        <p className="text-[12px] text-muted">
-          Concluídas filtradas por <strong className="text-secondary">data de execução</strong> · Em Rota = snapshot ao vivo
-        </p>
+
+        <Button
+          variant="outline" size="sm"
+          className={`gap-1.5 flex-shrink-0 transition-all duration-300
+            ${copied
+              ? 'border-green-500/50 text-green bg-green-500/10'
+              : 'border-green/30 text-green hover:bg-green/10'}`}
+          onClick={handleCopyProdutividade}
+        >
+          {copied
+            ? <><Check size={11} /> Copiado!</>
+            : <><Copy size={11} /> Copiar produtividade</>}
+        </Button>
       </div>
 
       {/* ── 1. Instalação ──────────────────────────────────────────────────── */}

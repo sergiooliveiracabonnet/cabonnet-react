@@ -44,6 +44,34 @@ export function byCidade(rows: OSRow[]): { cidade: string; total: number }[] {
   return Object.entries(map).sort((a, b) => b[1] - a[1]).map(([cidade, total]) => ({ cidade, total }))
 }
 
+// ─── Texto de produtividade (copiar para área de transferência) ────────────────
+export interface CategoriaProdutividade {
+  label:             string
+  total:             number
+  ativos:            number
+  concluidos:        number
+  cidadesAtivos:     { cidade: string; total: number }[]
+  cidadesConcluidos: { cidade: string; total: number }[]
+}
+
+export function buildProdutividadeText(categorias: CategoriaProdutividade[], periodoLabel: string): string {
+  const lines: string[] = [`📊 PRODUTIVIDADE — ${periodoLabel}`, '']
+  for (const c of categorias) {
+    lines.push(c.label)
+    lines.push(`Total: ${c.total}  ·  Em aberto: ${c.ativos}  ·  Concluídas: ${c.concluidos}`)
+    if (c.cidadesConcluidos.length) {
+      lines.push('Concluídas por cidade:')
+      for (const cc of c.cidadesConcluidos) lines.push(`  ${cc.cidade}: ${cc.total}`)
+    }
+    if (c.cidadesAtivos.length) {
+      lines.push('Em aberto por cidade:')
+      for (const ca of c.cidadesAtivos) lines.push(`  ${ca.cidade}: ${ca.total}`)
+    }
+    lines.push('')
+  }
+  return lines.join('\n').trim()
+}
+
 export function byEquipe(rows: OSRow[]): ({ equipe: string } & EquipeEntry)[] {
   const map: Record<string, EquipeEntry> = {}
   for (const r of rows) {
