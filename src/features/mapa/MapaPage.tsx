@@ -1,15 +1,31 @@
 import { useState, useMemo, useEffect } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from 'react-leaflet'
-import { Map, Flame, Circle, TrendingUp, X, LayoutGrid, Layers, ChevronDown, ChevronUp } from 'lucide-react'
+import { MapContainer, TileLayer, CircleMarker, Marker, Circle as MapCircle, Tooltip, useMap } from 'react-leaflet'
+import {
+  Map as MapIcon, Flame, Circle, TrendingUp, X, LayoutGrid, Layers, ChevronDown, ChevronUp,
+  Search, Loader2, CheckCircle2, AlertTriangle, MapPin as PinIcon,
+} from 'lucide-react'
 import L from 'leaflet'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
 import { aggregateByCidade, aggregateByBairro, buildHeatPoints, type BairroAgg } from './geo'
+import { geocodeAddress, haversineKm, type GeocodeResult } from './searchAddress'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import OSDrawer from '../ordens/OSDrawer'
 import type { OSRow } from '../../lib/types'
+
+const PROXIMIDADE_KM = 5
+
+const searchPinIcon = L.divIcon({
+  className: 'address-search-pin',
+  html: `<div style="
+    width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+    background:#22d3ee;border:2px solid #0d1117;box-shadow:0 2px 8px rgba(0,0,0,.5);
+  "></div>`,
+  iconSize: [26, 26],
+  iconAnchor: [13, 26],
+})
 
 // Tipo do objeto retornado por aggregateByCidade
 interface CidadeAgg {
@@ -31,6 +47,15 @@ function MapResizer() {
     const t = setTimeout(() => map.invalidateSize(), 100)
     return () => clearTimeout(t)
   }, [map])
+  return null
+}
+
+// ── Voa para um ponto buscado (resultado de geocodificação) ──────────────────
+function FlyTo({ point }: { point: { lat: number; lng: number } | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (point) map.flyTo([point.lat, point.lng], 14, { duration: 0.8 })
+  }, [map, point])
   return null
 }
 
@@ -144,6 +169,107 @@ function CidadePanel({ cidade, onClose }: { cidade: CidadeAgg | null; onClose: (
   )
 }
 
+// ── Painel de resultado da busca por endereço ─────────────────────────────────
+interface BairroProx extends BairroAgg { distKm: number }
+interface EquipeProx  { nome: string; count: number }
+interface ProximidadeInfo {
+  proximos:           BairroProx[]
+  maisProximo:        BairroProx | null
+  equipes:            EquipeProx[]
+  temEquipesProximas: boolean
+}
+
+function AddressSearchPanel({ result, info, onClose }: {
+  result: GeocodeResult
+  info:   ProximidadeInfo
+  onClose: () => void
+}) {
+  const { temEquipesProximas, equipes, proximos, maisProximo } = info
+  return (
+    <div className="absolute top-4 left-4 z-[500] w-80 animate-fade-in">
+      <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 px-4 py-3 border-b border-white/[0.08]">
+          <div className="flex items-start gap-2 min-w-0">
+            <PinIcon size={13} className="text-cyan flex-shrink-0 mt-0.5" />
+            <p className="text-[11.5px] text-secondary leading-snug">{result.label}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0
+                       text-muted hover:text-text hover:bg-surface transition-all"
+          >
+            <X size={12} />
+          </button>
+        </div>
+
+        {/* Veredito */}
+        <div className={`flex items-start gap-2.5 px-4 py-3 border-b border-white/[0.08]
+                          ${temEquipesProximas ? 'bg-green/[0.06]' : 'bg-yellow/[0.06]'}`}>
+          {temEquipesProximas
+            ? <CheckCircle2 size={15} className="text-green flex-shrink-0 mt-0.5" />
+            : <AlertTriangle size={15} className="text-yellow flex-shrink-0 mt-0.5" />}
+          <div>
+            {temEquipesProximas ? (
+              <>
+                <p className="text-[12px] font-bold text-green leading-snug">
+                  {equipes.length} equipe{equipes.length !== 1 ? 's' : ''} com OS nas proximidades
+                </p>
+                <p className="text-[10.5px] text-muted mt-0.5">raio de {PROXIMIDADE_KM} km</p>
+              </>
+            ) : (
+              <>
+                <p className="text-[12px] font-bold text-yellow leading-snug">
+                  Nenhuma equipe com OS ativa em até {PROXIMIDADE_KM} km
+                </p>
+                {maisProximo && (
+                  <p className="text-[10.5px] text-muted mt-0.5">
+                    Mais próxima: {maisProximo.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())} — {maisProximo.distKm.toFixed(1)} km
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Equipes próximas */}
+        {equipes.length > 0 && (
+          <div className="px-4 py-3 border-b border-white/[0.08]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Equipes com OS ativas</p>
+            <div className="flex flex-wrap gap-1.5">
+              {equipes.map(e => (
+                <span key={e.nome} className="text-[11px] bg-surface/40 border border-white/[0.08] rounded-full px-2.5 py-1">
+                  <span className="text-text font-semibold">{shortEquipe(e.nome)}</span>
+                  <span className="text-muted ml-1.5 font-mono">{e.count}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bairros próximos */}
+        {proximos.length > 0 && (
+          <div className="px-4 py-3 max-h-48 overflow-y-auto">
+            <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Bairros próximos</p>
+            <div className="space-y-1.5">
+              {proximos.map(b => (
+                <div key={`${b.cidade}::${b.bairro}`} className="flex items-center gap-2 text-[11px]">
+                  <span className="flex-1 min-w-0 truncate text-secondary capitalize">
+                    {b.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                  </span>
+                  <span className="text-muted font-mono flex-shrink-0">{b.distKm.toFixed(1)}km</span>
+                  <span className="font-mono font-semibold text-text flex-shrink-0 w-6 text-right">{b.count}</span>
+                  {b.criticos > 0 && <span className="text-[10px] font-bold text-red flex-shrink-0">⚠{b.criticos}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function Stat({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
     <div className="flex flex-col items-center py-2.5 px-1 gap-0.5">
@@ -211,6 +337,40 @@ export default function MapaPage() {
   const [selectedBairro, setSelectedBairro] = useState<BairroAgg | null>(null)
   const [drawerOS,       setDrawerOS]       = useState<OSRow | null>(null)
 
+  // ── Busca de endereço ────────────────────────────────────────────────────
+  const [addressQuery,  setAddressQuery]  = useState('')
+  const [searching,     setSearching]     = useState(false)
+  const [searchError,   setSearchError]   = useState<string | null>(null)
+  const [searchResult,  setSearchResult]  = useState<GeocodeResult | null>(null)
+
+  async function handleSearchAddress() {
+    const q = addressQuery.trim()
+    if (!q || searching) return
+    setSearching(true)
+    setSearchError(null)
+    try {
+      const results = await geocodeAddress(q)
+      if (!results.length) {
+        setSearchResult(null)
+        setSearchError('Endereço não encontrado. Tente incluir bairro e cidade.')
+      } else {
+        setSearchResult(results[0])
+        setSelectedCidade(null)
+        setSelectedBairro(null)
+      }
+    } catch {
+      setSearchResult(null)
+      setSearchError('Falha ao buscar endereço. Tente novamente.')
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  function handleClearSearch() {
+    setSearchResult(null)
+    setSearchError(null)
+  }
+
   // Reset seleção ao trocar granularidade
   const handleGranularity = (g: 'cidade' | 'bairro') => {
     setGranularity(g)
@@ -249,6 +409,36 @@ export default function MapaPage() {
   const cidades    = useMemo(() => aggregateByCidade(rows), [rows])
   const bairros    = useMemo(() => aggregateByBairro(rows), [rows])
   const heatPoints = useMemo(() => buildHeatPoints(rows),   [rows])
+
+  // ── Proximidade: bairros e equipes com OS próximas ao endereço buscado ──
+  const proximidade = useMemo<ProximidadeInfo | null>(() => {
+    if (!searchResult) return null
+    const point = { lat: searchResult.lat, lng: searchResult.lng }
+    const ranked: BairroProx[] = bairros
+      .map(b => ({ ...b, distKm: haversineKm(point, b.coords) }))
+      .sort((a, b) => a.distKm - b.distKm)
+    const proximos    = ranked.filter(b => b.distKm <= PROXIMIDADE_KM)
+    const maisProximo = ranked[0] ?? null
+
+    const norm = (s: string) => (s || '').trim().toUpperCase()
+    const bairroKeys = new Set(proximos.map(b => `${norm(b.cidade)}::${norm(b.bairro)}`))
+    const equipeMap = new Map<string, number>()
+    if (bairroKeys.size > 0) {
+      for (const r of rows) {
+        const key = `${norm(r.nomedacidade)}::${norm(r.bairro)}`
+        if (!bairroKeys.has(key)) continue
+        if (!['Pendente', 'Atendimento'].includes(r._situacaoEfetiva ?? r.descsituacao)) continue
+        const eq = r.nomedaequipe?.trim()
+        if (!eq) continue
+        equipeMap.set(eq, (equipeMap.get(eq) ?? 0) + 1)
+      }
+    }
+    const equipes = [...equipeMap.entries()]
+      .map(([nome, count]) => ({ nome, count }))
+      .sort((a, b) => b.count - a.count)
+
+    return { proximos: proximos.slice(0, 8), maisProximo, equipes, temEquipesProximas: equipes.length > 0 }
+  }, [searchResult, bairros, rows])
 
   // KPIs globais
   const totalCriticos  = useMemo(() => rows.filter(r => r._slaCritico).length,  [rows])
@@ -293,9 +483,53 @@ export default function MapaPage() {
 
         {/* Ícone + título */}
         <div className="flex items-center gap-2">
-          <Map size={15} className="text-primary" />
+          <MapIcon size={15} className="text-primary" />
           <span className="text-[13px] font-bold text-text">Mapa de Calor</span>
         </div>
+
+        <div className="w-px h-5 bg-surface" />
+
+        {/* Busca de endereço */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative flex items-center">
+            <Search size={11} className="absolute left-2.5 text-muted pointer-events-none" />
+            <input
+              type="text"
+              value={addressQuery}
+              onChange={e => setAddressQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSearchAddress() }}
+              placeholder="Buscar endereço (ex: Rua X, bairro, cidade)"
+              className="w-64 pl-7 pr-2 py-1.5 text-[12px] rounded-lg
+                         bg-bg border border-white/[0.08] text-text placeholder:text-muted
+                         outline-none focus:border-primary/40 transition-colors duration-fast"
+            />
+          </div>
+          <button
+            onClick={handleSearchAddress}
+            disabled={searching || !addressQuery.trim()}
+            className="flex items-center gap-1.5 h-[30px] px-3 rounded-lg text-[11px] font-semibold
+                       bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25
+                       disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-fast"
+          >
+            {searching ? <Loader2 size={11} className="animate-spin" /> : <Search size={11} />}
+            Buscar
+          </button>
+          {(searchResult || searchError) && (
+            <button
+              onClick={handleClearSearch}
+              title="Limpar busca"
+              className="w-[30px] h-[30px] flex items-center justify-center rounded-lg
+                         text-muted hover:text-text border border-white/[0.08] hover:bg-surface transition-all"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+        {searchError && (
+          <span className="text-[11px] text-yellow flex items-center gap-1">
+            <AlertTriangle size={10} /> {searchError}
+          </span>
+        )}
 
         <div className="w-px h-5 bg-surface" />
 
@@ -347,7 +581,7 @@ export default function MapaPage() {
           {[
             { val: 'calor',  icon: Flame,  label: 'Calor'  },
             { val: 'bolhas', icon: Circle, label: 'Bolhas' },
-            { val: 'ambos',  icon: Map,    label: 'Ambos'  },
+            { val: 'ambos',  icon: MapIcon, label: 'Ambos'  },
           ].map(({ val, icon: Icon, label }) => (
             <button
               key={val}
@@ -375,6 +609,7 @@ export default function MapaPage() {
           zoomControl={false}
         >
           <MapResizer />
+          <FlyTo point={searchResult} />
 
           {/* ESRI World Dark Gray Base — dark nativo, sem filtro CSS, sem API key */}
           <TileLayer
@@ -436,7 +671,32 @@ export default function MapaPage() {
               </CircleMarker>
             )
           })}
+
+          {/* Resultado da busca de endereço */}
+          {searchResult && (
+            <>
+              <MapCircle
+                center={[searchResult.lat, searchResult.lng]}
+                radius={PROXIMIDADE_KM * 1000}
+                pathOptions={{ color: '#22d3ee', fillColor: '#22d3ee', fillOpacity: 0.04, weight: 1, dashArray: '4 6' }}
+              />
+              <Marker position={[searchResult.lat, searchResult.lng]} icon={searchPinIcon}>
+                <Tooltip permanent direction="top" offset={[0, -28]} className="map-tooltip">
+                  {searchResult.label}
+                </Tooltip>
+              </Marker>
+            </>
+          )}
         </MapContainer>
+
+        {/* Resultado da busca de endereço */}
+        {searchResult && proximidade && (
+          <AddressSearchPanel
+            result={searchResult}
+            info={proximidade}
+            onClose={handleClearSearch}
+          />
+        )}
 
         {/* Legenda */}
         <div className="absolute bottom-4 right-4 z-[500]">
