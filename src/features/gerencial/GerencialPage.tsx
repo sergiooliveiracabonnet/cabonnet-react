@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react'
-import { Briefcase, MapPin, Clock, ChevronRight, Package, Wrench, Users, Copy, Check } from 'lucide-react'
+import { useState, useMemo, useRef } from 'react'
+import { Briefcase, MapPin, Clock, ChevronRight, Package, Wrench, Users, Camera, Check } from 'lucide-react'
+import { toBlob } from 'html-to-image'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useUIStore, PRESETS } from '../../store/uiStore'
 import { isReagend, isExecucaoReal } from '../../lib/transform'
 import {
   isInst, isVTManut, isServico, isAtend, isAtivo, skip,
-  _parseBR, _isExecNoPeriodo, byCidade, byEquipe, buildProdutividadeText,
+  _parseBR, _isExecNoPeriodo, byCidade, byEquipe,
   type DrillRow,
 } from './gerencialUtils'
 import {
@@ -19,6 +20,7 @@ export default function GerencialPage() {
   const { dateFilter }               = useUIStore()
   const [drillDown, setDrillDown]    = useState<DrillRow | null>(null)
   const [copied,    setCopied]       = useState(false)
+  const produtividadeRef             = useRef<HTMLDivElement>(null)
 
   const { from, to } = dateFilter ?? {}
 
@@ -88,33 +90,106 @@ export default function GerencialPage() {
   const kpiAtendendo  = useMemo(() => baseRows.filter(isAtend), [baseRows])
   const kpiConcluidas = useMemo(() => concluidas, [concluidas])
 
-  // ─── Copiar produtividade (Instalação / VT-Manutenção / Serviço) ─────────
-  function handleCopyProdutividade() {
-    const presetLabel = PRESETS.find(p => p.id === dateFilter?.preset)?.label ?? dateFilter?.preset ?? '—'
-    const fmt = (d: Date | null | undefined) => d ? d.toLocaleDateString('pt-BR') : '—'
-    const periodoLabel = `${presetLabel} (${fmt(from)} – ${fmt(to)})`
+  // ─── Copiar produtividade (Instalação / VT-Manutenção / Serviço) como imagem ─
+  async function handleCopyProdutividade() {
+    const el = produtividadeRef.current
+    if (!el) return
+    try {
+      const isDark     = !document.documentElement.classList.contains('light')
+      const bg         = isDark ? '#0d1117' : '#ffffff'
+      const bgHdr      = isDark ? '#111827' : '#f0f4ff'
+      const colorText  = isDark ? '#e2e8f0' : '#0f172a'
+      const colorMuted = isDark ? '#94a3b8' : '#64748b'
+      const borderClr  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
+      const now         = new Date()
+      const ts          = now.toLocaleDateString('pt-BR') + ' · ' +
+                          now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      const presetLabel  = PRESETS.find(p => p.id === dateFilter?.preset)?.label ?? dateFilter?.preset ?? '—'
+      const fmt           = (d: Date | null | undefined) => d ? d.toLocaleDateString('pt-BR') : '—'
+      const periodoLabel  = `${presetLabel} · ${fmt(from)} – ${fmt(to)}`
 
-    const text = buildProdutividadeText([
-      {
-        label: '📦 INSTALAÇÕES — executadas no período',
-        total: instRows.length, ativos: instAtivos.length, concluidos: instConclRows.length,
-        cidadesAtivos: instAtivosCidades, cidadesConcluidos: instCidades,
-      },
-      {
-        label: '🔧 VT / MANUTENÇÃO — executadas no período',
-        total: vtManutRows.length, ativos: vtManutAtivos.length, concluidos: vtManutConclRows.length,
-        cidadesAtivos: vtManutAtivosCidades, cidadesConcluidos: vtManutCidades,
-      },
-      {
-        label: '💼 SERVIÇO — executados no período',
-        total: servRows.length, ativos: servAtivos.length, concluidos: servConclRows.length,
-        cidadesAtivos: servAtivosCidades, cidadesConcluidos: servCidades,
-      },
-    ], periodoLabel)
+      // Largura real: percorre a subárvore para achar o maior scrollWidth real
+      const getTrueWidth = (node: HTMLElement): number => {
+        let w = node.scrollWidth
+        for (const c of node.children) w = Math.max(w, getTrueWidth(c as HTMLElement))
+        return w
+      }
+      const capW = getTrueWidth(el)
 
-    navigator.clipboard.writeText(text).catch(() => {})
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2500)
+      const stripOverflow = (node: HTMLElement) => {
+        node.style.overflow  = 'visible'
+        node.style.overflowX = 'visible'
+        node.style.overflowY = 'visible'
+        node.style.maxHeight = 'none'
+        node.style.maxWidth  = 'none'
+        for (const c of node.children) stripOverflow(c as HTMLElement)
+      }
+
+      const wrapper = document.createElement('div')
+      wrapper.style.cssText = `position:fixed;top:-99999px;left:0;width:${capW}px;pointer-events:none;`
+
+      const clone = el.cloneNode(true) as HTMLDivElement
+      clone.style.width = `${capW}px`
+      stripOverflow(clone)
+
+      wrapper.appendChild(clone)
+      document.body.appendChild(wrapper)
+
+      // Dois frames para o browser recalcular o layout no clone
+      await new Promise<void>(r => requestAnimationFrame(() => { requestAnimationFrame(() => r()) }))
+      const capH = clone.scrollHeight
+
+      const contentBlob = await toBlob(clone, {
+        pixelRatio: 2,
+        width:  capW,
+        height: capH,
+        backgroundColor: bg,
+      })
+      document.body.removeChild(wrapper)
+      if (!contentBlob) return
+
+      // Composita cabeçalho Canvas + conteúdo capturado
+      const SCALE      = 2
+      const HDR_H      = 60
+      const contentImg = await createImageBitmap(contentBlob)
+      const canvas     = document.createElement('canvas')
+      canvas.width     = contentImg.width
+      canvas.height    = contentImg.height + HDR_H * SCALE
+      const ctx        = canvas.getContext('2d')!
+
+      ctx.fillStyle = bg
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.fillStyle = bgHdr
+      ctx.fillRect(0, 0, canvas.width, HDR_H * SCALE)
+      ctx.fillStyle = '#3b82f6'
+      ctx.fillRect(0, 0, 4 * SCALE, HDR_H * SCALE)
+      ctx.strokeStyle = borderClr
+      ctx.lineWidth   = 1 * SCALE
+      ctx.beginPath(); ctx.moveTo(0, HDR_H * SCALE); ctx.lineTo(canvas.width, HDR_H * SCALE); ctx.stroke()
+
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle    = colorText
+      ctx.font         = `bold ${14 * SCALE}px system-ui,-apple-system,sans-serif`
+      ctx.fillText('CABONNET · Produtividade', 18 * SCALE, 20 * SCALE)
+      ctx.fillStyle = '#3b82f6'
+      ctx.font      = `600 ${11 * SCALE}px system-ui,-apple-system,sans-serif`
+      ctx.fillText(periodoLabel, 18 * SCALE, 43 * SCALE)
+      ctx.textAlign = 'right'
+      ctx.fillStyle = colorMuted
+      ctx.font      = `${10 * SCALE}px system-ui,-apple-system,sans-serif`
+      ctx.fillText(ts, canvas.width - 16 * SCALE, 30 * SCALE)
+      ctx.textAlign = 'left'
+      ctx.drawImage(contentImg, 0, HDR_H * SCALE)
+
+      const finalBlob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png')
+      )
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': finalBlob })])
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch (e) {
+      console.error('Clipboard error:', e)
+    }
   }
 
   if (isLoading) {
@@ -166,9 +241,11 @@ export default function GerencialPage() {
         >
           {copied
             ? <><Check size={11} /> Copiado!</>
-            : <><Copy size={11} /> Copiar produtividade</>}
+            : <><Camera size={11} /> Copiar produtividade</>}
         </Button>
       </div>
+
+      <div ref={produtividadeRef} className="space-y-6">
 
       {/* ── 1. Instalação ──────────────────────────────────────────────────── */}
       <section className="space-y-3">
@@ -346,6 +423,8 @@ export default function GerencialPage() {
           </div>
         </div>
       </section>
+
+      </div>
 
       {/* ── Em Rota — snapshot atual ────────────────────────────────────────── */}
       <section className="space-y-3">
