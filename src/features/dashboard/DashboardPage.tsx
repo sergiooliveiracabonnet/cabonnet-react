@@ -10,14 +10,16 @@ import { Modal } from '../../components/ui/Modal'
 import OSDrawer from '../ordens/OSDrawer'
 import {
   SectionLabel, PulsoHero, BentoKPICard, ExecutadasHeroBlock,
-  ClustersBairroPanel, AgingPanel, CidadesPanel, FornecedorCard, AnomaliaSection, KpiModalTable,
+  ClustersBairroPanel, AgingPanel, RitmoEquipesPanel, CidadesPanel, FornecedorCard, AnomaliaSection, KpiModalTable,
   KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS,
-  type ModalState, type TypedDashboard,
+  type ModalState, type TypedDashboard, type CampoProjecaoReal,
 } from './DashboardComponents'
 
 export default function DashboardPage() {
-  const { derived: { dashboard, anomalias }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
+  const { derived: { dashboard, anomalias, campo }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
   const { kpis, fornecedores, pulso } = dashboard as unknown as TypedDashboard
+  const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
+  const fluxoHoje = { entradas: pulso.entradasHoje, saidas: pulso.saidasHoje, saldo: pulso.fluxoHoje }
   const { clustersAtivos = [] } = pulso
   const [aiEnabled, setAiEnabled] = useState(false)
   const [observacao, setObservacao] = useState('')
@@ -130,6 +132,8 @@ export default function DashboardPage() {
         {/* ── 3. Executadas Hoje ─────────────────────────────────────────── */}
         <ExecutadasHeroBlock
           rows={allRows}
+          projecao={projecaoHoje}
+          fluxo={fluxoHoje}
           onOpenModal={(title, filtered) => setModal({ title, rows: filtered })}
         />
 
@@ -149,10 +153,11 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── 5. Faixa: Clusters + Risk Panel ──────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* ── 5. Faixa: Clusters + Risk Panel + Ritmo por Equipe ─────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <ClustersBairroPanel clusters={clustersAtivos} />
           <AgingPanel pulso={pulso} />
+          <RitmoEquipesPanel semaforo={campo.semaforo} />
         </div>
 
         {/* ── 6. Fornecedores ───────────────────────────────────────────── */}

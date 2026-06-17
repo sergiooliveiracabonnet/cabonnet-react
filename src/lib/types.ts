@@ -117,6 +117,9 @@ export interface Pulso {
   mttr:              number
   topCidadesCriticas: { cidade: string; count: number }[]
   clustersAtivos:    ClusterAtivo[]
+  entradasHoje:      number
+  saidasHoje:        number
+  fluxoHoje:         number
 }
 
 export interface FornecedorCard {

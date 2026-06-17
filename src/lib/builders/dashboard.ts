@@ -44,6 +44,17 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     .sort((a, b) => b[1] - a[1]).slice(0, 5)
     .map(([cidade, count]) => ({ cidade, count }))
 
+  // ─── Fluxo do dia: entradas vs saídas — ao vivo, ignora filtro de data ────
+  const now     = new Date()
+  const hojeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
+  let entradasHoje = 0, saidasHoje = 0
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r)) continue
+    if ((r.datacadastro || '').split(' ')[0] === hojeStr) entradasHoje++
+    if (r._executadaHoje) saidasHoje++
+  }
+  const fluxoHoje = entradasHoje - saidasHoje
+
   let concl = 0, totalPeriodo = 0
   const fornMap = new Map<string, { total: number; concluidas: number }>()
   for (const r of rows) {
@@ -61,7 +72,14 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const taxa = totalPeriodo > 0 ? Math.round(concl / totalPeriodo * 100) : 0
 
   let prevConcl = 0, prevTotalPeriodo = 0
+  const prevFornMap = new Map<string, { total: number; concluidas: number }>()
   for (const r of prevRows) {
+    const k = r._fornecedor === 'OUTRO' ? null : r._fornecedor
+    if (k && !isCOPE(r) && !isReagend(r)) {
+      if (!prevFornMap.has(k)) prevFornMap.set(k, { total: 0, concluidas: 0 })
+      prevFornMap.get(k)!.total++
+      if (isExecucaoReal(r.descsituacao)) prevFornMap.get(k)!.concluidas++
+    }
     if (isCOPE(r) || isReagend(r) || isRede(r)) continue
     prevTotalPeriodo++
     if (isExecucaoReal(r.descsituacao)) prevConcl++
@@ -121,6 +139,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     narrativa: narrativaPulso, quickInsights,
     agingMed, agingDist, slaFila, semAgendamento, mttr,
     topCidadesCriticas, clustersAtivos,
+    entradasHoje, saidasHoje, fluxoHoje,
   }
 
   const mkTrend = (cur: number, prev: number, higherIsBetter = true) => {
@@ -143,11 +162,16 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   ]
 
   const fornecedores: FornCard[] = [...fornMap.entries()]
-    .map(([k, { total: t, concluidas: c }]) => ({
-      nome: FORN_CFG[k]?.label ?? k, total: t, concluidas: c,
-      sla: t > 0 ? Math.round(c / t * 100) : 0,
-      cor: FORN_CFG[k]?.cor ?? '#64748b',
-    }))
+    .map(([k, { total: t, concluidas: c }]) => {
+      const sla = t > 0 ? Math.round(c / t * 100) : 0
+      const prevF = prevFornMap.get(k)
+      const prevSla = prevF && prevF.total > 0 ? Math.round(prevF.concluidas / prevF.total * 100) : 0
+      return {
+        nome: FORN_CFG[k]?.label ?? k, total: t, concluidas: c, sla,
+        cor: FORN_CFG[k]?.cor ?? '#64748b',
+        slaTrend: mkTrend(sla, prevSla, true),
+      }
+    })
     .filter(f => f.total > 0)
     .sort((a, b) => b.total - a.total)
 

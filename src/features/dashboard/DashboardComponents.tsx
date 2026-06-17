@@ -2,14 +2,14 @@ import { useState, useMemo, type ComponentType, type CSSProperties, type ReactNo
 import {
   AlertCircle, CheckCircle2, Zap, TrendingUp, TrendingDown, Minus,
   MapPin, Clock, BarChart3, Package, Wrench, Radio, Target,
-  ChevronDown, ChevronUp, Activity, Users, RotateCcw,
+  ChevronDown, ChevronUp, Activity, Users, RotateCcw, ArrowDownRight, ArrowUpRight, Gauge,
 } from 'lucide-react'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { isCOPE, isReagend } from '../../lib/transform'
 import type {
-  OSRow, KPI, Pulso, ClusterAtivo, AccentColor,
+  OSRow, KPI, Pulso, ClusterAtivo, AccentColor, CampoSemaforo,
 } from '../../lib/types'
 export { PulsoHero } from './PulsoHero'
 export type { AnomaliaContextType } from './PulsoHero'
@@ -167,8 +167,57 @@ const CAT_CFG: CatCfgItem[] = [
   { cat: 'REDE',          label: 'Rede',             icon: Radio,   color: '#71717a' },
 ]
 
-export function ExecutadasHeroBlock({ rows, onOpenModal }: {
+// Espelha o objeto `projecao` retornado por buildCampo (campo.ts) — não é
+// per-equipe, é a projeção agregada da fila. types.ts ainda não foi atualizado
+// para esse shape (ver memória "Melhorias pendentes"), então tipamos localmente.
+export interface CampoProjecaoReal {
+  conclHoje:     number
+  dayFraction:   number
+  mediaBaseline: number
+  projecaoFinal: number | null
+  status:        'acima' | 'abaixo' | 'neutro'
+  label:         string
+}
+
+export interface FluxoHoje {
+  entradas: number
+  saidas:   number
+  saldo:    number
+}
+
+function RitmoIndicator({ p }: { p: CampoProjecaoReal }) {
+  const cor  = p.status === 'acima' ? '#4ade80' : p.status === 'abaixo' ? '#facc15' : '#94a3b8'
+  const Icon = p.status === 'acima' ? TrendingUp : p.status === 'abaixo' ? TrendingDown : Gauge
+  return (
+    <div className="flex items-center gap-1.5 text-[11px]">
+      <Icon size={11} style={{ color: cor }} />
+      <span className="font-semibold" style={{ color: cor }}>
+        {p.status === 'acima' ? 'No ritmo' : p.status === 'abaixo' ? 'Abaixo do ritmo' : 'Início do dia'}
+      </span>
+      <span className="text-muted">· {p.label}</span>
+    </div>
+  )
+}
+
+function FluxoIndicator({ f }: { f: FluxoHoje }) {
+  const crescendo = f.saldo > 0
+  const cor  = crescendo ? '#fb923c' : f.saldo < 0 ? '#4ade80' : '#94a3b8'
+  const Icon = crescendo ? ArrowUpRight : f.saldo < 0 ? ArrowDownRight : Minus
+  return (
+    <div className="flex items-center gap-1.5 text-[11px]">
+      <Icon size={11} style={{ color: cor }} />
+      <span className="font-semibold" style={{ color: cor }}>
+        Fila {crescendo ? `+${f.saldo}` : f.saldo} hoje
+      </span>
+      <span className="text-muted">· {f.entradas} entraram · {f.saidas} saíram</span>
+    </div>
+  )
+}
+
+export function ExecutadasHeroBlock({ rows, projecao, fluxo, onOpenModal }: {
   rows: OSRow[]
+  projecao?: CampoProjecaoReal | null
+  fluxo?:    FluxoHoje | null
   onOpenModal: (title: string, rows: OSRow[]) => void
 }) {
   const hojeRows = useMemo(() => rows.filter(r => r._executadaHoje), [rows])
@@ -194,7 +243,7 @@ export function ExecutadasHeroBlock({ rows, onOpenModal }: {
            style={{ background: 'rgba(74,222,128,0.07)' }} />
 
       <div className="relative p-5">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3">
           <SectionLabel icon={CheckCircle2} color="#4ade80">Executadas Hoje</SectionLabel>
           {total > 0 && (
             <button
@@ -206,6 +255,13 @@ export function ExecutadasHeroBlock({ rows, onOpenModal }: {
             </button>
           )}
         </div>
+
+        {(projecao || fluxo) && (
+          <div className="flex items-center gap-4 flex-wrap mb-4 pb-3 border-b border-white/[0.05]">
+            {projecao && <RitmoIndicator p={projecao} />}
+            {fluxo && <FluxoIndicator f={fluxo} />}
+          </div>
+        )}
 
         {total === 0 ? (
           <div className="flex items-center gap-3 py-4">
@@ -395,6 +451,79 @@ export function AgingPanel({ pulso }: { pulso: Pulso }) {
   )
 }
 
+// ─── RitmoEquipesPanel ──────────────────────────────────────────────────────
+
+export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
+  const comRitmo = semaforo.filter(e => e.ritmoHoje != null)
+  const abaixo = comRitmo
+    .filter(e => e.ritmoHoje!.status === 'abaixo')
+    .sort((a, b) => (b.ritmoHoje!.baseline - b.ritmoHoje!.atual) - (a.ritmoHoje!.baseline - a.ritmoHoje!.atual))
+    .slice(0, 3)
+  const acima = comRitmo
+    .filter(e => e.ritmoHoje!.status === 'acima')
+    .sort((a, b) => (b.ritmoHoje!.atual - b.ritmoHoje!.baseline) - (a.ritmoHoje!.atual - a.ritmoHoje!.baseline))
+    .slice(0, 3)
+
+  if (!comRitmo.length) {
+    return (
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card p-5">
+        <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
+        <div className="flex items-center justify-center py-8">
+          <p className="text-muted text-[12px]">Ainda sem histórico de ritmo para comparar hoje</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card p-5">
+      <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
+
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-yellow/80 mb-2 flex items-center gap-1">
+            <TrendingDown size={10} /> Abaixo do ritmo
+          </p>
+          {abaixo.length === 0 ? (
+            <p className="text-[11px] text-muted/50">Nenhuma equipe abaixo da média</p>
+          ) : (
+            <div className="space-y-1.5">
+              {abaixo.map(e => (
+                <div key={e.nome} className="flex items-center justify-between text-[11px] gap-2">
+                  <span className="text-text font-semibold truncate">{e.nome}</span>
+                  <span className="font-mono text-yellow flex-shrink-0">
+                    {e.ritmoHoje!.atual}/{e.ritmoHoje!.baseline}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-green/80 mb-2 flex items-center gap-1">
+            <TrendingUp size={10} /> Acima do ritmo
+          </p>
+          {acima.length === 0 ? (
+            <p className="text-[11px] text-muted/50">Nenhuma equipe acima da média</p>
+          ) : (
+            <div className="space-y-1.5">
+              {acima.map(e => (
+                <div key={e.nome} className="flex items-center justify-between text-[11px] gap-2">
+                  <span className="text-text font-semibold truncate">{e.nome}</span>
+                  <span className="font-mono text-green flex-shrink-0">
+                    {e.ritmoHoje!.atual}/{e.ritmoHoje!.baseline}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── CidadesPanel ─────────────────────────────────────────────────────────────
 
 export function CidadesPanel({ cidades }: { cidades: { cidade: string; count: number }[] }) {
@@ -424,8 +553,9 @@ export function CidadesPanel({ cidades }: { cidades: { cidade: string; count: nu
 
 const SLA_TIER = { ok: { cls: 'badge-green', label: 'No SLA' }, warn: { cls: 'badge-yellow', label: 'Atenção' }, crit: { cls: 'badge-red', label: 'Crítico' } }
 
-export function FornecedorCard({ nome, total, concluidas, sla, cor }: {
+export function FornecedorCard({ nome, total, concluidas, sla, cor, slaTrend }: {
   nome: string; total: number; concluidas: number; sla: number; cor: string
+  slaTrend?: KPI['trend']
 }) {
   const tier = sla >= 85 ? 'ok' : sla >= 65 ? 'warn' : 'crit'
   const t    = SLA_TIER[tier]
@@ -455,9 +585,12 @@ export function FornecedorCard({ nome, total, concluidas, sla, cor }: {
             <p className="text-[11px] text-muted mt-0.5">OS abertas</p>
           </div>
           <div className="text-right">
-            <p className="font-mono font-bold text-[22px] leading-none"
-               style={{ color: cor }}>{sla}%</p>
-            <p className="text-[11px] text-muted mt-0.5">conclusão</p>
+            <div className="flex items-center justify-end gap-1.5">
+              <p className="font-mono font-bold text-[22px] leading-none"
+                 style={{ color: cor }}>{sla}%</p>
+              {slaTrend && <TrendPill trend={slaTrend} />}
+            </div>
+            <p className="text-[11px] text-muted mt-0.5">conclusão · vs. período anterior</p>
           </div>
         </div>
 

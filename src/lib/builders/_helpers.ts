@@ -42,6 +42,7 @@ export interface FornCard {
   concluidas: number
   sla:        number
   cor:        string
+  slaTrend?:  { delta: number; pct: number; higherIsBetter: boolean } | null
 }
 
 export const FORN_CFG: Record<string, { label: string; cor: string }> = {
