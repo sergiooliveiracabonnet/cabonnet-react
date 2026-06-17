@@ -153,13 +153,14 @@ export default function GerencialPage() {
       document.body.removeChild(wrapper)
       if (!contentBlob) return
 
-      // Composita cabeçalho Canvas + conteúdo capturado
+      // Composita cabeçalho Canvas + conteúdo capturado, com margem ao redor
       const SCALE      = 2
       const HDR_H      = 60
+      const PAD        = 20
       const contentImg = await createImageBitmap(contentBlob)
       const canvas     = document.createElement('canvas')
-      canvas.width     = contentImg.width
-      canvas.height    = contentImg.height + HDR_H * SCALE
+      canvas.width     = contentImg.width  + PAD * SCALE * 2
+      canvas.height    = contentImg.height + HDR_H * SCALE + PAD * SCALE * 2
       const ctx        = canvas.getContext('2d')!
 
       ctx.fillStyle = bg
@@ -184,7 +185,7 @@ export default function GerencialPage() {
       ctx.font      = `${10 * SCALE}px system-ui,-apple-system,sans-serif`
       ctx.fillText(ts, canvas.width - 16 * SCALE, 30 * SCALE)
       ctx.textAlign = 'left'
-      ctx.drawImage(contentImg, 0, HDR_H * SCALE)
+      ctx.drawImage(contentImg, PAD * SCALE, HDR_H * SCALE + PAD * SCALE)
 
       const finalBlob = await new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png')
