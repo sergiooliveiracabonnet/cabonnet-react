@@ -116,12 +116,17 @@ export default function GerencialPage() {
       }
       const capW = getTrueWidth(el)
 
+      // Clonar reinicia animações de entrada (animate-card-enter etc.) do zero;
+      // sem isso a captura pega os cards no frame inicial (opacity:0) e some texto.
       const stripOverflow = (node: HTMLElement) => {
-        node.style.overflow  = 'visible'
-        node.style.overflowX = 'visible'
-        node.style.overflowY = 'visible'
-        node.style.maxHeight = 'none'
-        node.style.maxWidth  = 'none'
+        node.style.overflow    = 'visible'
+        node.style.overflowX   = 'visible'
+        node.style.overflowY   = 'visible'
+        node.style.maxHeight   = 'none'
+        node.style.maxWidth    = 'none'
+        node.style.animation   = 'none'
+        node.style.transition  = 'none'
+        node.style.opacity     = '1'
         for (const c of node.children) stripOverflow(c as HTMLElement)
       }
 
