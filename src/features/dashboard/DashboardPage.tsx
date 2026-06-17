@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { AlertCircle, Download, Package, BarChart3 } from 'lucide-react'
 import type { OSRow, KPI, AccentColor } from '../../lib/types'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -9,7 +9,7 @@ import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import { Modal } from '../../components/ui/Modal'
 import OSDrawer from '../ordens/OSDrawer'
 import {
-  SectionLabel, PulsoHero, BentoKPICard, ExecutadasHeroBlock,
+  SectionLabel, PulsoHero, BentoKPICard, ExecutadasHeroBlock, MetaMesCard, AlertaTopoBanner,
   ClustersBairroPanel, AgingPanel, RitmoEquipesPanel, CidadesPanel, FornecedorCard, AnomaliaSection, KpiModalTable,
   KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS,
   type ModalState, type TypedDashboard, type CampoProjecaoReal,
@@ -21,6 +21,8 @@ export default function DashboardPage() {
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
   const fluxoHoje = { entradas: pulso.entradasHoje, saidas: pulso.saidasHoje, saldo: pulso.fluxoHoje }
   const { clustersAtivos = [] } = pulso
+  const clustersRef  = useRef<HTMLDivElement>(null)
+  const anomaliasRef = useRef<HTMLDivElement>(null)
   const [aiEnabled, setAiEnabled] = useState(false)
   const [observacao, setObservacao] = useState('')
   const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso: pulso as unknown as Record<string, unknown>, fornecedores, anomalias, observacao, enabled: aiEnabled })
@@ -105,6 +107,14 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* ── Alerta no topo: clusters/anomalias sobem quando ativos ──────── */}
+        <AlertaTopoBanner
+          clustersCount={clustersAtivos.length}
+          anomaliasCount={anomalias?.total ?? 0}
+          onScrollClusters={() => clustersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onScrollAnomalias={() => anomaliasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        />
+
         {/* ── 1. HERO — Pulso Operacional ──────────────────────────────── */}
         <PulsoHero
           pulso={pulso}
@@ -153,11 +163,14 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── 5. Faixa: Clusters + Risk Panel + Ritmo por Equipe ─────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <ClustersBairroPanel clusters={clustersAtivos} />
+        {/* ── 5. Faixa: Clusters + Risk Panel + Ritmo por Equipe + Meta ──── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div ref={clustersRef}>
+            <ClustersBairroPanel clusters={clustersAtivos} />
+          </div>
           <AgingPanel pulso={pulso} />
           <RitmoEquipesPanel semaforo={campo.semaforo} />
+          <MetaMesCard meta={pulso.metaMes} />
         </div>
 
         {/* ── 6. Fornecedores ───────────────────────────────────────────── */}
@@ -177,15 +190,17 @@ export default function DashboardPage() {
 
         {/* ── 8. Anomalias ──────────────────────────────────────────────── */}
         {anomalias?.total > 0 && (
-          <AnomaliaSection
-            anomalias={anomalias}
-            contexto={{
-              total:     (kpis.find(k => k.id === 'total')?.value    as number) ?? 0,
-              sla_pct:   pulso.slaFila    ?? 0,
-              criticas:  (kpis.find(k => k.id === 'criticas')?.value as number) ?? 0,
-              aging_med: pulso.agingMed   ?? 0,
-            }}
-          />
+          <div ref={anomaliasRef}>
+            <AnomaliaSection
+              anomalias={anomalias}
+              contexto={{
+                total:     (kpis.find(k => k.id === 'total')?.value    as number) ?? 0,
+                sla_pct:   pulso.slaFila    ?? 0,
+                criticas:  (kpis.find(k => k.id === 'criticas')?.value as number) ?? 0,
+                aging_med: pulso.agingMed   ?? 0,
+              }}
+            />
+          </div>
         )}
 
       </div>

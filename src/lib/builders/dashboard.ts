@@ -1,4 +1,4 @@
-import { isExecucaoReal, isCOPE, isReagend } from '../transform'
+import { isExecucaoReal, isCOPE, isReagend, parseDate } from '../transform'
 import type { OSRow, KPI } from '../types'
 import { avg, calcMTTR, type FornCard, FORN_CFG } from './_helpers'
 
@@ -55,6 +55,48 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   }
   const fluxoHoje = entradasHoje - saidasHoje
 
+  // ─── Meta do mês: concluídas no mês atual vs média dos 3 meses anteriores ─
+  const monthKey   = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  const curMonthKey = monthKey(now)
+  const concluPorMes = new Map<string, number>()
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r) || isRede(r)) continue
+    if (!isExecucaoReal(r.descsituacao)) continue
+    const dt = parseDate(r.databaixa) || parseDate(r.dataexecucao)
+    if (!dt) continue
+    const k = monthKey(dt)
+    concluPorMes.set(k, (concluPorMes.get(k) ?? 0) + 1)
+  }
+  const concluidasMesAtual = concluPorMes.get(curMonthKey) ?? 0
+  const baselineMeses = [1, 2, 3].map(i => monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)))
+  const baselineVals  = baselineMeses.map(k => concluPorMes.get(k) ?? 0).filter(v => v > 0)
+  const metaMesAtual  = baselineVals.length > 0 ? Math.round(baselineVals.reduce((a, b) => a + b, 0) / baselineVals.length) : 0
+
+  const diasUteisAte = (ano: number, mes: number, diaFinal: number): number => {
+    let n = 0
+    for (let d = 1; d <= diaFinal; d++) {
+      const dow = new Date(ano, mes, d).getDay()
+      if (dow !== 0 && dow !== 6) n++
+    }
+    return n
+  }
+  const ultimoDiaMes      = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const diasUteisTotal    = diasUteisAte(now.getFullYear(), now.getMonth(), ultimoDiaMes)
+  const diasUteisDecorr   = diasUteisAte(now.getFullYear(), now.getMonth(), now.getDate())
+  const diasUteisRestantes = Math.max(0, diasUteisTotal - diasUteisDecorr)
+  const pctMetaMes      = metaMesAtual > 0 ? Math.round(concluidasMesAtual / metaMesAtual * 100) : null
+  const projecaoMesFinal = diasUteisDecorr > 0
+    ? Math.round(concluidasMesAtual / diasUteisDecorr * diasUteisTotal)
+    : null
+  const metaMesStatus: 'acima' | 'abaixo' | 'neutro' =
+    metaMesAtual === 0 || projecaoMesFinal == null ? 'neutro'
+    : projecaoMesFinal >= metaMesAtual ? 'acima' : 'abaixo'
+  const metaMes = {
+    concluidas: concluidasMesAtual, meta: metaMesAtual, pct: pctMetaMes,
+    diasUteisRestantes, diasUteisTotal, projecaoFinal: projecaoMesFinal,
+    status: metaMesStatus,
+  }
+
   let concl = 0, totalPeriodo = 0
   const fornMap = new Map<string, { total: number; concluidas: number }>()
   for (const r of rows) {
@@ -92,6 +134,12 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     ? Math.min(100, Math.round(slaFila * 0.45 + taxa * 0.35 + mttrScore * 0.20))
     : 0
   const scorePulsoLabel = scorePulso >= 85 ? 'Excelente' : scorePulso >= 70 ? 'Bom' : scorePulso >= 50 ? 'Regular' : 'Crítico'
+
+  const scoreBreakdown = [
+    { id: 'sla',  label: 'SLA da Fila',     value: slaFila,   weight: 0.45 },
+    { id: 'taxa', label: 'Taxa Conclusão',  value: taxa,      weight: 0.35 },
+    { id: 'mttr', label: 'MTTR',            value: mttrScore, weight: 0.20 },
+  ]
 
   type InsightLevel = 'red' | 'orange' | 'yellow' | 'green'
   const quickInsights: { level: InsightLevel; text: string }[] = []
@@ -135,11 +183,11 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     .sort((a, b) => b.total - a.total)
 
   const pulso = {
-    score: scorePulso, scoreLabel: scorePulsoLabel,
+    score: scorePulso, scoreLabel: scorePulsoLabel, scoreBreakdown,
     narrativa: narrativaPulso, quickInsights,
     agingMed, agingDist, slaFila, semAgendamento, mttr,
     topCidadesCriticas, clustersAtivos,
-    entradasHoje, saidasHoje, fluxoHoje,
+    entradasHoje, saidasHoje, fluxoHoje, metaMes,
   }
 
   const mkTrend = (cur: number, prev: number, higherIsBetter = true) => {

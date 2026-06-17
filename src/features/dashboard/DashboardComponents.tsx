@@ -9,7 +9,7 @@ import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { isCOPE, isReagend } from '../../lib/transform'
 import type {
-  OSRow, KPI, Pulso, ClusterAtivo, AccentColor, CampoSemaforo,
+  OSRow, KPI, Pulso, ClusterAtivo, AccentColor, CampoSemaforo, PulsoMetaMes,
 } from '../../lib/types'
 export { PulsoHero } from './PulsoHero'
 export type { AnomaliaContextType } from './PulsoHero'
@@ -329,6 +329,97 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, onOpenModal }: {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─── MetaMesCard ──────────────────────────────────────────────────────────────
+
+export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
+  if (meta.meta === 0) {
+    return (
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card p-5">
+        <div className="flex items-center gap-2.5">
+          <Target size={14} className="text-muted" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">Meta do Mês</span>
+        </div>
+        <p className="text-[12px] text-muted/60 mt-3">
+          {meta.concluidas} concluídas até agora · sem histórico dos 3 meses anteriores para definir uma meta
+        </p>
+      </div>
+    )
+  }
+
+  const cor = meta.status === 'acima' ? '#4ade80' : meta.status === 'abaixo' ? '#facc15' : '#94a3b8'
+  const pct = Math.min(100, meta.pct ?? 0)
+  const diasLabel = meta.diasUteisRestantes === 1 ? '1 dia útil restante' : `${meta.diasUteisRestantes} dias úteis restantes`
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border bg-card p-5" style={{ borderColor: `${cor}28` }}>
+      <div className="absolute top-0 left-0 right-0 h-[2px]"
+           style={{ background: `linear-gradient(90deg, transparent, ${cor}, transparent)` }} />
+
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+        <div className="flex items-center gap-2.5">
+          <Target size={14} style={{ color: cor }} />
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">Meta do Mês</span>
+        </div>
+        <span className="text-[11px] text-muted">{diasLabel}</span>
+      </div>
+
+      <div className="flex items-end gap-3 mb-2">
+        <span className="font-mono font-black leading-none" style={{ fontSize: '32px', color: cor }}>
+          {meta.pct}%
+        </span>
+        <span className="text-[12px] text-muted mb-1">
+          {meta.concluidas} concluídas · meta ~{meta.meta} (média 3 meses)
+        </span>
+      </div>
+
+      <div className="h-2 bg-surface/40 rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-700"
+             style={{ width: `${pct}%`, background: cor, boxShadow: `0 0 8px ${cor}60` }} />
+      </div>
+
+      {meta.projecaoFinal != null && (
+        <p className="mt-2.5 text-[11px]" style={{ color: cor }}>
+          {meta.status === 'acima' ? '↑ No ritmo atual' : meta.status === 'abaixo' ? '↓ No ritmo atual' : 'No ritmo atual'}:
+          {' '}projeção de <strong>{meta.projecaoFinal}</strong> até o fim do mês
+          {meta.status === 'abaixo' ? ' — abaixo da meta' : meta.status === 'acima' ? ' — acima da meta' : ''}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ─── AlertaTopoBanner ─────────────────────────────────────────────────────────
+
+export function AlertaTopoBanner({ clustersCount, anomaliasCount, onScrollClusters, onScrollAnomalias }: {
+  clustersCount: number; anomaliasCount: number
+  onScrollClusters?: () => void; onScrollAnomalias?: () => void
+}) {
+  if (!clustersCount && !anomaliasCount) return null
+  return (
+    <div className="flex items-center gap-3 flex-wrap rounded-xl border border-red/25 bg-red/[0.06] px-4 py-2.5">
+      <AlertCircle size={13} className="text-red flex-shrink-0" />
+      <span className="text-[12px] font-bold text-red">Atenção necessária:</span>
+      {clustersCount > 0 && (
+        <button
+          onClick={onScrollClusters}
+          className="text-[12px] text-text underline-offset-2 hover:underline hover:text-red transition-colors"
+        >
+          {clustersCount} cluster{clustersCount !== 1 ? 's' : ''} de falha detectado{clustersCount !== 1 ? 's' : ''}
+        </button>
+      )}
+      {clustersCount > 0 && anomaliasCount > 0 && <span className="text-muted">·</span>}
+      {anomaliasCount > 0 && (
+        <button
+          onClick={onScrollAnomalias}
+          className="text-[12px] text-text underline-offset-2 hover:underline hover:text-red transition-colors"
+        >
+          {anomaliasCount} anomalia{anomaliasCount !== 1 ? 's' : ''} detectada{anomaliasCount !== 1 ? 's' : ''}
+        </button>
+      )}
     </div>
   )
 }

@@ -18,13 +18,17 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI }: {
   const [showReanalysis, setShowReanalysis] = useState(false)
 
   const {
-    score = 0, scoreLabel = '—', narrativa = '', quickInsights = [],
+    score = 0, scoreLabel = '—', scoreBreakdown = [], narrativa = '', quickInsights = [],
     agingMed = 0, slaFila = 0, mttr = 0, semAgendamento = 0,
   } = pulso
 
   const scoreColor =
     score >= 85 ? '#4ade80' :
     score >= 65 ? '#facc15' : '#f87171'
+
+  const weakestId = scoreBreakdown.length > 0
+    ? [...scoreBreakdown].sort((a, b) => a.value - b.value)[0].id
+    : null
 
   type DisplayInsight = { level: string; text: string; ai?: boolean }
   const displayNarrative = narrativa
@@ -77,6 +81,35 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI }: {
               Score
             </span>
           </div>
+
+          {/* Score breakdown — alavancas que compõem o score, mais fraca destacada */}
+          {scoreBreakdown.length > 0 && (
+            <div className="flex flex-col gap-2 flex-shrink-0 w-[120px] pt-1">
+              {scoreBreakdown.map(item => {
+                const isWeakest = item.id === weakestId
+                const cor = item.value >= 85 ? '#4ade80' : item.value >= 65 ? '#facc15' : '#f87171'
+                return (
+                  <div key={item.id}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-[9px] ${isWeakest ? 'font-bold text-text' : 'text-muted'}`}>
+                        {item.label}{isWeakest ? ' ⚠' : ''}
+                      </span>
+                      <span className="text-[10px] font-mono font-semibold" style={{ color: cor }}>
+                        {item.value}
+                      </span>
+                    </div>
+                    <div className="h-1 bg-surface/40 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700"
+                           style={{ width: `${Math.min(100, Math.max(0, item.value))}%`, background: cor }} />
+                    </div>
+                  </div>
+                )
+              })}
+              <span className="text-[8px] text-muted/70 leading-tight">
+                Peso: SLA 45% · Taxa 35% · MTTR 20%
+              </span>
+            </div>
+          )}
 
           {/* Narrativa */}
           <div className="flex-1 min-w-[200px]">

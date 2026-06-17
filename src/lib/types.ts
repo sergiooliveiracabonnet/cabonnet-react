@@ -105,9 +105,27 @@ export interface ClusterAtivo {
   total:  number
 }
 
+export interface PulsoScoreItem {
+  id:     string
+  label:  string
+  value:  number
+  weight: number
+}
+
+export interface PulsoMetaMes {
+  concluidas:        number
+  meta:              number
+  pct:               number | null
+  diasUteisRestantes: number
+  diasUteisTotal:    number
+  projecaoFinal:     number | null
+  status:            'acima' | 'abaixo' | 'neutro'
+}
+
 export interface Pulso {
   score:             number
   scoreLabel:        string
+  scoreBreakdown:    PulsoScoreItem[]
   narrativa:         string
   quickInsights:     QuickInsight[]
   agingMed:          number
@@ -120,6 +138,7 @@ export interface Pulso {
   entradasHoje:      number
   saidasHoje:        number
   fluxoHoje:         number
+  metaMes:           PulsoMetaMes
 }
 
 export interface FornecedorCard {

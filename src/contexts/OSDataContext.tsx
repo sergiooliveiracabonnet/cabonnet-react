@@ -32,12 +32,18 @@ const EMPTY_DERIVED = {
     fornecedores: [] as { nome: string; total: number; concluidas: number; sla: number; cor: string }[],
     pulso: {
       score: 0, scoreLabel: '—', narrativa: '—',
+      scoreBreakdown:     [] as { id: string; label: string; value: number; weight: number }[],
       quickInsights:      [] as QuickInsight[],
       agingMed: 0, agingDist: { '≤1d': 0, '2-3d': 0, '4-7d': 0, '8+d': 0 } as { '≤1d': number; '2-3d': number; '4-7d': number; '8+d': number },
       slaFila: 0, semAgendamento: 0, mttr: 0,
       topCidadesCriticas: [] as { cidade: string; count: number }[],
       clustersAtivos:     [] as ClusterAtivo[],
       entradasHoje: 0, saidasHoje: 0, fluxoHoje: 0,
+      metaMes: {
+        concluidas: 0, meta: 0, pct: null as number | null,
+        diasUteisRestantes: 0, diasUteisTotal: 0, projecaoFinal: null as number | null,
+        status: 'neutro' as 'acima' | 'abaixo' | 'neutro',
+      },
     },
   },
   sla: {
