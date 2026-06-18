@@ -9,10 +9,8 @@ export const ERPJustificativaPage    = lazy(() => import('../features/erp/justif
 
 export const DashboardPage  = lazy(() => import('../features/dashboard/DashboardPage'))
 export const OrdensPage     = lazy(() => import('../features/ordens/OrdensPage'))
-export const CapacidadePage = lazy(() => import('../features/capacidade/CapacidadePage'))
 export const GraficosPage   = lazy(() => import('../features/graficos/GraficosPage'))
 export const CidadesPage    = lazy(() => import('../features/cidades/CidadesPage'))
-export const CampoPage      = lazy(() => import('../features/campo/CampoPage'))
 export const FornecedorPage = lazy(() => import('../features/fornecedor/FornecedorPage'))
 export const JuniperPage    = lazy(() => import('../features/juniper/JuniperPage'))
 export const NotFoundPage   = lazy(() => import('./NotFound'))

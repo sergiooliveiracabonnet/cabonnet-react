@@ -8,8 +8,8 @@ import {
   ERPRelatoriosPage,
   ERPAlertasPage,
   ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage, ERPJustificativaPage,
-  DashboardPage, OrdensPage, CapacidadePage,
-  GraficosPage, CidadesPage, CampoPage,
+  DashboardPage, OrdensPage,
+  GraficosPage, CidadesPage,
   FornecedorPage, JuniperPage, NotFoundPage, NocPage, FechamentoPage,
   MapaPage, GerencialPage,
 } from './pages/index'
@@ -66,10 +66,8 @@ export default function App() {
 
         <Route index             element={<DashboardPage />}  />
         <Route path="ordens"     element={<OrdensPage />}     />
-        <Route path="capacidade" element={<CapacidadePage />} />
         <Route path="graficos"   element={<GraficosPage />}   />
         <Route path="cidades"    element={<CidadesPage />}    />
-        <Route path="campo"      element={<CampoPage />}      />
         <Route path="fornecedor" element={<FornecedorPage />} />
         <Route path="juniper"    element={<JuniperPage />}    />
         <Route path="fechamento" element={<FechamentoPage />} />

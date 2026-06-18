@@ -2,10 +2,10 @@ import { useRef, useState, useEffect, type ComponentType, type CSSProperties } f
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList,
-  BarChart2, PieChart, MapPin, Layout,
+  BarChart2, PieChart, MapPin,
   Zap, Monitor, LogOut, FileText, Map,
   Bell, ChevronRight, Briefcase,
-  TrendingUp, Award, CalendarDays, Activity, Shield,
+  TrendingUp, Award, CalendarDays, Shield,
 } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
 import { useAuthStore } from '../../store/authStore'
@@ -66,7 +66,6 @@ const groups: NavGroup[] = [
     key: 'anal', label: 'Análise', color: '#4ade80',
     links: [
       { to: '/graficos',   label: 'Gráficos',   icon: PieChart  },
-      { to: '/capacidade', label: 'Capacidade', icon: Activity  },
       { to: '/gerencial',  label: 'Gerencial',  icon: Briefcase },
       { to: '/fechamento', label: 'Fechamento', icon: FileText  },
     ],
@@ -74,7 +73,6 @@ const groups: NavGroup[] = [
   {
     key: 'infra', label: 'Campo & Infra', color: '#fb923c',
     links: [
-      { to: '/campo',      label: 'Campo',      icon: Layout  },
       { to: '/fornecedor', label: 'Fornecedor', icon: Shield  },
       { to: '/juniper',    label: 'Juniper',    icon: Zap     },
       { to: '/noc',        label: 'NOC',        icon: Monitor },

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { OSRow, DateFilter } from './types'
 import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, isConcluida, isExecucaoReal } from './transform.js'
-import { buildDashboard, buildSla, buildCapacidade, buildAnomalias, buildCidades } from './builders.js'
+import { buildDashboard, buildSla, buildAnomalias, buildCidades } from './builders.js'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -438,44 +438,6 @@ describe('buildSla', () => {
     ])
     const { semaforo } = buildSla(rows)
     expect(semaforo.every(e => e.total > 0)).toBe(true)
-  })
-})
-
-// ─── buildCapacidade ──────────────────────────────────────────────────────────
-
-describe('buildCapacidade', () => {
-  const rows = enrichRows([
-    makeOS({ numos: 'C1', descsituacao: 'Concluída', nomedaequipe: 'EQUIPE A', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(5) }),
-    makeOS({ numos: 'C2', descsituacao: 'Pendente',  nomedaequipe: 'EQUIPE A', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(1) }),
-    makeOS({ numos: 'C3', descsituacao: 'Pendente',  nomedaequipe: 'EQUIPE B', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(1) }),
-  ])
-
-  it('retorna estrutura completa com executivo, equipes, semaforo e cobertura', () => {
-    const result = buildCapacidade(rows)
-    expect(result.executivo).toBeDefined()
-    expect(Array.isArray(result.equipes)).toBe(true)
-    expect(Array.isArray(result.semaforo)).toBe(true)
-    expect(result.cobertura).toHaveLength(4)
-  })
-
-  it('fila conta apenas Pendente e Atendimento', () => {
-    const { executivo } = buildCapacidade(rows)
-    expect(executivo.fila).toBe(2)
-  })
-
-  it('hipoteses tem 3 perguntas', () => {
-    const { hipoteses } = buildCapacidade(rows)
-    expect(hipoteses).toHaveLength(3)
-  })
-
-  it('equipes têm nome, total, concluidas e taxa', () => {
-    const { equipes } = buildCapacidade(rows)
-    expect(equipes.length).toBeGreaterThan(0)
-    equipes.forEach(e => {
-      expect(e.nome).toBeDefined()
-      expect(typeof e.total).toBe('number')
-      expect(typeof e.taxa).toBe('number')
-    })
   })
 })
 

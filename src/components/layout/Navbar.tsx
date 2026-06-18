@@ -22,10 +22,8 @@ import type { OSRow } from '../../lib/types'
 const ROUTE_LABELS: Record<string, string> = {
   '/':           'Resumo Geral',
   '/ordens':     'Ordens de Serviço',
-  '/capacidade': 'Capacidade',
   '/graficos':   'Gráficos',
   '/cidades':    'Cidades',
-  '/campo':      'Campo',
   '/fornecedor': 'Fornecedor',
   '/juniper':    'Juniper',
 }
