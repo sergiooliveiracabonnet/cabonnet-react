@@ -1,28 +1,5 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { OSRow } from '../lib/types'
-
-// ─── Kanban ───────────────────────────────────────────────────────────────────
-
-export type KanbanColumnId = 'nova' | 'agendada' | 'atendimento' | 'concluida' | 'cancelada'
-
-export const KANBAN_COLUMNS: Record<KanbanColumnId, { label: string; order: number }> = {
-  nova:        { label: 'Nova',           order: 0 },
-  agendada:    { label: 'Agendada',       order: 1 },
-  atendimento: { label: 'Em Atendimento', order: 2 },
-  concluida:   { label: 'Concluída',      order: 3 },
-  cancelada:   { label: 'Cancelada',      order: 4 },
-}
-
-export function getKanbanColumn(row: Pick<OSRow, 'numos' | 'descsituacao'>, overrides: Record<string, KanbanColumnId> = {}): KanbanColumnId {
-  if (overrides[row.numos]) return overrides[row.numos]
-  const s = (row.descsituacao || '').toLowerCase()
-  if (s.includes('conclu')) return 'concluida'
-  if (s.includes('cancel')) return 'cancelada'
-  if (s.includes('atend'))  return 'atendimento'
-  if (s.includes('agend'))  return 'agendada'
-  return 'nova'
-}
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -38,8 +15,6 @@ interface TeamExtras {
 }
 
 interface ERPState {
-  erpOrdensView:          string
-  statusOverrides:        Record<string, KanbanColumnId>
   filterEquipe:           string
   filterTipo:             string
   alertSettings:          AlertSettings
@@ -50,9 +25,6 @@ interface ERPState {
   equipeIndisponivel:     Record<string, boolean>
   metaEquipeDiaria:       Record<string, number>
 
-  setERPOrdensView:       (v: string) => void
-  setStatusOverride:      (numos: string, column: KanbanColumnId) => void
-  clearStatusOverride:    (numos: string) => void
   setFilterEquipe:        (v: string) => void
   setFilterTipo:          (v: string) => void
   setAlertSettings:       (patch: Partial<AlertSettings>) => void
@@ -68,8 +40,6 @@ interface ERPState {
 export const useERPStore = create<ERPState>()(
   persist(
     (set) => ({
-      erpOrdensView:         'kanban',
-      statusOverrides:       {},
       filterEquipe:          '',
       filterTipo:            '',
       alertSettings:         { agingCriticoDias: 14, capacidadePct: 85, slaEquipePct: 75, semAgendDias: 7 },
@@ -79,14 +49,6 @@ export const useERPStore = create<ERPState>()(
       custoEquipe:           {},
       equipeIndisponivel:    {},
       metaEquipeDiaria:      {},
-
-      setERPOrdensView: (v) => set({ erpOrdensView: v }),
-
-      setStatusOverride: (numos, column) =>
-        set(s => ({ statusOverrides: { ...s.statusOverrides, [numos]: column } })),
-
-      clearStatusOverride: (numos) =>
-        set(s => { const next = { ...s.statusOverrides }; delete next[numos]; return { statusOverrides: next } }),
 
       setFilterEquipe: (v) => set({ filterEquipe: v }),
       setFilterTipo:   (v) => set({ filterTipo: v }),

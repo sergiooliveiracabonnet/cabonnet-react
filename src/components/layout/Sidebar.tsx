@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ClipboardList,
   BarChart2, PieChart, MapPin, Layout,
   Zap, Monitor, LogOut, FileText, Map,
-  Kanban, Users, Bell, ChevronRight, Briefcase,
+  Bell, ChevronRight, Briefcase,
   TrendingUp, Award, CalendarDays, Activity, Shield,
 } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
@@ -45,8 +45,6 @@ const groups: NavGroup[] = [
   {
     key: 'erp', label: 'ERP', color: '#c4b5fd',
     links: [
-      { to: '/erp/ordens',        label: 'OS · Kanban',    icon: Kanban      },
-      { to: '/erp/equipes',       label: 'Equipes',        icon: Users       },
       { to: '/erp/relatorios',    label: 'Relatórios',     icon: BarChart2   },
       { to: '/erp/alertas',       label: 'Alertas',        icon: Bell        },
       { to: '/erp/produtividade', label: 'Produtividade',  icon: TrendingUp  },

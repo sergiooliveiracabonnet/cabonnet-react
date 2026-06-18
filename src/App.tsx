@@ -5,7 +5,7 @@ import { LoginPage } from './features/auth/LoginPage'
 import { useAuthStore } from './store/authStore'
 import { api } from './lib/api'
 import {
-  ERPOrdensPage, ERPEquipesPage, ERPRelatoriosPage,
+  ERPRelatoriosPage,
   ERPAlertasPage,
   ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage, ERPJustificativaPage,
   DashboardPage, OrdensPage, CapacidadePage,
@@ -56,8 +56,6 @@ export default function App() {
       <Route element={<AppLayout />}>
         {/* ── ERP ── */}
         <Route path="erp">
-          <Route path="ordens"        element={<ERPOrdensPage />}       />
-          <Route path="equipes"       element={<ERPEquipesPage />}      />
           <Route path="relatorios"    element={<ERPRelatoriosPage />}   />
           <Route path="alertas"       element={<ERPAlertasPage />}      />
           <Route path="produtividade" element={<ERPProdutividadePage />}/>
