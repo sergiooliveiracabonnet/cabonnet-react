@@ -390,7 +390,8 @@ SELECT
   to_char(ct.d_datadavenda,      'DD/MM/YYYY')                          as datacontratacao,
   to_char(ct.d_datadainstalacao, 'DD/MM/YYYY')                          as datainstalacao,
   ct.situacao                                                            as situacaocontrato,
-  ct.valordocontrato                                                     as valorcontrato
+  ct.valordocontrato                                                     as valorcontrato,
+  mi.descricao                                                           as motivoinconclusivo
 FROM ordemservico o
   JOIN contratos ct  ON ct.cidade = o.cidade AND ct.codempresa = o.codempresa AND ct.contrato = o.codigocontrato
   JOIN clientes  cli ON cli.codigocliente = o.codigoassinante AND cli.cidade = o.cidade
@@ -402,8 +403,55 @@ FROM ordemservico o
   LEFT JOIN carteiracidade cc ON cc.codigocarteira = ct.codcarteira AND cc.codigocidade = o.cidade
   LEFT JOIN carteira cart    ON cart.codigo = cc.codigocarteira
   LEFT JOIN enderecos ende   ON ende.codigodacidade = ct.cidade AND ende.codigodologradouro = ct.enderecoconexao
+  LEFT JOIN mobile.vis_os_ordemservico mo ON mo.numos = o.numos
+  LEFT JOIN mobile.vis_os_motivosinconclusivos mi ON mi.id = mo.idmotivoinconclusivo
 WHERE o.numos = {numos}
 LIMIT 1
+"""
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  SQL — FOTOS, CHECKLIST E MOTIVO DE INCONCLUSÃO (mobile schema)
+# ══════════════════════════════════════════════════════════════════════════════
+SQL_FOTOS_TEMPLATE = """
+SELECT id, codfoto, nomearquivo, descricao, usuario, extensaoarquivo
+FROM mobile.vis_os_fotos
+WHERE numos = {numos}
+ORDER BY id
+"""
+
+SQL_FOTO_BLOB_TEMPLATE = """
+SELECT encode(imagem, 'base64') AS imagem_b64, extensaoarquivo
+FROM mobile.vis_os_fotos
+WHERE numos = {numos} AND codfoto = {codfoto}
+LIMIT 1
+"""
+
+SQL_CHECKLIST_TEMPLATE = """
+SELECT descricaoservico, descricaochecklist, checked
+FROM mobile.vis_os_checklist_status
+WHERE numos = {numos}
+ORDER BY codigoservico, codigochecklist
+"""
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  SQL — PIN DE EXECUÇÃO (Bloco B: OS em Atendimento com ponto de início)
+#  Suposições validadas no Task 1 da plan de implementação (mo.codcidade ==
+#  tablocal.codigo; situacaoos=2 == Atendimento). Ajustar se a verificação
+#  pós-GRANT indicar o contrário.
+# ══════════════════════════════════════════════════════════════════════════════
+SQL_OS_EXECUCAO_GEO = """
+SELECT
+  mo.numos,
+  mo.latitudeinicio,
+  mo.longitudeinicio,
+  mo.equipeagendada
+FROM mobile.vis_os_ordemservico mo
+JOIN public.tablocal t ON t.codigo = mo.codcidade
+WHERE mo.situacaoos = 2
+  AND mo.latitudeinicio IS NOT NULL
+  AND mo.longitudeinicio IS NOT NULL
+  AND t.estado = 'SP'
+  AND t.nome IN ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
 """
 
 SQL_DIAG_TEMPLATE = """
