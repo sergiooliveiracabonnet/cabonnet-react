@@ -4,11 +4,16 @@ import {
   ChevronDown, ChevronUp, Package, Wrench, Radio, Settings, Sparkles,
 } from 'lucide-react'
 import { useERPRows } from '../useERPRows'
+import { useUIStore } from '../../../store/uiStore'
 import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
 import { isCOPE, isReagend, isConcluida } from '../../../lib/transform'
 import { Badge } from '../../../components/ui/Badge'
 import type { OSRow } from '../../../lib/types'
 import { useAIProdutividade } from '../../../hooks/useAIProdutividade'
+
+// Limite de colunas no grid de dias — ranges longos (mensal/anual/custom) mostram
+// só os dias mais recentes dentro do range, senão o grid quebra o layout.
+const MAX_GRID_DAYS = 31
 
 type IconComp = ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
 interface DayInfo { key: string; label: string; dow: string; isToday: boolean; isWeekend: boolean }
@@ -37,17 +42,28 @@ function toLabel(key: string): string { return key.slice(0, 5) }
 
 const DOW_LABELS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
-function getDayLabels(n = 14) {
-  const days = []
+// Constrói o grid de dias a partir do range do filtro global (from/to), terminando
+// em `to` e limitado a `maxDays` colunas — ranges maiores mostram só os dias mais
+// recentes dentro do range escolhido.
+function getDayLabelsFromRange(from: Date | null | undefined, to: Date | null | undefined, maxDays = MAX_GRID_DAYS): DayInfo[] {
   const today = new Date(); today.setHours(0,0,0,0)
+  const start = from ? new Date(from) : new Date(today.getTime() - 13 * 86_400_000)
+  const end   = to   ? new Date(to)   : today
+  start.setHours(0,0,0,0)
+  end.setHours(0,0,0,0)
+
+  const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1)
+  const n = Math.min(totalDays, maxDays)
+
+  const days: DayInfo[] = []
   for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(today); d.setDate(today.getDate() - i)
+    const d = new Date(end); d.setDate(end.getDate() - i)
     const key = toKey(d)
     days.push({
       key,
       label: toLabel(key),
       dow: DOW_LABELS[d.getDay()],
-      isToday: i === 0,
+      isToday: d.getTime() === today.getTime(),
       isWeekend: d.getDay() === 0 || d.getDay() === 6,
     })
   }
@@ -246,10 +262,12 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
 
 // ─── TeamRow ──────────────────────────────────────────────────────────────────
 
-function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDayKey, onDayClick }: {
+function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, onToggle, activeDayKey, onDayClick }: {
   rank:        number
   entry:       TeamEntry
   days:        DayInfo[]
+  thisLen:     number
+  prevLen:     number
   globalMax:   number
   isExpanded:  boolean
   onToggle:    () => void
@@ -315,17 +333,17 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
 
         <td className="px-3 py-3 text-right">
           <p className="font-mono font-bold text-[18px] leading-none text-text">{entry.thisWeek}</p>
-          <p className="text-[9px] text-muted mt-0.5">últimos 7d</p>
+          <p className="text-[9px] text-muted mt-0.5">últimos {thisLen}d</p>
         </td>
 
         <td className="px-3 py-3 text-right">
           <DeltaBadge delta={entry.delta} />
-          <p className="text-[9px] text-muted mt-1">vs 7d ant.</p>
+          <p className="text-[9px] text-muted mt-1">vs {prevLen}d ant.</p>
         </td>
 
         <td className="px-3 py-3 text-right">
           <p className="font-mono text-[14px] text-secondary">{entry.total}</p>
-          <p className="text-[9px] text-muted mt-0.5">14 dias</p>
+          <p className="text-[9px] text-muted mt-0.5">{days.length} dias</p>
         </td>
 
         <td className="px-3 py-3 text-right">
@@ -416,13 +434,21 @@ function TeamRow({ rank, entry, days, globalMax, isExpanded, onToggle, activeDay
 // ─── ProdutividadePage ────────────────────────────────────────────────────────
 
 export default function ProdutividadePage() {
-  const { allRows, isLoading } = useERPRows()
+  const { rows, isLoading } = useERPRows()
+  const { dateFilter } = useUIStore()
   const [expanded,    setExpanded]    = useState<string | null>(null)
   const [activeDrill, setActiveDrill] = useState<DrillInfo | null>(null)
   const [aiEnabled,   setAiEnabled]   = useState(false)
 
-  const days = useMemo(getDayLabels, [])
-  const { teams, globalMax } = useMemo(() => buildProdutividade(allRows, days), [allRows, days])
+  const days = useMemo(
+    () => getDayLabelsFromRange(dateFilter?.from, dateFilter?.to),
+    [dateFilter?.from, dateFilter?.to]
+  )
+  const { teams, globalMax } = useMemo(() => buildProdutividade(rows, days), [rows, days])
+
+  const half     = Math.floor(days.length / 2)
+  const thisLen  = days.length - half
+  const prevLen  = half
 
   const totalThis  = teams.reduce((s, t) => s + t.thisWeek, 0)
   const totalPrev  = teams.reduce((s, t) => s + t.prevWeek, 0)
@@ -431,7 +457,7 @@ export default function ProdutividadePage() {
   const piorou     = teams.filter(t => t.delta < 0).length
   const topTeam    = teams[0]
 
-  // Equipes com queda > 20% na semana atual vs anterior
+  // Equipes com queda > 20% no período atual vs anterior
   const quedas = useMemo(() => teams
     .filter(t => t.prevWeek > 0 && t.thisWeek < t.prevWeek)
     .map(t => {
@@ -446,8 +472,8 @@ export default function ProdutividadePage() {
 
   const aiContexto = useMemo(() => {
     const total = teams.reduce((s, t) => s + t.total, 0)
-    return `${teams.length} equipes · ${total} OS em 14 dias · semana atual ${totalThis} vs anterior ${totalPrev}`
-  }, [teams, totalThis, totalPrev])
+    return `${teams.length} equipes · ${total} OS em ${days.length} dias · período atual ${totalThis} vs anterior ${totalPrev}`
+  }, [teams, totalThis, totalPrev, days.length])
 
   const { data: aiProdutividade, isLoading: aiLoading } = useAIProdutividade({
     quedas,
@@ -485,18 +511,18 @@ export default function ProdutividadePage() {
       <div>
         <h1 className="text-[20px] font-headline font-bold text-text mb-0.5">Produtividade por Equipe</h1>
         <p className="text-[12px] text-muted">
-          Histórico de 14 dias · OS executadas por equipe · expanda e clique no dia para ver as ordens
+          Histórico de {days.length} dia{days.length > 1 ? 's' : ''} · OS executadas por equipe · expanda e clique no dia para ver as ordens
         </p>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Executadas (últimos 7d)', value: totalThis,  sub: `${totalPrev} nos 7d anteriores`,  color: '#3b82f6', delta: totalDelta },
+          { label: `Executadas (últimos ${thisLen}d)`, value: totalThis,  sub: `${totalPrev} nos ${prevLen}d anteriores`,  color: '#3b82f6', delta: totalDelta },
           { label: 'Equipes melhoraram',       value: melhorou,  sub: `${piorou} reduziram · ${teams.length - melhorou - piorou} estáveis`, color: '#4ade80' },
           { label: 'Pior queda',               value: piorou,    sub: 'equipes com redução',              color: '#f87171' },
           topTeam
-            ? { label: 'Líder (7 dias)', value: topTeam.thisWeek, sub: topTeam.team, color: '#f59e0b' }
+            ? { label: `Líder (${thisLen}d)`, value: topTeam.thisWeek, sub: topTeam.team, color: '#f59e0b' }
             : { label: '—', value: '—', sub: '', color: '#6b7280' },
         ].map((k, i) => (
           <div key={i}
@@ -518,7 +544,7 @@ export default function ProdutividadePage() {
 
       {/* Tabela */}
       <section className="space-y-2">
-        <SectionLabel icon={BarChart3} color="#3b82f6">Ranking — {teams.length} equipes · 14 dias</SectionLabel>
+        <SectionLabel icon={BarChart3} color="#3b82f6">Ranking — {teams.length} equipes · {days.length} dias</SectionLabel>
 
         {teams.length === 0 ? (
           <div className="rounded-2xl border border-white/[0.08] bg-card px-4 py-12 text-center">
@@ -552,10 +578,10 @@ export default function ProdutividadePage() {
                   <tr className="border-b border-white/[0.05] bg-surface/10">
                     <th className="px-4 py-2 text-left w-10" />
                     <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Equipe</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Últimos 14 dias</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">7d</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Últimos {days.length} dias</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">{thisLen}d</th>
                     <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Δ</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">14d</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">{days.length}d</th>
                     <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Pico</th>
                     <th className="w-8" />
                   </tr>
@@ -567,6 +593,8 @@ export default function ProdutividadePage() {
                       rank={i + 1}
                       entry={entry}
                       days={days}
+                      thisLen={thisLen}
+                      prevLen={prevLen}
                       globalMax={globalMax}
                       isExpanded={expanded === entry.team}
                       onToggle={() => handleToggle(entry.team)}
