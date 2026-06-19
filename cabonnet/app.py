@@ -725,18 +725,18 @@ async def detalhes(numos: str = ""):
         reagendada = bool(dt_atend and dt_agend and dt_atend[:10] != dt_agend[:10])
         ocorrencias = []
         try: ocorrencias = frames_to_dict_list(grafana_post(SQL_OCORRENCIAS_TEMPLATE.format(numos=numos_int)))
-        except Exception: pass
+        except Exception: log.warning("Falha ao buscar ocorrências numos=%s", numos_int, exc_info=True)
         equipe_reagendou = ""
         try:
             rows_er = frames_to_dict_list(grafana_post(SQL_EQUIPE_REAGENDOU_TEMPLATE.format(numos=numos_int)))
             if rows_er: equipe_reagendou = rows_er[0].get("descricao", "")
-        except Exception: pass
+        except Exception: log.warning("Falha ao buscar equipe_reagendou numos=%s", numos_int, exc_info=True)
         materiais_utilizados = []
         try: materiais_utilizados = frames_to_dict_list(grafana_post(SQL_MATERIAIS_UTILIZADOS_TEMPLATE.format(numos=numos_int)))
-        except Exception: pass
+        except Exception: log.warning("Falha ao buscar materiais_utilizados numos=%s", numos_int, exc_info=True)
         materiais_retirados = []
         try: materiais_retirados = frames_to_dict_list(grafana_post(SQL_MATERIAIS_RETIRADOS_TEMPLATE.format(numos=numos_int)))
-        except Exception: pass
+        except Exception: log.warning("Falha ao buscar materiais_retirados numos=%s", numos_int, exc_info=True)
         return {"os": os_data, "reagendada": reagendada, "equipe_reagendou": equipe_reagendou,
                 "ocorrencias": ocorrencias, "materiais_utilizados": materiais_utilizados,
                 "materiais_retirados": materiais_retirados}

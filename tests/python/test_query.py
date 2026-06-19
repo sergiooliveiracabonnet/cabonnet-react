@@ -99,3 +99,35 @@ def test_stats_sla_pct_range(client):
     """SLA % deve estar entre 0 e 100."""
     data = client.get("/stats").json()
     assert 0 <= data["fila"]["sla_pct"] <= 100
+
+
+from unittest.mock import patch
+
+
+def _grafana_frame(fields_values):
+    """Monta um payload Grafana válido a partir de {nome_coluna: [valores]}."""
+    fields = [{"name": k} for k in fields_values]
+    values = list(fields_values.values())
+    return {"results": {"A": {"frames": [{"schema": {"fields": fields}, "data": {"values": values}}]}}}
+
+
+def test_detalhes_loga_warning_quando_mobile_falha(client, caplog):
+    """Quando as queries do schema mobile falham (ex: permission denied),
+    o erro deve ser logado, não silenciado."""
+    main_row = _grafana_frame({"numos": [9999999], "nomecliente": ["Cliente Teste"]})
+    with patch(
+        "cabonnet.app.grafana_post",
+        side_effect=[
+            main_row,
+            Exception("permission denied for schema mobile"),  # ocorrencias
+            Exception("permission denied for schema mobile"),  # equipe_reagendou
+            Exception("permission denied for schema mobile"),  # materiais_utilizados
+            Exception("permission denied for schema mobile"),  # materiais_retirados
+            Exception("permission denied for schema mobile"),  # fotos
+            Exception("permission denied for schema mobile"),  # checklist
+        ],
+    ):
+        with caplog.at_level("WARNING"):
+            r = client.get("/detalhes?numos=9999999")
+    assert r.status_code == 200
+    assert "permission denied" in caplog.text
