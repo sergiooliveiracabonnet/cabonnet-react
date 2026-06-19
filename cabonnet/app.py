@@ -61,14 +61,18 @@ from cabonnet.grafana import (
     SQL_AGENDADO,
     SQL_ATENDIMENTO,
     SQL_BACKLOG_TEMPLATE,
+    SQL_CHECKLIST_TEMPLATE,
     SQL_DETALHES_TEMPLATE,
     SQL_EQUIPE_REAGENDOU_TEMPLATE,
     SQL_ERP_OS_CIDADES,
     SQL_ERP_OS_TOTAIS,
+    SQL_FOTO_BLOB_TEMPLATE,
+    SQL_FOTOS_TEMPLATE,
     SQL_FUTURO,
     SQL_MATERIAIS_RETIRADOS_TEMPLATE,
     SQL_MATERIAIS_UTILIZADOS_TEMPLATE,
     SQL_OCORRENCIAS_TEMPLATE,
+    SQL_OS_EXECUCAO_GEO,
     SQL_PENDENTE,
     SQL_REVISITAS,
     SQL_REVISITAS_COM_OBS,
@@ -737,9 +741,22 @@ async def detalhes(numos: str = ""):
         materiais_retirados = []
         try: materiais_retirados = frames_to_dict_list(grafana_post(SQL_MATERIAIS_RETIRADOS_TEMPLATE.format(numos=numos_int)))
         except Exception: log.warning("Falha ao buscar materiais_retirados numos=%s", numos_int, exc_info=True)
+        fotos = []
+        try: fotos = frames_to_dict_list(grafana_post(SQL_FOTOS_TEMPLATE.format(numos=numos_int)))
+        except Exception: log.warning("Falha ao buscar fotos numos=%s", numos_int, exc_info=True)
+        checklist = []
+        try: checklist = frames_to_dict_list(grafana_post(SQL_CHECKLIST_TEMPLATE.format(numos=numos_int)))
+        except Exception: log.warning("Falha ao buscar checklist numos=%s", numos_int, exc_info=True)
+        motivo_inconclusivo = os_data.get("motivoinconclusivo") or None
         return {"os": os_data, "reagendada": reagendada, "equipe_reagendou": equipe_reagendou,
                 "ocorrencias": ocorrencias, "materiais_utilizados": materiais_utilizados,
-                "materiais_retirados": materiais_retirados}
+                "materiais_retirados": materiais_retirados,
+                "fotos": [{"id": f.get("id"), "codfoto": f.get("codfoto"), "nomearquivo": f.get("nomearquivo"),
+                           "descricao": f.get("descricao") or None, "usuario": f.get("usuario"),
+                           "extensaoarquivo": f.get("extensaoarquivo")} for f in fotos],
+                "checklist": [{"servico": c.get("descricaoservico"), "descricao": c.get("descricaochecklist"),
+                               "checked": bool(c.get("checked"))} for c in checklist],
+                "motivoinconclusivo": motivo_inconclusivo}
     except HTTPException:
         raise
     except Exception as ex:

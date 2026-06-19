@@ -131,3 +131,54 @@ def test_detalhes_loga_warning_quando_mobile_falha(client, caplog):
             r = client.get("/detalhes?numos=9999999")
     assert r.status_code == 200
     assert "permission denied" in caplog.text
+
+
+def test_detalhes_inclui_fotos_checklist_e_motivo(client):
+    main_row = _grafana_frame({
+        "numos": [9999999],
+        "nomecliente": ["Cliente Teste"],
+        "motivoinconclusivo": ["Cliente ausente no local"],
+    })
+    fotos_frame = _grafana_frame({
+        "id": [1], "codfoto": [10], "nomearquivo": ["foto1.jpg"],
+        "descricao": ["Fachada"], "usuario": ["tecnico1"], "extensaoarquivo": ["jpg"],
+    })
+    checklist_frame = _grafana_frame({
+        "descricaoservico": ["Instalação"],
+        "descricaochecklist": ["Testou sinal de internet"],
+        "checked": [True],
+    })
+    with patch(
+        "cabonnet.app.grafana_post",
+        side_effect=[
+            main_row,
+            Exception("sem ocorrencias"),
+            Exception("sem equipe_reagendou"),
+            Exception("sem materiais_utilizados"),
+            Exception("sem materiais_retirados"),
+            fotos_frame,
+            checklist_frame,
+        ],
+    ):
+        r = client.get("/detalhes?numos=9999999")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["motivoinconclusivo"] == "Cliente ausente no local"
+    assert data["fotos"] == [
+        {"id": 1, "codfoto": 10, "nomearquivo": "foto1.jpg", "descricao": "Fachada", "usuario": "tecnico1", "extensaoarquivo": "jpg"}
+    ]
+    assert data["checklist"] == [
+        {"servico": "Instalação", "descricao": "Testou sinal de internet", "checked": True}
+    ]
+
+
+def test_detalhes_motivo_inconclusivo_null_quando_vazio(client):
+    """frames_to_dict_list converte NULL em '' — o endpoint deve normalizar para None."""
+    main_row = _grafana_frame({"numos": [8888888], "nomecliente": ["Outro Cliente"]})
+    with patch(
+        "cabonnet.app.grafana_post",
+        side_effect=[main_row, Exception(), Exception(), Exception(), Exception(), {}, {}],
+    ):
+        r = client.get("/detalhes?numos=8888888")
+    assert r.status_code == 200
+    assert r.json()["motivoinconclusivo"] is None
