@@ -764,6 +764,24 @@ async def detalhes(numos: str = ""):
         raise HTTPException(502, str(ex))
 
 
+@router.get("/detalhes/foto")
+async def detalhes_foto(numos: str = "", codfoto: str = ""):
+    if not numos.strip().isdigit() or not codfoto.strip().isdigit():
+        raise HTTPException(400, "Parâmetros 'numos'/'codfoto' inválidos.")
+    numos_int   = int(numos.strip())
+    codfoto_int = int(codfoto.strip())
+    try:
+        rows = frames_to_dict_list(grafana_post(SQL_FOTO_BLOB_TEMPLATE.format(numos=numos_int, codfoto=codfoto_int)))
+    except Exception as ex:
+        log.exception("Erro /detalhes/foto numos=%s codfoto=%s", numos, codfoto)
+        raise HTTPException(502, str(ex))
+    if not rows or not rows[0].get("imagem_b64"):
+        raise HTTPException(404, f"Foto {codfoto} da OS {numos} não encontrada.")
+    img_bytes = _base64.b64decode(rows[0]["imagem_b64"])
+    ext = (rows[0].get("extensaoarquivo") or "jpg").strip().lower().lstrip(".")
+    return RawResponse(content=img_bytes, media_type=f"image/{ext}")
+
+
 # ── Telegram ──────────────────────────────────────────────────────────────────
 
 @router.get("/notify/telegram/status")

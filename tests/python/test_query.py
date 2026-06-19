@@ -182,3 +182,28 @@ def test_detalhes_motivo_inconclusivo_null_quando_vazio(client):
         r = client.get("/detalhes?numos=8888888")
     assert r.status_code == 200
     assert r.json()["motivoinconclusivo"] is None
+
+
+import base64 as _b64
+
+
+def test_detalhes_foto_parametros_invalidos_retorna_400(client):
+    assert client.get("/detalhes/foto?numos=abc&codfoto=1").status_code == 400
+    assert client.get("/detalhes/foto?numos=123&codfoto=abc").status_code == 400
+
+
+def test_detalhes_foto_nao_encontrada_retorna_404(client):
+    with patch("cabonnet.app.grafana_post", return_value={}):
+        r = client.get("/detalhes/foto?numos=9999999&codfoto=1")
+    assert r.status_code == 404
+
+
+def test_detalhes_foto_retorna_bytes_corretos(client):
+    fake_bytes = b"FAKEJPEGDATA12345"
+    b64 = _b64.b64encode(fake_bytes).decode("ascii")
+    frame = _grafana_frame({"imagem_b64": [b64], "extensaoarquivo": ["jpg"]})
+    with patch("cabonnet.app.grafana_post", return_value=frame):
+        r = client.get("/detalhes/foto?numos=9999999&codfoto=10")
+    assert r.status_code == 200
+    assert r.content == fake_bytes
+    assert r.headers["content-type"] == "image/jpg"
