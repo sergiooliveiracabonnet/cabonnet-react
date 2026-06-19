@@ -764,6 +764,9 @@ async def detalhes(numos: str = ""):
         raise HTTPException(502, str(ex))
 
 
+_FOTO_EXT_PERMITIDAS = {"jpg", "jpeg", "png", "gif", "webp", "bmp"}
+
+
 @router.get("/detalhes/foto")
 async def detalhes_foto(numos: str = "", codfoto: str = ""):
     if not numos.strip().isdigit() or not codfoto.strip().isdigit():
@@ -778,7 +781,8 @@ async def detalhes_foto(numos: str = "", codfoto: str = ""):
     if not rows or not rows[0].get("imagem_b64"):
         raise HTTPException(404, f"Foto {codfoto} da OS {numos} não encontrada.")
     img_bytes = _base64.b64decode(rows[0]["imagem_b64"])
-    ext = (rows[0].get("extensaoarquivo") or "jpg").strip().lower().lstrip(".")
+    ext_raw = (rows[0].get("extensaoarquivo") or "jpg").strip().lower().lstrip(".")
+    ext = ext_raw if ext_raw in _FOTO_EXT_PERMITIDAS else "jpg"
     return RawResponse(content=img_bytes, media_type=f"image/{ext}")
 
 

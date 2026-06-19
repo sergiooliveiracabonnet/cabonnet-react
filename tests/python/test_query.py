@@ -207,3 +207,25 @@ def test_detalhes_foto_retorna_bytes_corretos(client):
     assert r.status_code == 200
     assert r.content == fake_bytes
     assert r.headers["content-type"] == "image/jpg"
+
+
+def test_detalhes_foto_extensao_nao_permitida_cai_para_jpg(client):
+    """extensaoarquivo fora do allowlist (incluindo valores com caracteres
+    de controle embutidos) nunca deve ser refletido cru no content-type."""
+    fake_bytes = b"FAKEDATA"
+    b64 = _b64.b64encode(fake_bytes).decode("ascii")
+    frame = _grafana_frame({"imagem_b64": [b64], "extensaoarquivo": ["jpg\r\nX-Evil: 1"]})
+    with patch("cabonnet.app.grafana_post", return_value=frame):
+        r = client.get("/detalhes/foto?numos=9999999&codfoto=10")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/jpg"
+
+
+def test_detalhes_foto_extensao_ausente_usa_fallback_jpg(client):
+    fake_bytes = b"FAKEDATA"
+    b64 = _b64.b64encode(fake_bytes).decode("ascii")
+    frame = _grafana_frame({"imagem_b64": [b64], "extensaoarquivo": [""]})
+    with patch("cabonnet.app.grafana_post", return_value=frame):
+        r = client.get("/detalhes/foto?numos=9999999&codfoto=10")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/jpg"
