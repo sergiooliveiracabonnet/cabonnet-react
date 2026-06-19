@@ -229,3 +229,35 @@ def test_detalhes_foto_extensao_ausente_usa_fallback_jpg(client):
         r = client.get("/detalhes/foto?numos=9999999&codfoto=10")
     assert r.status_code == 200
     assert r.headers["content-type"] == "image/jpg"
+
+
+def test_os_execucao_geo_retorna_lista_vazia_quando_sem_dados(client):
+    with patch("cabonnet.app.grafana_post", return_value={}):
+        r = client.get("/erp/os-execucao-geo")
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_os_execucao_geo_retorna_pontos(client):
+    frame = _grafana_frame({
+        "numos": [9999999],
+        "latitudeinicio": ["-23.1896"],
+        "longitudeinicio": ["-45.8841"],
+        "equipeagendada": ["F01 - Equipe Teste"],
+    })
+    with patch("cabonnet.app.grafana_post", return_value=frame):
+        r = client.get("/erp/os-execucao-geo")
+    assert r.status_code == 200
+    assert r.json() == [{
+        "numos": 9999999,
+        "latitudeinicio": "-23.1896",
+        "longitudeinicio": "-45.8841",
+        "equipeagendada": "F01 - Equipe Teste",
+    }]
+
+
+def test_os_execucao_geo_degrada_sem_erro_quando_falha(client):
+    with patch("cabonnet.app.grafana_post", side_effect=Exception("permission denied for schema mobile")):
+        r = client.get("/erp/os-execucao-geo")
+    assert r.status_code == 200
+    assert r.json() == []

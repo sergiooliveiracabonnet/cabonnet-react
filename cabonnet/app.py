@@ -786,6 +786,24 @@ async def detalhes_foto(numos: str = "", codfoto: str = ""):
     return RawResponse(content=img_bytes, media_type=f"image/{ext}")
 
 
+@router.get("/erp/os-execucao-geo")
+async def os_execucao_geo():
+    try:
+        rows = frames_to_dict_list(grafana_post(SQL_OS_EXECUCAO_GEO))
+    except Exception:
+        log.warning("Falha ao buscar os-execucao-geo", exc_info=True)
+        return []
+    return [
+        {
+            "numos":           r.get("numos"),
+            "latitudeinicio":  r.get("latitudeinicio"),
+            "longitudeinicio": r.get("longitudeinicio"),
+            "equipeagendada":  r.get("equipeagendada"),
+        }
+        for r in rows
+    ]
+
+
 # ── Telegram ──────────────────────────────────────────────────────────────────
 
 @router.get("/notify/telegram/status")
