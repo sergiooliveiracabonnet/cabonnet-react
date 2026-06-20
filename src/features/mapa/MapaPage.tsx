@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Marker, Circle as MapCircle, Tooltip, useMap } from 'react-leaflet'
 import {
   Map as MapIcon, Flame, Circle, TrendingUp, X, LayoutGrid, Layers, ChevronDown, ChevronUp,
-  Search, Loader2, CheckCircle2, AlertTriangle, MapPin as PinIcon,
+  Search, Loader2, CheckCircle2, AlertTriangle, MapPin as PinIcon, Wrench,
 } from 'lucide-react'
 import L from 'leaflet'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -13,6 +13,7 @@ import { FilterSelect } from '../../components/ui/FilterSelect'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import OSDrawer from '../ordens/OSDrawer'
+import { useOSExecucaoGeo } from '../../hooks/useOSExecucaoGeo'
 import type { OSRow } from '../../lib/types'
 
 const PROXIMIDADE_KM = 5
@@ -25,6 +26,17 @@ const searchPinIcon = L.divIcon({
   "></div>`,
   iconSize: [26, 26],
   iconAnchor: [13, 26],
+})
+
+const execucaoIcon = L.divIcon({
+  className: 'execucao-pin',
+  html: `<div style="
+    width:22px;height:22px;border-radius:50%;
+    background:#facc15;border:2px solid #0d1117;box-shadow:0 2px 6px rgba(0,0,0,.5);
+    display:flex;align-items:center;justify-content:center;
+  "></div>`,
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
 })
 
 // Tipo do objeto retornado por aggregateByCidade
@@ -326,7 +338,9 @@ function RankingPanel({ cidades, onSelect, selected }: {
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function MapaPage() {
-  const { rows: globalRows } = useOSDerived()
+  const { rows: globalRows, allRows } = useOSDerived()
+  const { data: execucaoGeo = [] } = useOSExecucaoGeo()
+  const [showExecucao, setShowExecucao] = useState(false)
 
   const [view,        setView]        = useState('ambos')    // 'calor' | 'bolhas' | 'ambos'
   const [granularity, setGranularity] = useState<'cidade' | 'bairro'>('cidade')
@@ -598,6 +612,25 @@ export default function MapaPage() {
             </button>
           ))}
         </div>
+
+        <div className="w-px h-5 bg-surface" />
+
+        {/* Toggle de execução em campo */}
+        <button
+          onClick={() => setShowExecucao(v => !v)}
+          title="OS em atendimento agora (ponto de início da execução)"
+          className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-[11px] font-semibold
+                      transition-all duration-fast border
+                      ${showExecucao
+                        ? 'bg-yellow/20 text-yellow border-yellow/30'
+                        : 'text-muted border-white/[0.08] hover:text-text'}`}
+        >
+          <Wrench size={11} />
+          Em atendimento agora{execucaoGeo.length > 0 ? ` (${execucaoGeo.length})` : ''}
+        </button>
+        {showExecucao && execucaoGeo.length === 0 && (
+          <span className="text-[10.5px] text-muted italic">Nenhuma OS em campo agora</span>
+        )}
       </div>
 
       {/* ── Área do mapa ──────────────────────────────────────────────────── */}
@@ -687,6 +720,26 @@ export default function MapaPage() {
               </Marker>
             </>
           )}
+
+          {/* Pins de execução em campo */}
+          {showExecucao && execucaoGeo.map(p => (
+            <Marker
+              key={p.numos}
+              position={[p.lat, p.lng]}
+              icon={execucaoIcon}
+              eventHandlers={{
+                click: () => {
+                  const found = allRows.find(r => r.numos === p.numos)
+                  if (found) setDrawerOS(found)
+                },
+              }}
+            >
+              <Tooltip direction="top" offset={[0, -12]} className="map-tooltip">
+                <span className="font-semibold">OS {p.numos}</span>
+                {p.equipeagendada && <span className="block text-[10px]">{p.equipeagendada}</span>}
+              </Tooltip>
+            </Marker>
+          ))}
         </MapContainer>
 
         {/* Resultado da busca de endereço */}
