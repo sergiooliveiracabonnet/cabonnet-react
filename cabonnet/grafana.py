@@ -390,8 +390,7 @@ SELECT
   to_char(ct.d_datadavenda,      'DD/MM/YYYY')                          as datacontratacao,
   to_char(ct.d_datadainstalacao, 'DD/MM/YYYY')                          as datainstalacao,
   ct.situacao                                                            as situacaocontrato,
-  ct.valordocontrato                                                     as valorcontrato,
-  mi.descricao                                                           as motivoinconclusivo
+  ct.valordocontrato                                                     as valorcontrato
 FROM ordemservico o
   JOIN contratos ct  ON ct.cidade = o.cidade AND ct.codempresa = o.codempresa AND ct.contrato = o.codigocontrato
   JOIN clientes  cli ON cli.codigocliente = o.codigoassinante AND cli.cidade = o.cidade
@@ -403,8 +402,6 @@ FROM ordemservico o
   LEFT JOIN carteiracidade cc ON cc.codigocarteira = ct.codcarteira AND cc.codigocidade = o.cidade
   LEFT JOIN carteira cart    ON cart.codigo = cc.codigocarteira
   LEFT JOIN enderecos ende   ON ende.codigodacidade = ct.cidade AND ende.codigodologradouro = ct.enderecoconexao
-  LEFT JOIN mobile.vis_os_ordemservico mo ON mo.numos = o.numos
-  LEFT JOIN mobile.vis_os_motivosinconclusivos mi ON mi.id = mo.idmotivoinconclusivo
 WHERE o.numos = {numos}
 LIMIT 1
 """
@@ -431,6 +428,14 @@ SELECT descricaoservico, descricaochecklist, checked
 FROM mobile.vis_os_checklist_status
 WHERE numos = {numos}
 ORDER BY codigoservico, codigochecklist
+"""
+
+SQL_MOTIVO_INCONCLUSIVO_TEMPLATE = """
+SELECT mi.descricao AS motivoinconclusivo
+FROM mobile.vis_os_ordemservico mo
+LEFT JOIN mobile.vis_os_motivosinconclusivos mi ON mi.id = mo.idmotivoinconclusivo
+WHERE mo.numos = {numos}
+LIMIT 1
 """
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -71,6 +71,7 @@ from cabonnet.grafana import (
     SQL_FUTURO,
     SQL_MATERIAIS_RETIRADOS_TEMPLATE,
     SQL_MATERIAIS_UTILIZADOS_TEMPLATE,
+    SQL_MOTIVO_INCONCLUSIVO_TEMPLATE,
     SQL_OCORRENCIAS_TEMPLATE,
     SQL_OS_EXECUCAO_GEO,
     SQL_PENDENTE,
@@ -747,7 +748,11 @@ async def detalhes(numos: str = ""):
         checklist = []
         try: checklist = frames_to_dict_list(grafana_post(SQL_CHECKLIST_TEMPLATE.format(numos=numos_int)))
         except Exception: log.warning("Falha ao buscar checklist numos=%s", numos_int, exc_info=True)
-        motivo_inconclusivo = os_data.get("motivoinconclusivo") or None
+        motivo_inconclusivo = None
+        try:
+            rows_mi = frames_to_dict_list(grafana_post(SQL_MOTIVO_INCONCLUSIVO_TEMPLATE.format(numos=numos_int)))
+            if rows_mi: motivo_inconclusivo = rows_mi[0].get("motivoinconclusivo") or None
+        except Exception: log.warning("Falha ao buscar motivo_inconclusivo numos=%s", numos_int, exc_info=True)
         return {"os": os_data, "reagendada": reagendada, "equipe_reagendou": equipe_reagendou,
                 "ocorrencias": ocorrencias, "materiais_utilizados": materiais_utilizados,
                 "materiais_retirados": materiais_retirados,

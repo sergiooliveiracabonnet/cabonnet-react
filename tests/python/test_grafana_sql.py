@@ -6,6 +6,7 @@ from cabonnet.grafana import (
     SQL_DETALHES_TEMPLATE,
     SQL_FOTO_BLOB_TEMPLATE,
     SQL_FOTOS_TEMPLATE,
+    SQL_MOTIVO_INCONCLUSIVO_TEMPLATE,
     SQL_OS_EXECUCAO_GEO,
 )
 
@@ -31,11 +32,16 @@ def test_sql_checklist_template_referencia_tabela_e_numos():
     assert "WHERE numos = 9999999" in sql
 
 
-def test_sql_detalhes_template_inclui_join_motivo_inconclusivo():
+def test_sql_detalhes_template_nao_referencia_mobile():
     sql = SQL_DETALHES_TEMPLATE.format(numos=9999999)
+    assert "mobile." not in sql
+
+
+def test_sql_motivo_inconclusivo_template_referencia_tabelas_e_numos():
+    sql = SQL_MOTIVO_INCONCLUSIVO_TEMPLATE.format(numos=9999999)
     assert "mobile.vis_os_ordemservico" in sql
     assert "mobile.vis_os_motivosinconclusivos" in sql
-    assert "motivoinconclusivo" in sql
+    assert "WHERE mo.numos = 9999999" in sql
 
 
 def test_sql_os_execucao_geo_filtra_atendimento_e_cidades_vale():

@@ -125,6 +125,7 @@ def test_detalhes_loga_warning_quando_mobile_falha(client, caplog):
             Exception("permission denied for schema mobile"),  # materiais_retirados
             Exception("permission denied for schema mobile"),  # fotos
             Exception("permission denied for schema mobile"),  # checklist
+            Exception("permission denied for schema mobile"),  # motivo_inconclusivo
         ],
     ):
         with caplog.at_level("WARNING"):
@@ -133,11 +134,37 @@ def test_detalhes_loga_warning_quando_mobile_falha(client, caplog):
     assert "permission denied" in caplog.text
 
 
+def test_detalhes_degrada_graciosamente_quando_mobile_inteiro_falha(client):
+    """Regressão do bug crítico: antes do fix, o JOIN com mobile estava na query
+    principal e fazia o /detalhes inteiro retornar 502 quando o schema mobile
+    era negado. Agora a consulta principal só usa o schema public."""
+    main_row = _grafana_frame({"numos": [7777777], "nomecliente": ["Cliente Resiliente"]})
+    with patch(
+        "cabonnet.app.grafana_post",
+        side_effect=[
+            main_row,
+            Exception("permission denied for schema mobile"),  # ocorrencias
+            Exception("permission denied for schema mobile"),  # equipe_reagendou
+            Exception("permission denied for schema mobile"),  # materiais_utilizados
+            Exception("permission denied for schema mobile"),  # materiais_retirados
+            Exception("permission denied for schema mobile"),  # fotos
+            Exception("permission denied for schema mobile"),  # checklist
+            Exception("permission denied for schema mobile"),  # motivo_inconclusivo
+        ],
+    ):
+        r = client.get("/detalhes?numos=7777777")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["os"]["numos"] == 7777777
+    assert data["motivoinconclusivo"] is None
+    assert data["fotos"] == []
+    assert data["checklist"] == []
+
+
 def test_detalhes_inclui_fotos_checklist_e_motivo(client):
     main_row = _grafana_frame({
         "numos": [9999999],
         "nomecliente": ["Cliente Teste"],
-        "motivoinconclusivo": ["Cliente ausente no local"],
     })
     fotos_frame = _grafana_frame({
         "id": [1], "codfoto": [10], "nomearquivo": ["foto1.jpg"],
@@ -148,6 +175,7 @@ def test_detalhes_inclui_fotos_checklist_e_motivo(client):
         "descricaochecklist": ["Testou sinal de internet"],
         "checked": [True],
     })
+    motivo_frame = _grafana_frame({"motivoinconclusivo": ["Cliente ausente no local"]})
     with patch(
         "cabonnet.app.grafana_post",
         side_effect=[
@@ -158,6 +186,7 @@ def test_detalhes_inclui_fotos_checklist_e_motivo(client):
             Exception("sem materiais_retirados"),
             fotos_frame,
             checklist_frame,
+            motivo_frame,
         ],
     ):
         r = client.get("/detalhes?numos=9999999")
@@ -177,7 +206,7 @@ def test_detalhes_motivo_inconclusivo_null_quando_vazio(client):
     main_row = _grafana_frame({"numos": [8888888], "nomecliente": ["Outro Cliente"]})
     with patch(
         "cabonnet.app.grafana_post",
-        side_effect=[main_row, Exception(), Exception(), Exception(), Exception(), {}, {}],
+        side_effect=[main_row, Exception(), Exception(), Exception(), Exception(), {}, {}, {}],
     ):
         r = client.get("/detalhes?numos=8888888")
     assert r.status_code == 200
