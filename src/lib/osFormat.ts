@@ -122,6 +122,13 @@ export function calcDuracao(raw1: string | null | undefined, raw2: string | null
   return h === 0 ? `${m}min` : m > 0 ? `${h}h ${m}min` : `${h}h`
 }
 
+export function fmtHorasMin(absHoras: number): string {
+  const mins = Math.round(Math.abs(absHoras) * 60)
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return h === 0 ? `${m}min` : m > 0 ? `${h}h ${m}min` : `${h}h`
+}
+
 export const FORN_LABEL: Record<Fornecedor, string> = {
   WES:        'WES',
   Instacable: 'Instacable',

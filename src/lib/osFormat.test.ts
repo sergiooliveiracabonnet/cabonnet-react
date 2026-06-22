@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe } from './osFormat'
+import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, fmtHorasMin } from './osFormat'
 
 describe('fmtDate', () => {
   it('retorna null para valor nulo', () => {
@@ -112,5 +112,23 @@ describe('shortEquipe', () => {
   it('fmtDate lida com ISO timestamp com offset de timezone', () => {
     const result = fmtDate('2025-04-25T09:15:00-03:00')
     expect(result).toBe('25/04/2025 09:15')
+  })
+})
+
+describe('fmtHorasMin', () => {
+  it('formata horas e minutos', () => {
+    expect(fmtHorasMin(1.5)).toBe('1h 30min')
+  })
+
+  it('formata só horas quando minutos são zero', () => {
+    expect(fmtHorasMin(2)).toBe('2h')
+  })
+
+  it('formata só minutos quando menos de 1 hora', () => {
+    expect(fmtHorasMin(0.75)).toBe('45min')
+  })
+
+  it('usa valor absoluto (ignora sinal negativo)', () => {
+    expect(fmtHorasMin(-1.5)).toBe('1h 30min')
   })
 })
