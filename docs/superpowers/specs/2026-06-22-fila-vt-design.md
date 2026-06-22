@@ -180,7 +180,7 @@ O botão "Notificar" manual da tela é complementar — permite avisar antecipad
 ## Testes
 
 - `src/lib/transform.test.ts`: casos para `getVtPrazoHoras` (8h/24h/48h/não-VT) e para `_vtHorasRestantes`/`_vtViolado` em `enrichRows` (ativa vs. concluída, antes/depois do prazo).
-- Backend: teste manual via `/setup` ou logs (`[VTMonitor]`) — sem suíte de testes automatizados em Python no projeto atualmente.
+- Backend: o projeto já tem suíte pytest em `tests/python/` (`pytest.ini`, fixture `client` em `conftest.py`). Adicionar `tests/python/test_grafana_sql.py` (asserts sobre as 3 constantes SQL conterem `HH24:MI`) e testes para `_parse_datetime_br` em `cabonnet/utils.py`.
 
 ## Arquivos afetados (resumo)
 
