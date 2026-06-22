@@ -507,6 +507,14 @@ describe('parseDateTime', () => {
   it('retorna null para data inválida', () => {
     expect(parseDateTime('32/13/2026')).toBeNull()
   })
+
+  it('retorna null para lixo após a hora', () => {
+    expect(parseDateTime('22/06/2026 14:35 lixo')).toBeNull()
+  })
+
+  it('retorna null para hora fora do intervalo', () => {
+    expect(parseDateTime('22/06/2026 25:99')).toBeNull()
+  })
 })
 
 // ─── isConcluida / isExecucaoReal ─────────────────────────────────────────────
