@@ -239,6 +239,27 @@ describe('enrichRows — VT Prazo Horas', () => {
     expect(r._vtHorasRestantes).toBeNull()
     expect(r._vtViolado).toBe(false)
   })
+
+  it('_vtViolado é true exatamente no limite do prazo (VT 24h, aberta há exatos 24h)', () => {
+    const os = makeOS({
+      numos: 'VT5', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Pendente', datacadastro: hoursAgo(24),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtHorasRestantes as number).toBeLessThanOrEqual(0)
+    expect(r._vtViolado).toBe(true)
+  })
+
+  it('_vtHorasRestantes é null quando OS é VT mas datacadastro está ausente', () => {
+    const os = makeOS({
+      numos: 'VT6', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Pendente', datacadastro: null,
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtPrazoHoras).toBe(24)
+    expect(r._vtHorasRestantes).toBeNull()
+    expect(r._vtViolado).toBe(false)
+  })
 })
 
 // ─── parseCSV ─────────────────────────────────────────────────────────────────
