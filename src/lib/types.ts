@@ -48,6 +48,9 @@ export interface OSRow {
   _executadaHoje:     boolean
   _riskScore:         number   // 0–100: score de risco de SLA (computado em enrichRows)
   _diasAteViolacao:   number | null  // dias restantes até SLA crítico (0 = já crítico)
+  _vtPrazoHoras:      number | null
+  _vtHorasRestantes:  number | null
+  _vtViolado:         boolean
 }
 
 // ─── Date Filter (uiStore) ────────────────────────────────────────────────────

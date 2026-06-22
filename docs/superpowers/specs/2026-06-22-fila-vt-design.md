@@ -23,6 +23,16 @@ O objetivo desta feature é dar ao usuário um lugar para **priorizar agressivam
 
 Em vez disso, esta feature introduz um conjunto de **campos novos e paralelos**, usados exclusivamente pela fila VT, com zero impacto no que já existe.
 
+## 0. Pré-requisito: precisão de hora no `datacadastro`
+
+**Descoberto durante o planejamento:** as 3 queries SQL principais que alimentam `/query` (`SQL_PENDENTE`, `SQL_AGENDADO`, `SQL_FUTURO` em `cabonnet/grafana.py`, linhas 57/142/227) geram `datacadastro` com `to_char(o.d_datacadastro, 'DD/MM/YYYY')` — **só a data, sem hora**. A coluna `o.d_datacadastro` no banco tem timestamp completo, mas a hora é descartada antes de chegar no CSV/frontend. Isso torna qualquer cálculo de "horas restantes" impreciso em até ~24h (uma OS aberta às 23h50 e outra às 00h10 do mesmo dia ficam indistinguíveis).
+
+**Correção:** mudar as 3 queries para `to_char(o.d_datacadastro, 'DD/MM/YYYY HH24:MI')`. Seguro para o resto do sistema porque todo o código existente (`parseDate` no frontend, `_parse_data_br` no backend) já descarta defensivamente qualquer hora extra na string (`s.split(' ')[0]`). Apenas os campos NOVOS desta feature (`_vtHorasRestantes` etc.) vão de fato usar a hora — `_agingAbertura`, `_agingHoras` e todo o resto do sistema continuam exatamente como estão hoje (sem mudança de comportamento), pois continuam usando `parseDate`/`_parse_data_br` (que ignoram a hora).
+
+Para isso, duas novas funções de parsing com hora completa (paralelas às existentes, que continuam intactas):
+- Frontend: `parseDateTime(s)` em `src/lib/transform.ts` — como `parseDate`, mas preserva HH:MM.
+- Backend: `_parse_datetime_br(s)` em `cabonnet/utils.py` — como `_parse_data_br`, mas preserva HH:MM.
+
 ## 1. Camada de dados (frontend)
 
 ### `src/lib/transform.ts`
@@ -39,10 +49,15 @@ function getVtPrazoHoras(servico: string | null | undefined): number | null {
 }
 ```
 
-Em `enrichRows`, usando `_agingHoras` (já calculado a partir de `datacadastro`):
+Em `enrichRows`, para cada linha que é VT (`getVtPrazoHoras(row.servico) != null`), calcula um aging em horas **preciso** usando a nova `parseDateTime(row.datacadastro)` (ver seção 0) — não reutiliza `_agingHoras` existente, que continua baseado em `parseDate` (data-only) e intocado:
+
+```ts
+const dtAberturaPrecisa = parseDateTime(row.datacadastro)
+const agingHorasReal = dtAberturaPrecisa ? Math.max(0, (dtRef.getTime() - dtAberturaPrecisa.getTime()) / 3600000) : null
+```
 
 - `row._vtPrazoHoras`: 8 / 24 / 48 / `null` (não é VT)
-- `row._vtHorasRestantes`: `_vtPrazoHoras - _agingHoras`, somente para OS ativas (Pendente/Atendimento); `null` se não for VT ou não estiver ativa. Pode ser negativo (já violado).
+- `row._vtHorasRestantes`: `_vtPrazoHoras - agingHorasReal`, somente para OS ativas (Pendente/Atendimento) e quando `agingHorasReal != null`; `null` caso contrário. Pode ser negativo (já violado).
 - `row._vtViolado: boolean`: `true` quando `_vtHorasRestantes != null && _vtHorasRestantes <= 0`
 
 ### `src/lib/types.ts`
@@ -130,7 +145,7 @@ Novo monitor em background, seguindo exatamente o padrão dos monitores existent
 - Lê `state._dados_cache["agendado"]` (cache já populado pelo polling existente — nenhuma chamada extra ao Grafana).
 - Para cada OS ativa (Pendente/Atendimento) cujo `servico` contenha VT 08H/24H/48H:
   - `prazo_h` = 8/24/48 conforme o texto do `servico`
-  - `aging_h` = horas desde `datacadastro` até agora
+  - `aging_h` = horas desde `datacadastro` até agora, usando a nova `_parse_datetime_br` (seção 0) — não usa `_parse_data_br` (data-only)
   - `restante_h = prazo_h - aging_h`
 
 ### Máquina de estados por OS
@@ -165,14 +180,16 @@ O botão "Notificar" manual da tela é complementar — permite avisar antecipad
 ## Testes
 
 - `src/lib/transform.test.ts`: casos para `getVtPrazoHoras` (8h/24h/48h/não-VT) e para `_vtHorasRestantes`/`_vtViolado` em `enrichRows` (ativa vs. concluída, antes/depois do prazo).
-- Backend: teste manual via `/setup` ou logs (`[VTMonitor]`) — sem suíte de testes automatizados em Python no projeto atualmente.
+- Backend: o projeto já tem suíte pytest em `tests/python/` (`pytest.ini`, fixture `client` em `conftest.py`). Adicionar `tests/python/test_grafana_sql.py` (asserts sobre as 3 constantes SQL conterem `HH24:MI`) e testes para `_parse_datetime_br` em `cabonnet/utils.py`.
 
 ## Arquivos afetados (resumo)
 
 | Arquivo | Tipo de mudança |
 |---|---|
+| `cabonnet/grafana.py` | `SQL_PENDENTE`/`SQL_AGENDADO`/`SQL_FUTURO` passam a incluir hora em `datacadastro` |
+| `cabonnet/utils.py` | Nova função `_parse_datetime_br` |
 | `src/lib/types.ts` | Novos campos em `OSRow` |
-| `src/lib/transform.ts` | Nova função `getVtPrazoHoras` + novos campos em `enrichRows` |
+| `src/lib/transform.ts` | Novas funções `parseDateTime`, `getVtPrazoHoras` + novos campos em `enrichRows` |
 | `src/lib/transform.test.ts` | Novos testes |
 | `src/lib/tgTemplates.ts` | Novo template `tgVTUrgente` |
 | `src/features/erp/vt/VTPriorityPage.tsx` | Novo arquivo |

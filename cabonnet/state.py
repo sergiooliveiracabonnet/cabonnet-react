@@ -43,6 +43,10 @@ _sem_exec_alertadas_data = None
 _manut_vistos      = set()   # numos de manutenção já alertados hoje
 _manut_vistos_data = None    # date do último reset
 
+# ── Estado do monitor de VT (Fila de Prioridade) ─────────────────────────────
+_vt_alertados      = {}   # { numos(str): {"estagio": "risco"|"violado", "last_sent": datetime} }
+_vt_alertados_data = None # date do último reset
+
 # ── Juniper PPPoE ─────────────────────────────────────────────────────────────
 # Conjunto de user_name conhecidos na última coleta (por cluster).
 _jun_known: dict = {}

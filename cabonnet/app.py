@@ -241,6 +241,7 @@ async def lifespan(app: FastAPI):
         _resumo_scheduler_loop,
         _sem_exec_monitor_loop,
         _sla_monitor_loop,
+        _vt_monitor_loop,
     )
 
     _db_init()
@@ -268,6 +269,7 @@ async def lifespan(app: FastAPI):
         threading.Thread(target=_telegram_poll_loop,       name="TelegramPoll",      daemon=True).start()
         threading.Thread(target=_resumo_scheduler_loop,    name="TelegramScheduler", daemon=True).start()
         threading.Thread(target=_sla_monitor_loop,         name="SLAMonitor",        daemon=True).start()
+        threading.Thread(target=_vt_monitor_loop,          name="VTMonitor",         daemon=True).start()
         threading.Thread(target=_fila_monitor_loop,        name="FilaMonitor",       daemon=True).start()
         threading.Thread(target=_manut_monitor_loop,       name="ManutMonitor",      daemon=True).start()
         threading.Thread(target=_atendimento_travado_loop, name="AtendTravado",      daemon=True).start()

@@ -54,7 +54,7 @@ with analitico as (
   o.equipe,
   eq.nomedaequipe,
   eqe.nomedaequipe as equipeexecutou,
-  to_char(o.d_datacadastro,    'DD/MM/YYYY') as datacadastro,
+  to_char(o.d_datacadastro,    'DD/MM/YYYY HH24:MI') as datacadastro,
   to_char(o.d_dataatendimento, 'DD/MM/YYYY') as dataatendimento,
   to_char(o.d_dataagendamento, 'DD/MM/YYYY') as dataagendamento,
   case when o.t_horainicial is not null
@@ -139,7 +139,7 @@ with analitico as (
   o.equipe,
   eq.nomedaequipe,
   eqe.nomedaequipe as equipeexecutou,
-  to_char(o.d_datacadastro,    'DD/MM/YYYY') as datacadastro,
+  to_char(o.d_datacadastro,    'DD/MM/YYYY HH24:MI') as datacadastro,
   to_char(o.d_dataatendimento, 'DD/MM/YYYY') as dataatendimento,
   to_char(o.d_dataagendamento, 'DD/MM/YYYY') as dataagendamento,
   case when o.t_horainicial is not null
@@ -224,7 +224,7 @@ with analitico as (
   o.equipe,
   eq.nomedaequipe,
   eqe.nomedaequipe as equipeexecutou,
-  to_char(o.d_datacadastro,    'DD/MM/YYYY') as datacadastro,
+  to_char(o.d_datacadastro,    'DD/MM/YYYY HH24:MI') as datacadastro,
   to_char(o.d_dataatendimento, 'DD/MM/YYYY') as dataatendimento,
   to_char(o.d_dataagendamento, 'DD/MM/YYYY') as dataagendamento,
   case when o.t_horainicial is not null

@@ -7,7 +7,7 @@ import { api } from './lib/api'
 import {
   ERPRelatoriosPage,
   ERPAlertasPage,
-  ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage, ERPJustificativaPage,
+  ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage, ERPVTPage, ERPJustificativaPage,
   DashboardPage, OrdensPage,
   GraficosPage, CidadesPage,
   FornecedorPage, JuniperPage, NotFoundPage, NocPage, FechamentoPage,
@@ -62,6 +62,7 @@ export default function App() {
           <Route path="qualidade"      element={<ERPQualidadePage />}       />
           <Route path="justificativa" element={<ERPJustificativaPage />}  />
           <Route path="planner"       element={<ERPPlannerPage />}         />
+          <Route path="vt"           element={<ERPVTPage />}          />
         </Route>
 
         <Route index             element={<DashboardPage />}  />

@@ -52,6 +52,33 @@ export function parseDate(s: string | null | undefined): Date | null {
   return dt
 }
 
+export function parseDateTime(s: string | null | undefined): Date | null {
+  if (!s) return null
+  // split(' ') sem limite: espaços duplicados ou lixo à direita criam mais
+  // de 2 segmentos — tratamos isso como entrada malformada em vez de ignorar
+  // silenciosamente (mesma armadilha do truncamento detectada no parser Python).
+  const segments = s.trim().split(' ').filter(Boolean)
+  if (segments.length < 1 || segments.length > 2) return null
+  const [datePart, timePart] = segments
+  const parts = datePart.split(/[/-]/)
+  if (parts.length < 3) return null
+  const [d, m, y] = parts.map(Number)
+  if (!d || !m || !y || m < 1 || m > 12 || d < 1 || d > 31) return null
+  let hh = 0
+  let mi = 0
+  if (timePart) {
+    const timeParts = timePart.split(':')
+    if (timeParts.length !== 2) return null
+    const [h, mn] = timeParts.map(Number)
+    if (Number.isNaN(h) || Number.isNaN(mn) || h < 0 || h > 23 || mn < 0 || mn > 59) return null
+    hh = h
+    mi = mn
+  }
+  const dt = new Date(y, m - 1, d, hh, mi)
+  if (dt.getMonth() !== m - 1 || dt.getDate() !== d) return null
+  return dt
+}
+
 function parseRow(line: string, sep: string): string[] {
   const r: string[] = []; let cur = '', inQ = false
   for (let i = 0; i < line.length; i++) {
@@ -182,6 +209,14 @@ export function getSlaLimite(
   return { limite: lim.SERVICO ?? 2, label: 'Serviços' }
 }
 
+export function getVtPrazoHoras(servico: string | null | undefined): number | null {
+  const s = (servico || '').toUpperCase()
+  if (s.includes('VT 08H')) return 8
+  if (s.includes('VT 24H')) return 24
+  if (s.includes('VT 48H')) return 48
+  return null
+}
+
 // ─── Classifiers ─────────────────────────────────────────────────────────────
 
 export const isCOPE    = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /COPE/i.test(r.nomedaequipe ?? '')
@@ -298,6 +333,18 @@ export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): O
     else if (_isVT || row._tipo === 'MANUTENCAO')         row._categoria = 'VT_MANUTENCAO'
     else if (row._tipo === 'INSTALACAO')                  row._categoria = 'INSTALACAO'
     else                                                  row._categoria = 'SERVICO'
+
+    const vtPrazoHoras = getVtPrazoHoras(row.servico)
+    row._vtPrazoHoras = vtPrazoHoras
+    if (vtPrazoHoras != null && isAtiva) {
+      const dtAberturaPrecisa = parseDateTime(row.datacadastro)
+      row._vtHorasRestantes = dtAberturaPrecisa
+        ? vtPrazoHoras - Math.max(0, (dtRef.getTime() - dtAberturaPrecisa.getTime()) / 3600000)
+        : null
+    } else {
+      row._vtHorasRestantes = null
+    }
+    row._vtViolado = row._vtHorasRestantes != null && row._vtHorasRestantes <= 0
 
     if      (isCOPE(row)    && !isConcluida(row.descsituacao)) row._situacaoEfetiva = 'Pendente'
     else if (isReagend(row) && !isConcluida(row.descsituacao)) row._situacaoEfetiva = 'Reagendamento'

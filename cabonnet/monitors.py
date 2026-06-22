@@ -11,15 +11,15 @@ from datetime import datetime, date, timedelta
 
 from cabonnet.config import (
     TELEGRAM_CHAT_ALERTAS, TELEGRAM_CHAT_ID,
-    TELEGRAM_CHAT_INSTACABLE, TELEGRAM_CHAT_WES,
+    TELEGRAM_CHAT_INSTACABLE, TELEGRAM_CHAT_WES, TELEGRAM_CHAT_REDE,
     TELEGRAM_CHAT_OPERACIONAL_THM,
 )
 from cabonnet import state
 from cabonnet.cache import _sla_limite, _dados_cache_update
-from cabonnet.utils import _parse_data_br
+from cabonnet.utils import _parse_data_br, _parse_datetime_br
 from cabonnet.telegram import (
     _telegram_enabled, _telegram_send, _telegram_send_long,
-    _tg_esc, _abrev_equipe, _is_campo, _TG_DIV,
+    _tg_esc, _abrev_equipe, _is_campo, _TG_DIV, _operadora_da_os,
 )
 from cabonnet.grafana import grafana_post, frames_to_csv, SQL_AGENDADO
 from cabonnet.builders import (
@@ -611,3 +611,125 @@ def _resumo_scheduler_loop():
                 except Exception as ex:
                     log.warning("[Telegram] Erro Executadas Hoje: %s", str(ex)[:120])
             threading.Thread(target=_enviar_executadas, daemon=True).start()
+
+
+# ── Monitor de VT (Fila de Prioridade) ────────────────────────────────────────
+
+_VT_RISK_WINDOW_H      = 4     # horas restantes para entrar em estágio de risco
+_VT_REPEAT_INTERVAL_S  = 1800  # segundos entre repetições do alerta de violação (30min)
+
+
+def _classificar_vt_alerta(restante, registro, agora):
+    """Decide se uma OS deve disparar alerta neste ciclo. Não muta estado.
+
+    Estágios: None -> risco (uma vez) -> violado (uma vez) -> violado repetido (a cada 30min).
+    Retorna 'violado', 'risco', ou None (sem alerta neste ciclo).
+    """
+    estagio_atual = registro["estagio"] if registro else None
+    if restante <= 0:
+        if estagio_atual != "violado":
+            return "violado"
+        last_sent = registro["last_sent"]
+        if (agora - last_sent).total_seconds() >= _VT_REPEAT_INTERVAL_S:
+            return "violado"
+        return None
+    if restante <= _VT_RISK_WINDOW_H and estagio_atual is None:
+        return "risco"
+    return None
+
+
+_VT_CHAT_POR_OPERADORA = {
+    "WES":        TELEGRAM_CHAT_WES,
+    "INSTACABLE": TELEGRAM_CHAT_INSTACABLE,
+    "REDE":       TELEGRAM_CHAT_REDE,
+    "THM":        TELEGRAM_CHAT_OPERACIONAL_THM,
+}
+
+
+def _enviar_alertas_vt(items, tipo):
+    """items: lista de (row, restante_h, prazo_h). tipo: 'violado' | 'risco'."""
+    if not items:
+        return
+
+    agora  = datetime.now()
+    por_op = {}
+    for r, restante, prazo_h in items:
+        op = _operadora_da_os(r) or "ALERTAS"
+        por_op.setdefault(op, []).append((r, restante, prazo_h))
+
+    for op, batch in por_op.items():
+        batch  = sorted(batch, key=lambda item: item[1])
+        chat   = _VT_CHAT_POR_OPERADORA.get(op, TELEGRAM_CHAT_ALERTAS)
+        titulo = "🔴 VT VIOLADO" if tipo == "violado" else "🟠 VT EM RISCO"
+        linhas = [f"{titulo} — {len(batch)} OS", f"<i>{agora.strftime('%d/%m/%Y às %H:%M')}</i>", _TG_DIV]
+        for r, restante, prazo_h in batch[:10]:
+            numos = _tg_esc(r.get("numos", "?"))
+            cli   = _tg_esc((r.get("nomecliente") or "?")[:28])
+            eq    = _tg_esc(_abrev_equipe(r.get("nomedaequipe", "")) or "Sem equipe")
+            if restante <= 0:
+                linhas.append(f"🔴 <b>OS {numos}</b> · VT {prazo_h}h · violado há {round(abs(restante), 1)}h · {cli} · {eq}")
+            else:
+                linhas.append(f"🟠 <b>OS {numos}</b> · VT {prazo_h}h · faltam {round(restante, 1)}h · {cli} · {eq}")
+        if len(batch) > 10:
+            linhas.append(f"<i>… +{len(batch) - 10} OS</i>")
+        texto = "\n".join(linhas)
+        _telegram_send(texto, chat_id_override=chat)
+        if chat != TELEGRAM_CHAT_ALERTAS:
+            _telegram_send(texto, chat_id_override=TELEGRAM_CHAT_ALERTAS)
+
+    log.info("[VTMonitor] %s — %d OS notificadas", tipo, len(items))
+
+
+def _vt_monitor_loop():
+    log.info("[VTMonitor] Iniciado")
+    while True:
+        _time_mod.sleep(180)
+        if not _telegram_enabled():
+            continue
+        try:
+            hoje = date.today()
+            if state._vt_alertados_data != hoje:
+                state._vt_alertados = {}
+                state._vt_alertados_data = hoje
+
+            with state._dados_cache_lock:
+                rows = list(state._dados_cache["agendado"])
+
+            agora  = datetime.now()
+            ativos = [r for r in rows if r.get("descsituacao") in ("Pendente", "Atendimento")]
+
+            novas_viol  = []
+            novas_risco = []
+
+            for r in ativos:
+                servico = (r.get("servico") or "").upper()
+                if "VT 08H" in servico:
+                    prazo_h = 8
+                elif "VT 24H" in servico:
+                    prazo_h = 24
+                elif "VT 48H" in servico:
+                    prazo_h = 48
+                else:
+                    continue
+
+                numos = str(r.get("numos", ""))
+                dt    = _parse_datetime_br(r.get("datacadastro", ""))
+                if not dt:
+                    continue
+                aging_h   = (agora - dt).total_seconds() / 3600
+                restante  = prazo_h - aging_h
+
+                registro = state._vt_alertados.get(numos)
+                decisao  = _classificar_vt_alerta(restante, registro, agora)
+                if decisao == "violado":
+                    novas_viol.append((r, restante, prazo_h))
+                    state._vt_alertados[numos] = {"estagio": "violado", "last_sent": agora}
+                elif decisao == "risco":
+                    novas_risco.append((r, restante, prazo_h))
+                    state._vt_alertados[numos] = {"estagio": "risco", "last_sent": agora}
+
+            _enviar_alertas_vt(novas_viol, "violado")
+            _enviar_alertas_vt(novas_risco, "risco")
+
+        except Exception as ex:
+            log.warning("[VTMonitor] Erro: %s", str(ex)[:120])
