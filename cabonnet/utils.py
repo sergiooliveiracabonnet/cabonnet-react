@@ -54,7 +54,7 @@ def _parse_datetime_br(s):
     s = s.strip()
     for fmt in ("%d/%m/%Y %H:%M", "%d/%m/%Y"):
         try:
-            return datetime.strptime(s[:16], fmt)
+            return datetime.strptime(s, fmt)
         except ValueError:
             continue
     return None
