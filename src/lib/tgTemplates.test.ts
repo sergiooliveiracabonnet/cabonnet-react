@@ -249,6 +249,14 @@ describe('tgVTUrgente', () => {
     const msg = tgVTUrgente(os)
     expect(msg).toContain('VIOLADO')
   })
+
+  it('omite a linha de status quando _vtHorasRestantes é null (OS não-VT)', () => {
+    const os  = makeEnrichedOS({ servico: 'ASSISTENCIA TECNICA' })
+    const msg = tgVTUrgente(os)
+    expect(msg).not.toContain('undefined')
+    expect(msg).not.toContain('🔴')
+    expect(msg).not.toContain('🟠')
+  })
 })
 
 // ─── chatKeyForFornecedor ─────────────────────────────────────────────────────
@@ -264,5 +272,13 @@ describe('chatKeyForFornecedor', () => {
 
   it('mapeia fornecedor desconhecido para "alertas"', () => {
     expect(chatKeyForFornecedor(makeEnrichedOS({ nomedaequipe: 'EQUIPE DESCONHECIDA' }))).toBe('alertas')
+  })
+
+  it('mapeia THM para "thm"', () => {
+    expect(chatKeyForFornecedor(makeEnrichedOS({ nomedaequipe: 'EQUIPE F12' }))).toBe('thm')
+  })
+
+  it('mapeia REDE para "rede"', () => {
+    expect(chatKeyForFornecedor(makeEnrichedOS({ nomedaequipe: 'EQUIPE REDE' }))).toBe('rede')
   })
 })

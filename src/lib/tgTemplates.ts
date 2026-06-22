@@ -1,6 +1,6 @@
 import { shortEquipe, fmtHorasMin } from './osFormat'
 import { getSlaLimite } from './transform'
-import type { OSRow } from './types'
+import type { OSRow, Fornecedor } from './types'
 
 const DIV  = '─'.repeat(24)
 const DIVS = '─'.repeat(20)
@@ -363,12 +363,17 @@ export function tgVTUrgente(row: OSRow): string {
 }
 
 // ─── Roteamento de chat por fornecedor (Fila VT) ──────────────────────────────
+const VT_CHAT_KEY: Record<Fornecedor, string> = {
+  WES:        'wes',
+  Instacable: 'instacable',
+  THM:        'thm',
+  REDE:       'rede',
+  MANUTENCAO: 'alertas',
+  INSTALACAO: 'alertas',
+  INTERNO:    'alertas',
+  OUTRO:      'alertas',
+}
+
 export function chatKeyForFornecedor(row: OSRow): string {
-  switch (row._fornecedor) {
-    case 'WES':        return 'wes'
-    case 'Instacable':  return 'instacable'
-    case 'THM':         return 'thm'
-    case 'REDE':        return 'rede'
-    default:            return 'alertas'
-  }
+  return VT_CHAT_KEY[row._fornecedor] ?? 'alertas'
 }
