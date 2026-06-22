@@ -29,6 +29,16 @@ function daysAgo(n: number): string {
   return `${dd}/${mm}/${yyyy}`
 }
 
+function hoursAgo(n: number): string {
+  const d = new Date()
+  d.setHours(d.getHours() - n)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const HH = String(d.getHours()).padStart(2, '0')
+  const MI = String(d.getMinutes()).padStart(2, '0')
+  return `${dd}/${mm}/${d.getFullYear()} ${HH}:${MI}`
+}
+
 
 // ─── getFornecedor ─────────────────────────────────────────────────────────────
 
@@ -162,6 +172,72 @@ describe('enrichRows — SLA', () => {
     })
     const [r] = enrichRows([os])
     expect(r._slaSemAgend).toBe(true)
+  })
+})
+
+// ─── enrichRows — VT Prazo Horas ───────────────────────────────────────────────
+
+describe('enrichRows — VT Prazo Horas', () => {
+  it('getVtPrazoHoras retorna 8 para VT 08H', () => {
+    const [r] = enrichRows([makeOS({ servico: 'ASSISTENCIA - VT 08H' })])
+    expect(r._vtPrazoHoras).toBe(8)
+  })
+
+  it('getVtPrazoHoras retorna 24 para VT 24H', () => {
+    const [r] = enrichRows([makeOS({ servico: 'ASSISTENCIA - VT 24H' })])
+    expect(r._vtPrazoHoras).toBe(24)
+  })
+
+  it('getVtPrazoHoras retorna 48 para VT 48H', () => {
+    const [r] = enrichRows([makeOS({ servico: 'VT 48H TESTE' })])
+    expect(r._vtPrazoHoras).toBe(48)
+  })
+
+  it('getVtPrazoHoras retorna null para serviço não-VT', () => {
+    const [r] = enrichRows([makeOS({ servico: 'ASSISTENCIA TECNICA' })])
+    expect(r._vtPrazoHoras).toBeNull()
+  })
+
+  it('_vtHorasRestantes positivo quando dentro do prazo (VT 24h, aberta há 20h)', () => {
+    const os = makeOS({
+      numos: 'VT1', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Pendente', datacadastro: hoursAgo(20),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtHorasRestantes).not.toBeNull()
+    expect(r._vtHorasRestantes as number).toBeGreaterThan(3)
+    expect(r._vtHorasRestantes as number).toBeLessThan(5)
+    expect(r._vtViolado).toBe(false)
+  })
+
+  it('_vtHorasRestantes negativo e _vtViolado=true quando passou do prazo (VT 24h, aberta há 30h)', () => {
+    const os = makeOS({
+      numos: 'VT2', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Pendente', datacadastro: hoursAgo(30),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtHorasRestantes as number).toBeLessThan(0)
+    expect(r._vtViolado).toBe(true)
+  })
+
+  it('_vtHorasRestantes é null para OS não-VT', () => {
+    const os = makeOS({
+      numos: 'VT3', servico: 'ASSISTENCIA TECNICA',
+      descsituacao: 'Pendente', datacadastro: hoursAgo(5),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtHorasRestantes).toBeNull()
+    expect(r._vtViolado).toBe(false)
+  })
+
+  it('_vtHorasRestantes é null para OS VT já concluída (não está mais na fila ativa)', () => {
+    const os = makeOS({
+      numos: 'VT4', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Concluída', datacadastro: hoursAgo(30),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtHorasRestantes).toBeNull()
+    expect(r._vtViolado).toBe(false)
   })
 })
 

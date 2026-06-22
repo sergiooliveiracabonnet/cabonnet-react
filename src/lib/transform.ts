@@ -209,6 +209,14 @@ export function getSlaLimite(
   return { limite: lim.SERVICO ?? 2, label: 'Serviços' }
 }
 
+export function getVtPrazoHoras(servico: string | null | undefined): number | null {
+  const s = (servico || '').toUpperCase()
+  if (s.includes('VT 08H')) return 8
+  if (s.includes('VT 24H')) return 24
+  if (s.includes('VT 48H')) return 48
+  return null
+}
+
 // ─── Classifiers ─────────────────────────────────────────────────────────────
 
 export const isCOPE    = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /COPE/i.test(r.nomedaequipe ?? '')
@@ -325,6 +333,18 @@ export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): O
     else if (_isVT || row._tipo === 'MANUTENCAO')         row._categoria = 'VT_MANUTENCAO'
     else if (row._tipo === 'INSTALACAO')                  row._categoria = 'INSTALACAO'
     else                                                  row._categoria = 'SERVICO'
+
+    const vtPrazoHoras = getVtPrazoHoras(row.servico)
+    row._vtPrazoHoras = vtPrazoHoras
+    if (vtPrazoHoras != null && isAtiva) {
+      const dtAberturaPrecisa = parseDateTime(row.datacadastro)
+      row._vtHorasRestantes = dtAberturaPrecisa
+        ? vtPrazoHoras - Math.max(0, (dtRef.getTime() - dtAberturaPrecisa.getTime()) / 3600000)
+        : null
+    } else {
+      row._vtHorasRestantes = null
+    }
+    row._vtViolado = row._vtHorasRestantes != null && row._vtHorasRestantes <= 0
 
     if      (isCOPE(row)    && !isConcluida(row.descsituacao)) row._situacaoEfetiva = 'Pendente'
     else if (isReagend(row) && !isConcluida(row.descsituacao)) row._situacaoEfetiva = 'Reagendamento'
