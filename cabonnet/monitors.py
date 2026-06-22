@@ -615,6 +615,29 @@ def _resumo_scheduler_loop():
 
 # ── Monitor de VT (Fila de Prioridade) ────────────────────────────────────────
 
+_VT_RISK_WINDOW_H      = 4     # horas restantes para entrar em estágio de risco
+_VT_REPEAT_INTERVAL_S  = 1800  # segundos entre repetições do alerta de violação (30min)
+
+
+def _classificar_vt_alerta(restante, registro, agora):
+    """Decide se uma OS deve disparar alerta neste ciclo. Não muta estado.
+
+    Estágios: None -> risco (uma vez) -> violado (uma vez) -> violado repetido (a cada 30min).
+    Retorna 'violado', 'risco', ou None (sem alerta neste ciclo).
+    """
+    estagio_atual = registro["estagio"] if registro else None
+    if restante <= 0:
+        if estagio_atual != "violado":
+            return "violado"
+        last_sent = registro["last_sent"]
+        if (agora - last_sent).total_seconds() >= _VT_REPEAT_INTERVAL_S:
+            return "violado"
+        return None
+    if restante <= _VT_RISK_WINDOW_H and estagio_atual is None:
+        return "risco"
+    return None
+
+
 _VT_CHAT_POR_OPERADORA = {
     "WES":        TELEGRAM_CHAT_WES,
     "INSTACABLE": TELEGRAM_CHAT_INSTACABLE,
@@ -635,6 +658,7 @@ def _enviar_alertas_vt(items, tipo):
         por_op.setdefault(op, []).append((r, restante, prazo_h))
 
     for op, batch in por_op.items():
+        batch  = sorted(batch, key=lambda item: item[1])
         chat   = _VT_CHAT_POR_OPERADORA.get(op, TELEGRAM_CHAT_ALERTAS)
         titulo = "🔴 VT VIOLADO" if tipo == "violado" else "🟠 VT EM RISCO"
         linhas = [f"{titulo} — {len(batch)} OS", f"<i>{agora.strftime('%d/%m/%Y às %H:%M')}</i>", _TG_DIV]
@@ -694,19 +718,13 @@ def _vt_monitor_loop():
                     continue
                 aging_h   = (agora - dt).total_seconds() / 3600
                 restante  = prazo_h - aging_h
-                registro  = state._vt_alertados.get(numos)
-                estagio_atual = registro["estagio"] if registro else None
 
-                if restante <= 0:
-                    if estagio_atual != "violado":
-                        novas_viol.append((r, restante, prazo_h))
-                        state._vt_alertados[numos] = {"estagio": "violado", "last_sent": agora}
-                    else:
-                        last_sent = registro["last_sent"]
-                        if (agora - last_sent).total_seconds() >= 1800:
-                            novas_viol.append((r, restante, prazo_h))
-                            state._vt_alertados[numos] = {"estagio": "violado", "last_sent": agora}
-                elif restante <= 4 and estagio_atual is None:
+                registro = state._vt_alertados.get(numos)
+                decisao  = _classificar_vt_alerta(restante, registro, agora)
+                if decisao == "violado":
+                    novas_viol.append((r, restante, prazo_h))
+                    state._vt_alertados[numos] = {"estagio": "violado", "last_sent": agora}
+                elif decisao == "risco":
                     novas_risco.append((r, restante, prazo_h))
                     state._vt_alertados[numos] = {"estagio": "risco", "last_sent": agora}
 
