@@ -5,6 +5,7 @@ export const ERPAlertasPage       = lazy(() => import('../features/erp/alertas/A
 export const ERPProdutividadePage = lazy(() => import('../features/erp/produtividade/ProdutividadePage'))
 export const ERPQualidadePage     = lazy(() => import('../features/erp/qualidade/QualidadePage'))
 export const ERPPlannerPage          = lazy(() => import('../features/erp/planner/PlannerPage'))
+export const ERPVTPage = lazy(() => import('../features/erp/vt/VTPriorityPage'))
 export const ERPJustificativaPage    = lazy(() => import('../features/erp/justificativa/JustificativaPage'))
 
 export const DashboardPage  = lazy(() => import('../features/dashboard/DashboardPage'))
