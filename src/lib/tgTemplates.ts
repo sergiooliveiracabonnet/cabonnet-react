@@ -1,4 +1,4 @@
-import { shortEquipe } from './osFormat'
+import { shortEquipe, fmtHorasMin } from './osFormat'
 import { getSlaLimite } from './transform'
 import type { OSRow } from './types'
 
@@ -335,4 +335,40 @@ export function tgFilaResidual(rows: OSRow[]): string {
   }
   m += `\n${DIV}\n${rod()}`
   return m
+}
+
+// ─── Template: VT Urgente (notificação manual de OS individual) ──────────────
+export function tgVTUrgente(row: OSRow): string {
+  const numos   = row.numos
+  const cliente = esc(row.nomecliente ?? '(Sem nome)')
+  const cidade  = esc(row.nomedacidade ?? '')
+  const bairro  = esc(row.bairro ?? '')
+  const equipe  = esc(shortEquipe(row.nomedaequipe) ?? 'Sem equipe')
+  const tipo    = esc(row._slaTipoLabel ?? 'VT')
+  const restante = row._vtHorasRestantes
+
+  const statusLinha = restante == null
+    ? ''
+    : restante <= 0
+      ? `🔴 <b>VIOLADO</b> há ${fmtHorasMin(restante)}`
+      : `🟠 Faltam <b>${fmtHorasMin(restante)}</b>`
+
+  let m = `🚨 <b>${EMP} — OS URGENTE (${tipo})</b>\n`
+  m += `${DIV}\n\n`
+  m += `<b>OS ${numos}</b>  ·  ${equipe}\n`
+  m += `${cliente}${cidade ? ' · ' + cidade : ''}${bairro ? ' · ' + bairro : ''}\n\n`
+  if (statusLinha) m += `${statusLinha}\n\n`
+  m += rod()
+  return m
+}
+
+// ─── Roteamento de chat por fornecedor (Fila VT) ──────────────────────────────
+export function chatKeyForFornecedor(row: OSRow): string {
+  switch (row._fornecedor) {
+    case 'WES':        return 'wes'
+    case 'Instacable':  return 'instacable'
+    case 'THM':         return 'thm'
+    case 'REDE':        return 'rede'
+    default:            return 'alertas'
+  }
 }

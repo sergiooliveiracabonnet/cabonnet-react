@@ -4,6 +4,7 @@ import { enrichRows } from './transform'
 import {
   tgCriticas, tgEquipes, tgSLA, tgPulso,
   tgExecutadas, tgEquipeInativa, tgFilaResidual,
+  tgVTUrgente, chatKeyForFornecedor,
 } from './tgTemplates'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -230,5 +231,38 @@ describe('tgFilaResidual', () => {
     const result = tgFilaResidual(rows)
     expect(result).toContain('F07')
     expect(result).toContain('OS restante')
+  })
+})
+
+// ─── tgVTUrgente ──────────────────────────────────────────────────────────────
+
+describe('tgVTUrgente', () => {
+  it('inclui número da OS, cliente e equipe', () => {
+    const os  = makeEnrichedOS({ numos: '7654321', nomecliente: 'Maria Souza', nomedaequipe: 'INST F01', servico: 'ASSISTENCIA - VT 24H' })
+    const msg = tgVTUrgente(os)
+    expect(msg).toContain('7654321')
+    expect(msg).toContain('MARIA SOUZA')
+  })
+
+  it('mostra "VIOLADO" quando _vtViolado é true', () => {
+    const os  = makeEnrichedOS({ servico: 'ASSISTENCIA - VT 24H', datacadastro: daysAgo(2) })
+    const msg = tgVTUrgente(os)
+    expect(msg).toContain('VIOLADO')
+  })
+})
+
+// ─── chatKeyForFornecedor ─────────────────────────────────────────────────────
+
+describe('chatKeyForFornecedor', () => {
+  it('mapeia WES para "wes"', () => {
+    expect(chatKeyForFornecedor(makeEnrichedOS({ nomedaequipe: 'EQUIPE F08' }))).toBe('wes')
+  })
+
+  it('mapeia Instacable para "instacable"', () => {
+    expect(chatKeyForFornecedor(makeEnrichedOS({ nomedaequipe: 'EQUIPE F01' }))).toBe('instacable')
+  })
+
+  it('mapeia fornecedor desconhecido para "alertas"', () => {
+    expect(chatKeyForFornecedor(makeEnrichedOS({ nomedaequipe: 'EQUIPE DESCONHECIDA' }))).toBe('alertas')
   })
 })
