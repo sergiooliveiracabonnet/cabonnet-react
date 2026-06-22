@@ -47,6 +47,19 @@ def _parse_data_br(s):
         return None
 
 
+def _parse_datetime_br(s):
+    """Parseia 'DD/MM/YYYY HH:MM' (com hora) ou 'DD/MM/YYYY' (assume 00:00) em datetime, ou None."""
+    if not s:
+        return None
+    s = s.strip()
+    for fmt in ("%d/%m/%Y %H:%M", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(s[:16], fmt)
+        except ValueError:
+            continue
+    return None
+
+
 def isConcluida_str(situacao):
     """Retorna True se a situação indica OS concluída/encerrada."""
     s = (situacao or "").lower()
