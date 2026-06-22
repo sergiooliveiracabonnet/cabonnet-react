@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { OSRow, DateFilter } from './types'
-import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, isConcluida, isExecucaoReal } from './transform.js'
+import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, parseDateTime, isConcluida, isExecucaoReal } from './transform.js'
 import { buildDashboard, buildSla, buildAnomalias, buildCidades } from './builders.js'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -480,6 +480,32 @@ describe('parseDate', () => {
   it('retorna null para string sem 3 partes', () => {
     expect(parseDate('15/2025')).toBeNull()
     expect(parseDate('abc')).toBeNull()
+  })
+})
+
+describe('parseDateTime', () => {
+  it('parseia data com hora', () => {
+    const dt = parseDateTime('22/06/2026 14:35')
+    expect(dt?.getFullYear()).toBe(2026)
+    expect(dt?.getMonth()).toBe(5)
+    expect(dt?.getDate()).toBe(22)
+    expect(dt?.getHours()).toBe(14)
+    expect(dt?.getMinutes()).toBe(35)
+  })
+
+  it('parseia data sem hora assumindo 00:00', () => {
+    const dt = parseDateTime('22/06/2026')
+    expect(dt?.getHours()).toBe(0)
+    expect(dt?.getMinutes()).toBe(0)
+  })
+
+  it('retorna null para string vazia ou nula', () => {
+    expect(parseDateTime('')).toBeNull()
+    expect(parseDateTime(null)).toBeNull()
+  })
+
+  it('retorna null para data inválida', () => {
+    expect(parseDateTime('32/13/2026')).toBeNull()
   })
 })
 

@@ -52,6 +52,33 @@ export function parseDate(s: string | null | undefined): Date | null {
   return dt
 }
 
+export function parseDateTime(s: string | null | undefined): Date | null {
+  if (!s) return null
+  // split(' ') sem limite: espaços duplicados ou lixo à direita criam mais
+  // de 2 segmentos — tratamos isso como entrada malformada em vez de ignorar
+  // silenciosamente (mesma armadilha do truncamento detectada no parser Python).
+  const segments = s.trim().split(' ').filter(Boolean)
+  if (segments.length < 1 || segments.length > 2) return null
+  const [datePart, timePart] = segments
+  const parts = datePart.split(/[/-]/)
+  if (parts.length < 3) return null
+  const [d, m, y] = parts.map(Number)
+  if (!d || !m || !y || m < 1 || m > 12 || d < 1 || d > 31) return null
+  let hh = 0
+  let mi = 0
+  if (timePart) {
+    const timeParts = timePart.split(':')
+    if (timeParts.length !== 2) return null
+    const [h, mn] = timeParts.map(Number)
+    if (Number.isNaN(h) || Number.isNaN(mn) || h < 0 || h > 23 || mn < 0 || mn > 59) return null
+    hh = h
+    mi = mn
+  }
+  const dt = new Date(y, m - 1, d, hh, mi)
+  if (dt.getMonth() !== m - 1 || dt.getDate() !== d) return null
+  return dt
+}
+
 function parseRow(line: string, sep: string): string[] {
   const r: string[] = []; let cur = '', inQ = false
   for (let i = 0; i < line.length; i++) {
