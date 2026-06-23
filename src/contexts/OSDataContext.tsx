@@ -7,7 +7,7 @@ import { useUIStore } from '../store/uiStore'
 import { applyDateFilter } from '../lib/transform'
 import {
   buildDashboard, buildSla, buildGraficos, buildAuditoria,
-  buildCidades, buildCampo, buildRevisitas, buildOrdens, buildAnomalias,
+  buildCidades, buildCampo, buildRevisitas, buildOrdens, buildAnomalias, buildVT,
 } from '../lib/builders'
 import type {
   OSRow, KPI, QuickInsight, ClusterAtivo,
@@ -130,6 +130,15 @@ const EMPTY_DERIVED = {
     ordens:  [] as OSRow[],
     options: { tipos: [] as string[], cidades: [] as string[], equipes: [] as string[], bairros: [] as string[], periodos: [] as string[] },
   },
+  vt: {
+    cumprimento: {
+      total: 0, noPrazo: 0, fora: 0,
+      pct: null as number | null, prevPct: null as number | null, deltaPp: null as number | null,
+    },
+    cargaFornecedor: [] as { nome: string; total: number; violadas: number; criticas: number }[],
+    cargaCidade:     [] as { nome: string; total: number; violadas: number; criticas: number }[],
+    tendencia:       [] as { dia: string; label: string; total: number; violadas: number }[],
+  },
 }
 
 type Derived = typeof EMPTY_DERIVED
@@ -188,6 +197,8 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
   const campo      = useMemo(() => safe('campo',      () => buildCampo(activeRows),      EMPTY_DERIVED.campo),      [activeRows])
   const revisitas  = useMemo(() => safe('revisitas',  () => buildRevisitas(activeRevisitaRows, prevRevisitaRows), EMPTY_DERIVED.revisitas), [activeRevisitaRows, prevRevisitaRows])
   const ordens     = useMemo(() => safe('ordens',     () => buildOrdens(activeRows),     EMPTY_DERIVED.ordens),     [activeRows])
+  const allRevisitaActive = useMemo(() => hideRede ? allRevisitaRows.filter(r => r._tipo !== 'REDE') : allRevisitaRows, [allRevisitaRows, hideRede])
+  const vt         = useMemo(() => safe('vt',         () => buildVT(activeRows, activeRevisitaRows, prevRevisitaRows, allRevisitaActive), EMPTY_DERIVED.vt), [activeRows, activeRevisitaRows, prevRevisitaRows, allRevisitaActive])
 
   // Detecta falhas de builders por identidade de referência com o fallback
   const builderErrors = useMemo(() => [
@@ -200,7 +211,8 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     campo     === EMPTY_DERIVED.campo     && 'campo',
     revisitas === EMPTY_DERIVED.revisitas && 'revisitas',
     ordens    === EMPTY_DERIVED.ordens    && 'ordens',
-  ].filter(Boolean) as string[], [dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens])
+    vt        === EMPTY_DERIVED.vt        && 'vt',
+  ].filter(Boolean) as string[], [dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, vt])
 
   const value = useMemo<OSDataContextValue>(() => ({
     rows:    activeRows,
@@ -209,9 +221,9 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     error,
     dataUpdatedAt,
     builderErrors,
-    derived: { dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens },
+    derived: { dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, vt },
   }), [activeRows, activeAllRows, isLoading, error, dataUpdatedAt, builderErrors,
-       dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens])
+       dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, vt])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
