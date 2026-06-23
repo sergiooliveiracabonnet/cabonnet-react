@@ -148,6 +148,7 @@ export interface Pulso {
   mttr:              number
   topCidadesCriticas: { cidade: string; count: number }[]
   clustersAtivos:    ClusterAtivo[]
+  criticasTotal:     number
   entradasHoje:      number
   saidasHoje:        number
   fluxoHoje:         number

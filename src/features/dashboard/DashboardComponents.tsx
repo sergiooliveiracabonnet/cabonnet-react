@@ -35,6 +35,11 @@ export interface CatCfgItem {
 
 const isRede  = (r: OSRow): boolean => r._tipo === 'REDE'
 const isAtivo = (r: OSRow): boolean => ['Pendente','Atendimento'].includes(r.descsituacao)
+const _hojeDDMMYYYY = (): string => {
+  const n = new Date()
+  return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}/${n.getFullYear()}`
+}
+const isAgendadaHoje = (r: OSRow): boolean => (r.dataagendamento || '').split(' ')[0] === _hojeDDMMYYYY()
 
 export const KPI_FILTERS: Record<string, (r: OSRow) => boolean> = {
   total:    r => !isCOPE(r) && !isReagend(r) && isAtivo(r) && !isRede(r),
@@ -42,7 +47,7 @@ export const KPI_FILTERS: Record<string, (r: OSRow) => boolean> = {
   concl:    r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Concluída',
   pend:     r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Pendente'    && !isRede(r),
   atend:    r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Atendimento' && !isRede(r),
-  criticas: r => !isCOPE(r) && !isReagend(r) && r._slaCritico  && !isRede(r),
+  criticas: r => !isCOPE(r) && !isReagend(r) && r._slaCritico  && !isRede(r) && isAgendadaHoje(r),
   semEq:    r => !isCOPE(r) && !isReagend(r) && !r.nomedaequipe?.trim() && isAtivo(r) && !isRede(r),
   reagendInviab: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'inviabilidade',
   reagendMobile: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'mobile',

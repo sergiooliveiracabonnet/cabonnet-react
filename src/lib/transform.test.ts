@@ -573,6 +573,18 @@ describe('buildDashboard', () => {
     expect(kpis.find(k => k.id === 'reagendFutura')!.value).toBe(2)
   })
 
+  it('OS Críticas conta apenas críticas agendadas para hoje', () => {
+    const n = new Date()
+    const hoje = `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}/${n.getFullYear()}`
+    const critRows = enrichRows([
+      makeOS({ numos: 'C1', descsituacao: 'Pendente', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(6), dataagendamento: hoje }),
+      makeOS({ numos: 'C2', descsituacao: 'Pendente', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(6), dataagendamento: '01/01/2020' }),
+    ])
+    const { kpis, pulso } = buildDashboard(critRows)
+    expect(kpis.find(k => k.id === 'criticas')!.value).toBe(1)   // só a agendada hoje
+    expect((pulso as { criticasTotal: number }).criticasTotal).toBe(2) // todas as críticas preservadas
+  })
+
   it('retorna array de fornecedores', () => {
     const { fornecedores } = buildDashboard(rows)
     expect(Array.isArray(fornecedores)).toBe(true)

@@ -38,6 +38,7 @@ const EMPTY_DERIVED = {
       slaFila: 0, semAgendamento: 0, mttr: 0,
       topCidadesCriticas: [] as { cidade: string; count: number }[],
       clustersAtivos:     [] as ClusterAtivo[],
+      criticasTotal: 0,
       entradasHoje: 0, saidasHoje: 0, fluxoHoje: 0, entradaMediaDia: 0,
       metaMes: {
         concluidas: 0, meta: 0, pct: null as number | null,

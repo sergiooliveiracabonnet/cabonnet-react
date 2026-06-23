@@ -112,7 +112,12 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const isAtivo = (r: OSRow) => ['Pendente','Atendimento'].includes(r.descsituacao)
   const isRede  = (r: OSRow) => r._tipo === 'REDE'
 
-  let pend = 0, atend = 0, redeCount = 0, criticas = 0, semEquipe = 0
+  // Data de hoje em DD/MM/YYYY para comparar com dataagendamento (mesmo formato do CSV)
+  const _now = new Date()
+  const _hojeStr = `${String(_now.getDate()).padStart(2, '0')}/${String(_now.getMonth() + 1).padStart(2, '0')}/${_now.getFullYear()}`
+  const isAgendadaHoje = (r: OSRow) => (r.dataagendamento || '').split(' ')[0] === _hojeStr
+
+  let pend = 0, atend = 0, redeCount = 0, criticas = 0, criticasHoje = 0, semEquipe = 0
   let reagendInviab = 0, reagendMobile = 0, reagendFutura = 0
   let slaExcFila = 0, semAgendamento = 0
   const agingArr: number[] = []
@@ -137,6 +142,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     if (!r.nomedaequipe?.trim()) semEquipe++
     if (r._slaCritico) {
       criticas++
+      if (isAgendadaHoje(r)) criticasHoje++
       const c = (r.nomedacidade || '').trim()
       if (c) cidCritMap.set(c, (cidCritMap.get(c) ?? 0) + 1)
     }
@@ -317,7 +323,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     score: scorePulso, scoreLabel: scorePulsoLabel, scoreBreakdown,
     narrativa: narrativaPulso, quickInsights,
     agingMed, agingDist, slaFila, semAgendamento, mttr,
-    topCidadesCriticas, clustersAtivos,
+    topCidadesCriticas, clustersAtivos, criticasTotal: criticas,
     entradasHoje, saidasHoje, fluxoHoje, entradaMediaDia: entradaMediaDia(rows), metaMes, ritmoIntradiario,
   }
 
@@ -329,7 +335,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   }
 
   const kpis: KPI[] = [
-    { id: 'criticas', title: 'OS Críticas',      value: criticas,   sub: 'SLA 2× excedido',               accent: 'red'    },
+    { id: 'criticas', title: 'OS Críticas',      value: criticasHoje, sub: 'SLA 2× · agend. hoje',          accent: 'red'    },
     { id: 'semEq',    title: 'Sem Equipe',        value: semEquipe,  sub: 'pendente atribuição',            accent: 'orange' },
     { id: 'pend',     title: 'Pendentes',         value: pend,       sub: 'aguardando campo',               accent: 'yellow' },
     { id: 'atend',    title: 'Em Atendimento',    value: atend,      sub: 'em campo + agend. futuro',       accent: 'cyan'   },

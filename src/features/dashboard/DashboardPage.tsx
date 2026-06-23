@@ -151,7 +151,7 @@ export default function DashboardPage() {
         {/* ── 2b. Projeção de risco preditiva (24-48h) ──────────────────── */}
         <ProjecaoRiscoPanel
           proj={projecaoRisco}
-          criticasAgora={(kpis.find(k => k.id === 'criticas')?.value as number) ?? 0}
+          criticasAgora={pulso.criticasTotal ?? 0}
           onOpen={(rows) => setModal({ title: 'Risco de violação · próximas 48h', rows })}
         />
 
@@ -214,7 +214,7 @@ export default function DashboardPage() {
               contexto={{
                 total:     (kpis.find(k => k.id === 'total')?.value    as number) ?? 0,
                 sla_pct:   pulso.slaFila    ?? 0,
-                criticas:  (kpis.find(k => k.id === 'criticas')?.value as number) ?? 0,
+                criticas:  pulso.criticasTotal ?? 0,
                 aging_med: pulso.agingMed   ?? 0,
               }}
             />
