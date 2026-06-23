@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CheckCircle, Clock, Calendar, ExternalLink, MapPin, Users, Wrench,
-  AlertTriangle, MessageSquare, Hash, Check, Filter, FileText,
+  AlertTriangle, Hash, Check, Filter, FileText, Copy, ClipboardList,
 } from 'lucide-react'
 import type { OSRow, Fornecedor } from '../../lib/types'
 
@@ -178,8 +178,11 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
         width="580px"
         actions={
           <div className="flex items-center gap-1">
-            <ActionBtn title="Copiar resumo para WhatsApp" active={copied === 'wha'} onClick={() => copyWith('wha', buildOSWhatsApp(os, osDetails?.historico))}>
-              {copied === 'wha' ? <Check size={13} /> : <MessageSquare size={13} />}
+            <ActionBtn title="Copiar só a OS (resumo)" active={copied === 'wha'} onClick={() => copyWith('wha', buildOSWhatsApp(os))}>
+              {copied === 'wha' ? <Check size={13} /> : <Copy size={13} />}
+            </ActionBtn>
+            <ActionBtn title="Copiar OS + histórico" active={copied === 'wha-full'} onClick={() => copyWith('wha-full', buildOSWhatsApp(os, osDetails?.historico))}>
+              {copied === 'wha-full' ? <Check size={13} /> : <ClipboardList size={13} />}
             </ActionBtn>
             <ActionBtn title="Copiar nº da OS" active={copied === 'num'} onClick={() => copyWith('num', String(os.numos))}>
               {copied === 'num' ? <Check size={13} /> : <Hash size={13} />}
