@@ -262,6 +262,76 @@ describe('enrichRows — VT Prazo Horas', () => {
   })
 })
 
+// ─── enrichRows — VT Cumprimento de Prazo (executadas) ──────────────────────────
+
+describe('enrichRows — VT Cumprimento de Prazo', () => {
+  it('_vtCumpridaNoPrazo=true quando VT 08h executada 6h após o cadastro', () => {
+    const os = makeOS({
+      numos: 'VC1', servico: 'ASSISTENCIA - VT 08H',
+      descsituacao: 'Concluída', datacadastro: hoursAgo(20), dataexecucao: hoursAgo(14),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtCumpridaNoPrazo).toBe(true)
+  })
+
+  it('_vtCumpridaNoPrazo=false quando VT 08h executada 12h após o cadastro', () => {
+    const os = makeOS({
+      numos: 'VC2', servico: 'ASSISTENCIA - VT 08H',
+      descsituacao: 'Concluída', datacadastro: hoursAgo(20), dataexecucao: hoursAgo(8),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtCumpridaNoPrazo).toBe(false)
+  })
+
+  it('_vtCumpridaNoPrazo é null para VT ainda sem dataexecucao', () => {
+    const os = makeOS({
+      numos: 'VC3', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Pendente', datacadastro: hoursAgo(10),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtCumpridaNoPrazo).toBeNull()
+  })
+
+  it('_vtCumpridaNoPrazo é null para OS não-VT mesmo executada', () => {
+    const os = makeOS({
+      numos: 'VC4', servico: 'ASSISTENCIA TECNICA',
+      descsituacao: 'Concluída', datacadastro: hoursAgo(20), dataexecucao: hoursAgo(10),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtCumpridaNoPrazo).toBeNull()
+  })
+})
+
+// ─── enrichRows — VT Priority Score ─────────────────────────────────────────────
+
+describe('enrichRows — VT Priority Score', () => {
+  it('_vtPriorityScore é 0 para OS não-VT', () => {
+    const [r] = enrichRows([makeOS({ servico: 'ASSISTENCIA TECNICA', datacadastro: hoursAgo(5) })])
+    expect(r._vtPriorityScore).toBe(0)
+  })
+
+  it('VT 08h pesa mais que VT 48h com o mesmo estouro', () => {
+    const [vt08] = enrichRows([makeOS({ numos: 'S1', servico: 'VT 08H', descsituacao: 'Pendente', datacadastro: hoursAgo(10) })])
+    const [vt48] = enrichRows([makeOS({ numos: 'S2', servico: 'VT 48H', descsituacao: 'Pendente', datacadastro: hoursAgo(50) })])
+    // ambos violados há ~2h, mas o 08h tem peso de tipo 3 vs 1 do 48h
+    expect(vt08._vtPriorityScore).toBeGreaterThan(vt48._vtPriorityScore)
+  })
+
+  it('VT violada pontua mais que VT no prazo do mesmo tipo', () => {
+    const [violada] = enrichRows([makeOS({ numos: 'S3', servico: 'VT 08H', descsituacao: 'Pendente', datacadastro: hoursAgo(12) })]) // violada
+    const [noPrazo] = enrichRows([makeOS({ numos: 'S4', servico: 'VT 08H', descsituacao: 'Pendente', datacadastro: hoursAgo(4) })])  // 4h restantes
+    expect(violada._vtPriorityScore).toBeGreaterThan(noPrazo._vtPriorityScore)
+    expect(noPrazo._vtPriorityScore).toBeGreaterThan(0)
+  })
+
+  it('Reagendamento reduz o score (já tem tratativa)', () => {
+    const [normal]     = enrichRows([makeOS({ numos: 'S5', servico: 'VT 08H', nomedaequipe: 'EQUIPE F01', descsituacao: 'Pendente', datacadastro: hoursAgo(10) })])
+    const [reagendada] = enrichRows([makeOS({ numos: 'S6', servico: 'VT 08H', nomedaequipe: 'REAGENDAMENTO F01', descsituacao: 'Pendente', datacadastro: hoursAgo(10) })])
+    expect(reagendada._situacaoEfetiva).toBe('Reagendamento')
+    expect(reagendada._vtPriorityScore).toBeLessThan(normal._vtPriorityScore)
+  })
+})
+
 // ─── parseCSV ─────────────────────────────────────────────────────────────────
 
 describe('parseCSV', () => {

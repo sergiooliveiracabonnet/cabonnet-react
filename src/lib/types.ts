@@ -51,6 +51,8 @@ export interface OSRow {
   _vtPrazoHoras:      number | null
   _vtHorasRestantes:  number | null
   _vtViolado:         boolean
+  _vtCumpridaNoPrazo: boolean | null  // VT executada dentro do prazo? null = não-VT ou não executada
+  _vtPriorityScore:   number          // 0+ : prioridade da fila VT (tipo × urgência × situação)
 }
 
 // ─── Date Filter (uiStore) ────────────────────────────────────────────────────

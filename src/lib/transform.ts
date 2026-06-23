@@ -266,6 +266,24 @@ export function calcRiskScore(row: Partial<OSRow>): number {
   return Math.min(s, 100)
 }
 
+// ─── VT Priority Score ───────────────────────────────────────────────────────
+// Ordena a fila VT por gravidade real, não só pelo relógio:
+//   peso_tipo (08h=3 · 24h=2 · 48h=1)  — contrato mais curto é mais grave
+//   × urgência (violado = 100 + horas de estouro · no prazo = % do prazo consumido)
+//   × peso_situação (Reagendamento = 0.3, pois já há tratativa com o cliente)
+export function calcVtPriorityScore(row: Partial<OSRow>): number {
+  const prazo    = row._vtPrazoHoras
+  const restante = row._vtHorasRestantes
+  if (prazo == null || restante == null) return 0
+
+  const pesoTipo = prazo <= 8 ? 3 : prazo <= 24 ? 2 : 1
+  const urgencia = restante <= 0
+    ? 100 + Math.abs(restante)
+    : Math.max(0, (prazo - restante) / prazo) * 100
+  const pesoSituacao = row._situacaoEfetiva === 'Reagendamento' ? 0.3 : 1
+  return Math.round(pesoTipo * urgencia * pesoSituacao)
+}
+
 // ─── Row Enrichment ───────────────────────────────────────────────────────────
 
 export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): OSRow[] {
@@ -346,6 +364,18 @@ export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): O
     }
     row._vtViolado = row._vtHorasRestantes != null && row._vtHorasRestantes <= 0
 
+    // Cumprimento de prazo VT (executadas): a execução ocorreu dentro do prazo contratual?
+    // Mede o passado — alimenta o KPI de % cumprimento. null = não-VT ou ainda não executada.
+    if (vtPrazoHoras != null) {
+      const dtCadVt  = parseDateTime(row.datacadastro)
+      const dtExecVt = parseDateTime(row.dataexecucao)
+      row._vtCumpridaNoPrazo = (dtCadVt && dtExecVt)
+        ? (dtExecVt.getTime() - dtCadVt.getTime()) / 3600000 <= vtPrazoHoras
+        : null
+    } else {
+      row._vtCumpridaNoPrazo = null
+    }
+
     if      (isCOPE(row)    && !isConcluida(row.descsituacao)) row._situacaoEfetiva = 'Pendente'
     else if (isReagend(row) && !isConcluida(row.descsituacao)) row._situacaoEfetiva = 'Reagendamento'
     else if (['INSTALACAO','MANUTENCAO','REDE'].includes(row._tipo) && row.nomedaequipe?.trim() && !isConcluida(row.descsituacao))
@@ -354,7 +384,8 @@ export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): O
 
     const _fechamento = (row.dataexecucao || row.databaixa || '').split(' ')[0]
     row._executadaHoje = !isCOPE(row) && !isReagend(row) && isExecucaoReal(row._situacaoEfetiva) && _fechamento === hojeStr
-    row._riskScore     = calcRiskScore(row)
+    row._riskScore       = calcRiskScore(row)
+    row._vtPriorityScore = calcVtPriorityScore(row)
 
     // shortEquipe é usado apenas para exibição — não faz parte do OSRow,
     // mas manter compatibilidade com código JS que chama shortEquipe(r.nomedaequipe)
