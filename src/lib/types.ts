@@ -151,6 +151,7 @@ export interface Pulso {
   entradasHoje:      number
   saidasHoje:        number
   fluxoHoje:         number
+  entradaMediaDia:   number
   metaMes:           PulsoMetaMes
   ritmoIntradiario:  PulsoRitmoIntradiario
 }

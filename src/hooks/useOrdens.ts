@@ -24,6 +24,7 @@ export function useOrdens() {
   const [bairro,      setBairro]      = useState('')
   const [equipe,      setEquipe]      = useState('')
   const [aging,       setAging]       = useState('')
+  const [critico,     setCritico]     = useState(false)
   const [fornecedor,  setFornecedor]  = useState('')
   const [tipoOs,      setTipoOs]      = useState('')
   const [periodo,     setPeriodo]     = useState('')
@@ -73,6 +74,7 @@ export function useOrdens() {
     if (tipoOs)     r = r.filter(x => x._tipo === tipoOs)
     if (periodo)    r = r.filter(x => ((x.periodo as string) || '').trim().toLowerCase() === periodo.toLowerCase())
     if (semEquipe)  r = r.filter(x => !x.nomedaequipe)
+    if (critico)    r = r.filter(x => x._slaCritico)
     if (hideRede)   r = r.filter(x => x._fornecedor !== 'REDE')
     if (agendHoje) {
       const today = new Date().toISOString().slice(0, 10)
@@ -102,7 +104,7 @@ export function useOrdens() {
     }
 
     return r
-  }, [baseOrdens, search, status, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, hideRede, sortBy])
+  }, [baseOrdens, search, status, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, hideRede, sortBy])
 
   const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
@@ -124,7 +126,7 @@ export function useOrdens() {
   const clearFilters = () => {
     setSearch(''); setStatus(''); setTipo(''); setCidade(''); setBairro('')
     setEquipe(''); setAging(''); setFornecedor(''); setTipoOs(''); setPeriodo('')
-    setSemEquipe(false); setAgendHoje(false); setAgendAmanha(false); setAgendFuturo(false)
+    setSemEquipe(false); setCritico(false); setAgendHoje(false); setAgendAmanha(false); setAgendFuturo(false)
     setPage(1)
   }
 
@@ -133,7 +135,7 @@ export function useOrdens() {
     totalPages, page, setPage, density, setDensity, kpis,
     search, setSearch, status, setStatus, tipo, setTipo,
     cidade, setCidade, bairro, setBairro, equipe, setEquipe,
-    aging, setAging, fornecedor, setFornecedor, tipoOs, setTipoOs,
+    aging, setAging, critico, setCritico, fornecedor, setFornecedor, tipoOs, setTipoOs,
     periodo, setPeriodo,
     semEquipe, setSemEquipe, agendHoje, setAgendHoje,
     agendAmanha, setAgendAmanha, agendFuturo, setAgendFuturo,

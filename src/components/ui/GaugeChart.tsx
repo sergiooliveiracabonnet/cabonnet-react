@@ -15,6 +15,7 @@ function isLight(): boolean {
 interface GaugeChartProps {
   value?:     number
   max?:       number
+  target?:    number
   color?:     string
   size?:      number
   label?:     string
@@ -22,7 +23,7 @@ interface GaugeChartProps {
   className?: string
 }
 
-export function GaugeChart({ value = 0, max = 100, color = '#3b82f6', size = 96, label, style, className = '' }: GaugeChartProps) {
+export function GaugeChart({ value = 0, max = 100, target, color = '#3b82f6', size = 96, label, style, className = '' }: GaugeChartProps) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100))
   const r   = size * 0.38
   const cx  = size / 2
@@ -47,6 +48,14 @@ export function GaugeChart({ value = 0, max = 100, color = '#3b82f6', size = 96,
   const fontSize   = Math.round(size * 0.27)
   const trackColor = isLight() ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.07)'
 
+  // Marca de meta (alvo) sobre o arco
+  const hasTarget = target != null
+  const tgtPct    = hasTarget ? Math.min(100, Math.max(0, (target! / max) * 100)) : 0
+  const tgtDeg    = START_DEG + SWEEP_DEG * (tgtPct / 100)
+  const tIn       = polar(tgtDeg, r - sw, cx, cy)
+  const tOut      = polar(tgtDeg, r + sw, cx, cy)
+  const tgtColor  = isLight() ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.6)'
+
   return (
     <div className={`flex-shrink-0 flex flex-col items-center gap-1.5 ${className}`} style={style}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
@@ -67,6 +76,18 @@ export function GaugeChart({ value = 0, max = 100, color = '#3b82f6', size = 96,
             strokeWidth={sw}
             strokeLinecap="round"
           />
+        )}
+        {/* Meta (alvo) */}
+        {hasTarget && (
+          <line
+            x1={tIn.x.toFixed(2)} y1={tIn.y.toFixed(2)}
+            x2={tOut.x.toFixed(2)} y2={tOut.y.toFixed(2)}
+            stroke={tgtColor}
+            strokeWidth={Math.max(1.5, sw * 0.5)}
+            strokeLinecap="round"
+          >
+            <title>Meta: {target}</title>
+          </line>
         )}
         {/* Center value */}
         <text

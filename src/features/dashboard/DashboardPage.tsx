@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
-import { AlertCircle, Download, Package, BarChart3 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { AlertCircle, Download, Package, BarChart3, ArrowRight } from 'lucide-react'
 import type { OSRow, KPI, AccentColor } from '../../lib/types'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useAINarrative } from '../../hooks/useAINarrative'
@@ -11,15 +12,15 @@ import OSDrawer from '../ordens/OSDrawer'
 import {
   SectionLabel, PulsoHero, BentoKPICard, ExecutadasHeroBlock, MetaMesCard, AlertaTopoBanner,
   ClustersBairroPanel, AgingPanel, RitmoEquipesPanel, CidadesPanel, FornecedorCard, AnomaliaSection, KpiModalTable,
-  KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS,
+  MudancasStrip, ProjecaoRiscoPanel, KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS, FOCO_NAVEGAVEL,
   type ModalState, type TypedDashboard, type CampoProjecaoReal,
 } from './DashboardComponents'
 
 export default function DashboardPage() {
   const { derived: { dashboard, anomalias, campo }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
-  const { kpis, fornecedores, pulso } = dashboard as unknown as TypedDashboard
+  const { kpis, fornecedores, pulso, scoreTendencia, mudancas, metaScore, projecaoRisco } = dashboard as unknown as TypedDashboard
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
-  const fluxoHoje = { entradas: pulso.entradasHoje, saidas: pulso.saidasHoje, saldo: pulso.fluxoHoje }
+  const fluxoHoje = { entradas: pulso.entradasHoje, saidas: pulso.saidasHoje, saldo: pulso.fluxoHoje, mediaEntrada: pulso.entradaMediaDia }
   const { clustersAtivos = [] } = pulso
   const clustersRef  = useRef<HTMLDivElement>(null)
   const anomaliasRef = useRef<HTMLDivElement>(null)
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [observacao, setObservacao] = useState('')
   const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso: pulso as unknown as Record<string, unknown>, fornecedores, anomalias, observacao, enabled: aiEnabled })
   const { data: stats } = useStats()
+  const navigate = useNavigate()
 
   const [modal,    setModal]    = useState<ModalState | null>(null)
   const [drawerOS, setDrawerOS] = useState<OSRow | null>(null)
@@ -36,7 +38,7 @@ export default function DashboardPage() {
     if (!filter) return
     const source   = ALLROWS_KPIS.has(kpi.id) ? allRows : rows
     const filtered = source.filter(filter)
-    setModal({ title: kpi.title, rows: filtered })
+    setModal({ title: kpi.title, rows: filtered, foco: kpi.id })
   }
 
   if (error && !rows.length) {
@@ -118,10 +120,14 @@ export default function DashboardPage() {
         {/* ── 1. HERO — Pulso Operacional ──────────────────────────────── */}
         <PulsoHero
           pulso={pulso}
+          target={metaScore}
           aiData={aiData}
           isLoadingAI={isLoadingAI}
           onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
         />
+
+        {/* ── 1b. Trajetória — Δ do score do período + o que mudou ──────── */}
+        <MudancasStrip tendencia={scoreTendencia} mudancas={mudancas} />
 
         {/* ── 2. KPI BENTO — Alertas & Risco ───────────────────────────── */}
         <section>
@@ -139,6 +145,13 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
+
+        {/* ── 2b. Projeção de risco preditiva (24-48h) ──────────────────── */}
+        <ProjecaoRiscoPanel
+          proj={projecaoRisco}
+          criticasAgora={(kpis.find(k => k.id === 'criticas')?.value as number) ?? 0}
+          onOpen={(rows) => setModal({ title: 'Risco de violação · próximas 48h', rows })}
+        />
 
         {/* ── 3. Executadas Hoje ─────────────────────────────────────────── */}
         <ExecutadasHeroBlock
@@ -217,17 +230,29 @@ export default function DashboardPage() {
         maxWidth="900px"
         headerAction={
           (modal?.rows?.length ?? 0) > 0 && (
-            <button
-              onClick={() => {
-                const date = new Date().toISOString().slice(0, 10)
-                exportCSV(modal!.rows, `os_${modal!.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
-              }}
-              className="flex items-center gap-1.5 text-[10px] text-muted hover:text-primary
-                         border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
-                         transition-all duration-fast"
-            >
-              <Download size={11} /> CSV
-            </button>
+            <div className="flex items-center gap-2">
+              {modal?.foco && FOCO_NAVEGAVEL.has(modal.foco) && (
+                <button
+                  onClick={() => { const foco = modal!.foco; setModal(null); navigate('/ordens', { state: { foco } }) }}
+                  className="flex items-center gap-1.5 text-[10px] font-semibold text-primary
+                             border border-primary/30 hover:bg-primary/10 rounded-md px-2.5 py-1
+                             transition-all duration-fast"
+                >
+                  Abrir na fila <ArrowRight size={11} />
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  const date = new Date().toISOString().slice(0, 10)
+                  exportCSV(modal!.rows, `os_${modal!.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
+                }}
+                className="flex items-center gap-1.5 text-[10px] text-muted hover:text-primary
+                           border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
+                           transition-all duration-fast"
+              >
+                <Download size={11} /> CSV
+              </button>
+            </div>
           )
         }
       >

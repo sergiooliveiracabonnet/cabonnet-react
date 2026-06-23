@@ -38,7 +38,7 @@ const EMPTY_DERIVED = {
       slaFila: 0, semAgendamento: 0, mttr: 0,
       topCidadesCriticas: [] as { cidade: string; count: number }[],
       clustersAtivos:     [] as ClusterAtivo[],
-      entradasHoje: 0, saidasHoje: 0, fluxoHoje: 0,
+      entradasHoje: 0, saidasHoje: 0, fluxoHoje: 0, entradaMediaDia: 0,
       metaMes: {
         concluidas: 0, meta: 0, pct: null as number | null,
         diasUteisRestantes: 0, diasUteisTotal: 0, projecaoFinal: null as number | null,
@@ -48,6 +48,10 @@ const EMPTY_DERIVED = {
         manha: 0, tarde: 0, semPeriodo: 0, tardeIniciada: false, alerta: false,
       },
     },
+    scoreTendencia: { atual: 0, anterior: null as number | null, delta: null as number | null },
+    mudancas: [] as { id: string; label: string; atual: number; anterior: number; delta: number; unidade: string; melhorou: boolean; impacto: number }[],
+    metaScore: 85,
+    projecaoRisco: { proj24h: 0, proj48h: 0, amostra: [] as OSRow[] },
   },
   sla: {
     pulso:    { narrativa: '', ok: 0, atencao: 0, fora: 0, criticas: 0, score: 0, scoreLabel: '' },
