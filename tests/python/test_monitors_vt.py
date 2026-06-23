@@ -73,3 +73,19 @@ def test_classificar_risco_que_vira_violado_dispara():
     agora = datetime(2026, 6, 22, 12, 0)
     registro = {"estagio": "risco", "last_sent": agora - timedelta(hours=1)}
     assert _classificar_vt_alerta(restante=-0.5, registro=registro, agora=agora) == "violado"
+
+
+def test_classificar_vt_recem_aberta_nao_alerta_mesmo_violada():
+    # VT 08H aberta há 9h: já violou (restante < 0), mas aging < 12h → silêncio
+    agora = datetime(2026, 6, 22, 12, 0)
+    assert _classificar_vt_alerta(restante=-1, registro=None, agora=agora, aging_h=9) is None
+
+
+def test_classificar_vt_recem_aberta_nao_alerta_em_risco():
+    agora = datetime(2026, 6, 22, 12, 0)
+    assert _classificar_vt_alerta(restante=3, registro=None, agora=agora, aging_h=5) is None
+
+
+def test_classificar_vt_apos_12h_volta_a_alertar():
+    agora = datetime(2026, 6, 22, 12, 0)
+    assert _classificar_vt_alerta(restante=-1, registro=None, agora=agora, aging_h=12) == "violado"

@@ -617,14 +617,19 @@ def _resumo_scheduler_loop():
 
 _VT_RISK_WINDOW_H      = 4     # horas restantes para entrar em estágio de risco
 _VT_REPEAT_INTERVAL_S  = 1800  # segundos entre repetições do alerta de violação (30min)
+_VT_MIN_AGING_H        = 12    # não alerta VT aberta há menos de 12h (evita ruído em VT recém-abertas)
 
 
-def _classificar_vt_alerta(restante, registro, agora):
+def _classificar_vt_alerta(restante, registro, agora, aging_h=float("inf")):
     """Decide se uma OS deve disparar alerta neste ciclo. Não muta estado.
 
     Estágios: None -> risco (uma vez) -> violado (uma vez) -> violado repetido (a cada 30min).
     Retorna 'violado', 'risco', ou None (sem alerta neste ciclo).
+
+    VT aberta há menos de _VT_MIN_AGING_H horas nunca alerta.
     """
+    if aging_h < _VT_MIN_AGING_H:
+        return None
     estagio_atual = registro["estagio"] if registro else None
     if restante <= 0:
         if estagio_atual != "violado":
@@ -720,7 +725,7 @@ def _vt_monitor_loop():
                 restante  = prazo_h - aging_h
 
                 registro = state._vt_alertados.get(numos)
-                decisao  = _classificar_vt_alerta(restante, registro, agora)
+                decisao  = _classificar_vt_alerta(restante, registro, agora, aging_h=aging_h)
                 if decisao == "violado":
                     novas_viol.append((r, restante, prazo_h))
                     state._vt_alertados[numos] = {"estagio": "violado", "last_sent": agora}
