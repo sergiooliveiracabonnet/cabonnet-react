@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Flame, Clock, CheckCircle2, Send, Check, Gauge, Truck, MapPin, Wrench, Activity, Megaphone } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, Flame, Clock, CheckCircle2, Send, Check, Gauge, Truck, MapPin, Wrench, Activity, Megaphone, Copy, ClipboardList } from 'lucide-react'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 import { useAuditStore } from '../../../store/auditStore'
 import { useVTStore } from '../../../store/vtStore'
@@ -8,7 +9,8 @@ import { FilterSelect } from '../../../components/ui/FilterSelect'
 import { SearchBox } from '../../../components/ui/SearchBox'
 import { DataTable } from '../../../components/ui/DataTable'
 import { Badge } from '../../../components/ui/Badge'
-import { shortEquipe, fmtHorasMin } from '../../../lib/osFormat'
+import { shortEquipe, fmtHorasMin, buildOSWhatsApp } from '../../../lib/osFormat'
+import { parseOSDetails, osDetailsQuery } from '../../../hooks/useOSDetails'
 import { tgVTUrgente, chatKeyForFornecedor } from '../../../lib/tgTemplates'
 import { telegram } from '../../../lib/api'
 import OSDrawer from '../../ordens/OSDrawer'
@@ -126,6 +128,26 @@ export default function VTPriorityPage() {
   const [drawerOS, setDrawerOS]     = useState<OSRow | null>(null)
   const [notified, setNotified]     = useState<Record<string, 'ok' | 'error' | undefined>>({})
   const [enviandoLote, setEnviandoLote] = useState(false)
+  const [copied, setCopied]         = useState<string | null>(null)
+  const queryClient = useQueryClient()
+
+  function flashCopied(key: string) { setCopied(key); setTimeout(() => setCopied(null), 1800) }
+
+  function copyResumo(row: OSRow, e: React.MouseEvent) {
+    e.stopPropagation()
+    navigator.clipboard.writeText(buildOSWhatsApp(row)).catch(() => {}); flashCopied(`${row.numos}:os`)
+  }
+
+  async function copyCompleto(row: OSRow, e: React.MouseEvent) {
+    e.stopPropagation()
+    flashCopied(`${row.numos}:full`)
+    let historico
+    try {
+      const data = await queryClient.fetchQuery(osDetailsQuery(row.numos))
+      historico = parseOSDetails(data)?.historico
+    } catch { /* sem detalhes: copia só o resumo */ }
+    navigator.clipboard.writeText(buildOSWhatsApp(row, historico)).catch(() => {})
+  }
 
   const filaVT = useMemo(() => {
     let fila = rows.filter(r => r._vtPrazoHoras != null && r._vtHorasRestantes != null)
@@ -237,6 +259,20 @@ export default function VTPriorityPage() {
             >
               <Wrench size={12} />
               {tratando ? 'Tratando' : 'Tratar'}
+            </button>
+            <button
+              onClick={(e) => copyResumo(row, e)}
+              title="Copiar só a OS (resumo)"
+              className="p-1 rounded-md text-muted hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              {copied === `${row.numos}:os` ? <Check size={12} className="text-green" /> : <Copy size={12} />}
+            </button>
+            <button
+              onClick={(e) => copyCompleto(row, e)}
+              title="Copiar OS + histórico"
+              className="p-1 rounded-md text-muted hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              {copied === `${row.numos}:full` ? <Check size={12} className="text-green" /> : <ClipboardList size={12} />}
             </button>
           </div>
         )
