@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AlertTriangle, MapPin, Users, RefreshCw, Wrench, Home, Star, Search, Sparkles } from 'lucide-react'
 import { useBacklog, type BacklogRow } from '../../../hooks/useBacklog'
 import { AreaChart, Area, XAxis, YAxis, Grid, ChartTooltip, Legend } from '../../../components/ui/line-chart'
@@ -10,7 +10,7 @@ import {
 } from './QualidadeComponents'
 import { CausaRaizSection } from './CausaRaizSection'
 
-// â”€â”€â”€ Datas (hora local, sem desvio UTC) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Datas (hora local, sem desvio UTC) ───────────────────────────────────────
 
 function isoDate(d: Date): string {
   const y   = d.getFullYear()
@@ -44,10 +44,10 @@ const TIPO_ICON: Record<Exclude<Tipo,'todos'>, typeof Wrench> = {
   servico:    Star,
 }
 
-// â”€â”€â”€ Helpers de dados â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helpers de dados ────────────────────────────────────────────────────────
 
 function parseDMY(s: string): string {
-  // "DD/MM/YYYY" â†’ "YYYY-MM-DD"
+  // "DD/MM/YYYY" → "YYYY-MM-DD"
   if (!s || !s.includes('/')) return s
   const [d, m, y] = s.split('/')
   return `${y}-${m}-${d}`
@@ -77,7 +77,7 @@ interface OcorrenciaItem { servico: string; count: number; os: BacklogRow[] }
 function buildOcorrencias(rows: BacklogRow[]): OcorrenciaItem[] {
   const map: Record<string, BacklogRow[]> = {}
   for (const r of rows) {
-    const key = (r.servico || 'Sem descriÃ§Ã£o').trim()
+    const key = (r.servico || 'Sem descrição').trim()
     if (!map[key]) map[key] = []
     map[key].push(r)
   }
@@ -87,11 +87,11 @@ function buildOcorrencias(rows: BacklogRow[]): OcorrenciaItem[] {
     .slice(0, 12)
 }
 
-// â”€â”€â”€ Helpers visuais â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helpers visuais ─────────────────────────────────────────────────────────
 
 function fmt(n: number): string { return n.toLocaleString('pt-BR') }
 
-// â”€â”€â”€ QualidadePage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── QualidadePage ────────────────────────────────────────────────────────────
 
 export default function QualidadePage() {
   const [preset,    setPreset]    = useState<Preset>('atual')
@@ -110,7 +110,7 @@ export default function QualidadePage() {
 
   const { data, isLoading, isError, refetch, isFetching } = useBacklog(inicio, fim)
 
-  // â”€â”€ Revisitas = qualquer flag de revisita ativo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Revisitas = qualquer flag de revisita ativo ───────────────────────
   const revisitas = useMemo(
     () => (data?.rows ?? []).filter(r =>
       Number(r.revisita_inst) === 1 ||
@@ -121,7 +121,7 @@ export default function QualidadePage() {
   )
   const totalOS   = data?.kpis.total ?? 0
 
-  // Filtradas pelo tipo ativo â€” usa os flags do SQL
+  // Filtradas pelo tipo ativo — usa os flags do SQL
   const revisitasFiltradas = useMemo(() => {
     if (tipoAtivo === 'todos')       return revisitas
     if (tipoAtivo === 'instalacao')  return revisitas.filter(r => Number(r.revisita_inst)  === 1)
@@ -137,7 +137,7 @@ export default function QualidadePage() {
     servico:    revisitas.filter(r => Number(r.revisita_serv)  === 1).length,
   }), [revisitas])
 
-  // Ranking por equipe â€” usa revisitasFiltradas vs total do mesmo tipo
+  // Ranking por equipe — usa revisitasFiltradas vs total do mesmo tipo
   const rankingEquipe = useMemo(() => {
     const allRows = data?.rows ?? []
     const totalMap: Record<string, number> = {}
@@ -164,7 +164,7 @@ export default function QualidadePage() {
       .slice(0, 15)
   }, [data, tipoAtivo])
 
-  // Clientes crÃ´nicos (3+ revisitas no perÃ­odo)
+  // Clientes crônicos (3+ revisitas no período)
   const cronicos = useMemo(() => {
     const cnt: Record<string, { nome: string; count: number }> = {}
     for (const r of revisitasFiltradas) {
@@ -201,9 +201,9 @@ export default function QualidadePage() {
   const taxaGeral = totalOS > 0 ? Math.round((revisitasFiltradas.length / totalOS) * 100) : 0
   const cor       = TIPO_COLOR[tipoAtivo]
 
-  // GrÃ¡fico diÃ¡rio â€” sempre inst + manut independente do filtro de tipo
+  // Gráfico diário — sempre inst + manut independente do filtro de tipo
   const diario      = useMemo(() => buildDiario(revisitas), [revisitas])
-  // OcorrÃªncias â€” no tipo ativo
+  // Ocorrências — no tipo ativo
   const ocorrencias = useMemo(() => buildOcorrencias(revisitasFiltradas), [revisitasFiltradas])
   const [ocSelecionada, setOcSelecionada] = useState<OcorrenciaItem | null>(null)
 
@@ -213,13 +213,13 @@ export default function QualidadePage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-headline font-bold text-text mb-0.5">Qualidade â€” Revisitas</h1>
+          <h1 className="text-[20px] font-headline font-bold text-text mb-0.5">Qualidade — Revisitas</h1>
           <p className="text-[12px] text-muted">
-            Clientes que abriram nova OS apÃ³s atendimento recente Â· instalaÃ§Ã£o Â· manutenÃ§Ã£o Â· serviÃ§o
+            Clientes que abriram nova OS após atendimento recente · instalação · manutenção · serviço
           </p>
         </div>
 
-        {/* Controles de perÃ­odo */}
+        {/* Controles de período */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-[12px]">
             {(['atual','anterior','custom'] as Preset[]).map((v, i) => (
@@ -227,7 +227,7 @@ export default function QualidadePage() {
                       className={`px-3 py-1.5 transition-colors ${
                         preset === v ? 'bg-primary/20 text-primary font-semibold' : 'text-muted hover:text-text'
                       }`}>
-                {['MÃªs Atual','MÃªs Anterior','Personalizado'][i]}
+                {['Mês Atual','Mês Anterior','Personalizado'][i]}
               </button>
             ))}
           </div>
@@ -236,7 +236,7 @@ export default function QualidadePage() {
               <input type="date" value={customIni} onChange={e => setCustomIni(e.target.value)}
                      className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
                                 text-[12px] text-text focus:outline-none" />
-              <span className="text-[11px] text-muted">atÃ©</span>
+              <span className="text-[11px] text-muted">até</span>
               <input type="date" value={customFim} onChange={e => setCustomFim(e.target.value)}
                      className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
                                 text-[12px] text-text focus:outline-none" />
@@ -255,7 +255,7 @@ export default function QualidadePage() {
       {isLoading && !data && (
         <div className="flex items-center justify-center py-24 gap-3 text-secondary text-sm">
           <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          Consultando iManagerâ€¦
+          Consultando iManager…
         </div>
       )}
 
@@ -270,24 +270,24 @@ export default function QualidadePage() {
       {data && (
         <div className={`space-y-4 transition-opacity duration-200 ${isFetching ? 'opacity-60' : ''}`}>
 
-          {/* PerÃ­odo + status */}
+          {/* Período + status */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted">PerÃ­odo:</span>
+            <span className="text-[11px] text-muted">Período:</span>
             <span className="text-[11px] font-semibold text-text">{fmtPeriodo(data.periodo)}</span>
             {isFetching && (
               <span className="flex items-center gap-1 text-[10px] text-primary">
-                <RefreshCw size={10} className="animate-spin" /> Atualizandoâ€¦
+                <RefreshCw size={10} className="animate-spin" /> Atualizando…
               </span>
             )}
           </div>
 
-          {/* â”€â”€ GrÃ¡fico diÃ¡rio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* ── Gráfico diário ───────────────────────────────────────────── */}
           {diario.length > 0 && (
             <section className="space-y-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-[3px] h-4 rounded-full bg-violet-400 flex-shrink-0" />
                 <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-violet-400">
-                  Acompanhamento DiÃ¡rio â€” InstalaÃ§Ã£o vs ManutenÃ§Ã£o
+                  Acompanhamento Diário — Instalação vs Manutenção
                 </span>
               </div>
               <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
@@ -308,8 +308,8 @@ export default function QualidadePage() {
                     <YAxis allowDecimals={false} />
                     <ChartTooltip suffix=" revisitas" />
                     <Legend />
-                    <Area dataKey="inst"  name="InstalaÃ§Ã£o" stroke="#3b82f6" fill="url(#gradInst)"  strokeWidth={2} />
-                    <Area dataKey="manut" name="ManutenÃ§Ã£o" stroke="#f97316" fill="url(#gradManut)" strokeWidth={2} />
+                    <Area dataKey="inst"  name="Instalação" stroke="#3b82f6" fill="url(#gradInst)"  strokeWidth={2} />
+                    <Area dataKey="manut" name="Manutenção" stroke="#f97316" fill="url(#gradManut)" strokeWidth={2} />
                   </AreaChart>
                 </div>
               </div>
@@ -341,42 +341,42 @@ export default function QualidadePage() {
 
           {/* KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <KpiCard label={`Revisitas${tipoAtivo !== 'todos' ? ` Â· ${TIPO_LABEL[tipoAtivo]}` : ' Â· Total'}`}
+            <KpiCard label={`Revisitas${tipoAtivo !== 'todos' ? ` · ${TIPO_LABEL[tipoAtivo]}` : ' · Total'}`}
                      value={revisitasFiltradas.length}
-                     sub={`${taxaGeral}% do total de ${fmt(totalOS)} OS no perÃ­odo`}
+                     sub={`${taxaGeral}% do total de ${fmt(totalOS)} OS no período`}
                      color={cor} delay={0} />
-            <KpiCard label="Inst â†’ Manut (BI)"
+            <KpiCard label="Inst → Manut (BI)"
                      value={data?.kpis.rev_inst ?? 0}
-                     sub="instalaÃ§Ãµes que geraram VT no mesmo mÃªs"
+                     sub="instalações que geraram VT no mesmo mês"
                      color="#3b82f6" delay={60} />
             <KpiCard label="Manut Repetida (BI)"
                      value={data?.kpis.rev_manut ?? 0}
-                     sub="2Âª+ manutenÃ§Ã£o do mesmo cliente no mÃªs"
+                     sub="2ª+ manutenção do mesmo cliente no mês"
                      color="#f97316" delay={120} />
-            <KpiCard label="ServiÃ§o â†’ Manut (BI)"
+            <KpiCard label="Serviço → Manut (BI)"
                      value={data?.kpis.rev_serv ?? 0}
-                     sub="serviÃ§o tÃ©cnico que gerou VT no mesmo mÃªs"
+                     sub="serviço técnico que gerou VT no mesmo mês"
                      color="#22d3ee" delay={180} />
           </div>
 
-          {/* â”€â”€ OcorrÃªncias que causam revisitas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* ── Ocorrências que causam revisitas ────────────────────────── */}
           {ocorrencias.length > 0 && (
             <section className="space-y-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: cor }} />
                 <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
-                  Principais OcorrÃªncias â€” clique para ver as OS
+                  Principais Ocorrências — clique para ver as OS
                 </span>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-4">
 
-                {/* GrÃ¡fico horizontal */}
+                {/* Gráfico horizontal */}
                 <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div style={{ height: Math.max(180, ocorrencias.length * 34) }}>
                     <BarChart
                       data={ocorrencias.map(o => ({
-                        servico: o.servico.length > 32 ? o.servico.slice(0, 32) + 'â€¦' : o.servico,
+                        servico: o.servico.length > 32 ? o.servico.slice(0, 32) + '…' : o.servico,
                         _full:   o.servico,
                         count:   o.count,
                       }))}
@@ -401,7 +401,7 @@ export default function QualidadePage() {
                   <p className="text-[10px] text-muted mt-2 text-center">Clique numa barra para ver as OS</p>
                 </div>
 
-                {/* Painel de OS da ocorrÃªncia selecionada */}
+                {/* Painel de OS da ocorrência selecionada */}
                 <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
                   {ocSelecionada ? (
                     <>
@@ -411,7 +411,7 @@ export default function QualidadePage() {
                           <p className="text-[10px] text-muted mt-0.5">{ocSelecionada.count} revisitas</p>
                         </div>
                         <button onClick={() => setOcSelecionada(null)}
-                                className="text-[11px] text-muted hover:text-text transition-colors flex-shrink-0">âœ•</button>
+                                className="text-[11px] text-muted hover:text-text transition-colors flex-shrink-0">✕</button>
                       </div>
                       <div className="overflow-y-auto max-h-[340px] divide-y divide-white/[0.04]">
                         {ocSelecionada.os.map(r => (
@@ -423,9 +423,9 @@ export default function QualidadePage() {
                             <p className="text-[11.5px] text-text truncate mt-0.5">{r.nomecliente}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-[10px] text-muted">{r.nomedacidade}</span>
-                              <span className="text-[10px] text-muted/50">Â·</span>
-                              <span className="text-[10px] text-muted truncate">{r.nomedaequipe || 'â€”'}</span>
-                              <span className="text-[10px] text-muted/50 ml-auto flex-shrink-0">Â·</span>
+                              <span className="text-[10px] text-muted/50">·</span>
+                              <span className="text-[10px] text-muted truncate">{r.nomedaequipe || '—'}</span>
+                              <span className="text-[10px] text-muted/50 ml-auto flex-shrink-0">·</span>
                               <span className="text-[10px] text-muted flex-shrink-0">{r.descsituacao}</span>
                             </div>
                           </div>
@@ -435,7 +435,7 @@ export default function QualidadePage() {
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted">
                       <Search size={24} className="opacity-30" />
-                      <p className="text-[12px]">Selecione uma ocorrÃªncia no grÃ¡fico</p>
+                      <p className="text-[12px]">Selecione uma ocorrência no gráfico</p>
                       <p className="text-[10px] opacity-60">para ver as OS associadas</p>
                     </div>
                   )}
@@ -444,7 +444,7 @@ export default function QualidadePage() {
             </section>
           )}
 
-          {/* Ranking equipe + Cidades + CrÃ´nicos */}
+          {/* Ranking equipe + Cidades + Crônicos */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4">
 
             {/* Ranking por equipe */}
@@ -454,7 +454,7 @@ export default function QualidadePage() {
                   <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: cor }} />
                   <Users size={12} style={{ color: cor }} className="flex-shrink-0" />
                   <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
-                    Ranking â€” Revisitas por Equipe
+                    Ranking — Revisitas por Equipe
                   </span>
                 </div>
                 <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
@@ -481,7 +481,7 @@ export default function QualidadePage() {
               </section>
             )}
 
-            {/* Coluna direita: cidades + crÃ´nicos */}
+            {/* Coluna direita: cidades + crônicos */}
             <div className="space-y-3">
 
               {/* Por cidade */}
@@ -514,14 +514,14 @@ export default function QualidadePage() {
                 </section>
               )}
 
-              {/* Clientes crÃ´nicos */}
+              {/* Clientes crônicos */}
               {cronicos.length > 0 && (
                 <section className="space-y-2">
                   <div className="flex items-center gap-2.5">
                     <div className="w-[3px] h-4 rounded-full bg-red-400 flex-shrink-0" />
                     <AlertTriangle size={12} className="text-red-400 flex-shrink-0" />
                     <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-red-400">
-                      CrÃ´nicos â€” 2+ revisitas
+                      Crônicos — 2+ revisitas
                     </span>
                   </div>
                   <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
@@ -531,7 +531,7 @@ export default function QualidadePage() {
                         return (
                           <div key={c.nome} className="flex items-center gap-2 px-4 py-2.5 hover:bg-surface/20 transition-colors">
                             <p className="flex-1 text-[11.5px] text-text truncate">{c.nome}</p>
-                            <span className="font-mono font-bold text-[13px]" style={{ color }}>{c.count}Ã—</span>
+                            <span className="font-mono font-bold text-[13px]" style={{ color }}>{c.count}×</span>
                           </div>
                         )
                       })}
@@ -546,12 +546,12 @@ export default function QualidadePage() {
           <div>
             <button onClick={() => setShowDrill(v => !v)}
                     className="text-[12px] text-muted hover:text-text transition-colors py-1 flex items-center gap-1">
-              {showDrill ? 'â–² Ocultar' : 'â–¼ Ver'} lista completa de revisitas ({fmt(revisitasFiltradas.length)})
+              {showDrill ? '▲ Ocultar' : '▼ Ver'} lista completa de revisitas ({fmt(revisitasFiltradas.length)})
             </button>
           </div>
           {showDrill && <DrillTable rows={revisitasFiltradas} />}
 
-          {/* â”€â”€ Causa Raiz por IA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* ── Causa Raiz por IA ──────────────────────────────────── */}
           <section className="space-y-2 pt-2">
             <div className="flex items-center gap-2.5">
               <div className="w-[3px] h-4 rounded-full bg-violet-500 flex-shrink-0" />
