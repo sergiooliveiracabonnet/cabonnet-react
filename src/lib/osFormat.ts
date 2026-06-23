@@ -1,5 +1,5 @@
 // Formatters e constantes compartilhados por OSDrawer, OSDetailModal e transform
-import type { Fornecedor } from './types'
+import type { Fornecedor, OSRow } from './types'
 
 export const EQUIPE_NAMES: Record<string, string> = {
   'INST F01':  'INST F01 - FELIPE',
@@ -127,6 +127,26 @@ export function fmtHorasMin(absHoras: number): string {
   const h = Math.floor(mins / 60)
   const m = mins % 60
   return h === 0 ? `${m}min` : m > 0 ? `${h}h ${m}min` : `${h}h`
+}
+
+// Resumo da OS para colar no WhatsApp (mesmo formato do botão do OSDrawer).
+export function buildOSWhatsApp(os: OSRow): string {
+  const sit    = os._situacaoEfetiva ?? os.descsituacao ?? '—'
+  const equipe = shortEquipe(os.nomedaequipe) || '—'
+  const aging  = os._aging != null ? `${os._aging}d` : '—'
+  const agend  = os.dataagendamento ? os.dataagendamento.slice(0, 10) : 'Não agendado'
+  const loc    = [os.nomedacidade, os.bairro].filter(Boolean).join(' · ') || '—'
+  const end    = [os.logradouro || os.enderecoconexao, os.numero, os.complemento].filter(Boolean).join(', ') || '—'
+  return [
+    `📋 *OS ${os.numos}* — ${sit}`,
+    `👤 ${os.nomecliente || '—'}`,
+    `📍 ${loc}`,
+    `🏠 ${end}`,
+    `🔧 ${os.tiposervico || '—'} · ${os.servico || '—'}`,
+    `👷 ${equipe}`,
+    `⏱ Aging: ${aging}`,
+    `📅 Agend: ${agend}`,
+  ].join('\n')
 }
 
 export const FORN_LABEL: Record<Fornecedor, string> = {

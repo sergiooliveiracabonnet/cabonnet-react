@@ -18,7 +18,7 @@ interface StepItem {
 }
 import { Drawer }        from '../../components/ui/Drawer'
 import { Badge }         from '../../components/ui/Badge'
-import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, calcDuracao } from '../../lib/osFormat'
+import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, calcDuracao, buildOSWhatsApp } from '../../lib/osFormat'
 import { TimelineStep }  from './TimelineStep'
 import { OSDetailModal } from './OSDetailModal'
 import { useOSDetails }  from '../../hooks/useOSDetails'
@@ -37,24 +37,6 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
     navigator.clipboard.writeText(text).catch(() => {})
     setCopied(key)
     setTimeout(() => setCopied(null), 2000)
-  }
-
-  function buildWhaText() {
-    const equipe = shortEquipe(os.nomedaequipe) || '—'
-    const aging  = os._aging != null ? `${os._aging}d` : '—'
-    const agend  = os.dataagendamento ? os.dataagendamento.slice(0, 10) : 'Não agendado'
-    const loc    = [os.nomedacidade, os.bairro].filter(Boolean).join(' · ') || '—'
-    const end    = [os.logradouro || os.enderecoconexao, os.numero, os.complemento].filter(Boolean).join(', ') || '—'
-    return [
-      `📋 *OS ${os.numos}* — ${sit}`,
-      `👤 ${os.nomecliente || '—'}`,
-      `📍 ${loc}`,
-      `🏠 ${end}`,
-      `🔧 ${os.tiposervico || '—'} · ${os.servico || '—'}`,
-      `👷 ${equipe}`,
-      `⏱ Aging: ${aging}`,
-      `📅 Agend: ${agend}`,
-    ].join('\n')
   }
 
   function openMaps() {
@@ -196,7 +178,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
         width="580px"
         actions={
           <div className="flex items-center gap-1">
-            <ActionBtn title="Copiar resumo para WhatsApp" active={copied === 'wha'} onClick={() => copyWith('wha', buildWhaText())}>
+            <ActionBtn title="Copiar resumo para WhatsApp" active={copied === 'wha'} onClick={() => copyWith('wha', buildOSWhatsApp(os))}>
               {copied === 'wha' ? <Check size={13} /> : <MessageSquare size={13} />}
             </ActionBtn>
             <ActionBtn title="Copiar nº da OS" active={copied === 'num'} onClick={() => copyWith('num', String(os.numos))}>

@@ -2,12 +2,14 @@ import { useState, useMemo, type ComponentType, type CSSProperties, type ReactNo
 import {
   AlertCircle, CheckCircle2, Zap, TrendingUp, TrendingDown, Minus,
   MapPin, Clock, BarChart3, Package, Wrench, Radio, Target, Calendar,
-  ChevronDown, ChevronUp, Activity, Users, RotateCcw, ArrowDownRight, ArrowUpRight, Gauge,
+  ChevronDown, ChevronRight, Activity, Users, RotateCcw, ArrowDownRight, ArrowUpRight, Gauge,
+  Copy, Check,
 } from 'lucide-react'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
 import { Badge } from '../../components/ui/Badge'
-import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
+import { shortEquipe, situacaoVariant, buildOSWhatsApp } from '../../lib/osFormat'
 import { isCOPE, isReagend, getReagendTipo } from '../../lib/transform'
+import { useOSDetails } from '../../hooks/useOSDetails'
 import type {
   OSRow, KPI, Pulso, ClusterAtivo, AccentColor, CampoSemaforo, PulsoMetaMes, PulsoRitmoIntradiario,
 } from '../../lib/types'
@@ -828,95 +830,119 @@ export function FornecedorCard({ nome, total, concluidas, sla, cor, slaTrend }: 
 
 // ─── Modal de OS ──────────────────────────────────────────────────────────────
 
-const MODAL_COLS = [
-  { key: 'numos',           label: 'Nº OS'       },
-  { key: 'nomecliente',     label: 'Cliente'      },
-  { key: 'nomedacidade',    label: 'Cidade'       },
-  { key: 'nomedaequipe',    label: 'Equipe'       },
-  { key: 'descsituacao',    label: 'Situação'     },
-  { key: '_aging',          label: 'Aging'        },
-  { key: 'dataagendamento', label: 'Agendamento'  },
-]
+// Timeline de reagendamentos/ocorrências de uma OS — busca /detalhes sob demanda.
+function OcorrenciasExpand({ numos }: { numos: string }) {
+  const { details, isLoading } = useOSDetails(numos)
+  if (isLoading) return <p className="px-10 py-3 text-[11px] text-muted">⏳ Carregando histórico…</p>
+  const hist = details?.historico ?? []
+  const equipeReagend = details?.equipeReagend
+  if (!hist.length) return <p className="px-10 py-3 text-[11px] text-muted/60 italic">Sem ocorrências registradas.</p>
+  return (
+    <div className="px-10 py-3 space-y-2 bg-surface/20">
+      {equipeReagend && (
+        <p className="text-[10px] text-muted flex items-center gap-1.5">
+          <Users size={10} className="opacity-50" /> Equipe do reagendamento:
+          <span className="text-secondary font-medium">{shortEquipe(equipeReagend)}</span>
+        </p>
+      )}
+      {hist.map((e, i) => (
+        <div key={i}
+             className={`rounded-xl px-3 py-2 border ${e.isReagend ? 'bg-orange/[0.08] border-orange/25' : 'bg-surface/30 border-white/[0.06]'}`}>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            {e.isReagend && (
+              <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-orange/80">
+                <RotateCcw size={9} /> Reagendamento
+              </span>
+            )}
+            {e.autor && <span className="text-[10px] font-semibold text-muted">{e.autor}</span>}
+            {e.data && <span className="font-mono text-[10px] text-muted/60">{e.data}{e.hora ? ` ${e.hora}` : ''}</span>}
+          </div>
+          <p className={`text-[11px] leading-relaxed whitespace-pre-wrap ${e.isReagend ? 'text-orange/90' : 'text-secondary'}`}>
+            {e.texto}
+          </p>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow) => void }) {
-  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: '_aging', dir: 'desc' })
-  const [page, setPage] = useState(0)
-  const PAGE_SIZE = 50
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const [copied,   setCopied]   = useState<string | null>(null)
 
-  function toggleSort(key: string) { setSort(s => ({ key, dir: s.key === key && s.dir === 'desc' ? 'asc' : 'desc' })); setPage(0) }
-  function agendSort(s: string | null | undefined): string { if (!s) return ''; const p = s.split(' ')[0].split('/'); return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : s }
+  function flashCopied(key: string) { setCopied(key); setTimeout(() => setCopied(null), 1800) }
+  function copyOne(os: OSRow)  { navigator.clipboard.writeText(buildOSWhatsApp(os)).catch(() => {}); flashCopied(os.numos) }
+  function copyCity(cidade: string, list: OSRow[]) {
+    const text = `*${cidade}* — ${list.length} OS\n\n${list.map(buildOSWhatsApp).join('\n\n')}`
+    navigator.clipboard.writeText(text).catch(() => {}); flashCopied(`city:${cidade}`)
+  }
 
-  const sorted = useMemo(() => {
-    if (!rows.length) return []
-    return [...rows].sort((a, b) => {
-      const { key, dir } = sort
-      let av: number | string, bv: number | string
-      if (key === 'numos')                { av = parseInt(a.numos) || 0; bv = parseInt(b.numos) || 0 }
-      else if (key === 'dataagendamento') { av = agendSort(a.dataagendamento ?? ''); bv = agendSort(b.dataagendamento ?? '') }
-      else if (key === '_aging')          { av = a._aging ?? -1; bv = b._aging ?? -1 }
-      else                               {
-        av = String((a as Record<string, unknown>)[key] ?? '').toLowerCase()
-        bv = String((b as Record<string, unknown>)[key] ?? '').toLowerCase()
-      }
-      const cmp = typeof av === 'string' ? av.localeCompare(bv as string) : (av as number) - (bv as number)
-      return dir === 'asc' ? cmp : -cmp
-    })
-  }, [rows, sort])
-
-  const totalPages = Math.ceil(sorted.length / PAGE_SIZE)
-  const pageRows   = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+  // Agrupa por cidade; cidades por volume (desc), OS por aging (desc, mais crítico primeiro)
+  const grupos = useMemo(() => {
+    const map = new Map<string, OSRow[]>()
+    for (const os of rows) {
+      const c = (os.nomedacidade || '').trim() || '—'
+      if (!map.has(c)) map.set(c, [])
+      map.get(c)!.push(os)
+    }
+    for (const list of map.values()) list.sort((a, b) => (b._aging ?? -1) - (a._aging ?? -1))
+    return [...map.entries()].sort((a, b) => b[1].length - a[1].length)
+  }, [rows])
 
   if (!rows.length) return <p className="text-center text-muted text-[12px] py-10">Nenhuma OS encontrada.</p>
 
   return (
-    <div className="overflow-auto">
-      <table className="w-full text-[11px]">
-        <thead>
-          <tr className="border-b border-white/[0.08] bg-surface text-left text-[10px] font-bold uppercase tracking-[0.04em] text-muted">
-            {MODAL_COLS.map(col => (
-              <th key={col.key} onClick={() => toggleSort(col.key)}
-                  className="px-4 py-2.5 whitespace-nowrap cursor-pointer select-none hover:text-secondary transition-colors">
-                <span className="flex items-center gap-1">
-                  {col.label}
-                  {sort.key === col.key
-                    ? (sort.dir === 'asc' ? <ChevronUp size={9} className="text-primary" /> : <ChevronDown size={9} className="text-primary" />)
-                    : <ChevronDown size={9} className="opacity-20" />}
-                </span>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-white/[0.04]">
-          {pageRows.map(os => {
-            const aging = os._aging ?? 0
-            const agVar = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'
-            return (
-              <tr key={os.numos} onClick={() => onOS(os)}
-                  className="hover:bg-surface/30 cursor-pointer transition-colors">
-                <td className="px-4 py-2.5 font-mono text-primary">{os.numos}</td>
-                <td className="px-4 py-2.5 text-text max-w-[160px] truncate">{os.nomecliente ?? '—'}</td>
-                <td className="px-4 py-2.5 text-secondary">{os.nomedacidade ?? '—'}</td>
-                <td className="px-4 py-2.5 text-secondary max-w-[140px] truncate">{shortEquipe(os.nomedaequipe) || '—'}</td>
-                <td className="px-4 py-2.5"><Badge variant={situacaoVariant(os._situacaoEfetiva ?? os.descsituacao)}>{os._situacaoEfetiva ?? os.descsituacao ?? '—'}</Badge></td>
-                <td className="px-4 py-2.5">{os._aging != null ? <Badge variant={agVar}>{aging}d</Badge> : <span className="text-muted">—</span>}</td>
-                <td className="px-4 py-2.5 font-mono text-muted">{os.dataagendamento ? os.dataagendamento.slice(0, 10) : '—'}</td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.08] text-[10px] text-muted">
-          <span>{page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} de {sorted.length}</span>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                    className="px-2 py-1 rounded border border-white/[0.08] disabled:opacity-30 hover:bg-surface/40 transition-colors">‹</button>
-            <span className="px-2 font-mono">{page + 1}/{totalPages}</span>
-            <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1}
-                    className="px-2 py-1 rounded border border-white/[0.08] disabled:opacity-30 hover:bg-surface/40 transition-colors">›</button>
+    <div className="overflow-auto max-h-[72vh]">
+      {grupos.map(([cidade, list], gi) => (
+        <div key={cidade} className={gi > 0 ? 'border-t-2 border-white/[0.12]' : ''}>
+          {/* Cabeçalho da cidade */}
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-surface px-4 py-2 border-b border-white/[0.08]">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold text-text uppercase tracking-[0.03em]">
+              <MapPin size={11} className="text-primary/70" /> {cidade}
+              <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-[10px] font-bold tabular-nums">
+                {list.length} OS
+              </span>
+            </span>
+            <button onClick={() => copyCity(cidade, list)} title="Copiar todas as OS desta cidade"
+                    className="flex items-center gap-1 text-[10px] font-semibold text-muted hover:text-primary transition-colors">
+              {copied === `city:${cidade}` ? <Check size={11} className="text-green" /> : <Copy size={11} />} Copiar cidade
+            </button>
+          </div>
+
+          {/* Linhas da cidade */}
+          <div className="divide-y divide-white/[0.04]">
+            {list.map(os => {
+              const aging  = os._aging ?? 0
+              const agVar  = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'
+              const isOpen = expanded === os.numos
+              return (
+                <div key={os.numos}>
+                  <div className="flex items-center gap-2 px-4 py-2 hover:bg-surface/30 transition-colors text-[11px]">
+                    <button onClick={() => setExpanded(v => v === os.numos ? null : os.numos)}
+                            title="Ver histórico de reagendamentos"
+                            className="text-muted/50 hover:text-primary transition-colors flex-shrink-0">
+                      {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                    </button>
+                    <button onClick={() => onOS(os)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
+                      <span className="font-mono text-primary w-[60px] flex-shrink-0">{os.numos}</span>
+                      <span className="text-text truncate flex-1">{os.nomecliente ?? '—'}</span>
+                      <span className="text-secondary truncate max-w-[120px] hidden sm:block">{shortEquipe(os.nomedaequipe) || '—'}</span>
+                      <Badge variant={situacaoVariant(os._situacaoEfetiva ?? os.descsituacao)}>{os._situacaoEfetiva ?? os.descsituacao ?? '—'}</Badge>
+                      {os._aging != null ? <Badge variant={agVar}>{aging}d</Badge> : <span className="text-muted">—</span>}
+                      <span className="font-mono text-muted w-[68px] flex-shrink-0 text-right">{os.dataagendamento ? os.dataagendamento.slice(0, 10) : '—'}</span>
+                    </button>
+                    <button onClick={() => copyOne(os)} title="Copiar OS para WhatsApp"
+                            className="text-muted/50 hover:text-primary transition-colors flex-shrink-0">
+                      {copied === os.numos ? <Check size={13} className="text-green" /> : <Copy size={13} />}
+                    </button>
+                  </div>
+                  {isOpen && <OcorrenciasExpand numos={os.numos} />}
+                </div>
+              )
+            })}
           </div>
         </div>
-      )}
+      ))}
     </div>
   )
 }
