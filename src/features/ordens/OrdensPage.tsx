@@ -125,10 +125,23 @@ export default function OrdensPage() {
   const tableRef   = useRef<HTMLDivElement>(null)
 
   // Recebe equipe pré-selecionada via React Router state (OSDrawer → "Ver Equipe")
+  // ou um "foco" deep-link vindo dos KPIs de risco do Dashboard
   useEffect(() => {
     const eq = location.state?.filterEquipe
     if (eq) {
       os.setEquipe(eq)
+      navigate(location.pathname, { replace: true, state: null })
+      setTimeout(scrollToTable, 150)
+      return
+    }
+    const foco = location.state?.foco as string | undefined
+    if (foco) {
+      os.clearFilters()
+      if      (foco === 'criticas') os.setCritico(true)
+      else if (foco === 'semEq')    os.setSemEquipe(true)
+      else if (foco === 'pend')     os.setStatus('Pendente')
+      else if (foco === 'atend')    os.setStatus('Atendimento')
+      else if (foco === 'reagend')  os.setStatus('Reagendamento')
       navigate(location.pathname, { replace: true, state: null })
       setTimeout(scrollToTable, 150)
     }

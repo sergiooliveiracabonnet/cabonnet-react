@@ -2,6 +2,112 @@ import { isExecucaoReal, isCOPE, isReagend, parseDate } from '../transform'
 import type { OSRow, KPI } from '../types'
 import { avg, calcMTTR, type FornCard, FORN_CFG } from './_helpers'
 
+// ─── Saúde do período (comparável entre janelas) ──────────────────────────────
+// Diferente do slaFila "ao vivo" (fila atual), mede a saúde das OS do PERÍODO,
+// permitindo comparar período atual vs anterior. Mesmos pesos do Hero: SLA 45 · Taxa 35 · MTTR 20.
+
+export interface PeriodHealth {
+  total:  number
+  slaPct: number
+  taxa:   number
+  mttr:   number
+  score:  number
+}
+
+export function periodHealth(set: OSRow[]): PeriodHealth {
+  let total = 0, concl = 0, breach = 0
+  for (const r of set) {
+    if (isCOPE(r) || isReagend(r) || r._tipo === 'REDE') continue
+    total++
+    if (isExecucaoReal(r.descsituacao)) concl++
+    const breached = r._diasAteAgendamento != null
+      ? r._diasAteAgendamento > r._slaLimite
+      : (r._agingAbertura != null && r._agingAbertura > r._slaLimite)
+    if (breached) breach++
+  }
+  const slaPct    = total > 0 ? Math.round((total - breach) / total * 100) : 100
+  const taxa      = total > 0 ? Math.round(concl / total * 100) : 0
+  const mttr      = calcMTTR(set)
+  const mttrScore = Math.max(0, 100 - mttr * 8)
+  const score     = total > 0 ? Math.min(100, Math.round(slaPct * 0.45 + taxa * 0.35 + mttrScore * 0.20)) : 0
+  return { total, slaPct, taxa, mttr, score }
+}
+
+// ─── Projeção de risco (preditivo) ────────────────────────────────────────────
+// OS ativas que ainda NÃO são críticas mas vão estourar o SLA (2× limite) em breve,
+// usando _diasAteViolacao já calculado no enrichRows. Olha a fila ao vivo (allRows).
+
+export interface ProjecaoRisco {
+  proj24h: number       // viram críticas em ≤ 24h
+  proj48h: number       // viram críticas em ≤ 48h (além das de 24h)
+  amostra: OSRow[]      // as mais iminentes primeiro (para drill-down)
+}
+
+export function buildProjecaoRisco(allRows: OSRow[]): ProjecaoRisco {
+  let proj24h = 0, proj48h = 0
+  const risco: OSRow[] = []
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r) || r._tipo === 'REDE') continue
+    if (!['Pendente', 'Atendimento'].includes(r.descsituacao)) continue
+    if (r._slaCritico) continue
+    const d = r._diasAteViolacao
+    if (d == null) continue
+    if (d <= 1)      { proj24h++; risco.push(r) }
+    else if (d === 2) { proj48h++; risco.push(r) }
+  }
+  const amostra = risco
+    .sort((a, b) => (a._diasAteViolacao ?? 99) - (b._diasAteViolacao ?? 99))
+    .slice(0, 50)
+  return { proj24h, proj48h, amostra }
+}
+
+// Média diária de entradas (OS criadas) no período — baseline para o fluxo do dia
+export function entradaMediaDia(rows: OSRow[]): number {
+  const perDay = new Map<string, number>()
+  for (const r of rows) {
+    if (isCOPE(r) || isReagend(r)) continue
+    const day = (r.datacadastro || '').split(' ')[0]
+    if (!day) continue
+    perDay.set(day, (perDay.get(day) ?? 0) + 1)
+  }
+  if (perDay.size === 0) return 0
+  const total = [...perDay.values()].reduce((a, b) => a + b, 0)
+  return Math.round(total / perDay.size)
+}
+
+export interface DashboardMover {
+  id:       string
+  label:    string
+  atual:    number
+  anterior: number
+  delta:    number
+  unidade:  string
+  melhorou: boolean
+  impacto:  number   // impacto assinado no score (positivo = melhorou)
+}
+
+export function buildMudancas(cur: PeriodHealth, prev: PeriodHealth): DashboardMover[] {
+  const mttrScore = (m: number) => Math.max(0, 100 - m * 8)
+  const defs = [
+    { id: 'sla',  label: 'SLA do período',    atual: cur.slaPct, anterior: prev.slaPct, unidade: '%', w: 0.45, mttr: false },
+    { id: 'taxa', label: 'Taxa de conclusão', atual: cur.taxa,   anterior: prev.taxa,   unidade: '%', w: 0.35, mttr: false },
+    { id: 'mttr', label: 'MTTR',              atual: cur.mttr,   anterior: prev.mttr,   unidade: 'd', w: 0.20, mttr: true  },
+  ]
+  return defs
+    .map(d => {
+      const delta = d.atual - d.anterior
+      const impacto = d.mttr
+        ? (mttrScore(cur.mttr) - mttrScore(prev.mttr)) * d.w
+        : delta * d.w
+      return {
+        id: d.id, label: d.label, atual: d.atual, anterior: d.anterior, delta,
+        unidade: d.unidade, melhorou: impacto > 0, impacto: Math.round(impacto * 10) / 10,
+      }
+    })
+    .filter(m => m.delta !== 0)
+    .sort((a, b) => Math.abs(b.impacto) - Math.abs(a.impacto))
+}
+
 export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows: OSRow[] = []) {
   const isAtivo = (r: OSRow) => ['Pendente','Atendimento'].includes(r.descsituacao)
   const isRede  = (r: OSRow) => r._tipo === 'REDE'
@@ -203,7 +309,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     narrativa: narrativaPulso, quickInsights,
     agingMed, agingDist, slaFila, semAgendamento, mttr,
     topCidadesCriticas, clustersAtivos,
-    entradasHoje, saidasHoje, fluxoHoje, metaMes, ritmoIntradiario,
+    entradasHoje, saidasHoje, fluxoHoje, entradaMediaDia: entradaMediaDia(rows), metaMes, ritmoIntradiario,
   }
 
   const mkTrend = (cur: number, prev: number, higherIsBetter = true) => {
@@ -225,6 +331,19 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     { id: 'taxa',     title: 'Taxa Conclusão',    value: `${taxa}%`, sub: 'do total do período',            accent: 'green', trend: mkTrend(taxa, prevTaxa, true) },
   ]
 
+  // ─── Trajetória: saúde do período atual vs anterior ──────────────────────
+  const hAtual  = periodHealth(rows)
+  const hPrev   = periodHealth(prevRows)
+  const temPrev = prevRows.length > 0
+  const scoreTendencia = {
+    atual:    hAtual.score,
+    anterior: temPrev ? hPrev.score : null,
+    delta:    temPrev ? hAtual.score - hPrev.score : null,
+  }
+  const mudancas  = temPrev ? buildMudancas(hAtual, hPrev) : []
+  const metaScore = 85   // alvo de referência no gauge (limiar "Excelente"); configurável numa fase futura
+  const projecaoRisco = buildProjecaoRisco(allRows)
+
   const fornecedores: FornCard[] = [...fornMap.entries()]
     .map(([k, { total: t, concluidas: c }]) => {
       const sla = t > 0 ? Math.round(c / t * 100) : 0
@@ -239,7 +358,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     .filter(f => f.total > 0)
     .sort((a, b) => b.total - a.total)
 
-  return { kpis, fornecedores, pulso }
+  return { kpis, fornecedores, pulso, scoreTendencia, mudancas, metaScore, projecaoRisco }
 }
 
 // ─── SLA ──────────────────────────────────────────────────────────────────────

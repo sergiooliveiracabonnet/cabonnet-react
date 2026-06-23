@@ -11,8 +11,8 @@ export interface AnomaliaContextType {
   aging_med: number
 }
 
-export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI }: {
-  pulso: Pulso; aiData: AINarrativeResult | null | undefined; isLoadingAI: boolean; onRequestAI?: (obs: string) => void
+export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target }: {
+  pulso: Pulso; aiData: AINarrativeResult | null | undefined; isLoadingAI: boolean; onRequestAI?: (obs: string) => void; target?: number
 }) {
   const [draftObs, setDraftObs] = useState('')
   const [showReanalysis, setShowReanalysis] = useState(false)
@@ -75,7 +75,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI }: {
 
           {/* Gauge */}
           <div className="flex flex-col items-center gap-1 flex-shrink-0">
-            <GaugeChart value={score} color={scoreColor} label={scoreLabel} size={100} />
+            <GaugeChart value={score} target={target} color={scoreColor} label={scoreLabel} size={100} />
             <span className="text-[10px] font-bold uppercase tracking-[0.06em]"
                   style={{ color: `${scoreColor}99` }}>
               Score

@@ -15,7 +15,9 @@ export { PulsoHero } from './PulsoHero'
 export type { AnomaliaContextType } from './PulsoHero'
 export { AnomaliaSection } from './AnomaliaSection'
 
-export interface ModalState        { title: string; rows: OSRow[] }
+export interface ModalState        { title: string; rows: OSRow[]; foco?: string }
+// KPIs de risco que têm filtro correspondente na OrdensPage (deep-link "Abrir na fila")
+export const FOCO_NAVEGAVEL = new Set(['criticas', 'semEq', 'pend', 'atend', 'reagend'])
 export type { AINarrativeResult }
 export type IconComp = ComponentType<{ size?: number; className?: string; style?: CSSProperties }>
 
@@ -62,7 +64,71 @@ export const KPI_ICONS: Partial<Record<string, IconComp>> = {
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 
 export interface DashFornCard { nome: string; total: number; concluidas: number; sla: number; cor: string }
-export interface TypedDashboard { kpis: KPI[]; fornecedores: DashFornCard[]; pulso: Pulso }
+export interface ScoreTendencia { atual: number; anterior: number | null; delta: number | null }
+export interface DashMover { id: string; label: string; atual: number; anterior: number; delta: number; unidade: string; melhorou: boolean; impacto: number }
+export interface ProjecaoRisco { proj24h: number; proj48h: number; amostra: OSRow[] }
+export interface TypedDashboard {
+  kpis: KPI[]; fornecedores: DashFornCard[]; pulso: Pulso
+  scoreTendencia: ScoreTendencia; mudancas: DashMover[]; metaScore: number; projecaoRisco: ProjecaoRisco
+}
+
+// Painel preditivo: OS que vão estourar o SLA nas próximas 24-48h (clicável → drill-down)
+export function ProjecaoRiscoPanel({ proj, criticasAgora, onOpen }: {
+  proj: ProjecaoRisco; criticasAgora: number; onOpen: (rows: OSRow[]) => void
+}) {
+  if (proj.proj24h === 0 && proj.proj48h === 0) return null
+  const totalProj = proj.proj24h + proj.proj48h
+  return (
+    <button
+      onClick={() => onOpen(proj.amostra)}
+      className="w-full flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-card border border-orange/20
+                 px-4 py-2.5 text-left hover:border-orange/40 hover:bg-orange/[0.04] transition-colors duration-fast"
+    >
+      <div className="flex items-center gap-2">
+        <TrendingUp size={14} className="text-orange" />
+        <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">Projeção de risco</span>
+      </div>
+      <span className="text-[12px] text-secondary">
+        <span className="font-semibold text-text tabular-nums">{criticasAgora}</span> críticas agora
+        {' · '}<span className="font-semibold text-orange tabular-nums">+{proj.proj24h}</span> em ≤24h
+        {' · '}<span className="font-semibold text-yellow tabular-nums">+{proj.proj48h}</span> em ≤48h
+      </span>
+      <span className="sm:ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-orange">
+        {totalProj} em risco — ver OS <ArrowUpRight size={12} />
+      </span>
+    </button>
+  )
+}
+
+// Faixa de trajetória: Δ do score do período + os fatores que mais mexeram nele
+export function MudancasStrip({ tendencia, mudancas }: { tendencia: ScoreTendencia; mudancas: DashMover[] }) {
+  if (tendencia.delta == null || mudancas.length === 0) return null
+  const up   = tendencia.delta > 0
+  const flat = tendencia.delta === 0
+  const cor  = flat ? '#94a3b8' : up ? '#4ade80' : '#f87171'
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-card border border-white/[0.08] px-4 py-2.5">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">Tendência</span>
+        <span className="text-[12px] font-semibold tabular-nums" style={{ color: cor }}>
+          {flat ? '— estável' : `${up ? '↑' : '↓'} ${up ? '+' : ''}${tendencia.delta} pts`}
+        </span>
+        <span className="text-[10px] text-muted">vs período anterior · score do período {tendencia.atual}</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+        <span className="text-[10px] text-muted">O que mudou:</span>
+        {mudancas.map(m => (
+          <span key={m.id}
+            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border tabular-nums
+                        ${m.melhorou ? 'text-green bg-green/10 border-green/20' : 'text-red bg-red/10 border-red/20'}`}
+            title={`${m.label}: ${m.anterior}${m.unidade} → ${m.atual}${m.unidade}`}>
+            {m.melhorou ? '↑' : '↓'} {m.label} {m.atual}{m.unidade}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 
 export function SectionLabel({ icon: Icon, color, children }: {
@@ -193,6 +259,7 @@ export interface FluxoHoje {
   entradas: number
   saidas:   number
   saldo:    number
+  mediaEntrada?: number
 }
 
 function RitmoIndicator({ p }: { p: CampoProjecaoReal }) {
@@ -220,6 +287,17 @@ function FluxoIndicator({ f }: { f: FluxoHoje }) {
         Fila {crescendo ? `+${f.saldo}` : f.saldo} hoje
       </span>
       <span className="text-muted">· {f.entradas} entraram · {f.saidas} saíram</span>
+      {f.mediaEntrada != null && f.mediaEntrada > 0 && (() => {
+        const acima = f.entradas > f.mediaEntrada
+        const igual = f.entradas === f.mediaEntrada
+        return (
+          <span className={`flex items-center gap-0.5 font-semibold ${igual ? 'text-muted' : acima ? 'text-orange' : 'text-green'}`}
+                title={`Entradas hoje vs média diária do período (${f.mediaEntrada}/dia)`}>
+            {igual ? <Minus size={10} /> : acima ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+            média {f.mediaEntrada}/d
+          </span>
+        )
+      })()}
     </div>
   )
 }
