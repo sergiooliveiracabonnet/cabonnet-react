@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useOSDerived } from '../contexts/OSDataContext'
+import { isReagend, getReagendTipo } from '../lib/transform'
 import type { OSRow, OrdensOptions } from '../lib/types'
 
 function parseAgend(str: string | null | undefined): Date | null {
@@ -19,6 +20,7 @@ export function useOrdens() {
 
   const [search,      setSearch]      = useState('')
   const [status,      setStatus]      = useState('')
+  const [reagendTipo, setReagendTipo] = useState('')
   const [tipo,        setTipo]        = useState('')
   const [cidade,      setCidade]      = useState('')
   const [bairro,      setBairro]      = useState('')
@@ -59,13 +61,25 @@ export function useOrdens() {
     return { amanhaOrdens, futuroOrdens }
   }, [allRows])
 
-  const baseOrdens: OSRow[] = agendAmanha ? amanhaOrdens : agendFuturo ? futuroOrdens : ordens
+  // Reagendamentos são excluídos do `ordens` base (buildOrdens), então o filtro de
+  // Reagendamento usa a lista ao-vivo (allRows), espelhando os KPIs do Dashboard.
+  const reagendOrdens = useMemo(() => allRows.filter(r => isReagend(r)), [allRows])
+  const verReagend = status === 'Reagendamento' || !!reagendTipo
+
+  const baseOrdens: OSRow[] = agendAmanha
+    ? amanhaOrdens
+    : agendFuturo
+      ? futuroOrdens
+      : verReagend
+        ? reagendOrdens
+        : ordens
 
   const filtered = useMemo(() => {
     let r = baseOrdens
     const q = search.toLowerCase()
     if (q)          r = r.filter(x => ((x.nomecliente as string) ?? '').toLowerCase().includes(q) || ((x.numos as string) ?? '').includes(q) || ((x.nomedacidade as string) ?? '').toLowerCase().includes(q))
     if (status)     r = r.filter(x => x._situacaoEfetiva === status)
+    if (reagendTipo) r = r.filter(x => getReagendTipo(x) === reagendTipo)
     if (tipo)       r = r.filter(x => x.tiposervico === tipo)
     if (cidade)     r = r.filter(x => x.nomedacidade === cidade)
     if (bairro)     r = r.filter(x => x.bairro === bairro)
@@ -104,7 +118,7 @@ export function useOrdens() {
     }
 
     return r
-  }, [baseOrdens, search, status, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, hideRede, sortBy])
+  }, [baseOrdens, search, status, reagendTipo, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, hideRede, sortBy])
 
   const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
@@ -124,7 +138,7 @@ export function useOrdens() {
   }, [filtered, amanhaOrdens, futuroOrdens])
 
   const clearFilters = () => {
-    setSearch(''); setStatus(''); setTipo(''); setCidade(''); setBairro('')
+    setSearch(''); setStatus(''); setReagendTipo(''); setTipo(''); setCidade(''); setBairro('')
     setEquipe(''); setAging(''); setFornecedor(''); setTipoOs(''); setPeriodo('')
     setSemEquipe(false); setCritico(false); setAgendHoje(false); setAgendAmanha(false); setAgendFuturo(false)
     setPage(1)
@@ -133,7 +147,7 @@ export function useOrdens() {
   return {
     isLoading, error, ordens, filtered, paginated,
     totalPages, page, setPage, density, setDensity, kpis,
-    search, setSearch, status, setStatus, tipo, setTipo,
+    search, setSearch, status, setStatus, reagendTipo, setReagendTipo, tipo, setTipo,
     cidade, setCidade, bairro, setBairro, equipe, setEquipe,
     aging, setAging, critico, setCritico, fornecedor, setFornecedor, tipoOs, setTipoOs,
     periodo, setPeriodo,

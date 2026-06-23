@@ -1,4 +1,4 @@
-import { isExecucaoReal, isCOPE, isReagend, parseDate } from '../transform'
+import { isExecucaoReal, isCOPE, isReagend, getReagendTipo, parseDate } from '../transform'
 import type { OSRow, KPI } from '../types'
 import { avg, calcMTTR, type FornCard, FORN_CFG } from './_helpers'
 
@@ -112,14 +112,23 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const isAtivo = (r: OSRow) => ['Pendente','Atendimento'].includes(r.descsituacao)
   const isRede  = (r: OSRow) => r._tipo === 'REDE'
 
-  let pend = 0, atend = 0, redeCount = 0, criticas = 0, semEquipe = 0, reagend = 0
+  let pend = 0, atend = 0, redeCount = 0, criticas = 0, semEquipe = 0
+  let reagendInviab = 0, reagendMobile = 0, reagendFutura = 0
   let slaExcFila = 0, semAgendamento = 0
   const agingArr: number[] = []
   const agingDist = { '≤1d': 0, '2-3d': 0, '4-7d': 0, '8+d': 0 }
   const cidCritMap = new Map<string, number>()
 
   for (const r of allRows) {
-    if (isReagend(r)) { if (isAtivo(r)) reagend++; continue }
+    if (isReagend(r)) {
+      if (isAtivo(r)) {
+        const t = getReagendTipo(r)
+        if      (t === 'inviabilidade') reagendInviab++
+        else if (t === 'mobile')        reagendMobile++
+        else                            reagendFutura++
+      }
+      continue
+    }
     if (isCOPE(r)) continue
     if (!isAtivo(r)) continue
     if (isRede(r)) { redeCount++; continue }
@@ -324,7 +333,9 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     { id: 'semEq',    title: 'Sem Equipe',        value: semEquipe,  sub: 'pendente atribuição',            accent: 'orange' },
     { id: 'pend',     title: 'Pendentes',         value: pend,       sub: 'aguardando campo',               accent: 'yellow' },
     { id: 'atend',    title: 'Em Atendimento',    value: atend,      sub: 'em campo + agend. futuro',       accent: 'cyan'   },
-    { id: 'reagend',  title: 'Reagendamentos',      value: reagend,    sub: 'aguardando rescheduling',        accent: 'orange' },
+    { id: 'reagendInviab', title: 'Reag. Inviab.', value: reagendInviab, sub: 'reagend. por inviabilidade',  accent: 'orange' },
+    { id: 'reagendMobile', title: 'Reag. Mobile',  value: reagendMobile, sub: 'reagend. via OS mobile',      accent: 'orange' },
+    { id: 'reagendFutura', title: 'Reag. Futura',  value: reagendFutura, sub: 'reagend. p/ data futura',     accent: 'orange' },
     { id: 'total',    title: 'Total OS',          value: total,      sub: 'fila ativa (pend. + atend.)',    accent: 'primary'},
     { id: 'rede',     title: 'OS Rede',           value: rede,       sub: 'fila ativa de rede',             accent: 'purple' },
     { id: 'concl',    title: 'Concluídas',        value: concl,      sub: `${taxa}% de conclusão`,          accent: 'green', trend: mkTrend(concl, prevConcl, true) },

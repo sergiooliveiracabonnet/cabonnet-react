@@ -7,7 +7,7 @@ import {
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
-import { isCOPE, isReagend } from '../../lib/transform'
+import { isCOPE, isReagend, getReagendTipo } from '../../lib/transform'
 import type {
   OSRow, KPI, Pulso, ClusterAtivo, AccentColor, CampoSemaforo, PulsoMetaMes, PulsoRitmoIntradiario,
 } from '../../lib/types'
@@ -17,7 +17,7 @@ export { AnomaliaSection } from './AnomaliaSection'
 
 export interface ModalState        { title: string; rows: OSRow[]; foco?: string }
 // KPIs de risco que têm filtro correspondente na OrdensPage (deep-link "Abrir na fila")
-export const FOCO_NAVEGAVEL = new Set(['criticas', 'semEq', 'pend', 'atend', 'reagend'])
+export const FOCO_NAVEGAVEL = new Set(['criticas', 'semEq', 'pend', 'atend', 'reagendInviab', 'reagendMobile', 'reagendFutura'])
 export type { AINarrativeResult }
 export type IconComp = ComponentType<{ size?: number; className?: string; style?: CSSProperties }>
 
@@ -41,9 +41,11 @@ export const KPI_FILTERS: Record<string, (r: OSRow) => boolean> = {
   atend:    r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Atendimento' && !isRede(r),
   criticas: r => !isCOPE(r) && !isReagend(r) && r._slaCritico  && !isRede(r),
   semEq:    r => !isCOPE(r) && !isReagend(r) && !r.nomedaequipe?.trim() && isAtivo(r) && !isRede(r),
-  reagend:  r => isReagend(r) && isAtivo(r),
+  reagendInviab: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'inviabilidade',
+  reagendMobile: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'mobile',
+  reagendFutura: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'futura',
 }
-export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq','reagend'])
+export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq','reagendInviab','reagendMobile','reagendFutura'])
 
 type AccentConfig = { solid: string; glow: string; bg: string }
 export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
@@ -58,7 +60,8 @@ export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
 
 export const KPI_ICONS: Partial<Record<string, IconComp>> = {
   criticas: AlertCircle, semEq: Users, pend: Clock, atend: Activity,
-  reagend: RotateCcw, total: BarChart3, rede: Radio, concl: CheckCircle2, taxa: Target,
+  reagendInviab: RotateCcw, reagendMobile: RotateCcw, reagendFutura: RotateCcw,
+  total: BarChart3, rede: Radio, concl: CheckCircle2, taxa: Target,
 }
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────

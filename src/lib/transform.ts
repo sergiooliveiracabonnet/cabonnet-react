@@ -222,6 +222,20 @@ export function getVtPrazoHoras(servico: string | null | undefined): number | nu
 export const isCOPE    = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /COPE/i.test(r.nomedaequipe ?? '')
 export const isReagend = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /REAGEND/i.test(r.nomedaequipe ?? '')
 
+export type ReagendTipo = 'inviabilidade' | 'mobile' | 'futura'
+
+// Subtipo do reagendamento, lido do nomedaequipe (espelha _abrev_equipe do telegram.py):
+//   REAGENDAMENTO - INVIABILIDADE  → inviabilidade
+//   REAGENDAMENTO O.S MOBILE       → mobile
+//   REAGENDAMENTO (genérico)       → futura (reagendamento para data futura)
+export function getReagendTipo(r: Pick<OSRow, 'nomedaequipe'>): ReagendTipo | null {
+  const u = (r.nomedaequipe ?? '').toUpperCase()
+  if (!/REAGEND/.test(u)) return null
+  if (/INVIABILID/.test(u)) return 'inviabilidade'
+  if (/MOBILE/.test(u))     return 'mobile'
+  return 'futura'
+}
+
 const WES_CODES  = new Set(['F08', 'F11', 'F23', 'F36', 'F44'])
 const INST_CODES = new Set(['F01', 'F04', 'F05', 'F07', 'F20', 'F45', 'F46', 'F47', 'F48', 'F49', 'F50'])
 const THM_CODES  = new Set(['F12', 'F13', 'F14'])

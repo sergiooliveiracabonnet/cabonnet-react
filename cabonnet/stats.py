@@ -62,6 +62,15 @@ def _is_cope(equipe: str) -> bool:
 def _is_reagend(equipe: str) -> bool:
     return "REAGEND" in (equipe or "").upper()
 
+def _reagend_tipo(equipe: str) -> str | None:
+    """Subtipo do reagendamento (espelha getReagendTipo do transform.ts)."""
+    u = (equipe or "").upper()
+    if "REAGEND" not in u:
+        return None
+    if "INVIABILID" in u: return "inviabilidade"
+    if "MOBILE" in u:     return "mobile"
+    return "futura"
+
 def _is_ativo(descsituacao: str) -> bool:
     return (descsituacao or "") in ("Pendente", "Atendimento")
 
@@ -153,6 +162,7 @@ def compute_stats(csv_pendente: str, csv_agendado: str, csv_futuro: str) -> dict
     rows = [_enrich(r, hoje) for r in unique if _row_valido(r)]
 
     pendente = atend = rede = criticas = sem_equipe = sem_agend = sla_exc_fila = reagend = 0
+    reagend_inviab = reagend_mobile = reagend_futura = 0
     aging_arr: list[int] = []
     aging_dist = {"le1d": 0, "d2a3": 0, "d4a7": 0, "d8mais": 0}
     por_cidade: dict = defaultdict(lambda: {"pendente": 0, "atendimento": 0, "criticas": 0})
@@ -161,6 +171,10 @@ def compute_stats(csv_pendente: str, csv_agendado: str, csv_futuro: str) -> dict
     for r in rows:
         if r["_reagend"] and r["_ativo"]:
             reagend += 1
+            _rt = _reagend_tipo(r.get("nomedaequipe", ""))
+            if   _rt == "inviabilidade": reagend_inviab += 1
+            elif _rt == "mobile":        reagend_mobile += 1
+            else:                        reagend_futura += 1
         if r["_cope"] or r["_reagend"]:
             continue
         if not r["_ativo"]:
@@ -219,6 +233,9 @@ def compute_stats(csv_pendente: str, csv_agendado: str, csv_futuro: str) -> dict
             "sem_equipe":      sem_equipe,
             "sem_agendamento": sem_agend,
             "reagend":         reagend,
+            "reagend_inviab":  reagend_inviab,
+            "reagend_mobile":  reagend_mobile,
+            "reagend_futura":  reagend_futura,
             "sla_pct":         sla_pct,
             "aging_med":       aging_med,
             "aging_dist":      aging_dist,

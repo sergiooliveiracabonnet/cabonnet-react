@@ -10,6 +10,9 @@ export interface StatsFila {
   sem_equipe:      number
   sem_agendamento: number
   reagend:         number
+  reagend_inviab:  number
+  reagend_mobile:  number
+  reagend_futura:  number
   sla_pct:         number
   aging_med:       number
   aging_dist: {

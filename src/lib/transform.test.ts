@@ -543,9 +543,9 @@ describe('buildDashboard', () => {
     makeOS({ numos: 'D3', descsituacao: 'Concluída',   datacadastro: daysAgo(1), nomedaequipe: 'MANUTENCAO M01', tiposervico: 'MANUTENCAO' }),
   ])
 
-  it('retorna 9 KPIs', () => {
+  it('retorna 11 KPIs', () => {
     const { kpis } = buildDashboard(rows)
-    expect(kpis).toHaveLength(9)
+    expect(kpis).toHaveLength(11)
   })
 
   it('total conta apenas Pendente + Atendimento', () => {
@@ -558,6 +558,19 @@ describe('buildDashboard', () => {
     const { kpis } = buildDashboard(rows)
     const concl = kpis.find(k => k.id === 'concl')!
     expect(concl.value).toBe(1)
+  })
+
+  it('diferencia os três subtipos de reagendamento', () => {
+    const reagRows = enrichRows([
+      makeOS({ numos: 'RI', descsituacao: 'Pendente', nomedaequipe: 'REAGENDAMENTO - INVIABILIDADE' }),
+      makeOS({ numos: 'RM', descsituacao: 'Pendente', nomedaequipe: 'REAGENDAMENTO O.S MOBILE' }),
+      makeOS({ numos: 'RF1', descsituacao: 'Pendente', nomedaequipe: 'REAGENDAMENTO F01' }),
+      makeOS({ numos: 'RF2', descsituacao: 'Atendimento', nomedaequipe: 'REAGENDAMENTO' }),
+    ])
+    const { kpis } = buildDashboard(reagRows)
+    expect(kpis.find(k => k.id === 'reagendInviab')!.value).toBe(1)
+    expect(kpis.find(k => k.id === 'reagendMobile')!.value).toBe(1)
+    expect(kpis.find(k => k.id === 'reagendFutura')!.value).toBe(2)
   })
 
   it('retorna array de fornecedores', () => {
