@@ -3,7 +3,7 @@ import {
   AlertCircle, CheckCircle2, Zap, TrendingUp, TrendingDown, Minus,
   MapPin, Clock, BarChart3, Package, Wrench, Radio, Target, Calendar,
   ChevronDown, ChevronRight, Activity, Users, RotateCcw, ArrowDownRight, ArrowUpRight, Gauge,
-  Copy, Check,
+  Copy, Check, ClipboardList,
 } from 'lucide-react'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
 import { Badge } from '../../components/ui/Badge'
@@ -874,9 +874,14 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
 
   function flashCopied(key: string) { setCopied(key); setTimeout(() => setCopied(null), 1800) }
 
+  // Copia só o resumo da OS (instantâneo).
+  function copyResumo(os: OSRow) {
+    navigator.clipboard.writeText(buildOSWhatsApp(os)).catch(() => {}); flashCopied(`${os.numos}:os`)
+  }
+
   // Busca o histórico (/detalhes) e copia a OS com a linha do tempo anexada.
-  async function copyOne(os: OSRow) {
-    flashCopied(os.numos)
+  async function copyCompleto(os: OSRow) {
+    flashCopied(`${os.numos}:full`)
     let historico
     try {
       const data = await queryClient.fetchQuery(osDetailsQuery(os.numos))
@@ -944,9 +949,13 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                       {os._aging != null ? <Badge variant={agVar}>{aging}d</Badge> : <span className="text-muted">—</span>}
                       <span className="font-mono text-muted w-[68px] flex-shrink-0 text-right">{os.dataagendamento ? os.dataagendamento.slice(0, 10) : '—'}</span>
                     </button>
-                    <button onClick={() => copyOne(os)} title="Copiar OS para WhatsApp"
+                    <button onClick={() => copyResumo(os)} title="Copiar só a OS (resumo)"
                             className="text-muted/50 hover:text-primary transition-colors flex-shrink-0">
-                      {copied === os.numos ? <Check size={13} className="text-green" /> : <Copy size={13} />}
+                      {copied === `${os.numos}:os` ? <Check size={13} className="text-green" /> : <Copy size={13} />}
+                    </button>
+                    <button onClick={() => copyCompleto(os)} title="Copiar OS + histórico"
+                            className="text-muted/50 hover:text-primary transition-colors flex-shrink-0">
+                      {copied === `${os.numos}:full` ? <Check size={13} className="text-green" /> : <ClipboardList size={13} />}
                     </button>
                   </div>
                   {isOpen && <OcorrenciasExpand numos={os.numos} />}
