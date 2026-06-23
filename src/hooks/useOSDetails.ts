@@ -3,7 +3,7 @@ import { api, endpoints } from '../lib/api'
 
 const REAGEND_RE = /ALTEROU\s+DATA|REAGEND|REMARCOU|REMARC|NOVA\s+DATA|MUDOU\s+DATA/i
 
-interface HistoricoEntry {
+export interface HistoricoEntry {
   texto:     string
   autor:     string | null
   data:      string | null
@@ -82,18 +82,12 @@ interface OSDetailsResult {
   } | null
 }
 
-export function useOSDetails(numos: string | null | undefined): OSDetailsResult {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['os-detalhes', numos],
-    queryFn:  () => api.get(`${endpoints.detalhes}?numos=${numos}`),
-    enabled:  !!numos,
-    staleTime: 1000 * 60 * 5,
-    retry:    0,
-  })
+// Transforma a resposta crua de /detalhes em details parseado. Exportado para
+// reuso fora do hook (ex.: copiar OS com histórico via queryClient.fetchQuery).
+export function parseOSDetails(data: unknown): OSDetailsResult['details'] {
+  if (!data) return null
 
-  if (!data) return { isLoading: !!(numos && isLoading), error: error as Error | null, details: null }
-
-  const raw = data as unknown as Record<string, unknown>
+  const raw = data as Record<string, unknown>
   const rawOs = raw.os
   const osObj: Record<string, unknown> = (typeof rawOs === 'object' && rawOs !== null) ? rawOs as Record<string, unknown> : {}
 
@@ -114,22 +108,39 @@ export function useOSDetails(numos: string | null | undefined): OSDetailsResult 
     : []
 
   return {
-    isLoading: false,
-    error:     error as Error | null,
-    details: {
-      historico,
-      obsTecnico,
-      nomeTecnico,
-      reagendada:        raw.reagendada === true || raw.reagendada === 'true',
-      equipeAgendada:    (osObj.nomedaequipe   as string) || null,
-      equipeExecutou:    (osObj.equipeexecutou as string) || null,
-      equipeReagend:     (raw.equipe_reagendou as string) || null,
-      materiais,
-      materiaisRetirados,
-      datacontratacao:   (osObj.datacontratacao as string) || null,
-      datainstalacao:    (osObj.datainstalacao  as string) || null,
-      situacaocontrato:  typeof osObj.situacaocontrato === 'number' ? osObj.situacaocontrato : null,
-      valorcontrato:     typeof osObj.valorcontrato    === 'number' ? osObj.valorcontrato    : null,
-    },
+    historico,
+    obsTecnico,
+    nomeTecnico,
+    reagendada:        raw.reagendada === true || raw.reagendada === 'true',
+    equipeAgendada:    (osObj.nomedaequipe   as string) || null,
+    equipeExecutou:    (osObj.equipeexecutou as string) || null,
+    equipeReagend:     (raw.equipe_reagendou as string) || null,
+    materiais,
+    materiaisRetirados,
+    datacontratacao:   (osObj.datacontratacao as string) || null,
+    datainstalacao:    (osObj.datainstalacao  as string) || null,
+    situacaocontrato:  typeof osObj.situacaocontrato === 'number' ? osObj.situacaocontrato : null,
+    valorcontrato:     typeof osObj.valorcontrato    === 'number' ? osObj.valorcontrato    : null,
   }
+}
+
+// Query options compartilhadas — mesma queryKey usada pelo fetchQuery no copiar.
+export function osDetailsQuery(numos: string) {
+  return {
+    queryKey: ['os-detalhes', numos] as const,
+    queryFn:  () => api.get(`${endpoints.detalhes}?numos=${numos}`),
+    staleTime: 1000 * 60 * 5,
+  }
+}
+
+export function useOSDetails(numos: string | null | undefined): OSDetailsResult {
+  const { data, isLoading, error } = useQuery({
+    ...osDetailsQuery(numos as string),
+    enabled:  !!numos,
+    retry:    0,
+  })
+
+  if (!data) return { isLoading: !!(numos && isLoading), error: error as Error | null, details: null }
+
+  return { isLoading: false, error: error as Error | null, details: parseOSDetails(data) }
 }

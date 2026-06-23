@@ -129,15 +129,24 @@ export function fmtHorasMin(absHoras: number): string {
   return h === 0 ? `${m}min` : m > 0 ? `${h}h ${m}min` : `${h}h`
 }
 
+export interface OSHistoricoEntry {
+  autor?:     string | null
+  data?:      string | null
+  hora?:      string | null
+  texto?:     string | null
+  isReagend?: boolean
+}
+
 // Resumo da OS para colar no WhatsApp (mesmo formato do botão do OSDrawer).
-export function buildOSWhatsApp(os: OSRow): string {
+// Quando `historico` é informado, anexa a linha do tempo de ocorrências/reagendamentos.
+export function buildOSWhatsApp(os: OSRow, historico?: OSHistoricoEntry[]): string {
   const sit    = os._situacaoEfetiva ?? os.descsituacao ?? '—'
   const equipe = shortEquipe(os.nomedaequipe) || '—'
   const aging  = os._aging != null ? `${os._aging}d` : '—'
   const agend  = os.dataagendamento ? os.dataagendamento.slice(0, 10) : 'Não agendado'
   const loc    = [os.nomedacidade, os.bairro].filter(Boolean).join(' · ') || '—'
   const end    = [os.logradouro || os.enderecoconexao, os.numero, os.complemento].filter(Boolean).join(', ') || '—'
-  return [
+  const lines  = [
     `📋 *OS ${os.numos}* — ${sit}`,
     `👤 ${os.nomecliente || '—'}`,
     `📍 ${loc}`,
@@ -146,7 +155,18 @@ export function buildOSWhatsApp(os: OSRow): string {
     `👷 ${equipe}`,
     `⏱ Aging: ${aging}`,
     `📅 Agend: ${agend}`,
-  ].join('\n')
+  ]
+
+  if (historico && historico.length) {
+    lines.push('', '🕓 *Histórico:*')
+    for (const e of historico) {
+      const meta = [e.autor, [e.data, e.hora].filter(Boolean).join(' ')].filter(Boolean).join(' · ')
+      lines.push(`${e.isReagend ? '🔄' : '•'} ${meta || '—'}`)
+      if (e.texto) lines.push(`   ${e.texto.trim().replace(/\n+/g, ' ')}`)
+    }
+  }
+
+  return lines.join('\n')
 }
 
 export const FORN_LABEL: Record<Fornecedor, string> = {

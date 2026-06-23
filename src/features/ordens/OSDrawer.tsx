@@ -178,7 +178,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
         width="580px"
         actions={
           <div className="flex items-center gap-1">
-            <ActionBtn title="Copiar resumo para WhatsApp" active={copied === 'wha'} onClick={() => copyWith('wha', buildOSWhatsApp(os))}>
+            <ActionBtn title="Copiar resumo para WhatsApp" active={copied === 'wha'} onClick={() => copyWith('wha', buildOSWhatsApp(os, osDetails?.historico))}>
               {copied === 'wha' ? <Check size={13} /> : <MessageSquare size={13} />}
             </ActionBtn>
             <ActionBtn title="Copiar nº da OS" active={copied === 'num'} onClick={() => copyWith('num', String(os.numos))}>

@@ -7,9 +7,10 @@ import {
 } from 'lucide-react'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
 import { Badge } from '../../components/ui/Badge'
+import { useQueryClient } from '@tanstack/react-query'
 import { shortEquipe, situacaoVariant, buildOSWhatsApp } from '../../lib/osFormat'
 import { isCOPE, isReagend, getReagendTipo } from '../../lib/transform'
-import { useOSDetails } from '../../hooks/useOSDetails'
+import { useOSDetails, parseOSDetails, osDetailsQuery } from '../../hooks/useOSDetails'
 import type {
   OSRow, KPI, Pulso, ClusterAtivo, AccentColor, CampoSemaforo, PulsoMetaMes, PulsoRitmoIntradiario,
 } from '../../lib/types'
@@ -869,11 +870,23 @@ function OcorrenciasExpand({ numos }: { numos: string }) {
 export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow) => void }) {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [copied,   setCopied]   = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
   function flashCopied(key: string) { setCopied(key); setTimeout(() => setCopied(null), 1800) }
-  function copyOne(os: OSRow)  { navigator.clipboard.writeText(buildOSWhatsApp(os)).catch(() => {}); flashCopied(os.numos) }
+
+  // Busca o histórico (/detalhes) e copia a OS com a linha do tempo anexada.
+  async function copyOne(os: OSRow) {
+    flashCopied(os.numos)
+    let historico
+    try {
+      const data = await queryClient.fetchQuery(osDetailsQuery(os.numos))
+      historico = parseOSDetails(data)?.historico
+    } catch { /* sem detalhes: copia só o resumo */ }
+    navigator.clipboard.writeText(buildOSWhatsApp(os, historico)).catch(() => {})
+  }
+
   function copyCity(cidade: string, list: OSRow[]) {
-    const text = `*${cidade}* — ${list.length} OS\n\n${list.map(buildOSWhatsApp).join('\n\n')}`
+    const text = `*${cidade}* — ${list.length} OS\n\n${list.map(os => buildOSWhatsApp(os)).join('\n\n')}`
     navigator.clipboard.writeText(text).catch(() => {}); flashCopied(`city:${cidade}`)
   }
 
