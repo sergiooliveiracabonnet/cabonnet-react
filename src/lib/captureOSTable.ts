@@ -473,7 +473,6 @@ export function captureOSDetalhado(rows: CaptureOSRow[], fornLabel: string, acce
 // Relação por Período (Manhã / Tarde) — para copiar direto no WhatsApp
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PW       = 880
 const P_HDR_H  = 72
 const P_COL_H  = 28
 const P_PER_H  = 34
@@ -489,16 +488,49 @@ const P_STATUS_COLORS: Record<string, string> = {
 
 const P_PERIOD_ORDER = ['manhã', 'tarde']
 
-const P_COLS: ColDef[] = [
-  { key: 'aging',   label: 'AGING',    x: 16,  w: 46,  align: 'center' },
-  { key: 'numos',   label: 'Nº OS',    x: 66,  w: 68,  align: 'left'   },
-  { key: 'cliente', label: 'CLIENTE',  x: 138, w: 148, align: 'left'   },
-  { key: 'tipo',    label: 'TIPO',     x: 290, w: 82,  align: 'left'   },
-  { key: 'cidade',  label: 'CIDADE',   x: 376, w: 100, align: 'left'   },
-  { key: 'bairro',  label: 'BAIRRO',   x: 480, w: 112, align: 'left'   },
-  { key: 'logr',    label: 'ENDEREÇO', x: 596, w: 148, align: 'left'   },
-  { key: 'status',  label: 'SITUAÇÃO', x: 748, w: 116, align: 'left'   },
+// Metadados das colunas — a largura é calculada dinamicamente a partir do conteúdo
+// real (medição de texto no canvas) para que nenhuma informação seja truncada.
+interface PColMeta { key: string; label: string; align: CanvasTextAlign; min: number; fixed?: boolean }
+const P_COL_META: PColMeta[] = [
+  { key: 'aging',   label: 'AGING',    align: 'center', min: 46, fixed: true },
+  { key: 'numos',   label: 'Nº OS',    align: 'left',   min: 60  },
+  { key: 'cliente', label: 'CLIENTE',  align: 'left',   min: 110 },
+  { key: 'tipo',    label: 'TIPO',     align: 'left',   min: 64  },
+  { key: 'cidade',  label: 'CIDADE',   align: 'left',   min: 74  },
+  { key: 'bairro',  label: 'BAIRRO',   align: 'left',   min: 90  },
+  { key: 'logr',    label: 'ENDEREÇO', align: 'left',   min: 110 },
+  { key: 'status',  label: 'SITUAÇÃO', align: 'left',   min: 88  },
 ]
+
+const P_CELL_PAD = 18      // folga horizontal dentro de cada célula
+const P_MAX_COL  = 460     // teto de segurança p/ um valor patológico não estourar a imagem
+
+interface PCell { str: string; font: string }
+interface PProcRow { raw: CaptureOSRow; aging: number; cells: Record<string, PCell> }
+
+// Pré-calcula o texto e a fonte de cada célula (mesmas transformações usadas na
+// renderização) para que medição e desenho usem exatamente a mesma string.
+function buildPeriodoCells(r: CaptureOSRow): PProcRow {
+  const nomeDisplay = r.nomecliente || (r.codigocliente ? `Cód. ${r.codigocliente}` : '(Sem nome)')
+  const tipo = (r.tiposervico ?? '')
+    .replace(/instalac[aã]o/i, 'INST.').replace(/manutenc[aã]o/i, 'MANUT.') || '—'
+  const cidade = (r.nomedacidade || '—').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+  const bairro = (r.bairro || '—').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+  const addr = [r.logradouro, r.numero, r.complemento].filter(Boolean).join(', ') || '—'
+  return {
+    raw:   r,
+    aging: r._aging ?? 0,
+    cells: {
+      numos:   { str: String(r.numos ?? '—'), font: 'bold 10.5px Arial' },
+      cliente: { str: nomeDisplay,            font: r.nomecliente ? '10.5px Arial' : 'italic 10px Arial' },
+      tipo:    { str: tipo,                   font: '10px Arial' },
+      cidade:  { str: cidade,                 font: '10px Arial' },
+      bairro:  { str: bairro,                 font: '10.5px Arial' },
+      logr:    { str: addr,                   font: '10px Arial' },
+      status:  { str: r._situacaoEfetiva || '—', font: '10px Arial' },
+    },
+  }
+}
 
 function pillRect(ctx: CanvasRenderingContext2D, cx: number, cy: number, w: number, h: number, r: number, color: string) {
   const x = cx - w / 2, y = cy - h / 2
@@ -523,13 +555,13 @@ function pillRect(ctx: CanvasRenderingContext2D, cx: number, cy: number, w: numb
  */
 export function captureOSPorPeriodo(rows: CaptureOSRow[], equipeName: string): HTMLCanvasElement {
   C = getTheme()
-  const map: Record<string, CaptureOSRow[]> = {}
+  const map: Record<string, PProcRow[]> = {}
   for (const r of rows) {
     const p = (r.periodo || '').trim() || 'Sem Período'
-    ;(map[p] = map[p] || []).push(r)
+    ;(map[p] = map[p] || []).push(buildPeriodoCells(r))
   }
   for (const p of Object.keys(map)) {
-    map[p].sort((a, b) => (a.bairro || '').localeCompare(b.bairro || '', 'pt-BR'))
+    map[p].sort((a, b) => (a.raw.bairro || '').localeCompare(b.raw.bairro || '', 'pt-BR'))
   }
   const groups = Object.entries(map).sort(([a], [b]) => {
     const ia = P_PERIOD_ORDER.indexOf(a.toLowerCase())
@@ -537,19 +569,47 @@ export function captureOSPorPeriodo(rows: CaptureOSRow[], equipeName: string): H
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
   })
 
-  const totalOS = groups.reduce((s, [, rs]) => s + rs.length, 0)
+  const allProc = groups.flatMap(([, rs]) => rs)
+  const totalOS = allProc.length
+
+  // ── Larguras dinâmicas: cada coluna fica do tamanho do maior conteúdo ──────
+  const measCtx = document.createElement('canvas').getContext('2d')!
+  const cols = P_COL_META.map(m => ({ ...m, x: 0, w: m.min }))
+  for (const col of cols) {
+    if (col.fixed) {
+      col.w = col.min
+      continue
+    }
+    measCtx.font = 'bold 8.5px Arial'
+    let maxW = measCtx.measureText(col.label).width
+    for (const pr of allProc) {
+      const cell = pr.cells[col.key]
+      measCtx.font = cell.font
+      const w = measCtx.measureText(cell.str).width
+      if (w > maxW) maxW = w
+    }
+    col.w = Math.min(P_MAX_COL, Math.max(col.min, Math.ceil(maxW) + P_CELL_PAD))
+  }
+  let cursorX = 16
+  for (const col of cols) {
+    col.x = cursorX
+    cursorX += col.w
+  }
+  const colMap = Object.fromEntries(cols.map(c => [c.key, c]))
+  const pw = cursorX + 16
+
   const HEIGHT  = P_HDR_H + P_COL_H + groups.reduce((s, [, rs]) => s + P_PER_H + rs.length * P_ROW_H, 0) + P_FOOT_H
 
   const canvas  = document.createElement('canvas')
-  canvas.width  = PW * SCALE
+  canvas.width  = pw * SCALE
   canvas.height = HEIGHT * SCALE
   const ctx = canvas.getContext('2d')!
   ctx.scale(SCALE, SCALE)
 
-  rect(ctx, 0, 0, PW, HEIGHT, C.bg)
+  rect(ctx, 0, 0, pw, HEIGHT, C.bg)
 
   // Cabeçalho
-  rect(ctx, 0, 0, PW, P_HDR_H, C.bgHdr)
+  rect(ctx, 0, 0, pw, P_HDR_H, C.bgHdr)
   rect(ctx, 0, 0, 4, P_HDR_H, '#3b82f6')
   text(ctx, 'CABONNET · Relação de OS por Período', 20, 26,
     { font: 'bold 15px Arial', color: C.text })
@@ -558,18 +618,18 @@ export function captureOSPorPeriodo(rows: CaptureOSRow[], equipeName: string): H
   const now = new Date()
   const ts  = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   text(ctx, ts, 20, 62, { font: '10px Arial', color: C.muted })
-  text(ctx, `${totalOS} OS · ${groups.length} período(s) · ordenado por bairro`, PW - 16, 46,
+  text(ctx, `${totalOS} OS · ${groups.length} período(s) · ordenado por bairro`, pw - 16, 46,
     { font: '11px Arial', color: C.dim, align: 'right' })
-  line(ctx, 0, P_HDR_H, PW, P_HDR_H)
+  line(ctx, 0, P_HDR_H, pw, P_HDR_H)
 
   // Cabeçalho de colunas
-  rect(ctx, 0, P_HDR_H, PW, P_COL_H, C.bgColHdr)
-  for (const col of P_COLS) {
+  rect(ctx, 0, P_HDR_H, pw, P_COL_H, C.bgColHdr)
+  for (const col of cols) {
     const tx = col.align === 'center' ? col.x + col.w / 2 : col.x
     text(ctx, col.label, tx, P_HDR_H + 18,
       { font: 'bold 8.5px Arial', color: C.muted, align: col.align })
   }
-  line(ctx, 0, P_HDR_H + P_COL_H, PW, P_HDR_H + P_COL_H)
+  line(ctx, 0, P_HDR_H + P_COL_H, pw, P_HDR_H + P_COL_H)
 
   let curY = P_HDR_H + P_COL_H
 
@@ -579,64 +639,58 @@ export function captureOSPorPeriodo(rows: CaptureOSRow[], equipeName: string): H
     const pColor  = isManha ? '#f59e0b' : isTarde ? '#818cf8' : C.dim
     const pBg     = isManha ? 'rgba(245,158,11,0.07)' : isTarde ? 'rgba(129,140,248,0.07)' : C.bgPerSin
 
-    rect(ctx, 0, curY, PW, P_PER_H, pBg)
-    line(ctx, 0, curY, PW, curY, C.borderSoft)
+    rect(ctx, 0, curY, pw, P_PER_H, pBg)
+    line(ctx, 0, curY, pw, curY, C.borderSoft)
     ctx.fillStyle = pColor
     ctx.beginPath()
     ctx.arc(26, curY + P_PER_H / 2, 4, 0, Math.PI * 2)
     ctx.fill()
     text(ctx, `PERÍODO: ${periodo.toUpperCase()}`, 38, curY + P_PER_H / 2 + 4.5,
       { font: 'bold 10.5px Arial', color: pColor })
-    text(ctx, `${periodoRows.length} OS`, PW - 16, curY + P_PER_H / 2 + 4.5,
+    text(ctx, `${periodoRows.length} OS`, pw - 16, curY + P_PER_H / 2 + 4.5,
       { font: '10px Arial', color: C.muted, align: 'right' })
-    line(ctx, 0, curY + P_PER_H, PW, curY + P_PER_H, C.border)
+    line(ctx, 0, curY + P_PER_H, pw, curY + P_PER_H, C.border)
     curY += P_PER_H
 
-    periodoRows.forEach((r, ri) => {
-      rect(ctx, 0, curY, PW, P_ROW_H, ri % 2 === 0 ? C.bg : C.bgAlt)
-      if (ri > 0) line(ctx, 16, curY, PW - 16, curY, C.borderFaint)
+    periodoRows.forEach((pr, ri) => {
+      const r = pr.raw
+      rect(ctx, 0, curY, pw, P_ROW_H, ri % 2 === 0 ? C.bg : C.bgAlt)
+      if (ri > 0) line(ctx, 16, curY, pw - 16, curY, C.borderFaint)
 
       const cy     = curY + P_ROW_H / 2 + 4.5
-      const aging  = r._aging ?? 0
+      const aging  = pr.aging
       const agColor = aging >= 6 ? C.red : aging >= 3 ? C.yellow : C.cyan
       const agBg    = aging >= 6 ? 'rgba(248,113,113,0.15)' : aging >= 3 ? 'rgba(250,204,21,0.15)' : 'rgba(59,130,246,0.12)'
-      const agCX   = P_COLS[0].x + P_COLS[0].w / 2
+      const agCX   = colMap.aging.x + colMap.aging.w / 2
 
       pillRect(ctx, agCX, curY + P_ROW_H / 2, 32, 16, 8, agBg)
       text(ctx, `${aging}d`, agCX, cy, { font: 'bold 10px Arial', color: agColor, align: 'center' })
-      text(ctx, r.numos ?? '—', P_COLS[1].x, cy, { font: 'bold 10.5px Arial', color: '#3b82f6' })
-      const nomeDisplay = r.nomecliente || (r.codigocliente ? `Cód. ${r.codigocliente}` : '(Sem nome)')
-      const nomeColor   = r.nomecliente ? C.text : C.muted
-      const nomeFont    = r.nomecliente ? '10.5px Arial' : 'italic 10px Arial'
-      text(ctx, nomeDisplay, P_COLS[2].x, cy,
-        { font: nomeFont, color: nomeColor, maxW: P_COLS[2].w - 4 })
-      const tipo = (r.tiposervico ?? '')
-        .replace(/instalac[aã]o/i, 'INST.').replace(/manutenc[aã]o/i, 'MANUT.')
-      text(ctx, tipo || '—', P_COLS[3].x, cy,
-        { font: '10px Arial', color: C.muted, maxW: P_COLS[3].w - 2 })
-      const cidade = (r.nomedacidade || '—').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
-      text(ctx, cidade, P_COLS[4].x, cy,
-        { font: '10px Arial', color: C.dim, maxW: P_COLS[4].w - 4 })
-      const bairro = (r.bairro || '—').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
-      text(ctx, bairro, P_COLS[5].x, cy,
-        { font: '10.5px Arial', color: C.dim, maxW: P_COLS[5].w - 4 })
-      const addr = [r.logradouro, r.numero, r.complemento].filter(Boolean).join(', ')
-      text(ctx, addr || '—', P_COLS[6].x, cy,
-        { font: '10px Arial', color: C.muted, maxW: P_COLS[6].w - 4 })
+      text(ctx, pr.cells.numos.str, colMap.numos.x, cy, { font: pr.cells.numos.font, color: '#3b82f6' })
+      const nomeColor = r.nomecliente ? C.text : C.muted
+      text(ctx, pr.cells.cliente.str, colMap.cliente.x, cy,
+        { font: pr.cells.cliente.font, color: nomeColor, maxW: colMap.cliente.w - 6 })
+      text(ctx, pr.cells.tipo.str, colMap.tipo.x, cy,
+        { font: pr.cells.tipo.font, color: C.muted, maxW: colMap.tipo.w - 6 })
+      text(ctx, pr.cells.cidade.str, colMap.cidade.x, cy,
+        { font: pr.cells.cidade.font, color: C.dim, maxW: colMap.cidade.w - 6 })
+      text(ctx, pr.cells.bairro.str, colMap.bairro.x, cy,
+        { font: pr.cells.bairro.font, color: C.dim, maxW: colMap.bairro.w - 6 })
+      text(ctx, pr.cells.logr.str, colMap.logr.x, cy,
+        { font: pr.cells.logr.font, color: C.muted, maxW: colMap.logr.w - 6 })
       const stColor = P_STATUS_COLORS[r._situacaoEfetiva ?? ''] ?? C.muted
-      text(ctx, r._situacaoEfetiva || '—', P_COLS[7].x, cy,
-        { font: '10px Arial', color: stColor, maxW: P_COLS[7].w - 4 })
+      text(ctx, pr.cells.status.str, colMap.status.x, cy,
+        { font: pr.cells.status.font, color: stColor, maxW: colMap.status.w - 6 })
 
       curY += P_ROW_H
     })
   })
 
   // Rodapé
-  rect(ctx, 0, curY, PW, P_FOOT_H, C.bgFoot)
-  line(ctx, 0, curY, PW, curY)
+  rect(ctx, 0, curY, pw, P_FOOT_H, C.bgFoot)
+  line(ctx, 0, curY, pw, curY)
   text(ctx, 'Dashboard Cabonnet · Gerado automaticamente', 16, curY + 17,
     { font: '10px Arial', color: C.muted })
-  text(ctx, `${totalOS} ordens de serviço`, PW - 16, curY + 17,
+  text(ctx, `${totalOS} ordens de serviço`, pw - 16, curY + 17,
     { font: '10px Arial', color: C.muted, align: 'right' })
 
   return canvas
