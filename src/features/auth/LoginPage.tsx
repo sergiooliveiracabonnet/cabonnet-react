@@ -293,9 +293,19 @@ export function LoginPage() {
       <div className="relative w-full max-w-[360px] animate-fade-in">
 
         {/* Brand mark */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-[72px] h-[72px] mb-5 flex items-center justify-center">
-            <img src="/logo-cabonnet.png" alt="Cabonnet" className="w-full h-full object-contain drop-shadow-lg" />
+        <div className="flex flex-col items-center mb-9">
+          <div className="relative w-[216px] h-[93px] mb-4">
+            {/* Ambient glow behind the mark — echoes the primary orb in the backdrop */}
+            <div
+              className="absolute inset-0 blur-2xl opacity-70"
+              style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(59,130,246,0.38) 0%, transparent 72%)' }}
+            />
+            <img
+              src="/logo-cabonnet.png"
+              alt="Cabonnet"
+              className="relative w-full h-full object-contain"
+              style={{ filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.55)) drop-shadow(0 0 28px rgba(59,130,246,0.16))' }}
+            />
           </div>
           <h1 className="font-headline text-[22px] font-semibold tracking-tight"
               style={{ color: '#e8edf5', letterSpacing: '-0.02em' }}>
@@ -325,7 +335,7 @@ export function LoginPage() {
           }}
         >
           {/* Section label */}
-          <p className="text-[10px] font-medium tracking-[0.14em] uppercase mb-5"
+          <p className="text-[10px] font-medium tracking-[0.14em] uppercase mb-5 text-center"
              style={{ color: 'rgba(96,165,250,0.6)' }}>
             Acesso restrito
           </p>
