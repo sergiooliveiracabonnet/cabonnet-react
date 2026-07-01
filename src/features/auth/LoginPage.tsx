@@ -444,7 +444,7 @@ export function LoginPage() {
         <div className="flex items-center justify-center gap-2 mt-7">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(59,130,246,0.4)' }} />
           <p className="text-[10px] tracking-[0.06em]" style={{ color: 'rgba(100,116,139,0.55)' }}>
-            Cabonnet ISP · Sistema Interno · v1.0
+            Cabonnet ISP · Sistema Interno · v{__APP_VERSION__}
           </p>
         </div>
       </div>

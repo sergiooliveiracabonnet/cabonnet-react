@@ -10,4 +10,7 @@ declare global {
     relSetPeriodo?:        (periodo: string) => void
     relatorioGerarPDF?:    (sendToTelegram: boolean, chatId?: string | number) => Promise<{ ok: boolean; error?: string }>
   }
+
+  // Injetada em build time via vite.config.js `define`, a partir de package.json.
+  const __APP_VERSION__: string
 }

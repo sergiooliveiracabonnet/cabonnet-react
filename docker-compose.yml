@@ -8,4 +8,12 @@ services:
     env_file:
       - .env
     volumes:
-      - ./logs:/app/logs
+      # Sem isto, todo `docker compose up --build` recria o container e o
+      # SQLite (histórico de OS, cadastro de usuários/senhas, técnicos etc.)
+      # nasce vazio de novo — era exatamente por isso que o admin sumia
+      # a cada deploy. ./logs:/app/logs (removido) não persistia nada real:
+      # nenhum código escreve em /app/logs, os arquivos ficam na raiz do app.
+      - ./cabonnet_data.db:/app/cabonnet_data.db
+      - ./cabonnet_server.log:/app/cabonnet_server.log
+      - ./jun_historico.json:/app/jun_historico.json
+      - ./Backup:/app/Backup
