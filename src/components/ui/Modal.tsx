@@ -17,6 +17,13 @@ interface ModalProps {
 export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', headerAction, children }: ModalProps) {
   const dialogRef    = useRef<HTMLDivElement>(null)
   const prevFocusRef = useRef<Element | null>(null)
+  // Callers costumam passar onClose como função inline (ex: () => { reset(); onClose() }),
+  // que muda de identidade a cada render. Guardamos a versão mais recente num ref e
+  // deixamos o efeito abaixo depender só de `open` — senão, qualquer re-render do
+  // conteúdo do modal (ex: digitar num input controlado) recria onClose, o efeito
+  // roda de novo e rouba o foco pro primeiro elemento focável (o botão de fechar).
+  const onCloseRef = useRef(onClose)
+  useEffect(() => { onCloseRef.current = onClose })
 
   useEffect(() => {
     if (!open) return
@@ -27,7 +34,7 @@ export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', head
     first?.focus()
 
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { onClose?.(); return }
+      if (e.key === 'Escape') { onCloseRef.current?.(); return }
       if (e.key !== 'Tab') return
 
       const els = [...(dialogRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SEL) ?? [])]
@@ -48,7 +55,7 @@ export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', head
       document.removeEventListener('keydown', onKey)
       ;(prevFocusRef.current as HTMLElement | null)?.focus()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
