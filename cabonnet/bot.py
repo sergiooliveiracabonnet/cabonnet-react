@@ -214,16 +214,10 @@ def _telegram_poll_loop_inner():
                 if termo_livre.isdigit() and len(termo_livre) >= 5:
                     _telegram_send("🔍 Buscando informações solicitadas...", chat_id_override=cid)
                     n = termo_livre
-                    if grupo == "PRODUTIVIDADE":
-                        def _ficha_livre(n=n, cid=cid):
-                            txt, mkp = _build_os_ficha_rapida(n)
-                            _telegram_send(txt, chat_id_override=cid, reply_markup=mkp)
-                        threading.Thread(target=_ficha_livre, daemon=True).start()
-                    else:
-                        threading.Thread(
-                            target=lambda n=n: _telegram_send(_build_os_detalhes(n), chat_id_override=cid),
-                            daemon=True,
-                        ).start()
+                    threading.Thread(
+                        target=lambda n=n: _telegram_send_long(_build_os_detalhes(n), chat_id_override=cid),
+                        daemon=True,
+                    ).start()
                 elif len(termo_livre) >= 4:
                     _telegram_send("🔍 Buscando informações solicitadas...", chat_id_override=cid)
                     t = termo_livre; pfx = "os"
@@ -333,13 +327,7 @@ def _telegram_poll_loop_inner():
                     _telegram_send("ℹ️ Uso:\n  /os <b>número</b>\n  /os <b>nome</b>\n  /os <b>c12345</b>\n  /os <b>a67890</b>", chat_id_override=cid)
                 elif raw.isdigit():
                     n = raw
-                    if grupo == "PRODUTIVIDADE":
-                        def _ficha_cmd(n=n, cid=cid):
-                            txt, mkp = _build_os_ficha_rapida(n)
-                            _telegram_send(txt, chat_id_override=cid, reply_markup=mkp)
-                        threading.Thread(target=_ficha_cmd, daemon=True).start()
-                    else:
-                        threading.Thread(target=lambda n=n: _telegram_send(_build_os_detalhes(n), chat_id_override=cid), daemon=True).start()
+                    threading.Thread(target=lambda n=n: _telegram_send_long(_build_os_detalhes(n), chat_id_override=cid), daemon=True).start()
                 else:
                     t = raw; pfx = "os"
                     def _busca_os(t=t, cid=cid, pfx=pfx):
