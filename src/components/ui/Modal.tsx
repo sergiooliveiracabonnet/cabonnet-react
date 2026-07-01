@@ -24,6 +24,11 @@ export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', head
   // roda de novo e rouba o foco pro primeiro elemento focável (o botão de fechar).
   const onCloseRef = useRef(onClose)
   useEffect(() => { onCloseRef.current = onClose })
+  // Selecionar texto arrastando o mouse a partir de dentro do modal pode terminar
+  // (mouseup) em cima do backdrop — sem isso, o "clicar fora fecha" interpretava
+  // esse arraste como um clique fora e fechava o modal no meio da seleção.
+  // Só fecha se o mousedown E o click tiverem começado/terminado no próprio backdrop.
+  const mouseDownOnBackdrop = useRef(false)
 
   useEffect(() => {
     if (!open) return
@@ -61,7 +66,11 @@ export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', head
 
   return createPortal(
     <div
-      onClick={(e) => { if (e.target === e.currentTarget) onClose?.() }}
+      onMouseDown={(e) => { mouseDownOnBackdrop.current = e.target === e.currentTarget }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && mouseDownOnBackdrop.current) onClose?.()
+        mouseDownOnBackdrop.current = false
+      }}
       className="fixed inset-0 bg-black/65 backdrop-blur-[4px] z-modal
                  flex items-center justify-center p-5 animate-fade-in"
     >
