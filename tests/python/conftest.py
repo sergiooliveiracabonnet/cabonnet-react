@@ -13,6 +13,9 @@ Patches de sessão:
                                            muitos logins em sequência na mesma "sessão"
                                            de testes; o rate limit é por IP e travaria
                                            logins legítimos sem isso.
+  - cabonnet.app._check_api_rate_limit  → sempre True: o client é session-scoped e o
+                                           conjunto todo de testes soma bem mais que
+                                           300 requisições na mesma janela de 1 min.
 
 Por que patchar cabonnet.app.X em vez de cabonnet.grafana.X:
   app.py faz `from cabonnet.grafana import grafana_post` — isso cria uma
@@ -34,6 +37,7 @@ def client():
         patch("cabonnet.app.grafana_post", return_value={}),
         patch("cabonnet.app._auth_enabled", return_value=False),
         patch("cabonnet.app._check_login_rate_limit"),
+        patch("cabonnet.app._check_api_rate_limit", return_value=True),
     ):
         from cabonnet.app import app
         with TestClient(app, raise_server_exceptions=True) as c:

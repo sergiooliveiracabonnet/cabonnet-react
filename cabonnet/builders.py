@@ -25,8 +25,9 @@ from cabonnet.telegram import (
 )
 from cabonnet.grafana import (
     grafana_post, frames_to_csv, frames_to_dict_list,
-    SQL_AGENDADO, SQL_DETALHES_TEMPLATE, SQL_OCORRENCIAS_TEMPLATE,
-    SQL_MATERIAIS_UTILIZADOS_TEMPLATE, SQL_MATERIAIS_RETIRADOS_TEMPLATE,
+    SQL_AGENDADO,
+    sql_detalhes, sql_ocorrencias,
+    sql_materiais_utilizados, sql_materiais_retirados,
 )
 
 log = logging.getLogger("CaboNetServer")
@@ -1019,7 +1020,7 @@ def _build_os_detalhes(numos_str):
     except ValueError:
         return f"❌ Número inválido: <code>{_tg_esc(numos_str)}</code>"
     try:
-        rows = frames_to_dict_list(grafana_post(SQL_DETALHES_TEMPLATE.format(numos=numos_int)))
+        rows = frames_to_dict_list(grafana_post(sql_detalhes(numos_int)))
     except Exception as ex:
         return f"❌ Erro ao buscar OS {numos_str}: {_tg_esc(str(ex)[:100])}"
     if not rows:
@@ -1027,19 +1028,19 @@ def _build_os_detalhes(numos_str):
     r = rows[0]
     ocorrencias = []
     try:
-        ocorrencias = frames_to_dict_list(grafana_post(SQL_OCORRENCIAS_TEMPLATE.format(numos=numos_int)))
+        ocorrencias = frames_to_dict_list(grafana_post(sql_ocorrencias(numos_int)))
     except Exception as ex:
         log.warning("[OS %s] Falha ao buscar ocorrências: %s", numos_str, str(ex)[:120])
     materiais = []
     materiais_retirados = []
     materiais_erro = False
     try:
-        materiais = frames_to_dict_list(grafana_post(SQL_MATERIAIS_UTILIZADOS_TEMPLATE.format(numos=numos_int)))
+        materiais = frames_to_dict_list(grafana_post(sql_materiais_utilizados(numos_int)))
     except Exception as ex:
         materiais_erro = True
         log.warning("[OS %s] Falha ao buscar materiais utilizados: %s", numos_str, str(ex)[:120])
     try:
-        materiais_retirados = frames_to_dict_list(grafana_post(SQL_MATERIAIS_RETIRADOS_TEMPLATE.format(numos=numos_int)))
+        materiais_retirados = frames_to_dict_list(grafana_post(sql_materiais_retirados(numos_int)))
     except Exception as ex:
         log.warning("[OS %s] Falha ao buscar materiais retirados: %s", numos_str, str(ex)[:120])
     def v(campo, fb="—"):
@@ -1116,7 +1117,7 @@ def _build_os_ficha_rapida(numos_str):
     r = cache_hits[0] if cache_hits else None
     if r is None:
         try:
-            rows = frames_to_dict_list(grafana_post(SQL_DETALHES_TEMPLATE.format(numos=numos_int)))
+            rows = frames_to_dict_list(grafana_post(sql_detalhes(numos_int)))
             r    = rows[0] if rows else None
         except Exception as ex:
             return f"❌ Erro ao buscar OS {numos_str}: {_tg_esc(str(ex)[:100])}", None

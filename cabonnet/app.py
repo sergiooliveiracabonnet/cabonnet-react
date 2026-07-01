@@ -74,24 +74,24 @@ from cabonnet.postgres import pg_init, pg_is_available, pg_load_snapshot, pg_syn
 from cabonnet.grafana import (
     SQL_AGENDADO,
     SQL_ATENDIMENTO,
-    SQL_BACKLOG_TEMPLATE,
-    SQL_DETALHES_TEMPLATE,
-    SQL_EQUIPE_REAGENDOU_TEMPLATE,
     SQL_ERP_OS_CIDADES,
     SQL_ERP_OS_TOTAIS,
     SQL_FUTURO,
-    SQL_MATERIAIS_RETIRADOS_TEMPLATE,
-    SQL_MATERIAIS_UTILIZADOS_TEMPLATE,
-    SQL_OCORRENCIAS_TEMPLATE,
     SQL_PENDENTE,
     SQL_REVISITAS,
-    SQL_REVISITAS_COM_OBS,
     build_atendimento_json,
     build_backlog_json,
     build_pares_revisita,
     frames_to_csv,
     frames_to_dict_list,
     grafana_post,
+    sql_backlog,
+    sql_detalhes,
+    sql_equipe_reagendou,
+    sql_materiais_retirados,
+    sql_materiais_utilizados,
+    sql_ocorrencias,
+    sql_revisitas_com_obs,
 )
 from cabonnet.juniper import _jun_notify_new_clients, juniper_fetch
 from cabonnet.telegram import _telegram_enabled, _telegram_send, _telegram_send_document
@@ -348,6 +348,41 @@ async def _correlation_id_middleware(request: Request, call_next):
     if rid:
         response.headers["X-Request-ID"] = rid
     return response
+
+
+# Rate limiting geral por IP: protege todas as rotas contra abuso/bug de polling.
+# Login tem limite próprio e mais restrito (_check_login_rate_limit, acima).
+_API_MAX_REQUESTS = 300
+_API_WINDOW_S      = 60
+_api_requests: dict[str, list[float]] = {}
+_api_requests_lock = threading.Lock()
+
+# Fora do limite geral: health check (batido pela infra a cada poucos segundos)
+# e estáticos do build (JS/CSS/imagens não precisam de proteção de abuso).
+_RATE_LIMIT_EXEMPT_PREFIXES = ("/health", "/assets", "/favicon")
+
+
+def _check_api_rate_limit(ip: str) -> bool:
+    """True se o IP ainda está dentro do limite (janela deslizante de 1 min)."""
+    now = _time_mod.time()
+    with _api_requests_lock:
+        reqs = [t for t in _api_requests.get(ip, []) if now - t < _API_WINDOW_S]
+        if len(reqs) >= _API_MAX_REQUESTS:
+            _api_requests[ip] = reqs
+            return False
+        reqs.append(now)
+        _api_requests[ip] = reqs
+        return True
+
+
+@app.middleware("http")
+async def _rate_limit_middleware(request: Request, call_next):
+    if request.url.path.startswith(_RATE_LIMIT_EXEMPT_PREFIXES):
+        return await call_next(request)
+    ip = request.client.host if request.client else "unknown"
+    if not _check_api_rate_limit(ip):
+        return JSONResponse({"detail": "Muitas requisições. Tente novamente em instantes."}, status_code=429)
+    return await call_next(request)
 
 
 # ── API Router (v1) ───────────────────────────────────────────────────────────
@@ -819,7 +854,7 @@ async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require
                 and (now - cached["ts"]) < _BACKLOG_CACHE_TTL):
             return cached["data"]
     try:
-        rows   = frames_to_dict_list(grafana_post(SQL_BACKLOG_TEMPLATE.format(inicio=inicio_use, fim=fim_use)))
+        rows   = frames_to_dict_list(grafana_post(sql_backlog(inicio_use, fim_use)))
         result = build_backlog_json(rows)
         result["periodo"] = inicio_use
         result["fim"]     = fim_use
@@ -855,7 +890,7 @@ async def revisitas_detalhe(inicio: str = "", fim: str = "", _role: str = Depend
         fim_use    = (today + timedelta(days=1)).isoformat()
 
     try:
-        rows   = frames_to_dict_list(grafana_post(SQL_REVISITAS_COM_OBS.format(inicio=inicio_use, fim=fim_use)))
+        rows   = frames_to_dict_list(grafana_post(sql_revisitas_com_obs(inicio_use, fim_use)))
         result = build_pares_revisita(rows)
         result["periodo"] = inicio_use
         result["fim"]     = fim_use
@@ -894,7 +929,7 @@ async def detalhes(numos: str = ""):
         raise HTTPException(400, "Parâmetro 'numos' inválido.")
     numos_int = int(numos.strip())
     try:
-        rows = frames_to_dict_list(grafana_post(SQL_DETALHES_TEMPLATE.format(numos=numos_int)))
+        rows = frames_to_dict_list(grafana_post(sql_detalhes(numos_int)))
         if not rows:
             raise HTTPException(404, f"OS {numos} não encontrada.")
         os_data = rows[0]
@@ -902,18 +937,18 @@ async def detalhes(numos: str = ""):
         dt_agend = os_data.get("dataagendamento", "")
         reagendada = bool(dt_atend and dt_agend and dt_atend[:10] != dt_agend[:10])
         ocorrencias = []
-        try: ocorrencias = frames_to_dict_list(grafana_post(SQL_OCORRENCIAS_TEMPLATE.format(numos=numos_int)))
+        try: ocorrencias = frames_to_dict_list(grafana_post(sql_ocorrencias(numos_int)))
         except Exception: pass
         equipe_reagendou = ""
         try:
-            rows_er = frames_to_dict_list(grafana_post(SQL_EQUIPE_REAGENDOU_TEMPLATE.format(numos=numos_int)))
+            rows_er = frames_to_dict_list(grafana_post(sql_equipe_reagendou(numos_int)))
             if rows_er: equipe_reagendou = rows_er[0].get("descricao", "")
         except Exception: pass
         materiais_utilizados = []
-        try: materiais_utilizados = frames_to_dict_list(grafana_post(SQL_MATERIAIS_UTILIZADOS_TEMPLATE.format(numos=numos_int)))
+        try: materiais_utilizados = frames_to_dict_list(grafana_post(sql_materiais_utilizados(numos_int)))
         except Exception: pass
         materiais_retirados = []
-        try: materiais_retirados = frames_to_dict_list(grafana_post(SQL_MATERIAIS_RETIRADOS_TEMPLATE.format(numos=numos_int)))
+        try: materiais_retirados = frames_to_dict_list(grafana_post(sql_materiais_retirados(numos_int)))
         except Exception: pass
         return {"os": os_data, "reagendada": reagendada, "equipe_reagendou": equipe_reagendou,
                 "ocorrencias": ocorrencias, "materiais_utilizados": materiais_utilizados,
