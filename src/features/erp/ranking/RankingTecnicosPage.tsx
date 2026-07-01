@@ -75,9 +75,11 @@ function TecnicoCell({ codigo, cadastro }: { codigo: string; cadastro: TecnicoIt
   return (
     <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 group text-left">
       <div>
-        <p className="font-semibold text-text">{cadastro?.nome_real || shortEquipe(codigo)}</p>
+        <p className="font-semibold text-text">
+          {cadastro?.nome_real || shortEquipe(codigo)}
+          {cadastro?.contato && <span className="ml-1 font-normal text-[10px] text-muted">| {cadastro.contato}</span>}
+        </p>
         {cadastro?.nome_real && <p className="text-[10px] text-muted font-mono">{shortEquipe(codigo)}</p>}
-        {cadastro?.contato && <p className="text-[10px] text-muted">{cadastro.contato}</p>}
       </div>
       <Pencil size={10} className="text-muted/0 group-hover:text-muted/60 transition-colors flex-shrink-0" />
     </button>
