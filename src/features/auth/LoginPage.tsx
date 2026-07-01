@@ -23,11 +23,11 @@ export function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await api.auth.login(username.trim(), password) as { ok: boolean; role?: string; error?: string }
+      const res = await api.auth.login(username.trim(), password)
       if (res.ok) {
         logAudit(`Login realizado`, `role: ${res.role ?? 'gestor'}`, 'auth')
         setSuccess(true)
-        setTimeout(() => setAuthed((res.role ?? 'gestor') as 'gestor' | 'operador' | 'viewer'), 600)
+        setTimeout(() => setAuthed((res.role ?? 'gestor') as 'gestor' | 'operador' | 'viewer', res.modulos ?? []), 600)
         return
       } else {
         setError(res.error || 'Credenciais inválidas')

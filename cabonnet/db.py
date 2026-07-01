@@ -3,6 +3,9 @@
 cabonnet/db.py — SQLite: persistência de cache e histórico de status.
 """
 
+import hashlib
+import hmac
+import secrets
 import sqlite3
 import logging
 import threading
@@ -13,6 +16,24 @@ from cabonnet import state
 
 log    = logging.getLogger("CaboNetServer")
 log_db = logging.getLogger("CaboNetServer.DB")
+
+# ── Módulos do app togleáveis por papel (gestor/operador/viewer) ──────────────
+# Mapeados 1:1 com as rotas do Sidebar (src/components/layout/Sidebar.tsx).
+ALL_MODULOS = [
+    "dashboard", "ordens", "graficos", "cidades", "fornecedor", "juniper",
+    "fechamento", "mapa", "noc",
+    "erp_relatorios", "erp_alertas", "erp_produtividade", "erp_qualidade",
+    "erp_planner", "erp_fila", "erp_ranking", "erp_acao",
+]
+
+# Defaults semeados no bootstrap — só o ponto de partida, ajustável depois pela
+# própria tela de permissões.
+_DEFAULT_OPERADOR_MODULOS = [
+    "dashboard", "ordens", "cidades", "mapa", "juniper",
+    "erp_relatorios", "erp_alertas", "erp_produtividade", "erp_qualidade",
+    "erp_planner", "erp_fila", "erp_ranking", "erp_acao",
+]
+_DEFAULT_VIEWER_MODULOS = ["dashboard", "graficos", "cidades", "mapa"]
 
 
 def _db_init():
@@ -92,6 +113,30 @@ def _db_init():
                 contato     TEXT    DEFAULT '',
                 ativo       INTEGER NOT NULL DEFAULT 1,
                 atualizado_em TEXT  NOT NULL
+            )
+        """)
+        # Cadastro de usuários — substitui as credenciais fixas do .env
+        # (LOGIN_GESTOR_USER/PASS etc). Senha nunca em texto plano, ver
+        # _hash_password/_verify_password.
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                username      TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+                senha_hash    TEXT    NOT NULL,
+                role          TEXT    NOT NULL DEFAULT 'viewer',
+                ativo         INTEGER NOT NULL DEFAULT 1,
+                criado_em     TEXT    NOT NULL,
+                atualizado_em TEXT    NOT NULL
+            )
+        """)
+        # Módulos liberados por papel (operador/viewer). Gestor não é gravado
+        # aqui — é tratado como "todos os módulos" direto no código
+        # (ver _db_get_permissoes) pra nunca haver risco de autoexclusão.
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS role_permissoes (
+                role   TEXT NOT NULL,
+                modulo TEXT NOT NULL,
+                PRIMARY KEY (role, modulo)
             )
         """)
         con.commit()
@@ -426,3 +471,223 @@ def _db_delete_tecnico(codigo):
     except Exception as ex:
         log_db.warning("Falha ao deletar tecnico %s: %s", codigo, ex)
         return False
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Usuários, senhas e permissões por papel
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Nota sobre tratamento de erro: as funções de leitura acima seguem o padrão
+# do arquivo (engolir exceção, logar, devolver valor vazio) porque falhar
+# "aberto" nessas telas não é grave. Nas funções de escrita abaixo que mexem
+# com autenticação (criar usuário, trocar senha) a exceção é propagada de
+# propósito — o endpoint precisa saber a causa real (ex: username duplicado
+# → 409) em vez de um "False" genérico que esconderia o motivo.
+
+_PBKDF2_ITERATIONS = 200_000
+
+
+def _hash_password(plain):
+    """Gera um hash PBKDF2-HMAC-SHA256 com salt aleatório (stdlib apenas).
+    Formato auto-descritivo: pbkdf2_sha256$<iteracoes>$<salt_hex>$<hash_hex>."""
+    salt = secrets.token_bytes(16)
+    dk = hashlib.pbkdf2_hmac("sha256", plain.encode("utf-8"), salt, _PBKDF2_ITERATIONS)
+    return f"pbkdf2_sha256${_PBKDF2_ITERATIONS}${salt.hex()}${dk.hex()}"
+
+
+def _verify_password(plain, stored):
+    """Verifica senha em tempo constante. Retorna False (não lança) para
+    qualquer hash malformado/desconhecido — nunca deixa um formato inesperado
+    virar autenticação bem-sucedida."""
+    try:
+        algo, iterations_str, salt_hex, hash_hex = stored.split("$")
+        if algo != "pbkdf2_sha256":
+            return False
+        salt = bytes.fromhex(salt_hex)
+        dk = hashlib.pbkdf2_hmac("sha256", plain.encode("utf-8"), salt, int(iterations_str))
+        return hmac.compare_digest(dk.hex(), hash_hex)
+    except (ValueError, AttributeError):
+        return False
+
+
+def _db_list_usuarios():
+    """Lista usuários cadastrados. Nunca inclui senha_hash."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            rows = con.execute(
+                "SELECT id, username, role, ativo, criado_em, atualizado_em "
+                "FROM usuarios ORDER BY username COLLATE NOCASE"
+            ).fetchall()
+            con.close()
+        return [
+            {"id": r[0], "username": r[1], "role": r[2], "ativo": bool(r[3]),
+             "criado_em": r[4], "atualizado_em": r[5]}
+            for r in rows
+        ]
+    except Exception as ex:
+        log_db.warning("Falha ao listar usuarios: %s", ex)
+        return []
+
+
+def _db_get_usuario_by_username(username):
+    """Uso interno de login — inclui senha_hash e ativo. Não expor via API."""
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        row = con.execute(
+            "SELECT id, username, senha_hash, role, ativo FROM usuarios WHERE username=?",
+            (username,)
+        ).fetchone()
+        con.close()
+    if not row:
+        return None
+    return {"id": row[0], "username": row[1], "senha_hash": row[2], "role": row[3], "ativo": bool(row[4])}
+
+
+def _db_get_usuario_by_id(uid):
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        row = con.execute(
+            "SELECT id, username, role, ativo FROM usuarios WHERE id=?", (uid,)
+        ).fetchone()
+        con.close()
+    if not row:
+        return None
+    return {"id": row[0], "username": row[1], "role": row[2], "ativo": bool(row[3])}
+
+
+def _db_create_usuario(username, senha_hash, role):
+    """Cria um usuário. Propaga sqlite3.IntegrityError se o username já existe
+    (COLLATE NOCASE) — o endpoint traduz isso para HTTP 409."""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        try:
+            cur = con.execute(
+                "INSERT INTO usuarios (username, senha_hash, role, ativo, criado_em, atualizado_em) "
+                "VALUES (?,?,?,1,?,?)",
+                (username, senha_hash, role, now, now)
+            )
+            con.commit()
+            return cur.lastrowid
+        finally:
+            con.close()
+
+
+def _db_update_usuario(uid, role=None, ativo=None):
+    """Atualização parcial de papel/status. Username é imutável (evita
+    re-chavear sessões em memória, que guardam o username no token)."""
+    fields, values = [], []
+    if role is not None:
+        fields.append("role=?")
+        values.append(role)
+    if ativo is not None:
+        fields.append("ativo=?")
+        values.append(1 if ativo else 0)
+    if not fields:
+        return _db_get_usuario_by_id(uid)
+    fields.append("atualizado_em=?")
+    values.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    values.append(uid)
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        con.execute(f"UPDATE usuarios SET {', '.join(fields)} WHERE id=?", values)
+        con.commit()
+        con.close()
+    return _db_get_usuario_by_id(uid)
+
+
+def _db_set_password(uid, senha_hash):
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        cur = con.execute(
+            "UPDATE usuarios SET senha_hash=?, atualizado_em=? WHERE id=?",
+            (senha_hash, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), uid)
+        )
+        affected = cur.rowcount
+        con.commit()
+        con.close()
+    return affected > 0
+
+
+def _db_count_usuarios():
+    """Total de usuários cadastrados (qualquer status) — usado no bootstrap
+    e em _auth_enabled()."""
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        n = con.execute("SELECT COUNT(*) FROM usuarios").fetchone()[0]
+        con.close()
+    return n
+
+
+def _db_count_ativos_por_role(role):
+    """Quantos usuários ATIVOS existem com o papel dado — usado no guard
+    'não desative/rebaixe o último gestor ativo'."""
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        n = con.execute(
+            "SELECT COUNT(*) FROM usuarios WHERE role=? AND ativo=1", (role,)
+        ).fetchone()[0]
+        con.close()
+    return n
+
+
+def _db_get_permissoes(role):
+    """Módulos liberados para o papel. Gestor sempre é 'todos', nunca lido
+    da tabela (evita qualquer estado inconsistente derrubar o próprio acesso
+    de gestor)."""
+    if role == "gestor":
+        return list(ALL_MODULOS)
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            rows = con.execute(
+                "SELECT modulo FROM role_permissoes WHERE role=?", (role,)
+            ).fetchall()
+            con.close()
+        return [r[0] for r in rows]
+    except Exception as ex:
+        log_db.warning("Falha ao ler permissoes do papel %s: %s", role, ex)
+        return []
+
+
+def _db_set_permissoes(role, modulos):
+    """Substitui a lista de módulos liberados para o papel. Gestor é
+    imutável — o caller deve rejeitar antes de chamar (ValueError aqui é
+    defesa em profundidade caso algo chame direto)."""
+    if role == "gestor":
+        raise ValueError("Permissões do papel gestor não são editáveis")
+    validos = [m for m in modulos if m in ALL_MODULOS]
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        con.execute("DELETE FROM role_permissoes WHERE role=?", (role,))
+        if validos:
+            con.executemany(
+                "INSERT INTO role_permissoes (role, modulo) VALUES (?,?)",
+                [(role, m) for m in validos]
+            )
+        con.commit()
+        con.close()
+    return validos
+
+
+def _db_bootstrap_admin():
+    """Primeira execução com o banco de usuários vazio: cria um gestor
+    'admin' com senha aleatória (logada uma única vez) e semeia defaults de
+    permissão pra operador/viewer. Idempotente — só age se a tabela estiver
+    vazia. Retorna a senha gerada, ou None se já havia usuários."""
+    if _db_count_usuarios() > 0:
+        return None
+
+    senha = secrets.token_urlsafe(12)
+    _db_create_usuario("admin", _hash_password(senha), "gestor")
+    _db_set_permissoes("operador", _DEFAULT_OPERADOR_MODULOS)
+    _db_set_permissoes("viewer", _DEFAULT_VIEWER_MODULOS)
+
+    log.warning("=" * 64)
+    log.warning("  USUARIO ADMIN CRIADO (primeiro boot do banco de usuarios)")
+    log.warning("  login: admin   senha: %s", senha)
+    log.warning("  troque a senha em /erp/usuarios assim que possivel")
+    log.warning("=" * 64)
+    print(f"\n[BOOTSTRAP] usuario admin criado — senha: {senha}\n", flush=True)
+    return senha

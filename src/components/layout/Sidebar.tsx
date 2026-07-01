@@ -1,11 +1,11 @@
-import { useRef, useState, useEffect, type ComponentType, type CSSProperties } from 'react'
+import { useRef, useState, useEffect, useMemo, type ComponentType, type CSSProperties } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList,
   BarChart2, PieChart, MapPin,
   Zap, Monitor, LogOut, FileText, Map,
   Bell, ChevronRight,
-  TrendingUp, Award, CalendarDays, Shield, Siren, Medal, ListTodo,
+  TrendingUp, Award, CalendarDays, Shield, Siren, Medal, ListTodo, Users,
 } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
 import { useAuthStore } from '../../store/authStore'
@@ -13,6 +13,7 @@ import { useAuditStore } from '../../store/auditStore'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { api } from '../../lib/api'
 import { LogoIcon } from '../ui/LogoIcon'
+import { rotaParaModulo } from '../../lib/modulos'
 
 const ROLE_LABELS: Record<string, string> = {
   gestor:   'Gestor',
@@ -41,7 +42,7 @@ interface NavGroup {
   links: NavLinkDef[]
 }
 
-const groups: NavGroup[] = [
+const baseGroups: NavGroup[] = [
   {
     key: 'erp', label: 'ERP', color: '#c4b5fd',
     links: [
@@ -154,8 +155,32 @@ export function Sidebar() {
   const { sidebarOpen } = useUIStore()
   const setUnauthed = useAuthStore(s => s.setUnauthed)
   const role        = useAuthStore(s => s.role)
+  const modulos     = useAuthStore(s => s.modulos)
   const logAudit    = useAuditStore(s => s.log)
   const { isLoading, error, dataUpdatedAt } = useOSDerived()
+
+  // Gestor vê tudo. Operador/Viewer só os links cujo módulo está liberado
+  // (ver src/lib/modulos.ts) — grupos que ficam sem nenhum link visível somem.
+  // "Usuários" é acrescentado só pra gestor: não é um módulo togleável, é a
+  // própria tela de administração desses módulos.
+  const groups = useMemo<NavGroup[]>(() => {
+    const podeVer = (to: string) => {
+      if (role === 'gestor') return true
+      const modulo = rotaParaModulo(to)
+      return modulo ? modulos.includes(modulo) : false
+    }
+    const filtrados = baseGroups
+      .map(g => ({ ...g, links: g.links.filter(l => podeVer(l.to)) }))
+      .filter(g => g.links.length > 0)
+    if (role === 'gestor') {
+      return filtrados.map(g =>
+        g.key === 'erp'
+          ? { ...g, links: [...g.links, { to: '/erp/usuarios', label: 'Usuários', icon: Users }] }
+          : g
+      )
+    }
+    return filtrados
+  }, [role, modulos])
 
   // nowTs actualizado a cada minuto para que a badge de status reflicta o tempo real
   // Usamos useState com lazy initializer para não chamar Date.now() diretamente no render

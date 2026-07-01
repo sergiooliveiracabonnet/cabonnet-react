@@ -52,10 +52,18 @@ export const api = {
   delete: <T = unknown>(path: string)              => request<T>(path, { method: 'DELETE' }),
 
   auth: {
-    check:  ()                                     => request('/api/session'),
-    login:  (username: string, password: string)   => request('/api/login',  { method: 'POST', body: JSON.stringify({ username, password }) }),
+    check:  ()                                     => request<AuthResponse>('/api/session'),
+    login:  (username: string, password: string)   => request<AuthResponse>('/api/login',  { method: 'POST', body: JSON.stringify({ username, password }) }),
     logout: ()                                     => request('/api/logout'),
   },
+}
+
+export interface AuthResponse {
+  ok:        boolean
+  role?:     UserRole | null
+  username?: string | null
+  modulos?:  string[]
+  error?:    string
 }
 
 export const picoAlertas = {
@@ -92,6 +100,37 @@ export const tecnicos = {
   upsert: (body: { codigo: string; nome_real?: string; contato?: string; ativo?: boolean }) =>
     request<{ ok: boolean }>('/api/tecnicos', { method: 'POST', body: JSON.stringify(body) }),
   remove: (codigo: string) => request<{ ok: boolean }>(`/api/tecnicos/${encodeURIComponent(codigo)}`, { method: 'DELETE' }),
+}
+
+export type UserRole = 'gestor' | 'operador' | 'viewer'
+
+export interface UsuarioItem {
+  id:            number
+  username:      string
+  role:          UserRole
+  ativo:         boolean
+  criado_em:     string
+  atualizado_em: string
+}
+
+export const usuarios = {
+  list: () => request<{ ok: boolean; items: UsuarioItem[] }>('/api/usuarios'),
+  create: (body: { username: string; password: string; role: UserRole }) =>
+    request<{ ok: boolean; id: number }>('/api/usuarios', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: number, body: { role?: UserRole; ativo?: boolean }) =>
+    request<{ ok: boolean; item: UsuarioItem }>(`/api/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  resetPassword: (id: number, password: string) =>
+    request<{ ok: boolean }>(`/api/usuarios/${id}/senha`, { method: 'POST', body: JSON.stringify({ password }) }),
+  changeOwnPassword: (atual: string, nova: string) =>
+    request<{ ok: boolean }>('/api/usuarios/me/senha', { method: 'POST', body: JSON.stringify({ atual, nova }) }),
+}
+
+export interface ModuloDef { key: string; label: string }
+
+export const permissoes = {
+  get: () => request<{ ok: boolean; permissoes: Record<UserRole, string[]>; modulos: ModuloDef[] }>('/api/permissoes'),
+  set: (role: UserRole, modulos: string[]) =>
+    request<{ ok: boolean; modulos: string[] }>(`/api/permissoes/${role}`, { method: 'PUT', body: JSON.stringify({ modulos }) }),
 }
 
 export const endpoints = {

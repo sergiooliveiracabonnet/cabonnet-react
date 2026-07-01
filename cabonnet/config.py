@@ -101,39 +101,10 @@ _SLA_LIMITS = {
 _DB_PATH = os.path.join(_PROJECT_DIR, "cabonnet_data.db")
 
 # ── Autenticação do Dashboard ─────────────────────────────────────────────────
-LOGIN_USER       = _env("LOGIN_USER", "admin")
-LOGIN_PASS       = _env("LOGIN_PASS", "")           # vazio = sem autenticação (legado → role gestor)
+# Usuários e senhas vivem na tabela `usuarios` (cabonnet/db.py) — não há mais
+# credenciais fixas via .env. Ver cabonnet/auth.py (_authenticate) e o
+# bootstrap automático do primeiro usuário (db._db_bootstrap_admin).
 SESSION_DURATION = int(_env("SESSION_DURATION", "28800"))  # 8 horas em segundos
-
-# ── Roles de acesso (3 níveis via .env) ──────────────────────────────────────
-# Exemplo no .env:
-#   LOGIN_GESTOR_USER=admin      LOGIN_GESTOR_PASS=senha_forte
-#   LOGIN_OPERADOR_USER=oper     LOGIN_OPERADOR_PASS=senha_oper
-#   LOGIN_VIEWER_USER=viewer     LOGIN_VIEWER_PASS=senha_viewer
-LOGIN_GESTOR_USER   = _env("LOGIN_GESTOR_USER",   "")
-LOGIN_GESTOR_PASS   = _env("LOGIN_GESTOR_PASS",   "")
-LOGIN_OPERADOR_USER = _env("LOGIN_OPERADOR_USER",  "")
-LOGIN_OPERADOR_PASS = _env("LOGIN_OPERADOR_PASS",  "")
-LOGIN_VIEWER_USER   = _env("LOGIN_VIEWER_USER",    "")
-LOGIN_VIEWER_PASS   = _env("LOGIN_VIEWER_PASS",    "")
-
-
-def _resolve_role(user, pwd):
-    """Verifica credenciais e retorna 'gestor'|'operador'|'viewer'|None.
-    Compatibilidade com LOGIN_USER/PASS legados (mantidos como gestor)."""
-    if not user or not pwd:
-        return None
-    # Novos roles (prioridade)
-    if LOGIN_GESTOR_PASS and user == LOGIN_GESTOR_USER and pwd == LOGIN_GESTOR_PASS:
-        return "gestor"
-    if LOGIN_OPERADOR_PASS and user == LOGIN_OPERADOR_USER and pwd == LOGIN_OPERADOR_PASS:
-        return "operador"
-    if LOGIN_VIEWER_PASS and user == LOGIN_VIEWER_USER and pwd == LOGIN_VIEWER_PASS:
-        return "viewer"
-    # Legado: LOGIN_USER/PASS → gestor (backward-compat)
-    if LOGIN_PASS and user == LOGIN_USER and pwd == LOGIN_PASS:
-        return "gestor"
-    return None
 
 # ── Grafana de Monitoramento (PPPoE / Juniper) ────────────────────────────────
 MONITOR_CONFIG = {

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoginPage } from './features/auth/LoginPage'
+import { RequireModulo, RequireGestor } from './components/auth/RequireAcesso'
 import { useAuthStore } from './store/authStore'
 import { api } from './lib/api'
 import {
@@ -11,7 +12,7 @@ import {
   DashboardPage, OrdensPage,
   GraficosPage, CidadesGerencialPage,
   FornecedorPage, JuniperPage, NotFoundPage, NocPage, FechamentoPage,
-  MapaPage,
+  MapaPage, UsuariosPage,
 } from './pages/index'
 
 export default function App() {
@@ -23,8 +24,8 @@ export default function App() {
     // é 'authed' e a verificação acontece em background sem bloquear a UI.
     api.auth.check()
       .then((res) => {
-        const { ok, role } = res as { ok: boolean; role?: string }
-        ok ? setAuthed((role ?? 'viewer') as 'gestor' | 'operador' | 'viewer') : setUnauthed()
+        const { ok, role, modulos } = res
+        ok ? setAuthed((role ?? 'viewer') as 'gestor' | 'operador' | 'viewer', modulos ?? []) : setUnauthed()
       })
       .catch(() => {
         // Erro de rede: só desloga se ainda estava em 'checking'
@@ -56,31 +57,32 @@ export default function App() {
       <Route element={<AppLayout />}>
         {/* ── ERP ── */}
         <Route path="erp">
-          <Route path="relatorios"    element={<ERPRelatoriosPage />}   />
-          <Route path="alertas"       element={<ERPAlertasPage />}      />
-          <Route path="produtividade" element={<ERPProdutividadePage />}/>
-          <Route path="qualidade"      element={<ERPQualidadePage />}       />
-          <Route path="planner"       element={<ERPPlannerPage />}         />
-          <Route path="fila"         element={<ERPFilaPage />}        />
+          <Route path="relatorios"    element={<RequireModulo modulo="erp_relatorios">   <ERPRelatoriosPage />   </RequireModulo>} />
+          <Route path="alertas"       element={<RequireModulo modulo="erp_alertas">      <ERPAlertasPage />      </RequireModulo>} />
+          <Route path="produtividade" element={<RequireModulo modulo="erp_produtividade"><ERPProdutividadePage /></RequireModulo>} />
+          <Route path="qualidade"     element={<RequireModulo modulo="erp_qualidade">    <ERPQualidadePage />    </RequireModulo>} />
+          <Route path="planner"       element={<RequireModulo modulo="erp_planner">      <ERPPlannerPage />      </RequireModulo>} />
+          <Route path="fila"          element={<RequireModulo modulo="erp_fila">         <ERPFilaPage />         </RequireModulo>} />
           {/* /erp/vt virou a fila unica em /erp/fila */}
-          <Route path="vt"           element={<Navigate to="/erp/fila" replace />} />
-          <Route path="ranking"      element={<ERPRankingTecnicosPage />} />
-          <Route path="acao"         element={<ERPCentralAcaoPage />} />
+          <Route path="vt"            element={<Navigate to="/erp/fila" replace />} />
+          <Route path="ranking"       element={<RequireModulo modulo="erp_ranking">      <ERPRankingTecnicosPage /></RequireModulo>} />
+          <Route path="acao"          element={<RequireModulo modulo="erp_acao">         <ERPCentralAcaoPage />  </RequireModulo>} />
+          <Route path="usuarios"      element={<RequireGestor>                           <UsuariosPage />        </RequireGestor>} />
         </Route>
 
-        <Route index             element={<DashboardPage />}  />
-        <Route path="ordens"     element={<OrdensPage />}     />
-        <Route path="graficos"   element={<GraficosPage />}   />
-        <Route path="cidades"    element={<CidadesGerencialPage />} />
-        <Route path="fornecedor" element={<FornecedorPage />} />
-        <Route path="juniper"    element={<JuniperPage />}    />
-        <Route path="fechamento" element={<FechamentoPage />} />
-        <Route path="mapa"       element={<MapaPage />}     />
+        <Route index             element={<RequireModulo modulo="dashboard"> <DashboardPage />          </RequireModulo>} />
+        <Route path="ordens"     element={<RequireModulo modulo="ordens">    <OrdensPage />              </RequireModulo>} />
+        <Route path="graficos"   element={<RequireModulo modulo="graficos">  <GraficosPage />            </RequireModulo>} />
+        <Route path="cidades"    element={<RequireModulo modulo="cidades">   <CidadesGerencialPage />    </RequireModulo>} />
+        <Route path="fornecedor" element={<RequireModulo modulo="fornecedor"><FornecedorPage />          </RequireModulo>} />
+        <Route path="juniper"    element={<RequireModulo modulo="juniper">   <JuniperPage />              </RequireModulo>} />
+        <Route path="fechamento" element={<RequireModulo modulo="fechamento"><FechamentoPage />          </RequireModulo>} />
+        <Route path="mapa"       element={<RequireModulo modulo="mapa">      <MapaPage />                </RequireModulo>} />
         {/* /gerencial virou a aba "Por Categoria" dentro de /cidades */}
         <Route path="gerencial" element={<Navigate to="/cidades" replace />} />
         <Route path="*"          element={<NotFoundPage />}   />
       </Route>
-      <Route path="noc" element={<NocPage />} />
+      <Route path="noc" element={<RequireModulo modulo="noc"><NocPage /></RequireModulo>} />
     </Routes>
   )
 }
