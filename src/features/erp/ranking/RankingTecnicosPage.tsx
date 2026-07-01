@@ -39,6 +39,11 @@ function revisitaColor(taxa: number | null): string {
   return '#f87171'
 }
 
+function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: 'asc' | 'desc' }) {
+  if (sortKey !== col) return <ArrowUpDown size={11} className="text-muted/40" />
+  return sortDir === 'desc' ? <ArrowDown size={11} className="text-primary" /> : <ArrowUp size={11} className="text-primary" />
+}
+
 // Código de frente (ex: F04) → nome real do técnico. Cadastro leve, opcional —
 // sem ele, a coluna cai de volta pro código curto de sempre.
 function TecnicoCell({ codigo, cadastro }: { codigo: string; cadastro: TecnicoItem | undefined }) {
@@ -124,11 +129,6 @@ export default function RankingTecnicosPage() {
     setSortKey(key); setSortDir('desc')
   }
 
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <ArrowUpDown size={11} className="text-muted/40" />
-    return sortDir === 'desc' ? <ArrowDown size={11} className="text-primary" /> : <ArrowUp size={11} className="text-primary" />
-  }
-
   const kpis = useMemo(() => {
     const comSla = ranking.filter(r => r.sla != null)
     const slaMedio = comSla.length ? Math.round(comSla.reduce((s, r) => s + (r.sla ?? 0), 0) / comSla.length) : null
@@ -172,19 +172,19 @@ export default function RankingTecnicosPage() {
                 <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Técnico</th>
                 <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('volume')}>
-                  <span className="inline-flex items-center gap-1">Volume concluído <SortIcon col="volume" /></span>
+                  <span className="inline-flex items-center gap-1">Volume concluído <SortIcon col="volume" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
                 <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('sla')}>
-                  <span className="inline-flex items-center gap-1">SLA <SortIcon col="sla" /></span>
+                  <span className="inline-flex items-center gap-1">SLA <SortIcon col="sla" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
                 <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('criticas')}>
-                  <span className="inline-flex items-center gap-1">Críticas <SortIcon col="criticas" /></span>
+                  <span className="inline-flex items-center gap-1">Críticas <SortIcon col="criticas" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
                 <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('taxaRevisita')}>
-                  <span className="inline-flex items-center gap-1">Retrabalho <SortIcon col="taxaRevisita" /></span>
+                  <span className="inline-flex items-center gap-1">Retrabalho <SortIcon col="taxaRevisita" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
               </tr>
             </thead>
