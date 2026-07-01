@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, MapPin, Users, RefreshCw, Wrench, Home, Star, Search, Sparkles } from 'lucide-react'
+import { AlertTriangle, MapPin, Users, RefreshCw, Wrench, Home, Star, Search, Sparkles, ClipboardCheck } from 'lucide-react'
 import { useBacklog, type BacklogRow } from '../../../hooks/useBacklog'
 import { AreaChart, Area, XAxis, YAxis, Grid, ChartTooltip, Legend } from '../../../components/ui/line-chart'
 import { BarChart, Bar, XAxis as BXAxis, YAxis as BYAxis, Grid as BGrid, ChartTooltip as BTip } from '../../../components/ui/bar-chart'
@@ -9,6 +9,7 @@ import {
   taxaColor,
 } from './QualidadeComponents'
 import { CausaRaizSection } from './CausaRaizSection'
+import { RevisitaMotivosSection } from './RevisitaMotivosSection'
 
 // ─── Datas (hora local, sem desvio UTC) ───────────────────────────────────────
 
@@ -559,13 +560,25 @@ export default function QualidadePage() {
           </div>
           {showDrill && <DrillTable rows={revisitasFiltradas} />}
 
-          {/* ── Causa Raiz por IA ──────────────────────────────────── */}
+          {/* ── Causa Raiz registrada pelo time (real, via Telegram) ─── */}
+          <section className="space-y-2 pt-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-[3px] h-4 rounded-full bg-teal-400 flex-shrink-0" />
+              <ClipboardCheck size={12} className="text-teal-400 flex-shrink-0" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-teal-400">
+                Causa Raiz Registrada pelo Time
+              </span>
+            </div>
+            <RevisitaMotivosSection />
+          </section>
+
+          {/* ── Causa Raiz por IA (inferida das observações) ─────────── */}
           <section className="space-y-2 pt-2">
             <div className="flex items-center gap-2.5">
               <div className="w-[3px] h-4 rounded-full bg-violet-500 flex-shrink-0" />
               <Sparkles size={12} className="text-violet-400 flex-shrink-0" />
               <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-violet-400">
-                Causa Raiz de Revisitas (IA)
+                Causa Raiz de Revisitas (IA, inferida das observações)
               </span>
             </div>
             <CausaRaizSection inicio={inicio} fim={fim} />

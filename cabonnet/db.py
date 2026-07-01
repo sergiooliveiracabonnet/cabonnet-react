@@ -235,3 +235,59 @@ def _db_save_status_changes(changes):
             con.close()
     except Exception as ex:
         log_db.warning("Falha ao salvar status_history: %s", ex)
+
+
+_MOTIVO_LABEL = {
+    "Material": "Material / Equipamento",
+    "Técnico":  "Execução / Técnico",
+    "Cliente":  "Cliente",
+    "Outro":    "Outro",
+}
+
+
+def _db_list_revisita_motivos(dias=90):
+    """Causa raiz REAL de revisitas — classificação feita manualmente pelo operador
+    no Telegram (botão 'Qual o motivo da revisita?') no momento em que o sistema
+    detecta o retorno, salva em status_history.revisita_motivo. Não é estimativa:
+    é o dado que o time realmente registrou, um por um.
+    """
+    ts_min = int(datetime.now().timestamp()) - dias * 86400
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            rows = con.execute(
+                """SELECT numos, revisita_motivo, MAX(ts) as ts, nomedaequipe, nomedacidade
+                   FROM status_history
+                   WHERE revisita_motivo IS NOT NULL AND ts >= ?
+                   GROUP BY numos
+                   ORDER BY ts DESC""",
+                (ts_min,)
+            ).fetchall()
+            con.close()
+    except Exception as ex:
+        log_db.warning("Falha ao listar revisita_motivos: %s", ex)
+        return {"total": 0, "distribuicao": [], "itens": []}
+
+    itens = [
+        {
+            "numos": r[0], "motivo": r[1], "ts": r[2],
+            "nomedaequipe": r[3] or "", "nomedacidade": r[4] or "",
+        }
+        for r in rows
+    ]
+    total = len(itens)
+    contagem = {}
+    for it in itens:
+        contagem[it["motivo"]] = contagem.get(it["motivo"], 0) + 1
+    distribuicao = sorted(
+        (
+            {
+                "motivo": _MOTIVO_LABEL.get(m, m),
+                "count":  c,
+                "pct":    round(c / total * 100) if total else 0,
+            }
+            for m, c in contagem.items()
+        ),
+        key=lambda d: d["count"], reverse=True,
+    )
+    return {"total": total, "distribuicao": distribuicao, "itens": itens}

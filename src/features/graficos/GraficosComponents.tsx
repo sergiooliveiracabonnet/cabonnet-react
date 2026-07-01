@@ -213,87 +213,68 @@ type EvolAny = { labels?: string[]; [k: string]: unknown }
 export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown; totalAtivo: number; fila: number }) {
   const ev = evolucao as EvolAny | undefined
   const [aiEnabled, setAiEnabled] = useState(false)
-  const { data, isFetching, isError } = useAIForecast({
+  const { forecast, narrativa, cached, isFetching, isError } = useAIForecast({
     evolucao: ev as unknown as import('../../lib/types').EvolucaoData ?? { labels: [], abertas: [], concluidas: [] },
     totalAtivo, fila, enabled: aiEnabled,
   })
-  const tend = data?.tendencia ? (TEND_STYLE[data.tendencia] ?? TEND_STYLE['estável']) : null
+  const tend = forecast ? (TEND_STYLE[forecast.tendencia] ?? TEND_STYLE['estável']) : null
 
-  if ((ev?.labels?.length ?? 0) < 7) return null
-
-  if (!aiEnabled) {
-    return (
-      <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles size={12} className="text-primary/40" />
-          <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Previsão de Demanda · IA</span>
-        </div>
-        <button
-          onClick={() => setAiEnabled(true)}
-          className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
-                     px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
-                     transition-all duration-fast"
-        >
-          <Sparkles size={11} /> Analisar com IA
-        </button>
-      </div>
-    )
-  }
+  if ((ev?.labels?.length ?? 0) < 7 || !forecast) return null
 
   return (
     <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-5 space-y-4">
       <div className="flex items-center gap-2">
         <Sparkles size={14} className="text-primary" />
         <span className="text-[13px] font-bold text-text">Previsão de Demanda — próximos 7 dias</span>
+        <span className="text-[9px] text-muted/60 ml-1">regressão linear + sazonalidade · R²={forecast.r2}</span>
         {isFetching && <span className="text-[10px] text-muted animate-pulse ml-auto">Analisando…</span>}
-        {data?.cached && <span className="text-[10px] text-muted/50 ml-auto">cache</span>}
+        {cached && !isFetching && <span className="text-[10px] text-muted/50 ml-auto">cache</span>}
       </div>
 
-      {isError && (
-        <p className="text-[11px] text-muted">Forecast indisponível — verifique ANTHROPIC_API_KEY no servidor.</p>
+      <div className="flex items-start gap-3">
+        {tend && <tend.Icon size={16} className={`${tend.cls} flex-shrink-0 mt-0.5`} />}
+        <div className="flex-1">
+          <span className={`text-[11px] font-bold uppercase tracking-wider ${tend?.cls ?? 'text-muted'}`}>
+            {forecast.tendencia}
+          </span>
+          {narrativa ? (
+            <p className="text-[11px] text-secondary mt-0.5 leading-relaxed">{narrativa}</p>
+          ) : !aiEnabled ? (
+            <button
+              onClick={() => setAiEnabled(true)}
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary mt-1"
+            >
+              <Sparkles size={11} /> Explicar com IA
+            </button>
+          ) : isError ? (
+            <p className="text-[11px] text-muted mt-0.5">Explicação indisponível — verifique ANTHROPIC_API_KEY no servidor.</p>
+          ) : null}
+        </div>
+      </div>
+
+      {forecast.pico_previsto && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange/[0.07] border border-orange/20">
+          <TrendingUp size={12} className="text-orange flex-shrink-0" />
+          <span className="text-[11px] text-secondary">
+            Pico previsto: <span className="font-bold text-text">{forecast.pico_previsto.data}</span>
+            {' '}— <span className="font-bold text-orange">{forecast.pico_previsto.volume} OS</span>
+          </span>
+        </div>
       )}
 
-      {data && (
-        <>
-          <div className="flex items-start gap-3">
-            {tend && <tend.Icon size={16} className={`${tend.cls} flex-shrink-0 mt-0.5`} />}
-            <div>
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${tend?.cls ?? 'text-muted'}`}>
-                {data.tendencia}
-              </span>
-              <p className="text-[11px] text-secondary mt-0.5 leading-relaxed">{data.narrativa}</p>
+      <div className="grid grid-cols-7 gap-1.5">
+        {forecast.previsao.map((d, i) => (
+          <div key={i} className="flex flex-col items-center gap-1">
+            <span className="text-[9px] text-muted font-semibold">{d.data}</span>
+            <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-surface border border-white/[0.08]">
+              <span className="text-[13px] font-bold text-text">{d.volume}</span>
             </div>
+            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${CONF_STYLE[d.confianca] ?? CONF_STYLE['media']}`}>
+              {d.confianca}
+            </span>
           </div>
-
-          {data.pico_previsto && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange/[0.07] border border-orange/20">
-              <TrendingUp size={12} className="text-orange flex-shrink-0" />
-              <span className="text-[11px] text-secondary">
-                Pico previsto: <span className="font-bold text-text">{data.pico_previsto.data}</span>
-                {' '}— <span className="font-bold text-orange">{data.pico_previsto.volume} OS</span>
-              </span>
-            </div>
-          )}
-
-          <div className="grid grid-cols-7 gap-1.5">
-            {data.previsao.map((d, i) => (
-              <div key={i} className="flex flex-col items-center gap-1">
-                <span className="text-[9px] text-muted font-semibold">{d.data}</span>
-                <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-surface border border-white/[0.08]">
-                  <span className="text-[13px] font-bold text-text">{d.volume}</span>
-                </div>
-                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${CONF_STYLE[d.confianca] ?? CONF_STYLE['media']}`}>
-                  {d.confianca}
-                </span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {!data && !isFetching && !isError && (
-        <p className="text-[11px] text-muted/60">Aguardando dados históricos suficientes…</p>
-      )}
+        ))}
+      </div>
     </div>
   )
 }

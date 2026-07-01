@@ -70,6 +70,13 @@ export const justificativas = {
   delete: (id: number)    => request<{ ok: boolean }>(`/api/justificativas/${id}`, { method: 'DELETE' }),
 }
 
+export interface RevisitaMotivoItem { numos: string; motivo: string; ts: number; nomedaequipe: string; nomedacidade: string }
+export interface RevisitaMotivoDist { motivo: string; count: number; pct: number }
+
+export const revisitaMotivos = {
+  get: (dias = 90) => request<{ ok: boolean; total: number; distribuicao: RevisitaMotivoDist[]; itens: RevisitaMotivoItem[] }>(`/api/revisita-motivos?dias=${dias}`),
+}
+
 export const endpoints = {
   query:            '/query',
   revisitas:        '/revisitas',

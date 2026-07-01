@@ -878,6 +878,12 @@ async def ai_revisitas_causa(request: Request):
     return {"ok": True, **result}
 
 
+@router.get("/api/revisita-motivos")
+async def get_revisita_motivos(dias: int = 90, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_list_revisita_motivos
+    return {"ok": True, **_db_list_revisita_motivos(dias)}
+
+
 @router.get("/api/justificativas")
 async def list_justificativas(limit: int = 100, _role: str = Depends(_require_auth)):
     from cabonnet.db import _db_list_justificativas
