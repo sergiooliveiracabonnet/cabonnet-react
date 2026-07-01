@@ -51,7 +51,6 @@ const groups: NavGroup[] = [
       { to: '/erp/produtividade', label: 'Produtividade',  icon: TrendingUp  },
       { to: '/erp/ranking',       label: 'Ranking Técnicos', icon: Medal     },
       { to: '/erp/qualidade',      label: 'Qualidade',      icon: Award       },
-      { to: '/erp/justificativa',  label: 'Justificativa',  icon: FileText    },
       { to: '/erp/planner',        label: 'Planner',        icon: CalendarDays},
       { to: '/erp/fila',           label: 'Fila de Prioridade', icon: Siren  },
     ],

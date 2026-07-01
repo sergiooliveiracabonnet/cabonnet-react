@@ -7,7 +7,7 @@ import { api } from './lib/api'
 import {
   ERPRelatoriosPage,
   ERPAlertasPage,
-  ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage, ERPFilaPage, ERPRankingTecnicosPage, ERPCentralAcaoPage, ERPJustificativaPage,
+  ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage, ERPFilaPage, ERPRankingTecnicosPage, ERPCentralAcaoPage,
   DashboardPage, OrdensPage,
   GraficosPage, CidadesGerencialPage,
   FornecedorPage, JuniperPage, NotFoundPage, NocPage, FechamentoPage,
@@ -60,7 +60,6 @@ export default function App() {
           <Route path="alertas"       element={<ERPAlertasPage />}      />
           <Route path="produtividade" element={<ERPProdutividadePage />}/>
           <Route path="qualidade"      element={<ERPQualidadePage />}       />
-          <Route path="justificativa" element={<ERPJustificativaPage />}  />
           <Route path="planner"       element={<ERPPlannerPage />}         />
           <Route path="fila"         element={<ERPFilaPage />}        />
           {/* /erp/vt virou a fila unica em /erp/fila */}
