@@ -593,7 +593,7 @@ def _resumo_scheduler_loop():
             enviados.add(chave_pppoe)
             threading.Thread(target=_build_pppoe_resumo_diario, daemon=True).start()
 
-        if agora.hour != 8 and agora.minute < 2 and 7 <= agora.hour <= 20 and chave_h not in enviados:
+        if agora.hour != 8 and agora.minute < 2 and 7 <= agora.hour <= 23 and chave_h not in enviados:
             enviados.add(chave_h)
             def _enviar_executadas(hora=agora.hour):
                 try:
