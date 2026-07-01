@@ -6,7 +6,7 @@ cabonnet/db.py — SQLite: persistência de cache e histórico de status.
 import sqlite3
 import logging
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from cabonnet.config import _DB_PATH
 from cabonnet import state
@@ -67,6 +67,31 @@ def _db_init():
                 zscore    REAL    NOT NULL,
                 status    TEXT    NOT NULL DEFAULT 'pending',
                 criado_em TEXT    NOT NULL
+            )
+        """)
+        # Motivo de encerramento classificado manualmente na Ordens/OSDrawer — cobre
+        # qualquer OS concluída, não só as que o bot do Telegram detectou como revisita.
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS motivo_encerramento (
+                numos       TEXT PRIMARY KEY,
+                motivo      TEXT    NOT NULL,
+                observacao  TEXT    DEFAULT '',
+                nomedaequipe TEXT   DEFAULT '',
+                nomedacidade TEXT   DEFAULT '',
+                criado_em   TEXT    NOT NULL
+            )
+        """)
+        # Cadastro leve de técnicos — "equipe" no CSV é na prática 1 código de
+        # frente = 1 técnico (ex: F04). Isto só adiciona metadado humano (nome
+        # real, contato) sobre o código já usado em toda parte; não substitui
+        # nomedaequipe como chave, só o torna legível.
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS tecnicos (
+                codigo      TEXT PRIMARY KEY,
+                nome_real   TEXT    DEFAULT '',
+                contato     TEXT    DEFAULT '',
+                ativo       INTEGER NOT NULL DEFAULT 1,
+                atualizado_em TEXT  NOT NULL
             )
         """)
         con.commit()
@@ -246,35 +271,49 @@ _MOTIVO_LABEL = {
 
 
 def _db_list_revisita_motivos(dias=90):
-    """Causa raiz REAL de revisitas — classificação feita manualmente pelo operador
-    no Telegram (botão 'Qual o motivo da revisita?') no momento em que o sistema
-    detecta o retorno, salva em status_history.revisita_motivo. Não é estimativa:
-    é o dado que o time realmente registrou, um por um.
+    """Causa raiz REAL de revisitas/encerramentos — nunca estimada. Duas fontes:
+    1. status_history.revisita_motivo — Telegram detecta o retorno do cliente e
+       pergunta o motivo automaticamente (bot.py).
+    2. motivo_encerramento — classificação manual feita no OSDrawer para qualquer
+       OS concluída, cobrindo encerramentos que o bot não capturou.
+    Quando as duas existem para a mesma OS, a manual prevalece (mais deliberada).
     """
     ts_min = int(datetime.now().timestamp()) - dias * 86400
+    criado_min = (datetime.now() - timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S")
     try:
         with state._db_lock:
             con = sqlite3.connect(_DB_PATH)
-            rows = con.execute(
+            tg_rows = con.execute(
                 """SELECT numos, revisita_motivo, MAX(ts) as ts, nomedaequipe, nomedacidade
                    FROM status_history
                    WHERE revisita_motivo IS NOT NULL AND ts >= ?
-                   GROUP BY numos
-                   ORDER BY ts DESC""",
+                   GROUP BY numos""",
                 (ts_min,)
+            ).fetchall()
+            manual_rows = con.execute(
+                """SELECT numos, motivo, criado_em, nomedaequipe, nomedacidade
+                   FROM motivo_encerramento
+                   WHERE criado_em >= ?""",
+                (criado_min,)
             ).fetchall()
             con.close()
     except Exception as ex:
         log_db.warning("Falha ao listar revisita_motivos: %s", ex)
         return {"total": 0, "distribuicao": [], "itens": []}
 
-    itens = [
-        {
+    por_numos = {}
+    for r in tg_rows:
+        por_numos[r[0]] = {
             "numos": r[0], "motivo": r[1], "ts": r[2],
-            "nomedaequipe": r[3] or "", "nomedacidade": r[4] or "",
+            "nomedaequipe": r[3] or "", "nomedacidade": r[4] or "", "origem": "telegram",
         }
-        for r in rows
-    ]
+    for r in manual_rows:
+        por_numos[r[0]] = {
+            "numos": r[0], "motivo": r[1], "ts": r[2],
+            "nomedaequipe": r[3] or "", "nomedacidade": r[4] or "", "origem": "manual",
+        }
+
+    itens = sorted(por_numos.values(), key=lambda i: i["ts"] or "", reverse=True)
     total = len(itens)
     contagem = {}
     for it in itens:
@@ -291,3 +330,99 @@ def _db_list_revisita_motivos(dias=90):
         key=lambda d: d["count"], reverse=True,
     )
     return {"total": total, "distribuicao": distribuicao, "itens": itens}
+
+
+def _db_save_motivo_encerramento(numos, motivo, observacao="", nomedaequipe="", nomedacidade=""):
+    """Classificação manual de motivo de encerramento (OSDrawer). INSERT OR REPLACE
+    — reclassificar a mesma OS substitui o registro anterior."""
+    criado_em = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            con.execute(
+                """INSERT OR REPLACE INTO motivo_encerramento
+                   (numos, motivo, observacao, nomedaequipe, nomedacidade, criado_em)
+                   VALUES (?,?,?,?,?,?)""",
+                (numos, motivo, observacao, nomedaequipe, nomedacidade, criado_em)
+            )
+            con.commit()
+            con.close()
+        return True
+    except Exception as ex:
+        log_db.warning("Falha ao salvar motivo_encerramento: %s", ex)
+        return False
+
+
+def _db_get_motivo_encerramento(numos):
+    """Retorna a classificação manual salva para uma OS, se existir."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            row = con.execute(
+                "SELECT motivo, observacao, criado_em FROM motivo_encerramento WHERE numos=?",
+                (numos,)
+            ).fetchone()
+            con.close()
+        if not row:
+            return None
+        return {"motivo": row[0], "observacao": row[1], "criado_em": row[2]}
+    except Exception as ex:
+        log_db.warning("Falha ao buscar motivo_encerramento %s: %s", numos, ex)
+        return None
+
+
+def _db_list_tecnicos():
+    """Lista o cadastro de técnicos (código de frente → nome real/contato)."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            rows = con.execute(
+                "SELECT codigo, nome_real, contato, ativo, atualizado_em FROM tecnicos ORDER BY codigo"
+            ).fetchall()
+            con.close()
+        return [
+            {"codigo": r[0], "nome_real": r[1], "contato": r[2], "ativo": bool(r[3]), "atualizado_em": r[4]}
+            for r in rows
+        ]
+    except Exception as ex:
+        log_db.warning("Falha ao listar tecnicos: %s", ex)
+        return []
+
+
+def _db_upsert_tecnico(codigo, nome_real="", contato="", ativo=True):
+    """Cria ou atualiza o cadastro de um técnico pelo código de frente."""
+    atualizado_em = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            con.execute(
+                """INSERT INTO tecnicos (codigo, nome_real, contato, ativo, atualizado_em)
+                   VALUES (?,?,?,?,?)
+                   ON CONFLICT(codigo) DO UPDATE SET
+                     nome_real=excluded.nome_real,
+                     contato=excluded.contato,
+                     ativo=excluded.ativo,
+                     atualizado_em=excluded.atualizado_em""",
+                (codigo, nome_real, contato, 1 if ativo else 0, atualizado_em)
+            )
+            con.commit()
+            con.close()
+        return True
+    except Exception as ex:
+        log_db.warning("Falha ao salvar tecnico %s: %s", codigo, ex)
+        return False
+
+
+def _db_delete_tecnico(codigo):
+    """Remove o cadastro de um técnico (não afeta o histórico de OS, só o metadado)."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            cur = con.execute("DELETE FROM tecnicos WHERE codigo=?", (codigo,))
+            affected = cur.rowcount
+            con.commit()
+            con.close()
+        return affected > 0
+    except Exception as ex:
+        log_db.warning("Falha ao deletar tecnico %s: %s", codigo, ex)
+        return False

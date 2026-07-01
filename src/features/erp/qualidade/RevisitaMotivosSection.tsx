@@ -33,7 +33,7 @@ export function RevisitaMotivosSection() {
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-[11px] text-muted">
-          Motivo registrado pelo operador no Telegram no momento da revisita — não é estimativa.
+          Motivo registrado pelo time — pelo Telegram na revisita ou classificado direto na OS. Não é estimativa.
         </p>
         <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-[11px]">
           {PERIODOS.map(p => (

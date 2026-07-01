@@ -884,6 +884,65 @@ async def get_revisita_motivos(dias: int = 90, _role: str = Depends(_require_aut
     return {"ok": True, **_db_list_revisita_motivos(dias)}
 
 
+@router.get("/api/motivo-encerramento")
+async def get_motivo_encerramento(numos: str, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_get_motivo_encerramento
+    return {"ok": True, "item": _db_get_motivo_encerramento(numos)}
+
+
+@router.post("/api/motivo-encerramento")
+async def save_motivo_encerramento(request: Request, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_save_motivo_encerramento
+    body = await request.json()
+    numos = str(body.get("numos", "")).strip()
+    motivo = str(body.get("motivo", "")).strip()
+    if not numos or not motivo:
+        raise HTTPException(400, "numos e motivo são obrigatórios")
+    ok = _db_save_motivo_encerramento(
+        numos=numos,
+        motivo=motivo,
+        observacao=body.get("observacao", ""),
+        nomedaequipe=body.get("nomedaequipe", ""),
+        nomedacidade=body.get("nomedacidade", ""),
+    )
+    if not ok:
+        raise HTTPException(500, "Falha ao salvar classificação")
+    return {"ok": True}
+
+
+@router.get("/api/tecnicos")
+async def list_tecnicos(_role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_list_tecnicos
+    return {"ok": True, "items": _db_list_tecnicos()}
+
+
+@router.post("/api/tecnicos")
+async def upsert_tecnico(request: Request, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_upsert_tecnico
+    body = await request.json()
+    codigo = str(body.get("codigo", "")).strip()
+    if not codigo:
+        raise HTTPException(400, "codigo é obrigatório")
+    ok = _db_upsert_tecnico(
+        codigo=codigo,
+        nome_real=body.get("nome_real", ""),
+        contato=body.get("contato", ""),
+        ativo=body.get("ativo", True),
+    )
+    if not ok:
+        raise HTTPException(500, "Falha ao salvar técnico")
+    return {"ok": True}
+
+
+@router.delete("/api/tecnicos/{codigo}")
+async def delete_tecnico(codigo: str, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_delete_tecnico
+    ok = _db_delete_tecnico(codigo)
+    if not ok:
+        raise HTTPException(404, "Técnico não encontrado")
+    return {"ok": True}
+
+
 @router.get("/api/justificativas")
 async def list_justificativas(limit: int = 100, _role: str = Depends(_require_auth)):
     from cabonnet.db import _db_list_justificativas

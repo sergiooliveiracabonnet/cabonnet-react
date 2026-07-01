@@ -9,12 +9,20 @@ import { exportCSV } from '../../lib/export'
 import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import { Modal } from '../../components/ui/Modal'
 import OSDrawer from '../ordens/OSDrawer'
+import { PulsoHero } from './PulsoHero'
+import { AnomaliaSection } from './AnomaliaSection'
+import { SectionLabel, BentoKPICard } from './DashboardKpiPrimitives'
+import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
-  SectionLabel, PulsoHero, BentoKPICard, ExecutadasHeroBlock, MetaMesCard, AlertaTopoBanner,
-  ClustersBairroPanel, AgingPanel, RitmoEquipesPanel, CidadesPanel, FornecedorCard, AnomaliaSection, KpiModalTable,
-  MudancasStrip, ProjecaoRiscoPanel, KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS, FOCO_NAVEGAVEL,
+  MetaMesCard, AlertaTopoBanner, ClustersBairroPanel, AgingPanel,
+  RitmoEquipesPanel, CidadesPanel, MudancasStrip, ProjecaoRiscoPanel,
+} from './DashboardPaineis'
+import { FornecedorCard } from './DashboardFornecedorCard'
+import { KpiModalTable } from './DashboardKpiModal'
+import {
+  KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS, FOCO_NAVEGAVEL,
   type ModalState, type TypedDashboard, type CampoProjecaoReal,
-} from './DashboardComponents'
+} from './DashboardTypes'
 
 export default function DashboardPage() {
   const { derived: { dashboard, anomalias, campo }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()

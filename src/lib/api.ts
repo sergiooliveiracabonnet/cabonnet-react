@@ -70,11 +70,28 @@ export const justificativas = {
   delete: (id: number)    => request<{ ok: boolean }>(`/api/justificativas/${id}`, { method: 'DELETE' }),
 }
 
-export interface RevisitaMotivoItem { numos: string; motivo: string; ts: number; nomedaequipe: string; nomedacidade: string }
+export interface RevisitaMotivoItem { numos: string; motivo: string; ts: number; nomedaequipe: string; nomedacidade: string; origem: 'telegram' | 'manual' }
 export interface RevisitaMotivoDist { motivo: string; count: number; pct: number }
 
 export const revisitaMotivos = {
   get: (dias = 90) => request<{ ok: boolean; total: number; distribuicao: RevisitaMotivoDist[]; itens: RevisitaMotivoItem[] }>(`/api/revisita-motivos?dias=${dias}`),
+}
+
+export interface MotivoEncerramentoItem { motivo: string; observacao: string; criado_em: string }
+
+export const motivoEncerramento = {
+  get:  (numos: string) => request<{ ok: boolean; item: MotivoEncerramentoItem | null }>(`/api/motivo-encerramento?numos=${encodeURIComponent(numos)}`),
+  save: (body: { numos: string; motivo: string; observacao?: string; nomedaequipe?: string; nomedacidade?: string }) =>
+    request<{ ok: boolean }>('/api/motivo-encerramento', { method: 'POST', body: JSON.stringify(body) }),
+}
+
+export interface TecnicoItem { codigo: string; nome_real: string; contato: string; ativo: boolean; atualizado_em: string }
+
+export const tecnicos = {
+  list:   () => request<{ ok: boolean; items: TecnicoItem[] }>('/api/tecnicos'),
+  upsert: (body: { codigo: string; nome_real?: string; contato?: string; ativo?: boolean }) =>
+    request<{ ok: boolean }>('/api/tecnicos', { method: 'POST', body: JSON.stringify(body) }),
+  remove: (codigo: string) => request<{ ok: boolean }>(`/api/tecnicos/${encodeURIComponent(codigo)}`, { method: 'DELETE' }),
 }
 
 export const endpoints = {

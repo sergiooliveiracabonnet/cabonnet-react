@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Award, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Award, ArrowUpDown, ArrowUp, ArrowDown, Pencil, Check, X } from 'lucide-react'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 import { isCOPE, isReagend, isExecucaoReal } from '../../../lib/transform'
 import { shortEquipe } from '../../../lib/osFormat'
 import { Badge } from '../../../components/ui/Badge'
 import { KPICard } from '../../../components/ui/KPICard'
+import { useTecnicos, useTecnicosActions } from '../../../hooks/useTecnicos'
+import type { TecnicoItem } from '../../../lib/api'
 
 // "Equipe" neste sistema é, na prática, 1 técnico (código de frente, ex: F04) —
 // não uma equipe multi-pessoa. Essa granularidade já existia espalhada em 3
@@ -37,8 +39,49 @@ function revisitaColor(taxa: number | null): string {
   return '#f87171'
 }
 
+// Código de frente (ex: F04) → nome real do técnico. Cadastro leve, opcional —
+// sem ele, a coluna cai de volta pro código curto de sempre.
+function TecnicoCell({ codigo, cadastro }: { codigo: string; cadastro: TecnicoItem | undefined }) {
+  const { upsert } = useTecnicosActions()
+  const [editing, setEditing] = useState(false)
+  const [nome, setNome] = useState(cadastro?.nome_real ?? '')
+  const [contato, setContato] = useState(cadastro?.contato ?? '')
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <input
+          autoFocus value={nome} onChange={e => setNome(e.target.value)}
+          placeholder="Nome real"
+          className="w-28 text-[11px] bg-surface/40 border border-white/[0.08] rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
+        />
+        <input
+          value={contato} onChange={e => setContato(e.target.value)}
+          placeholder="Contato"
+          className="w-24 text-[11px] bg-surface/40 border border-white/[0.08] rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
+        />
+        <button onClick={() => { upsert({ codigo, nome_real: nome, contato }); setEditing(false) }}
+                className="text-green hover:text-green/80"><Check size={13} /></button>
+        <button onClick={() => setEditing(false)} className="text-muted hover:text-text"><X size={13} /></button>
+      </div>
+    )
+  }
+
+  return (
+    <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 group text-left">
+      <div>
+        <p className="font-semibold text-text">{cadastro?.nome_real || shortEquipe(codigo)}</p>
+        {cadastro?.nome_real && <p className="text-[10px] text-muted font-mono">{shortEquipe(codigo)}</p>}
+      </div>
+      <Pencil size={10} className="text-muted/0 group-hover:text-muted/60 transition-colors flex-shrink-0" />
+    </button>
+  )
+}
+
 export default function RankingTecnicosPage() {
   const { rows, isLoading, derived } = useOSDerived()
+  const { data: cadastro = [] } = useTecnicos()
+  const cadastroMap = useMemo(() => new Map(cadastro.map(t => [t.codigo, t])), [cadastro])
   const [sortKey, setSortKey] = useState<SortKey>('volume')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
@@ -148,7 +191,9 @@ export default function RankingTecnicosPage() {
             <tbody>
               {sorted.map(r => (
                 <tr key={r.nome} className="border-b border-white/[0.03] hover:bg-surface/10 transition-colors">
-                  <td className="px-4 py-2.5 font-semibold text-text">{shortEquipe(r.nome)}</td>
+                  <td className="px-4 py-2.5">
+                    <TecnicoCell codigo={r.nome} cadastro={cadastroMap.get(r.nome)} />
+                  </td>
                   <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.volume}</td>
                   <td className="px-4 py-2.5 text-right">
                     {r.sla != null

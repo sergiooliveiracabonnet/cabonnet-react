@@ -22,6 +22,7 @@ import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, calcDuracao, buildOS
 import { TimelineStep }  from './TimelineStep'
 import { OSDetailModal } from './OSDetailModal'
 import { useOSDetails }  from '../../hooks/useOSDetails'
+import { ClassificarEncerramento } from './ClassificarEncerramento'
 
 export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; onClose: () => void }) {
   const [showModal, setShowModal] = useState(false)
@@ -268,6 +269,13 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                 </div>
               ) : !obsCrit && (
                 <p className="text-[12px] text-muted/60 italic px-1">Nenhuma observação registrada.</p>
+              )}
+              {isConcluida && (
+                <ClassificarEncerramento
+                  numos={os.numos}
+                  nomedaequipe={os.nomedaequipe as string | undefined}
+                  nomedacidade={os.nomedacidade as string | undefined}
+                />
               )}
             </Section>
 
