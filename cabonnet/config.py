@@ -6,6 +6,21 @@ Nenhum import de outros módulos cabonnet.
 
 import os
 import pathlib
+import time as _time
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  FUSO HORÁRIO — força Brasília no processo (independe do Docker/compose/systemd)
+# ══════════════════════════════════════════════════════════════════════════════
+# Os relatórios diários usam date.today()/datetime.now() naive. Sem isto, um
+# servidor em UTC (Docker slim, host Linux) faz o "hoje" virar o dia seguinte às
+# 21h de Brasília e zera /producao, /executadas, KPI etc. à noite.
+# setdefault: respeita um TZ explícito no ambiente; senão assume Brasília.
+# Só no Unix: tzset() aplica o TZ (requer tzdata, instalado no Dockerfile). No
+# Windows não há tzset e setar TZ a um nome IANA faria o runtime cair em UTC —
+# então lá deixamos o fuso do sistema (já é Brasília no dev).
+if hasattr(_time, "tzset"):
+    os.environ.setdefault("TZ", "America/Sao_Paulo")
+    _time.tzset()
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  .ENV — carrega credenciais do arquivo .env (sem dependencia externa)
