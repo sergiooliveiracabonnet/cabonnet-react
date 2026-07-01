@@ -4,8 +4,8 @@ import {
   LayoutDashboard, ClipboardList,
   BarChart2, PieChart, MapPin,
   Zap, Monitor, LogOut, FileText, Map,
-  Bell, ChevronRight, Briefcase,
-  TrendingUp, Award, CalendarDays, Shield, Siren,
+  Bell, ChevronRight,
+  TrendingUp, Award, CalendarDays, Shield, Siren, ListChecks,
 } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
 import { useAuthStore } from '../../store/authStore'
@@ -52,6 +52,7 @@ const groups: NavGroup[] = [
       { to: '/erp/justificativa',  label: 'Justificativa',  icon: FileText    },
       { to: '/erp/planner',        label: 'Planner',        icon: CalendarDays},
       { to: '/erp/vt',             label: 'Fila VT',       icon: Siren       },
+      { to: '/erp/fila',           label: 'Fila Geral',    icon: ListChecks  },
     ],
   },
   {
@@ -67,7 +68,6 @@ const groups: NavGroup[] = [
     key: 'anal', label: 'Análise', color: '#4ade80',
     links: [
       { to: '/graficos',   label: 'Gráficos',   icon: PieChart  },
-      { to: '/gerencial',  label: 'Gerencial',  icon: Briefcase },
       { to: '/fechamento', label: 'Fechamento', icon: FileText  },
     ],
   },

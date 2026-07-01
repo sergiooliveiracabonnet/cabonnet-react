@@ -7,7 +7,7 @@ import { useUIStore } from '../store/uiStore'
 import { applyDateFilter } from '../lib/transform'
 import {
   buildDashboard, buildSla, buildGraficos, buildAuditoria,
-  buildCidades, buildCampo, buildRevisitas, buildOrdens, buildAnomalias, buildVT,
+  buildCidades, buildCampo, buildRevisitas, buildOrdens, buildAnomalias, buildVT, buildFilaGeral,
 } from '../lib/builders'
 import type {
   OSRow, KPI, QuickInsight, ClusterAtivo,
@@ -16,7 +16,7 @@ import type {
   SlaHipotese, SlaResumoItem, SlaRankingItem, SlaSemaforo, SlaCluster,
   CidadeItem, CidadeRankItem, CidadePendItem, CidadeFilaItem,
   CidadeHeatmapItem, CidadeExecItem, CidadeConsolidItem,
-  RevisitaHipotese, RevisitaCausa,
+  RevisitaHipotese,
 } from '../lib/types'
 
 // Tipos locais não exportados de types.ts — espelham retorno real dos builders.
@@ -115,8 +115,6 @@ const EMPTY_DERIVED = {
     taxa:      { inst: 0, manut: 0, serv: 0, geral: 0 },
     narrativa: '',
     hipoteses: [] as RevisitaHipotese[],
-    causas:    [] as RevisitaCausa[],
-    causaRaiz: [] as RevisitaCausa[],
     cronicos:  [] as OSRow[],
     chart:     { labels: [] as string[], values: [] as number[] },
     totalRevisitas: 0, revInst: 0, revManut: 0, revServ: 0,
@@ -143,6 +141,14 @@ const EMPTY_DERIVED = {
     cargaFornecedor: [] as { nome: string; total: number; violadas: number; criticas: number }[],
     cargaCidade:     [] as { nome: string; total: number; violadas: number; criticas: number }[],
     tendencia:       [] as { dia: string; label: string; total: number; violadas: number }[],
+  },
+  filaGeral: {
+    cumprimento: {
+      total: 0, noPrazo: 0, fora: 0,
+      pct: null as number | null, prevPct: null as number | null, deltaPp: null as number | null,
+    },
+    cargaFornecedor: [] as { nome: string; total: number; criticas: number; excedidas: number }[],
+    cargaCidade:     [] as { nome: string; total: number; criticas: number; excedidas: number }[],
   },
 }
 
@@ -204,6 +210,7 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
   const ordens     = useMemo(() => safe('ordens',     () => buildOrdens(activeRows),     EMPTY_DERIVED.ordens),     [activeRows])
   const allRevisitaActive = useMemo(() => hideRede ? allRevisitaRows.filter(r => r._tipo !== 'REDE') : allRevisitaRows, [allRevisitaRows, hideRede])
   const vt         = useMemo(() => safe('vt',         () => buildVT(activeRows, activeRevisitaRows, prevRevisitaRows, allRevisitaActive), EMPTY_DERIVED.vt), [activeRows, activeRevisitaRows, prevRevisitaRows, allRevisitaActive])
+  const filaGeral  = useMemo(() => safe('filaGeral',  () => buildFilaGeral(activeRows, activeRevisitaRows, prevRevisitaRows), EMPTY_DERIVED.filaGeral), [activeRows, activeRevisitaRows, prevRevisitaRows])
 
   // Detecta falhas de builders por identidade de referência com o fallback
   const builderErrors = useMemo(() => [
@@ -217,7 +224,8 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     revisitas === EMPTY_DERIVED.revisitas && 'revisitas',
     ordens    === EMPTY_DERIVED.ordens    && 'ordens',
     vt        === EMPTY_DERIVED.vt        && 'vt',
-  ].filter(Boolean) as string[], [dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, vt])
+    filaGeral === EMPTY_DERIVED.filaGeral && 'filaGeral',
+  ].filter(Boolean) as string[], [dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, vt, filaGeral])
 
   const value = useMemo<OSDataContextValue>(() => ({
     rows:    activeRows,
@@ -226,9 +234,9 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     error,
     dataUpdatedAt,
     builderErrors,
-    derived: { dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, vt },
+    derived: { dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, vt, filaGeral },
   }), [activeRows, activeAllRows, isLoading, error, dataUpdatedAt, builderErrors,
-       dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, vt])
+       dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, vt, filaGeral])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

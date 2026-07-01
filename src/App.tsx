@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoginPage } from './features/auth/LoginPage'
 import { useAuthStore } from './store/authStore'
@@ -7,11 +7,11 @@ import { api } from './lib/api'
 import {
   ERPRelatoriosPage,
   ERPAlertasPage,
-  ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage, ERPVTPage, ERPJustificativaPage,
+  ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage, ERPVTPage, ERPFilaGeralPage, ERPJustificativaPage,
   DashboardPage, OrdensPage,
-  GraficosPage, CidadesPage,
+  GraficosPage, CidadesGerencialPage,
   FornecedorPage, JuniperPage, NotFoundPage, NocPage, FechamentoPage,
-  MapaPage, GerencialPage,
+  MapaPage,
 } from './pages/index'
 
 export default function App() {
@@ -63,17 +63,19 @@ export default function App() {
           <Route path="justificativa" element={<ERPJustificativaPage />}  />
           <Route path="planner"       element={<ERPPlannerPage />}         />
           <Route path="vt"           element={<ERPVTPage />}          />
+          <Route path="fila"         element={<ERPFilaGeralPage />}   />
         </Route>
 
         <Route index             element={<DashboardPage />}  />
         <Route path="ordens"     element={<OrdensPage />}     />
         <Route path="graficos"   element={<GraficosPage />}   />
-        <Route path="cidades"    element={<CidadesPage />}    />
+        <Route path="cidades"    element={<CidadesGerencialPage />} />
         <Route path="fornecedor" element={<FornecedorPage />} />
         <Route path="juniper"    element={<JuniperPage />}    />
         <Route path="fechamento" element={<FechamentoPage />} />
         <Route path="mapa"       element={<MapaPage />}     />
-        <Route path="gerencial" element={<GerencialPage />} />
+        {/* /gerencial virou a aba "Por Categoria" dentro de /cidades */}
+        <Route path="gerencial" element={<Navigate to="/cidades" replace />} />
         <Route path="*"          element={<NotFoundPage />}   />
       </Route>
       <Route path="noc" element={<NocPage />} />

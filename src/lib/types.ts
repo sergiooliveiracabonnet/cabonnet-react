@@ -471,17 +471,10 @@ export interface RevisitaHipotese {
   sub:      string | null
 }
 
-export interface RevisitaCausa {
-  causa: string
-  pct:   number
-}
-
 export interface RevisitasData {
   taxa:          RevisitaTaxa
   narrativa:     string
   hipoteses:     RevisitaHipotese[]
-  causas:        RevisitaCausa[]
-  causaRaiz:     RevisitaCausa[]
   cronicos:      OSRow[]
   chart:         ChartSeries
   totalRevisitas: number

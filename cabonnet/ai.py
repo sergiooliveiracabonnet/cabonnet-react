@@ -266,10 +266,13 @@ def _ai_revisitas(payload):
         f"Top cidades com revisitas:\n{cidades_txt}\n\n"
         f"Clientes crônicos: {cronicos_txt}\n\n"
         "=== INSTRUÇÕES ===\n"
-        "Cite os dados reais do relatório. Identifique padrões (equipe x cidade, tempo x tipo). "
-        "Seja específico sobre causa raiz — não diga 'melhorar qualidade', diga O QUÊ exatamente fazer.\n\n"
+        "Cite os dados do relatório. Identifique padrões (equipe x cidade, tempo x tipo). "
+        "Seja específico sobre causa raiz — não diga 'melhorar qualidade', diga O QUÊ exatamente fazer.\n"
+        "IMPORTANTE: 'Evitáveis' e 'Custo estimado' são calculados a partir de taxas de evitabilidade e "
+        "custo por revisita ainda não calibradas para esta operação — são estimativas aproximadas, não "
+        "medições reais. Trate-os como tal no texto (ex.: 'estimativa de R$X', nunca 'custo real de R$X').\n\n"
         "Responda SOMENTE com JSON válido, sem markdown:\n"
-        '{"narrativa": "2-3 frases: diagnóstico preciso com dados, causa raiz principal, impacto financeiro real", '
+        '{"narrativa": "2-3 frases: diagnóstico preciso com dados, causa raiz principal, impacto financeiro estimado", '
         '"insights": ["insight com dado específico 1", "insight 2", "insight 3", "insight 4"], '
         '"estrategia": ["Ação 1 (prazo e responsável)", "Ação 2", "Ação 3", "Ação 4", "Ação 5"], '
         '"prioridades": ['

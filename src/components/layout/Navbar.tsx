@@ -23,7 +23,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/':           'Resumo Geral',
   '/ordens':     'Ordens de Serviço',
   '/graficos':   'Gráficos',
-  '/cidades':    'Cidades',
+  '/cidades':    'Cidades & Categorias',
   '/fornecedor': 'Fornecedor',
   '/juniper':    'Juniper',
 }

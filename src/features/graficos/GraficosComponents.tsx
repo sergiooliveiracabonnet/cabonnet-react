@@ -13,6 +13,7 @@ import { AreaChart, Area } from '../../components/ui/line-chart'
 import { XAxis as LXAxis, YAxis as LYAxis, ChartTooltip as LTooltip, Grid as LGrid, Legend as LLegend } from '../../components/ui/line-chart'
 import { useAIForecast } from '../../hooks/useAIForecast'
 import { shortEquipe }   from '../../lib/osFormat'
+import { isConcluida, isExecucaoReal } from '../../lib/transform'
 
 // ─── Tipos exportados ─────────────────────────────────────────────────────────
 
@@ -397,7 +398,7 @@ export function TabDistribuicao({ d, rows, onDrill }: { d: Record<string,unknown
             if (ds === 'Abertas')
               onDrill(`Abertas em ${label}`, rows.filter(r => toISODate(r.datacadastro) === label))
             else
-              onDrill(`Concluídas em ${label}`, rows.filter(r => r.descsituacao === 'Concluída' && closeISO(r) === label))
+              onDrill(`Concluídas em ${label}`, rows.filter(r => isExecucaoReal(r.descsituacao) && closeISO(r) === label))
           }}>
           <Area dataKey="Abertas"    stroke="#3b82f6" fill="#3b82f6" name="Abertas"    />
           <Area dataKey="Concluídas" stroke="#4ade80" fill="#4ade80" name="Concluídas" />
@@ -442,7 +443,7 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
             const label = cdp.activeLabel!
             const ds    = cdp.activePayload![0].name
             if (ds === 'Concluídas')
-              onDrill(`Concluídas em ${label}`, rows.filter(r => r.descsituacao === 'Concluída' && closeISOMonth(r) === label))
+              onDrill(`Concluídas em ${label}`, rows.filter(r => isExecucaoReal(r.descsituacao) && closeISOMonth(r) === label))
             else if (ds === 'SLA Excedido')
               onDrill(`SLA Excedido em ${label}`, rows.filter(r => r._slaExcedido && toISOMonth(r.datacadastro) === label))
             else
@@ -466,7 +467,7 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
               const label = cdp.activeLabel!
               const ds    = cdp.activePayload![0].name
               if (ds === 'concluida')
-                onDrill(`Concluídas em ${label}`, rows.filter(r => r.descsituacao === 'Concluída' && closeISO(r) === label))
+                onDrill(`Concluídas em ${label}`, rows.filter(r => isExecucaoReal(r.descsituacao) && closeISO(r) === label))
               else if (ds === 'pendente')
                 onDrill(`Pendentes abertos em ${label}`, rows.filter(r => r.descsituacao === 'Pendente' && toISODate(r.datacadastro) === label))
               else
@@ -501,7 +502,7 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
             const label = cdp.activeLabel!
             const ds    = cdp.activePayload![0].name
             if (ds === 'realizado')
-              onDrill(`Concluídas em ${label}`, rows.filter(r => r.descsituacao === 'Concluída' && closeISOMonth(r) === label))
+              onDrill(`Concluídas em ${label}`, rows.filter(r => isExecucaoReal(r.descsituacao) && closeISOMonth(r) === label))
             else
               onDrill(`Abertas em ${label}`, rows.filter(r => toISOMonth(r.datacadastro) === label))
           }}>
@@ -593,9 +594,9 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
             <Bar dataKey="Abertas"    fill="#3b82f6" name="Abertas"
               onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — todas as OS`, rows.filter(r => toISOMonth(r.datacadastro) === data.name))} />
             <Bar dataKey="Concluídas" fill="#4ade80" name="Concluídas"
-              onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — Concluídas`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === data.name))} />
+              onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — Concluídas`, rows.filter(r => isConcluida(r.descsituacao) && toISOMonth(r.datacadastro) === data.name))} />
             <Bar dataKey="Mesmo Mês"  fill="#c4b5fd" name="Mesmo Mês"
-              onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — Mesmo Mês`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === data.name && closeISOMonth(r) === data.name))} />
+              onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — Mesmo Mês`, rows.filter(r => isConcluida(r.descsituacao) && toISOMonth(r.datacadastro) === data.name && closeISOMonth(r) === data.name))} />
             <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip /><Legend />
           </BarChart>
         </ChartCard>
@@ -603,7 +604,7 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
         <ChartCard title="Taxa de Resolução por Cohort (%)" dot="#4ade80" height="h-64">
           <AreaChart
             data={taxaData}
-            onClick={(cd: Record<string,unknown>) => { if (cd?.activeLabel) onDrill(`Cohort ${cd.activeLabel} — Concluídas`, rows.filter(r => r.descsituacao === 'Concluída' && toISOMonth(r.datacadastro) === cd.activeLabel)) }}
+            onClick={(cd: Record<string,unknown>) => { if (cd?.activeLabel) onDrill(`Cohort ${cd.activeLabel} — Concluídas`, rows.filter(r => isConcluida(r.descsituacao) && toISOMonth(r.datacadastro) === cd.activeLabel)) }}
             style={{ cursor: 'pointer' }}>
             <Area dataKey="value" stroke="#4ade80" fill="rgba(74,222,128,0.08)" name="Taxa Resolução" />
             <LXAxis dataKey="name" /><LYAxis domain={[0, 100]} /><LGrid /><LTooltip suffix="%" />

@@ -199,6 +199,10 @@ export default function QualidadePage() {
 
   const maxRev    = Math.max(1, ...rankingEquipe.map(e => e.rev))
   const taxaGeral = totalOS > 0 ? Math.round((revisitasFiltradas.length / totalOS) * 100) : 0
+  // Taxa de primeira visita (first-time-fix): OS do período que NÃO precisaram de retorno.
+  // É o complemento direto da taxa de revisita — já era calculável, só nunca tinha sido
+  // exposta como KPI nomeado e destacado.
+  const taxaPrimeiraVisita = totalOS > 0 ? 100 - taxaGeral : 0
   const cor       = TIPO_COLOR[tipoAtivo]
 
   // Gráfico diário — sempre inst + manut independente do filtro de tipo
@@ -340,11 +344,15 @@ export default function QualidadePage() {
           </div>
 
           {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <KpiCard label="Taxa de Primeira Visita"
+                     value={`${taxaPrimeiraVisita}%`}
+                     sub={`${fmt(totalOS - revisitasFiltradas.length)} de ${fmt(totalOS)} OS resolvidas sem retorno`}
+                     color={taxaColor(taxaGeral)} delay={0} />
             <KpiCard label={`Revisitas${tipoAtivo !== 'todos' ? ` · ${TIPO_LABEL[tipoAtivo]}` : ' · Total'}`}
                      value={revisitasFiltradas.length}
                      sub={`${taxaGeral}% do total de ${fmt(totalOS)} OS no período`}
-                     color={cor} delay={0} />
+                     color={cor} delay={30} />
             <KpiCard label="Inst → Manut (BI)"
                      value={data?.kpis.rev_inst ?? 0}
                      sub="instalações que geraram VT no mesmo mês"
@@ -352,11 +360,11 @@ export default function QualidadePage() {
             <KpiCard label="Manut Repetida (BI)"
                      value={data?.kpis.rev_manut ?? 0}
                      sub="2ª+ manutenção do mesmo cliente no mês"
-                     color="#f97316" delay={120} />
+                     color="#f97316" delay={90} />
             <KpiCard label="Serviço → Manut (BI)"
                      value={data?.kpis.rev_serv ?? 0}
                      sub="serviço técnico que gerou VT no mesmo mês"
-                     color="#22d3ee" delay={180} />
+                     color="#22d3ee" delay={120} />
           </div>
 
           {/* ── Ocorrências que causam revisitas ────────────────────────── */}

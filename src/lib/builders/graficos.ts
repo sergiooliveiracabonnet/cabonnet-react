@@ -62,7 +62,11 @@ export function buildGraficos(rows: OSRow[]) {
       }
     }
 
-    if (isConcluida(st)) {
+    // Concluídas "por data de fechamento" alimenta evolução/mensal/comparativo/burndown —
+    // métricas de performance comparáveis ao Dashboard, por isso usam isExecucaoReal
+    // (mesma regra do Dashboard/Campo/Fornecedor), não isConcluida (que inclui baixas
+    // administrativas sem execução real em campo).
+    if (isExecucaoReal(st)) {
       const closeRaw = (r.databaixa || r.dataexecucao || '').split(' ')[0]
       if (closeRaw) {
         const dtC = parseDate(closeRaw)
