@@ -71,6 +71,16 @@ git pull
 docker compose up -d --build
 ```
 
+Ou use [`deploy/atualizar.sh`](deploy/atualizar.sh), que faz o mesmo `git pull` +
+`docker compose up -d --build` e manda um aviso no Telegram (grupo
+`TELEGRAM_CHAT_ALERTAS`, ou `TELEGRAM_CHAT_ID` se aquele não estiver setado) antes
+e depois — útil pra saber se alguém já está atualizando ou se a atualização falhou:
+
+```bash
+cd /opt/cabonnet
+./deploy/atualizar.sh
+```
+
 ---
 
 ## Opção B — Instalação nativa (systemd, sem Docker)
