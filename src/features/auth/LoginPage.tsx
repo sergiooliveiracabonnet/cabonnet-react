@@ -295,7 +295,7 @@ export function LoginPage() {
         {/* Brand mark */}
         <div className="flex flex-col items-center mb-10">
           <div className="w-[72px] h-[72px] mb-5 flex items-center justify-center">
-            <img src="/LOGO.png" alt="Cabonnet" className="w-full h-full object-contain drop-shadow-lg" />
+            <img src="/logo-cabonnet.png" alt="Cabonnet" className="w-full h-full object-contain drop-shadow-lg" />
           </div>
           <h1 className="font-headline text-[22px] font-semibold tracking-tight"
               style={{ color: '#e8edf5', letterSpacing: '-0.02em' }}>
