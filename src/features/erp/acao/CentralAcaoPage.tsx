@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ListTodo, AlertTriangle, Flame, Siren, Users, MapPin, Gauge, ChevronRight } from 'lucide-react'
 import { useOSDerived } from '../../../contexts/OSDataContext'
+import { filaUrgenciaTier, filaUrgenciaScore } from '../../../lib/builders/fila'
 import { shortEquipe, fmtHorasMin } from '../../../lib/osFormat'
 import { Badge } from '../../../components/ui/Badge'
 import { KPICard } from '../../../components/ui/KPICard'
@@ -9,9 +10,9 @@ import OSDrawer from '../../ordens/OSDrawer'
 import type { OSRow } from '../../../lib/types'
 
 // "O que eu preciso fazer agora, em ordem, e por quê" — hoje essa pergunta exige
-// abrir Dashboard, Fila VT, Fila Geral, Alertas e Cidades separadamente pra montar
-// o quadro. Esta página só agrega o que cada builder já calcula (nenhuma lógica
-// de negócio nova) numa fila única, ordenada por severidade.
+// abrir Dashboard, Fila, Alertas e Cidades separadamente pra montar o quadro.
+// Esta página só agrega o que cada builder já calcula (nenhuma lógica de negócio
+// nova) numa fila única, ordenada por severidade.
 
 const LIMITE_ITENS = 40
 
@@ -29,8 +30,7 @@ interface AcaoItem {
 }
 
 const FONTE_ICON: Record<string, typeof Siren> = {
-  'Fila VT':    Siren,
-  'Fila Geral': Flame,
+  'Fila':       Siren,
   'Equipes':    Users,
   'Cidades':    MapPin,
   'SLA':        Gauge,
@@ -39,34 +39,23 @@ const FONTE_ICON: Record<string, typeof Siren> = {
 function buildAgenda(rows: OSRow[], derived: ReturnType<typeof useOSDerived>['derived']): AcaoItem[] {
   const itens: AcaoItem[] = []
 
-  // ── Fila VT: violadas e críticas (≤2h) ──────────────────────────────────
+  // ── Fila: violado ou atenção — mesmo critério de urgência da Fila de
+  // Prioridade unificada (VT em horas, demais tipos em SLA de dias) ───────
   for (const r of rows) {
-    if (r._vtPrazoHoras == null || r._vtHorasRestantes == null) continue
-    const restante = r._vtHorasRestantes
-    if (!(r._vtViolado || restante <= 2)) continue
-    itens.push({
-      id: `vt:${r.numos}`,
-      titulo: `OS ${r.numos} — VT ${r._vtPrazoHoras}h`,
-      motivo: r._vtViolado ? `Violado há ${fmtHorasMin(restante)}` : `Faltam ${fmtHorasMin(restante)} para o prazo`,
-      severidade: r._vtViolado ? 'critico' : 'atencao',
-      fonte: 'Fila VT',
-      score: r._vtPriorityScore ?? 0,
-      row: r,
-    })
-  }
-
-  // ── Fila Geral: SLA crítico fora de VT/Manutenção ───────────────────────
-  for (const r of rows) {
-    if (r._categoria === 'VT_MANUTENCAO') continue
-    if (!r._slaCritico) continue
     if (!(r.descsituacao === 'Pendente' || r.descsituacao === 'Atendimento')) continue
+    const tier = filaUrgenciaTier(r)
+    if (tier === 'ok') continue
+    const isVT = r._vtPrazoHoras != null
+    const motivo = isVT
+      ? (r._vtViolado ? `Violado há ${fmtHorasMin(r._vtHorasRestantes ?? 0)}` : `Faltam ${fmtHorasMin(r._vtHorasRestantes ?? 0)} para o prazo`)
+      : `${r._agingAbertura ?? 0}d aberta · limite é ${r._slaLimite ?? '?'}d`
     itens.push({
-      id: `fg:${r.numos}`,
-      titulo: `OS ${r.numos} — ${r._slaTipoLabel ?? r._categoria}`,
-      motivo: `${r._agingAbertura ?? 0}d aberta · limite é ${r._slaLimite ?? '?'}d`,
-      severidade: 'critico',
-      fonte: 'Fila Geral',
-      score: r._riskScore ?? 0,
+      id: `fila:${r.numos}`,
+      titulo: `OS ${r.numos} — ${r._slaTipoLabel ?? '?'}`,
+      motivo,
+      severidade: tier === 'violado' ? 'critico' : 'atencao',
+      fonte: 'Fila',
+      score: filaUrgenciaScore(r),
       row: r,
     })
   }
@@ -179,7 +168,7 @@ export default function CentralAcaoPage() {
           <ListTodo size={18} className="text-primary" /> Central de Ação
         </h1>
         <p className="text-[12px] text-muted mt-0.5">
-          O que precisa de atenção agora, em ordem — reúne Fila VT, Fila Geral, Equipes, Cidades e SLA numa lista só
+          O que precisa de atenção agora, em ordem — reúne Fila, Equipes, Cidades e SLA numa lista só
         </p>
       </div>
 

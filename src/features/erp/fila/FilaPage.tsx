@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Flame, Clock, CheckCircle2, Send, Check, Gauge, Truck, MapPin, Wrench, Activity, Megaphone, Copy, ClipboardList } from 'lucide-react'
+import { AlertTriangle, Flame, CheckCircle2, Send, Check, Gauge, Truck, MapPin, Wrench, Activity, Megaphone, Copy, ClipboardList, UserX } from 'lucide-react'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 import { useAuditStore } from '../../../store/auditStore'
-import { useVTStore } from '../../../store/vtStore'
+import { useFilaGeralStore } from '../../../store/filaGeralStore'
+import { filaUrgenciaTier, filaUrgenciaScore } from '../../../lib/builders/fila'
 import { KPICard } from '../../../components/ui/KPICard'
 import { FilterSelect } from '../../../components/ui/FilterSelect'
 import { SearchBox } from '../../../components/ui/SearchBox'
@@ -16,12 +17,21 @@ import { telegram } from '../../../lib/api'
 import OSDrawer from '../../ordens/OSDrawer'
 import type { OSRow } from '../../../lib/types'
 
+// Fila de prioridade única — antes eram duas páginas (VT com prazo em horas,
+// "Fila Geral" com SLA em dias que excluía tudo marcado como VT_MANUTENCAO).
+// Nessa exclusão, OS de manutenção comum (não-VT) não apareciam em NENHUMA das
+// duas — ficavam num buraco entre as duas filas. Unificado: toda OS ativa entra
+// aqui, urgência calculada pelo critério certo pra cada uma (buildFila).
+
 type ColRender = (value: unknown, row: OSRow) => React.ReactNode
 
-const tipoVTOptions = [
-  { value: '8',  label: 'VT 08h' },
-  { value: '24', label: 'VT 24h' },
-  { value: '48', label: 'VT 48h' },
+const tipoOptions = [
+  { value: 'VT 8h',       label: 'VT 8h'       },
+  { value: 'VT 24h',      label: 'VT 24h'      },
+  { value: 'VT 48h',      label: 'VT 48h'      },
+  { value: 'Instalação',  label: 'Instalação'  },
+  { value: 'Manutenção',  label: 'Manutenção'  },
+  { value: 'Serviços',    label: 'Serviços'    },
 ]
 
 const fornecedorOptions = [
@@ -32,17 +42,23 @@ const fornecedorOptions = [
   { value: 'MANUTENCAO', label: 'Manutenção' },
 ]
 
-function tempoRestanteVariant(restante: number): 'red' | 'orange' | 'yellow' | 'green' {
-  if (restante <= 0) return 'red'
-  if (restante <= 2) return 'orange'
-  if (restante <= 6) return 'yellow'
+function urgenciaVariant(r: OSRow): 'red' | 'orange' | 'green' {
+  const tier = filaUrgenciaTier(r)
+  if (tier === 'violado') return 'red'
+  if (tier === 'atencao') return 'orange'
   return 'green'
 }
 
-function tempoRestanteLabel(restante: number): string {
-  return restante <= 0
-    ? `Violado há ${fmtHorasMin(restante)}`
-    : `${fmtHorasMin(restante)} restantes`
+function urgenciaLabel(r: OSRow): string {
+  if (r._vtPrazoHoras != null) {
+    const restante = r._vtHorasRestantes ?? 0
+    return restante <= 0 ? `Violado há ${fmtHorasMin(restante)}` : `Faltam ${fmtHorasMin(restante)}`
+  }
+  const aging  = r._agingAbertura ?? 0
+  const limite = r._slaLimite ?? 0
+  const tier = filaUrgenciaTier(r)
+  const prefixo = tier === 'violado' ? 'Crítico' : tier === 'atencao' ? 'Excedido' : 'No prazo'
+  return `${prefixo} — ${aging}d / lim. ${limite}d`
 }
 
 function situacaoVariant(situacao: string): 'yellow' | 'cyan' | 'purple' | 'green' | 'red' | 'teal' {
@@ -66,14 +82,14 @@ function TendenciaPanel({ items }: { items: TendenciaItem[] }) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-muted" />
-          <h3 className="text-[12px] font-semibold text-text">Violações VT · 7 dias</h3>
+          <h3 className="text-[12px] font-semibold text-text">Violações da Fila · 7 dias</h3>
         </div>
         <span className="text-[11px] text-muted tabular-nums">{totalViol} no total</span>
       </div>
       <div className="flex items-end gap-1.5">
         {items.map(d => (
           <div key={d.dia} className="flex-1 flex flex-col items-center gap-1"
-               title={`${d.label}: ${d.violadas} violações de ${d.total} VT executadas`}>
+               title={`${d.label}: ${d.violadas} violações de ${d.total} executadas`}>
             <div className="w-full h-14 flex items-end">
               <div className="w-full rounded-t bg-red/60"
                    style={{ height: `${(d.violadas / max) * 100}%`, minHeight: d.violadas > 0 ? 3 : 0 }} />
@@ -96,7 +112,7 @@ function CargaPanel({ title, icon: Icon, items }: { title: string; icon: typeof 
         <h3 className="text-[12px] font-semibold text-text">{title}</h3>
       </div>
       {items.length === 0 ? (
-        <p className="text-[12px] text-muted py-2">Sem VT em aberto</p>
+        <p className="text-[12px] text-muted py-2">Sem OS em aberto</p>
       ) : (
         <div className="space-y-1.5">
           {items.slice(0, 6).map(c => (
@@ -104,7 +120,7 @@ function CargaPanel({ title, icon: Icon, items }: { title: string; icon: typeof 
               <span className="text-secondary truncate">{c.nome}</span>
               <div className="flex items-center gap-1.5 flex-shrink-0 tabular-nums">
                 {c.violadas > 0 && <Badge variant="red" dot={false}>{c.violadas} viol.</Badge>}
-                {c.criticas > 0 && <Badge variant="orange" dot={false}>{c.criticas} crít.</Badge>}
+                {c.criticas > 0 && <Badge variant="orange" dot={false}>{c.criticas} atenç.</Badge>}
                 <span className="text-muted w-8 text-right">{c.total}</span>
               </div>
             </div>
@@ -115,14 +131,14 @@ function CargaPanel({ title, icon: Icon, items }: { title: string; icon: typeof 
   )
 }
 
-export default function VTPriorityPage() {
+export default function FilaPage() {
   const { rows, isLoading, derived } = useOSDerived()
-  const { cumprimento, cargaFornecedor, cargaCidade, tendencia } = derived.vt
+  const { cumprimento, cargaFornecedor, cargaCidade, tendencia } = derived.fila
   const logAudit = useAuditStore(s => s.log)
-  const emTratativa     = useVTStore(s => s.emTratativa)
-  const toggleTratativa = useVTStore(s => s.toggleTratativa)
+  const emTratativa     = useFilaGeralStore(s => s.emTratativa)
+  const toggleTratativa = useFilaGeralStore(s => s.toggleTratativa)
 
-  const [tipoVT, setTipoVT]         = useState('')
+  const [tipo, setTipo]             = useState('')
   const [fornecedor, setFornecedor] = useState('')
   const [search, setSearch]         = useState('')
   const [drawerOS, setDrawerOS]     = useState<OSRow | null>(null)
@@ -149,46 +165,50 @@ export default function VTPriorityPage() {
     navigator.clipboard.writeText(buildOSWhatsApp(row, historico)).catch(() => {})
   }
 
-  const filaVT = useMemo(() => {
-    let fila = rows.filter(r => r._vtPrazoHoras != null && r._vtHorasRestantes != null)
-    if (tipoVT)      fila = fila.filter(r => String(r._vtPrazoHoras) === tipoVT)
-    if (fornecedor)  fila = fila.filter(r => r._fornecedor === fornecedor)
+  const fila = useMemo(() => {
+    let f = rows.filter(r => r.descsituacao === 'Pendente' || r.descsituacao === 'Atendimento')
+    if (tipo)        f = f.filter(r => r._slaTipoLabel === tipo)
+    if (fornecedor)  f = f.filter(r => r._fornecedor === fornecedor)
     if (search.trim()) {
       const term = search.trim().toLowerCase()
-      fila = fila.filter(r =>
+      f = f.filter(r =>
         r.numos?.toLowerCase().includes(term) ||
         r.nomecliente?.toLowerCase().includes(term)
       )
     }
-    // Ordena por prioridade ponderada (tipo × urgência × situação); em tratativa vai pro fim
-    return [...fila].sort((a, b) => {
+    // Ordena por tier de urgência (violado > atenção > ok); em tratativa vai pro fim;
+    // dentro do mesmo tier, desempata pelo score nativo de cada tipo (VT ou geral)
+    const tierOrder = { violado: 0, atencao: 1, ok: 2 }
+    return [...f].sort((a, b) => {
       const ta = emTratativa[a.numos] ? 1 : 0
       const tb = emTratativa[b.numos] ? 1 : 0
       if (ta !== tb) return ta - tb
-      return (b._vtPriorityScore ?? 0) - (a._vtPriorityScore ?? 0)
+      const tierDiff = tierOrder[filaUrgenciaTier(a)] - tierOrder[filaUrgenciaTier(b)]
+      if (tierDiff !== 0) return tierDiff
+      return filaUrgenciaScore(b) - filaUrgenciaScore(a)
     })
-  }, [rows, tipoVT, fornecedor, search, emTratativa])
+  }, [rows, tipo, fornecedor, search, emTratativa])
 
-  // VT críticas (violadas ou ≤ 2h) ainda não em tratativa — alvo da notificação em lote
+  // Violadas ainda não em tratativa — alvo da notificação em lote
   const criticas = useMemo(
-    () => filaVT.filter(r => !emTratativa[r.numos] && (r._vtViolado || (r._vtHorasRestantes ?? 99) <= 2)),
-    [filaVT, emTratativa],
+    () => fila.filter(r => !emTratativa[r.numos] && filaUrgenciaTier(r) === 'violado'),
+    [fila, emTratativa],
   )
 
   const kpis = useMemo(() => {
-    const violadas = filaVT.filter(r => r._vtViolado).length
-    const critico   = filaVT.filter(r => !r._vtViolado && (r._vtHorasRestantes ?? 99) <= 2).length
-    const atencao    = filaVT.filter(r => !r._vtViolado && (r._vtHorasRestantes ?? 99) > 2 && (r._vtHorasRestantes ?? 99) <= 6).length
-    const noPrazo    = filaVT.filter(r => !r._vtViolado && (r._vtHorasRestantes ?? 99) > 6).length
-    return { violadas, critico, atencao, noPrazo }
-  }, [filaVT])
+    const violadas  = fila.filter(r => filaUrgenciaTier(r) === 'violado').length
+    const atencao   = fila.filter(r => filaUrgenciaTier(r) === 'atencao').length
+    const semEquipe = fila.filter(r => !r.nomedaequipe?.trim()).length
+    const noPrazo   = fila.filter(r => filaUrgenciaTier(r) === 'ok').length
+    return { violadas, atencao, semEquipe, noPrazo }
+  }, [fila])
 
   async function handleNotificar(row: OSRow, e: React.MouseEvent) {
     e.stopPropagation()
     const chat = chatKeyForFornecedor(row)
     try {
       await telegram.send(tgVTUrgente(row), chat)
-      logAudit('Telegram enviado (VT urgente)', `OS ${row.numos} · ${chat}`, 'telegram')
+      logAudit('Telegram enviado (fila urgente)', `OS ${row.numos} · ${chat}`, 'telegram')
       setNotified(prev => ({ ...prev, [row.numos]: 'ok' }))
     } catch {
       setNotified(prev => ({ ...prev, [row.numos]: 'error' }))
@@ -199,14 +219,14 @@ export default function VTPriorityPage() {
 
   async function handleNotificarCriticas() {
     if (criticas.length === 0 || enviandoLote) return
-    if (!window.confirm(`Enviar alerta de Telegram para ${criticas.length} OS críticas/violadas?`)) return
+    if (!window.confirm(`Enviar alerta de Telegram para ${criticas.length} OS violadas?`)) return
     setEnviandoLote(true)
     const results = await Promise.allSettled(
       criticas.map(row => telegram.send(tgVTUrgente(row), chatKeyForFornecedor(row))),
     )
     const ok = results.filter(r => r.status === 'fulfilled').length
     const falhas = results.length - ok
-    logAudit('Telegram em lote (VT críticas)', `${ok} enviadas, ${falhas} falhas`, 'telegram')
+    logAudit('Telegram em lote (fila violadas)', `${ok} enviadas, ${falhas} falhas`, 'telegram')
     setNotified(prev => {
       const next = { ...prev }
       criticas.forEach((row, i) => { next[row.numos] = results[i].status === 'fulfilled' ? 'ok' : 'error' })
@@ -221,7 +241,7 @@ export default function VTPriorityPage() {
     { key: 'nomecliente', label: 'Cliente' },
     { key: 'nomedacidade', label: 'Cidade' },
     { key: 'bairro', label: 'Bairro' },
-    { key: 'nomedaequipe', label: 'Equipe', render: (v) => shortEquipe(v as string) },
+    { key: 'nomedaequipe', label: 'Equipe', render: (v) => shortEquipe(v as string) || <Badge variant="orange">Sem equipe</Badge> },
     {
       key: '_situacaoEfetiva', label: 'Situação',
       render: (v) => {
@@ -229,13 +249,10 @@ export default function VTPriorityPage() {
         return <Badge variant={situacaoVariant(s)}>{s}</Badge>
       },
     },
-    { key: '_vtPrazoHoras', label: 'Tipo VT', render: (v) => <Badge variant="cyan">VT {v as number}h</Badge> },
+    { key: '_slaTipoLabel', label: 'Tipo', render: (v) => <Badge variant="cyan">{v as string}</Badge> },
     {
-      key: '_vtHorasRestantes', label: 'Tempo Restante',
-      render: (v) => {
-        const restante = v as number
-        return <Badge variant={tempoRestanteVariant(restante)}>{tempoRestanteLabel(restante)}</Badge>
-      },
+      label: 'Urgência',
+      render: (_v, row) => <Badge variant={urgenciaVariant(row)}>{urgenciaLabel(row)}</Badge>,
     },
     {
       label: 'Ações',
@@ -281,23 +298,23 @@ export default function VTPriorityPage() {
   ]
 
   if (isLoading) {
-    return <div className="p-6 text-muted text-[12px]">Carregando fila VT…</div>
+    return <div className="p-6 text-muted text-[12px]">Carregando fila…</div>
   }
 
   return (
     <div className="p-6 space-y-5">
       <div>
-        <h1 className="text-[20px] font-bold text-text">Fila de Prioridade VT</h1>
-        <p className="text-[12px] text-muted mt-0.5">OS de Visita Técnica (08h/24h/48h) ordenadas por prioridade — tipo do contrato, estouro do prazo e tratativa</p>
+        <h1 className="text-[20px] font-bold text-text">Fila de Prioridade</h1>
+        <p className="text-[12px] text-muted mt-0.5">Toda OS ativa numa fila só — VT (prazo em horas) e as demais (SLA em dias), ordenadas pela mesma gravidade real</p>
       </div>
 
       <div className="grid grid-cols-5 gap-4">
         <KPICard title="Violadas" value={kpis.violadas} accent="red" icon={AlertTriangle} />
-        <KPICard title="Crítico < 2h" value={kpis.critico} accent="orange" icon={Flame} />
-        <KPICard title="Atenção < 6h" value={kpis.atencao} accent="yellow" icon={Clock} />
+        <KPICard title="Atenção" value={kpis.atencao} accent="orange" icon={Flame} />
+        <KPICard title="Sem Equipe" value={kpis.semEquipe} accent="yellow" icon={UserX} />
         <KPICard title="No prazo" value={kpis.noPrazo} accent="green" icon={CheckCircle2} />
         <KPICard
-          title="Cumprimento SLA VT"
+          title="Cumprimento SLA"
           value={cumprimento.pct != null ? `${cumprimento.pct}%` : '—'}
           sub={cumprimento.total > 0 ? `${cumprimento.noPrazo}/${cumprimento.total} no prazo` : 'Sem execuções no período'}
           accent="teal"
@@ -313,7 +330,7 @@ export default function VTPriorityPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <FilterSelect value={tipoVT} onChange={setTipoVT} options={tipoVTOptions} placeholder="Todos os tipos" className="w-40" />
+        <FilterSelect value={tipo} onChange={setTipo} options={tipoOptions} placeholder="Todos os tipos" className="w-40" />
         <FilterSelect value={fornecedor} onChange={setFornecedor} options={fornecedorOptions} placeholder="Todos os fornecedores" className="w-48" />
         <SearchBox value={search} onChange={setSearch} placeholder="Buscar por cliente ou nº OS…" className="w-64" />
         <button
@@ -323,16 +340,16 @@ export default function VTPriorityPage() {
                      text-red bg-red/10 hover:bg-red/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Megaphone size={14} />
-          {enviandoLote ? 'Enviando…' : `Notificar críticas (${criticas.length})`}
+          {enviandoLote ? 'Enviando…' : `Notificar violadas (${criticas.length})`}
         </button>
       </div>
 
-      {filaVT.length === 0 ? (
+      {fila.length === 0 ? (
         <div className="rounded-xl bg-card border border-white/[0.08] p-12 text-center">
-          <p className="text-[14px] text-secondary">Nenhuma OS de VT em aberto 🎉</p>
+          <p className="text-[14px] text-secondary">Nenhuma OS em aberto 🎉</p>
         </div>
       ) : (
-        <DataTable columns={columns} rows={filaVT} onRowClick={setDrawerOS} />
+        <DataTable columns={columns} rows={fila} onRowClick={setDrawerOS} />
       )}
 
       <OSDrawer os={drawerOS} onClose={() => setDrawerOS(null)} />

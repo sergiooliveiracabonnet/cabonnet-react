@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { enrichRows } from '../transform'
-import { buildVT } from './vt'
+import { buildFila, filaUrgenciaTier } from './fila'
 import type { OSRow } from '../types'
 
 function makeOS(overrides: Record<string, unknown> = {}): OSRow {
@@ -27,26 +27,25 @@ function makeOS(overrides: Record<string, unknown> = {}): OSRow {
   } as unknown as OSRow
 }
 
-// Helper para VT em aberto (entra nos painéis de carga)
+// Helper para OS em aberto (entra nos painéis de carga)
 function makeAberta(overrides: Record<string, unknown> = {}): OSRow {
   return makeOS({ descsituacao: 'Pendente', dataexecucao: '', ...overrides })
 }
 
-describe('buildVT — cumprimento', () => {
+describe('buildFila — cumprimento', () => {
   it('retorna cumprimento zerado para arrays vazios', () => {
-    const { cumprimento } = buildVT([], [], [])
+    const { cumprimento } = buildFila([], [], [])
     expect(cumprimento.total).toBe(0)
     expect(cumprimento.noPrazo).toBe(0)
     expect(cumprimento.pct).toBeNull()
     expect(cumprimento.deltaPp).toBeNull()
   })
 
-  it('ignora OS sem aferição de prazo VT (não-VT ou não executadas)', () => {
+  it('ignora OS sem aferição de prazo (não executadas)', () => {
     const revisitas = enrichRows([
-      makeOS({ numos: 'A', servico: 'ASSISTENCIA TECNICA' }),              // não-VT
       makeOS({ numos: 'B', descsituacao: 'Pendente', dataexecucao: '' }),  // VT não executada
     ])
-    const { cumprimento } = buildVT([], revisitas, [])
+    const { cumprimento } = buildFila([], revisitas, [])
     expect(cumprimento.total).toBe(0)
     expect(cumprimento.pct).toBeNull()
   })
@@ -58,11 +57,23 @@ describe('buildVT — cumprimento', () => {
       makeOS({ numos: 'C', dataexecucao: '01/06/2026 20:00' }),  // 12h → no prazo
       makeOS({ numos: 'D', dataexecucao: '01/06/2026 12:00' }),  // 4h  → no prazo
     ])
-    const { cumprimento } = buildVT([], revisitas, [])
+    const { cumprimento } = buildFila([], revisitas, [])
     expect(cumprimento.total).toBe(4)
     expect(cumprimento.noPrazo).toBe(3)
     expect(cumprimento.fora).toBe(1)
     expect(cumprimento.pct).toBe(75)
+  })
+
+  it('calcula % no prazo sobre não-VT executadas (SLA em dias)', () => {
+    const revisitas = enrichRows([
+      // Instalação, limite padrão 2 dias
+      makeOS({ numos: 'A', servico: 'ASSISTENCIA TECNICA', tiposervico: 'Instalação', datacadastro: '01/06/2026 08:00', dataexecucao: '01/06/2026 18:00' }), // <1d → no prazo
+      makeOS({ numos: 'B', servico: 'ASSISTENCIA TECNICA', tiposervico: 'Instalação', datacadastro: '01/06/2026 08:00', dataexecucao: '10/06/2026 18:00' }), // 9d → fora
+    ])
+    const { cumprimento } = buildFila([], revisitas, [])
+    expect(cumprimento.total).toBe(2)
+    expect(cumprimento.noPrazo).toBe(1)
+    expect(cumprimento.pct).toBe(50)
   })
 
   it('calcula delta em pontos percentuais vs período anterior', () => {
@@ -74,7 +85,7 @@ describe('buildVT — cumprimento', () => {
       makeOS({ numos: 'X', dataexecucao: '01/06/2026 18:00' }),  // no prazo
       makeOS({ numos: 'Y', dataexecucao: '03/06/2026 18:00' }),  // fora
     ]) // 50%
-    const { cumprimento } = buildVT([], atual, anterior)
+    const { cumprimento } = buildFila([], atual, anterior)
     expect(cumprimento.pct).toBe(100)
     expect(cumprimento.prevPct).toBe(50)
     expect(cumprimento.deltaPp).toBe(50)
@@ -90,9 +101,9 @@ function execDia(offset: number): string {
   return `${dd}/${mm}/${d.getFullYear()} 10:00`
 }
 
-describe('buildVT — tendência 7 dias', () => {
+describe('buildFila — tendência 7 dias', () => {
   it('retorna 7 dias com zeros para entrada vazia', () => {
-    const { tendencia } = buildVT([], [], [], [])
+    const { tendencia } = buildFila([], [], [], [])
     expect(tendencia).toHaveLength(7)
     expect(tendencia.every(d => d.total === 0 && d.violadas === 0)).toBe(true)
     // ordem cronológica: último item é hoje
@@ -101,35 +112,35 @@ describe('buildVT — tendência 7 dias', () => {
     expect(tendencia[6].label.startsWith(dd)).toBe(true)
   })
 
-  it('conta VT executadas fora do prazo por dia de execução', () => {
+  it('conta OS executadas fora do prazo por dia de execução (VT e não-VT juntos)', () => {
     const all = enrichRows([
-      // hoje: 1 violada + 1 no prazo
+      // hoje: 1 violada (VT 8h) + 1 no prazo (VT 24h)
       makeOS({ numos: 'H1', datacadastro: execDia(0).replace('10:00', '00:00'), dataexecucao: execDia(0) }), // 10h → no prazo (VT 24h)
       makeOS({ numos: 'H2', servico: 'VT 08H', datacadastro: execDia(0).replace('10:00', '00:00'), dataexecucao: execDia(0) }), // 10h > 8h → violada
-      // ontem: 1 violada
-      makeOS({ numos: 'O1', servico: 'VT 08H', datacadastro: execDia(1).replace('10:00', '00:00'), dataexecucao: execDia(1) }), // 10h > 8h → violada
+      // ontem: 1 violada (não-VT, instalação limite 2d, executada 5d depois)
+      makeOS({ numos: 'O1', servico: 'ASSISTENCIA TECNICA', tiposervico: 'Instalação', datacadastro: execDia(6), dataexecucao: execDia(1) }), // 5d > 2d → violada
     ])
-    const { tendencia } = buildVT([], [], [], all)
+    const { tendencia } = buildFila([], [], [], all)
     expect(tendencia[6].total).toBe(2)     // hoje
     expect(tendencia[6].violadas).toBe(1)  // hoje: só a VT08h
-    expect(tendencia[5].violadas).toBe(1)  // ontem
+    expect(tendencia[5].violadas).toBe(1)  // ontem: a não-VT
   })
 })
 
-describe('buildVT — carga', () => {
+describe('buildFila — carga', () => {
   it('retorna carga vazia para arrays vazios', () => {
-    const { cargaFornecedor, cargaCidade } = buildVT([], [], [])
+    const { cargaFornecedor, cargaCidade } = buildFila([], [], [])
     expect(cargaFornecedor).toEqual([])
     expect(cargaCidade).toEqual([])
   })
 
-  it('agrega VT abertas por fornecedor com violadas e críticas', () => {
+  it('agrega OS abertas por fornecedor com violadas e críticas (VT)', () => {
     const rows = enrichRows([
-      makeAberta({ numos: 'W1', nomedaequipe: 'EQUIPE F08', datacadastro: '01/06/2026 08:00' }), // WES, sem hora real → violada (datas fixas, muito antigas)
+      makeAberta({ numos: 'W1', nomedaequipe: 'EQUIPE F08', datacadastro: '01/06/2026 08:00' }), // WES, violada
       makeAberta({ numos: 'W2', nomedaequipe: 'EQUIPE F08', datacadastro: '01/06/2026 08:00' }), // WES, violada
       makeAberta({ numos: 'I1', nomedaequipe: 'EQUIPE F01', datacadastro: '01/06/2026 08:00' }), // Instacable, violada
     ])
-    const { cargaFornecedor } = buildVT(rows, [], [])
+    const { cargaFornecedor } = buildFila(rows, [], [])
     const wes = cargaFornecedor.find(c => c.nome === 'WES')
     const inst = cargaFornecedor.find(c => c.nome === 'Instacable')
     expect(wes?.total).toBe(2)
@@ -139,17 +150,29 @@ describe('buildVT — carga', () => {
     expect(cargaFornecedor[0].nome).toBe('WES')
   })
 
-  it('agrega VT abertas por cidade e ignora não-VT', () => {
+  it('agrega OS abertas por cidade INCLUINDO não-VT (fila unificada)', () => {
     const rows = enrichRows([
       makeAberta({ numos: 'C1', nomedacidade: 'SAO JOSE DOS CAMPOS', datacadastro: '01/06/2026 08:00' }),
       makeAberta({ numos: 'C2', nomedacidade: 'SAO JOSE DOS CAMPOS', datacadastro: '01/06/2026 08:00' }),
       makeAberta({ numos: 'C3', nomedacidade: 'TAUBATE',             datacadastro: '01/06/2026 08:00' }),
-      makeAberta({ numos: 'N1', nomedacidade: 'TAUBATE', servico: 'ASSISTENCIA TECNICA' }), // não-VT → ignorada
+      makeAberta({ numos: 'N1', nomedacidade: 'TAUBATE', servico: 'ASSISTENCIA TECNICA' }), // não-VT → agora ENTRA na fila unificada
     ])
-    const { cargaCidade } = buildVT(rows, [], [])
+    const { cargaCidade } = buildFila(rows, [], [])
     const sjc = cargaCidade.find(c => c.nome === 'SAO JOSE DOS CAMPOS')
     const tau = cargaCidade.find(c => c.nome === 'TAUBATE')
     expect(sjc?.total).toBe(2)
-    expect(tau?.total).toBe(1)  // a não-VT não conta
+    expect(tau?.total).toBe(2)  // C3 (VT) + N1 (não-VT), unificadas
+  })
+})
+
+describe('filaUrgenciaTier', () => {
+  it('classifica VT violado como "violado"', () => {
+    const [row] = enrichRows([makeAberta({ servico: 'VT 08H', datacadastro: '01/06/2026 08:00' })])
+    expect(filaUrgenciaTier(row)).toBe('violado')
+  })
+
+  it('classifica não-VT com SLA 2x excedido como "violado"', () => {
+    const [row] = enrichRows([makeAberta({ servico: 'ASSISTENCIA TECNICA', tiposervico: 'Instalação', datacadastro: '01/06/2026 08:00' })])
+    expect(filaUrgenciaTier(row)).toBe('violado')
   })
 })
