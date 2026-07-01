@@ -53,23 +53,10 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target }: {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border"
-      style={{
-        background: 'rgb(var(--c-card))',
-        borderColor: `${scoreColor}28`,
-      }}
+      className="rounded-lg border border-border bg-card"
+      style={{ borderLeft: `2px solid ${scoreColor}` }}
     >
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: `linear-gradient(90deg, transparent, ${scoreColor}, transparent)` }} />
-
-      {/* Atmospheric glow */}
-      <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full blur-3xl pointer-events-none"
-           style={{ background: `${scoreColor}0e` }} />
-      <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full blur-3xl pointer-events-none"
-           style={{ background: 'rgba(59,130,246,0.05)' }} />
-
-      <div className="relative p-5 space-y-4">
+      <div className="p-5 space-y-4">
         {/* Main row */}
         <div className="flex items-start gap-6 flex-wrap">
 

@@ -92,8 +92,8 @@ export function ProjecaoRiscoPanel({ proj, criticasAgora, onOpen }: {
   return (
     <button
       onClick={() => onOpen(proj.amostra)}
-      className="w-full flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-card border border-orange/20
-                 px-4 py-2.5 text-left hover:border-orange/40 hover:bg-orange/[0.04] transition-colors duration-fast"
+      className="w-full flex flex-wrap items-center gap-x-5 gap-y-2 rounded-md bg-card border-l-2 border-l-orange border border-border
+                 px-4 py-2.5 text-left hover:border-muted/40 transition-colors duration-fast"
     >
       <div className="flex items-center gap-2">
         <TrendingUp size={14} className="text-orange" />
@@ -118,7 +118,7 @@ export function MudancasStrip({ tendencia, mudancas }: { tendencia: ScoreTendenc
   const flat = tendencia.delta === 0
   const cor  = flat ? '#94a3b8' : up ? '#4ade80' : '#f87171'
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-card border border-white/[0.08] px-4 py-2.5">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-card border border-border px-4 py-2.5">
       <div className="flex items-center gap-2">
         <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">Tendência</span>
         <span className="text-[12px] font-semibold tabular-nums" style={{ color: cor }}>
@@ -147,9 +147,9 @@ export function SectionLabel({ icon: Icon, color, children }: {
 }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
-      <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color }}>
+      <div className="w-[3px] h-3.5 rounded-full flex-shrink-0" style={{ background: color }} />
+      <Icon size={12} className="flex-shrink-0 text-muted" />
+      <span className="text-[11px] font-semibold uppercase tracking-[0.09em] text-secondary">
         {children}
       </span>
     </div>
@@ -163,7 +163,13 @@ export function BentoKPICard({ kpi, icon: Icon, delay = 0, onClick, scope }: {
   scope?: 'aovivo' | 'periodo'
 }) {
   const { title, value, sub, accent, trend } = kpi
-  const ac = ACCENT_COLORS[accent] ?? ACCENT_COLORS.primary
+  // Neutro por padrão; a cor só aparece quando o accent representa status real.
+  const status = accent === 'red' ? 'crit' : accent === 'orange' ? 'warn' : accent === 'green' ? 'ok' : 'neutral'
+  const statusColor = status === 'crit' ? 'rgb(var(--c-red))'
+                    : status === 'warn' ? 'rgb(var(--c-orange))'
+                    : status === 'ok'   ? 'rgb(var(--c-green))' : ''
+  const valColor = status === 'crit' ? 'rgb(var(--c-red))'
+                 : status === 'warn' ? 'rgb(var(--c-orange))' : 'rgb(var(--c-text))'
 
   return (
     <div
@@ -171,60 +177,39 @@ export function BentoKPICard({ kpi, icon: Icon, delay = 0, onClick, scope }: {
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={e => e.key === 'Enter' && onClick?.()}
-      style={{ animationDelay: `${delay}ms`, borderColor: `${ac.solid}22` }}
-      className="relative overflow-hidden rounded-xl border bg-card
-                 animate-card-enter cursor-pointer group
-                 transition-colors duration-150
-                 hover:shadow-md"
+      style={{ animationDelay: `${delay}ms`, borderLeft: statusColor ? `2px solid ${statusColor}` : undefined }}
+      className={`relative rounded-md border border-border bg-card p-4 animate-card-enter
+                  transition-colors duration-150 hover:border-muted/40
+                  ${onClick ? 'cursor-pointer' : ''}`}
     >
-      {/* Accent top bar */}
-      <div className="absolute top-0 left-0 right-0 h-[2.5px] transition-opacity duration-200"
-           style={{ background: `linear-gradient(90deg, ${ac.solid}, ${ac.solid}80)` }} />
-
-      {/* Background glow on hover */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-           style={{ background: `radial-gradient(ellipse at top right, ${ac.solid}0d, transparent 65%)` }} />
-
-      <div className="relative p-4">
-        {/* Icon + Trend row */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-               style={{ background: ac.bg }}>
-            {Icon && <Icon size={15} style={{ color: ac.solid }} />}
-          </div>
-          {trend && <TrendPill trend={trend} />}
-        </div>
-
-        {/* Value */}
-        <p className="number-display tabular-nums leading-none mb-1.5 transition-colors duration-150"
-           style={{
-             fontSize: String(value).length > 4 ? '32px' : '40px',
-             color: ac.solid,
-           }}>
-          {value}
-        </p>
-
-        {/* Title */}
-        <p className="text-[12px] font-semibold text-text mb-0.5">{title}</p>
-
-        {/* Sub */}
-        <p className="text-[11px] text-muted leading-snug">{sub}</p>
-
-        {/* Escopo: ao vivo (ignora filtro de data) vs no período selecionado */}
-        {scope && (
-          <p className="flex items-center gap-1 text-[8.5px] uppercase tracking-wide text-muted/45 mt-1.5">
-            {scope === 'aovivo'
-              ? <><span className="w-1 h-1 rounded-full bg-green animate-pulse flex-shrink-0" /> Ao vivo</>
-              : <><Calendar size={8} className="flex-shrink-0" /> No período</>}
-          </p>
-        )}
+      {/* Label + trend/scope */}
+      <div className="flex items-center justify-between gap-2 mb-3.5">
+        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary min-w-0">
+          {Icon && <Icon size={12} className="text-muted flex-shrink-0" />}
+          <span className="truncate">{title}</span>
+        </span>
+        {trend
+          ? <TrendPill trend={trend} />
+          : scope && (
+            <span className="flex items-center gap-1 text-[9px] uppercase tracking-wide text-muted flex-shrink-0">
+              {scope === 'aovivo'
+                ? <><span className="w-1 h-1 rounded-full bg-green flex-shrink-0" /> Ao vivo</>
+                : <><Calendar size={8} className="flex-shrink-0" /> Período</>}
+            </span>
+          )}
       </div>
 
-      {/* Bottom indicator when clickable */}
-      {onClick && (
-        <div className="absolute bottom-0 left-4 right-4 h-px opacity-0 group-hover:opacity-100 transition-opacity"
-             style={{ background: `linear-gradient(90deg, transparent, ${ac.solid}50, transparent)` }} />
-      )}
+      {/* Value */}
+      <p className="tabular-nums leading-none"
+         style={{
+           fontSize: String(value).length > 4 ? '28px' : '34px',
+           fontWeight: 700, letterSpacing: '-0.03em', color: valColor,
+         }}>
+        {value}
+      </p>
+
+      {/* Sub */}
+      <p className="text-[11px] text-muted leading-snug mt-2">{sub}</p>
     </div>
   )
 }
@@ -372,14 +357,8 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, o
   }, [hojeRows])
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-green/20 bg-card">
-      {/* Top accent */}
-      <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: 'linear-gradient(90deg, transparent, #4ade80, transparent)' }} />
-      <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-64 h-32 blur-3xl pointer-events-none"
-           style={{ background: 'rgba(74,222,128,0.07)' }} />
-
-      <div className="relative p-5">
+    <div className="rounded-lg border border-border border-l-2 border-l-green bg-card">
+      <div className="p-5">
         <div className="flex items-start justify-between mb-3">
           <SectionLabel icon={CheckCircle2} color="#4ade80">Executadas Hoje</SectionLabel>
           {total > 0 && (
@@ -477,10 +456,10 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, o
 export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
   if (meta.meta === 0) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card p-5">
+      <div className="rounded-lg border border-border bg-card p-5">
         <div className="flex items-center gap-2.5">
           <Target size={14} className="text-muted" />
-          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">Meta do Mês</span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.09em] text-secondary">Meta do Mês</span>
         </div>
         <p className="text-[12px] text-muted/60 mt-3">
           {meta.concluidas} concluídas até agora · sem histórico dos 3 meses anteriores para definir uma meta
@@ -494,14 +473,11 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
   const diasLabel = meta.diasUteisRestantes === 1 ? '1 dia útil restante' : `${meta.diasUteisRestantes} dias úteis restantes`
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-card p-5" style={{ borderColor: `${cor}28` }}>
-      <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: `linear-gradient(90deg, transparent, ${cor}, transparent)` }} />
-
+    <div className="rounded-lg border border-border bg-card p-5" style={{ borderLeft: `2px solid ${cor}` }}>
       <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div className="flex items-center gap-2.5">
           <Target size={14} style={{ color: cor }} />
-          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">Meta do Mês</span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.09em] text-secondary">Meta do Mês</span>
         </div>
         <span className="text-[11px] text-muted">{diasLabel}</span>
       </div>
@@ -515,9 +491,9 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
         </span>
       </div>
 
-      <div className="h-2 bg-surface/40 rounded-full overflow-hidden">
+      <div className="h-2 bg-surface rounded-full overflow-hidden">
         <div className="h-full rounded-full transition-all duration-700"
-             style={{ width: `${pct}%`, background: cor, boxShadow: `0 0 8px ${cor}60` }} />
+             style={{ width: `${pct}%`, background: cor }} />
       </div>
 
       {meta.projecaoFinal != null && (
@@ -568,9 +544,7 @@ export function AlertaTopoBanner({ clustersCount, anomaliasCount, onScrollCluste
 export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) {
   if (!clusters?.length) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-green/15 bg-card p-5">
-        <div className="absolute top-0 left-0 right-0 h-[2px]"
-             style={{ background: 'linear-gradient(90deg, transparent, #4ade8066, transparent)' }} />
+      <div className="rounded-lg border border-border border-l-2 border-l-green bg-card p-5">
         <SectionLabel icon={Zap} color="#4ade80">Clusters de Falha</SectionLabel>
         <div className="flex items-center gap-3 mt-4">
           <CheckCircle2 size={18} className="text-green flex-shrink-0" />
@@ -583,14 +557,8 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-card"
-         style={{ borderColor: 'rgba(248,113,113,0.35)' }}>
-      <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: 'linear-gradient(90deg, transparent, #f87171, transparent)' }} />
-      <div className="absolute -top-10 left-0 w-40 h-32 blur-3xl pointer-events-none"
-           style={{ background: 'rgba(248,113,113,0.08)' }} />
-
-      <div className="relative p-5">
+    <div className="rounded-lg border border-border border-l-2 border-l-red bg-card">
+      <div className="p-5">
         <div className="flex items-start justify-between mb-4">
           <SectionLabel icon={Zap} color="#f87171">Clusters de Falha</SectionLabel>
           <span className="text-[10px] font-bold uppercase tracking-[0.05em] bg-red/15 text-red
@@ -635,13 +603,13 @@ export function AgingPanel({ pulso }: { pulso: Pulso }) {
   ]
 
   if (!agingTotal) return (
-    <div className="rounded-2xl border border-white/[0.08] bg-card p-5 flex items-center justify-center">
+    <div className="rounded-lg border border-border bg-card p-5 flex items-center justify-center">
       <p className="text-muted text-[12px]">Sem dados de aging</p>
     </div>
   )
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card p-5">
+    <div className="rounded-lg border border-border bg-card p-5">
       <SectionLabel icon={Clock} color="#3b82f6">Aging da Fila Ativa</SectionLabel>
 
       <div className="mt-4 space-y-3">
@@ -652,9 +620,9 @@ export function AgingPanel({ pulso }: { pulso: Pulso }) {
             <div key={e.key} className="flex items-center gap-3">
               <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: e.color }} />
               <span className="text-[11px] text-muted w-14 flex-shrink-0">{e.label}</span>
-              <div className="flex-1 h-2 bg-surface/40 rounded-full overflow-hidden">
+              <div className="flex-1 h-2 bg-surface rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-700"
-                     style={{ width: `${pct}%`, background: e.color, boxShadow: `0 0 6px ${e.color}60` }} />
+                     style={{ width: `${pct}%`, background: e.color }} />
               </div>
               <span className="font-mono text-[12px] text-text font-semibold w-6 text-right flex-shrink-0">
                 {val}
@@ -706,7 +674,7 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card p-5">
+    <div className="rounded-lg border border-border bg-card p-5">
       <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
 
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -759,9 +727,7 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
 export function CidadesPanel({ cidades }: { cidades: { cidade: string; count: number }[] }) {
   const max = Math.max(...cidades.map(c => c.count), 1)
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-red/15 bg-card p-5">
-      <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: 'linear-gradient(90deg, transparent, rgba(248,113,113,0.4), transparent)' }} />
+    <div className="rounded-lg border border-border border-l-2 border-l-red bg-card p-5">
       <SectionLabel icon={MapPin} color="#f87171">Top Cidades — OS Críticas</SectionLabel>
       <div className="mt-4 space-y-2.5">
         {cidades.map(c => (
@@ -769,7 +735,7 @@ export function CidadesPanel({ cidades }: { cidades: { cidade: string; count: nu
             <span className="text-[11px] font-semibold text-text w-28 flex-shrink-0 truncate">{c.cidade}</span>
             <div className="flex-1 h-2 bg-surface/40 rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700"
-                   style={{ width: `${Math.round(c.count / max * 100)}%`, background: '#f87171', boxShadow: '0 0 6px rgba(248,113,113,0.5)' }} />
+                   style={{ width: `${Math.round(c.count / max * 100)}%`, background: '#f87171' }} />
             </div>
             <span className="font-mono text-[13px] font-bold text-red w-6 text-right flex-shrink-0">{c.count}</span>
           </div>
@@ -791,14 +757,10 @@ export function FornecedorCard({ nome, total, concluidas, sla, cor, slaTrend }: 
   const t    = SLA_TIER[tier]
 
   return (
-    <div className="relative overflow-hidden rounded-xl border bg-card transition-all duration-200
-                    hover:-translate-y-0.5 hover:shadow-lg cursor-default"
-         style={{ borderColor: `${cor}22` }}>
-      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: cor }} />
-      <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full blur-2xl pointer-events-none"
-           style={{ background: `${cor}14` }} />
-
-      <div className="relative p-4">
+    <div className="rounded-md border border-border bg-card transition-colors duration-150
+                    hover:border-muted/40 cursor-default"
+         style={{ borderLeft: `2px solid ${cor}` }}>
+      <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 min-w-0">
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cor }} />
