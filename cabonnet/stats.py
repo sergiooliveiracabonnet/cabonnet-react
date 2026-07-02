@@ -163,6 +163,7 @@ def compute_stats(csv_pendente: str, csv_agendado: str, csv_futuro: str) -> dict
 
     pendente = atend = rede = criticas = sem_equipe = sem_agend = sla_exc_fila = reagend = 0
     reagend_inviab = reagend_mobile = reagend_futura = 0
+    cope_aguardando = 0
     aging_arr: list[int] = []
     aging_dist = {"le1d": 0, "d2a3": 0, "d4a7": 0, "d8mais": 0}
     por_cidade: dict = defaultdict(lambda: {"pendente": 0, "atendimento": 0, "criticas": 0})
@@ -175,7 +176,11 @@ def compute_stats(csv_pendente: str, csv_agendado: str, csv_futuro: str) -> dict
             if   _rt == "inviabilidade": reagend_inviab += 1
             elif _rt == "mobile":        reagend_mobile += 1
             else:                        reagend_futura += 1
-        if r["_cope"] or r["_reagend"]:
+        if r["_cope"]:
+            if r["_ativo"]:
+                cope_aguardando += 1
+            continue
+        if r["_reagend"]:
             continue
         if not r["_ativo"]:
             continue
@@ -236,6 +241,7 @@ def compute_stats(csv_pendente: str, csv_agendado: str, csv_futuro: str) -> dict
             "reagend_inviab":  reagend_inviab,
             "reagend_mobile":  reagend_mobile,
             "reagend_futura":  reagend_futura,
+            "cope_aguardando": cope_aguardando,
             "sla_pct":         sla_pct,
             "aging_med":       aging_med,
             "aging_dist":      aging_dist,

@@ -1,7 +1,7 @@
 import type { ComponentType, CSSProperties } from 'react'
 import {
   AlertCircle, CheckCircle2, Target,
-  Clock, BarChart3, Radio, Activity, Users, RotateCcw,
+  Clock, BarChart3, Radio, Activity, Users, RotateCcw, Send,
 } from 'lucide-react'
 import { isCOPE, isReagend, getReagendTipo } from '../../lib/transform'
 import type { OSRow, KPI, Pulso, AccentColor } from '../../lib/types'
@@ -42,11 +42,12 @@ export const KPI_FILTERS: Record<string, (r: OSRow) => boolean> = {
   atend:    r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Atendimento' && !isRede(r),
   criticas: r => !isCOPE(r) && !isReagend(r) && r._slaCritico  && !isRede(r) && isAgendadaHoje(r),
   semEq:    r => !isCOPE(r) && !isReagend(r) && !r.nomedaequipe?.trim() && isAtivo(r) && !isRede(r),
+  copeAguardando: r => isCOPE(r) && isAtivo(r),
   reagendInviab: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'inviabilidade',
   reagendMobile: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'mobile',
   reagendFutura: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'futura',
 }
-export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq','reagendInviab','reagendMobile','reagendFutura'])
+export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq','copeAguardando','reagendInviab','reagendMobile','reagendFutura'])
 
 type AccentConfig = { solid: string; glow: string; bg: string }
 export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
@@ -61,6 +62,7 @@ export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
 
 export const KPI_ICONS: Partial<Record<string, IconComp>> = {
   criticas: AlertCircle, semEq: Users, pend: Clock, atend: Activity,
+  copeAguardando: Send,
   reagendInviab: RotateCcw, reagendMobile: RotateCcw, reagendFutura: RotateCcw,
   total: BarChart3, rede: Radio, concl: CheckCircle2, taxa: Target,
 }

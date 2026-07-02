@@ -543,9 +543,9 @@ describe('buildDashboard', () => {
     makeOS({ numos: 'D3', descsituacao: 'Concluída',   datacadastro: daysAgo(1), nomedaequipe: 'MANUTENCAO M01', tiposervico: 'MANUTENCAO' }),
   ])
 
-  it('retorna 11 KPIs', () => {
+  it('retorna 12 KPIs', () => {
     const { kpis } = buildDashboard(rows)
-    expect(kpis).toHaveLength(11)
+    expect(kpis).toHaveLength(12)
   })
 
   it('total conta apenas Pendente + Atendimento', () => {
@@ -571,6 +571,16 @@ describe('buildDashboard', () => {
     expect(kpis.find(k => k.id === 'reagendInviab')!.value).toBe(1)
     expect(kpis.find(k => k.id === 'reagendMobile')!.value).toBe(1)
     expect(kpis.find(k => k.id === 'reagendFutura')!.value).toBe(2)
+  })
+
+  it('copeAguardando conta OS ativas paradas em equipes COPE, ignora concluídas', () => {
+    const copeRows = enrichRows([
+      makeOS({ numos: 'CP1', descsituacao: 'Pendente',    nomedaequipe: 'COPE - MANUTENCAO' }),
+      makeOS({ numos: 'CP2', descsituacao: 'Atendimento', nomedaequipe: 'COPE - INSTALACAO' }),
+      makeOS({ numos: 'CP3', descsituacao: 'Concluída',   nomedaequipe: 'COPE - MANUTENCAO' }),
+    ])
+    const { kpis } = buildDashboard(copeRows)
+    expect(kpis.find(k => k.id === 'copeAguardando')!.value).toBe(2)
   })
 
   it('OS Críticas conta apenas críticas agendadas para hoje', () => {
