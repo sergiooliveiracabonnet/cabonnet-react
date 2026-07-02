@@ -57,7 +57,7 @@ export interface OSRow {
 
 // ─── Date Filter (uiStore) ────────────────────────────────────────────────────
 
-export type DatePreset = 'hoje' | 'ontem' | 'semanal' | 'quinzenal' | 'mensal' | 'anual' | 'amanha' | 'futuro' | 'custom'
+export type DatePreset = 'hoje' | 'ontem' | 'semanal' | 'mensal' | 'anual' | 'amanha' | 'custom'
 export type DateCampo  = 'datacadastro' | 'dataagendamento' | 'dataexecucao'
 
 export interface DateFilter {
