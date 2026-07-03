@@ -11,6 +11,19 @@ import type { OSRow } from '../../lib/types'
 
 type SortKey = 'numos' | 'cliente' | 'tipo' | 'equipe' | 'situacao' | 'aging' | 'data'
 
+// Larguras compartilhadas entre o cabeçalho e as linhas — mesma constante nos dois
+// lugares evita desalinhamento quando o texto de uma coluna (ex: "Reagendamento") varia.
+const COL_W = {
+  chevron:  'w-4',
+  numos:    'w-[72px]',
+  tipo:     'w-[92px]',
+  equipe:   'w-[150px]',
+  situacao: 'w-[124px]',
+  aging:    'w-[52px]',
+  data:     'w-[80px]',
+  action:   'w-4',
+}
+
 function compareRows(a: OSRow, b: OSRow, key: SortKey): number {
   switch (key) {
     case 'numos':    return a.numos.localeCompare(b.numos)
@@ -130,23 +143,24 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
   return (
     <div className="overflow-auto max-h-[72vh]">
       {/* Cabeçalho de colunas — clique para ordenar */}
-      <div className="sticky top-0 z-20 h-7 flex items-center gap-2 bg-card px-4 border-b border-white/[0.12]">
-        <span className="w-[13px] flex-shrink-0" />
-        <SortHeader label="Nº OS"    active={sortKey === 'numos'}    dir={sortDir} onClick={() => toggleSort('numos')}    className="w-[60px]" />
-        <SortHeader label="Cliente"  active={sortKey === 'cliente'}  dir={sortDir} onClick={() => toggleSort('cliente')}  className="flex-1" />
-        <SortHeader label="Tipo"     active={sortKey === 'tipo'}     dir={sortDir} onClick={() => toggleSort('tipo')}     className="hidden sm:flex w-[70px]" />
-        <SortHeader label="Equipe"   active={sortKey === 'equipe'}   dir={sortDir} onClick={() => toggleSort('equipe')}   className="hidden md:flex max-w-[120px]" />
-        <SortHeader label="Situação" active={sortKey === 'situacao'} dir={sortDir} onClick={() => toggleSort('situacao')} className="w-[74px]" />
-        <SortHeader label="Aging"    active={sortKey === 'aging'}    dir={sortDir} onClick={() => toggleSort('aging')}    className="w-[38px]" />
-        <SortHeader label="Agend."   active={sortKey === 'data'}     dir={sortDir} onClick={() => toggleSort('data')}     className="w-[68px] justify-end" />
-        <span className="w-[13px] flex-shrink-0" />
-        <span className="w-[13px] flex-shrink-0" />
+      <div className="sticky top-0 z-20 h-9 flex items-center gap-3 bg-card px-5 border-b border-white/[0.12]">
+        <span className={`${COL_W.chevron} flex-shrink-0`} />
+        <SortHeader label="Nº OS"    active={sortKey === 'numos'}    dir={sortDir} onClick={() => toggleSort('numos')}    className={COL_W.numos} />
+        <SortHeader label="Cliente"  active={sortKey === 'cliente'}  dir={sortDir} onClick={() => toggleSort('cliente')}  className="flex-1 min-w-[160px]" />
+        <SortHeader label="Tipo"     active={sortKey === 'tipo'}     dir={sortDir} onClick={() => toggleSort('tipo')}     className={`hidden sm:flex ${COL_W.tipo}`} />
+        <SortHeader label="Equipe"   active={sortKey === 'equipe'}   dir={sortDir} onClick={() => toggleSort('equipe')}   className={`hidden md:flex ${COL_W.equipe}`} />
+        <SortHeader label="Situação" active={sortKey === 'situacao'} dir={sortDir} onClick={() => toggleSort('situacao')} className={COL_W.situacao} />
+        <SortHeader label="Aging"    active={sortKey === 'aging'}    dir={sortDir} onClick={() => toggleSort('aging')}    className={COL_W.aging} />
+        <SortHeader label="Agend."   active={sortKey === 'data'}     dir={sortDir} onClick={() => toggleSort('data')}     className={`${COL_W.data} justify-end`} />
+        <span className="w-[1px] h-4 bg-white/[0.08] flex-shrink-0" />
+        <span className={`${COL_W.action} flex-shrink-0`} />
+        <span className={`${COL_W.action} flex-shrink-0`} />
       </div>
 
       {grupos.map(([cidade, list], gi) => (
         <div key={cidade} className={gi > 0 ? 'border-t-2 border-white/[0.12]' : ''}>
           {/* Cabeçalho da cidade */}
-          <div className="sticky top-7 z-10 flex items-center justify-between gap-2 bg-surface px-4 py-2 border-b border-white/[0.08]">
+          <div className="sticky top-9 z-10 flex items-center justify-between gap-2 bg-surface px-5 py-2.5 border-b border-white/[0.08]">
             <span className="flex items-center gap-1.5 text-[11px] font-bold text-text uppercase tracking-[0.03em]">
               <MapPin size={11} className="text-primary/70" /> {cidade}
               <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-[10px] font-bold tabular-nums">
@@ -169,33 +183,40 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
               const catLabel = CATEGORIA_LABEL[os._categoria] ?? os._categoria
               return (
                 <div key={os.numos}>
-                  <div className="flex items-center gap-2 px-4 py-2 hover:bg-surface/30 transition-colors text-[11px]">
+                  <div className="flex items-center gap-3 px-5 py-2.5 hover:bg-surface/30 transition-colors text-[12px]">
                     <button onClick={() => setExpanded(v => v === os.numos ? null : os.numos)}
                             title="Ver histórico de reagendamentos"
-                            className="text-muted/50 hover:text-primary transition-colors flex-shrink-0">
+                            className={`${COL_W.chevron} flex-shrink-0 text-muted/50 hover:text-primary transition-colors`}>
                       {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                     </button>
-                    <button onClick={() => onOS(os)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
-                      <span className="font-mono text-primary w-[60px] flex-shrink-0">{os.numos}</span>
-                      <span className="text-text truncate flex-1">{os.nomecliente ?? '—'}</span>
-                      <span
-                        title={`${catLabel} · ${os.tiposervico || os.servico || ''}`}
-                        className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full flex-shrink-0 hidden sm:inline-block"
-                        style={{ color: catColor, background: `${catColor}1a`, border: `1px solid ${catColor}40` }}
-                      >
-                        {catLabel}
+                    <button onClick={() => onOS(os)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                      <span className={`font-mono text-primary ${COL_W.numos} flex-shrink-0`}>{os.numos}</span>
+                      <span className="text-text truncate flex-1 min-w-[160px]">{os.nomecliente ?? '—'}</span>
+                      <span className={`hidden sm:flex ${COL_W.tipo} flex-shrink-0`}>
+                        <span
+                          title={`${catLabel} · ${os.tiposervico || os.servico || ''}`}
+                          className="text-[9px] font-bold uppercase tracking-wide px-2 py-1 rounded-full leading-none"
+                          style={{ color: catColor, background: `${catColor}1a`, border: `1px solid ${catColor}40` }}
+                        >
+                          {catLabel}
+                        </span>
                       </span>
-                      <span className="text-secondary truncate max-w-[120px] hidden md:block">{shortEquipe(os.nomedaequipe) || '—'}</span>
-                      <Badge variant={situacaoVariant(os._situacaoEfetiva ?? os.descsituacao)}>{os._situacaoEfetiva ?? os.descsituacao ?? '—'}</Badge>
-                      {os._aging != null ? <Badge variant={agVar}>{aging}d</Badge> : <span className="text-muted">—</span>}
-                      <span className="font-mono text-muted w-[68px] flex-shrink-0 text-right">{os.dataagendamento ? os.dataagendamento.slice(0, 10) : '—'}</span>
+                      <span className={`text-secondary truncate hidden md:block ${COL_W.equipe} flex-shrink-0`}>{shortEquipe(os.nomedaequipe) || '—'}</span>
+                      <span className={`${COL_W.situacao} flex-shrink-0`}>
+                        <Badge variant={situacaoVariant(os._situacaoEfetiva ?? os.descsituacao)}>{os._situacaoEfetiva ?? os.descsituacao ?? '—'}</Badge>
+                      </span>
+                      <span className={`${COL_W.aging} flex-shrink-0`}>
+                        {os._aging != null ? <Badge variant={agVar}>{aging}d</Badge> : <span className="text-muted">—</span>}
+                      </span>
+                      <span className={`font-mono text-muted ${COL_W.data} flex-shrink-0 text-right`}>{os.dataagendamento ? os.dataagendamento.slice(0, 10) : '—'}</span>
                     </button>
+                    <span className="w-[1px] h-4 bg-white/[0.06] flex-shrink-0" />
                     <button onClick={() => copyResumo(os)} title="Copiar só a OS (resumo)"
-                            className="text-muted/50 hover:text-primary transition-colors flex-shrink-0">
+                            className={`${COL_W.action} flex-shrink-0 text-muted/50 hover:text-primary transition-colors`}>
                       {copied === `${os.numos}:os` ? <Check size={13} className="text-green" /> : <Copy size={13} />}
                     </button>
                     <button onClick={() => copyCompleto(os)} title="Copiar OS + histórico"
-                            className="text-muted/50 hover:text-primary transition-colors flex-shrink-0">
+                            className={`${COL_W.action} flex-shrink-0 text-muted/50 hover:text-primary transition-colors`}>
                       {copied === `${os.numos}:full` ? <Check size={13} className="text-green" /> : <ClipboardList size={13} />}
                     </button>
                   </div>

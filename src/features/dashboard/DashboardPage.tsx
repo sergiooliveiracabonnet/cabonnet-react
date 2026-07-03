@@ -238,7 +238,7 @@ export default function DashboardPage() {
         onClose={() => setModal(null)}
         title={modal?.title ?? ''}
         subtitle={`${modal?.rows?.length ?? 0} ordens de serviço`}
-        maxWidth="900px"
+        maxWidth="1120px"
         headerAction={
           (modal?.rows?.length ?? 0) > 0 && (
             <div className="flex items-center gap-2">
