@@ -197,7 +197,7 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
   const auditoria  = useMemo(() => safe('auditoria',  () => buildAuditoria(activeRows, discardedLixo, duplicadosLixo), EMPTY_DERIVED.auditoria), [activeRows, discardedLixo, duplicadosLixo])
   const anomalias  = useMemo(() => safe('anomalias',  () => buildAnomalias(activeRows),  EMPTY_DERIVED.anomalias),  [activeRows])
   const cidades    = useMemo(() => safe('cidades',    () => buildCidades(activeRows),    EMPTY_DERIVED.cidades),    [activeRows])
-  const campo      = useMemo(() => safe('campo',      () => buildCampo(activeRows),      EMPTY_DERIVED.campo),      [activeRows])
+  const campo      = useMemo(() => safe('campo',      () => buildCampo(activeRows, activeAllRows), EMPTY_DERIVED.campo), [activeRows, activeAllRows])
   const revisitas  = useMemo(() => safe('revisitas',  () => buildRevisitas(activeRevisitaRows, prevRevisitaRows), EMPTY_DERIVED.revisitas), [activeRevisitaRows, prevRevisitaRows])
   const ordens     = useMemo(() => safe('ordens',     () => buildOrdens(activeRows),     EMPTY_DERIVED.ordens),     [activeRows])
   const allRevisitaActive = useMemo(() => hideRede ? allRevisitaRows.filter(r => r._tipo !== 'REDE') : allRevisitaRows, [allRevisitaRows, hideRede])

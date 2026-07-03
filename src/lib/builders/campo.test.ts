@@ -276,3 +276,38 @@ describe('buildCampo — hero', () => {
     expect(hero.atencaoCount).toBe(1)
   })
 })
+
+// ─── Ritmo de equipe (baseline histórico) ─────────────────────────────────────
+
+describe('buildCampo — ritmoHoje', () => {
+  it('fica null para todas as equipes quando "rows" só contém o dia de hoje (filtro "hoje")', () => {
+    // Reproduz o card "Ritmo por Equipe" em branco: o filtro global padrão é
+    // "hoje", então activeRows só tem OS de hoje e nunca há data anterior
+    // para servir de baseline de mesmo dia da semana.
+    const rows = enrichRows([
+      makeOS({ numos: '0000001', nomedaequipe: 'EQUIPE F01', descsituacao: 'Concluída', dataagendamento: daysAgo(0) }),
+    ])
+    const { semaforo } = buildCampo(rows)
+    const eq = semaforo.find(e => e.nome.includes('F01'))
+    expect(eq?.ritmoHoje).toBeNull()
+  })
+
+  it('usa allRowsForRitmo (não restrito pelo filtro de data) para calcular a baseline', () => {
+    const historico = enrichRows([
+      makeOS({ numos: '0000002', nomedaequipe: 'EQUIPE F01', descsituacao: 'Concluída', dataagendamento: daysAgo(7)  }),
+      makeOS({ numos: '0000003', nomedaequipe: 'EQUIPE F01', descsituacao: 'Concluída', dataagendamento: daysAgo(14) }),
+      makeOS({ numos: '0000004', nomedaequipe: 'EQUIPE F01', descsituacao: 'Concluída', dataagendamento: daysAgo(21) }),
+    ])
+    const hoje = enrichRows([
+      makeOS({ numos: '0000001', nomedaequipe: 'EQUIPE F01', descsituacao: 'Concluída', dataagendamento: daysAgo(0) }),
+    ])
+    const allRows = [...hoje, ...historico]
+
+    // "rows" simula o filtro global "hoje": só a OS de hoje chega no builder
+    const { semaforo } = buildCampo(hoje, allRows)
+    const eq = semaforo.find(e => e.nome.includes('F01'))
+    expect(eq?.ritmoHoje).not.toBeNull()
+    expect(eq?.ritmoHoje?.atual).toBe(1)
+    expect(eq?.ritmoHoje?.baseline).toBe(1)
+  })
+})

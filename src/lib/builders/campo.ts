@@ -2,7 +2,7 @@ import { isExecucaoReal, isCOPE, isReagend, parseDate } from '../transform'
 import type { OSRow, KPI } from '../types'
 import { shortName } from './_helpers'
 
-export function buildCampo(rows: OSRow[]) {
+export function buildCampo(rows: OSRow[], allRowsForRitmo?: OSRow[]) {
   const base      = rows.filter(r => !isCOPE(r) && !isReagend(r))
   const filaAtiva = base.filter(r => ['Pendente','Atendimento'].includes(r.descsituacao))
   const concl     = base.filter(r => isExecucaoReal(r.descsituacao))
@@ -18,8 +18,16 @@ export function buildCampo(rows: OSRow[]) {
   const todayDow = now.getDay()
   const currentHour  = now.getHours() + now.getMinutes() / 60
   const dayFraction  = Math.min(1, Math.max(0, (currentHour - 8) / 10))
+
+  // Ritmo compara "hoje" com o mesmo dia da semana em ocorrências passadas.
+  // Isso não pode ficar restrito ao filtro de data global da UI — com o
+  // filtro padrão "hoje", `rows` só teria a data de hoje e nunca haveria
+  // histórico algum. `allRowsForRitmo` (quando informado) é a base completa,
+  // sem o corte de período selecionado.
+  const ritmoBase  = (allRowsForRitmo ?? rows).filter(r => !isCOPE(r) && !isReagend(r))
+  const ritmoConcl = ritmoBase.filter(r => isExecucaoReal(r.descsituacao))
   const allConclDates = [...new Set(
-    concl.map(r => (r.dataagendamento||'').split(' ')[0]).filter(Boolean)
+    ritmoConcl.map(r => (r.dataagendamento||'').split(' ')[0]).filter(Boolean)
   )].sort()
   const sameWeekdayDates = allConclDates
     .filter(d => d !== todayStr && parseDate(d)?.getDay() === todayDow)
@@ -34,12 +42,11 @@ export function buildCampo(rows: OSRow[]) {
 
   interface EqEntry {
     fila: number; concl: number; slaExc: number; minDiasAteSLA: number
-    conclHoje: number; conclPorData: Record<string, number>
   }
   const eqMap = new Map<string, EqEntry>()
   for (const r of base) {
     const eq = (r.nomedaequipe || '').trim() || 'Sem equipe'
-    if (!eqMap.has(eq)) eqMap.set(eq, { fila: 0, concl: 0, slaExc: 0, minDiasAteSLA: Infinity, conclHoje: 0, conclPorData: {} })
+    if (!eqMap.has(eq)) eqMap.set(eq, { fila: 0, concl: 0, slaExc: 0, minDiasAteSLA: Infinity })
     const e = eqMap.get(eq)!
     if (['Pendente','Atendimento'].includes(r.descsituacao)) {
       e.fila++
@@ -51,10 +58,18 @@ export function buildCampo(rows: OSRow[]) {
     }
     if (isExecucaoReal(r.descsituacao)) {
       e.concl++
-      const dData = (r.dataagendamento||'').split(' ')[0]
-      if (dData === todayStr) e.conclHoje++
-      else if (sameWeekdayDates.includes(dData)) e.conclPorData[dData] = (e.conclPorData[dData] || 0) + 1
     }
+  }
+
+  interface RitmoEntry { conclHoje: number; conclPorData: Record<string, number> }
+  const ritmoMap = new Map<string, RitmoEntry>()
+  for (const r of ritmoConcl) {
+    const eq = (r.nomedaequipe || '').trim() || 'Sem equipe'
+    if (!ritmoMap.has(eq)) ritmoMap.set(eq, { conclHoje: 0, conclPorData: {} })
+    const e = ritmoMap.get(eq)!
+    const dData = (r.dataagendamento||'').split(' ')[0]
+    if (dData === todayStr) e.conclHoje++
+    else if (sameWeekdayDates.includes(dData)) e.conclPorData[dData] = (e.conclPorData[dData] || 0) + 1
   }
 
   const semaforo = [...eqMap.entries()]
@@ -63,15 +78,17 @@ export function buildCampo(rows: OSRow[]) {
       const t = e.fila + e.concl
       const tx = t > 0 ? Math.round(e.concl / t * 100) : 0
       const diasAteSLA = e.minDiasAteSLA === Infinity ? null : e.minDiasAteSLA
-      const baselineVals = sameWeekdayDates.map(d => e.conclPorData[d] || 0)
+      const ritmoEntry = ritmoMap.get(nome)
+      const conclHojeEq = ritmoEntry?.conclHoje ?? 0
+      const baselineVals = ritmoEntry ? sameWeekdayDates.map(d => ritmoEntry.conclPorData[d] || 0) : []
       const baseline = baselineVals.length > 0
         ? baselineVals.reduce((a, b) => a + b, 0) / baselineVals.length
         : null
       const projetado = baseline !== null && dayFraction > 0.1
-        ? Math.round(e.conclHoje / dayFraction)
+        ? Math.round(conclHojeEq / dayFraction)
         : null
       const ritmoHoje = baseline !== null ? {
-        atual: e.conclHoje, projetado,
+        atual: conclHojeEq, projetado,
         baseline: Math.round(baseline),
         status: projetado === null ? 'neutro' : projetado >= baseline ? 'acima' : 'abaixo',
       } : null
@@ -103,9 +120,9 @@ export function buildCampo(rows: OSRow[]) {
   )
   const ritmo = { labels: diasSorted, values: ritmoValues }
 
-  const conclHoje = concl.filter(r => (r.dataagendamento||'').startsWith(todayStr)).length
+  const conclHoje = ritmoConcl.filter(r => (r.dataagendamento||'').startsWith(todayStr)).length
   const globalBaselineVals = sameWeekdayDates.map(d =>
-    concl.filter(r => (r.dataagendamento||'').startsWith(d)).length
+    ritmoConcl.filter(r => (r.dataagendamento||'').startsWith(d)).length
   )
   const mediaBaseline = globalBaselineVals.length > 0
     ? Math.round(globalBaselineVals.reduce((a, b) => a + b, 0) / globalBaselineVals.length)
