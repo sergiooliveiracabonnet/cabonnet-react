@@ -1,10 +1,44 @@
 import { useState, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, Users, RotateCcw, Copy, Check, ClipboardList, MapPin } from 'lucide-react'
+import {
+  ChevronDown, ChevronRight, ChevronUp, ChevronsUpDown,
+  Users, RotateCcw, Copy, Check, ClipboardList, MapPin,
+} from 'lucide-react'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant, buildOSWhatsApp, CATEGORIA_LABEL, CATEGORIA_COLOR } from '../../lib/osFormat'
 import { useOSDetails, parseOSDetails, osDetailsQuery } from '../../hooks/useOSDetails'
 import type { OSRow } from '../../lib/types'
+
+type SortKey = 'numos' | 'cliente' | 'tipo' | 'equipe' | 'situacao' | 'aging' | 'data'
+
+function compareRows(a: OSRow, b: OSRow, key: SortKey): number {
+  switch (key) {
+    case 'numos':    return a.numos.localeCompare(b.numos)
+    case 'cliente':  return (a.nomecliente || '').localeCompare(b.nomecliente || '', 'pt-BR')
+    case 'tipo':     return (CATEGORIA_LABEL[a._categoria] ?? '').localeCompare(CATEGORIA_LABEL[b._categoria] ?? '', 'pt-BR')
+    case 'equipe':   return shortEquipe(a.nomedaequipe).localeCompare(shortEquipe(b.nomedaequipe), 'pt-BR')
+    case 'situacao': return (a._situacaoEfetiva ?? a.descsituacao ?? '').localeCompare(b._situacaoEfetiva ?? b.descsituacao ?? '', 'pt-BR')
+    case 'aging':    return (a._aging ?? -1) - (b._aging ?? -1)
+    case 'data':     return (a.dataagendamento || '').localeCompare(b.dataagendamento || '')
+  }
+}
+
+function SortHeader({ label, active, dir, onClick, className = '' }: {
+  label: string; active: boolean; dir: 'asc' | 'desc'; onClick: () => void; className?: string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors flex-shrink-0
+                  ${active ? 'text-primary' : 'text-muted hover:text-secondary'} ${className}`}
+    >
+      {label}
+      {active
+        ? (dir === 'asc' ? <ChevronUp size={11} /> : <ChevronDown size={11} />)
+        : <ChevronsUpDown size={11} className="opacity-40" />}
+    </button>
+  )
+}
 
 // Timeline de reagendamentos/ocorrências de uma OS — busca /detalhes sob demanda.
 function OcorrenciasExpand({ numos }: { numos: string }) {
@@ -45,7 +79,15 @@ function OcorrenciasExpand({ numos }: { numos: string }) {
 export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow) => void }) {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [copied,   setCopied]   = useState<string | null>(null)
+  const [sortKey,  setSortKey]  = useState<SortKey>('aging')
+  const [sortDir,  setSortDir]  = useState<'asc' | 'desc'>('desc')
   const queryClient = useQueryClient()
+
+  function toggleSort(key: SortKey) {
+    if (key === sortKey) { setSortDir(d => d === 'desc' ? 'asc' : 'desc'); return }
+    setSortKey(key)
+    setSortDir(key === 'aging' ? 'desc' : 'asc')
+  }
 
   function flashCopied(key: string) { setCopied(key); setTimeout(() => setCopied(null), 1800) }
 
@@ -70,7 +112,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
     navigator.clipboard.writeText(text).catch(() => {}); flashCopied(`city:${cidade}`)
   }
 
-  // Agrupa por cidade; cidades por volume (desc), OS por aging (desc, mais crítico primeiro)
+  // Agrupa por cidade (volume desc); dentro de cada cidade, ordena pela coluna selecionada
   const grupos = useMemo(() => {
     const map = new Map<string, OSRow[]>()
     for (const os of rows) {
@@ -78,18 +120,33 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
       if (!map.has(c)) map.set(c, [])
       map.get(c)!.push(os)
     }
-    for (const list of map.values()) list.sort((a, b) => (b._aging ?? -1) - (a._aging ?? -1))
+    const dir = sortDir === 'asc' ? 1 : -1
+    for (const list of map.values()) list.sort((a, b) => dir * compareRows(a, b, sortKey))
     return [...map.entries()].sort((a, b) => b[1].length - a[1].length)
-  }, [rows])
+  }, [rows, sortKey, sortDir])
 
   if (!rows.length) return <p className="text-center text-muted text-[12px] py-10">Nenhuma OS encontrada.</p>
 
   return (
     <div className="overflow-auto max-h-[72vh]">
+      {/* Cabeçalho de colunas — clique para ordenar */}
+      <div className="sticky top-0 z-20 h-7 flex items-center gap-2 bg-card px-4 border-b border-white/[0.12]">
+        <span className="w-[13px] flex-shrink-0" />
+        <SortHeader label="Nº OS"    active={sortKey === 'numos'}    dir={sortDir} onClick={() => toggleSort('numos')}    className="w-[60px]" />
+        <SortHeader label="Cliente"  active={sortKey === 'cliente'}  dir={sortDir} onClick={() => toggleSort('cliente')}  className="flex-1" />
+        <SortHeader label="Tipo"     active={sortKey === 'tipo'}     dir={sortDir} onClick={() => toggleSort('tipo')}     className="hidden sm:flex w-[70px]" />
+        <SortHeader label="Equipe"   active={sortKey === 'equipe'}   dir={sortDir} onClick={() => toggleSort('equipe')}   className="hidden md:flex max-w-[120px]" />
+        <SortHeader label="Situação" active={sortKey === 'situacao'} dir={sortDir} onClick={() => toggleSort('situacao')} className="w-[74px]" />
+        <SortHeader label="Aging"    active={sortKey === 'aging'}    dir={sortDir} onClick={() => toggleSort('aging')}    className="w-[38px]" />
+        <SortHeader label="Agend."   active={sortKey === 'data'}     dir={sortDir} onClick={() => toggleSort('data')}     className="w-[68px] justify-end" />
+        <span className="w-[13px] flex-shrink-0" />
+        <span className="w-[13px] flex-shrink-0" />
+      </div>
+
       {grupos.map(([cidade, list], gi) => (
         <div key={cidade} className={gi > 0 ? 'border-t-2 border-white/[0.12]' : ''}>
           {/* Cabeçalho da cidade */}
-          <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-surface px-4 py-2 border-b border-white/[0.08]">
+          <div className="sticky top-7 z-10 flex items-center justify-between gap-2 bg-surface px-4 py-2 border-b border-white/[0.08]">
             <span className="flex items-center gap-1.5 text-[11px] font-bold text-text uppercase tracking-[0.03em]">
               <MapPin size={11} className="text-primary/70" /> {cidade}
               <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-[10px] font-bold tabular-nums">
