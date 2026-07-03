@@ -1,5 +1,5 @@
 // Formatters e constantes compartilhados por OSDrawer, OSDetailModal e transform
-import type { Fornecedor, OSRow } from './types'
+import type { Categoria, Fornecedor, OSRow } from './types'
 
 export const EQUIPE_NAMES: Record<string, string> = {
   'INST F01':  'INST F01 - FELIPE',
@@ -167,6 +167,21 @@ export function buildOSWhatsApp(os: OSRow, historico?: OSHistoricoEntry[]): stri
   }
 
   return lines.join('\n')
+}
+
+// Tipo de OS (instalação/manutenção/serviço/rede) — usa _categoria (calculado em enrichRows)
+export const CATEGORIA_LABEL: Record<Categoria, string> = {
+  INSTALACAO:    'Instalação',
+  VT_MANUTENCAO: 'Manutenção',
+  SERVICO:       'Serviço',
+  REDE:          'Rede',
+}
+
+export const CATEGORIA_COLOR: Record<Categoria, string> = {
+  INSTALACAO:    '#3b82f6',
+  VT_MANUTENCAO: '#fb923c',
+  SERVICO:       '#c4b5fd',
+  REDE:          '#71717a',
 }
 
 export const FORN_LABEL: Record<Fornecedor, string> = {

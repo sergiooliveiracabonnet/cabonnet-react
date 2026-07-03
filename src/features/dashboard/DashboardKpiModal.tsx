@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, Users, RotateCcw, Copy, Check, ClipboardList, MapPin } from 'lucide-react'
 import { Badge } from '../../components/ui/Badge'
-import { shortEquipe, situacaoVariant, buildOSWhatsApp } from '../../lib/osFormat'
+import { shortEquipe, situacaoVariant, buildOSWhatsApp, CATEGORIA_LABEL, CATEGORIA_COLOR } from '../../lib/osFormat'
 import { useOSDetails, parseOSDetails, osDetailsQuery } from '../../hooks/useOSDetails'
 import type { OSRow } from '../../lib/types'
 
@@ -108,6 +108,8 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
               const aging  = os._aging ?? 0
               const agVar  = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'
               const isOpen = expanded === os.numos
+              const catColor = CATEGORIA_COLOR[os._categoria]
+              const catLabel = CATEGORIA_LABEL[os._categoria] ?? os._categoria
               return (
                 <div key={os.numos}>
                   <div className="flex items-center gap-2 px-4 py-2 hover:bg-surface/30 transition-colors text-[11px]">
@@ -119,7 +121,14 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                     <button onClick={() => onOS(os)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
                       <span className="font-mono text-primary w-[60px] flex-shrink-0">{os.numos}</span>
                       <span className="text-text truncate flex-1">{os.nomecliente ?? '—'}</span>
-                      <span className="text-secondary truncate max-w-[120px] hidden sm:block">{shortEquipe(os.nomedaequipe) || '—'}</span>
+                      <span
+                        title={`${catLabel} · ${os.tiposervico || os.servico || ''}`}
+                        className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full flex-shrink-0 hidden sm:inline-block"
+                        style={{ color: catColor, background: `${catColor}1a`, border: `1px solid ${catColor}40` }}
+                      >
+                        {catLabel}
+                      </span>
+                      <span className="text-secondary truncate max-w-[120px] hidden md:block">{shortEquipe(os.nomedaequipe) || '—'}</span>
                       <Badge variant={situacaoVariant(os._situacaoEfetiva ?? os.descsituacao)}>{os._situacaoEfetiva ?? os.descsituacao ?? '—'}</Badge>
                       {os._aging != null ? <Badge variant={agVar}>{aging}d</Badge> : <span className="text-muted">—</span>}
                       <span className="font-mono text-muted w-[68px] flex-shrink-0 text-right">{os.dataagendamento ? os.dataagendamento.slice(0, 10) : '—'}</span>
