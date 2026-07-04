@@ -407,6 +407,59 @@ WHERE o.numos = {numos}
 LIMIT 1
 """
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  SQL — FOTOS, CHECKLIST E MOTIVO DE INCONCLUSÃO (mobile schema)
+# ══════════════════════════════════════════════════════════════════════════════
+SQL_FOTOS_TEMPLATE = """
+SELECT id, codfoto, nomearquivo, descricao, usuario, extensaoarquivo
+FROM mobile.vis_os_fotos
+WHERE numos = {numos}
+ORDER BY id
+"""
+
+SQL_FOTO_BLOB_TEMPLATE = """
+SELECT encode(imagem, 'base64') AS imagem_b64, extensaoarquivo
+FROM mobile.vis_os_fotos
+WHERE numos = {numos} AND codfoto = {codfoto}
+LIMIT 1
+"""
+
+SQL_CHECKLIST_TEMPLATE = """
+SELECT descricaoservico, descricaochecklist, checked
+FROM mobile.vis_os_checklist_status
+WHERE numos = {numos}
+ORDER BY codigoservico, codigochecklist
+"""
+
+SQL_MOTIVO_INCONCLUSIVO_TEMPLATE = """
+SELECT mi.descricao AS motivoinconclusivo
+FROM mobile.vis_os_ordemservico mo
+LEFT JOIN mobile.vis_os_motivosinconclusivos mi ON mi.id = mo.idmotivoinconclusivo
+WHERE mo.numos = {numos}
+LIMIT 1
+"""
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  SQL — PIN DE EXECUÇÃO (Bloco B: OS em Atendimento com ponto de início)
+#  Suposições validadas no Task 1 da plan de implementação (mo.codcidade ==
+#  tablocal.codigo; situacaoos=2 == Atendimento). Ajustar se a verificação
+#  pós-GRANT indicar o contrário.
+# ══════════════════════════════════════════════════════════════════════════════
+SQL_OS_EXECUCAO_GEO = """
+SELECT
+  mo.numos,
+  mo.latitudeinicio,
+  mo.longitudeinicio,
+  mo.equipeagendada
+FROM mobile.vis_os_ordemservico mo
+JOIN public.tablocal t ON t.codigo = mo.codcidade
+WHERE mo.situacaoos = 2
+  AND mo.latitudeinicio IS NOT NULL
+  AND mo.longitudeinicio IS NOT NULL
+  AND t.estado = 'SP'
+  AND t.nome IN ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
+"""
+
 SQL_DIAG_TEMPLATE = """
 SELECT
   current_setting('TimeZone')                                        as db_timezone,
@@ -476,6 +529,18 @@ def sql_materiais_utilizados(numos) -> str:
 
 def sql_materiais_retirados(numos) -> str:
     return SQL_MATERIAIS_RETIRADOS_TEMPLATE.format(numos=int(numos))
+
+
+def sql_fotos(numos) -> str:
+    return SQL_FOTOS_TEMPLATE.format(numos=int(numos))
+
+
+def sql_checklist(numos) -> str:
+    return SQL_CHECKLIST_TEMPLATE.format(numos=int(numos))
+
+
+def sql_motivo_inconclusivo(numos) -> str:
+    return SQL_MOTIVO_INCONCLUSIVO_TEMPLATE.format(numos=int(numos))
 
 
 SQL_ATENDIMENTO = """

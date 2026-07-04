@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Marker, Circle as MapCircle, Tooltip } from 'react-leaflet'
 import {
-  Map as MapIcon, Flame, Circle, X, LayoutGrid, Layers, Search, Loader2, AlertTriangle,
+  Map as MapIcon, Flame, Circle, X, LayoutGrid, Layers, Search, Loader2, AlertTriangle, Wrench,
 } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
@@ -9,17 +9,20 @@ import { aggregateByCidade, aggregateByBairro, buildHeatPoints, type BairroAgg }
 import { geocodeAddress, haversineKm, type GeocodeResult } from './searchAddress'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import OSDrawer from '../ordens/OSDrawer'
+import { useOSExecucaoGeo } from '../../hooks/useOSExecucaoGeo'
 import type { OSRow } from '../../lib/types'
 import {
   MapResizer, FlyTo, HeatLayer, bubbleRadius, CidadePanel, AddressSearchPanel,
   RankingPanel, BairroRankingPanel, BairroPanel, KpiBadge,
-  PROXIMIDADE_KM, searchPinIcon,
+  PROXIMIDADE_KM, searchPinIcon, execucaoIcon,
   type CidadeAgg, type ProximidadeInfo, type BairroProx,
 } from './MapaComponents'
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function MapaPage() {
-  const { rows: globalRows } = useOSDerived()
+  const { rows: globalRows, allRows } = useOSDerived()
+  const { data: execucaoGeo = [] } = useOSExecucaoGeo()
+  const [showExecucao, setShowExecucao] = useState(false)
 
   const [view,        setView]        = useState('ambos')    // 'calor' | 'bolhas' | 'ambos'
   const [granularity, setGranularity] = useState<'cidade' | 'bairro'>('cidade')
@@ -291,6 +294,25 @@ export default function MapaPage() {
             </button>
           ))}
         </div>
+
+        <div className="w-px h-5 bg-surface" />
+
+        {/* Toggle de execução em campo */}
+        <button
+          onClick={() => setShowExecucao(v => !v)}
+          title="OS em atendimento agora (ponto de início da execução)"
+          className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-[11px] font-semibold
+                      transition-all duration-fast border
+                      ${showExecucao
+                        ? 'bg-yellow/20 text-yellow border-yellow/30'
+                        : 'text-muted border-white/[0.08] hover:text-text'}`}
+        >
+          <Wrench size={11} />
+          Em atendimento agora{execucaoGeo.length > 0 ? ` (${execucaoGeo.length})` : ''}
+        </button>
+        {showExecucao && execucaoGeo.length === 0 && (
+          <span className="text-[10.5px] text-muted italic">Nenhuma OS em campo agora</span>
+        )}
       </div>
 
       {/* ── Área do mapa ──────────────────────────────────────────────────── */}
@@ -380,6 +402,26 @@ export default function MapaPage() {
               </Marker>
             </>
           )}
+
+          {/* Pins de execução em campo */}
+          {showExecucao && execucaoGeo.map(p => (
+            <Marker
+              key={p.numos}
+              position={[p.lat, p.lng]}
+              icon={execucaoIcon}
+              eventHandlers={{
+                click: () => {
+                  const found = allRows.find(r => r.numos === p.numos)
+                  if (found) setDrawerOS(found)
+                },
+              }}
+            >
+              <Tooltip direction="top" offset={[0, -12]} className="map-tooltip">
+                <span className="font-semibold">OS {p.numos}</span>
+                {p.equipeagendada && <span className="block text-[10px]">{p.equipeagendada}</span>}
+              </Tooltip>
+            </Marker>
+          ))}
         </MapContainer>
 
         {/* Resultado da busca de endereço */}

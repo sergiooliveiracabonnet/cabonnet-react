@@ -74,9 +74,14 @@ from cabonnet.postgres import pg_init, pg_is_available, pg_load_snapshot, pg_syn
 from cabonnet.grafana import (
     SQL_AGENDADO,
     SQL_ATENDIMENTO,
+    SQL_BACKLOG_TEMPLATE,
+    SQL_DETALHES_TEMPLATE,
+    SQL_EQUIPE_REAGENDOU_TEMPLATE,
     SQL_ERP_OS_CIDADES,
     SQL_ERP_OS_TOTAIS,
+    SQL_FOTO_BLOB_TEMPLATE,
     SQL_FUTURO,
+    SQL_OS_EXECUCAO_GEO,
     SQL_PENDENTE,
     SQL_REVISITAS,
     build_atendimento_json,
@@ -86,10 +91,13 @@ from cabonnet.grafana import (
     frames_to_dict_list,
     grafana_post,
     sql_backlog,
+    sql_checklist,
     sql_detalhes,
     sql_equipe_reagendou,
+    sql_fotos,
     sql_materiais_retirados,
     sql_materiais_utilizados,
+    sql_motivo_inconclusivo,
     sql_ocorrencias,
     sql_revisitas_com_obs,
 )
@@ -938,26 +946,83 @@ async def detalhes(numos: str = ""):
         reagendada = bool(dt_atend and dt_agend and dt_atend[:10] != dt_agend[:10])
         ocorrencias = []
         try: ocorrencias = frames_to_dict_list(grafana_post(sql_ocorrencias(numos_int)))
-        except Exception: pass
+        except Exception: log.warning("Falha ao buscar ocorrências numos=%s", numos_int, exc_info=True)
         equipe_reagendou = ""
         try:
             rows_er = frames_to_dict_list(grafana_post(sql_equipe_reagendou(numos_int)))
             if rows_er: equipe_reagendou = rows_er[0].get("descricao", "")
-        except Exception: pass
+        except Exception: log.warning("Falha ao buscar equipe_reagendou numos=%s", numos_int, exc_info=True)
         materiais_utilizados = []
         try: materiais_utilizados = frames_to_dict_list(grafana_post(sql_materiais_utilizados(numos_int)))
-        except Exception: pass
+        except Exception: log.warning("Falha ao buscar materiais_utilizados numos=%s", numos_int, exc_info=True)
         materiais_retirados = []
         try: materiais_retirados = frames_to_dict_list(grafana_post(sql_materiais_retirados(numos_int)))
-        except Exception: pass
+        except Exception: log.warning("Falha ao buscar materiais_retirados numos=%s", numos_int, exc_info=True)
+        fotos = []
+        try: fotos = frames_to_dict_list(grafana_post(sql_fotos(numos_int)))
+        except Exception: log.warning("Falha ao buscar fotos numos=%s", numos_int, exc_info=True)
+        checklist = []
+        try: checklist = frames_to_dict_list(grafana_post(sql_checklist(numos_int)))
+        except Exception: log.warning("Falha ao buscar checklist numos=%s", numos_int, exc_info=True)
+        motivo_inconclusivo = None
+        try:
+            rows_mi = frames_to_dict_list(grafana_post(sql_motivo_inconclusivo(numos_int)))
+            if rows_mi: motivo_inconclusivo = rows_mi[0].get("motivoinconclusivo") or None
+        except Exception: log.warning("Falha ao buscar motivo_inconclusivo numos=%s", numos_int, exc_info=True)
         return {"os": os_data, "reagendada": reagendada, "equipe_reagendou": equipe_reagendou,
                 "ocorrencias": ocorrencias, "materiais_utilizados": materiais_utilizados,
-                "materiais_retirados": materiais_retirados}
+                "materiais_retirados": materiais_retirados,
+                "fotos": [{"id": f.get("id"), "codfoto": f.get("codfoto"), "nomearquivo": f.get("nomearquivo"),
+                           "descricao": f.get("descricao") or None, "usuario": f.get("usuario"),
+                           "extensaoarquivo": f.get("extensaoarquivo")} for f in fotos],
+                "checklist": [{"servico": c.get("descricaoservico"), "descricao": c.get("descricaochecklist"),
+                               "checked": bool(c.get("checked"))} for c in checklist],
+                "motivoinconclusivo": motivo_inconclusivo}
     except HTTPException:
         raise
     except Exception as ex:
         log.exception("Erro /detalhes numos=%s", numos)
         raise HTTPException(502, str(ex))
+
+
+_FOTO_EXT_PERMITIDAS = {"jpg", "jpeg", "png", "gif", "webp", "bmp"}
+
+
+@router.get("/detalhes/foto")
+async def detalhes_foto(numos: str = "", codfoto: str = ""):
+    if not numos.strip().isdigit() or not codfoto.strip().isdigit():
+        raise HTTPException(400, "Parâmetros 'numos'/'codfoto' inválidos.")
+    numos_int   = int(numos.strip())
+    codfoto_int = int(codfoto.strip())
+    try:
+        rows = frames_to_dict_list(grafana_post(SQL_FOTO_BLOB_TEMPLATE.format(numos=numos_int, codfoto=codfoto_int)))
+    except Exception as ex:
+        log.exception("Erro /detalhes/foto numos=%s codfoto=%s", numos, codfoto)
+        raise HTTPException(502, str(ex))
+    if not rows or not rows[0].get("imagem_b64"):
+        raise HTTPException(404, f"Foto {codfoto} da OS {numos} não encontrada.")
+    img_bytes = _base64.b64decode(rows[0]["imagem_b64"])
+    ext_raw = (rows[0].get("extensaoarquivo") or "jpg").strip().lower().lstrip(".")
+    ext = ext_raw if ext_raw in _FOTO_EXT_PERMITIDAS else "jpg"
+    return RawResponse(content=img_bytes, media_type=f"image/{ext}")
+
+
+@router.get("/erp/os-execucao-geo")
+async def os_execucao_geo():
+    try:
+        rows = frames_to_dict_list(grafana_post(SQL_OS_EXECUCAO_GEO))
+    except Exception:
+        log.warning("Falha ao buscar os-execucao-geo", exc_info=True)
+        return []
+    return [
+        {
+            "numos":           r.get("numos"),
+            "latitudeinicio":  r.get("latitudeinicio"),
+            "longitudeinicio": r.get("longitudeinicio"),
+            "equipeagendada":  r.get("equipeagendada"),
+        }
+        for r in rows
+    ]
 
 
 # ── Telegram ──────────────────────────────────────────────────────────────────

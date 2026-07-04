@@ -62,6 +62,38 @@ interface Material {
   quantidade: unknown
 }
 
+export interface FotoMeta {
+  codfoto:    number
+  nomearquivo: string
+  descricao:  string | null
+}
+
+export function mapFotos(raw: unknown): FotoMeta[] {
+  if (!Array.isArray(raw)) return []
+  return (raw as Record<string, unknown>[])
+    .map(f => ({
+      codfoto:     Number(f.codfoto ?? 0),
+      nomearquivo: String(f.nomearquivo ?? '').trim(),
+      descricao:   (f.descricao as string) || null,
+    }))
+    .filter(f => f.nomearquivo)
+}
+
+export interface ChecklistItem {
+  servico:    string
+  descricao:  string
+  checked:    boolean
+}
+
+export function mapChecklist(raw: unknown): ChecklistItem[] {
+  if (!Array.isArray(raw)) return []
+  return (raw as Record<string, unknown>[]).map(c => ({
+    servico:   String(c.servico ?? ''),
+    descricao: String(c.descricao ?? ''),
+    checked:   Boolean(c.checked),
+  }))
+}
+
 interface OSDetailsResult {
   isLoading:          boolean
   error:              Error | null
@@ -79,6 +111,9 @@ interface OSDetailsResult {
     datainstalacao:    string | null
     situacaocontrato:  number | null
     valorcontrato:     number | null
+    fotos:              FotoMeta[]
+    checklist:           ChecklistItem[]
+    motivoInconclusivo:  string | null
   } | null
 }
 
@@ -121,6 +156,9 @@ export function parseOSDetails(data: unknown): OSDetailsResult['details'] {
     datainstalacao:    (osObj.datainstalacao  as string) || null,
     situacaocontrato:  typeof osObj.situacaocontrato === 'number' ? osObj.situacaocontrato : null,
     valorcontrato:     typeof osObj.valorcontrato    === 'number' ? osObj.valorcontrato    : null,
+    fotos:              mapFotos(raw.fotos),
+    checklist:           mapChecklist(raw.checklist),
+    motivoInconclusivo:  (raw.motivoinconclusivo as string) || null,
   }
 }
 

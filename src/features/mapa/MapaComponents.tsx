@@ -22,6 +22,17 @@ export const searchPinIcon = L.divIcon({
   iconAnchor: [13, 26],
 })
 
+export const execucaoIcon = L.divIcon({
+  className: 'execucao-pin',
+  html: `<div style="
+    width:22px;height:22px;border-radius:50%;
+    background:#facc15;border:2px solid #0d1117;box-shadow:0 2px 6px rgba(0,0,0,.5);
+    display:flex;align-items:center;justify-content:center;
+  "></div>`,
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+})
+
 // Tipo do objeto retornado por aggregateByCidade
 export interface CidadeAgg {
   cidade:     string

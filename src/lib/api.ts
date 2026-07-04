@@ -142,9 +142,15 @@ export const endpoints = {
   juniper:          '/juniper',
   juniperHist:      '/juniper/historico',
   detalhes:         '/detalhes',
+  detalhesFoto:     '/detalhes/foto',
+  osExecucaoGeo:    '/erp/os-execucao-geo',
   health:           '/health',
   stats:            '/stats',
 } as const
+
+export function osFotoUrl(numos: string | number, codfoto: number): string {
+  return `${BASE}${endpoints.detalhesFoto}?numos=${numos}&codfoto=${codfoto}`
+}
 
 export const ai = {
   narrative:         (payload: unknown) => request('/ai/narrative',            { method: 'POST', body: JSON.stringify(payload) }),
