@@ -1,21 +1,8 @@
+import { useMemo } from 'react'
 import { ai } from '../lib/api'
 import { useAIQuery } from './useAIQuery'
+import { forecastDemand, type ForecastResult } from '../lib/forecast'
 import type { EvolucaoData } from '../lib/types'
-
-export interface ForecastDay {
-  data:      string
-  volume:    number
-  confianca: 'alta' | 'media' | 'baixa'
-}
-
-export interface AIForecastData {
-  ok:            boolean
-  tendencia:     'crescente' | 'estável' | 'decrescente'
-  narrativa:     string
-  previsao:      ForecastDay[]
-  pico_previsto: { data: string; volume: number } | null
-  cached:        boolean
-}
 
 interface UseAIForecastInput {
   evolucao:    EvolucaoData
@@ -31,19 +18,39 @@ function buildSerie(evolucao: EvolucaoData) {
   }))
 }
 
+interface AINarrativaResponse { ok: boolean; narrativa: string; cached?: boolean }
+
+// A projeção (tendência, 7 dias, pico) é calculada localmente por regressão
+// linear + sazonalidade (src/lib/forecast.ts) — sempre disponível, sem custo de
+// API. A IA (opt-in) só recebe esses números prontos e escreve a explicação;
+// não gera nem recalcula a previsão.
 export function useAIForecast({ evolucao, totalAtivo = 0, fila = 0, enabled = false }: UseAIForecastInput & { enabled?: boolean }) {
-  const serie = buildSerie(evolucao)
+  const serie = useMemo(() => buildSerie(evolucao), [evolucao])
+  const forecast = useMemo<ForecastResult | null>(() => forecastDemand(serie), [serie])
+
   const mediaDiaria = serie.length ? serie.reduce((a, p) => a + p.abertas, 0) / serie.length : 0
   const payload = {
     serie,
-    contexto: { total_ativo: totalAtivo, fila, media_diaria: mediaDiaria },
+    contexto:      { total_ativo: totalAtivo, fila, media_diaria: mediaDiaria },
+    tendencia:     forecast?.tendencia ?? 'estável',
+    previsao:      forecast?.previsao ?? [],
+    pico_previsto: forecast?.pico_previsto ?? null,
+    r2:            forecast?.r2 ?? 0,
   }
 
-  return useAIQuery<AIForecastData>({
+  const { data, isFetching, isError } = useAIQuery<AINarrativaResponse>({
     key:       ['ai-forecast', payload],
     fn:        () => ai.forecast(payload),
-    enabled:   enabled && serie.length >= 7,
+    enabled:   enabled && !!forecast,
     staleTime: 60 * 60_000,
     gcTime:    2 * 60 * 60_000,
   })
+
+  return {
+    forecast,
+    narrativa:  data?.narrativa ?? null,
+    cached:     data?.cached ?? false,
+    isFetching,
+    isError,
+  }
 }

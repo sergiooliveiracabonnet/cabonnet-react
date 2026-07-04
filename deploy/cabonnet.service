@@ -17,6 +17,9 @@ Type=simple
 WorkingDirectory=/opt/cabonnet
 Environment=PATH=/opt/cabonnet/venv/bin:/usr/bin:/bin
 Environment=NODE_ENV=production
+# Relatórios diários (executadas/produção/KPI) usam hora local de Brasília.
+# Sem isto, um host Linux em UTC zera os relatórios após as 21h.
+Environment=TZ=America/Sao_Paulo
 ExecStart=/usr/bin/node servidor.js
 Restart=on-failure
 RestartSec=5

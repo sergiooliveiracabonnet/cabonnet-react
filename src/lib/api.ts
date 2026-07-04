@@ -52,10 +52,18 @@ export const api = {
   delete: <T = unknown>(path: string)              => request<T>(path, { method: 'DELETE' }),
 
   auth: {
-    check:  ()                                     => request('/api/session'),
-    login:  (username: string, password: string)   => request('/api/login',  { method: 'POST', body: JSON.stringify({ username, password }) }),
+    check:  ()                                     => request<AuthResponse>('/api/session'),
+    login:  (username: string, password: string)   => request<AuthResponse>('/api/login',  { method: 'POST', body: JSON.stringify({ username, password }) }),
     logout: ()                                     => request('/api/logout'),
   },
+}
+
+export interface AuthResponse {
+  ok:        boolean
+  role?:     UserRole | null
+  username?: string | null
+  modulos?:  string[]
+  error?:    string
 }
 
 export const picoAlertas = {
@@ -68,6 +76,61 @@ export const justificativas = {
   list:   (limit = 100)   => request<{ ok: boolean; items: unknown[] }>(`/api/justificativas?limit=${limit}`),
   save:   (body: unknown) => request<{ ok: boolean; id: number }>('/api/justificativas', { method: 'POST', body: JSON.stringify(body) }),
   delete: (id: number)    => request<{ ok: boolean }>(`/api/justificativas/${id}`, { method: 'DELETE' }),
+}
+
+export interface RevisitaMotivoItem { numos: string; motivo: string; ts: number; nomedaequipe: string; nomedacidade: string; origem: 'telegram' | 'manual' }
+export interface RevisitaMotivoDist { motivo: string; count: number; pct: number }
+
+export const revisitaMotivos = {
+  get: (dias = 90) => request<{ ok: boolean; total: number; distribuicao: RevisitaMotivoDist[]; itens: RevisitaMotivoItem[] }>(`/api/revisita-motivos?dias=${dias}`),
+}
+
+export interface MotivoEncerramentoItem { motivo: string; observacao: string; criado_em: string }
+
+export const motivoEncerramento = {
+  get:  (numos: string) => request<{ ok: boolean; item: MotivoEncerramentoItem | null }>(`/api/motivo-encerramento?numos=${encodeURIComponent(numos)}`),
+  save: (body: { numos: string; motivo: string; observacao?: string; nomedaequipe?: string; nomedacidade?: string }) =>
+    request<{ ok: boolean }>('/api/motivo-encerramento', { method: 'POST', body: JSON.stringify(body) }),
+}
+
+export interface TecnicoItem { codigo: string; nome_real: string; contato: string; ativo: boolean; atualizado_em: string }
+
+export const tecnicos = {
+  list:   () => request<{ ok: boolean; items: TecnicoItem[] }>('/api/tecnicos'),
+  upsert: (body: { codigo: string; nome_real?: string; contato?: string; ativo?: boolean }) =>
+    request<{ ok: boolean }>('/api/tecnicos', { method: 'POST', body: JSON.stringify(body) }),
+  remove: (codigo: string) => request<{ ok: boolean }>(`/api/tecnicos/${encodeURIComponent(codigo)}`, { method: 'DELETE' }),
+}
+
+export type UserRole = 'gestor' | 'operador' | 'viewer'
+
+export interface UsuarioItem {
+  id:            number
+  username:      string
+  role:          UserRole
+  ativo:         boolean
+  criado_em:     string
+  atualizado_em: string
+}
+
+export const usuarios = {
+  list: () => request<{ ok: boolean; items: UsuarioItem[] }>('/api/usuarios'),
+  create: (body: { username: string; password: string; role: UserRole }) =>
+    request<{ ok: boolean; id: number }>('/api/usuarios', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: number, body: { role?: UserRole; ativo?: boolean }) =>
+    request<{ ok: boolean; item: UsuarioItem }>(`/api/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  resetPassword: (id: number, password: string) =>
+    request<{ ok: boolean }>(`/api/usuarios/${id}/senha`, { method: 'POST', body: JSON.stringify({ password }) }),
+  changeOwnPassword: (atual: string, nova: string) =>
+    request<{ ok: boolean }>('/api/usuarios/me/senha', { method: 'POST', body: JSON.stringify({ atual, nova }) }),
+}
+
+export interface ModuloDef { key: string; label: string }
+
+export const permissoes = {
+  get: () => request<{ ok: boolean; permissoes: Record<UserRole, string[]>; modulos: ModuloDef[] }>('/api/permissoes'),
+  set: (role: UserRole, modulos: string[]) =>
+    request<{ ok: boolean; modulos: string[] }>(`/api/permissoes/${role}`, { method: 'PUT', body: JSON.stringify({ modulos }) }),
 }
 
 export const endpoints = {

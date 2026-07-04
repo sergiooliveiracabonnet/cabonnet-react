@@ -266,10 +266,13 @@ def _ai_revisitas(payload):
         f"Top cidades com revisitas:\n{cidades_txt}\n\n"
         f"Clientes crônicos: {cronicos_txt}\n\n"
         "=== INSTRUÇÕES ===\n"
-        "Cite os dados reais do relatório. Identifique padrões (equipe x cidade, tempo x tipo). "
-        "Seja específico sobre causa raiz — não diga 'melhorar qualidade', diga O QUÊ exatamente fazer.\n\n"
+        "Cite os dados do relatório. Identifique padrões (equipe x cidade, tempo x tipo). "
+        "Seja específico sobre causa raiz — não diga 'melhorar qualidade', diga O QUÊ exatamente fazer.\n"
+        "IMPORTANTE: 'Evitáveis' e 'Custo estimado' são calculados a partir de taxas de evitabilidade e "
+        "custo por revisita ainda não calibradas para esta operação — são estimativas aproximadas, não "
+        "medições reais. Trate-os como tal no texto (ex.: 'estimativa de R$X', nunca 'custo real de R$X').\n\n"
         "Responda SOMENTE com JSON válido, sem markdown:\n"
-        '{"narrativa": "2-3 frases: diagnóstico preciso com dados, causa raiz principal, impacto financeiro real", '
+        '{"narrativa": "2-3 frases: diagnóstico preciso com dados, causa raiz principal, impacto financeiro estimado", '
         '"insights": ["insight com dado específico 1", "insight 2", "insight 3", "insight 4"], '
         '"estrategia": ["Ação 1 (prazo e responsável)", "Ação 2", "Ação 3", "Ação 4", "Ação 5"], '
         '"prioridades": ['
@@ -428,62 +431,60 @@ _AI_FORECAST_TTL = 3600  # 1 hora
 
 
 def _ai_forecast(payload: dict):
-    """Demand Forecasting — Claude analisa série histórica e projeta próximos 7 dias."""
+    """Explica em texto uma projeção de demanda JÁ CALCULADA no frontend por
+    regressão linear + sazonalidade de dia da semana (ver src/lib/forecast.ts).
+    A IA NÃO gera os números da previsão — só descreve o padrão e o risco.
+    Antes disso, o Claude recebia a série crua e inventava os 7 valores sem
+    nenhum modelo estatístico por trás; isso mudou para não apresentar uma
+    estimativa de linguagem natural como se fosse cálculo.
+    """
     data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
     now = _time_mod.time()
 
     with state._ai_forecast_lock:
         c = state._ai_forecast_cache
         if c["hash"] == data_hash and (now - c["ts"]) < _AI_FORECAST_TTL:
-            return {
-                "tendencia":     c["tendencia"],
-                "narrativa":     c["narrativa"],
-                "previsao":      c["previsao"],
-                "pico_previsto": c["pico_previsto"],
-                "cached":        True,
-            }
+            return {"narrativa": c["narrativa"], "cached": True}
 
     if not ANTHROPIC_API_KEY:
         return None
 
-    serie   = payload.get("serie", [])
-    ctx     = payload.get("contexto", {})
+    serie     = payload.get("serie", [])
+    ctx       = payload.get("contexto", {})
+    tendencia = payload.get("tendencia", "estável")
+    previsao  = payload.get("previsao", [])
+    pico      = payload.get("pico_previsto")
+    r2        = payload.get("r2", 0)
 
-    if len(serie) < 7:
+    if len(serie) < 7 or not previsao:
         return None
 
     serie_txt = "\n".join(
         f"  {p['data']}: {p['abertas']} abertas, {p['concluidas']} concluídas"
         for p in serie[-30:]
     )
+    previsao_txt = "\n".join(f"  {d['data']}: {d['volume']} OS ({d['confianca']})" for d in previsao[:7])
+    pico_txt = f"{pico['data']} com {pico['volume']} OS" if pico else "sem pico destacado"
 
     prompt = (
-        "Você é um analista de dados de ISP especializado em forecasting de demanda operacional. "
-        "Analise a série histórica de OS abaixo e projete os próximos 7 dias.\n\n"
-        "=== SÉRIE HISTÓRICA (últimos dias) ===\n"
+        "Você é um analista de dados de ISP especializado em operações de campo. "
+        "A projeção de demanda abaixo JÁ FOI CALCULADA por regressão linear com ajuste de "
+        "sazonalidade por dia da semana — seu trabalho é só explicar o padrão em português, "
+        "NÃO recalcular nem propor números diferentes dos que já vieram prontos.\n\n"
+        "=== SÉRIE HISTÓRICA (últimos dias, entrada do modelo) ===\n"
         f"{serie_txt}\n\n"
         "=== CONTEXTO ===\n"
         f"Total ativo hoje: {ctx.get('total_ativo', '?')} OS | "
         f"Fila pendente: {ctx.get('fila', '?')} | "
         f"Média diária abertas (período): {ctx.get('media_diaria', '?'):.1f}\n\n"
+        "=== PROJEÇÃO JÁ CALCULADA (regressão + sazonalidade, R²={:.2f}) ===\n".format(r2) +
+        f"Tendência: {tendencia}\n{previsao_txt}\nPico previsto: {pico_txt}\n\n"
         "=== INSTRUÇÕES ===\n"
-        "1. Identifique a tendência (crescente/estável/decrescente) com base nos últimos 7 dias vs. os 7 anteriores.\n"
-        "2. Detecte padrões de sazonalidade (picos em certos dias da semana).\n"
-        "3. Projete os próximos 7 dias com volume estimado e confiança.\n"
-        "4. Confiança: 'alta' se tendência clara, 'media' se estável, 'baixa' se volátil.\n\n"
+        "Em até 2 frases, explique O QUE está causando essa tendência (cite dados reais da série) "
+        "e qual o risco operacional principal se ela se confirmar. Não repita os números da "
+        "projeção como se fosse novidade — explique o porquê.\n\n"
         "Responda SOMENTE com JSON válido, sem markdown:\n"
-        '{"tendencia": "crescente|estável|decrescente", '
-        '"narrativa": "2 frases: padrão identificado + risco principal com dados do período", '
-        '"previsao": ['
-        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
-        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
-        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
-        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
-        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
-        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}, '
-        '{"data": "dd/mm", "volume": <int>, "confianca": "alta|media|baixa"}'
-        '], '
-        '"pico_previsto": {"data": "dd/mm", "volume": <int>} }'
+        '{"narrativa": "até 2 frases: causa provável da tendência + risco operacional principal"}'
     )
 
     try:
@@ -496,7 +497,7 @@ def _ai_forecast(payload: dict):
             },
             json={
                 "model":      "claude-haiku-4-5-20251001",
-                "max_tokens": 800,
+                "max_tokens": 400,
                 "messages":   [{"role": "user", "content": prompt}],
             },
             timeout=25,
@@ -514,18 +515,13 @@ def _ai_forecast(payload: dict):
             if raw.startswith("json"):
                 raw = raw[4:]
         result = json.loads(raw)
-        out = {
-            "tendencia":     result.get("tendencia", "estável"),
-            "narrativa":     result.get("narrativa", ""),
-            "previsao":      result.get("previsao", [])[:7],
-            "pico_previsto": result.get("pico_previsto"),
-        }
+        narrativa = result.get("narrativa", "")
 
         with state._ai_forecast_lock:
-            state._ai_forecast_cache.update({"hash": data_hash, "ts": now, **out})
+            state._ai_forecast_cache.update({"hash": data_hash, "ts": now, "narrativa": narrativa})
 
-        log.info("[AI] Forecast gerado — tendência=%s, %d dias projetados", out["tendencia"], len(out["previsao"]))
-        return {**out, "cached": False}
+        log.info("[AI] Forecast narrado — tendência=%s (calculada no frontend)", tendencia)
+        return {"narrativa": narrativa, "cached": False}
 
     except Exception as ex:
         log.warning("[AI] Erro ao gerar forecast: %s", str(ex)[:200])

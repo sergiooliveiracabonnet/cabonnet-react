@@ -7,7 +7,7 @@ import { useUIStore } from '../store/uiStore'
 import { applyDateFilter } from '../lib/transform'
 import {
   buildDashboard, buildSla, buildGraficos, buildAuditoria,
-  buildCidades, buildCampo, buildRevisitas, buildOrdens, buildAnomalias,
+  buildCidades, buildCampo, buildRevisitas, buildOrdens, buildAnomalias, buildFila,
 } from '../lib/builders'
 import type {
   OSRow, KPI, QuickInsight, ClusterAtivo,
@@ -16,7 +16,7 @@ import type {
   SlaHipotese, SlaResumoItem, SlaRankingItem, SlaSemaforo, SlaCluster,
   CidadeItem, CidadeRankItem, CidadePendItem, CidadeFilaItem,
   CidadeHeatmapItem, CidadeExecItem, CidadeConsolidItem,
-  RevisitaHipotese, RevisitaCausa,
+  RevisitaHipotese,
 } from '../lib/types'
 
 // Tipos locais não exportados de types.ts — espelham retorno real dos builders.
@@ -38,7 +38,8 @@ const EMPTY_DERIVED = {
       slaFila: 0, semAgendamento: 0, mttr: 0,
       topCidadesCriticas: [] as { cidade: string; count: number }[],
       clustersAtivos:     [] as ClusterAtivo[],
-      entradasHoje: 0, saidasHoje: 0, fluxoHoje: 0,
+      criticasTotal: 0,
+      entradasHoje: 0, saidasHoje: 0, fluxoHoje: 0, entradaMediaDia: 0,
       metaMes: {
         concluidas: 0, meta: 0, pct: null as number | null,
         diasUteisRestantes: 0, diasUteisTotal: 0, projecaoFinal: null as number | null,
@@ -48,6 +49,10 @@ const EMPTY_DERIVED = {
         manha: 0, tarde: 0, semPeriodo: 0, tardeIniciada: false, alerta: false,
       },
     },
+    scoreTendencia: { atual: 0, anterior: null as number | null, delta: null as number | null },
+    mudancas: [] as { id: string; label: string; atual: number; anterior: number; delta: number; unidade: string; melhorou: boolean; impacto: number }[],
+    metaScore: 85,
+    projecaoRisco: { proj24h: 0, proj48h: 0, amostra: [] as OSRow[] },
   },
   sla: {
     pulso:    { narrativa: '', ok: 0, atencao: 0, fora: 0, criticas: 0, score: 0, scoreLabel: '' },
@@ -110,8 +115,6 @@ const EMPTY_DERIVED = {
     taxa:      { inst: 0, manut: 0, serv: 0, geral: 0 },
     narrativa: '',
     hipoteses: [] as RevisitaHipotese[],
-    causas:    [] as RevisitaCausa[],
-    causaRaiz: [] as RevisitaCausa[],
     cronicos:  [] as OSRow[],
     chart:     { labels: [] as string[], values: [] as number[] },
     totalRevisitas: 0, revInst: 0, revManut: 0, revServ: 0,
@@ -129,6 +132,15 @@ const EMPTY_DERIVED = {
   ordens: {
     ordens:  [] as OSRow[],
     options: { tipos: [] as string[], cidades: [] as string[], equipes: [] as string[], bairros: [] as string[], periodos: [] as string[] },
+  },
+  fila: {
+    cumprimento: {
+      total: 0, noPrazo: 0, fora: 0,
+      pct: null as number | null, prevPct: null as number | null, deltaPp: null as number | null,
+    },
+    cargaFornecedor: [] as { nome: string; total: number; violadas: number; criticas: number }[],
+    cargaCidade:     [] as { nome: string; total: number; violadas: number; criticas: number }[],
+    tendencia:       [] as { dia: string; label: string; total: number; violadas: number }[],
   },
 }
 
@@ -185,9 +197,11 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
   const auditoria  = useMemo(() => safe('auditoria',  () => buildAuditoria(activeRows, discardedLixo, duplicadosLixo), EMPTY_DERIVED.auditoria), [activeRows, discardedLixo, duplicadosLixo])
   const anomalias  = useMemo(() => safe('anomalias',  () => buildAnomalias(activeRows),  EMPTY_DERIVED.anomalias),  [activeRows])
   const cidades    = useMemo(() => safe('cidades',    () => buildCidades(activeRows),    EMPTY_DERIVED.cidades),    [activeRows])
-  const campo      = useMemo(() => safe('campo',      () => buildCampo(activeRows),      EMPTY_DERIVED.campo),      [activeRows])
+  const campo      = useMemo(() => safe('campo',      () => buildCampo(activeRows, activeAllRows), EMPTY_DERIVED.campo), [activeRows, activeAllRows])
   const revisitas  = useMemo(() => safe('revisitas',  () => buildRevisitas(activeRevisitaRows, prevRevisitaRows), EMPTY_DERIVED.revisitas), [activeRevisitaRows, prevRevisitaRows])
   const ordens     = useMemo(() => safe('ordens',     () => buildOrdens(activeRows),     EMPTY_DERIVED.ordens),     [activeRows])
+  const allRevisitaActive = useMemo(() => hideRede ? allRevisitaRows.filter(r => r._tipo !== 'REDE') : allRevisitaRows, [allRevisitaRows, hideRede])
+  const fila       = useMemo(() => safe('fila',       () => buildFila(activeRows, activeRevisitaRows, prevRevisitaRows, allRevisitaActive), EMPTY_DERIVED.fila), [activeRows, activeRevisitaRows, prevRevisitaRows, allRevisitaActive])
 
   // Detecta falhas de builders por identidade de referência com o fallback
   const builderErrors = useMemo(() => [
@@ -200,7 +214,8 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     campo     === EMPTY_DERIVED.campo     && 'campo',
     revisitas === EMPTY_DERIVED.revisitas && 'revisitas',
     ordens    === EMPTY_DERIVED.ordens    && 'ordens',
-  ].filter(Boolean) as string[], [dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens])
+    fila      === EMPTY_DERIVED.fila      && 'fila',
+  ].filter(Boolean) as string[], [dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, fila])
 
   const value = useMemo<OSDataContextValue>(() => ({
     rows:    activeRows,
@@ -209,9 +224,9 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     error,
     dataUpdatedAt,
     builderErrors,
-    derived: { dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens },
+    derived: { dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, fila },
   }), [activeRows, activeAllRows, isLoading, error, dataUpdatedAt, builderErrors,
-       dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens])
+       dashboard, sla, graficos, auditoria, anomalias, cidades, campo, revisitas, ordens, fila])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

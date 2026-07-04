@@ -43,6 +43,10 @@ _sem_exec_alertadas_data = None
 _manut_vistos      = set()   # numos de manutenção já alertados hoje
 _manut_vistos_data = None    # date do último reset
 
+# ── Estado do monitor de VT (Fila de Prioridade) ─────────────────────────────
+_vt_alertados      = {}   # { numos(str): {"estagio": "risco"|"violado", "last_sent": datetime} }
+_vt_alertados_data = None # date do último reset
+
 # ── Juniper PPPoE ─────────────────────────────────────────────────────────────
 # Conjunto de user_name conhecidos na última coleta (por cluster).
 _jun_known: dict = {}
@@ -83,7 +87,7 @@ _ai_anomalias_cache = {"hash": "", "causa_raiz": "", "acoes": [], "prioridade": 
 _ai_anomalias_lock  = threading.Lock()
 _ai_briefing_cache  = {"texto": "", "acoes": [], "data": "", "ts": 0.0}
 _ai_briefing_lock   = threading.Lock()
-_ai_forecast_cache  = {"hash": "", "tendencia": "", "narrativa": "", "previsao": [], "pico_previsto": None, "ts": 0.0}
+_ai_forecast_cache  = {"hash": "", "narrativa": "", "ts": 0.0}
 _ai_forecast_lock   = threading.Lock()
 _ai_suggest_cache   = {}   # key: data_hash → {"data": {...}, "ts": float}
 _ai_suggest_lock    = threading.Lock()

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { OSRow, DateFilter } from './types'
-import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, isConcluida, isExecucaoReal } from './transform.js'
+import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, parseDateTime, isConcluida, isExecucaoReal } from './transform.js'
 import { buildDashboard, buildSla, buildAnomalias, buildCidades } from './builders.js'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -27,6 +27,16 @@ function daysAgo(n: number): string {
   const mm   = String(d.getMonth() + 1).padStart(2, '0')
   const yyyy = d.getFullYear()
   return `${dd}/${mm}/${yyyy}`
+}
+
+function hoursAgo(n: number): string {
+  const d = new Date()
+  d.setHours(d.getHours() - n)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const HH = String(d.getHours()).padStart(2, '0')
+  const MI = String(d.getMinutes()).padStart(2, '0')
+  return `${dd}/${mm}/${d.getFullYear()} ${HH}:${MI}`
 }
 
 
@@ -162,6 +172,163 @@ describe('enrichRows — SLA', () => {
     })
     const [r] = enrichRows([os])
     expect(r._slaSemAgend).toBe(true)
+  })
+})
+
+// ─── enrichRows — VT Prazo Horas ───────────────────────────────────────────────
+
+describe('enrichRows — VT Prazo Horas', () => {
+  it('getVtPrazoHoras retorna 8 para VT 08H', () => {
+    const [r] = enrichRows([makeOS({ servico: 'ASSISTENCIA - VT 08H' })])
+    expect(r._vtPrazoHoras).toBe(8)
+  })
+
+  it('getVtPrazoHoras retorna 24 para VT 24H', () => {
+    const [r] = enrichRows([makeOS({ servico: 'ASSISTENCIA - VT 24H' })])
+    expect(r._vtPrazoHoras).toBe(24)
+  })
+
+  it('getVtPrazoHoras retorna 48 para VT 48H', () => {
+    const [r] = enrichRows([makeOS({ servico: 'VT 48H TESTE' })])
+    expect(r._vtPrazoHoras).toBe(48)
+  })
+
+  it('getVtPrazoHoras retorna null para serviço não-VT', () => {
+    const [r] = enrichRows([makeOS({ servico: 'ASSISTENCIA TECNICA' })])
+    expect(r._vtPrazoHoras).toBeNull()
+  })
+
+  it('_vtHorasRestantes positivo quando dentro do prazo (VT 24h, aberta há 20h)', () => {
+    const os = makeOS({
+      numos: 'VT1', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Pendente', datacadastro: hoursAgo(20),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtHorasRestantes).not.toBeNull()
+    expect(r._vtHorasRestantes as number).toBeGreaterThan(3)
+    expect(r._vtHorasRestantes as number).toBeLessThan(5)
+    expect(r._vtViolado).toBe(false)
+  })
+
+  it('_vtHorasRestantes negativo e _vtViolado=true quando passou do prazo (VT 24h, aberta há 30h)', () => {
+    const os = makeOS({
+      numos: 'VT2', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Pendente', datacadastro: hoursAgo(30),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtHorasRestantes as number).toBeLessThan(0)
+    expect(r._vtViolado).toBe(true)
+  })
+
+  it('_vtHorasRestantes é null para OS não-VT', () => {
+    const os = makeOS({
+      numos: 'VT3', servico: 'ASSISTENCIA TECNICA',
+      descsituacao: 'Pendente', datacadastro: hoursAgo(5),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtHorasRestantes).toBeNull()
+    expect(r._vtViolado).toBe(false)
+  })
+
+  it('_vtHorasRestantes é null para OS VT já concluída (não está mais na fila ativa)', () => {
+    const os = makeOS({
+      numos: 'VT4', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Concluída', datacadastro: hoursAgo(30),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtHorasRestantes).toBeNull()
+    expect(r._vtViolado).toBe(false)
+  })
+
+  it('_vtViolado é true exatamente no limite do prazo (VT 24h, aberta há exatos 24h)', () => {
+    const os = makeOS({
+      numos: 'VT5', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Pendente', datacadastro: hoursAgo(24),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtHorasRestantes as number).toBeLessThanOrEqual(0)
+    expect(r._vtViolado).toBe(true)
+  })
+
+  it('_vtHorasRestantes é null quando OS é VT mas datacadastro está ausente', () => {
+    const os = makeOS({
+      numos: 'VT6', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Pendente', datacadastro: null,
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtPrazoHoras).toBe(24)
+    expect(r._vtHorasRestantes).toBeNull()
+    expect(r._vtViolado).toBe(false)
+  })
+})
+
+// ─── enrichRows — VT Cumprimento de Prazo (executadas) ──────────────────────────
+
+describe('enrichRows — VT Cumprimento de Prazo', () => {
+  it('_vtCumpridaNoPrazo=true quando VT 08h executada 6h após o cadastro', () => {
+    const os = makeOS({
+      numos: 'VC1', servico: 'ASSISTENCIA - VT 08H',
+      descsituacao: 'Concluída', datacadastro: hoursAgo(20), dataexecucao: hoursAgo(14),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtCumpridaNoPrazo).toBe(true)
+  })
+
+  it('_vtCumpridaNoPrazo=false quando VT 08h executada 12h após o cadastro', () => {
+    const os = makeOS({
+      numos: 'VC2', servico: 'ASSISTENCIA - VT 08H',
+      descsituacao: 'Concluída', datacadastro: hoursAgo(20), dataexecucao: hoursAgo(8),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtCumpridaNoPrazo).toBe(false)
+  })
+
+  it('_vtCumpridaNoPrazo é null para VT ainda sem dataexecucao', () => {
+    const os = makeOS({
+      numos: 'VC3', servico: 'ASSISTENCIA - VT 24H',
+      descsituacao: 'Pendente', datacadastro: hoursAgo(10),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtCumpridaNoPrazo).toBeNull()
+  })
+
+  it('_vtCumpridaNoPrazo é null para OS não-VT mesmo executada', () => {
+    const os = makeOS({
+      numos: 'VC4', servico: 'ASSISTENCIA TECNICA',
+      descsituacao: 'Concluída', datacadastro: hoursAgo(20), dataexecucao: hoursAgo(10),
+    })
+    const [r] = enrichRows([os])
+    expect(r._vtCumpridaNoPrazo).toBeNull()
+  })
+})
+
+// ─── enrichRows — VT Priority Score ─────────────────────────────────────────────
+
+describe('enrichRows — VT Priority Score', () => {
+  it('_vtPriorityScore é 0 para OS não-VT', () => {
+    const [r] = enrichRows([makeOS({ servico: 'ASSISTENCIA TECNICA', datacadastro: hoursAgo(5) })])
+    expect(r._vtPriorityScore).toBe(0)
+  })
+
+  it('VT 08h pesa mais que VT 48h com o mesmo estouro', () => {
+    const [vt08] = enrichRows([makeOS({ numos: 'S1', servico: 'VT 08H', descsituacao: 'Pendente', datacadastro: hoursAgo(10) })])
+    const [vt48] = enrichRows([makeOS({ numos: 'S2', servico: 'VT 48H', descsituacao: 'Pendente', datacadastro: hoursAgo(50) })])
+    // ambos violados há ~2h, mas o 08h tem peso de tipo 3 vs 1 do 48h
+    expect(vt08._vtPriorityScore).toBeGreaterThan(vt48._vtPriorityScore)
+  })
+
+  it('VT violada pontua mais que VT no prazo do mesmo tipo', () => {
+    const [violada] = enrichRows([makeOS({ numos: 'S3', servico: 'VT 08H', descsituacao: 'Pendente', datacadastro: hoursAgo(12) })]) // violada
+    const [noPrazo] = enrichRows([makeOS({ numos: 'S4', servico: 'VT 08H', descsituacao: 'Pendente', datacadastro: hoursAgo(4) })])  // 4h restantes
+    expect(violada._vtPriorityScore).toBeGreaterThan(noPrazo._vtPriorityScore)
+    expect(noPrazo._vtPriorityScore).toBeGreaterThan(0)
+  })
+
+  it('Reagendamento reduz o score (já tem tratativa)', () => {
+    const [normal]     = enrichRows([makeOS({ numos: 'S5', servico: 'VT 08H', nomedaequipe: 'EQUIPE F01', descsituacao: 'Pendente', datacadastro: hoursAgo(10) })])
+    const [reagendada] = enrichRows([makeOS({ numos: 'S6', servico: 'VT 08H', nomedaequipe: 'REAGENDAMENTO F01', descsituacao: 'Pendente', datacadastro: hoursAgo(10) })])
+    expect(reagendada._situacaoEfetiva).toBe('Reagendamento')
+    expect(reagendada._vtPriorityScore).toBeLessThan(normal._vtPriorityScore)
   })
 })
 
@@ -376,9 +543,9 @@ describe('buildDashboard', () => {
     makeOS({ numos: 'D3', descsituacao: 'Concluída',   datacadastro: daysAgo(1), nomedaequipe: 'MANUTENCAO M01', tiposervico: 'MANUTENCAO' }),
   ])
 
-  it('retorna 9 KPIs', () => {
+  it('retorna 12 KPIs', () => {
     const { kpis } = buildDashboard(rows)
-    expect(kpis).toHaveLength(9)
+    expect(kpis).toHaveLength(12)
   })
 
   it('total conta apenas Pendente + Atendimento', () => {
@@ -391,6 +558,41 @@ describe('buildDashboard', () => {
     const { kpis } = buildDashboard(rows)
     const concl = kpis.find(k => k.id === 'concl')!
     expect(concl.value).toBe(1)
+  })
+
+  it('diferencia os três subtipos de reagendamento', () => {
+    const reagRows = enrichRows([
+      makeOS({ numos: 'RI', descsituacao: 'Pendente', nomedaequipe: 'REAGENDAMENTO - INVIABILIDADE' }),
+      makeOS({ numos: 'RM', descsituacao: 'Pendente', nomedaequipe: 'REAGENDAMENTO O.S MOBILE' }),
+      makeOS({ numos: 'RF1', descsituacao: 'Pendente', nomedaequipe: 'REAGENDAMENTO F01' }),
+      makeOS({ numos: 'RF2', descsituacao: 'Atendimento', nomedaequipe: 'REAGENDAMENTO' }),
+    ])
+    const { kpis } = buildDashboard(reagRows)
+    expect(kpis.find(k => k.id === 'reagendInviab')!.value).toBe(1)
+    expect(kpis.find(k => k.id === 'reagendMobile')!.value).toBe(1)
+    expect(kpis.find(k => k.id === 'reagendFutura')!.value).toBe(2)
+  })
+
+  it('copeAguardando conta OS ativas paradas em equipes COPE, ignora concluídas', () => {
+    const copeRows = enrichRows([
+      makeOS({ numos: 'CP1', descsituacao: 'Pendente',    nomedaequipe: 'COPE - MANUTENCAO' }),
+      makeOS({ numos: 'CP2', descsituacao: 'Atendimento', nomedaequipe: 'COPE - INSTALACAO' }),
+      makeOS({ numos: 'CP3', descsituacao: 'Concluída',   nomedaequipe: 'COPE - MANUTENCAO' }),
+    ])
+    const { kpis } = buildDashboard(copeRows)
+    expect(kpis.find(k => k.id === 'copeAguardando')!.value).toBe(2)
+  })
+
+  it('OS Críticas conta apenas críticas agendadas para hoje', () => {
+    const n = new Date()
+    const hoje = `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}/${n.getFullYear()}`
+    const critRows = enrichRows([
+      makeOS({ numos: 'C1', descsituacao: 'Pendente', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(6), dataagendamento: hoje }),
+      makeOS({ numos: 'C2', descsituacao: 'Pendente', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(6), dataagendamento: '01/01/2020' }),
+    ])
+    const { kpis, pulso } = buildDashboard(critRows)
+    expect(kpis.find(k => k.id === 'criticas')!.value).toBe(1)   // só a agendada hoje
+    expect((pulso as { criticasTotal: number }).criticasTotal).toBe(2) // todas as críticas preservadas
   })
 
   it('retorna array de fornecedores', () => {
@@ -480,6 +682,40 @@ describe('parseDate', () => {
   it('retorna null para string sem 3 partes', () => {
     expect(parseDate('15/2025')).toBeNull()
     expect(parseDate('abc')).toBeNull()
+  })
+})
+
+describe('parseDateTime', () => {
+  it('parseia data com hora', () => {
+    const dt = parseDateTime('22/06/2026 14:35')
+    expect(dt?.getFullYear()).toBe(2026)
+    expect(dt?.getMonth()).toBe(5)
+    expect(dt?.getDate()).toBe(22)
+    expect(dt?.getHours()).toBe(14)
+    expect(dt?.getMinutes()).toBe(35)
+  })
+
+  it('parseia data sem hora assumindo 00:00', () => {
+    const dt = parseDateTime('22/06/2026')
+    expect(dt?.getHours()).toBe(0)
+    expect(dt?.getMinutes()).toBe(0)
+  })
+
+  it('retorna null para string vazia ou nula', () => {
+    expect(parseDateTime('')).toBeNull()
+    expect(parseDateTime(null)).toBeNull()
+  })
+
+  it('retorna null para data inválida', () => {
+    expect(parseDateTime('32/13/2026')).toBeNull()
+  })
+
+  it('retorna null para lixo após a hora', () => {
+    expect(parseDateTime('22/06/2026 14:35 lixo')).toBeNull()
+  })
+
+  it('retorna null para hora fora do intervalo', () => {
+    expect(parseDateTime('22/06/2026 25:99')).toBeNull()
   })
 })
 

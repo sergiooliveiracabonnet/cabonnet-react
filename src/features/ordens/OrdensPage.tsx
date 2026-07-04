@@ -33,6 +33,12 @@ const statusOptions = [
   { value: 'Concluída/Sem Execução',  label: 'Concluída/Sem Exec.'  },
 ]
 
+const reagendTipoOptions = [
+  { value: 'inviabilidade', label: 'Inviabilidade' },
+  { value: 'mobile',        label: 'OS Mobile'     },
+  { value: 'futura',        label: 'Data Futura'   },
+]
+
 const agingOptions = [
   { value: '1',  label: 'Hoje (0-1 dia)' },
   { value: '2',  label: 'Até 2 dias' },
@@ -125,10 +131,25 @@ export default function OrdensPage() {
   const tableRef   = useRef<HTMLDivElement>(null)
 
   // Recebe equipe pré-selecionada via React Router state (OSDrawer → "Ver Equipe")
+  // ou um "foco" deep-link vindo dos KPIs de risco do Dashboard
   useEffect(() => {
     const eq = location.state?.filterEquipe
     if (eq) {
       os.setEquipe(eq)
+      navigate(location.pathname, { replace: true, state: null })
+      setTimeout(scrollToTable, 150)
+      return
+    }
+    const foco = location.state?.foco as string | undefined
+    if (foco) {
+      os.clearFilters()
+      if      (foco === 'criticas') os.setCritico(true)
+      else if (foco === 'semEq')    os.setSemEquipe(true)
+      else if (foco === 'pend')     os.setStatus('Pendente')
+      else if (foco === 'atend')    os.setStatus('Atendimento')
+      else if (foco === 'reagendInviab') { os.setStatus('Reagendamento'); os.setReagendTipo('inviabilidade') }
+      else if (foco === 'reagendMobile') { os.setStatus('Reagendamento'); os.setReagendTipo('mobile') }
+      else if (foco === 'reagendFutura') { os.setStatus('Reagendamento'); os.setReagendTipo('futura') }
       navigate(location.pathname, { replace: true, state: null })
       setTimeout(scrollToTable, 150)
     }
@@ -461,6 +482,9 @@ export default function OrdensPage() {
           className="w-64"
         />
         <FilterSelect value={os.status}     onChange={os.setStatus}     options={statusOptions}     placeholder="Status"      className="w-44" />
+        {(os.status === 'Reagendamento' || os.reagendTipo) && (
+          <FilterSelect value={os.reagendTipo} onChange={os.setReagendTipo} options={reagendTipoOptions} placeholder="Subtipo reag." className="w-40" />
+        )}
         <FilterSelect value={os.tipo}       onChange={os.setTipo}       options={tipoOpts}          placeholder="Tipo"        className="w-36" />
         <FilterSelect value={os.cidade}     onChange={os.setCidade}     options={cidadeOpts}        placeholder="Cidade"      className="w-36" />
         <FilterSelect value={os.bairro}     onChange={os.setBairro}     options={bairroOpts}        placeholder="Bairro"      className="w-32" />

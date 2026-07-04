@@ -1,5 +1,5 @@
 // Formatters e constantes compartilhados por OSDrawer, OSDetailModal e transform
-import type { Fornecedor } from './types'
+import type { Categoria, Fornecedor, OSRow } from './types'
 
 export const EQUIPE_NAMES: Record<string, string> = {
   'INST F01':  'INST F01 - FELIPE',
@@ -120,6 +120,68 @@ export function calcDuracao(raw1: string | null | undefined, raw2: string | null
   if (mins < 1) return null
   const h = Math.floor(mins / 60), m = mins % 60
   return h === 0 ? `${m}min` : m > 0 ? `${h}h ${m}min` : `${h}h`
+}
+
+export function fmtHorasMin(absHoras: number): string {
+  const mins = Math.round(Math.abs(absHoras) * 60)
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return h === 0 ? `${m}min` : m > 0 ? `${h}h ${m}min` : `${h}h`
+}
+
+export interface OSHistoricoEntry {
+  autor?:     string | null
+  data?:      string | null
+  hora?:      string | null
+  texto?:     string | null
+  isReagend?: boolean
+}
+
+// Resumo da OS para colar no WhatsApp (mesmo formato do botão do OSDrawer).
+// Quando `historico` é informado, anexa a linha do tempo de ocorrências/reagendamentos.
+export function buildOSWhatsApp(os: OSRow, historico?: OSHistoricoEntry[]): string {
+  const sit    = os._situacaoEfetiva ?? os.descsituacao ?? '—'
+  const equipe = shortEquipe(os.nomedaequipe) || '—'
+  const aging  = os._aging != null ? `${os._aging}d` : '—'
+  const agend  = os.dataagendamento ? os.dataagendamento.slice(0, 10) : 'Não agendado'
+  const loc    = [os.nomedacidade, os.bairro].filter(Boolean).join(' · ') || '—'
+  const end    = [os.logradouro || os.enderecoconexao, os.numero, os.complemento].filter(Boolean).join(', ') || '—'
+  const lines  = [
+    `📋 *OS ${os.numos}* — ${sit}`,
+    `👤 ${os.nomecliente || '—'}`,
+    `📍 ${loc}`,
+    `🏠 ${end}`,
+    `🔧 ${os.tiposervico || '—'} · ${os.servico || '—'}`,
+    `👷 ${equipe}`,
+    `⏱ Aging: ${aging}`,
+    `📅 Agend: ${agend}`,
+  ]
+
+  if (historico && historico.length) {
+    lines.push('', '🕓 *Histórico:*')
+    for (const e of historico) {
+      const meta = [e.autor, [e.data, e.hora].filter(Boolean).join(' ')].filter(Boolean).join(' · ')
+      lines.push(`${e.isReagend ? '🔄' : '•'} ${meta || '—'}`)
+      if (e.texto) lines.push(`   ${e.texto.trim().replace(/\n+/g, ' ')}`)
+    }
+  }
+
+  return lines.join('\n')
+}
+
+// Tipo de OS (instalação/manutenção/serviço/rede) — usa _categoria (calculado em enrichRows)
+export const CATEGORIA_LABEL: Record<Categoria, string> = {
+  INSTALACAO:    'Instalação',
+  VT_MANUTENCAO: 'Manutenção',
+  SERVICO:       'Serviço',
+  REDE:          'Rede',
+}
+
+export const CATEGORIA_COLOR: Record<Categoria, string> = {
+  INSTALACAO:    '#3b82f6',
+  VT_MANUTENCAO: '#fb923c',
+  SERVICO:       '#c4b5fd',
+  REDE:          '#71717a',
 }
 
 export const FORN_LABEL: Record<Fornecedor, string> = {

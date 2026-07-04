@@ -4,6 +4,7 @@ cabonnet/grafana.py — Proxy Grafana: SQL templates, HTTP post, frames_to_csv/d
 """
 
 import logging
+import re
 import threading
 from datetime import datetime
 
@@ -54,7 +55,7 @@ with analitico as (
   o.equipe,
   eq.nomedaequipe,
   eqe.nomedaequipe as equipeexecutou,
-  to_char(o.d_datacadastro,    'DD/MM/YYYY') as datacadastro,
+  to_char(o.d_datacadastro,    'DD/MM/YYYY HH24:MI') as datacadastro,
   to_char(o.d_dataatendimento, 'DD/MM/YYYY') as dataatendimento,
   to_char(o.d_dataagendamento, 'DD/MM/YYYY') as dataagendamento,
   case when o.t_horainicial is not null
@@ -139,7 +140,7 @@ with analitico as (
   o.equipe,
   eq.nomedaequipe,
   eqe.nomedaequipe as equipeexecutou,
-  to_char(o.d_datacadastro,    'DD/MM/YYYY') as datacadastro,
+  to_char(o.d_datacadastro,    'DD/MM/YYYY HH24:MI') as datacadastro,
   to_char(o.d_dataatendimento, 'DD/MM/YYYY') as dataatendimento,
   to_char(o.d_dataagendamento, 'DD/MM/YYYY') as dataagendamento,
   case when o.t_horainicial is not null
@@ -224,7 +225,7 @@ with analitico as (
   o.equipe,
   eq.nomedaequipe,
   eqe.nomedaequipe as equipeexecutou,
-  to_char(o.d_datacadastro,    'DD/MM/YYYY') as datacadastro,
+  to_char(o.d_datacadastro,    'DD/MM/YYYY HH24:MI') as datacadastro,
   to_char(o.d_dataatendimento, 'DD/MM/YYYY') as dataatendimento,
   to_char(o.d_dataagendamento, 'DD/MM/YYYY') as dataagendamento,
   case when o.t_horainicial is not null
@@ -504,6 +505,44 @@ WHERE numos = {numos}
 ORDER BY id
 """
 
+# Os templates acima usam `.format()` para interpolar valores direto no texto
+# do SQL (a API do Grafana não aceita bind parameters, só a query pronta). Os
+# helpers abaixo validam/coagem o valor ANTES de formatar, pra que a garantia
+# contra SQL injection viva aqui — perto do SQL — em vez de depender de cada
+# endpoint que chama isso lembrar de validar certo.
+
+def sql_detalhes(numos) -> str:
+    return SQL_DETALHES_TEMPLATE.format(numos=int(numos))
+
+
+def sql_ocorrencias(numos) -> str:
+    return SQL_OCORRENCIAS_TEMPLATE.format(numos=int(numos))
+
+
+def sql_equipe_reagendou(numos) -> str:
+    return SQL_EQUIPE_REAGENDOU_TEMPLATE.format(numos=int(numos))
+
+
+def sql_materiais_utilizados(numos) -> str:
+    return SQL_MATERIAIS_UTILIZADOS_TEMPLATE.format(numos=int(numos))
+
+
+def sql_materiais_retirados(numos) -> str:
+    return SQL_MATERIAIS_RETIRADOS_TEMPLATE.format(numos=int(numos))
+
+
+def sql_fotos(numos) -> str:
+    return SQL_FOTOS_TEMPLATE.format(numos=int(numos))
+
+
+def sql_checklist(numos) -> str:
+    return SQL_CHECKLIST_TEMPLATE.format(numos=int(numos))
+
+
+def sql_motivo_inconclusivo(numos) -> str:
+    return SQL_MOTIVO_INCONCLUSIVO_TEMPLATE.format(numos=int(numos))
+
+
 SQL_ATENDIMENTO = """
 SELECT
     h.d_data,
@@ -608,6 +647,23 @@ select * from analitico a
   and upper(coalesce(a.servico,'')) not like '%CONTRATO - UPGRADE%'
 order by dataexecucao desc
 """
+
+_DATE_ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _validar_data_iso(data: str, label: str) -> str:
+    """Só deixa passar 'YYYY-MM-DD' pro SQL — qualquer outra coisa vira erro
+    aqui, antes de virar texto interpolado na query."""
+    if not _DATE_ISO_RE.match(data or ""):
+        raise ValueError(f"{label} inválida (esperado YYYY-MM-DD): {data!r}")
+    return data
+
+
+def sql_revisitas_com_obs(inicio: str, fim: str) -> str:
+    return SQL_REVISITAS_COM_OBS.format(
+        inicio=_validar_data_iso(inicio, "inicio"),
+        fim=_validar_data_iso(fim, "fim"),
+    )
 
 
 def build_pares_revisita(rows):
@@ -909,6 +965,13 @@ SELECT
 FROM base
 ORDER BY dataexecucao DESC
 """
+
+
+def sql_backlog(inicio: str, fim: str) -> str:
+    return SQL_BACKLOG_TEMPLATE.format(
+        inicio=_validar_data_iso(inicio, "inicio"),
+        fim=_validar_data_iso(fim, "fim"),
+    )
 
 
 def build_backlog_json(rows):

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Calendar, ChevronDown, Server } from 'lucide-react'
-import { useUIStore, PRESETS } from '../../store/uiStore'
+import { Calendar, ChevronDown, ChevronLeft, ChevronRight, Server } from 'lucide-react'
+import { useUIStore, PRESETS, isSameMonth } from '../../store/uiStore'
 import type { DateCampo } from '../../lib/types'
 
 const CAMPOS: { value: DateCampo; label: string }[] = [
@@ -35,10 +35,23 @@ interface DateFilterBarProps {
   sidebarOpen: boolean
 }
 
+const MESES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+]
+
 export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
-  const { dateFilter, setPreset, setCustomRange, setCampo, hideRede, toggleHideRede } = useUIStore()
+  const {
+    dateFilter, setPreset, setCustomRange, setCampo, hideRede, toggleHideRede,
+    mensalAnchor, mensalPrevMonth, mensalNextMonth,
+  } = useUIStore()
   const { preset, from, to, campo } = dateFilter
   const [showCampo, setShowCampo] = useState(false)
+
+  const mensalAtual = isSameMonth(mensalAnchor, new Date())
+  const mensalLabel = preset === 'mensal'
+    ? `${MESES[mensalAnchor.getMonth()]} ${mensalAnchor.getFullYear()}`
+    : 'Mensal'
 
   const campoLabel = CAMPOS.find(c => c.value === campo)?.label ?? 'Abertura'
 
@@ -49,7 +62,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
       return `${f} → ${t}`
     }
     const f = from ? fmt(from) : '...'
-    const t = fmt(new Date())
+    const t = to   ? fmt(to)   : fmt(new Date())
     return `${f} → ${t}`
   })()
 
@@ -64,7 +77,38 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
       <Calendar size={13} className="text-muted flex-shrink-0" />
 
       <div className="flex items-center gap-1 flex-shrink-0">
-        {PRESETS.map((p) => (
+        {PRESETS.map((p) => p.id === 'mensal' ? (
+          <div key={p.id} className="flex items-center gap-0.5">
+            {preset === 'mensal' && (
+              <button
+                onClick={mensalPrevMonth}
+                title="Mês anterior"
+                className="w-5 h-5 flex items-center justify-center rounded-full text-muted hover:text-secondary hover:bg-surface/60 transition-colors"
+              >
+                <ChevronLeft size={12} />
+              </button>
+            )}
+            <button
+              onClick={() => setPreset(p.id)}
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all duration-fast whitespace-nowrap
+                          ${preset === p.id
+                            ? 'bg-primary/15 border-primary/40 text-primary'
+                            : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
+            >
+              {mensalLabel}
+            </button>
+            {preset === 'mensal' && (
+              <button
+                onClick={mensalNextMonth}
+                disabled={mensalAtual}
+                title={mensalAtual ? 'Mês atual' : 'Próximo mês'}
+                className="w-5 h-5 flex items-center justify-center rounded-full text-muted hover:text-secondary hover:bg-surface/60 transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-muted"
+              >
+                <ChevronRight size={12} />
+              </button>
+            )}
+          </div>
+        ) : (
           <button
             key={p.id}
             onClick={() => setPreset(p.id)}
@@ -72,14 +116,10 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                         ${preset === p.id
                           ? p.id === 'amanha'
                             ? 'bg-cyan/15 border-cyan/40 text-cyan'
-                            : p.id === 'futuro'
-                              ? 'bg-orange/15 border-orange/40 text-orange'
-                              : 'bg-primary/15 border-primary/40 text-primary'
+                            : 'bg-primary/15 border-primary/40 text-primary'
                           : p.id === 'amanha'
                             ? 'border-cyan/20 text-cyan/60 hover:text-cyan hover:border-cyan/40'
-                            : p.id === 'futuro'
-                              ? 'border-orange/20 text-orange/60 hover:text-orange hover:border-orange/40'
-                              : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
+                            : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
           >
             {p.label}
           </button>

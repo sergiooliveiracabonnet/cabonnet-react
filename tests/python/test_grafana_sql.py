@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
-"""Testes das novas SQL templates (Bloco A: fotos/checklist/motivo; Bloco B: geo)."""
+"""Testes das SQL templates de grafana.py (fotos/checklist/motivo, geo, precisão de hora)."""
 
 from cabonnet.grafana import (
+    SQL_AGENDADO,
     SQL_CHECKLIST_TEMPLATE,
     SQL_DETALHES_TEMPLATE,
     SQL_FOTO_BLOB_TEMPLATE,
     SQL_FOTOS_TEMPLATE,
+    SQL_FUTURO,
     SQL_MOTIVO_INCONCLUSIVO_TEMPLATE,
     SQL_OS_EXECUCAO_GEO,
+    SQL_PENDENTE,
 )
 
 
@@ -49,3 +52,15 @@ def test_sql_os_execucao_geo_filtra_atendimento_e_cidades_vale():
     assert "situacaoos = 2" in sql
     assert "TAUBATE" in sql and "SAO JOSE DOS CAMPOS" in sql
     assert "latitudeinicio" in sql and "longitudeinicio" in sql
+
+
+def test_sql_pendente_datacadastro_inclui_hora():
+    assert "to_char(o.d_datacadastro,    'DD/MM/YYYY HH24:MI') as datacadastro" in SQL_PENDENTE
+
+
+def test_sql_agendado_datacadastro_inclui_hora():
+    assert "to_char(o.d_datacadastro,    'DD/MM/YYYY HH24:MI') as datacadastro" in SQL_AGENDADO
+
+
+def test_sql_futuro_datacadastro_inclui_hora():
+    assert "to_char(o.d_datacadastro,    'DD/MM/YYYY HH24:MI') as datacadastro" in SQL_FUTURO

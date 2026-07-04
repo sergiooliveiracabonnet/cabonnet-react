@@ -3,9 +3,12 @@ import type { OSRow } from '../types'
 
 // ─── Revisitas — helpers internos ───────────────────────────────────────────
 
-const CUSTO_REVISITA  = 180
-const EVIT_INST_RATE  = 0.70
-const EVIT_MANUT_RATE = 0.50
+// Estimativas não calibradas — nenhum destes valores foi medido para esta operação.
+// Servem só para dar uma ordem de grandeza até existir custo real por visita técnica
+// e uma classificação real de causa (ver ai.revisitasCausa) medindo evitabilidade de fato.
+const CUSTO_REVISITA_ESTIMADO  = 180
+const EVIT_INST_RATE_ESTIMADO  = 0.70
+const EVIT_MANUT_RATE_ESTIMADO = 0.50
 const MONTHS_PT       = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
 function _execMonth(r: OSRow): string | null {
@@ -182,9 +185,9 @@ export function buildRevisitas(rows: OSRow[], prevRows: OSRow[] = []) {
 
   const diasArr        = revisitEvents.map(e => e.dias).filter(d => d >= 0)
   const tempoMedio     = diasArr.length > 0 ? Math.round(diasArr.reduce((a, b) => a + b, 0) / diasArr.length) : 0
-  const evitaveisCount = Math.round(revInst * EVIT_INST_RATE + revManut * EVIT_MANUT_RATE)
+  const evitaveisCount = Math.round(revInst * EVIT_INST_RATE_ESTIMADO + revManut * EVIT_MANUT_RATE_ESTIMADO)
   const evitaveisPct   = totalRevisitas > 0 ? Math.round(evitaveisCount / totalRevisitas * 100) : 0
-  const custoEstimado  = totalRevisitas * CUSTO_REVISITA
+  const custoEstimado  = totalRevisitas * CUSTO_REVISITA_ESTIMADO
 
   const diasDist = { '1-7': 0, '8-14': 0, '15-20': 0, '21-30': 0 }
   for (const ev of revisitEvents) {
@@ -217,26 +220,15 @@ export function buildRevisitas(rows: OSRow[], prevRows: OSRow[] = []) {
     { pergunta: 'Taxa em serviços',    resposta: `${taxaServ}%`,  sub: `${revServ} manutenção${revServ !== 1 ? 'ões' : ''} após serviço no mês` },
   ]
 
-  const causas = [
-    { causa: 'Conectorização / sinal deficiente', pct: 32 },
-    { causa: 'Equipamento com falha prematura',   pct: 24 },
-    { causa: 'Configuração incorreta',             pct: 18 },
-    { causa: 'Problema de rede / CTO',             pct: 16 },
-    { causa: 'Cliente / uso indevido',             pct: 10 },
-  ]
-
-  const causaRaiz = [
-    { label: 'Técnico / Execução', valor: Math.round(totalRevisitas * 0.50), variante: 'red'    },
-    { label: 'Material / Equip.',  valor: Math.round(totalRevisitas * 0.24), variante: 'orange' },
-    { label: 'Rede / Projeto',     valor: Math.round(totalRevisitas * 0.16), variante: 'yellow' },
-    { label: 'Cliente',            valor: Math.round(totalRevisitas * 0.10), variante: 'teal'   },
-  ]
+  // Causa raiz real (não estimada) é calculada sob demanda pela IA a partir das observações
+  // de cada par OS-origem/OS-revisita — ver ai.revisitasCausa() e CausaRaizSection.tsx.
+  // Removido daqui um breakdown de causas com percentuais fixos que nunca foram medidos.
 
   const cronicos = cronicosRaw.sort((a, b) => b.count - a.count).slice(0, 10)
   const chart    = { labels: ['Instalação', 'Manutenção', 'Serviço'], values: [revInst, revManut, revServ] }
 
   return {
-    taxa, narrativa, hipoteses, causas, causaRaiz, cronicos, chart,
+    taxa, narrativa, hipoteses, cronicos, chart,
     totalRevisitas, revInst, revManut, revServ,
     porEquipe, porCidade,
     evitaveis:  { count: evitaveisCount, pct: evitaveisPct },

@@ -31,18 +31,16 @@ from fastapi.responses import (
 
 from cabonnet import state
 from cabonnet.ai import _ai_narrative, _ai_revisitas
-from cabonnet.auth import _auth_enabled, _create_session, _role_from_cookie
+from cabonnet.auth import _auth_enabled, _authenticate, _create_session, _role_from_cookie, _session_from_cookie
 from cabonnet.builders import _build_status_text
 from cabonnet.cache import _dados_cache_update
 from cabonnet.config import (
     _ATE_CACHE_TTL,
     _load_env,
-    _resolve_role,
     _SCRIPT_DIR_ENV,
     _SLA_LIMITS,
     CONFIG,
     JUN_HIST_FILE,
-    LOGIN_PASS,
     MONITOR_CONFIG,
     PG_CONFIG,
     PORT,
@@ -55,34 +53,53 @@ from cabonnet.config import (
     TELEGRAM_CHAT_REDE,
     TELEGRAM_CHAT_WES,
 )
-from cabonnet.db import _db_init, _db_load_cache, _db_save_cache
+from cabonnet.db import (
+    ALL_MODULOS,
+    _db_bootstrap_admin,
+    _db_count_ativos_por_role,
+    _db_create_usuario,
+    _db_get_permissoes,
+    _db_get_usuario_by_id,
+    _db_init,
+    _db_load_cache,
+    _db_list_usuarios,
+    _db_save_cache,
+    _db_set_password,
+    _db_set_permissoes,
+    _db_update_usuario,
+    _hash_password,
+    _verify_password,
+)
 from cabonnet.postgres import pg_init, pg_is_available, pg_load_snapshot, pg_sync_grafana
 from cabonnet.grafana import (
     SQL_AGENDADO,
     SQL_ATENDIMENTO,
     SQL_BACKLOG_TEMPLATE,
-    SQL_CHECKLIST_TEMPLATE,
     SQL_DETALHES_TEMPLATE,
     SQL_EQUIPE_REAGENDOU_TEMPLATE,
     SQL_ERP_OS_CIDADES,
     SQL_ERP_OS_TOTAIS,
     SQL_FOTO_BLOB_TEMPLATE,
-    SQL_FOTOS_TEMPLATE,
     SQL_FUTURO,
-    SQL_MATERIAIS_RETIRADOS_TEMPLATE,
-    SQL_MATERIAIS_UTILIZADOS_TEMPLATE,
-    SQL_MOTIVO_INCONCLUSIVO_TEMPLATE,
-    SQL_OCORRENCIAS_TEMPLATE,
     SQL_OS_EXECUCAO_GEO,
     SQL_PENDENTE,
     SQL_REVISITAS,
-    SQL_REVISITAS_COM_OBS,
     build_atendimento_json,
     build_backlog_json,
     build_pares_revisita,
     frames_to_csv,
     frames_to_dict_list,
     grafana_post,
+    sql_backlog,
+    sql_checklist,
+    sql_detalhes,
+    sql_equipe_reagendou,
+    sql_fotos,
+    sql_materiais_retirados,
+    sql_materiais_utilizados,
+    sql_motivo_inconclusivo,
+    sql_ocorrencias,
+    sql_revisitas_com_obs,
 )
 from cabonnet.juniper import _jun_notify_new_clients, juniper_fetch
 from cabonnet.telegram import _telegram_enabled, _telegram_send, _telegram_send_document
@@ -172,10 +189,33 @@ def _require_auth(role: str | None = Depends(_get_optional_role)) -> str:
     return role
 
 
+def _require_session(request: Request) -> dict:
+    """Como _require_auth, mas devolve a sessão completa ({"role","username"})
+    — usado por endpoints que precisam saber QUEM está agindo, não só o papel
+    (ex: trocar a própria senha)."""
+    if not _auth_enabled():
+        return {"role": "gestor", "username": None}
+    sess = _session_from_cookie(request.headers.get("cookie", ""))
+    if sess is None:
+        raise HTTPException(401, "Não autenticado")
+    return sess
+
+
 def _require_gestor(role: str | None = Depends(_get_optional_role)) -> str:
     if role != "gestor":
         raise HTTPException(403, "Permissão negada — requer role gestor")
     return role
+
+
+def _require_modulo(modulo_key: str):
+    """Factory de dependency — segunda camada de defesa além do frontend
+    (RequireModulo em React): bloqueia a chamada de API se o papel da sessão
+    não tiver o módulo liberado. Gestor sempre passa (acesso total, fixo)."""
+    def _dep(role: str = Depends(_require_auth)) -> str:
+        if role != "gestor" and modulo_key not in _db_get_permissoes(role):
+            raise HTTPException(403, f"Módulo não permitido para o papel {role}: {modulo_key}")
+        return role
+    return _dep
 
 
 def _check_telegram():
@@ -246,9 +286,11 @@ async def lifespan(app: FastAPI):
         _resumo_scheduler_loop,
         _sem_exec_monitor_loop,
         _sla_monitor_loop,
+        _vt_monitor_loop,
     )
 
     _db_init()
+    _db_bootstrap_admin()
     pg_init(PG_CONFIG)
 
     # H4 — validação de configuração obrigatória no startup
@@ -273,6 +315,7 @@ async def lifespan(app: FastAPI):
         threading.Thread(target=_telegram_poll_loop,       name="TelegramPoll",      daemon=True).start()
         threading.Thread(target=_resumo_scheduler_loop,    name="TelegramScheduler", daemon=True).start()
         threading.Thread(target=_sla_monitor_loop,         name="SLAMonitor",        daemon=True).start()
+        threading.Thread(target=_vt_monitor_loop,          name="VTMonitor",         daemon=True).start()
         threading.Thread(target=_fila_monitor_loop,        name="FilaMonitor",       daemon=True).start()
         threading.Thread(target=_manut_monitor_loop,       name="ManutMonitor",      daemon=True).start()
         threading.Thread(target=_atendimento_travado_loop, name="AtendTravado",      daemon=True).start()
@@ -313,6 +356,41 @@ async def _correlation_id_middleware(request: Request, call_next):
     if rid:
         response.headers["X-Request-ID"] = rid
     return response
+
+
+# Rate limiting geral por IP: protege todas as rotas contra abuso/bug de polling.
+# Login tem limite próprio e mais restrito (_check_login_rate_limit, acima).
+_API_MAX_REQUESTS = 300
+_API_WINDOW_S      = 60
+_api_requests: dict[str, list[float]] = {}
+_api_requests_lock = threading.Lock()
+
+# Fora do limite geral: health check (batido pela infra a cada poucos segundos)
+# e estáticos do build (JS/CSS/imagens não precisam de proteção de abuso).
+_RATE_LIMIT_EXEMPT_PREFIXES = ("/health", "/assets", "/favicon")
+
+
+def _check_api_rate_limit(ip: str) -> bool:
+    """True se o IP ainda está dentro do limite (janela deslizante de 1 min)."""
+    now = _time_mod.time()
+    with _api_requests_lock:
+        reqs = [t for t in _api_requests.get(ip, []) if now - t < _API_WINDOW_S]
+        if len(reqs) >= _API_MAX_REQUESTS:
+            _api_requests[ip] = reqs
+            return False
+        reqs.append(now)
+        _api_requests[ip] = reqs
+        return True
+
+
+@app.middleware("http")
+async def _rate_limit_middleware(request: Request, call_next):
+    if request.url.path.startswith(_RATE_LIMIT_EXEMPT_PREFIXES):
+        return await call_next(request)
+    ip = request.client.host if request.client else "unknown"
+    if not _check_api_rate_limit(ip):
+        return JSONResponse({"detail": "Muitas requisições. Tente novamente em instantes."}, status_code=429)
+    return await call_next(request)
 
 
 # ── API Router (v1) ───────────────────────────────────────────────────────────
@@ -383,10 +461,10 @@ async def login_form(request: Request):
     body = await request.form()
     user = (body.get("username") or "").strip()
     pwd  = body.get("password") or ""
-    role = _resolve_role(user, pwd)
-    if role:
-        token = _create_session(role)
-        log.info("[Auth] Login OK — usuario: %s role: %s", user, role)
+    auth = _authenticate(user, pwd)
+    if auth:
+        token = _create_session(auth["role"], auth["username"])
+        log.info("[Auth] Login OK — usuario: %s role: %s", auth["username"], auth["role"])
         resp = RedirectResponse("/dashboard", status_code=302)
         resp.set_cookie("cbn_session", token, path="/", httponly=True, samesite="strict", secure=_COOKIE_SECURE, max_age=SESSION_DURATION)
         return resp
@@ -401,11 +479,12 @@ async def api_login(request: Request):
     body = await request.json()
     user = (body.get("username") or "").strip()
     pwd  = body.get("password") or ""
-    role = _resolve_role(user, pwd) if _auth_enabled() else "gestor"
-    if role:
-        token = _create_session(role)
-        log.info("[Auth] Login React OK — usuario: %s role: %s", user, role)
-        resp = JSONResponse({"ok": True, "role": role})
+    auth = _authenticate(user, pwd)
+    if auth:
+        token   = _create_session(auth["role"], auth["username"])
+        modulos = _db_get_permissoes(auth["role"])
+        log.info("[Auth] Login React OK — usuario: %s role: %s", auth["username"], auth["role"])
+        resp = JSONResponse({"ok": True, "role": auth["role"], "username": auth["username"], "modulos": modulos})
         resp.set_cookie("cbn_session", token, path="/", httponly=True, samesite="strict", secure=_COOKIE_SECURE, max_age=SESSION_DURATION)
         return resp
     log.warning("[Auth] Login React FALHOU — usuario: %s", user)
@@ -414,9 +493,16 @@ async def api_login(request: Request):
 
 @app.get("/api/session")
 async def api_session(request: Request):
-    role = _get_optional_role(request)
-    ok   = not _auth_enabled() or role is not None
-    return {"ok": ok, "auth_enabled": _auth_enabled(), "role": role or "viewer"}
+    sess = _session_from_cookie(request.headers.get("cookie", ""))
+    if sess is None:
+        return {"ok": False, "auth_enabled": True, "role": None}
+    return {
+        "ok":           True,
+        "auth_enabled": True,
+        "role":         sess["role"],
+        "username":     sess.get("username"),
+        "modulos":      _db_get_permissoes(sess["role"]),
+    }
 
 
 @app.get("/api/logout")
@@ -434,6 +520,136 @@ async def api_logout(request: Request):
 @app.get("/api/sla-limits")
 async def api_sla_limits():
     return {"ok": True, "limits": _SLA_LIMITS}
+
+
+# ── Usuários e permissões (gestão, gestor-only) ────────────────────────────────
+# Rótulos exibidos na tela de permissões — mantidos em sincronia com ALL_MODULOS
+# (cabonnet/db.py) e com o mapa de rotas do frontend (src/lib/modulos.ts).
+_MODULO_LABELS = {
+    "dashboard":          "Dashboard",
+    "ordens":             "Ordens de Serviço",
+    "graficos":           "Gráficos",
+    "cidades":            "Cidades",
+    "fornecedor":         "Fornecedor",
+    "juniper":            "Juniper",
+    "fechamento":         "Fechamento",
+    "mapa":               "Mapa",
+    "noc":                "NOC",
+    "erp_relatorios":     "Relatórios",
+    "erp_alertas":        "Alertas",
+    "erp_produtividade":  "Produtividade",
+    "erp_qualidade":      "Qualidade",
+    "erp_planner":        "Planner",
+    "erp_fila":           "Fila de Prioridade",
+    "erp_ranking":        "Ranking Técnicos",
+    "erp_acao":           "Central de Ação",
+}
+_ROLES_VALIDOS = ("gestor", "operador", "viewer")
+
+
+@app.get("/api/usuarios")
+async def list_usuarios(_role: str = Depends(_require_gestor)):
+    return {"ok": True, "items": _db_list_usuarios()}
+
+
+@app.post("/api/usuarios")
+async def create_usuario(request: Request, _role: str = Depends(_require_gestor)):
+    body     = await request.json()
+    username = str(body.get("username", "")).strip()
+    password = body.get("password") or ""
+    role     = body.get("role") or "viewer"
+    if not username:
+        raise HTTPException(400, "username é obrigatório")
+    if len(password) < 6:
+        raise HTTPException(400, "senha deve ter ao menos 6 caracteres")
+    if role not in _ROLES_VALIDOS:
+        raise HTTPException(400, f"role inválida — use um de: {', '.join(_ROLES_VALIDOS)}")
+    try:
+        uid = _db_create_usuario(username, _hash_password(password), role)
+    except Exception:
+        raise HTTPException(409, "Já existe um usuário com esse username")
+    log.info("[Usuarios] Criado — username: %s role: %s", username, role)
+    return {"ok": True, "id": uid}
+
+
+@app.put("/api/usuarios/{uid}")
+async def update_usuario(uid: int, request: Request, _role: str = Depends(_require_gestor)):
+    body    = await request.json()
+    alvo    = _db_get_usuario_by_id(uid)
+    if alvo is None:
+        raise HTTPException(404, "Usuário não encontrado")
+
+    role  = body.get("role")
+    ativo = body.get("ativo")
+    if role is not None and role not in _ROLES_VALIDOS:
+        raise HTTPException(400, f"role inválida — use um de: {', '.join(_ROLES_VALIDOS)}")
+
+    # Guard anti-lockout: não permite desativar/rebaixar o último gestor ativo.
+    rebaixando   = role is not None and role != "gestor"
+    desativando  = ativo is False
+    if alvo["role"] == "gestor" and alvo["ativo"] and (rebaixando or desativando):
+        if _db_count_ativos_por_role("gestor") <= 1:
+            raise HTTPException(409, "Não é possível desativar/rebaixar o último gestor ativo")
+
+    updated = _db_update_usuario(uid, role=role, ativo=ativo)
+    log.info("[Usuarios] Atualizado — id: %s role: %s ativo: %s", uid, role, ativo)
+    return {"ok": True, "item": updated}
+
+
+@app.post("/api/usuarios/me/senha")
+async def change_own_senha(request: Request, sess: dict = Depends(_require_session)):
+    # Precisa vir ANTES de /api/usuarios/{uid}/senha: Starlette casa rotas
+    # por ordem de registro e {uid} é um segmento string irrestrito na
+    # camada de roteamento — "me" bateria com {uid} se essa rota viesse
+    # depois, roteando erroneamente pra reset_usuario_senha (gestor-only).
+    body  = await request.json()
+    atual = body.get("atual") or ""
+    nova  = body.get("nova") or ""
+    if len(nova) < 6:
+        raise HTTPException(400, "nova senha deve ter ao menos 6 caracteres")
+    username = sess.get("username")
+    if not username:
+        raise HTTPException(400, "sessão sem usuário associado (login legado) — peça a um gestor pra redefinir")
+    from cabonnet.db import _db_get_usuario_by_username
+    user = _db_get_usuario_by_username(username)
+    if user is None or not _verify_password(atual, user["senha_hash"]):
+        raise HTTPException(403, "Senha atual incorreta")
+    _db_set_password(user["id"], _hash_password(nova))
+    log.info("[Usuarios] Senha própria alterada — username: %s", username)
+    return {"ok": True}
+
+
+@app.post("/api/usuarios/{uid}/senha")
+async def reset_usuario_senha(uid: int, request: Request, _role: str = Depends(_require_gestor)):
+    body     = await request.json()
+    password = body.get("password") or ""
+    if len(password) < 6:
+        raise HTTPException(400, "senha deve ter ao menos 6 caracteres")
+    if _db_get_usuario_by_id(uid) is None:
+        raise HTTPException(404, "Usuário não encontrado")
+    _db_set_password(uid, _hash_password(password))
+    log.info("[Usuarios] Senha redefinida pelo gestor — id: %s", uid)
+    return {"ok": True}
+
+
+@app.get("/api/permissoes")
+async def get_permissoes(_role: str = Depends(_require_gestor)):
+    permissoes = {role: _db_get_permissoes(role) for role in _ROLES_VALIDOS}
+    modulos    = [{"key": k, "label": _MODULO_LABELS.get(k, k)} for k in ALL_MODULOS]
+    return {"ok": True, "permissoes": permissoes, "modulos": modulos}
+
+
+@app.put("/api/permissoes/{role}")
+async def set_permissoes(role: str, request: Request, _role: str = Depends(_require_gestor)):
+    if role == "gestor":
+        raise HTTPException(400, "Permissões do papel gestor não são editáveis")
+    if role not in _ROLES_VALIDOS:
+        raise HTTPException(400, f"role inválida — use um de: {', '.join(_ROLES_VALIDOS)}")
+    body    = await request.json()
+    modulos = body.get("modulos") or []
+    salvos  = _db_set_permissoes(role, modulos)
+    log.info("[Permissoes] Atualizado — role: %s modulos: %s", role, salvos)
+    return {"ok": True, "modulos": salvos}
 
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
@@ -646,7 +862,7 @@ async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require
                 and (now - cached["ts"]) < _BACKLOG_CACHE_TTL):
             return cached["data"]
     try:
-        rows   = frames_to_dict_list(grafana_post(SQL_BACKLOG_TEMPLATE.format(inicio=inicio_use, fim=fim_use)))
+        rows   = frames_to_dict_list(grafana_post(sql_backlog(inicio_use, fim_use)))
         result = build_backlog_json(rows)
         result["periodo"] = inicio_use
         result["fim"]     = fim_use
@@ -682,7 +898,7 @@ async def revisitas_detalhe(inicio: str = "", fim: str = "", _role: str = Depend
         fim_use    = (today + timedelta(days=1)).isoformat()
 
     try:
-        rows   = frames_to_dict_list(grafana_post(SQL_REVISITAS_COM_OBS.format(inicio=inicio_use, fim=fim_use)))
+        rows   = frames_to_dict_list(grafana_post(sql_revisitas_com_obs(inicio_use, fim_use)))
         result = build_pares_revisita(rows)
         result["periodo"] = inicio_use
         result["fim"]     = fim_use
@@ -721,7 +937,7 @@ async def detalhes(numos: str = ""):
         raise HTTPException(400, "Parâmetro 'numos' inválido.")
     numos_int = int(numos.strip())
     try:
-        rows = frames_to_dict_list(grafana_post(SQL_DETALHES_TEMPLATE.format(numos=numos_int)))
+        rows = frames_to_dict_list(grafana_post(sql_detalhes(numos_int)))
         if not rows:
             raise HTTPException(404, f"OS {numos} não encontrada.")
         os_data = rows[0]
@@ -729,28 +945,28 @@ async def detalhes(numos: str = ""):
         dt_agend = os_data.get("dataagendamento", "")
         reagendada = bool(dt_atend and dt_agend and dt_atend[:10] != dt_agend[:10])
         ocorrencias = []
-        try: ocorrencias = frames_to_dict_list(grafana_post(SQL_OCORRENCIAS_TEMPLATE.format(numos=numos_int)))
+        try: ocorrencias = frames_to_dict_list(grafana_post(sql_ocorrencias(numos_int)))
         except Exception: log.warning("Falha ao buscar ocorrências numos=%s", numos_int, exc_info=True)
         equipe_reagendou = ""
         try:
-            rows_er = frames_to_dict_list(grafana_post(SQL_EQUIPE_REAGENDOU_TEMPLATE.format(numos=numos_int)))
+            rows_er = frames_to_dict_list(grafana_post(sql_equipe_reagendou(numos_int)))
             if rows_er: equipe_reagendou = rows_er[0].get("descricao", "")
         except Exception: log.warning("Falha ao buscar equipe_reagendou numos=%s", numos_int, exc_info=True)
         materiais_utilizados = []
-        try: materiais_utilizados = frames_to_dict_list(grafana_post(SQL_MATERIAIS_UTILIZADOS_TEMPLATE.format(numos=numos_int)))
+        try: materiais_utilizados = frames_to_dict_list(grafana_post(sql_materiais_utilizados(numos_int)))
         except Exception: log.warning("Falha ao buscar materiais_utilizados numos=%s", numos_int, exc_info=True)
         materiais_retirados = []
-        try: materiais_retirados = frames_to_dict_list(grafana_post(SQL_MATERIAIS_RETIRADOS_TEMPLATE.format(numos=numos_int)))
+        try: materiais_retirados = frames_to_dict_list(grafana_post(sql_materiais_retirados(numos_int)))
         except Exception: log.warning("Falha ao buscar materiais_retirados numos=%s", numos_int, exc_info=True)
         fotos = []
-        try: fotos = frames_to_dict_list(grafana_post(SQL_FOTOS_TEMPLATE.format(numos=numos_int)))
+        try: fotos = frames_to_dict_list(grafana_post(sql_fotos(numos_int)))
         except Exception: log.warning("Falha ao buscar fotos numos=%s", numos_int, exc_info=True)
         checklist = []
-        try: checklist = frames_to_dict_list(grafana_post(SQL_CHECKLIST_TEMPLATE.format(numos=numos_int)))
+        try: checklist = frames_to_dict_list(grafana_post(sql_checklist(numos_int)))
         except Exception: log.warning("Falha ao buscar checklist numos=%s", numos_int, exc_info=True)
         motivo_inconclusivo = None
         try:
-            rows_mi = frames_to_dict_list(grafana_post(SQL_MOTIVO_INCONCLUSIVO_TEMPLATE.format(numos=numos_int)))
+            rows_mi = frames_to_dict_list(grafana_post(sql_motivo_inconclusivo(numos_int)))
             if rows_mi: motivo_inconclusivo = rows_mi[0].get("motivoinconclusivo") or None
         except Exception: log.warning("Falha ao buscar motivo_inconclusivo numos=%s", numos_int, exc_info=True)
         return {"os": os_data, "reagendada": reagendada, "equipe_reagendou": equipe_reagendou,
@@ -936,6 +1152,71 @@ async def ai_revisitas_causa(request: Request):
         msg  = "ANTHROPIC_API_KEY não configurada no .env" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
         raise HTTPException(code, msg)
     return {"ok": True, **result}
+
+
+@router.get("/api/revisita-motivos")
+async def get_revisita_motivos(dias: int = 90, _role: str = Depends(_require_modulo("erp_qualidade"))):
+    from cabonnet.db import _db_list_revisita_motivos
+    return {"ok": True, **_db_list_revisita_motivos(dias)}
+
+
+@router.get("/api/motivo-encerramento")
+async def get_motivo_encerramento(numos: str, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_get_motivo_encerramento
+    return {"ok": True, "item": _db_get_motivo_encerramento(numos)}
+
+
+@router.post("/api/motivo-encerramento")
+async def save_motivo_encerramento(request: Request, _role: str = Depends(_require_auth)):
+    from cabonnet.db import _db_save_motivo_encerramento
+    body = await request.json()
+    numos = str(body.get("numos", "")).strip()
+    motivo = str(body.get("motivo", "")).strip()
+    if not numos or not motivo:
+        raise HTTPException(400, "numos e motivo são obrigatórios")
+    ok = _db_save_motivo_encerramento(
+        numos=numos,
+        motivo=motivo,
+        observacao=body.get("observacao", ""),
+        nomedaequipe=body.get("nomedaequipe", ""),
+        nomedacidade=body.get("nomedacidade", ""),
+    )
+    if not ok:
+        raise HTTPException(500, "Falha ao salvar classificação")
+    return {"ok": True}
+
+
+@router.get("/api/tecnicos")
+async def list_tecnicos(_role: str = Depends(_require_modulo("erp_ranking"))):
+    from cabonnet.db import _db_list_tecnicos
+    return {"ok": True, "items": _db_list_tecnicos()}
+
+
+@router.post("/api/tecnicos")
+async def upsert_tecnico(request: Request, _role: str = Depends(_require_modulo("erp_ranking"))):
+    from cabonnet.db import _db_upsert_tecnico
+    body = await request.json()
+    codigo = str(body.get("codigo", "")).strip()
+    if not codigo:
+        raise HTTPException(400, "codigo é obrigatório")
+    ok = _db_upsert_tecnico(
+        codigo=codigo,
+        nome_real=body.get("nome_real", ""),
+        contato=body.get("contato", ""),
+        ativo=body.get("ativo", True),
+    )
+    if not ok:
+        raise HTTPException(500, "Falha ao salvar técnico")
+    return {"ok": True}
+
+
+@router.delete("/api/tecnicos/{codigo}")
+async def delete_tecnico(codigo: str, _role: str = Depends(_require_modulo("erp_ranking"))):
+    from cabonnet.db import _db_delete_tecnico
+    ok = _db_delete_tecnico(codigo)
+    if not ok:
+        raise HTTPException(404, "Técnico não encontrado")
+    return {"ok": True}
 
 
 @router.get("/api/justificativas")

@@ -25,8 +25,9 @@ from cabonnet.telegram import (
 )
 from cabonnet.grafana import (
     grafana_post, frames_to_csv, frames_to_dict_list,
-    SQL_AGENDADO, SQL_DETALHES_TEMPLATE, SQL_OCORRENCIAS_TEMPLATE,
-    SQL_MATERIAIS_UTILIZADOS_TEMPLATE,
+    SQL_AGENDADO,
+    sql_detalhes, sql_ocorrencias,
+    sql_materiais_utilizados, sql_materiais_retirados,
 )
 
 log = logging.getLogger("CaboNetServer")
@@ -1019,7 +1020,7 @@ def _build_os_detalhes(numos_str):
     except ValueError:
         return f"❌ Número inválido: <code>{_tg_esc(numos_str)}</code>"
     try:
-        rows = frames_to_dict_list(grafana_post(SQL_DETALHES_TEMPLATE.format(numos=numos_int)))
+        rows = frames_to_dict_list(grafana_post(sql_detalhes(numos_int)))
     except Exception as ex:
         return f"❌ Erro ao buscar OS {numos_str}: {_tg_esc(str(ex)[:100])}"
     if not rows:
@@ -1027,14 +1028,21 @@ def _build_os_detalhes(numos_str):
     r = rows[0]
     ocorrencias = []
     try:
-        ocorrencias = frames_to_dict_list(grafana_post(SQL_OCORRENCIAS_TEMPLATE.format(numos=numos_int)))
-    except Exception:
-        pass
+        ocorrencias = frames_to_dict_list(grafana_post(sql_ocorrencias(numos_int)))
+    except Exception as ex:
+        log.warning("[OS %s] Falha ao buscar ocorrências: %s", numos_str, str(ex)[:120])
     materiais = []
+    materiais_retirados = []
+    materiais_erro = False
     try:
-        materiais = frames_to_dict_list(grafana_post(SQL_MATERIAIS_UTILIZADOS_TEMPLATE.format(numos=numos_int)))
-    except Exception:
-        pass
+        materiais = frames_to_dict_list(grafana_post(sql_materiais_utilizados(numos_int)))
+    except Exception as ex:
+        materiais_erro = True
+        log.warning("[OS %s] Falha ao buscar materiais utilizados: %s", numos_str, str(ex)[:120])
+    try:
+        materiais_retirados = frames_to_dict_list(grafana_post(sql_materiais_retirados(numos_int)))
+    except Exception as ex:
+        log.warning("[OS %s] Falha ao buscar materiais retirados: %s", numos_str, str(ex)[:120])
     def v(campo, fb="—"):
         return _tg_esc(str(r.get(campo) or "").strip() or fb)
     situacao = r.get("descsituacao") or ""
@@ -1076,14 +1084,25 @@ def _build_os_detalhes(numos_str):
             desc = _tg_esc(str(oc.get("descricao") or oc.get("ocorrencia") or str(oc))[:80])
             linhas.append(f"  • {data} {desc}".strip())
         if len(ocorrencias) > 6: linhas.append(f"  <i>+{len(ocorrencias)-6} ocorrências</i>")
+    def _fmt_materiais(itens, titulo, emoji):
+        bloco = ["", f"{emoji} <b>{titulo} ({len(itens)}):</b>"]
+        for m in itens[:20]:
+            mat = _tg_esc((m.get("material") or "?")[:45])
+            qtd = _tg_esc(str(m.get("quantidade") or "").strip())
+            uid = _tg_esc((m.get("identificadorunico") or "").strip()[:28])
+            linha = f"  • {mat}" + (f" × {qtd}" if qtd else "")
+            if uid:
+                linha += f"\n      🔖 <code>{uid}</code>"
+            bloco.append(linha)
+        if len(itens) > 20:
+            bloco.append(f"  <i>+{len(itens)-20} itens</i>")
+        return bloco
     if materiais:
-        linhas += ["", f"📦 <b>Materiais ({len(materiais)}):</b>"]
-        for m in materiais[:8]:
-            mat = _tg_esc((m.get("material") or "?")[:40])
-            qtd = _tg_esc(str(m.get("quantidade") or ""))
-            uid = _tg_esc((m.get("identificadorunico") or "")[:20])
-            linhas.append(f"  • {mat} × {qtd}" + (f" — {uid}" if uid else ""))
-        if len(materiais) > 8: linhas.append(f"  <i>+{len(materiais)-8} materiais</i>")
+        linhas += _fmt_materiais(materiais, "Equipamentos/Materiais utilizados", "📦")
+    if materiais_retirados:
+        linhas += _fmt_materiais(materiais_retirados, "Equipamentos retirados", "📤")
+    if materiais_erro and not materiais:
+        linhas += ["", "⚠️ <i>Equipamentos indisponíveis: sem acesso ao módulo mobile no banco (verificar liberação do schema).</i>"]
     linhas += ["", _TG_DIV, f"<i>Cabonnet · OS {numos_str}</i>"]
     return "\n".join(linhas)
 
@@ -1098,7 +1117,7 @@ def _build_os_ficha_rapida(numos_str):
     r = cache_hits[0] if cache_hits else None
     if r is None:
         try:
-            rows = frames_to_dict_list(grafana_post(SQL_DETALHES_TEMPLATE.format(numos=numos_int)))
+            rows = frames_to_dict_list(grafana_post(sql_detalhes(numos_int)))
             r    = rows[0] if rows else None
         except Exception as ex:
             return f"❌ Erro ao buscar OS {numos_str}: {_tg_esc(str(ex)[:100])}", None

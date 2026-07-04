@@ -1,9 +1,21 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 
+// Versão única de verdade: package.json. Injetada em build time como
+// __APP_VERSION__ pra não duplicar/desalinhar em outros lugares (ex: rodapé
+// da tela de login, aviso de deploy no Telegram — que já lê package.json
+// direto no shell, e um dia ficou dessincronizado de um "v1.0" hardcoded
+// que existia aqui).
+const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf-8'))
+
 export default defineConfig({
   base: './',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.{js,ts,jsx,tsx}'],

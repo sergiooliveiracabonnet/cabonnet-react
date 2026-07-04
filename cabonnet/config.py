@@ -6,6 +6,21 @@ Nenhum import de outros módulos cabonnet.
 
 import os
 import pathlib
+import time as _time
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  FUSO HORÁRIO — força Brasília no processo (independe do Docker/compose/systemd)
+# ══════════════════════════════════════════════════════════════════════════════
+# Os relatórios diários usam date.today()/datetime.now() naive. Sem isto, um
+# servidor em UTC (Docker slim, host Linux) faz o "hoje" virar o dia seguinte às
+# 21h de Brasília e zera /producao, /executadas, KPI etc. à noite.
+# setdefault: respeita um TZ explícito no ambiente; senão assume Brasília.
+# Só no Unix: tzset() aplica o TZ (requer tzdata, instalado no Dockerfile). No
+# Windows não há tzset e setar TZ a um nome IANA faria o runtime cair em UTC —
+# então lá deixamos o fuso do sistema (já é Brasília no dev).
+if hasattr(_time, "tzset"):
+    os.environ.setdefault("TZ", "America/Sao_Paulo")
+    _time.tzset()
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  .ENV — carrega credenciais do arquivo .env (sem dependencia externa)
@@ -86,39 +101,10 @@ _SLA_LIMITS = {
 _DB_PATH = os.path.join(_PROJECT_DIR, "cabonnet_data.db")
 
 # ── Autenticação do Dashboard ─────────────────────────────────────────────────
-LOGIN_USER       = _env("LOGIN_USER", "admin")
-LOGIN_PASS       = _env("LOGIN_PASS", "")           # vazio = sem autenticação (legado → role gestor)
+# Usuários e senhas vivem na tabela `usuarios` (cabonnet/db.py) — não há mais
+# credenciais fixas via .env. Ver cabonnet/auth.py (_authenticate) e o
+# bootstrap automático do primeiro usuário (db._db_bootstrap_admin).
 SESSION_DURATION = int(_env("SESSION_DURATION", "28800"))  # 8 horas em segundos
-
-# ── Roles de acesso (3 níveis via .env) ──────────────────────────────────────
-# Exemplo no .env:
-#   LOGIN_GESTOR_USER=admin      LOGIN_GESTOR_PASS=senha_forte
-#   LOGIN_OPERADOR_USER=oper     LOGIN_OPERADOR_PASS=senha_oper
-#   LOGIN_VIEWER_USER=viewer     LOGIN_VIEWER_PASS=senha_viewer
-LOGIN_GESTOR_USER   = _env("LOGIN_GESTOR_USER",   "")
-LOGIN_GESTOR_PASS   = _env("LOGIN_GESTOR_PASS",   "")
-LOGIN_OPERADOR_USER = _env("LOGIN_OPERADOR_USER",  "")
-LOGIN_OPERADOR_PASS = _env("LOGIN_OPERADOR_PASS",  "")
-LOGIN_VIEWER_USER   = _env("LOGIN_VIEWER_USER",    "")
-LOGIN_VIEWER_PASS   = _env("LOGIN_VIEWER_PASS",    "")
-
-
-def _resolve_role(user, pwd):
-    """Verifica credenciais e retorna 'gestor'|'operador'|'viewer'|None.
-    Compatibilidade com LOGIN_USER/PASS legados (mantidos como gestor)."""
-    if not user or not pwd:
-        return None
-    # Novos roles (prioridade)
-    if LOGIN_GESTOR_PASS and user == LOGIN_GESTOR_USER and pwd == LOGIN_GESTOR_PASS:
-        return "gestor"
-    if LOGIN_OPERADOR_PASS and user == LOGIN_OPERADOR_USER and pwd == LOGIN_OPERADOR_PASS:
-        return "operador"
-    if LOGIN_VIEWER_PASS and user == LOGIN_VIEWER_USER and pwd == LOGIN_VIEWER_PASS:
-        return "viewer"
-    # Legado: LOGIN_USER/PASS → gestor (backward-compat)
-    if LOGIN_PASS and user == LOGIN_USER and pwd == LOGIN_PASS:
-        return "gestor"
-    return None
 
 # ── Grafana de Monitoramento (PPPoE / Juniper) ────────────────────────────────
 MONITOR_CONFIG = {

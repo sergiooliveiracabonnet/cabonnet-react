@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CheckCircle, Clock, Calendar, ExternalLink, MapPin, Users, Wrench,
-  AlertTriangle, MessageSquare, Hash, Check, Filter, FileText,
+  AlertTriangle, Hash, Check, Filter, FileText, Copy, ClipboardList,
 } from 'lucide-react'
 import type { OSRow, Fornecedor } from '../../lib/types'
 
@@ -18,10 +18,11 @@ interface StepItem {
 }
 import { Drawer }        from '../../components/ui/Drawer'
 import { Badge }         from '../../components/ui/Badge'
-import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, calcDuracao } from '../../lib/osFormat'
+import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, calcDuracao, buildOSWhatsApp } from '../../lib/osFormat'
 import { TimelineStep }  from './TimelineStep'
 import { OSDetailModal } from './OSDetailModal'
 import { useOSDetails }  from '../../hooks/useOSDetails'
+import { ClassificarEncerramento } from './ClassificarEncerramento'
 
 export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; onClose: () => void }) {
   const [showModal, setShowModal] = useState(false)
@@ -37,24 +38,6 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
     navigator.clipboard.writeText(text).catch(() => {})
     setCopied(key)
     setTimeout(() => setCopied(null), 2000)
-  }
-
-  function buildWhaText() {
-    const equipe = shortEquipe(os.nomedaequipe) || '—'
-    const aging  = os._aging != null ? `${os._aging}d` : '—'
-    const agend  = os.dataagendamento ? os.dataagendamento.slice(0, 10) : 'Não agendado'
-    const loc    = [os.nomedacidade, os.bairro].filter(Boolean).join(' · ') || '—'
-    const end    = [os.logradouro || os.enderecoconexao, os.numero, os.complemento].filter(Boolean).join(', ') || '—'
-    return [
-      `📋 *OS ${os.numos}* — ${sit}`,
-      `👤 ${os.nomecliente || '—'}`,
-      `📍 ${loc}`,
-      `🏠 ${end}`,
-      `🔧 ${os.tiposervico || '—'} · ${os.servico || '—'}`,
-      `👷 ${equipe}`,
-      `⏱ Aging: ${aging}`,
-      `📅 Agend: ${agend}`,
-    ].join('\n')
   }
 
   function openMaps() {
@@ -196,8 +179,11 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
         width="580px"
         actions={
           <div className="flex items-center gap-1">
-            <ActionBtn title="Copiar resumo para WhatsApp" active={copied === 'wha'} onClick={() => copyWith('wha', buildWhaText())}>
-              {copied === 'wha' ? <Check size={13} /> : <MessageSquare size={13} />}
+            <ActionBtn title="Copiar só a OS (resumo)" active={copied === 'wha'} onClick={() => copyWith('wha', buildOSWhatsApp(os))}>
+              {copied === 'wha' ? <Check size={13} /> : <Copy size={13} />}
+            </ActionBtn>
+            <ActionBtn title="Copiar OS + histórico" active={copied === 'wha-full'} onClick={() => copyWith('wha-full', buildOSWhatsApp(os, osDetails?.historico))}>
+              {copied === 'wha-full' ? <Check size={13} /> : <ClipboardList size={13} />}
             </ActionBtn>
             <ActionBtn title="Copiar nº da OS" active={copied === 'num'} onClick={() => copyWith('num', String(os.numos))}>
               {copied === 'num' ? <Check size={13} /> : <Hash size={13} />}
@@ -283,6 +269,13 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                 </div>
               ) : !obsCrit && (
                 <p className="text-[12px] text-muted/60 italic px-1">Nenhuma observação registrada.</p>
+              )}
+              {isConcluida && (
+                <ClassificarEncerramento
+                  numos={os.numos}
+                  nomedaequipe={os.nomedaequipe as string | undefined}
+                  nomedacidade={os.nomedacidade as string | undefined}
+                />
               )}
             </Section>
 

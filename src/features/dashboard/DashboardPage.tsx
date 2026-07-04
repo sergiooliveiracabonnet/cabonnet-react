@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
-import { AlertCircle, Download, Package, BarChart3 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { AlertCircle, Download, Package, BarChart3, ArrowRight } from 'lucide-react'
 import type { OSRow, KPI, AccentColor } from '../../lib/types'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useAINarrative } from '../../hooks/useAINarrative'
@@ -8,18 +9,26 @@ import { exportCSV } from '../../lib/export'
 import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import { Modal } from '../../components/ui/Modal'
 import OSDrawer from '../ordens/OSDrawer'
+import { PulsoHero } from './PulsoHero'
+import { AnomaliaSection } from './AnomaliaSection'
+import { SectionLabel, BentoKPICard } from './DashboardKpiPrimitives'
+import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
-  SectionLabel, PulsoHero, BentoKPICard, ExecutadasHeroBlock, MetaMesCard, AlertaTopoBanner,
-  ClustersBairroPanel, AgingPanel, RitmoEquipesPanel, CidadesPanel, FornecedorCard, AnomaliaSection, KpiModalTable,
-  KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS,
+  MetaMesCard, AlertaTopoBanner, ClustersBairroPanel, AgingPanel,
+  RitmoEquipesPanel, CidadesPanel, MudancasStrip, ProjecaoRiscoPanel,
+} from './DashboardPaineis'
+import { FornecedorCard } from './DashboardFornecedorCard'
+import { KpiModalTable } from './DashboardKpiModal'
+import {
+  KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS, FOCO_NAVEGAVEL,
   type ModalState, type TypedDashboard, type CampoProjecaoReal,
-} from './DashboardComponents'
+} from './DashboardTypes'
 
 export default function DashboardPage() {
   const { derived: { dashboard, anomalias, campo }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
-  const { kpis, fornecedores, pulso } = dashboard as unknown as TypedDashboard
+  const { kpis, fornecedores, pulso, scoreTendencia, mudancas, metaScore, projecaoRisco } = dashboard as unknown as TypedDashboard
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
-  const fluxoHoje = { entradas: pulso.entradasHoje, saidas: pulso.saidasHoje, saldo: pulso.fluxoHoje }
+  const fluxoHoje = { entradas: pulso.entradasHoje, saidas: pulso.saidasHoje, saldo: pulso.fluxoHoje, mediaEntrada: pulso.entradaMediaDia }
   const { clustersAtivos = [] } = pulso
   const clustersRef  = useRef<HTMLDivElement>(null)
   const anomaliasRef = useRef<HTMLDivElement>(null)
@@ -27,6 +36,7 @@ export default function DashboardPage() {
   const [observacao, setObservacao] = useState('')
   const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso: pulso as unknown as Record<string, unknown>, fornecedores, anomalias, observacao, enabled: aiEnabled })
   const { data: stats } = useStats()
+  const navigate = useNavigate()
 
   const [modal,    setModal]    = useState<ModalState | null>(null)
   const [drawerOS, setDrawerOS] = useState<OSRow | null>(null)
@@ -36,7 +46,7 @@ export default function DashboardPage() {
     if (!filter) return
     const source   = ALLROWS_KPIS.has(kpi.id) ? allRows : rows
     const filtered = source.filter(filter)
-    setModal({ title: kpi.title, rows: filtered })
+    setModal({ title: kpi.title, rows: filtered, foco: kpi.id })
   }
 
   if (error && !rows.length) {
@@ -62,7 +72,10 @@ export default function DashboardPage() {
         { id: 'semEq',    title: 'Sem Equipe',     value: f.sem_equipe,      sub: 'sem atribuição',   accent: 'orange'  },
         { id: 'pend',     title: 'Pendentes',      value: f.pendente,        sub: 'aguardando',       accent: 'yellow'  },
         { id: 'atend',    title: 'Em Atendimento', value: f.atendimento,     sub: 'em campo',         accent: 'cyan'    },
-        { id: 'reagend',  title: 'Reagendamentos', value: f.reagend ?? 0,    sub: 'aguardando rescheduling', accent: 'orange' },
+        { id: 'copeAguardando', title: 'Aguard. Roteirização', value: f.cope_aguardando ?? 0, sub: 'parado no COPE', accent: 'orange' },
+        { id: 'reagendInviab', title: 'Reag. Inviab.', value: f.reagend_inviab ?? 0, sub: 'por inviabilidade',  accent: 'orange' },
+        { id: 'reagendMobile', title: 'Reag. Mobile',  value: f.reagend_mobile ?? 0, sub: 'via OS mobile',      accent: 'orange' },
+        { id: 'reagendFutura', title: 'Reag. Futura',  value: f.reagend_futura ?? 0, sub: 'p/ data futura',     accent: 'orange' },
         { id: 'total',    title: 'Fila Total',     value: f.total,           sub: 'OS ativas',        accent: 'primary' },
         { id: 'rede',     title: 'Rede',           value: f.rede,            sub: 'OS de rede',       accent: 'green'   },
         { id: 'sla',      title: 'SLA da Fila',    value: `${f.sla_pct}%`,  sub: 'dentro do prazo',  accent: slaAccent },
@@ -118,10 +131,14 @@ export default function DashboardPage() {
         {/* ── 1. HERO — Pulso Operacional ──────────────────────────────── */}
         <PulsoHero
           pulso={pulso}
+          target={metaScore}
           aiData={aiData}
           isLoadingAI={isLoadingAI}
           onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
         />
+
+        {/* ── 1b. Trajetória — Δ do score do período + o que mudou ──────── */}
+        <MudancasStrip tendencia={scoreTendencia} mudancas={mudancas} />
 
         {/* ── 2. KPI BENTO — Alertas & Risco ───────────────────────────── */}
         <section>
@@ -139,6 +156,13 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
+
+        {/* ── 2b. Projeção de risco preditiva (24-48h) ──────────────────── */}
+        <ProjecaoRiscoPanel
+          proj={projecaoRisco}
+          criticasAgora={pulso.criticasTotal ?? 0}
+          onOpen={(rows) => setModal({ title: 'Risco de violação · próximas 48h', rows })}
+        />
 
         {/* ── 3. Executadas Hoje ─────────────────────────────────────────── */}
         <ExecutadasHeroBlock
@@ -199,7 +223,7 @@ export default function DashboardPage() {
               contexto={{
                 total:     (kpis.find(k => k.id === 'total')?.value    as number) ?? 0,
                 sla_pct:   pulso.slaFila    ?? 0,
-                criticas:  (kpis.find(k => k.id === 'criticas')?.value as number) ?? 0,
+                criticas:  pulso.criticasTotal ?? 0,
                 aging_med: pulso.agingMed   ?? 0,
               }}
             />
@@ -214,20 +238,32 @@ export default function DashboardPage() {
         onClose={() => setModal(null)}
         title={modal?.title ?? ''}
         subtitle={`${modal?.rows?.length ?? 0} ordens de serviço`}
-        maxWidth="900px"
+        maxWidth="1120px"
         headerAction={
           (modal?.rows?.length ?? 0) > 0 && (
-            <button
-              onClick={() => {
-                const date = new Date().toISOString().slice(0, 10)
-                exportCSV(modal!.rows, `os_${modal!.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
-              }}
-              className="flex items-center gap-1.5 text-[10px] text-muted hover:text-primary
-                         border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
-                         transition-all duration-fast"
-            >
-              <Download size={11} /> CSV
-            </button>
+            <div className="flex items-center gap-2">
+              {modal?.foco && FOCO_NAVEGAVEL.has(modal.foco) && (
+                <button
+                  onClick={() => { const foco = modal!.foco; setModal(null); navigate('/ordens', { state: { foco } }) }}
+                  className="flex items-center gap-1.5 text-[10px] font-semibold text-primary
+                             border border-primary/30 hover:bg-primary/10 rounded-md px-2.5 py-1
+                             transition-all duration-fast"
+                >
+                  Abrir na fila <ArrowRight size={11} />
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  const date = new Date().toISOString().slice(0, 10)
+                  exportCSV(modal!.rows, `os_${modal!.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
+                }}
+                className="flex items-center gap-1.5 text-[10px] text-muted hover:text-primary
+                           border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
+                           transition-all duration-fast"
+              >
+                <Download size={11} /> CSV
+              </button>
+            </div>
           )
         }
       >

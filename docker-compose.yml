@@ -1,20 +1,19 @@
 services:
   cabonnet:
     build: .
+    container_name: cabonnet
+    restart: unless-stopped
     ports:
       - "3000:3000"
     env_file:
       - .env
     volumes:
-      # Persist Grafana snapshots across container restarts
-      - backup_data:/app/Backup
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-volumes:
-  backup_data:
+      # Sem isto, todo `docker compose up --build` recria o container e o
+      # SQLite (histórico de OS, cadastro de usuários/senhas, técnicos etc.)
+      # nasce vazio de novo — era exatamente por isso que o admin sumia
+      # a cada deploy. ./logs:/app/logs (removido) não persistia nada real:
+      # nenhum código escreve em /app/logs, os arquivos ficam na raiz do app.
+      - ./cabonnet_data.db:/app/cabonnet_data.db
+      - ./cabonnet_server.log:/app/cabonnet_server.log
+      - ./jun_historico.json:/app/jun_historico.json
+      - ./Backup:/app/Backup

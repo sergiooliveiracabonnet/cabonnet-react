@@ -48,11 +48,16 @@ export interface OSRow {
   _executadaHoje:     boolean
   _riskScore:         number   // 0–100: score de risco de SLA (computado em enrichRows)
   _diasAteViolacao:   number | null  // dias restantes até SLA crítico (0 = já crítico)
+  _vtPrazoHoras:      number | null
+  _vtHorasRestantes:  number | null
+  _vtViolado:         boolean
+  _vtCumpridaNoPrazo: boolean | null  // VT executada dentro do prazo? null = não-VT ou não executada
+  _vtPriorityScore:   number          // 0+ : prioridade da fila VT (tipo × urgência × situação)
 }
 
 // ─── Date Filter (uiStore) ────────────────────────────────────────────────────
 
-export type DatePreset = 'hoje' | 'ontem' | 'semanal' | 'quinzenal' | 'mensal' | 'anual' | 'amanha' | 'futuro' | 'custom'
+export type DatePreset = 'hoje' | 'ontem' | 'semanal' | 'mensal' | 'anual' | 'amanha' | 'custom'
 export type DateCampo  = 'datacadastro' | 'dataagendamento' | 'dataexecucao'
 
 export interface DateFilter {
@@ -143,9 +148,11 @@ export interface Pulso {
   mttr:              number
   topCidadesCriticas: { cidade: string; count: number }[]
   clustersAtivos:    ClusterAtivo[]
+  criticasTotal:     number
   entradasHoje:      number
   saidasHoje:        number
   fluxoHoje:         number
+  entradaMediaDia:   number
   metaMes:           PulsoMetaMes
   ritmoIntradiario:  PulsoRitmoIntradiario
 }
@@ -464,17 +471,10 @@ export interface RevisitaHipotese {
   sub:      string | null
 }
 
-export interface RevisitaCausa {
-  causa: string
-  pct:   number
-}
-
 export interface RevisitasData {
   taxa:          RevisitaTaxa
   narrativa:     string
   hipoteses:     RevisitaHipotese[]
-  causas:        RevisitaCausa[]
-  causaRaiz:     RevisitaCausa[]
   cronicos:      OSRow[]
   chart:         ChartSeries
   totalRevisitas: number

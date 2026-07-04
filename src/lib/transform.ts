@@ -52,6 +52,33 @@ export function parseDate(s: string | null | undefined): Date | null {
   return dt
 }
 
+export function parseDateTime(s: string | null | undefined): Date | null {
+  if (!s) return null
+  // split(' ') sem limite: espaços duplicados ou lixo à direita criam mais
+  // de 2 segmentos — tratamos isso como entrada malformada em vez de ignorar
+  // silenciosamente (mesma armadilha do truncamento detectada no parser Python).
+  const segments = s.trim().split(' ').filter(Boolean)
+  if (segments.length < 1 || segments.length > 2) return null
+  const [datePart, timePart] = segments
+  const parts = datePart.split(/[/-]/)
+  if (parts.length < 3) return null
+  const [d, m, y] = parts.map(Number)
+  if (!d || !m || !y || m < 1 || m > 12 || d < 1 || d > 31) return null
+  let hh = 0
+  let mi = 0
+  if (timePart) {
+    const timeParts = timePart.split(':')
+    if (timeParts.length !== 2) return null
+    const [h, mn] = timeParts.map(Number)
+    if (Number.isNaN(h) || Number.isNaN(mn) || h < 0 || h > 23 || mn < 0 || mn > 59) return null
+    hh = h
+    mi = mn
+  }
+  const dt = new Date(y, m - 1, d, hh, mi)
+  if (dt.getMonth() !== m - 1 || dt.getDate() !== d) return null
+  return dt
+}
+
 function parseRow(line: string, sep: string): string[] {
   const r: string[] = []; let cur = '', inQ = false
   for (let i = 0; i < line.length; i++) {
@@ -182,10 +209,32 @@ export function getSlaLimite(
   return { limite: lim.SERVICO ?? 2, label: 'Serviços' }
 }
 
+export function getVtPrazoHoras(servico: string | null | undefined): number | null {
+  const s = (servico || '').toUpperCase()
+  if (s.includes('VT 08H')) return 8
+  if (s.includes('VT 24H')) return 24
+  if (s.includes('VT 48H')) return 48
+  return null
+}
+
 // ─── Classifiers ─────────────────────────────────────────────────────────────
 
 export const isCOPE    = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /COPE/i.test(r.nomedaequipe ?? '')
 export const isReagend = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /REAGEND/i.test(r.nomedaequipe ?? '')
+
+export type ReagendTipo = 'inviabilidade' | 'mobile' | 'futura'
+
+// Subtipo do reagendamento, lido do nomedaequipe (espelha _abrev_equipe do telegram.py):
+//   REAGENDAMENTO - INVIABILIDADE  → inviabilidade
+//   REAGENDAMENTO O.S MOBILE       → mobile
+//   REAGENDAMENTO (genérico)       → futura (reagendamento para data futura)
+export function getReagendTipo(r: Pick<OSRow, 'nomedaequipe'>): ReagendTipo | null {
+  const u = (r.nomedaequipe ?? '').toUpperCase()
+  if (!/REAGEND/.test(u)) return null
+  if (/INVIABILID/.test(u)) return 'inviabilidade'
+  if (/MOBILE/.test(u))     return 'mobile'
+  return 'futura'
+}
 
 const WES_CODES  = new Set(['F08', 'F11', 'F23', 'F36', 'F44'])
 const INST_CODES = new Set(['F01', 'F04', 'F05', 'F07', 'F20', 'F45', 'F46', 'F47', 'F48', 'F49', 'F50'])
@@ -229,6 +278,24 @@ export function calcRiskScore(row: Partial<OSRow>): number {
   if (!row.nomedaequipe?.trim()) s += 15
   if (row._tipo === 'INSTALACAO') s += 5
   return Math.min(s, 100)
+}
+
+// ─── VT Priority Score ───────────────────────────────────────────────────────
+// Ordena a fila VT por gravidade real, não só pelo relógio:
+//   peso_tipo (08h=3 · 24h=2 · 48h=1)  — contrato mais curto é mais grave
+//   × urgência (violado = 100 + horas de estouro · no prazo = % do prazo consumido)
+//   × peso_situação (Reagendamento = 0.3, pois já há tratativa com o cliente)
+export function calcVtPriorityScore(row: Partial<OSRow>): number {
+  const prazo    = row._vtPrazoHoras
+  const restante = row._vtHorasRestantes
+  if (prazo == null || restante == null) return 0
+
+  const pesoTipo = prazo <= 8 ? 3 : prazo <= 24 ? 2 : 1
+  const urgencia = restante <= 0
+    ? 100 + Math.abs(restante)
+    : Math.max(0, (prazo - restante) / prazo) * 100
+  const pesoSituacao = row._situacaoEfetiva === 'Reagendamento' ? 0.3 : 1
+  return Math.round(pesoTipo * urgencia * pesoSituacao)
 }
 
 // ─── Row Enrichment ───────────────────────────────────────────────────────────
@@ -299,6 +366,30 @@ export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): O
     else if (row._tipo === 'INSTALACAO')                  row._categoria = 'INSTALACAO'
     else                                                  row._categoria = 'SERVICO'
 
+    const vtPrazoHoras = getVtPrazoHoras(row.servico)
+    row._vtPrazoHoras = vtPrazoHoras
+    if (vtPrazoHoras != null && isAtiva) {
+      const dtAberturaPrecisa = parseDateTime(row.datacadastro)
+      row._vtHorasRestantes = dtAberturaPrecisa
+        ? vtPrazoHoras - Math.max(0, (dtRef.getTime() - dtAberturaPrecisa.getTime()) / 3600000)
+        : null
+    } else {
+      row._vtHorasRestantes = null
+    }
+    row._vtViolado = row._vtHorasRestantes != null && row._vtHorasRestantes <= 0
+
+    // Cumprimento de prazo VT (executadas): a execução ocorreu dentro do prazo contratual?
+    // Mede o passado — alimenta o KPI de % cumprimento. null = não-VT ou ainda não executada.
+    if (vtPrazoHoras != null) {
+      const dtCadVt  = parseDateTime(row.datacadastro)
+      const dtExecVt = parseDateTime(row.dataexecucao)
+      row._vtCumpridaNoPrazo = (dtCadVt && dtExecVt)
+        ? (dtExecVt.getTime() - dtCadVt.getTime()) / 3600000 <= vtPrazoHoras
+        : null
+    } else {
+      row._vtCumpridaNoPrazo = null
+    }
+
     if      (isCOPE(row)    && !isConcluida(row.descsituacao)) row._situacaoEfetiva = 'Pendente'
     else if (isReagend(row) && !isConcluida(row.descsituacao)) row._situacaoEfetiva = 'Reagendamento'
     else if (['INSTALACAO','MANUTENCAO','REDE'].includes(row._tipo) && row.nomedaequipe?.trim() && !isConcluida(row.descsituacao))
@@ -307,7 +398,8 @@ export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): O
 
     const _fechamento = (row.dataexecucao || row.databaixa || '').split(' ')[0]
     row._executadaHoje = !isCOPE(row) && !isReagend(row) && isExecucaoReal(row._situacaoEfetiva) && _fechamento === hojeStr
-    row._riskScore     = calcRiskScore(row)
+    row._riskScore       = calcRiskScore(row)
+    row._vtPriorityScore = calcVtPriorityScore(row)
 
     // shortEquipe é usado apenas para exibição — não faz parte do OSRow,
     // mas manter compatibilidade com código JS que chama shortEquipe(r.nomedaequipe)
