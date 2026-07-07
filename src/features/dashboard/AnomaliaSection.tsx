@@ -1,8 +1,35 @@
 import { useState } from 'react'
 import { AlertCircle, ChevronDown, Sparkles } from 'lucide-react'
 import { useAIAnomalias } from '../../hooks/useAIAnomalias'
-import type { AnomaliasData } from '../../lib/types'
+import type { AnomaliasData, Composicao } from '../../lib/types'
 import type { AnomaliaContextType } from './PulsoHero'
+
+// Composição real da anomalia — já vem calculada pelo builder (zero custo, zero
+// espera). Mostrar isso direto na tela resolve a maior parte do que a análise
+// de IA existia pra "sugerir investigar": tipo de serviço, quantas equipes
+// distintas passaram ali e se há cliente reincidente já respondem boa parte
+// de "é infraestrutura, é equipe ou é caso pontual?" sem precisar de LLM.
+function ComposicaoLine({ composicao }: { composicao: Composicao }) {
+  const tipo   = composicao.tiposervicoTop[0]
+  const outras = composicao.outrasDimensoes
+  const outrasLabel = composicao.outrasDimensoesLabel === 'equipe' ? 'equipes' : 'bairros'
+  const recorrente = composicao.clientesRecorrentes[0]
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-3 pt-0.5 pb-1 text-[10.5px] text-muted/80">
+      {tipo && (
+        <span>Predomina <span className="text-secondary font-medium">{tipo.nome}</span> ({tipo.pct}%)</span>
+      )}
+      <span>
+        <span className="text-secondary font-medium">{outras.length}</span> {outrasLabel} envolvid{composicao.outrasDimensoesLabel === 'equipe' ? 'as' : 'os'}
+        {outras.length === 1 ? ` (${outras[0].nome})` : ''}
+      </span>
+      {recorrente && (
+        <span>Cliente recorrente: <span className="text-orange font-medium">{recorrente.nome}</span> ({recorrente.count}x)</span>
+      )}
+    </div>
+  )
+}
 
 const PRIORIDADE_STYLE = {
   alta:  { color: '#f87171', bg: 'rgba(248,113,113,0.08)',   border: 'rgba(248,113,113,0.25)'   },
@@ -72,11 +99,14 @@ export function AnomaliaSection({ anomalias, contexto }: {
               <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted mb-2">Bairros com SLA Anômalo</p>
               <div className="space-y-2">
                 {bairrosAnomalia.map(b => (
-                  <div key={b.bairro} className="flex items-center gap-3 text-[12px] bg-surface/20 rounded-lg px-3 py-2">
-                    <span className="text-text font-semibold flex-1 min-w-0 truncate">{b.bairro}</span>
-                    <span className="font-mono font-bold text-red">{b.ratePct}%</span>
-                    <span className="text-muted">{b.slaExc}/{b.total}</span>
-                    <span className="text-muted ml-auto">Z: <span className="text-yellow font-mono">{b.zScore}σ</span></span>
+                  <div key={b.bairro} className="bg-surface/20 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-3 text-[12px]">
+                      <span className="text-text font-semibold flex-1 min-w-0 truncate">{b.bairro}</span>
+                      <span className="font-mono font-bold text-red">{b.ratePct}%</span>
+                      <span className="text-muted">{b.slaExc}/{b.total}</span>
+                      <span className="text-muted ml-auto">Z: <span className="text-yellow font-mono">{b.zScore}σ</span></span>
+                    </div>
+                    <ComposicaoLine composicao={b.composicao} />
                   </div>
                 ))}
               </div>
@@ -88,11 +118,14 @@ export function AnomaliaSection({ anomalias, contexto }: {
               <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted mb-2">Equipes com Aging Elevado</p>
               <div className="space-y-2">
                 {equipesAnomalia.map(e => (
-                  <div key={e.nome} className="flex items-center gap-3 text-[12px] bg-surface/20 rounded-lg px-3 py-2">
-                    <span className="text-text font-semibold flex-1 min-w-0 truncate">{e.nome}</span>
-                    <span className="font-mono font-bold text-orange">{e.agingMed}d</span>
-                    <span className="text-muted">{e.count} OS</span>
-                    <span className="text-muted ml-auto">Z: <span className="text-yellow font-mono">{e.zScore}σ</span></span>
+                  <div key={e.nome} className="bg-surface/20 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-3 text-[12px]">
+                      <span className="text-text font-semibold flex-1 min-w-0 truncate">{e.nome}</span>
+                      <span className="font-mono font-bold text-orange">{e.agingMed}d</span>
+                      <span className="text-muted">{e.count} OS</span>
+                      <span className="text-muted ml-auto">Z: <span className="text-yellow font-mono">{e.zScore}σ</span></span>
+                    </div>
+                    <ComposicaoLine composicao={e.composicao} />
                   </div>
                 ))}
               </div>

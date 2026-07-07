@@ -329,6 +329,22 @@ def _ai_revisitas(payload):
         return None
 
 
+def _fmt_composicao(c):
+    """Formata a composição (já calculada no frontend, ver anomalias.ts) de uma
+    anomalia em texto pro prompt — sem isso a IA não tem como concluir causa
+    raiz, só especular, porque não sabe do que as OS da anomalia são feitas."""
+    if not c:
+        return "não disponível"
+    tipos = ", ".join(f"{t['nome']} ({t['pct']}%)" for t in c.get("tiposervicoTop", [])[:3]) or "—"
+    outras_label = "equipes" if c.get("outrasDimensoesLabel") == "equipe" else "bairros"
+    outras = ", ".join(f"{o['nome']} ({o['count']})" for o in c.get("outrasDimensoes", [])[:4]) or "—"
+    clientes = c.get("clientesRecorrentes", [])
+    rec_txt = (", ".join(f"{cl['nome']} ({cl['count']}x)" for cl in clientes[:3])
+               if clientes else "nenhum cliente repetido")
+    return (f"tipos de serviço: {tipos} | {outras_label} distintas envolvidas: {outras} | "
+            f"clientes recorrentes: {rec_txt}")
+
+
 def _ai_anomalias(payload):
     """Root Cause Analysis das anomalias detectadas via Z-score."""
     data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
@@ -354,19 +370,24 @@ def _ai_anomalias(payload):
     ) or "  nenhum"
 
     bairros_txt = "\n".join(
-        f"  - {b['bairro']}: {b['ratePct']}% SLA excedido ({b['slaExc']}/{b['total']} OS, Z={b['zScore']}σ)"
+        f"  - {b['bairro']}: {b['ratePct']}% SLA excedido ({b['slaExc']}/{b['total']} OS, Z={b['zScore']}σ)\n"
+        f"    composição: {_fmt_composicao(b.get('composicao'))}"
         for b in bairros[:5]
     ) or "  nenhum"
 
     equipes_txt = "\n".join(
-        f"  - {e['nome']}: aging médio {e['agingMed']}d ({e['count']} OS, Z={e['zScore']}σ)"
+        f"  - {e['nome']}: aging médio {e['agingMed']}d ({e['count']} OS, Z={e['zScore']}σ)\n"
+        f"    composição: {_fmt_composicao(e.get('composicao'))}"
         for e in equipes[:5]
     ) or "  nenhum"
 
     prompt = (
         "Você é um analista sênior de operações de ISP regional. O sistema detectou anomalias "
-        "estatísticas (desvios significativos do padrão histórico via Z-score) nos dados de campo.\n\n"
-        "=== ANOMALIAS DETECTADAS ===\n\n"
+        "estatísticas (desvios significativos do padrão histórico via Z-score) nos dados de campo, "
+        "e já decompôs cada uma delas na composição real das OS envolvidas (tipo de serviço, "
+        "equipes/bairros distintos, clientes recorrentes) — isso NÃO é um resumo, é o levantamento "
+        "completo já pronto.\n\n"
+        "=== ANOMALIAS DETECTADAS (com composição já levantada) ===\n\n"
         f"Picos de abertura de OS (volume > média + 2σ):\n{picos_txt}\n\n"
         f"Bairros com SLA anômalo (taxa de excedência > média + 1.5σ):\n{bairros_txt}\n\n"
         f"Equipes com aging elevado (média > média do grupo + 1.5σ):\n{equipes_txt}\n\n"
@@ -374,11 +395,19 @@ def _ai_anomalias(payload):
         f"OS ativas: {ctx.get('total', '?')} | SLA da fila: {ctx.get('sla_pct', '?')}% | "
         f"Críticas: {ctx.get('criticas', '?')} | Aging médio: {ctx.get('aging_med', '?')}d\n\n"
         "=== INSTRUÇÕES ===\n"
-        "Identifique a causa raiz MAIS PROVÁVEL das anomalias (não liste sintomas). "
-        "Cite dados específicos do relatório. Proponha ações imediatas e precisas.\n\n"
+        "Use a composição acima para CONCLUIR a causa raiz, não para sugerir que alguém a levante — "
+        "esse levantamento já foi feito. Por exemplo: se um tipo de serviço domina (>50%) e várias "
+        "equipes distintas passaram pelo bairro, a causa é o tipo de serviço/infraestrutura, não a "
+        "equipe; se poucas equipes concentram o problema, é execução; se um cliente recorrente domina, "
+        "é revisita de caso pontual, não padrão geográfico. Cite os números da composição na resposta.\n"
+        "PROIBIDO propor ações como 'auditar', 'levantar histórico', 'analisar dados' ou 'investigar' "
+        "quando a composição já responde isso — essas ações já foram executadas por este sistema. "
+        "Só liste ações que exigem intervenção física/humana que os dados por si não resolvem (ex.: "
+        "despachar técnico para o endereço X, abrir chamado com o fornecedor Y, contatar o cliente Z), "
+        "sempre nomeando o alvo concreto que os dados apontaram — nunca uma ação genérica de coletar mais dados.\n\n"
         "Responda SOMENTE com JSON válido, sem markdown:\n"
-        '{"causa_raiz": "1-2 frases: hipótese de causa raiz com dados do relatório", '
-        '"acoes": ["Ação específica 1 (quem, o quê, quando)", "Ação 2", "Ação 3"], '
+        '{"causa_raiz": "1-2 frases: causa raiz concluída a partir da composição, citando os números", '
+        '"acoes": ["Ação física concreta e específica 1 (quem, onde/quem, quando)", "Ação 2", "Ação 3"], '
         '"prioridade": "alta|média|baixa"}'
     )
 

@@ -294,20 +294,39 @@ export interface PicoDiaAnomalia {
   zScore: number
 }
 
+// Decomposição de uma anomalia (bairro ou equipe) nas OS que a compõem — dá pra
+// IA (e pro usuário, direto na tela) o que de fato caracteriza o padrão, em vez
+// de só a contagem/Z-score que não permite concluir nada sozinho.
+export interface DistItem {
+  nome:  string
+  count: number
+  pct:   number
+}
+
+export interface Composicao {
+  tiposervicoTop:       DistItem[]
+  fornecedorTop:        DistItem[]
+  clientesRecorrentes:  { nome: string; count: number }[]
+  outrasDimensoes:      DistItem[]           // equipes envolvidas (bairro) ou bairros atendidos (equipe)
+  outrasDimensoesLabel: 'equipe' | 'bairro'
+}
+
 export interface BairroAnomalia {
-  bairro:  string
-  total:   number
-  slaExc:  number
-  rate:    number
-  ratePct: number
-  zScore:  number
+  bairro:     string
+  total:      number
+  slaExc:     number
+  rate:       number
+  ratePct:    number
+  zScore:     number
+  composicao: Composicao
 }
 
 export interface EquipeAnomalia {
-  nome:     string
-  agingMed: number
-  count:    number
-  zScore:   number
+  nome:       string
+  agingMed:   number
+  count:      number
+  zScore:     number
+  composicao: Composicao
 }
 
 export interface AnomaliasData {
