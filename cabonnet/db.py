@@ -62,6 +62,23 @@ def _db_init():
         """)
         con.execute("CREATE INDEX IF NOT EXISTS idx_sh_numos ON status_history(numos)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_sh_ts    ON status_history(ts)")
+        # Histórico de agendamentos — uma linha por troca de equipe e/ou data de
+        # agendamento, capturada pelo polling em cache.py. Reconstrói por quais
+        # equipes uma OS passou, algo que o Grafana não guarda (só o estado atual).
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS agendamento_history (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                numos           TEXT    NOT NULL,
+                nomedaequipe    TEXT,
+                dataagendamento TEXT,
+                descsituacao    TEXT,
+                nomedacidade    TEXT,
+                tiposervico     TEXT,
+                ts              INTEGER NOT NULL
+            )
+        """)
+        con.execute("CREATE INDEX IF NOT EXISTS idx_ah_numos ON agendamento_history(numos)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_ah_ts    ON agendamento_history(ts)")
         con.execute("""
             CREATE TABLE IF NOT EXISTS justificativas (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -305,6 +322,52 @@ def _db_save_status_changes(changes):
             con.close()
     except Exception as ex:
         log_db.warning("Falha ao salvar status_history: %s", ex)
+
+
+def _db_save_agendamento_changes(rows):
+    """Registra troca de equipe e/ou data de agendamento no histórico SQLite.
+    `rows` é uma lista de dicts de OS (linhas do CSV/Grafana), uma por OS que
+    mudou de equipe ou de dataagendamento desde o último ciclo de polling.
+    """
+    if not rows:
+        return
+    ts = int(datetime.now().timestamp())
+    data = [
+        (r.get("numos",""), r.get("nomedaequipe",""), r.get("dataagendamento",""),
+         r.get("descsituacao",""), r.get("nomedacidade",""), r.get("tiposervico",""), ts)
+        for r in rows
+    ]
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            con.executemany(
+                "INSERT INTO agendamento_history"
+                "(numos,nomedaequipe,dataagendamento,descsituacao,nomedacidade,tiposervico,ts) "
+                "VALUES(?,?,?,?,?,?,?)",
+                data
+            )
+            con.commit()
+            con.close()
+    except Exception as ex:
+        log_db.warning("Falha ao salvar agendamento_history: %s", ex)
+
+
+def _db_get_agendamento_history(numos):
+    """Histórico de agendamentos de uma OS, do mais antigo pro mais recente."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            con.row_factory = sqlite3.Row
+            rows = con.execute(
+                "SELECT numos, nomedaequipe, dataagendamento, descsituacao, ts "
+                "FROM agendamento_history WHERE numos=? ORDER BY ts ASC",
+                (str(numos),)
+            ).fetchall()
+            con.close()
+            return [dict(r) for r in rows]
+    except Exception as ex:
+        log_db.warning("Falha ao ler agendamento_history numos=%s: %s", numos, ex)
+        return []
 
 
 _MOTIVO_LABEL = {

@@ -58,6 +58,7 @@ from cabonnet.db import (
     _db_bootstrap_admin,
     _db_count_ativos_por_role,
     _db_create_usuario,
+    _db_get_agendamento_history,
     _db_get_permissoes,
     _db_get_usuario_by_id,
     _db_init,
@@ -1023,6 +1024,15 @@ async def os_execucao_geo():
         }
         for r in rows
     ]
+
+
+@router.get("/detalhes/agendamentos")
+async def detalhes_agendamentos(numos: str = ""):
+    """Histórico de equipes/datas de agendamento de uma OS, capturado pelo
+    polling em cache.py — não vem do Grafana, que só guarda o estado atual."""
+    if not numos.strip().isdigit():
+        raise HTTPException(400, "Parâmetro 'numos' inválido.")
+    return {"historico": _db_get_agendamento_history(numos.strip())}
 
 
 # ── Telegram ──────────────────────────────────────────────────────────────────

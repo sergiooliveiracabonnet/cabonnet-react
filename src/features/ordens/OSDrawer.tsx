@@ -22,6 +22,7 @@ import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, calcDuracao, buildOS
 import { TimelineStep }  from './TimelineStep'
 import { OSDetailModal } from './OSDetailModal'
 import { useOSDetails }  from '../../hooks/useOSDetails'
+import { useAgendamentoHistorico } from '../../hooks/useAgendamentoHistorico'
 import { ClassificarEncerramento } from './ClassificarEncerramento'
 
 export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; onClose: () => void }) {
@@ -29,6 +30,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   const [copied,    setCopied]    = useState<string | null>(null)
   const navigate = useNavigate()
   const { details: osDetails, isLoading: loadingDetails } = useOSDetails(osMaybe?.numos)
+  const { historico: agendamentoHistorico } = useAgendamentoHistorico(osMaybe?.numos)
 
   if (!osMaybe) return null
   // Alias não-nulo — TypeScript não estreita em closures, então criamos uma const local
@@ -100,6 +102,43 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   // Equipes diferentes = outra equipe assumiu a OS
   const eqsDiferem = d && eqAgendada && eqExecutou && eqAgendada !== eqExecutou
 
+  // Histórico real de equipe/data por agendamento (cache.py grava 1 linha a cada
+  // troca detectada). Sem isso, o Grafana só devolve o estado atual da OS e
+  // reagendamentos anteriores para outras equipes ficam invisíveis na timeline.
+  const agendamentoSteps: StepItem[] = !hasAgend ? [] : agendamentoHistorico.length > 1
+    ? agendamentoHistorico.map((h, idx) => {
+        const isLast = idx === agendamentoHistorico.length - 1
+        return {
+          icon: Calendar,
+          color: isLast ? (isConcluida || isAtendimento ? 'green' : 'yellow') : 'cyan',
+          label: idx === 0 ? 'Agendamento' : `Reagendamento ${idx}`,
+          date: fmtDate(h.dataagendamento),
+          equipe: shortEquipe(h.nomedaequipe) || undefined,
+          done: !isLast || isConcluida || isAtendimento,
+          details: isLast ? {
+            hora:          os.horaatendimento || null,
+            periodo:       os.periodo         || null,
+            servico:       os.servico         || null,
+            equipeReagend: d?.equipeReagend   || null,
+            reagendada:    d?.reagendada      ?? null,
+            historico:     loadingDetails ? null : historico,
+          } : undefined,
+        }
+      })
+    : [{
+        icon: Calendar, color: isConcluida || isAtendimento ? 'green' : 'yellow',
+        label: 'Agendamento', date: fmtDate(os.dataagendamento),
+        equipe: eqAgendada, done: isConcluida || isAtendimento,
+        details: {
+          hora:          os.horaatendimento || null,
+          periodo:       os.periodo         || null,
+          servico:       os.servico         || null,
+          equipeReagend: d?.equipeReagend   || null,
+          reagendada:    d?.reagendada      ?? null,
+          historico:     loadingDetails ? null : historico,
+        },
+      }]
+
   const steps = [
     {
       icon: Clock, color: 'primary', label: 'Abertura da OS',
@@ -109,19 +148,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
         servico:  os.servico || os.tiposervico || null,
       },
     },
-    hasAgend && {
-      icon: Calendar, color: isConcluida || isAtendimento ? 'green' : 'yellow',
-      label: 'Agendamento', date: fmtDate(os.dataagendamento),
-      equipe: eqAgendada, done: isConcluida || isAtendimento,
-      details: {
-        hora:          os.horaatendimento || null,
-        periodo:       os.periodo         || null,
-        servico:       os.servico         || null,
-        equipeReagend: d?.equipeReagend   || null,
-        reagendada:    d?.reagendada      ?? null,
-        historico:     loadingDetails ? null : historico,
-      },
-    },
+    ...agendamentoSteps,
     hasAtend && {
       icon: Calendar, color: 'cyan', label: '1º Agendamento',
       date: fmtDate(os.dataatendimento as string), equipe: eqAgendada,

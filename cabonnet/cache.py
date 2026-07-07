@@ -10,7 +10,7 @@ from datetime import date
 
 from cabonnet.config import _SLA_LIMITS, _REVISITA_TTL_DIAS, TELEGRAM_CHAT_ALERTAS
 from cabonnet import state
-from cabonnet.db import _db_save_status_changes
+from cabonnet.db import _db_save_agendamento_changes, _db_save_status_changes
 from cabonnet.utils import _parse_csv_rows, _parse_data_br, isConcluida_str
 from cabonnet.telegram import (
     _telegram_enabled, _tg_esc, _telegram_send, _telegram_send,
@@ -99,7 +99,9 @@ def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro=""):
         _parse_csv_rows(csv_futuro)
     )
     rows_agendado = _parse_csv_rows(csv_agendado)
-    new_snap = {r["numos"]: r.get("descsituacao", "") for r in all_rows if r.get("numos")}
+    row_map     = {r["numos"]: r for r in all_rows if r.get("numos")}
+    new_snap    = {n: r.get("descsituacao", "")  for n, r in row_map.items()}
+    new_eq_snap = {n: (r.get("nomedaequipe", ""), r.get("dataagendamento", "")) for n, r in row_map.items()}
 
     with state._status_snapshot_lock:
         old_snap              = state._status_snapshot.copy()
@@ -107,6 +109,11 @@ def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro=""):
         state._status_snapshot.update(new_snap)
         first_load            = not state._status_snap_primed
         state._status_snap_primed = True
+
+    with state._equipe_snapshot_lock:
+        old_eq_snap = state._equipe_snapshot.copy()
+        state._equipe_snapshot.clear()
+        state._equipe_snapshot.update(new_eq_snap)
 
     with state._dados_cache_lock:
         state._dados_cache["agendado"] = rows_agendado
@@ -117,7 +124,17 @@ def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro=""):
         log.info("[Status] Snapshot inicial — %d OS indexadas", len(new_snap))
         return
 
-    row_map = {r["numos"]: r for r in all_rows if r.get("numos")}
+    # Troca de equipe e/ou reagendamento — independente de descsituacao mudar.
+    # Cobre tanto OS que já existia e mudou de equipe/data quanto OS nova que
+    # aparece já com um agendamento definido (primeiro registro do seu histórico).
+    eq_changes = [
+        row_map[n] for n, val in new_eq_snap.items()
+        if val[1] and (n not in old_eq_snap or old_eq_snap[n] != val)
+    ]
+    if eq_changes:
+        log.info("[Agendamento] %d troca(s) de equipe/agendamento detectada(s)", len(eq_changes))
+        threading.Thread(target=_db_save_agendamento_changes, args=(eq_changes,), daemon=True).start()
+
     changes = [
         (row_map[n], old_st, new_snap[n])
         for n, old_st in old_snap.items()

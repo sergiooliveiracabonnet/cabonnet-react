@@ -21,6 +21,13 @@ _status_snapshot      = {}    # numos(str) → descsituacao(str)
 _status_snapshot_lock = threading.Lock()
 _status_snap_primed   = False # Primeira carga não dispara alertas
 
+# ── Snapshot para detecção de troca de equipe/reagendamento ───────────────────
+# Independente do status: uma OS pode ser reatribuída a outra equipe ou ter a
+# data de agendamento alterada sem que descsituacao mude, e isso não pode se
+# perder (ver cache.py::_dados_cache_update).
+_equipe_snapshot      = {}    # numos(str) → (nomedaequipe(str), dataagendamento(str))
+_equipe_snapshot_lock = threading.Lock()
+
 # ── Raiz de revisita — OS concluídas recentes por cliente ─────────────────────
 # { codigocliente: [(numos, ts_conclusao), ...] }  — TTL 30 dias
 _concluidas_recentes      = {}
