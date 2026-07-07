@@ -1,5 +1,5 @@
 import { isCOPE, isReagend } from '../transform'
-import type { Composicao, DistItem, OSRow } from '../types'
+import type { ClienteRecorrente, Composicao, DistItem, OSRow } from '../types'
 import { avg, stdDev, topN } from './_helpers'
 
 // Decompõe as OS de uma anomalia (bairro ou equipe) nas dimensões que já estão
@@ -13,7 +13,7 @@ function buildComposicao(rows: OSRow[], outraDimensao: 'equipe' | 'bairro'): Com
   const total   = rows.length
   const tipoMap = new Map<string, number>()
   const fornMap = new Map<string, number>()
-  const cliMap  = new Map<string, number>()
+  const cliMap  = new Map<string, { nomecliente: string; numos: string[] }>()
   const outMap  = new Map<string, number>()
 
   for (const r of rows) {
@@ -23,8 +23,12 @@ function buildComposicao(rows: OSRow[], outraDimensao: 'equipe' | 'bairro'): Com
     const forn = (r._fornecedor as string) || 'OUTRO'
     fornMap.set(forn, (fornMap.get(forn) ?? 0) + 1)
 
-    const cli = String(r.codigocliente || r.nomecliente || '').trim()
-    if (cli) cliMap.set(cli, (cliMap.get(cli) ?? 0) + 1)
+    const cliKey = String(r.codigocliente || r.nomecliente || '').trim()
+    if (cliKey) {
+      const entry = cliMap.get(cliKey) ?? { nomecliente: (r.nomecliente || '').trim(), numos: [] }
+      entry.numos.push(String(r.numos))
+      cliMap.set(cliKey, entry)
+    }
 
     const outKey = outraDimensao === 'equipe'
       ? ((r.nomedaequipe || '').trim() || 'Sem equipe')
@@ -32,10 +36,16 @@ function buildComposicao(rows: OSRow[], outraDimensao: 'equipe' | 'bairro'): Com
     outMap.set(outKey, (outMap.get(outKey) ?? 0) + 1)
   }
 
+  const clientesRecorrentes: ClienteRecorrente[] = [...cliMap.entries()]
+    .filter(([, e]) => e.numos.length > 1)
+    .sort((a, b) => b[1].numos.length - a[1].numos.length)
+    .slice(0, 5)
+    .map(([codigocliente, e]) => ({ codigocliente, nomecliente: e.nomecliente, count: e.numos.length, numos: e.numos }))
+
   return {
     tiposervicoTop:       distTop(tipoMap, total),
     fornecedorTop:        distTop(fornMap, total),
-    clientesRecorrentes:  topN(cliMap, 5).filter(([, c]) => c > 1).map(([nome, count]) => ({ nome, count })),
+    clientesRecorrentes,
     outrasDimensoes:      distTop(outMap, total, 5),
     outrasDimensoesLabel: outraDimensao,
   }

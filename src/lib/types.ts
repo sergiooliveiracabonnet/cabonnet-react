@@ -303,10 +303,20 @@ export interface DistItem {
   pct:   number
 }
 
+// codigocliente sozinho não é pesquisável em lugar nenhum da UI (ver GlobalSearch,
+// que busca por numos/nomecliente/bairro/cidade/equipe) — por isso carrega o nome
+// e as OS onde o cliente aparece, que são o que dá pra colar na busca do header.
+export interface ClienteRecorrente {
+  codigocliente: string
+  nomecliente:   string
+  count:         number
+  numos:         string[]
+}
+
 export interface Composicao {
   tiposervicoTop:       DistItem[]
   fornecedorTop:        DistItem[]
-  clientesRecorrentes:  { nome: string; count: number }[]
+  clientesRecorrentes:  ClienteRecorrente[]
   outrasDimensoes:      DistItem[]           // equipes envolvidas (bairro) ou bairros atendidos (equipe)
   outrasDimensoesLabel: 'equipe' | 'bairro'
 }

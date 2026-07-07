@@ -39,8 +39,8 @@ describe('buildAnomalias — composição da anomalia de bairro', () => {
   it('decompõe o bairro anômalo por tipo de serviço, equipes distintas e cliente recorrente', () => {
     // SLA estourado: agendamento ~70 dias após a abertura, bem acima de qualquer limite configurado
     const problemBairro = [
-      makeOS({ numos: '1', bairro: 'ESPLANADA', nomedaequipe: 'F01', tiposervico: 'Sinal Fraco', codigocliente: 'C1', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
-      makeOS({ numos: '2', bairro: 'ESPLANADA', nomedaequipe: 'F01', tiposervico: 'Sinal Fraco', codigocliente: 'C1', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
+      makeOS({ numos: '1', bairro: 'ESPLANADA', nomedaequipe: 'F01', tiposervico: 'Sinal Fraco', codigocliente: 'C1', nomecliente: 'JOAO SILVA', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
+      makeOS({ numos: '2', bairro: 'ESPLANADA', nomedaequipe: 'F01', tiposervico: 'Sinal Fraco', codigocliente: 'C1', nomecliente: 'JOAO SILVA', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
       makeOS({ numos: '3', bairro: 'ESPLANADA', nomedaequipe: 'F02', tiposervico: 'Sinal Fraco', codigocliente: 'C2', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
       makeOS({ numos: '4', bairro: 'ESPLANADA', nomedaequipe: 'F03', tiposervico: 'Sinal Fraco', codigocliente: 'C3', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
       makeOS({ numos: '5', bairro: 'ESPLANADA', nomedaequipe: 'F03', tiposervico: 'Instalação',  codigocliente: 'C4', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
@@ -58,7 +58,9 @@ describe('buildAnomalias — composição da anomalia de bairro', () => {
     expect(esplanada!.composicao.tiposervicoTop[0]).toEqual({ nome: 'Sinal Fraco', count: 4, pct: 80 })
     expect(esplanada!.composicao.outrasDimensoesLabel).toBe('equipe')
     expect(esplanada!.composicao.outrasDimensoes).toHaveLength(3)
-    expect(esplanada!.composicao.clientesRecorrentes).toEqual([{ nome: 'C1', count: 2 }])
+    expect(esplanada!.composicao.clientesRecorrentes).toEqual([
+      { codigocliente: 'C1', nomecliente: 'JOAO SILVA', count: 2, numos: ['1', '2'] },
+    ])
   })
 
   it('decompõe a equipe anômala por bairros atendidos', () => {

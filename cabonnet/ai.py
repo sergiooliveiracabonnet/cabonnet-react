@@ -339,8 +339,11 @@ def _fmt_composicao(c):
     outras_label = "equipes" if c.get("outrasDimensoesLabel") == "equipe" else "bairros"
     outras = ", ".join(f"{o['nome']} ({o['count']})" for o in c.get("outrasDimensoes", [])[:4]) or "—"
     clientes = c.get("clientesRecorrentes", [])
-    rec_txt = (", ".join(f"{cl['nome']} ({cl['count']}x)" for cl in clientes[:3])
-               if clientes else "nenhum cliente repetido")
+    rec_txt = (", ".join(
+        f"{cl.get('nomecliente') or 'Cód. ' + str(cl.get('codigocliente', ''))} "
+        f"(OS {', '.join(cl.get('numos', [])[:3])})"
+        for cl in clientes[:3]
+    ) if clientes else "nenhum cliente repetido")
     return (f"tipos de serviço: {tipos} | {outras_label} distintas envolvidas: {outras} | "
             f"clientes recorrentes: {rec_txt}")
 
@@ -399,7 +402,10 @@ def _ai_anomalias(payload):
         "esse levantamento já foi feito. Por exemplo: se um tipo de serviço domina (>50%) e várias "
         "equipes distintas passaram pelo bairro, a causa é o tipo de serviço/infraestrutura, não a "
         "equipe; se poucas equipes concentram o problema, é execução; se um cliente recorrente domina, "
-        "é revisita de caso pontual, não padrão geográfico. Cite os números da composição na resposta.\n"
+        "é revisita de caso pontual, não padrão geográfico. Cite os números da composição na resposta. "
+        "Ao citar um cliente recorrente, use SEMPRE o nome do cliente e o(s) número(s) de OS entre "
+        "parênteses, exatamente como fornecido acima — NUNCA o código interno do cliente sozinho, "
+        "que não é pesquisável em nenhuma tela do sistema.\n"
         "PROIBIDO propor ações como 'auditar', 'levantar histórico', 'analisar dados' ou 'investigar' "
         "quando a composição já responde isso — essas ações já foram executadas por este sistema. "
         "Só liste ações que exigem intervenção física/humana que os dados por si não resolvem (ex.: "

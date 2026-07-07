@@ -25,7 +25,10 @@ function ComposicaoLine({ composicao }: { composicao: Composicao }) {
         {outras.length === 1 ? ` (${outras[0].nome})` : ''}
       </span>
       {recorrente && (
-        <span>Cliente recorrente: <span className="text-orange font-medium">{recorrente.nome}</span> ({recorrente.count}x)</span>
+        <span>
+          Cliente recorrente: <span className="text-orange font-medium">{recorrente.nomecliente || `Cód. ${recorrente.codigocliente}`}</span> ({recorrente.count}x)
+          {' '}· OS <span className="font-mono">{recorrente.numos.slice(0, 3).join(', ')}</span>
+        </span>
       )}
     </div>
   )
