@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertCircle, ChevronDown, Sparkles } from 'lucide-react'
+import { AlertCircle, ChevronDown, RefreshCw, Sparkles } from 'lucide-react'
 import { useAIAnomalias } from '../../hooks/useAIAnomalias'
 import type { AnomaliasData, Composicao } from '../../lib/types'
 import type { AnomaliaContextType } from './PulsoHero'
@@ -48,7 +48,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
   const [aiEnabled, setAiEnabled] = useState(false)
 
   type HookAnomItem = { zScore: number; [k: string]: unknown }
-  const { data: rcaData, isLoading: rcaLoading } = useAIAnomalias({
+  const { data: rcaData, isLoading: rcaLoading, isError: rcaError, refetch: refetchRca } = useAIAnomalias({
     picosDia:        picosDia        as unknown as HookAnomItem[],
     bairrosAnomalia: bairrosAnomalia as unknown as HookAnomItem[],
     equipesAnomalia: equipesAnomalia as unknown as HookAnomItem[],
@@ -142,14 +142,15 @@ export function AnomaliaSection({ anomalias, contexto }: {
                 <Sparkles size={12} className="text-primary/70" />
                 <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted">Análise de Causa Raiz</p>
               </div>
-              {!aiEnabled && (
+              {!rcaLoading && (
                 <button
-                  onClick={() => setAiEnabled(true)}
+                  onClick={() => (aiEnabled ? refetchRca() : setAiEnabled(true))}
                   className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
                              px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                              transition-all duration-fast"
                 >
-                  <Sparkles size={11} /> Analisar com IA
+                  {aiEnabled ? <RefreshCw size={11} /> : <Sparkles size={11} />}
+                  {aiEnabled ? 'Reanalisar' : 'Analisar com IA'}
                 </button>
               )}
             </div>
@@ -159,6 +160,12 @@ export function AnomaliaSection({ anomalias, contexto }: {
                 <div className="w-3 h-3 rounded-full border border-primary/40 border-t-primary animate-spin" />
                 Analisando anomalias...
               </div>
+            )}
+
+            {!rcaLoading && rcaError && (
+              <p className="text-[11px] text-red/80 py-1">
+                Não foi possível gerar a análise agora. Tente novamente em instantes.
+              </p>
             )}
 
             {rcaData && (
