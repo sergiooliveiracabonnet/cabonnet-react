@@ -1,5 +1,6 @@
+import { useMemo } from 'react'
 import {
-  TrendingUp, TrendingDown, ArrowUpRight, Zap, CheckCircle2, MapPin, Clock, Gauge, Target, AlertCircle,
+  TrendingUp, ArrowUpRight, Zap, CheckCircle2, MapPin, Clock, Gauge, Target, AlertCircle, Layers,
 } from 'lucide-react'
 import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes } from '../../lib/types'
 import { SectionLabel } from './DashboardKpiPrimitives'
@@ -140,16 +141,22 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
   )
 }
 
-export function AgingPanel({ pulso }: { pulso: Pulso }) {
+export function AgingPanel({ pulso, filaAtiva, onOpen }: {
+  pulso: Pulso
+  filaAtiva?: OSRow[]
+  onOpen?: (title: string, rows: OSRow[]) => void
+}) {
   const { agingDist } = pulso
   const agingTotals = agingDist as unknown as Record<string, number>
   const agingTotal  = Object.values(agingTotals).reduce((s, v) => s + v, 0)
 
-  const agingEntries: { key: string; label: string; color: string }[] = [
-    { key: '≤1d',  label: '≤ 1 dia',  color: '#4ade80' },
-    { key: '2-3d', label: '2–3 dias', color: '#facc15' },
-    { key: '4-7d', label: '4–7 dias', color: '#f97316' },
-    { key: '8+d',  label: '8+ dias',  color: '#f87171' },
+  // Rampa sequencial de um só matiz (azul) — vermelho reservado ao bucket crítico.
+  // Mesmos limites do buildDashboard (agingDist) para os cliques baterem com os números.
+  const agingEntries: { key: string; label: string; color: string; hot?: boolean; match: (a: number) => boolean }[] = [
+    { key: '≤1d',  label: '≤ 1 d',  color: 'rgba(59,130,246,.30)', match: a => a <= 1 },
+    { key: '2-3d', label: '2–3 d',  color: 'rgba(59,130,246,.50)', match: a => a > 1 && a <= 3 },
+    { key: '4-7d', label: '4–7 d',  color: 'rgba(59,130,246,.75)', match: a => a > 3 && a <= 7 },
+    { key: '8+d',  label: '8+ d',   color: 'rgb(248,113,113)', hot: true, match: a => a > 7 },
   ]
 
   if (!agingTotal) return (
@@ -158,41 +165,186 @@ export function AgingPanel({ pulso }: { pulso: Pulso }) {
     </div>
   )
 
+  const maxVal   = Math.max(...agingEntries.map(e => agingTotals[e.key] ?? 0), 1)
+  const criticas = agingTotals['8+d'] ?? 0
+  const abrirBucket = (e: typeof agingEntries[number]) => {
+    if (!onOpen || !filaAtiva) return
+    onOpen(`Aging ${e.label} — OS na fila`, filaAtiva.filter(r => r._aging != null && e.match(r._aging)))
+  }
+
   return (
     <div className="rounded-lg border border-border bg-card p-5">
-      <SectionLabel icon={Clock} color="#3b82f6">Aging da Fila Ativa</SectionLabel>
+      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+        <SectionLabel icon={Clock} color="#3b82f6">Aging da Fila Ativa</SectionLabel>
+        <span className="text-[11px] text-muted tabular-nums">{agingTotal} OS abertas · clique para abrir</span>
+      </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 flex items-end gap-2 h-[136px]">
         {agingEntries.map(e => {
           const val = agingTotals[e.key] ?? 0
           const pct = agingTotal > 0 ? Math.round(val / agingTotal * 100) : 0
           return (
-            <div key={e.key} className="flex items-center gap-3">
-              <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: e.color }} />
-              <span className="text-[11px] text-muted w-14 flex-shrink-0">{e.label}</span>
-              <div className="flex-1 h-2 bg-surface rounded-full overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-700"
-                     style={{ width: `${pct}%`, background: e.color }} />
-              </div>
-              <span className="font-mono text-[12px] text-text font-semibold w-6 text-right flex-shrink-0">
+            <button key={e.key} type="button" onClick={() => abrirBucket(e)}
+                    className="flex-1 h-full flex flex-col items-center justify-end gap-1.5 cursor-pointer group bg-transparent border-0 p-0"
+                    title={`${e.label}: ${val} OS (${pct}%) — clique para listar`}>
+              <span className={`text-[12px] font-bold tabular-nums ${e.hot ? 'text-red' : 'text-text'}`}>
                 {val}
               </span>
-              <span className="font-mono text-[10px] text-muted w-8 text-right flex-shrink-0">
-                {pct}%
-              </span>
-            </div>
+              <div className="w-full max-w-[56px] rounded-t transition-all duration-700 group-hover:brightness-125"
+                   style={{ height: `${Math.max(3, Math.round(val / maxVal * 96))}px`, background: e.color }} />
+              <span className={`text-[10px] ${e.hot ? 'text-red font-semibold' : 'text-muted group-hover:text-secondary'}`}>{e.label}</span>
+            </button>
           )
         })}
       </div>
 
-      {/* Stacked bar total */}
-      <div className="mt-4 flex h-1.5 rounded-full overflow-hidden bg-surface/30">
-        {agingEntries.map(e => {
-          const val = agingTotals[e.key] ?? 0
-          const pct = agingTotal > 0 ? Math.round(val / agingTotal * 100) : 0
-          return pct > 0 ? (
-            <div key={e.key} className="h-full" style={{ width: `${pct}%`, background: e.color }} />
-          ) : null
+      {criticas > 0 && (
+        <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted">
+          <AlertCircle size={11} className="text-red flex-shrink-0" />
+          <span><span className="text-red font-semibold tabular-nums">{criticas} OS com 8+ dias</span> — priorizar hoje</span>
+        </p>
+      )}
+    </div>
+  )
+}
+
+// Pareto da fila ativa por tipo de serviço — responde "a fila é feita DE QUÊ?"
+// Concentração alta num tipo → decisão de alocação (rede vs frente de campo).
+export function ParetoServicoPanel({ filaAtiva, onOpen }: {
+  filaAtiva: OSRow[]
+  onOpen: (title: string, rows: OSRow[]) => void
+}) {
+  const grupos = useMemo(() => {
+    const map = new Map<string, OSRow[]>()
+    for (const r of filaAtiva) {
+      const nome = (r.servico || '').trim() || 'Sem descrição'
+      const arr = map.get(nome)
+      if (arr) arr.push(r)
+      else map.set(nome, [r])
+    }
+    return [...map.entries()]
+      .map(([nome, rows]) => ({ nome, rows }))
+      .sort((a, b) => b.rows.length - a.rows.length)
+  }, [filaAtiva])
+
+  const total = filaAtiva.length
+  if (total === 0) {
+    return (
+      <div className="rounded-lg border border-border bg-card p-5 flex items-center justify-center">
+        <p className="text-muted text-[12px]">Fila vazia — sem composição para analisar</p>
+      </div>
+    )
+  }
+
+  const top    = grupos.slice(0, 6)
+  const resto  = grupos.slice(6)
+  const maxVal = top[0]?.rows.length ?? 1
+  const pctTop3 = Math.round(grupos.slice(0, 3).reduce((s, g) => s + g.rows.length, 0) / total * 100)
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-5">
+      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+        <SectionLabel icon={Layers} color="#3b82f6">Composição da Fila — Tipo de Serviço</SectionLabel>
+        <span className="text-[11px] text-muted tabular-nums">top 3 = {pctTop3}% da fila</span>
+      </div>
+
+      <div className="mt-2">
+        {top.map(g => {
+          const pct = Math.round(g.rows.length / total * 100)
+          return (
+            <button key={g.nome} type="button"
+                    onClick={() => onOpen(`Fila — ${g.nome}`, g.rows)}
+                    className="w-full grid grid-cols-[minmax(0,1.1fr)_30px_1fr_34px] items-center gap-3 py-2
+                               border-b border-border/60 last:border-b-0 bg-transparent border-x-0 border-t-0
+                               cursor-pointer group text-left"
+                    title={`${g.nome}: ${g.rows.length} OS (${pct}%) — clique para listar`}>
+              <span className="text-[11px] font-semibold text-secondary truncate group-hover:text-text transition-colors">
+                {g.nome}
+              </span>
+              <span className="text-[12px] font-bold text-right tabular-nums">{g.rows.length}</span>
+              <div className="h-2 rounded-full bg-surface">
+                <div className="h-full rounded-full transition-all duration-700 group-hover:brightness-125"
+                     style={{ width: `${Math.round(g.rows.length / maxVal * 100)}%`, background: 'rgba(59,130,246,.75)' }} />
+              </div>
+              <span className="text-[10px] text-muted text-right tabular-nums">{pct}%</span>
+            </button>
+          )
+        })}
+        {resto.length > 0 && (
+          <button type="button"
+                  onClick={() => onOpen('Fila — Outros serviços', resto.flatMap(g => g.rows))}
+                  className="w-full text-left text-[10.5px] text-muted hover:text-secondary pt-2 bg-transparent border-0 cursor-pointer">
+            + {resto.length} outros tipos ({resto.reduce((s, g) => s + g.rows.length, 0)} OS) — ver todas
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Cidades do Vale — fila, parcela crítica e SLA por município.
+// SLA agregado esconde variação local; aqui cada cidade responde por si.
+export function CidadesValePanel({ filaAtiva, onOpen }: {
+  filaAtiva: OSRow[]
+  onOpen: (title: string, rows: OSRow[]) => void
+}) {
+  const cidades = useMemo(() => {
+    const map = new Map<string, { rows: OSRow[]; slaExc: number; criticas: number }>()
+    for (const r of filaAtiva) {
+      const nome = (r.nomedacidade || 'Sem cidade').trim()
+      let e = map.get(nome)
+      if (!e) { e = { rows: [], slaExc: 0, criticas: 0 }; map.set(nome, e) }
+      e.rows.push(r)
+      if (r._slaExcedido || r._slaSemAgend) e.slaExc++
+      if (r._slaCritico) e.criticas++
+    }
+    return [...map.entries()]
+      .map(([nome, e]) => ({
+        nome, ...e,
+        sla: e.rows.length > 0 ? Math.round((e.rows.length - e.slaExc) / e.rows.length * 100) : 100,
+      }))
+      .sort((a, b) => b.rows.length - a.rows.length)
+  }, [filaAtiva])
+
+  if (cidades.length === 0) return null
+  const maxFila = Math.max(...cidades.map(c => c.rows.length), 1)
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-5">
+      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+        <SectionLabel icon={MapPin} color="#3b82f6">Cidades do Vale — Fila e SLA</SectionLabel>
+        <span className="text-[11px] text-muted">parcela vermelha = OS críticas</span>
+      </div>
+
+      <div className="mt-2">
+        {cidades.map(c => {
+          const slaCls = c.sla >= 90 ? 'text-green bg-green/10'
+                       : c.sla >= 75 ? 'text-yellow bg-yellow/10'
+                       : 'text-red bg-red/10'
+          const wTotal = Math.round(c.rows.length / maxFila * 100)
+          const wCrit  = c.rows.length > 0 ? c.criticas / c.rows.length : 0
+          return (
+            <button key={c.nome} type="button"
+                    onClick={() => onOpen(`Fila — ${c.nome}`, c.rows)}
+                    className="w-full grid grid-cols-[minmax(0,1.1fr)_30px_1fr_44px] items-center gap-3 py-2
+                               border-b border-border/60 last:border-b-0 bg-transparent border-x-0 border-t-0
+                               cursor-pointer group text-left"
+                    title={`${c.nome}: ${c.rows.length} OS na fila · ${c.criticas} críticas · SLA ${c.sla}% — clique para listar`}>
+              <span className="text-[11px] font-semibold text-secondary truncate group-hover:text-text transition-colors">
+                {c.nome}
+              </span>
+              <span className="text-[12px] font-bold text-right tabular-nums">{c.rows.length}</span>
+              <div className="flex h-2 rounded-full bg-surface overflow-hidden" style={{ width: `${wTotal}%`, minWidth: 8 }}>
+                {c.criticas > 0 && (
+                  <div className="h-full flex-shrink-0" style={{ width: `${wCrit * 100}%`, background: 'rgb(248,113,113)' }} />
+                )}
+                <div className="h-full flex-1" style={{ background: 'rgba(59,130,246,.75)' }} />
+              </div>
+              <span className={`text-[10px] font-bold text-center rounded px-1.5 py-0.5 tabular-nums ${slaCls}`}>
+                {c.sla}%
+              </span>
+            </button>
+          )
         })}
       </div>
     </div>
@@ -201,18 +353,10 @@ export function AgingPanel({ pulso }: { pulso: Pulso }) {
 
 export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
   const comRitmo = semaforo.filter(e => e.ritmoHoje != null)
-  const abaixo = comRitmo
-    .filter(e => e.ritmoHoje!.status === 'abaixo')
-    .sort((a, b) => (b.ritmoHoje!.baseline - b.ritmoHoje!.atual) - (a.ritmoHoje!.baseline - a.ritmoHoje!.atual))
-    .slice(0, 3)
-  const acima = comRitmo
-    .filter(e => e.ritmoHoje!.status === 'acima')
-    .sort((a, b) => (b.ritmoHoje!.atual - b.ritmoHoje!.baseline) - (a.ritmoHoje!.atual - a.ritmoHoje!.baseline))
-    .slice(0, 3)
 
   if (!comRitmo.length) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card p-5">
+      <div className="rounded-lg border border-border bg-card p-5">
         <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
         <div className="flex items-center justify-center py-8">
           <p className="text-muted text-[12px]">Ainda sem histórico de ritmo para comparar hoje</p>
@@ -221,75 +365,52 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
     )
   }
 
+  // Maior desvio primeiro (quem mais precisa de atenção), depois maior volume
+  const equipes = [...comRitmo]
+    .sort((a, b) => {
+      const da = Math.abs(a.ritmoHoje!.atual - a.ritmoHoje!.baseline)
+      const db = Math.abs(b.ritmoHoje!.atual - b.ritmoHoje!.baseline)
+      return db - da || b.ritmoHoje!.atual - a.ritmoHoje!.atual
+    })
+    .slice(0, 6)
+  const escala = Math.max(...equipes.map(e => Math.max(e.ritmoHoje!.atual, e.ritmoHoje!.baseline)), 1) * 1.15
+
   return (
     <div className="rounded-lg border border-border bg-card p-5">
-      <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
+      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+        <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
+        <span className="text-[11px] text-muted">tracejado = baseline da equipe</span>
+      </div>
 
-      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-yellow/80 mb-2 flex items-center gap-1">
-            <TrendingDown size={10} /> Abaixo do ritmo
-          </p>
-          {abaixo.length === 0 ? (
-            <p className="text-[11px] text-muted/50">Nenhuma equipe abaixo da média</p>
-          ) : (
-            <div className="space-y-1.5">
-              {abaixo.map(e => (
-                <div key={e.nome} className="flex items-center justify-between text-[11px] gap-2">
-                  <span className="text-text font-semibold truncate">{e.nome}</span>
-                  <span className="font-mono text-yellow flex-shrink-0">
-                    {e.ritmoHoje!.atual}/{e.ritmoHoje!.baseline}
-                  </span>
-                </div>
-              ))}
+      <div className="mt-2">
+        {equipes.map(e => {
+          const r      = e.ritmoHoje!
+          const abaixo = r.status === 'abaixo'
+          return (
+            <div key={e.nome}
+                 className="grid grid-cols-[96px_1fr_58px] items-center gap-3 py-2 border-b border-border/60 last:border-b-0"
+                 title={`${e.nome}: ${r.atual} hoje · baseline ${r.baseline}`}>
+              <span className="text-[11px] font-semibold text-secondary truncate">{e.nome}</span>
+              <div className="relative h-2 rounded-full bg-surface">
+                <div className="absolute -top-[3px] -bottom-[3px] border-l-[1.5px] border-dashed border-muted/60"
+                     style={{ left: `${Math.min(100, r.baseline / escala * 100)}%` }} />
+                <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+                     style={{
+                       width: `${Math.min(100, r.atual / escala * 100)}%`,
+                       background: abaixo ? 'rgb(var(--c-orange))' : 'rgb(var(--c-primary))',
+                     }} />
+              </div>
+              <span className="text-[12px] font-bold text-right tabular-nums">
+                {r.atual}<span className="text-muted font-medium">/{r.baseline}</span>
+              </span>
             </div>
-          )}
-        </div>
-
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-green/80 mb-2 flex items-center gap-1">
-            <TrendingUp size={10} /> Acima do ritmo
-          </p>
-          {acima.length === 0 ? (
-            <p className="text-[11px] text-muted/50">Nenhuma equipe acima da média</p>
-          ) : (
-            <div className="space-y-1.5">
-              {acima.map(e => (
-                <div key={e.nome} className="flex items-center justify-between text-[11px] gap-2">
-                  <span className="text-text font-semibold truncate">{e.nome}</span>
-                  <span className="font-mono text-green flex-shrink-0">
-                    {e.ritmoHoje!.atual}/{e.ritmoHoje!.baseline}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-export function CidadesPanel({ cidades }: { cidades: { cidade: string; count: number }[] }) {
-  const max = Math.max(...cidades.map(c => c.count), 1)
-  return (
-    <div className="rounded-lg border border-border border-l-2 border-l-red bg-card p-5">
-      <SectionLabel icon={MapPin} color="#f87171">Top Cidades — OS Críticas</SectionLabel>
-      <div className="mt-4 space-y-2.5">
-        {cidades.map(c => (
-          <div key={c.cidade} className="flex items-center gap-3">
-            <span className="text-[11px] font-semibold text-text w-28 flex-shrink-0 truncate">{c.cidade}</span>
-            <div className="flex-1 h-2 bg-surface/40 rounded-full overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-700"
-                   style={{ width: `${Math.round(c.count / max * 100)}%`, background: '#f87171' }} />
-            </div>
-            <span className="font-mono text-[13px] font-bold text-red w-6 text-right flex-shrink-0">{c.count}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
   if (meta.meta === 0) {

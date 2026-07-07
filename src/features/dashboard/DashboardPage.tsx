@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, Download, Package, BarChart3, ArrowRight } from 'lucide-react'
 import type { OSRow, KPI, AccentColor } from '../../lib/types'
@@ -10,12 +10,14 @@ import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import { Modal } from '../../components/ui/Modal'
 import OSDrawer from '../ordens/OSDrawer'
 import { PulsoHero } from './PulsoHero'
+import { FluxoOSPanel } from './FluxoOSPanel'
 import { AnomaliaSection } from './AnomaliaSection'
 import { SectionLabel, BentoKPICard } from './DashboardKpiPrimitives'
 import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
   MetaMesCard, AlertaTopoBanner, ClustersBairroPanel, AgingPanel,
-  RitmoEquipesPanel, CidadesPanel, MudancasStrip, ProjecaoRiscoPanel,
+  RitmoEquipesPanel, MudancasStrip, ProjecaoRiscoPanel,
+  ParetoServicoPanel, CidadesValePanel,
 } from './DashboardPaineis'
 import { FornecedorCard } from './DashboardFornecedorCard'
 import { KpiModalTable } from './DashboardKpiModal'
@@ -25,7 +27,7 @@ import {
 } from './DashboardTypes'
 
 export default function DashboardPage() {
-  const { derived: { dashboard, anomalias, campo }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
+  const { derived: { dashboard, anomalias, campo, graficos }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
   const { kpis, fornecedores, pulso, scoreTendencia, mudancas, metaScore, projecaoRisco } = dashboard as unknown as TypedDashboard
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
   const fluxoHoje = { entradas: pulso.entradasHoje, saidas: pulso.saidasHoje, saldo: pulso.fluxoHoje, mediaEntrada: pulso.entradaMediaDia }
@@ -40,6 +42,9 @@ export default function DashboardPage() {
 
   const [modal,    setModal]    = useState<ModalState | null>(null)
   const [drawerOS, setDrawerOS] = useState<OSRow | null>(null)
+
+  // Fila ativa ao vivo — mesmo predicado do KPI "Fila Total" e do agingDist do builder
+  const filaAtiva = useMemo(() => allRows.filter(KPI_FILTERS.total), [allRows])
 
   function openKpi(kpi: KPI) {
     const filter = KPI_FILTERS[kpi.id]
@@ -132,6 +137,7 @@ export default function DashboardPage() {
         <PulsoHero
           pulso={pulso}
           target={metaScore}
+          tendencia={scoreTendencia}
           aiData={aiData}
           isLoadingAI={isLoadingAI}
           onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
@@ -190,12 +196,26 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── 5. Faixa: Clusters + Risk Panel + Ritmo por Equipe + Meta ──── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* ── 5. Fluxo diário (entradas × concluídas) + Aging ───────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3">
+          <FluxoOSPanel evolucao={graficos.evolucao} />
+          <AgingPanel pulso={pulso} filaAtiva={filaAtiva}
+                      onOpen={(title, rows) => setModal({ title, rows })} />
+        </div>
+
+        {/* ── 5a. Composição da fila (Pareto) + Cidades do Vale ─────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <ParetoServicoPanel filaAtiva={filaAtiva}
+                              onOpen={(title, rows) => setModal({ title, rows })} />
+          <CidadesValePanel filaAtiva={filaAtiva}
+                            onOpen={(title, rows) => setModal({ title, rows })} />
+        </div>
+
+        {/* ── 5b. Faixa: Clusters + Ritmo por Equipe + Meta ─────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div ref={clustersRef}>
             <ClustersBairroPanel clusters={clustersAtivos} />
           </div>
-          <AgingPanel pulso={pulso} />
           <RitmoEquipesPanel semaforo={campo.semaforo} />
           <MetaMesCard meta={pulso.metaMes} />
         </div>
@@ -208,11 +228,6 @@ export default function DashboardPage() {
               {fornecedores.map(f => <FornecedorCard key={f.nome} {...f} />)}
             </div>
           </section>
-        )}
-
-        {/* ── 7. Top Cidades Críticas ───────────────────────────────────── */}
-        {pulso.topCidadesCriticas?.length > 0 && (
-          <CidadesPanel cidades={pulso.topCidadesCriticas} />
         )}
 
         {/* ── 8. Anomalias ──────────────────────────────────────────────── */}

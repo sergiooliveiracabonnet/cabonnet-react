@@ -3,6 +3,7 @@ import { Sparkles, Zap, Activity } from 'lucide-react'
 import { GaugeChart } from '../../components/ui/GaugeChart'
 import type { Pulso } from '../../lib/types'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
+import type { ScoreTendencia } from './DashboardTypes'
 
 export interface AnomaliaContextType {
   total:     number
@@ -11,8 +12,9 @@ export interface AnomaliaContextType {
   aging_med: number
 }
 
-export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target }: {
+export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, tendencia }: {
   pulso: Pulso; aiData: AINarrativeResult | null | undefined; isLoadingAI: boolean; onRequestAI?: (obs: string) => void; target?: number
+  tendencia?: ScoreTendencia
 }) {
   const [draftObs, setDraftObs] = useState('')
   const [showReanalysis, setShowReanalysis] = useState(false)
@@ -61,12 +63,22 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target }: {
         <div className="flex items-start gap-6 flex-wrap">
 
           {/* Gauge */}
-          <div className="flex flex-col items-center gap-1 flex-shrink-0">
+          <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
             <GaugeChart value={score} target={target} color={scoreColor} label={scoreLabel} size={100} />
             <span className="text-[10px] font-bold uppercase tracking-[0.06em]"
                   style={{ color: `${scoreColor}99` }}>
               Score
             </span>
+            {tendencia?.delta != null && tendencia.delta !== 0 && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-bold tabular-nums
+                                px-2 py-0.5 rounded-full border
+                                ${tendencia.delta > 0
+                                  ? 'text-green bg-green/[0.07] border-green/20'
+                                  : 'text-red bg-red/[0.07] border-red/20'}`}
+                    title={`Score do período anterior: ${tendencia.anterior}`}>
+                {tendencia.delta > 0 ? '▲' : '▼'} {tendencia.delta > 0 ? '+' : ''}{tendencia.delta} vs anterior
+              </span>
+            )}
           </div>
 
           {/* Score breakdown — alavancas que compõem o score, mais fraca destacada */}
@@ -224,12 +236,13 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target }: {
             )}
           </div>
 
-          {/* Mini stats */}
-          <div className="flex-shrink-0 grid grid-cols-2 gap-x-8 gap-y-3">
+          {/* Mini stats — tiles */}
+          <div className="flex-shrink-0 grid grid-cols-2 gap-2">
             {miniStats.map(s => (
-              <div key={s.label} className="text-right">
-                <p className="text-[10px] text-muted mb-0.5">{s.label}</p>
-                <p className={`font-mono font-bold text-[18px] leading-none tabular-nums
+              <div key={s.label}
+                   className="flex flex-col border border-border rounded-lg bg-bg/40 px-3 py-2 min-w-[104px]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-muted">{s.label}</p>
+                <p className={`font-bold text-[18px] leading-none tabular-nums tracking-tight mt-1
                                ${s.danger ? 'text-red' : s.warn ? 'text-yellow' : 'text-text'}`}>
                   {s.value}
                 </p>
