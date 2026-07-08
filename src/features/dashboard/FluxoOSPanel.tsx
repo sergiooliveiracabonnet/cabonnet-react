@@ -44,7 +44,7 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
   const len = serie.dias.length
   if (len < 2) {
     return (
-      <div className="rounded-lg border border-border bg-card p-5 flex items-center justify-center">
+      <div className="h-full rounded-lg border border-border bg-card p-5 flex items-center justify-center">
         <p className="text-muted text-[12px]">Sem dados suficientes para o fluxo diário</p>
       </div>
     )
@@ -80,7 +80,7 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
     : 0
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
         <div>
           <p className="text-[13px] font-semibold text-text">Fluxo de OS — {len} dias</p>

@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
 import {
-  TrendingUp, ArrowUpRight, Zap, CheckCircle2, MapPin, Clock, Gauge, Target, AlertCircle, Layers,
+  TrendingUp, ArrowUpRight, Zap, CheckCircle2, MapPin, Clock, Gauge, Target, AlertCircle, Layers, Package,
 } from 'lucide-react'
-import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes } from '../../lib/types'
-import { SectionLabel } from './DashboardKpiPrimitives'
-import type { ProjecaoRisco, ScoreTendencia, DashMover } from './DashboardTypes'
+import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } from '../../lib/types'
+import { SectionLabel, TrendPill } from './DashboardKpiPrimitives'
+import type { ProjecaoRisco, ScoreTendencia, DashMover, DashFornCard } from './DashboardTypes'
 
 // Painel preditivo: OS que vão estourar o SLA nas próximas 24-48h (clicável → drill-down)
 export function ProjecaoRiscoPanel({ proj, criticasAgora, onOpen }: {
@@ -97,7 +97,7 @@ export function AlertaTopoBanner({ clustersCount, anomaliasCount, onScrollCluste
 export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) {
   if (!clusters?.length) {
     return (
-      <div className="rounded-lg border border-border border-l-2 border-l-green bg-card p-5">
+      <div className="h-full rounded-lg border border-border border-l-2 border-l-green bg-card p-5">
         <SectionLabel icon={Zap} color="#4ade80">Clusters de Falha</SectionLabel>
         <div className="flex items-center gap-3 mt-4">
           <CheckCircle2 size={18} className="text-green flex-shrink-0" />
@@ -110,7 +110,7 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
   }
 
   return (
-    <div className="rounded-lg border border-border border-l-2 border-l-red bg-card">
+    <div className="h-full rounded-lg border border-border border-l-2 border-l-red bg-card">
       <div className="p-5">
         <div className="flex items-start justify-between mb-4">
           <SectionLabel icon={Zap} color="#f87171">Clusters de Falha</SectionLabel>
@@ -160,7 +160,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
   ]
 
   if (!agingTotal) return (
-    <div className="rounded-lg border border-border bg-card p-5 flex items-center justify-center">
+    <div className="h-full rounded-lg border border-border bg-card p-5 flex items-center justify-center">
       <p className="text-muted text-[12px]">Sem dados de aging</p>
     </div>
   )
@@ -173,7 +173,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <SectionLabel icon={Clock} color="#3b82f6">Aging da Fila Ativa</SectionLabel>
         <span className="text-[11px] text-muted tabular-nums">{agingTotal} OS abertas · clique para abrir</span>
@@ -230,7 +230,7 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
   const total = filaAtiva.length
   if (total === 0) {
     return (
-      <div className="rounded-lg border border-border bg-card p-5 flex items-center justify-center">
+      <div className="h-full rounded-lg border border-border bg-card p-5 flex items-center justify-center">
         <p className="text-muted text-[12px]">Fila vazia — sem composição para analisar</p>
       </div>
     )
@@ -242,7 +242,7 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
   const pctTop3 = Math.round(grupos.slice(0, 3).reduce((s, g) => s + g.rows.length, 0) / total * 100)
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <SectionLabel icon={Layers} color="#3b82f6">Composição da Fila — Tipo de Serviço</SectionLabel>
         <span className="text-[11px] text-muted tabular-nums">top 3 = {pctTop3}% da fila</span>
@@ -282,6 +282,48 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
   )
 }
 
+// Fornecedores — SLA do período em linhas, mesmo padrão visual de Cidades/Pareto
+export function FornecedoresPanel({ fornecedores }: {
+  fornecedores: (DashFornCard & { slaTrend?: KPI['trend'] })[]
+}) {
+  if (!fornecedores.length) return null
+  const maxTotal = Math.max(...fornecedores.map(f => f.total), 1)
+
+  return (
+    <div className="h-full rounded-lg border border-border bg-card p-5">
+      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+        <SectionLabel icon={Package} color="#c4b5fd">Fornecedores — SLA do Período</SectionLabel>
+        <span className="text-[11px] text-muted">barra = OS abertas · badge = conclusão</span>
+      </div>
+
+      <div className="mt-2">
+        {fornecedores.map(f => {
+          const tier = f.sla >= 85 ? 'text-green bg-green/10' : f.sla >= 65 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
+          return (
+            <div key={f.nome}
+                 className="grid grid-cols-[minmax(0,1.1fr)_30px_1fr_auto] items-center gap-3 py-2 border-b border-border/60 last:border-b-0"
+                 title={`${f.nome}: ${f.total} OS abertas · ${f.concluidas} concluídas · SLA ${f.sla}%`}>
+              <span className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: f.cor }} />
+                <span className="text-[11px] font-semibold text-secondary truncate">{f.nome}</span>
+              </span>
+              <span className="text-[12px] font-bold text-right tabular-nums">{f.total}</span>
+              <div className="h-2 rounded-full bg-surface">
+                <div className="h-full rounded-full transition-all duration-700"
+                     style={{ width: `${Math.round(f.total / maxTotal * 100)}%`, background: f.cor }} />
+              </div>
+              <span className="flex items-center gap-1.5 justify-end min-w-[76px]">
+                <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 tabular-nums ${tier}`}>{f.sla}%</span>
+                {f.slaTrend && <TrendPill trend={f.slaTrend} />}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // Cidades do Vale — fila, parcela crítica e SLA por município.
 // SLA agregado esconde variação local; aqui cada cidade responde por si.
 export function CidadesValePanel({ filaAtiva, onOpen }: {
@@ -310,7 +352,7 @@ export function CidadesValePanel({ filaAtiva, onOpen }: {
   const maxFila = Math.max(...cidades.map(c => c.rows.length), 1)
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <SectionLabel icon={MapPin} color="#3b82f6">Cidades do Vale — Fila e SLA</SectionLabel>
         <span className="text-[11px] text-muted">parcela vermelha = OS críticas</span>
@@ -356,7 +398,7 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
 
   if (!comRitmo.length) {
     return (
-      <div className="rounded-lg border border-border bg-card p-5">
+      <div className="h-full rounded-lg border border-border bg-card p-5">
         <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
         <div className="flex items-center justify-center py-8">
           <p className="text-muted text-[12px]">Ainda sem histórico de ritmo para comparar hoje</p>
@@ -376,7 +418,7 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
   const escala = Math.max(...equipes.map(e => Math.max(e.ritmoHoje!.atual, e.ritmoHoje!.baseline)), 1) * 1.15
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
         <span className="text-[11px] text-muted">tracejado = baseline da equipe</span>
@@ -415,7 +457,7 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
 export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
   if (meta.meta === 0) {
     return (
-      <div className="rounded-lg border border-border bg-card p-5">
+      <div className="h-full rounded-lg border border-border bg-card p-5">
         <div className="flex items-center gap-2.5">
           <Target size={14} className="text-muted" />
           <span className="text-[11px] font-semibold uppercase tracking-[0.09em] text-secondary">Meta do Mês</span>
@@ -432,7 +474,7 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
   const diasLabel = meta.diasUteisRestantes === 1 ? '1 dia útil restante' : `${meta.diasUteisRestantes} dias úteis restantes`
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5" style={{ borderLeft: `2px solid ${cor}` }}>
+    <div className="h-full rounded-lg border border-border bg-card p-5" style={{ borderLeft: `2px solid ${cor}` }}>
       <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div className="flex items-center gap-2.5">
           <Target size={14} style={{ color: cor }} />

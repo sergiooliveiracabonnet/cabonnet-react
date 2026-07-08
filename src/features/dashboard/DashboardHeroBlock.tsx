@@ -146,10 +146,10 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, o
             {/* Hero number */}
             <div className="flex items-end gap-2 flex-shrink-0">
               <span className="font-mono font-black leading-none tabular-nums text-green"
-                    style={{ fontSize: 'clamp(56px, 8vw, 80px)' }}>
+                    style={{ fontSize: 'clamp(44px, 5vw, 60px)' }}>
                 {total}
               </span>
-              <span className="text-[13px] text-muted mb-3">OS hoje</span>
+              <span className="text-[13px] text-muted mb-2">OS hoje</span>
             </div>
 
             {/* Type breakdown */}
@@ -162,7 +162,7 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, o
                     key={g.cat}
                     onClick={() => onOpenModal(`Hoje — ${g.label}`, g.rows)}
                     className="bg-surface/30 hover:bg-surface border border-white/[0.08]
-                               hover:border-muted/30 rounded-xl p-3 text-left
+                               hover:border-muted/30 rounded-md p-3 text-left
                                transition-all duration-150 cursor-pointer group"
                   >
                     <div className="flex items-center justify-between mb-2">

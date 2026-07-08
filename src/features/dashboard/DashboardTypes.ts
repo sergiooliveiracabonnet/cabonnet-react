@@ -46,8 +46,9 @@ export const KPI_FILTERS: Record<string, (r: OSRow) => boolean> = {
   reagendInviab: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'inviabilidade',
   reagendMobile: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'mobile',
   reagendFutura: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'futura',
+  reagend:       r => isReagend(r) && isAtivo(r),
 }
-export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq','copeAguardando','reagendInviab','reagendMobile','reagendFutura'])
+export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq','copeAguardando','reagendInviab','reagendMobile','reagendFutura','reagend'])
 
 type AccentConfig = { solid: string; glow: string; bg: string }
 export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
@@ -63,7 +64,7 @@ export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
 export const KPI_ICONS: Partial<Record<string, IconComp>> = {
   criticas: AlertCircle, semEq: Users, pend: Clock, atend: Activity,
   copeAguardando: Send,
-  reagendInviab: RotateCcw, reagendMobile: RotateCcw, reagendFutura: RotateCcw,
+  reagendInviab: RotateCcw, reagendMobile: RotateCcw, reagendFutura: RotateCcw, reagend: RotateCcw,
   total: BarChart3, rede: Radio, concl: CheckCircle2, taxa: Target,
 }
 

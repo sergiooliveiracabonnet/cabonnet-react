@@ -240,7 +240,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
           <div className="flex-shrink-0 grid grid-cols-2 gap-2">
             {miniStats.map(s => (
               <div key={s.label}
-                   className="flex flex-col border border-border rounded-lg bg-bg/40 px-3 py-2 min-w-[104px]">
+                   className="flex flex-col border border-border rounded-md bg-bg/40 px-3 py-2 min-w-[104px]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-muted">{s.label}</p>
                 <p className={`font-bold text-[18px] leading-none tabular-nums tracking-tight mt-1
                                ${s.danger ? 'text-red' : s.warn ? 'text-yellow' : 'text-text'}`}>

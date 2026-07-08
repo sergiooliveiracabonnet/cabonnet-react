@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, Download, Package, BarChart3, ArrowRight } from 'lucide-react'
+import { AlertCircle, Download, BarChart3, ArrowRight } from 'lucide-react'
 import type { OSRow, KPI, AccentColor } from '../../lib/types'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useAINarrative } from '../../hooks/useAINarrative'
@@ -17,9 +17,8 @@ import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
   MetaMesCard, AlertaTopoBanner, ClustersBairroPanel, AgingPanel,
   RitmoEquipesPanel, MudancasStrip, ProjecaoRiscoPanel,
-  ParetoServicoPanel, CidadesValePanel,
+  ParetoServicoPanel, CidadesValePanel, FornecedoresPanel,
 } from './DashboardPaineis'
-import { FornecedorCard } from './DashboardFornecedorCard'
 import { KpiModalTable } from './DashboardKpiModal'
 import {
   KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS, FOCO_NAVEGAVEL,
@@ -72,15 +71,18 @@ export default function DashboardPage() {
     const f = stats?.fila
     if (f) {
       const slaAccent: AccentColor = f.sla_pct >= 90 ? 'green' : f.sla_pct >= 75 ? 'yellow' : 'red'
-      const statsKpis: KPI[] = [
+      const reagendTotal = (f.reagend_inviab ?? 0) + (f.reagend_mobile ?? 0) + (f.reagend_futura ?? 0)
+      // 5 + 5 — mesmas colunas nas duas linhas para os cartões alinharem
+      const riskStats: KPI[] = [
         { id: 'criticas', title: 'OS Críticas',   value: f.criticas,        sub: 'SLA 2× excedido',  accent: 'red'     },
         { id: 'semEq',    title: 'Sem Equipe',     value: f.sem_equipe,      sub: 'sem atribuição',   accent: 'orange'  },
         { id: 'pend',     title: 'Pendentes',      value: f.pendente,        sub: 'aguardando',       accent: 'yellow'  },
-        { id: 'atend',    title: 'Em Atendimento', value: f.atendimento,     sub: 'em campo',         accent: 'cyan'    },
         { id: 'copeAguardando', title: 'Aguard. Roteirização', value: f.cope_aguardando ?? 0, sub: 'parado no COPE', accent: 'orange' },
-        { id: 'reagendInviab', title: 'Reag. Inviab.', value: f.reagend_inviab ?? 0, sub: 'por inviabilidade',  accent: 'orange' },
-        { id: 'reagendMobile', title: 'Reag. Mobile',  value: f.reagend_mobile ?? 0, sub: 'via OS mobile',      accent: 'orange' },
-        { id: 'reagendFutura', title: 'Reag. Futura',  value: f.reagend_futura ?? 0, sub: 'p/ data futura',     accent: 'orange' },
+        { id: 'reagend',  title: 'Reagendadas',    value: reagendTotal,
+          sub: `inviab. ${f.reagend_inviab ?? 0} · mobile ${f.reagend_mobile ?? 0} · futura ${f.reagend_futura ?? 0}`, accent: 'orange' },
+      ]
+      const perfStats: KPI[] = [
+        { id: 'atend',    title: 'Em Atendimento', value: f.atendimento,     sub: 'em campo',         accent: 'cyan'    },
         { id: 'total',    title: 'Fila Total',     value: f.total,           sub: 'OS ativas',        accent: 'primary' },
         { id: 'rede',     title: 'Rede',           value: f.rede,            sub: 'OS de rede',       accent: 'green'   },
         { id: 'sla',      title: 'SLA da Fila',    value: `${f.sla_pct}%`,  sub: 'dentro do prazo',  accent: slaAccent },
@@ -90,16 +92,16 @@ export default function DashboardPage() {
         <div className="space-y-4 max-w-[1600px]">
           <section>
             <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-2">
-              {statsKpis.slice(0, 5).map((k, i) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
+              {riskStats.map((k, i) => (
                 <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} scope="aovivo" />
               ))}
             </div>
           </section>
           <section>
             <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
-              {statsKpis.slice(5).map((k, i) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
+              {perfStats.map((k, i) => (
                 <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} scope="aovivo" />
               ))}
             </div>
@@ -110,8 +112,19 @@ export default function DashboardPage() {
     return <KPIGridSkeleton count={8} />
   }
 
-  const riskKpis = kpis.slice(0, 5)
-  const perfKpis = kpis.slice(5)
+  // Reagrupamento 5 + 5: os 3 cartões de reagendamento viram um só (com breakdown
+  // no subtítulo e drill-down unificado) e "Em Atendimento" vai para performance.
+  const kpiById = new Map(kpis.map(k => [k.id, k]))
+  const pick    = (ids: string[]) => ids.map(id => kpiById.get(id)).filter((k): k is KPI => k != null)
+  const rInv = Number(kpiById.get('reagendInviab')?.value ?? 0)
+  const rMob = Number(kpiById.get('reagendMobile')?.value ?? 0)
+  const rFut = Number(kpiById.get('reagendFutura')?.value ?? 0)
+  const reagendKpi: KPI = {
+    id: 'reagend', title: 'Reagendadas', value: rInv + rMob + rFut,
+    sub: `inviab. ${rInv} · mobile ${rMob} · futura ${rFut}`, accent: 'orange',
+  }
+  const riskKpis = [...pick(['criticas', 'semEq', 'pend', 'copeAguardando']), reagendKpi]
+  const perfKpis = pick(['atend', 'total', 'rede', 'concl', 'taxa'])
 
   return (
     <>
@@ -149,7 +162,7 @@ export default function DashboardPage() {
         {/* ── 2. KPI BENTO — Alertas & Risco ───────────────────────────── */}
         <section>
           <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
             {riskKpis.map((k, i) => (
               <BentoKPICard
                 key={k.id}
@@ -182,7 +195,7 @@ export default function DashboardPage() {
         {/* ── 4. KPI BENTO — Fila & Performance ────────────────────────── */}
         <section>
           <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
             {perfKpis.map((k, i) => (
               <BentoKPICard
                 key={k.id}
@@ -196,39 +209,30 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── 5. Fluxo diário (entradas × concluídas) + Aging ───────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3">
-          <FluxoOSPanel evolucao={graficos.evolucao} />
+        {/* ── 5. Painéis analíticos — grid único de 3 colunas ───────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
+          <div className="lg:col-span-2">
+            <FluxoOSPanel evolucao={graficos.evolucao} />
+          </div>
           <AgingPanel pulso={pulso} filaAtiva={filaAtiva}
                       onOpen={(title, rows) => setModal({ title, rows })} />
         </div>
 
-        {/* ── 5a. Composição da fila (Pareto) + Cidades do Vale ─────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
           <ParetoServicoPanel filaAtiva={filaAtiva}
                               onOpen={(title, rows) => setModal({ title, rows })} />
           <CidadesValePanel filaAtiva={filaAtiva}
                             onOpen={(title, rows) => setModal({ title, rows })} />
-        </div>
-
-        {/* ── 5b. Faixa: Clusters + Ritmo por Equipe + Meta ─────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div ref={clustersRef}>
-            <ClustersBairroPanel clusters={clustersAtivos} />
-          </div>
-          <RitmoEquipesPanel semaforo={campo.semaforo} />
           <MetaMesCard meta={pulso.metaMes} />
         </div>
 
-        {/* ── 6. Fornecedores ───────────────────────────────────────────── */}
-        {fornecedores.length > 0 && (
-          <section>
-            <SectionLabel icon={Package} color="#c4b5fd">Desempenho por Fornecedor</SectionLabel>
-            <div className="grid gap-3 mt-2 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
-              {fornecedores.map(f => <FornecedorCard key={f.nome} {...f} />)}
-            </div>
-          </section>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+          <div ref={clustersRef} className="h-full">
+            <ClustersBairroPanel clusters={clustersAtivos} />
+          </div>
+          <RitmoEquipesPanel semaforo={campo.semaforo} />
+          <FornecedoresPanel fornecedores={fornecedores} />
+        </div>
 
         {/* ── 8. Anomalias ──────────────────────────────────────────────── */}
         {anomalias?.total > 0 && (
