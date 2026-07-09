@@ -1,7 +1,16 @@
 import { useState, useMemo } from 'react'
 import { useOSDerived } from '../contexts/OSDataContext'
-import { isReagend, getReagendTipo } from '../lib/transform'
+import { isReagend, getReagendTipo, isCOPE } from '../lib/transform'
 import type { OSRow, OrdensOptions } from '../lib/types'
+
+// buildOrdens() exclui OS da COPE da lista base (mesma lógica do Reagendamento).
+// Quando o usuário filtra por status "Pendente", precisamos reincorporá-las —
+// COPE parada em roteirização é _situacaoEfetiva === 'Pendente' (ver transform.ts),
+// mas nunca aparece porque foi removida de `ordens` antes do filtro de status rodar.
+export function withCopeQuandoPendente(ordens: OSRow[], allRows: OSRow[], status: string): OSRow[] {
+  if (status !== 'Pendente') return ordens
+  return [...ordens, ...allRows.filter(r => isCOPE(r))]
+}
 
 function parseAgend(str: string | null | undefined): Date | null {
   if (!str) return null
@@ -66,13 +75,17 @@ export function useOrdens() {
   const reagendOrdens = useMemo(() => allRows.filter(r => isReagend(r)), [allRows])
   const verReagend = status === 'Reagendamento' || !!reagendTipo
 
+  // Mesma lógica: COPE também é excluída de `ordens`, então o filtro "Pendente"
+  // precisa reincorporá-la — senão fica vazio mesmo com OS aguardando roteirização.
+  const ordensComCope = useMemo(() => withCopeQuandoPendente(ordens, allRows, status), [ordens, allRows, status])
+
   const baseOrdens: OSRow[] = agendAmanha
     ? amanhaOrdens
     : agendFuturo
       ? futuroOrdens
       : verReagend
         ? reagendOrdens
-        : ordens
+        : ordensComCope
 
   const filtered = useMemo(() => {
     let r = baseOrdens

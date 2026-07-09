@@ -146,6 +146,7 @@ export default function OrdensPage() {
       if      (foco === 'criticas') os.setCritico(true)
       else if (foco === 'semEq')    os.setSemEquipe(true)
       else if (foco === 'pend')     os.setStatus('Pendente')
+      else if (foco === 'copeAguardando') os.setStatus('Pendente')
       else if (foco === 'atend')    os.setStatus('Atendimento')
       else if (foco === 'reagendInviab') { os.setStatus('Reagendamento'); os.setReagendTipo('inviabilidade') }
       else if (foco === 'reagendMobile') { os.setStatus('Reagendamento'); os.setReagendTipo('mobile') }

@@ -1,4 +1,31 @@
 import { describe, it, expect } from 'vitest'
+import { withCopeQuandoPendente } from './useOrdens'
+import { enrichRows } from '../lib/transform'
+import type { OSRow } from '../lib/types'
+
+function makeOS(overrides: Record<string, unknown> = {}): OSRow {
+  return {
+    numos:           '0000001',
+    nomecliente:     'CLIENTE TESTE',
+    nomedacidade:    'TAUBATE',
+    nomedaequipe:    'EQUIPE F01',
+    tiposervico:     'Manutenção',
+    servico:         'ASSISTENCIA TECNICA',
+    descsituacao:    'Pendente',
+    datacadastro:    '01/06/2026',
+    dataagendamento: '02/06/2026',
+    dataexecucao:    '',
+    databaixa:       '',
+    bairro:          'CENTRO',
+    logradouro:      'RUA TESTE',
+    complemento:     '',
+    numero:          '1',
+    empresa:         '',
+    obs:             '',
+    periodo:         '2026-06',
+    ...overrides,
+  } as unknown as OSRow
+}
 
 // ─── Testes das funções puras extraídas de useOrdens ────────────────────────
 // O hook em si depende de React + OSDataContext e não é testado aqui.
@@ -70,6 +97,35 @@ describe('parseAgend', () => {
       return da - db
     })
     expect(sorted).toEqual(['01/01/2025', '10/04/2025', '20/06/2025'])
+  })
+})
+
+describe('withCopeQuandoPendente — reincorpora OS da COPE quando status = Pendente', () => {
+  it('não altera a lista quando o status filtrado não é Pendente', () => {
+    const allRows = enrichRows([makeOS({ numos: '0000002', nomedaequipe: 'COPE VALE' })])
+    const ordens  = [] as OSRow[]  // buildOrdens já removeu a COPE daqui
+    const result  = withCopeQuandoPendente(ordens, allRows, 'Atendimento')
+    expect(result).toEqual([])
+  })
+
+  it('reincorpora OS da COPE quando status = Pendente', () => {
+    const allRows = enrichRows([
+      makeOS({ numos: '0000001', nomedaequipe: 'EQUIPE F01' }),
+      makeOS({ numos: '0000002', nomedaequipe: 'COPE VALE' }),
+    ])
+    const ordens = allRows.filter(r => r.numos === '0000001')  // simula buildOrdens (sem COPE)
+    const result = withCopeQuandoPendente(ordens, allRows, 'Pendente')
+    const numos  = result.map(r => r.numos)
+    expect(numos).toContain('0000001')
+    expect(numos).toContain('0000002')
+    expect(result).toHaveLength(2)
+  })
+
+  it('não duplica OS que já estão em `ordens`', () => {
+    const allRows = enrichRows([makeOS({ numos: '0000001', nomedaequipe: 'EQUIPE F01' })])
+    const ordens  = allRows
+    const result  = withCopeQuandoPendente(ordens, allRows, 'Pendente')
+    expect(result).toHaveLength(1)
   })
 })
 

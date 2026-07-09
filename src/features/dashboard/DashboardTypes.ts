@@ -13,7 +13,7 @@ export type { AINarrativeResult } from '../../hooks/useAINarrative'
 export interface ModalState { title: string; rows: OSRow[]; foco?: string }
 
 // KPIs de risco que têm filtro correspondente na OrdensPage (deep-link "Abrir na fila")
-export const FOCO_NAVEGAVEL = new Set(['criticas', 'semEq', 'pend', 'atend', 'reagendInviab', 'reagendMobile', 'reagendFutura'])
+export const FOCO_NAVEGAVEL = new Set(['criticas', 'semEq', 'pend', 'atend', 'copeAguardando', 'reagendInviab', 'reagendMobile', 'reagendFutura'])
 
 export type IconComp = ComponentType<{ size?: number; className?: string; style?: CSSProperties }>
 
