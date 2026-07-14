@@ -67,8 +67,11 @@ export function buildAnomalias(rows: OSRow[]) {
     .sort((a, b) => b[1] - a[1]).slice(0, 5)
     .map(([date, count]) => ({ date, count, zScore: diaStd > 0 ? +(((count - diaMean) / diaStd).toFixed(1)) : 0 }))
 
+  // Instalação em massa no mesmo bairro é prática normal do PAP (arrastão), não anomalia —
+  // excluída para não dominar a composição nem inflar a taxa de SLA excedido do bairro.
   const bairroMap = new Map<string, { total: number; slaExc: number; rows: OSRow[] }>()
   for (const r of base) {
+    if (r._tipo === 'INSTALACAO') continue
     const b = (r.bairro || '').trim()
     if (!b) continue
     if (!bairroMap.has(b)) bairroMap.set(b, { total: 0, slaExc: 0, rows: [] })

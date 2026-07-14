@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { enrichRows } from '../transform'
-import { periodHealth, buildMudancas, entradaMediaDia, buildProjecaoRisco, type PeriodHealth } from './dashboard'
+import { periodHealth, buildMudancas, entradaMediaDia, buildProjecaoRisco, buildDashboard, type PeriodHealth } from './dashboard'
 import type { OSRow } from '../types'
 
 function daysAgo(n: number): string {
@@ -121,6 +121,31 @@ describe('buildProjecaoRisco', () => {
     expect(p.proj24h).toBe(0)
     expect(p.proj48h).toBe(0)
     expect(p.amostra).toEqual([])
+  })
+})
+
+describe('clustersAtivos (Clusters de Falha)', () => {
+  it('não sinaliza bairro com muitas OS de Instalação (arrastão do PAP é prática normal)', () => {
+    const rows = enrichRows(
+      Array.from({ length: 6 }, (_, i) => makeOS({
+        numos: `INST${i}`, bairro: 'JARDIM SUL', tiposervico: 'INSTALACAO',
+        descsituacao: 'Pendente', datacadastro: daysAgo(0), dataagendamento: '', dataexecucao: '', databaixa: '',
+      }))
+    )
+    const { pulso } = buildDashboard(rows)
+    expect((pulso as { clustersAtivos: { bairro: string }[] }).clustersAtivos).toHaveLength(0)
+  })
+
+  it('sinaliza bairro com muitas OS de Manutenção como cluster de falha', () => {
+    const rows = enrichRows(
+      Array.from({ length: 6 }, (_, i) => makeOS({
+        numos: `MAN${i}`, bairro: 'JARDIM SUL', tiposervico: 'MANUTENCAO',
+        descsituacao: 'Pendente', datacadastro: daysAgo(0), dataagendamento: '', dataexecucao: '', databaixa: '',
+      }))
+    )
+    const { pulso } = buildDashboard(rows)
+    const clusters = (pulso as { clustersAtivos: { bairro: string; total: number }[] }).clustersAtivos
+    expect(clusters.find(c => c.bairro === 'JARDIM SUL')?.total).toBe(6)
   })
 })
 

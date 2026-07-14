@@ -43,7 +43,7 @@ describe('buildAnomalias — composição da anomalia de bairro', () => {
       makeOS({ numos: '2', bairro: 'ESPLANADA', nomedaequipe: 'F01', tiposervico: 'Sinal Fraco', codigocliente: 'C1', nomecliente: 'JOAO SILVA', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
       makeOS({ numos: '3', bairro: 'ESPLANADA', nomedaequipe: 'F02', tiposervico: 'Sinal Fraco', codigocliente: 'C2', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
       makeOS({ numos: '4', bairro: 'ESPLANADA', nomedaequipe: 'F03', tiposervico: 'Sinal Fraco', codigocliente: 'C3', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
-      makeOS({ numos: '5', bairro: 'ESPLANADA', nomedaequipe: 'F03', tiposervico: 'Instalação',  codigocliente: 'C4', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
+      makeOS({ numos: '5', bairro: 'ESPLANADA', nomedaequipe: 'F03', tiposervico: 'Sem Sinal',   codigocliente: 'C4', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
     ]
     // Bairros normais: agendado no mesmo dia da abertura -> SLA nunca excedido
     const normalBairros = [1, 2, 3].flatMap(n => Array.from({ length: 5 }, (_, i) =>
@@ -78,5 +78,21 @@ describe('buildAnomalias — composição da anomalia de bairro', () => {
     expect(f20).toBeDefined()
     expect(f20!.composicao.outrasDimensoesLabel).toBe('bairro')
     expect(f20!.composicao.outrasDimensoes[0]).toEqual({ nome: 'QUIRIRIM', count: 4, pct: 67 })
+  })
+
+  it('não sinaliza bairro com SLA estourado só por causa de arrastão de Instalação do PAP', () => {
+    // Mesmo padrão de "problemBairro" acima (agendamento ~70 dias após a abertura),
+    // mas todas as OS são Instalação — não deve virar anomalia de bairro.
+    const arrastao = Array.from({ length: 6 }, (_, i) =>
+      makeOS({ numos: `arr${i}`, bairro: 'ARRASTAO', nomedaequipe: 'F20', tiposervico: 'INSTALACAO', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' })
+    )
+    const normalBairros = [1, 2, 3].flatMap(n => Array.from({ length: 5 }, (_, i) =>
+      makeOS({ numos: `n${n}-${i}`, bairro: `BAIRRO${n}`, nomedaequipe: 'F09' })
+    ))
+
+    const rows = enrichRows([...arrastao, ...normalBairros])
+    const { bairrosAnomalia } = buildAnomalias(rows)
+
+    expect(bairrosAnomalia.find(b => b.bairro === 'ARRASTAO')).toBeUndefined()
   })
 })

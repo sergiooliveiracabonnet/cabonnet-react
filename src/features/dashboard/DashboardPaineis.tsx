@@ -102,7 +102,7 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
         <div className="flex items-center gap-3 mt-4">
           <CheckCircle2 size={18} className="text-green flex-shrink-0" />
           <p className="text-[13px] text-green font-semibold">
-            Nenhum cluster detectado — sem bairros com 4+ OS nas últimas 24h
+            Nenhum cluster detectado — sem bairros com 4+ OS de manutenção nas últimas 24h
           </p>
         </div>
       </div>
@@ -123,7 +123,7 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
         <p className="text-[13px] font-semibold text-text mb-1">
           {clusters.length} bairro{clusters.length !== 1 ? 's' : ''} com possível problema de infraestrutura
         </p>
-        <p className="text-[11px] text-muted mb-4">4+ OS abertas no mesmo bairro nas últimas 24h</p>
+        <p className="text-[11px] text-muted mb-4">4+ OS de manutenção abertas no mesmo bairro nas últimas 24h</p>
 
         <div className="space-y-2">
           {clusters.map((cl, i) => (
