@@ -15,7 +15,7 @@ from cabonnet.config import (
 from cabonnet import state
 from cabonnet.telegram import (
     _telegram_enabled, _tg_get_session,
-    _filter_by_operadora,
+    _filter_by_operadora, _tg_caps,
 )
 from cabonnet.utils import _parse_data_br
 
@@ -92,7 +92,7 @@ def _telegram_send_image(img_bytes, caption, chat_id, as_document=False):
     try:
         resp = _tg_get_session().post(
             url,
-            data={"chat_id": chat_id, "caption": caption, "parse_mode": "HTML"},
+            data={"chat_id": chat_id, "caption": _tg_caps(caption), "parse_mode": "HTML"},
             files={field: (fname, img_bytes, "image/png")},
             timeout=30,
         )

@@ -103,7 +103,7 @@ from cabonnet.grafana import (
     sql_revisitas_com_obs,
 )
 from cabonnet.juniper import _jun_notify_new_clients, juniper_fetch
-from cabonnet.telegram import _telegram_enabled, _telegram_send, _telegram_send_document
+from cabonnet.telegram import _telegram_enabled, _telegram_send, _telegram_send_document, _tg_caps
 from cabonnet.utils import parse_date_param
 from cabonnet.zabbix import (
     _map_problems,
@@ -1095,11 +1095,11 @@ async def telegram_photo(request: Request):
     as_document = bool(body.get("as_document", False))
     if as_document:
         url  = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
-        resp = _requests.post(url, data={"chat_id": chat_id, "caption": caption, "parse_mode": "HTML"},
+        resp = _requests.post(url, data={"chat_id": chat_id, "caption": _tg_caps(caption), "parse_mode": "HTML"},
                                files={"document": ("relatorio-cabonnet.png", img_bytes, "image/png")}, timeout=30)
     else:
         url  = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-        resp = _requests.post(url, data={"chat_id": chat_id, "caption": caption, "parse_mode": "HTML"},
+        resp = _requests.post(url, data={"chat_id": chat_id, "caption": _tg_caps(caption), "parse_mode": "HTML"},
                                files={"photo": ("relatorio.png", img_bytes, "image/png")}, timeout=30)
     ok = resp.ok
     if ok:   log.info("[Telegram] %s enviado — %d bytes", "Documento" if as_document else "Foto", len(img_bytes))

@@ -41,6 +41,7 @@ def _telegram_send(text, chat_id_override=None, reply_markup=None):
         return False
     url = "https://api.telegram.org/bot{}/sendMessage".format(TELEGRAM_BOT_TOKEN)
     chat_id = chat_id_override or TELEGRAM_CHAT_ID
+    text = _tg_caps(text)
     try:
         payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
         if reply_markup:
@@ -97,7 +98,7 @@ def _telegram_send_document(pdf_bytes, filename, caption="", chat_id_override=No
     try:
         resp = _tg_get_session().post(
             url,
-            data={"chat_id": chat_id, "caption": caption, "parse_mode": "HTML"},
+            data={"chat_id": chat_id, "caption": _tg_caps(caption), "parse_mode": "HTML"},
             files={"document": (filename, pdf_bytes, "application/pdf")},
             timeout=30,
         )
@@ -113,6 +114,33 @@ def _telegram_send_document(pdf_bytes, filename, caption="", chat_id_override=No
 
 def _tg_esc(s):
     return str(s or "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+
+
+# Tokens que NÃO podem ser alterados pela caixa alta:
+# tags HTML (<b>, </i>...), entidades (&amp;, &lt;, &gt;) e comandos (/os, /sla...)
+_TG_CAPS_TOKEN_RE = _re_global.compile(r'(<[^>]*>|&(?:amp|lt|gt);|/[A-Za-z]\w*)')
+
+
+def _tg_caps(text):
+    """Converte o texto da mensagem para caixa alta (padrão dos grupos).
+
+    Preserva tags HTML, entidades, comandos (/os viraria /OS e o bot não
+    reconheceria o clique) e conteúdo dentro de <code> (seriais, barras).
+    """
+    partes  = _TG_CAPS_TOKEN_RE.split(text or "")
+    in_code = 0
+    saida   = []
+    for p in partes:
+        if _TG_CAPS_TOKEN_RE.fullmatch(p):
+            saida.append(p)
+            low = p.lower()
+            if low.startswith("<code"):
+                in_code += 1
+            elif low.startswith("</code"):
+                in_code = max(0, in_code - 1)
+        else:
+            saida.append(p if in_code else p.upper())
+    return "".join(saida)
 
 
 def _tg_endereco(row, bairro_cidade=False):
