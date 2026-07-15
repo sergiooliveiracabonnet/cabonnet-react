@@ -58,8 +58,19 @@ export function useOSData() {
   )
 
   const prevRows = useMemo(() => {
-    const { from, to } = dateFilter ?? {}
+    const { from, to, preset } = dateFilter ?? {}
     if (!from || !to) return []
+    // Mensal: compara com os MESMOS dias do mês anterior (1–15 jul vs 1–15 jun).
+    // A janela deslizante compararia com o FIM do mês anterior, que é inflado
+    // pela corrida de fechamento — baseline enviesado para cima.
+    if (preset === 'mensal') {
+      const prevFrom     = new Date(from.getFullYear(), from.getMonth() - 1, 1)
+      const ultimoDiaPrev = new Date(from.getFullYear(), from.getMonth(), 0).getDate()
+      const prevTo       = new Date(prevFrom.getFullYear(), prevFrom.getMonth(),
+                                    Math.min(to.getDate(), ultimoDiaPrev),
+                                    to.getHours(), to.getMinutes(), 59, 999)
+      return applyDateFilter(allRows, { ...dateFilter, from: prevFrom, to: prevTo })
+    }
     const duration = to.getTime() - from.getTime()
     const prevTo   = new Date(from.getTime() - 1)
     const prevFrom = new Date(from.getTime() - duration - 1)

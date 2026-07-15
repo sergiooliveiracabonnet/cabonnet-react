@@ -97,11 +97,13 @@ export interface QuickInsight {
   text:  string
 }
 
+// Buckets relativos ao SLA de cada OS (aging ÷ limite) — uma manutenção com 2d
+// (limite 1d) já estourou; uma instalação com 2d (limite 2d) está no limite.
 export interface AgingDist {
-  '≤1d':  number
-  '2-3d': number
-  '4-7d': number
-  '8+d':  number
+  ok:        number   // < 50% do SLA consumido
+  limite:    number   // 50–100% do SLA
+  estourado: number   // > 1× até 2× o SLA
+  critico:   number   // > 2× o SLA (mesma régua do _slaCritico)
 }
 
 export interface ClusterAtivo {
@@ -132,6 +134,8 @@ export interface PulsoRitmoIntradiario {
   tarde:         number
   semPeriodo:    number
   tardeIniciada: boolean
+  fracTarde:     number   // fração do turno da tarde já decorrida (0–1)
+  esperadoTarde: number   // conclusões esperadas na tarde até agora, no ritmo da manhã
   alerta:        boolean
 }
 
@@ -144,8 +148,11 @@ export interface Pulso {
   agingMed:          number
   agingDist:         AgingDist
   slaFila:           number
+  slaAtingimento:    number | null   // % das concluídas do período entregues dentro do SLA (fluxo); null sem concluídas
   semAgendamento:    number
-  mttr:              number
+  mttr:              number          // mediana (P50) em dias fracionários
+  mttrP90:           number
+  backlogDias:       number | null   // fila ativa ÷ média de saídas/dia (14d); null sem saídas
   topCidadesCriticas: { cidade: string; count: number }[]
   clustersAtivos:    ClusterAtivo[]
   criticasTotal:     number

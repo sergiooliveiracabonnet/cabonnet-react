@@ -1,6 +1,6 @@
 import { isExecucaoReal } from '../transform'
 import type { OSRow, Fornecedor } from '../types'
-import { avg, calcMTTR, scoreComposto, shortName } from './_helpers'
+import { avg, calcMTTR, scoreComposto, slaPeriodoPct, shortName } from './_helpers'
 
 const FORN_DISPLAY: Partial<Record<Fornecedor, { label: string; cor: string }>> = {
   WES:        { label: 'WES (Instalação)', cor: '#c4b5fd' },
@@ -33,24 +33,26 @@ export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<
     const concluidas = gr.filter(r => isExecucaoReal(r.descsituacao)).length
     const criticas   = gr.filter(r => r._slaCritico).length
     const conclPct   = total > 0 ? Math.round(concluidas / total * 100) : 0
-    const sla        = conclPct
+    // SLA de prazo real — antes era um alias de conclPct, o que contava a mesma
+    // métrica duas vezes no score (65% do peso numa variável só)
+    const sla        = slaPeriodoPct(gr)
     const mttr       = calcMTTR(gr)
     const score      = scoreComposto(sla, conclPct, mttr)
 
-    const eqMap = new Map<string, { total: number; concluidas: number; criticas: number; agingArr: number[]; mttrRows: OSRow[] }>()
+    const eqMap = new Map<string, { rows: OSRow[]; concluidas: number; criticas: number; agingArr: number[]; mttrRows: OSRow[] }>()
     for (const r of gr) {
       const eq = (r.nomedaequipe || '').trim() || 'Sem equipe'
-      if (!eqMap.has(eq)) eqMap.set(eq, { total: 0, concluidas: 0, criticas: 0, agingArr: [], mttrRows: [] })
+      if (!eqMap.has(eq)) eqMap.set(eq, { rows: [], concluidas: 0, criticas: 0, agingArr: [], mttrRows: [] })
       const e = eqMap.get(eq)!
-      e.total++
+      e.rows.push(r)
       if (isExecucaoReal(r.descsituacao)) { e.concluidas++; e.mttrRows.push(r) }
       if (r._slaCritico) e.criticas++
       if (r._aging != null) e.agingArr.push(r._aging)
     }
 
     const equipes = [...eqMap.entries()].map(([nome, e]) => ({
-      nome, total: e.total, concluidas: e.concluidas, criticas: e.criticas,
-      sla:  e.total > 0 ? Math.round(e.concluidas / e.total * 100) : 0,
+      nome, total: e.rows.length, concluidas: e.concluidas, criticas: e.criticas,
+      sla:  slaPeriodoPct(e.rows),   // % dentro do prazo — não taxa de conclusão
       aging: avg(e.agingArr),
       mttr: calcMTTR(e.mttrRows),
     })).sort((a, b) => b.total - a.total)

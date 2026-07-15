@@ -26,7 +26,7 @@ import {
 } from './DashboardTypes'
 
 export default function DashboardPage() {
-  const { derived: { dashboard, anomalias, campo, graficos }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
+  const { derived: { dashboard, anomalias, campo, graficos, revisitas }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
   const { kpis, fornecedores, pulso, scoreTendencia, mudancas, metaScore, projecaoRisco } = dashboard as unknown as TypedDashboard
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
   const fluxoHoje = { entradas: pulso.entradasHoje, saidas: pulso.saidasHoje, saldo: pulso.fluxoHoje, mediaEntrada: pulso.entradaMediaDia }
@@ -151,6 +151,7 @@ export default function DashboardPage() {
           pulso={pulso}
           target={metaScore}
           tendencia={scoreTendencia}
+          taxaRevisitas={(revisitas as { taxa?: { geral?: number } } | null)?.taxa?.geral ?? null}
           aiData={aiData}
           isLoadingAI={isLoadingAI}
           onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}

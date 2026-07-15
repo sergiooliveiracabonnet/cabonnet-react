@@ -81,20 +81,31 @@ describe('entradaMediaDia', () => {
 
   it('calcula a média diária de entradas (total / dias com entrada)', () => {
     const rows = enrichRows([
-      makeOS({ numos: 'A', datacadastro: '01/06/2026' }),
-      makeOS({ numos: 'B', datacadastro: '01/06/2026' }),
-      makeOS({ numos: 'C', datacadastro: '01/06/2026' }),
-      makeOS({ numos: 'D', datacadastro: '02/06/2026' }),
-      makeOS({ numos: 'E', datacadastro: '02/06/2026' }),
-    ]) // dia 01 = 3, dia 02 = 2 → média (3+2)/2 = 2.5 → 3
+      makeOS({ numos: 'A', datacadastro: daysAgo(2) }),
+      makeOS({ numos: 'B', datacadastro: daysAgo(2) }),
+      makeOS({ numos: 'C', datacadastro: daysAgo(2) }),
+      makeOS({ numos: 'D', datacadastro: daysAgo(1) }),
+      makeOS({ numos: 'E', datacadastro: daysAgo(1) }),
+    ]) // dia -2 = 3, dia -1 = 2 → média (3+2)/2 = 2.5 → 3
     expect(entradaMediaDia(rows)).toBe(3)
+  })
+
+  it('ignora entradas fora da janela (baseline fixo, independente do filtro)', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'A', datacadastro: daysAgo(1) }),
+      makeOS({ numos: 'B', datacadastro: daysAgo(1) }),
+      makeOS({ numos: 'V', datacadastro: daysAgo(60) }),   // fora da janela de 28d
+      makeOS({ numos: 'W', datacadastro: daysAgo(60) }),
+      makeOS({ numos: 'X', datacadastro: daysAgo(60) }),
+    ])
+    expect(entradaMediaDia(rows)).toBe(2)
   })
 
   it('ignora COPE e reagendamentos na média', () => {
     const rows = enrichRows([
-      makeOS({ numos: 'A', datacadastro: '01/06/2026' }),
-      makeOS({ numos: 'C', nomedaequipe: 'COPE VALE', datacadastro: '01/06/2026' }),
-      makeOS({ numos: 'G', nomedaequipe: 'REAGENDAMENTO F01', datacadastro: '01/06/2026' }),
+      makeOS({ numos: 'A', datacadastro: daysAgo(1) }),
+      makeOS({ numos: 'C', nomedaequipe: 'COPE VALE', datacadastro: daysAgo(1) }),
+      makeOS({ numos: 'G', nomedaequipe: 'REAGENDAMENTO F01', datacadastro: daysAgo(1) }),
     ])
     expect(entradaMediaDia(rows)).toBe(1)
   })
@@ -146,6 +157,43 @@ describe('clustersAtivos (Clusters de Falha)', () => {
     const { pulso } = buildDashboard(rows)
     const clusters = (pulso as { clustersAtivos: { bairro: string; total: number }[] }).clustersAtivos
     expect(clusters.find(c => c.bairro === 'JARDIM SUL')?.total).toBe(6)
+  })
+})
+
+describe('fornecedores — SLA de prazo (não taxa de conclusão)', () => {
+  it('fornecedor que conclui tudo mas fora do prazo tem SLA baixo e conclPct alto', () => {
+    // WES F01: 3 OS concluídas, todas agendadas 9 dias após o cadastro (limite 2d p/ instalação)
+    const rows = enrichRows([1, 2, 3].map(i => makeOS({
+      numos: `W${i}`, nomedaequipe: 'INSTALACAO F08', tiposervico: 'INSTALACAO',
+      datacadastro: '01/06/2026', dataagendamento: '10/06/2026',
+      dataexecucao: '10/06/2026', databaixa: '10/06/2026',
+    })))
+    const { fornecedores } = buildDashboard(rows)
+    const wes = fornecedores.find(f => f.nome === 'WES')
+    expect(wes?.conclPct).toBe(100)   // throughput perfeito…
+    expect(wes?.sla).toBe(0)          // …mas nenhuma dentro do prazo
+  })
+})
+
+describe('slaAtingimento (fluxo) e agingDist relativo ao SLA', () => {
+  it('atingimento mede as concluídas entregues dentro do SLA', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'A' }),  // cadastro 01/06, baixa 02/06 → 1d, limite manut 1d → no prazo
+      makeOS({ numos: 'B', dataexecucao: '09/06/2026', databaixa: '09/06/2026' }),  // 8d → fora
+    ])
+    const { pulso } = buildDashboard(rows)
+    expect((pulso as { slaAtingimento: number | null }).slaAtingimento).toBe(50)
+  })
+
+  it('bucket é relativo ao SLA: manutenção com 2d de aging já conta como estourada', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'M', tiposervico: 'MANUTENCAO', descsituacao: 'Pendente',
+               dataagendamento: '', dataexecucao: '', databaixa: '', datacadastro: daysAgo(2) }),
+    ])
+    const { pulso } = buildDashboard(rows)
+    const dist = (pulso as { agingDist: { ok: number; limite: number; estourado: number; critico: number } }).agingDist
+    expect(dist.estourado).toBe(1)   // aging 2 ÷ limite 1 = 2× → estourado (borda do crítico)
+    expect(dist.ok).toBe(0)
   })
 })
 

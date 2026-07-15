@@ -1,10 +1,13 @@
 import { isExecucaoReal, isCOPE, isReagend, getReagendTipo, parseDate } from '../transform'
 import type { OSRow, KPI } from '../types'
-import { avg, calcMTTR, type FornCard, FORN_CFG } from './_helpers'
+import {
+  avg, calcMTTR, mttrStats, estourouSLA, scoreComposto, mttrToScore, SCORE_PESOS,
+  type FornCard, FORN_CFG,
+} from './_helpers'
 
 // ─── Saúde do período (comparável entre janelas) ──────────────────────────────
 // Diferente do slaFila "ao vivo" (fila atual), mede a saúde das OS do PERÍODO,
-// permitindo comparar período atual vs anterior. Mesmos pesos do Hero: SLA 45 · Taxa 35 · MTTR 20.
+// permitindo comparar período atual vs anterior. Pesos únicos: SCORE_PESOS (_helpers).
 
 export interface PeriodHealth {
   total:  number
@@ -20,16 +23,12 @@ export function periodHealth(set: OSRow[]): PeriodHealth {
     if (isCOPE(r) || isReagend(r) || r._tipo === 'REDE') continue
     total++
     if (isExecucaoReal(r.descsituacao)) concl++
-    const breached = r._diasAteAgendamento != null
-      ? r._diasAteAgendamento > r._slaLimite
-      : (r._agingAbertura != null && r._agingAbertura > r._slaLimite)
-    if (breached) breach++
+    if (estourouSLA(r)) breach++
   }
-  const slaPct    = total > 0 ? Math.round((total - breach) / total * 100) : 100
-  const taxa      = total > 0 ? Math.round(concl / total * 100) : 0
-  const mttr      = calcMTTR(set)
-  const mttrScore = Math.max(0, 100 - mttr * 8)
-  const score     = total > 0 ? Math.min(100, Math.round(slaPct * 0.45 + taxa * 0.35 + mttrScore * 0.20)) : 0
+  const slaPct = total > 0 ? Math.round((total - breach) / total * 100) : 100
+  const taxa   = total > 0 ? Math.round(concl / total * 100) : 0
+  const mttr   = calcMTTR(set)
+  const score  = total > 0 ? scoreComposto(slaPct, taxa, mttr) : 0
   return { total, slaPct, taxa, mttr, score }
 }
 
@@ -61,13 +60,19 @@ export function buildProjecaoRisco(allRows: OSRow[]): ProjecaoRisco {
   return { proj24h, proj48h, amostra }
 }
 
-// Média diária de entradas (OS criadas) no período — baseline para o fluxo do dia
-export function entradaMediaDia(rows: OSRow[]): number {
+// Média diária de entradas (OS criadas) — baseline fixo dos últimos N dias,
+// independente do filtro de data do usuário (senão filtro "hoje" compararia hoje com hoje).
+export function entradaMediaDia(rows: OSRow[], janelaDias = 28): number {
+  const corte = new Date()
+  corte.setHours(0, 0, 0, 0)
+  corte.setDate(corte.getDate() - janelaDias)
   const perDay = new Map<string, number>()
   for (const r of rows) {
     if (isCOPE(r) || isReagend(r)) continue
     const day = (r.datacadastro || '').split(' ')[0]
     if (!day) continue
+    const dt = parseDate(day)
+    if (!dt || dt < corte) continue
     perDay.set(day, (perDay.get(day) ?? 0) + 1)
   }
   if (perDay.size === 0) return 0
@@ -87,17 +92,16 @@ export interface DashboardMover {
 }
 
 export function buildMudancas(cur: PeriodHealth, prev: PeriodHealth): DashboardMover[] {
-  const mttrScore = (m: number) => Math.max(0, 100 - m * 8)
   const defs = [
-    { id: 'sla',  label: 'SLA do período',    atual: cur.slaPct, anterior: prev.slaPct, unidade: '%', w: 0.45, mttr: false },
-    { id: 'taxa', label: 'Taxa de conclusão', atual: cur.taxa,   anterior: prev.taxa,   unidade: '%', w: 0.35, mttr: false },
-    { id: 'mttr', label: 'MTTR',              atual: cur.mttr,   anterior: prev.mttr,   unidade: 'd', w: 0.20, mttr: true  },
+    { id: 'sla',  label: 'SLA do período',    atual: cur.slaPct, anterior: prev.slaPct, unidade: '%', w: SCORE_PESOS.sla,  mttr: false },
+    { id: 'taxa', label: 'Taxa de conclusão', atual: cur.taxa,   anterior: prev.taxa,   unidade: '%', w: SCORE_PESOS.taxa, mttr: false },
+    { id: 'mttr', label: 'MTTR',              atual: cur.mttr,   anterior: prev.mttr,   unidade: 'd', w: SCORE_PESOS.mttr, mttr: true  },
   ]
   return defs
     .map(d => {
-      const delta = d.atual - d.anterior
+      const delta = Math.round((d.atual - d.anterior) * 10) / 10
       const impacto = d.mttr
-        ? (mttrScore(cur.mttr) - mttrScore(prev.mttr)) * d.w
+        ? (mttrToScore(cur.mttr) - mttrToScore(prev.mttr)) * d.w
         : delta * d.w
       return {
         id: d.id, label: d.label, atual: d.atual, anterior: d.anterior, delta,
@@ -122,7 +126,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   let copeAguardando = 0
   let slaExcFila = 0, semAgendamento = 0
   const agingArr: number[] = []
-  const agingDist = { '≤1d': 0, '2-3d': 0, '4-7d': 0, '8+d': 0 }
+  const agingDist = { ok: 0, limite: 0, estourado: 0, critico: 0 }
   const cidCritMap = new Map<string, number>()
 
   for (const r of allRows) {
@@ -154,11 +158,13 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     if (!r.dataagendamento?.trim()) semAgendamento++
     if (r._aging != null) {
       agingArr.push(r._aging)
-      const a = r._aging
-      if      (a <= 1) agingDist['≤1d']++
-      else if (a <= 3) agingDist['2-3d']++
-      else if (a <= 7) agingDist['4-7d']++
-      else             agingDist['8+d']++
+      // Bucket relativo ao SLA da OS: manutenção com 2d (limite 1) já estourou;
+      // instalação com 2d (limite 2) está no limite. Dias absolutos escondem isso.
+      const ratio = r._slaLimite > 0 ? r._aging / r._slaLimite : r._aging
+      if      (ratio < 0.5) agingDist.ok++
+      else if (ratio <= 1)  agingDist.limite++
+      else if (ratio <= 2)  agingDist.estourado++
+      else                  agingDist.critico++
     }
   }
   const total    = pend + atend
@@ -180,6 +186,25 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   }
   const fluxoHoje = entradasHoje - saidasHoje
 
+  // ─── Backlog em dias de capacidade: fila ÷ média de saídas/dia (14 dias) ──
+  // "120 OS na fila" não diz nada; "3,2 dias de fila no ritmo atual" decide
+  // se precisa de frente extra. Exclui hoje (dia incompleto) e domingos
+  // (plantão de 2–4 técnicos não representa a capacidade real) do baseline.
+  const saidasPorDia = new Map<string, number>()
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r) || isRede(r)) continue
+    if (!isExecucaoReal(r.descsituacao)) continue
+    const day = (r.dataexecucao || r.databaixa || '').split(' ')[0]
+    if (!day || day === hojeStr) continue
+    const dt = parseDate(day)
+    if (!dt || dt.getDay() === 0 || (now.getTime() - dt.getTime()) > 14 * 86400000) continue
+    saidasPorDia.set(day, (saidasPorDia.get(day) ?? 0) + 1)
+  }
+  const mediaSaidasDia = saidasPorDia.size > 0
+    ? [...saidasPorDia.values()].reduce((a, b) => a + b, 0) / saidasPorDia.size
+    : 0
+  const backlogDias = mediaSaidasDia > 0 ? Math.round(total / mediaSaidasDia * 10) / 10 : null
+
   // ─── Ritmo intradiário: conclusões de hoje por turno (manhã/tarde) ────────
   let manhaHoje = 0, tardeHoje = 0, semPeriodoHoje = 0
   for (const r of allRows) {
@@ -189,11 +214,19 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     else if (p.includes('tarde')) tardeHoje++
     else                           semPeriodoHoje++
   }
-  const tardeIniciada = now.getHours() >= 13
+  // Normaliza pela fração do turno decorrida: às 13h30 a tarde mal começou —
+  // comparar com a manhã completa geraria falso positivo estrutural.
+  const TARDE_INI_H = 13, TARDE_FIM_H = 18.5
+  const horaAtual   = now.getHours() + now.getMinutes() / 60
+  const fracTarde   = Math.max(0, Math.min(1, (horaAtual - TARDE_INI_H) / (TARDE_FIM_H - TARDE_INI_H)))
+  const esperadoTarde = Math.round(manhaHoje * fracTarde)
   const ritmoIntradiario = {
     manha: manhaHoje, tarde: tardeHoje, semPeriodo: semPeriodoHoje,
-    tardeIniciada,
-    alerta: tardeIniciada && manhaHoje >= 5 && tardeHoje < manhaHoje * 0.4,
+    tardeIniciada: fracTarde > 0,
+    fracTarde: Math.round(fracTarde * 100) / 100,
+    esperadoTarde,
+    // Só alerta com ≥35% do turno decorrido e produção < metade do esperado
+    alerta: fracTarde >= 0.35 && manhaHoje >= 5 && tardeHoje < esperadoTarde * 0.5,
   }
 
   // ─── Meta do mês: concluídas no mês atual vs média dos 3 meses anteriores ─
@@ -213,20 +246,28 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const baselineVals  = baselineMeses.map(k => concluPorMes.get(k) ?? 0).filter(v => v > 0)
   const metaMesAtual  = baselineVals.length > 0 ? Math.round(baselineVals.reduce((a, b) => a + b, 0) / baselineVals.length) : 0
 
+  // Operação Cabonnet: equipes atuam sábado normalmente; domingo é só plantão
+  // (2–4 técnicos) — dia útil = seg–sáb, domingo fora da meta e da projeção.
   const diasUteisAte = (ano: number, mes: number, diaFinal: number): number => {
     let n = 0
     for (let d = 1; d <= diaFinal; d++) {
-      const dow = new Date(ano, mes, d).getDay()
-      if (dow !== 0 && dow !== 6) n++
+      if (new Date(ano, mes, d).getDay() !== 0) n++
     }
     return n
   }
   const ultimoDiaMes      = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
   const diasUteisTotal    = diasUteisAte(now.getFullYear(), now.getMonth(), ultimoDiaMes)
-  const diasUteisDecorr   = diasUteisAte(now.getFullYear(), now.getMonth(), now.getDate())
-  const diasUteisRestantes = Math.max(0, diasUteisTotal - diasUteisDecorr)
+  // Hoje conta como fração do expediente decorrido (7h–18h30), não como dia
+  // inteiro — senão a projeção fica subestimada toda manhã.
+  const EXP_INI_H = 7, EXP_FIM_H = 18.5
+  const horaExp     = now.getHours() + now.getMinutes() / 60
+  const fracaoHoje  = Math.max(0, Math.min(1, (horaExp - EXP_INI_H) / (EXP_FIM_H - EXP_INI_H)))
+  const hojeEhUtil  = now.getDay() !== 0
+  const diasUteisInteiros = diasUteisAte(now.getFullYear(), now.getMonth(), now.getDate()) - (hojeEhUtil ? 1 : 0)
+  const diasUteisDecorr   = diasUteisInteiros + (hojeEhUtil ? fracaoHoje : 0)
+  const diasUteisRestantes = Math.max(0, diasUteisTotal - Math.ceil(diasUteisDecorr))
   const pctMetaMes      = metaMesAtual > 0 ? Math.round(concluidasMesAtual / metaMesAtual * 100) : null
-  const projecaoMesFinal = diasUteisDecorr > 0
+  const projecaoMesFinal = diasUteisDecorr >= 0.25
     ? Math.round(concluidasMesAtual / diasUteisDecorr * diasUteisTotal)
     : null
   const metaMesStatus: 'acima' | 'abaixo' | 'neutro' =
@@ -238,30 +279,40 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     status: metaMesStatus,
   }
 
-  let concl = 0, totalPeriodo = 0
-  const fornMap = new Map<string, { total: number; concluidas: number }>()
+  let concl = 0, totalPeriodo = 0, conclNoPrazo = 0
+  const fornMap = new Map<string, { total: number; concluidas: number; noPrazo: number }>()
   for (const r of rows) {
     if (isCOPE(r) || isReagend(r)) continue
     const k = r._fornecedor === 'OUTRO' ? null : r._fornecedor
     if (k) {
-      if (!fornMap.has(k)) fornMap.set(k, { total: 0, concluidas: 0 })
-      fornMap.get(k)!.total++
-      if (isExecucaoReal(r.descsituacao)) fornMap.get(k)!.concluidas++
+      if (!fornMap.has(k)) fornMap.set(k, { total: 0, concluidas: 0, noPrazo: 0 })
+      const f = fornMap.get(k)!
+      f.total++
+      if (isExecucaoReal(r.descsituacao)) f.concluidas++
+      if (!estourouSLA(r)) f.noPrazo++
     }
     if (isRede(r)) continue
     totalPeriodo++
-    if (isExecucaoReal(r.descsituacao)) concl++
+    if (isExecucaoReal(r.descsituacao)) {
+      concl++
+      // Atingimento: entregue dentro do SLA (aging congelado na baixa)
+      if (r._agingAbertura != null && r._agingAbertura <= r._slaLimite) conclNoPrazo++
+    }
   }
   const taxa = totalPeriodo > 0 ? Math.round(concl / totalPeriodo * 100) : 0
+  // SLA de atingimento (fluxo): % das CONCLUÍDAS do período entregues no prazo.
+  // Complementa o slaFila (estoque), que só enxerga o que ainda está na fila.
+  const slaAtingimento = concl > 0 ? Math.round(conclNoPrazo / concl * 100) : null
 
   let prevConcl = 0, prevTotalPeriodo = 0
-  const prevFornMap = new Map<string, { total: number; concluidas: number }>()
+  const prevFornMap = new Map<string, { total: number; noPrazo: number }>()
   for (const r of prevRows) {
     const k = r._fornecedor === 'OUTRO' ? null : r._fornecedor
     if (k && !isCOPE(r) && !isReagend(r)) {
-      if (!prevFornMap.has(k)) prevFornMap.set(k, { total: 0, concluidas: 0 })
-      prevFornMap.get(k)!.total++
-      if (isExecucaoReal(r.descsituacao)) prevFornMap.get(k)!.concluidas++
+      if (!prevFornMap.has(k)) prevFornMap.set(k, { total: 0, noPrazo: 0 })
+      const f = prevFornMap.get(k)!
+      f.total++
+      if (!estourouSLA(r)) f.noPrazo++
     }
     if (isCOPE(r) || isReagend(r) || isRede(r)) continue
     prevTotalPeriodo++
@@ -269,17 +320,15 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   }
   const prevTaxa = prevTotalPeriodo > 0 ? Math.round(prevConcl / prevTotalPeriodo * 100) : 0
 
-  const mttr       = calcMTTR(rows)
-  const mttrScore  = Math.max(0, 100 - mttr * 8)
-  const scorePulso = total > 0
-    ? Math.min(100, Math.round(slaFila * 0.45 + taxa * 0.35 + mttrScore * 0.20))
-    : 0
+  const mttrS      = mttrStats(rows)
+  const mttr       = mttrS.p50
+  const scorePulso = total > 0 ? scoreComposto(slaFila, taxa, mttr) : 0
   const scorePulsoLabel = scorePulso >= 85 ? 'Excelente' : scorePulso >= 70 ? 'Bom' : scorePulso >= 50 ? 'Regular' : 'Crítico'
 
   const scoreBreakdown = [
-    { id: 'sla',  label: 'SLA da Fila',     value: slaFila,   weight: 0.45 },
-    { id: 'taxa', label: 'Taxa Conclusão',  value: taxa,      weight: 0.35 },
-    { id: 'mttr', label: 'MTTR',            value: mttrScore, weight: 0.20 },
+    { id: 'sla',  label: 'SLA da Fila',     value: slaFila,           weight: SCORE_PESOS.sla  },
+    { id: 'taxa', label: 'Taxa Conclusão',  value: taxa,              weight: SCORE_PESOS.taxa },
+    { id: 'mttr', label: 'MTTR',            value: mttrToScore(mttr), weight: SCORE_PESOS.mttr },
   ]
 
   type InsightLevel = 'red' | 'orange' | 'yellow' | 'green'
@@ -298,6 +347,10 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     quickInsights.push({ level: 'orange', text: `${semEquipe} OS sem equipe atribuída` })
   if (semAgendamento > 5)
     quickInsights.push({ level: 'yellow', text: `${semAgendamento} OS sem agendamento` })
+  if (slaAtingimento != null && slaAtingimento < 75)
+    quickInsights.push({ level: 'red', text: `Só ${slaAtingimento}% das concluídas saíram dentro do prazo` })
+  if (backlogDias != null && backlogDias > 3)
+    quickInsights.push({ level: 'orange', text: `Fila equivale a ${backlogDias.toLocaleString('pt-BR')} dias de trabalho no ritmo atual` })
 
   const narrativaPulso = [
     `${total} OS ativa${total !== 1 ? 's' : ''}`,
@@ -328,9 +381,10 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const pulso = {
     score: scorePulso, scoreLabel: scorePulsoLabel, scoreBreakdown,
     narrativa: narrativaPulso, quickInsights,
-    agingMed, agingDist, slaFila, semAgendamento, mttr,
+    agingMed, agingDist, slaFila, slaAtingimento, semAgendamento,
+    mttr, mttrP90: mttrS.p90, backlogDias,
     topCidadesCriticas, clustersAtivos, criticasTotal: criticas,
-    entradasHoje, saidasHoje, fluxoHoje, entradaMediaDia: entradaMediaDia(rows), metaMes, ritmoIntradiario,
+    entradasHoje, saidasHoje, fluxoHoje, entradaMediaDia: entradaMediaDia(allRows), metaMes, ritmoIntradiario,
   }
 
   const mkTrend = (cur: number, prev: number, higherIsBetter = true) => {
@@ -369,12 +423,15 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const projecaoRisco = buildProjecaoRisco(allRows)
 
   const fornecedores: FornCard[] = [...fornMap.entries()]
-    .map(([k, { total: t, concluidas: c }]) => {
-      const sla = t > 0 ? Math.round(c / t * 100) : 0
-      const prevF = prevFornMap.get(k)
-      const prevSla = prevF && prevF.total > 0 ? Math.round(prevF.concluidas / prevF.total * 100) : 0
+    .map(([k, { total: t, concluidas: c, noPrazo }]) => {
+      // SLA = % dentro do prazo (estourouSLA); conclPct = throughput. São coisas
+      // diferentes — o rótulo "SLA" já induziu leitura errada quando era conclusão.
+      const sla      = t > 0 ? Math.round(noPrazo / t * 100) : 100
+      const conclPct = t > 0 ? Math.round(c / t * 100) : 0
+      const prevF    = prevFornMap.get(k)
+      const prevSla  = prevF && prevF.total > 0 ? Math.round(prevF.noPrazo / prevF.total * 100) : 0
       return {
-        nome: FORN_CFG[k]?.label ?? k, total: t, concluidas: c, sla,
+        nome: FORN_CFG[k]?.label ?? k, total: t, concluidas: c, sla, conclPct,
         cor: FORN_CFG[k]?.cor ?? '#64748b',
         slaTrend: mkTrend(sla, prevSla, true),
       }

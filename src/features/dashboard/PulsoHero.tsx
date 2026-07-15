@@ -12,16 +12,17 @@ export interface AnomaliaContextType {
   aging_med: number
 }
 
-export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, tendencia }: {
+export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, tendencia, taxaRevisitas }: {
   pulso: Pulso; aiData: AINarrativeResult | null | undefined; isLoadingAI: boolean; onRequestAI?: (obs: string) => void; target?: number
   tendencia?: ScoreTendencia
+  taxaRevisitas?: number | null
 }) {
   const [draftObs, setDraftObs] = useState('')
   const [showReanalysis, setShowReanalysis] = useState(false)
 
   const {
     score = 0, scoreLabel = '—', scoreBreakdown = [], narrativa = '', quickInsights = [],
-    agingMed = 0, slaFila = 0, mttr = 0, semAgendamento = 0,
+    agingMed = 0, slaFila = 0, slaAtingimento = null, mttr = 0, mttrP90 = 0, semAgendamento = 0,
   } = pulso
 
   const scoreColor =
@@ -38,11 +39,24 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
     ? aiData.insights.map(text => ({ level: 'cyan', text, ai: true }))
     : quickInsights
 
-  const miniStats = [
-    { label: 'Aging Médio', value: agingMed > 0 ? `${agingMed}d` : '—',      warn: agingMed > 3, danger: agingMed > 7  },
-    { label: 'SLA da Fila', value: `${slaFila}%`,                              warn: slaFila < 90, danger: slaFila < 75  },
-    { label: 'MTTR',        value: mttr > 0 ? `${mttr}d` : '—',               warn: mttr > 2,     danger: mttr > 5      },
-    { label: 'Sem Agend.',  value: String(semAgendamento),                      warn: semAgendamento > 5, danger: semAgendamento > 20 },
+  type MiniStat = { label: string; value: string; sub?: string; hint?: string; warn: boolean; danger: boolean }
+  const miniStats: MiniStat[] = [
+    { label: 'SLA da Fila',  value: `${slaFila}%`, hint: 'Estoque: % da fila atual ainda dentro do prazo',
+      warn: slaFila < 90, danger: slaFila < 75 },
+    { label: 'SLA Atendido', value: slaAtingimento != null ? `${slaAtingimento}%` : '—',
+      sub: 'das concluídas', hint: 'Fluxo: % das OS concluídas no período entregues dentro do SLA',
+      warn: slaAtingimento != null && slaAtingimento < 90, danger: slaAtingimento != null && slaAtingimento < 75 },
+    { label: 'MTTR',         value: mttr > 0 ? `${mttr.toLocaleString('pt-BR')}d` : '—',
+      sub: mttrP90 > 0 ? `P90 ${mttrP90.toLocaleString('pt-BR')}d` : undefined,
+      hint: 'Mediana do tempo abertura → baixa das concluídas · P90 = cauda',
+      warn: mttr > 2, danger: mttr > 5 },
+    { label: 'Aging Médio',  value: agingMed > 0 ? `${agingMed}d` : '—',
+      warn: agingMed > 3, danger: agingMed > 7 },
+    { label: 'Sem Agend.',   value: String(semAgendamento),
+      warn: semAgendamento > 5, danger: semAgendamento > 20 },
+    { label: 'Revisitas',    value: taxaRevisitas != null ? `${taxaRevisitas}%` : '—',
+      sub: 'reincidência', hint: 'Clientes com nova manutenção no mesmo mês — retrabalho',
+      warn: taxaRevisitas != null && taxaRevisitas > 8, danger: taxaRevisitas != null && taxaRevisitas > 15 },
   ]
 
   const INSIGHT_CLS = {
@@ -239,13 +253,14 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
           {/* Mini stats — tiles */}
           <div className="flex-shrink-0 grid grid-cols-2 gap-2">
             {miniStats.map(s => (
-              <div key={s.label}
+              <div key={s.label} title={s.hint}
                    className="flex flex-col border border-border rounded-md bg-bg/40 px-3 py-2 min-w-[104px]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-muted">{s.label}</p>
                 <p className={`font-bold text-[18px] leading-none tabular-nums tracking-tight mt-1
                                ${s.danger ? 'text-red' : s.warn ? 'text-yellow' : 'text-text'}`}>
                   {s.value}
                 </p>
+                {s.sub && <p className="text-[9px] text-muted/70 mt-0.5 leading-none">{s.sub}</p>}
               </div>
             ))}
           </div>

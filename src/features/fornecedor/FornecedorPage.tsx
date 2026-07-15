@@ -100,7 +100,7 @@ export default function FornecedorPage() {
             <div className="bg-card border border-white/[0.08] rounded-xl p-4">
               <SectionTitle icon={Award} className="mb-3">Ranking por Score Composto</SectionTitle>
               <p className="text-[11px] text-muted mb-4">
-                Score = SLA 45% + MTTR 35% + Conclusão 20% — quanto maior, melhor.
+                Score = SLA 45% + Conclusão 35% + MTTR 20% — quanto maior, melhor.
                 A linha vertical indica a meta configurada.
               </p>
               <div className="space-y-3">

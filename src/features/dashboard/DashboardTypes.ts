@@ -68,7 +68,7 @@ export const KPI_ICONS: Partial<Record<string, IconComp>> = {
   total: BarChart3, rede: Radio, concl: CheckCircle2, taxa: Target,
 }
 
-export interface DashFornCard { nome: string; total: number; concluidas: number; sla: number; cor: string }
+export interface DashFornCard { nome: string; total: number; concluidas: number; sla: number; conclPct?: number; cor: string }
 export interface ScoreTendencia { atual: number; anterior: number | null; delta: number | null }
 export interface DashMover { id: string; label: string; atual: number; anterior: number; delta: number; unidade: string; melhorou: boolean; impacto: number }
 export interface TypedDashboard {

@@ -146,17 +146,18 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
   filaAtiva?: OSRow[]
   onOpen?: (title: string, rows: OSRow[]) => void
 }) {
-  const { agingDist } = pulso
+  const { agingDist, backlogDias } = pulso
   const agingTotals = agingDist as unknown as Record<string, number>
   const agingTotal  = Object.values(agingTotals).reduce((s, v) => s + v, 0)
 
-  // Rampa sequencial de um só matiz (azul) — vermelho reservado ao bucket crítico.
-  // Mesmos limites do buildDashboard (agingDist) para os cliques baterem com os números.
-  const agingEntries: { key: string; label: string; color: string; hot?: boolean; match: (a: number) => boolean }[] = [
-    { key: '≤1d',  label: '≤ 1 d',  color: 'rgba(59,130,246,.30)', match: a => a <= 1 },
-    { key: '2-3d', label: '2–3 d',  color: 'rgba(59,130,246,.50)', match: a => a > 1 && a <= 3 },
-    { key: '4-7d', label: '4–7 d',  color: 'rgba(59,130,246,.75)', match: a => a > 3 && a <= 7 },
-    { key: '8+d',  label: '8+ d',   color: 'rgb(248,113,113)', hot: true, match: a => a > 7 },
+  // Buckets relativos ao SLA de cada OS (aging ÷ limite) — mesma régua do
+  // buildDashboard para os cliques baterem com os números. Vermelho = 2× SLA.
+  const ratioDe = (r: OSRow) => (r._slaLimite > 0 ? (r._aging ?? 0) / r._slaLimite : (r._aging ?? 0))
+  const agingEntries: { key: string; label: string; color: string; hot?: boolean; match: (r: OSRow) => boolean }[] = [
+    { key: 'ok',        label: '< 50% SLA', color: 'rgba(59,130,246,.30)', match: r => ratioDe(r) < 0.5 },
+    { key: 'limite',    label: '50–100%',   color: 'rgba(59,130,246,.55)', match: r => ratioDe(r) >= 0.5 && ratioDe(r) <= 1 },
+    { key: 'estourado', label: 'Estourado', color: 'rgb(251,146,60)',      match: r => ratioDe(r) > 1 && ratioDe(r) <= 2 },
+    { key: 'critico',   label: '2× SLA',    color: 'rgb(248,113,113)', hot: true, match: r => ratioDe(r) > 2 },
   ]
 
   if (!agingTotal) return (
@@ -166,17 +167,20 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
   )
 
   const maxVal   = Math.max(...agingEntries.map(e => agingTotals[e.key] ?? 0), 1)
-  const criticas = agingTotals['8+d'] ?? 0
+  const criticas = agingTotals['critico'] ?? 0
   const abrirBucket = (e: typeof agingEntries[number]) => {
     if (!onOpen || !filaAtiva) return
-    onOpen(`Aging ${e.label} — OS na fila`, filaAtiva.filter(r => r._aging != null && e.match(r._aging)))
+    onOpen(`SLA ${e.label} — OS na fila`, filaAtiva.filter(r => r._aging != null && e.match(r)))
   }
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
-        <SectionLabel icon={Clock} color="#3b82f6">Aging da Fila Ativa</SectionLabel>
-        <span className="text-[11px] text-muted tabular-nums">{agingTotal} OS abertas · clique para abrir</span>
+        <SectionLabel icon={Clock} color="#3b82f6">Fila Ativa — Prazo Consumido</SectionLabel>
+        <span className="text-[11px] text-muted tabular-nums">
+          {agingTotal} OS abertas
+          {backlogDias != null && <> · ≈ <span className="font-semibold text-text">{backlogDias.toLocaleString('pt-BR')} dias</span> de fila no ritmo atual</>}
+        </span>
       </div>
 
       <div className="mt-4 flex items-end gap-2 h-[136px]">
@@ -186,7 +190,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
           return (
             <button key={e.key} type="button" onClick={() => abrirBucket(e)}
                     className="flex-1 h-full flex flex-col items-center justify-end gap-1.5 cursor-pointer group bg-transparent border-0 p-0"
-                    title={`${e.label}: ${val} OS (${pct}%) — clique para listar`}>
+                    title={`${e.label}: ${val} OS (${pct}%) — % do prazo de SLA já consumido · clique para listar`}>
               <span className={`text-[12px] font-bold tabular-nums ${e.hot ? 'text-red' : 'text-text'}`}>
                 {val}
               </span>
@@ -201,7 +205,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
       {criticas > 0 && (
         <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted">
           <AlertCircle size={11} className="text-red flex-shrink-0" />
-          <span><span className="text-red font-semibold tabular-nums">{criticas} OS com 8+ dias</span> — priorizar hoje</span>
+          <span><span className="text-red font-semibold tabular-nums">{criticas} OS além de 2× o SLA</span> — priorizar hoje</span>
         </p>
       )}
     </div>
@@ -293,7 +297,7 @@ export function FornecedoresPanel({ fornecedores }: {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <SectionLabel icon={Package} color="#c4b5fd">Fornecedores — SLA do Período</SectionLabel>
-        <span className="text-[11px] text-muted">barra = OS abertas · badge = conclusão</span>
+        <span className="text-[11px] text-muted">barra = volume · badge = % dentro do prazo</span>
       </div>
 
       <div className="mt-2">
@@ -302,7 +306,7 @@ export function FornecedoresPanel({ fornecedores }: {
           return (
             <div key={f.nome}
                  className="grid grid-cols-[minmax(0,1.1fr)_30px_1fr_auto] items-center gap-3 py-2 border-b border-border/60 last:border-b-0"
-                 title={`${f.nome}: ${f.total} OS abertas · ${f.concluidas} concluídas · SLA ${f.sla}%`}>
+                 title={`${f.nome}: ${f.total} OS no período · SLA ${f.sla}% dentro do prazo · ${f.concluidas} concluídas (${f.conclPct ?? '—'}%)`}>
               <span className="flex items-center gap-2 min-w-0">
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: f.cor }} />
                 <span className="text-[11px] font-semibold text-secondary truncate">{f.nome}</span>
