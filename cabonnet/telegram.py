@@ -5,13 +5,14 @@ cabonnet/telegram.py — Envio de mensagens Telegram e funções de operadora.
 
 import logging
 import re as _re_global
+from datetime import datetime
 
 from cabonnet.config import (
     TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
     TELEGRAM_CHAT_INSTACABLE, TELEGRAM_CHAT_WES,
     TELEGRAM_CHAT_ALERTAS, TELEGRAM_CHAT_REDE,
     TELEGRAM_CHAT_OPERACIONAL_THM,
-    _TG_DIV, _TG_DIVS,
+    _TG_DIV,
     _STATUS_CHANGE_BATCH_LIMIT, _STATUS_EMOJI,
     _OPERADORA_GRUPOS,
 )
@@ -114,6 +115,30 @@ def _tg_esc(s):
     return str(s or "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
 
+def _tg_header(emoji, titulo, escopo=None, sub=None):
+    """Cabeçalho padrão: título em negrito, data · hora em itálico, divisória.
+
+    titulo/escopo/sub já devem vir escapados quando contiverem dados externos.
+    """
+    linha_titulo = f"{emoji} <b>{titulo}" + (f" — {escopo}" if escopo else "") + "</b>"
+    linhas = [linha_titulo, f"<i>{datetime.now().strftime('%d/%m/%Y · %H:%M')}</i>"]
+    if sub:
+        linhas.append(f"<i>{sub}</i>")
+    linhas.append(_TG_DIV)
+    return linhas
+
+
+def _tg_footer(*itens):
+    """Rodapé padrão: divisória + itens úteis (comandos, notas) em itálico.
+
+    Sem itens (ou todos vazios) não gera rodapé — a mensagem termina no corpo.
+    """
+    uteis = [i for i in itens if i]
+    if not uteis:
+        return []
+    return ["", _TG_DIV, "<i>" + "  ·  ".join(uteis) + "</i>"]
+
+
 def _abrev_equipe(nome):
     """Equivalente Python do abreviarEquipe() do JS."""
     import re
@@ -188,34 +213,33 @@ def _tg_fmt_status_change(row, old_st, new_st):
     bairro    = _tg_esc(row.get("bairro", ""))
     cidade    = _tg_esc(row.get("nomedacidade", ""))
     dt_agend  = _tg_esc(row.get("dataagendamento", ""))
-    local     = bairro or cidade
+    local     = " · ".join(x for x in (bairro, cidade) if x)
 
-    e_old = _STATUS_EMOJI.get(old_st, "⬜")
     e_new = _STATUS_EMOJI.get(new_st, "🔄")
 
     lines = [
-        f"{e_old} → {e_new} <b>OS #{numos} — {_tg_esc(new_st)}</b>",
-        _TG_DIVS,
+        f"{e_new} <b>OS {numos} — {_tg_esc(new_st)}</b>",
+        f"<i>{_tg_esc(old_st)} → {_tg_esc(new_st)}</i>",
+        _TG_DIV,
         f"👤 {cliente}",
     ]
     if tipo:
-        lines.append(f"📋 {tipo}" + (f" · <i>{equipe}</i>" if equipe else ""))
+        lines.append(f"🔧 {tipo}" + (f" · {equipe}" if equipe else ""))
     if local:
         lines.append(f"📍 {local}")
     if dt_agend:
         lines.append(f"📅 Agendada: {dt_agend}")
-    lines.append(f"\n{e_old} <i>{_tg_esc(old_st)}</i>  →  {e_new} <b>{_tg_esc(new_st)}</b>")
     return "\n".join(lines)
 
 
 def _tg_fmt_status_summary(changes):
     """Resumo compacto quando há muitas mudanças de uma vez."""
-    lines = [f"🔄 <b>{len(changes)} OS mudaram de status</b>", _TG_DIVS]
+    lines = [f"🔄 <b>{len(changes)} OS mudaram de status</b>", _TG_DIV]
     for row, old_st, new_st in changes:
         e_new = _STATUS_EMOJI.get(new_st, "🔄")
         numos = row.get("numos", "?")
         cli   = _tg_esc((row.get("nomecliente") or "")[:28])
-        lines.append(f"{e_new} <b>#{numos}</b> {cli}  <i>{_tg_esc(old_st)} → {_tg_esc(new_st)}</i>")
+        lines.append(f"{e_new} <b>{numos}</b> {cli}  <i>{_tg_esc(old_st)} → {_tg_esc(new_st)}</i>")
     return "\n".join(lines)
 
 

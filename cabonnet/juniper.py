@@ -35,12 +35,11 @@ def _build_pppoe_resumo_diario() -> None:
 
     total = len(usuarios)
     linhas = [
-        f"📡 <b>Relatório PPPoE — {_tg_esc(cluster)}</b>",
-        f"📅 <i>{hoje_fmt} · Fechamento 18:30</i>",
+        f"📡 <b>RELATÓRIO PPPOE — {_tg_esc(cluster)}</b>",
+        f"<i>{hoje_fmt} · Fechamento 18:30</i>",
         _TG_DIV,
-        "",
         f"👥 Clientes únicos conectados hoje: <b>{total}</b>",
-        f"📈 Pico de sessões simultâneas:      <b>{pico}</b>",
+        f"📈 Pico de sessões simultâneas: <b>{pico}</b>",
     ]
 
     if usuarios:
@@ -50,7 +49,6 @@ def _build_pppoe_resumo_diario() -> None:
         if total > 50:
             linhas.append(f"  <i>... e mais {total - 50} usuário(s)</i>")
 
-    linhas += ["", f"<i>Cabonnet · Monitoramento PPPoE · {hoje_fmt}</i>"]
     _telegram_send("\n".join(linhas))
     log.info("[Juniper] Resumo diário enviado — %d clientes únicos", total)
 

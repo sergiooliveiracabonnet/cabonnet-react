@@ -257,7 +257,7 @@ def _telegram_poll_loop_inner():
                         if img:
                             lbl = _OPERADORA_LABEL.get(o, "Todos")
                             dt  = datetime.now().strftime("%d/%m/%Y %H:%M")
-                            cap = f"<b>Cabonnet · {lbl} — Resumo por Equipe</b>\n{dt} · menor → maior"
+                            cap = f"<b>RESUMO POR EQUIPE — {lbl}</b>\n<i>{dt} · menor → maior</i>"
                             _telegram_send_image(img, cap, c)
                         elif not _PIL_OK:
                             _telegram_send("⚠️ Pillow não instalado no servidor.", chat_id_override=c)
@@ -275,7 +275,7 @@ def _telegram_poll_loop_inner():
                         if img:
                             lbl = _OPERADORA_LABEL.get(o, "Todos")
                             dt  = datetime.now().strftime("%d/%m/%Y %H:%M")
-                            cap = f"<b>Cabonnet · {lbl} — Relatório Detalhado</b>\nTodas as OS por equipe · {dt}"
+                            cap = f"<b>RELATÓRIO DETALHADO — {lbl}</b>\n<i>{dt} · todas as OS por equipe</i>"
                             _telegram_send_image(img, cap, c, as_document=True)
                         elif not _PIL_OK:
                             _telegram_send("⚠️ Pillow não instalado no servidor.", chat_id_override=c)

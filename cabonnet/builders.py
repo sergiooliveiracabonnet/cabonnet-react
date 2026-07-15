@@ -21,7 +21,7 @@ from cabonnet.cache import _sla_limite, _calc_sla_exc, _dados_cache_update
 from cabonnet.utils import _parse_data_br
 from cabonnet.telegram import (
     _telegram_send, _tg_esc, _abrev_equipe, _is_campo,
-    _filter_by_operadora, _TG_DIV, _TG_DIVS,
+    _filter_by_operadora, _TG_DIV, _tg_header, _tg_footer,
 )
 from cabonnet.grafana import (
     grafana_post, frames_to_csv, frames_to_dict_list,
@@ -56,7 +56,6 @@ def _build_status_text(rede=False, operadora=None):
 
     hoje     = date.today()
     hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
 
     pendentes   = [r for r in rows if r.get("descsituacao") == "Pendente"]
     atendimento = [r for r in rows if r.get("descsituacao") == "Atendimento"]
@@ -88,16 +87,13 @@ def _build_status_text(rede=False, operadora=None):
     cache_hora = datetime.fromtimestamp(ts).strftime("%H:%M") if ts else "?"
 
     if rede:
-        titulo = "📡 <b>CABONNET — STATUS REDE</b>"
+        header = _tg_header("📡", "STATUS REDE")
     elif operadora:
-        titulo = f"📊 <b>CABONNET — STATUS {operadora}</b>"
+        header = _tg_header("📊", "STATUS", operadora)
     else:
-        titulo = "📊 <b>CABONNET — STATUS OPERACIONAL</b>"
+        header = _tg_header("📊", "STATUS OPERACIONAL")
 
-    lines = [
-        titulo,
-        f"📅 <i>{hoje_str} às {hora_str}</i>",
-        _TG_DIV, "",
+    lines = header + [
         f"🟡 Pendentes: <b>{len(pendentes)}</b>",
         f"🔵 Em Atendimento: <b>{len(atendimento)}</b>",
         f"✅ Concluídas hoje: <b>{len(concl_hoje)}</b>",
@@ -122,8 +118,7 @@ def _build_status_text(rede=False, operadora=None):
             pct   = round(cnt / total_fila * 100)
             bar   = "▓" * round(pct/10) + "░" * (10 - round(pct/10))
             lines.append(f"  <b>{eq_s}</b>: {cnt} <code>{bar}</code> {pct}%")
-    lines.append("")
-    lines.append(f"<i>Dados às {cache_hora} · Cabonnet · Gestão de OS</i>")
+    lines += _tg_footer(f"Dados de {cache_hora}")
     return "\n".join(lines)
 
 
@@ -135,9 +130,6 @@ def _build_executadas_hoje(operadora=None):
 
     rows     = _filter_by_operadora(rows, operadora)
     hoje     = date.today()
-    hora_str = datetime.now().strftime("%H:%M")
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    label    = f" — {operadora}" if operadora else ""
 
     exec_hoje = [r for r in rows if r.get("descsituacao") == "Concluída"
                  and _parse_data_br(r.get("dataexecucao") or r.get("dataagendamento")) == hoje]
@@ -145,10 +137,8 @@ def _build_executadas_hoje(operadora=None):
                  and _parse_data_br(r.get("dataexecucao") or r.get("dataagendamento")) == hoje]
 
     if not exec_hoje:
-        return (f"📋 <b>CABONNET — EXECUTADAS HOJE{label}</b>\n"
-                f"📅 <i>{hoje_str} às {hora_str}</i>\n{_TG_DIV}\n\n"
-                "Nenhuma OS executada em campo hoje.\n\n"
-                f"{_TG_DIV}\n<i>Cabonnet · Gestão de OS · {hoje_str}</i>")
+        return "\n".join(_tg_header("📋", "EXECUTADAS HOJE", operadora)
+                         + ["Nenhuma OS executada em campo hoje."])
 
     by_cidade = {}
     for r in exec_hoje:
@@ -168,22 +158,20 @@ def _build_executadas_hoje(operadora=None):
     tM = sum(c["manut"] for c in cidades)
     tS = sum(c["serv"]  for c in cidades)
 
-    linhas = [f"📋 <b>CABONNET — EXECUTADAS HOJE{label}</b>",
-              f"📅 <i>{hoje_str} às {hora_str}</i>", _TG_DIV, ""]
+    linhas = _tg_header("📋", "EXECUTADAS HOJE", operadora)
     for c in cidades:
         linhas.append(f"<b>{_tg_esc(c['c'])} — {c['total']} OS</b>")
         if c["inst"]:  linhas.append(f"Instalação: {c['inst']}")
         if c["manut"]: linhas.append(f"Manutenção: {c['manut']}")
         if c["serv"]:  linhas.append(f"Serviços: {c['serv']}")
         linhas.append("")
-    linhas.append(_TG_DIVS)
+    linhas.append(_TG_DIV)
     linhas.append(f"<b>TOTAL: {len(exec_hoje)} OS executadas</b>")
     if tI: linhas.append(f"Instalação: {tI}")
     if tM: linhas.append(f"Manutenção: {tM}")
     if tS: linhas.append(f"Serviços: {tS}")
     if sem_exec:
         linhas += ["", f"⚠️ Encerradas sem execução: <b>{len(sem_exec)}</b> OS"]
-    linhas += ["", _TG_DIV, f"<i>Cabonnet · Gestão de OS · {hoje_str}</i>"]
     return "\n".join(linhas)
 
 
@@ -195,10 +183,7 @@ def _build_listatendimento(operadora=None):
              and not (r.get("servico") or "").upper().startswith("REDE")]
     if not atend:
         return "✅ Nenhuma OS em <b>Atendimento</b> no momento."
-    hoje     = date.today()
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
-    label    = f" — {operadora}" if operadora else ""
+    hoje = date.today()
 
     def _data_ord(d):
         if not d or "/" not in d: return "9999/99/99"
@@ -218,7 +203,7 @@ def _build_listatendimento(operadora=None):
         for r in lista:
             eq = (r.get("nomedaequipe") or "Sem equipe").strip()
             por_eq.setdefault(eq, []).append(r)
-        ls = [f"\n{icone} <b>{titulo} — {len(lista)} OS</b>", _TG_DIV]
+        ls = [f"\n{icone} <b>{titulo} — {len(lista)} OS</b>"]
         for eq in sorted(por_eq.keys(), key=lambda e: (1 if "COPE" in e.upper() else 0, e)):
             grupo = sorted(por_eq[eq], key=lambda r: _data_ord(r.get("dataagendamento") or r.get("dataatendimento") or ""))
             ls.append(f"\n👤 <b>{eq}</b> — {len(grupo)} OS")
@@ -230,11 +215,9 @@ def _build_listatendimento(operadora=None):
                 ls.append(f"  /os{numos} · {cidade} · {ts} · {dt}")
         return ls
 
-    linhas = [f"🔵 <b>OS EM ATENDIMENTO{label} — {len(atend)} total</b>",
-              f"📅 <i>{hoje_str} às {hora_str}</i>"]
+    linhas = _tg_header("🔵", "EM ATENDIMENTO", operadora, f"{len(atend)} OS no total")
     linhas += _bloco_por_equipe(atuais,  "Em Atendimento", "🔵")
     linhas += _bloco_por_equipe(futuras, "Reagendadas (datas futuras)", "📅")
-    linhas += ["", _TG_DIV, f"<i>Cabonnet · Gestão de OS · {hoje_str}</i>"]
     return "\n".join(linhas)
 
 
@@ -248,10 +231,7 @@ def _build_ordens_resumo(operadora=None):
               and not (r.get("servico") or "").upper().startswith("REDE")]
     if not ativos:
         return "✅ Nenhuma OS ativa no momento."
-    hoje     = date.today()
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
-    label    = f" — {operadora}" if operadora else ""
+    hoje   = date.today()
     grupos = {}
     for r in ativos:
         eq = (r.get("nomedaequipe") or "Sem equipe").strip()
@@ -272,9 +252,8 @@ def _build_ordens_resumo(operadora=None):
     total_crit = sum(g["criticas"] for _, g in ordenado)
     all_aging  = [a for _, g in ordenado for a in g["aging"]]
     med_aging  = round(sum(all_aging) / len(all_aging), 1) if all_aging else 0
-    linhas = [f"📊 <b>RESUMO POR EQUIPE{label}</b>",
-              f"📅 <i>{hoje_str} às {hora_str}</i>",
-              f"<b>{total_os} OS</b> ativas · {len(ordenado)} equipes · menor → maior", _TG_DIV]
+    linhas = _tg_header("📊", "RESUMO POR EQUIPE", operadora,
+                        f"{total_os} OS ativas · {len(ordenado)} equipes · menor → maior")
     for eq, g in ordenado:
         total     = g["pendente"] + g["atend"]
         aging_med = round(sum(g["aging"]) / len(g["aging"]), 1) if g["aging"] else 0
@@ -287,7 +266,6 @@ def _build_ordens_resumo(operadora=None):
     linhas += ["", _TG_DIV, f"Total: <b>{total_os} OS</b> · Aging médio: <b>{med_aging}d</b>"]
     if total_crit:
         linhas.append(f"🔴 <b>{total_crit} OS crítica{'s' if total_crit != 1 else ''}</b> (SLA 2× excedido)")
-    linhas.append(f"<i>Cabonnet · {hoje_str}</i>")
     return "\n".join(linhas)
 
 
@@ -301,10 +279,7 @@ def _build_ordens_detalhado(operadora=None):
               and not (r.get("servico") or "").upper().startswith("REDE")]
     if not ativos:
         return "✅ Nenhuma OS ativa no momento."
-    hoje     = date.today()
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
-    label    = f" — {operadora}" if operadora else ""
+    hoje = date.today()
 
     def _aging_r(r):
         dt = _parse_data_br(r.get("datacadastro", ""))
@@ -315,9 +290,8 @@ def _build_ordens_detalhado(operadora=None):
         eq = (r.get("nomedaequipe") or "Sem equipe").strip()
         grupos.setdefault(eq, []).append(r)
     ordenado = sorted(grupos.items(), key=lambda x: len(x[1]))
-    linhas = [f"📋 <b>RELATÓRIO DETALHADO{label}</b>",
-              f"📅 <i>{hoje_str} às {hora_str}</i>",
-              f"<b>{len(ativos)} OS</b> ativas · {len(ordenado)} equipes · menor → maior", _TG_DIV]
+    linhas = _tg_header("📋", "RELATÓRIO DETALHADO", operadora,
+                        f"{len(ativos)} OS ativas · {len(ordenado)} equipes · menor → maior")
     for eq, os_list in ordenado:
         os_sorted = sorted(os_list, key=_aging_r, reverse=True)
         linhas.append(f"\n▸ <b>{eq}</b>  ({len(os_list)} OS)")
@@ -330,7 +304,6 @@ def _build_ordens_detalhado(operadora=None):
             status  = r.get("descsituacao", "")[:12]
             ag_ico  = " 🔴" if ag >= 6 else (" ⚠️" if ag >= 3 else "")
             linhas.append(f"  /os{numos} · {cliente} · {cidade} · {tipo_s} · {ag}d{ag_ico} · {status}")
-    linhas += ["", _TG_DIV, f"<i>Cabonnet · {len(ativos)} OS · {hoje_str}</i>"]
     return "\n".join(linhas)
 
 
@@ -341,9 +314,6 @@ def _build_pulso(operadora=None):
         return "⏳ Sem dados disponíveis."
     rows     = _filter_by_operadora(rows, operadora)
     hoje     = date.today()
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
-    label    = f" {operadora}" if operadora else ""
     is_hoje  = lambda r: _parse_data_br(r.get("dataexecucao") or r.get("dataagendamento")) == hoje
     exec_h   = [r for r in rows if r.get("descsituacao") == "Concluída" and is_hoje(r)]
     fila     = [r for r in rows if r.get("descsituacao") in ("Pendente", "Atendimento")]
@@ -365,13 +335,11 @@ def _build_pulso(operadora=None):
         paradas_line = f"⛔ Equipes paradas: <b>{len(paradas)}</b> — {nomes_par}"
     else:
         paradas_line = "🏃 Todas equipes em atividade"
-    lines = [f"⚡ <b>CABONNET — PULSO{label} {hora_str}</b>",
-             f"📅 <i>{hoje_str}</i>", _TG_DIV, "",
+    lines = _tg_header("⚡", "PULSO", operadora) + [
              f"✅ Executadas hoje: <b>{len(exec_h)}</b>",
              f"📋 Fila atual: <b>{len(fila)}</b>",
              f"{taxa_em} Taxa: <b>{taxa}%</b>  <code>{bar}</code>",
-             sla_line, paradas_line, "", _TG_DIV,
-             f"<i>Cabonnet · Gestão de OS · {hoje_str}</i>"]
+             sla_line, paradas_line]
     return "\n".join(lines)
 
 
@@ -382,9 +350,6 @@ def _build_equipes(operadora=None):
         return "⏳ Sem dados disponíveis."
     rows     = _filter_by_operadora(rows, operadora)
     hoje     = date.today()
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
-    label    = f" — {operadora}" if operadora else ""
     is_hoje  = lambda r: _parse_data_br(r.get("dataexecucao") or r.get("dataagendamento")) == hoje
     eq_data  = {}
     for r in rows:
@@ -396,8 +361,7 @@ def _build_equipes(operadora=None):
         if r.get("descsituacao") in ("Pendente", "Atendimento"): eq_data[eq]["fila"] += 1
     ativas  = {eq: d for eq, d in eq_data.items() if d["exec"] > 0 or d["fila"] > 0}
     paradas = {eq: d for eq, d in eq_data.items() if d["exec"] == 0 and d["fila"] >= 1}
-    lines   = [f"👥 <b>CABONNET — EQUIPES HOJE{label}</b>",
-               f"📅 <i>{hoje_str} às {hora_str}</i>", _TG_DIV, ""]
+    lines = _tg_header("👥", "EQUIPES HOJE", operadora)
     if ativas:
         lines.append("<b>Em atividade:</b>")
         for eq, d in sorted(ativas.items(), key=lambda x: -x[1]["exec"]):
@@ -409,7 +373,6 @@ def _build_equipes(operadora=None):
             lines.append(f"  • {_tg_esc(eq)} — {d['fila']} OS na fila")
     if not ativas and not paradas:
         lines.append("<i>Nenhuma equipe com OS hoje.</i>")
-    lines += ["", _TG_DIV, f"<i>Cabonnet · Gestão de OS · {hoje_str}</i>"]
     return "\n".join(lines)
 
 
@@ -421,9 +384,6 @@ def _build_meta_inst(operadora="INSTACABLE"):
     global_view = operadora is None
     META     = 33 if global_view else 16
     hoje     = date.today()
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
-    label    = "" if global_view else f" — {operadora}"
     is_hoje  = lambda r: _parse_data_br(r.get("dataexecucao") or r.get("dataagendamento")) == hoje
     is_inst  = lambda r: "INSTALAC" in (r.get("tiposervico", "") or "").upper()
     rows_f   = rows if global_view else _filter_by_operadora(rows, operadora)
@@ -442,22 +402,18 @@ def _build_meta_inst(operadora="INSTACABLE"):
         fila_por_eq[eq] = fila_por_eq.get(eq, 0) + 1
     menos_eq    = min(fila_por_eq, key=lambda eq: exec_por_eq.get(eq, 0), default=None)
     menos_count = exec_por_eq.get(menos_eq, 0) if menos_eq else 0
+    lines = _tg_header("🎯", "META INSTALAÇÕES", None if global_view else operadora)
     if total >= META:
-        lines = [f"🎯 <b>CABONNET — META INSTALAÇÕES{label}</b>",
-                 f"📅 <i>{hoje_str} às {hora_str}</i>", _TG_DIV, "",
-                 f"✅ Meta atingida! <b>{total}/{META}</b> instalações",
-                 f"<code>{bar} {pct}%</code>"]
+        lines += [f"✅ Meta atingida! <b>{total}/{META}</b> instalações",
+                  f"<code>{bar} {pct}%</code>"]
     else:
         faltam = META - total
-        lines  = [f"🎯 <b>CABONNET — META INSTALAÇÕES{label}</b>",
-                  f"📅 <i>{hoje_str} às {hora_str}</i>", _TG_DIV, "",
-                  f"Meta: <b>{META} instalações</b>",
+        lines += [f"Meta: <b>{META} instalações</b>",
                   f"Realizado: <b>{total}</b> ❌  <i>faltam {faltam}</i>",
                   f"<code>{bar} {pct}%</code>"]
         if menos_eq:
             lines += ["", "Equipe com menos instalações hoje:",
                       f"⚠️ <b>{_tg_esc(menos_eq)}</b> — {menos_count} instalação{'ões' if menos_count != 1 else ''}"]
-    lines += ["", _TG_DIV, f"<i>Cabonnet · Gestão de OS · {hoje_str}</i>"]
     return "\n".join(lines)
 
 
@@ -467,9 +423,7 @@ def _build_kpi():
         ts   = state._dados_cache["ts"]
     if not rows:
         return "⏳ Sem dados disponíveis para o KPI."
-    hoje     = date.today()
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
+    hoje       = date.today()
     cache_hora = datetime.fromtimestamp(ts).strftime("%H:%M") if ts else "?"
     is_hoje  = lambda r: _parse_data_br(r.get("dataexecucao") or r.get("dataagendamento")) == hoje
     is_inst  = lambda r: "INSTALAC" in (r.get("tiposervico", "") or "").upper()
@@ -511,8 +465,7 @@ def _build_kpi():
         if r.get("descsituacao") in ("Pendente", "Atendimento"): eq_fila_g[eq] = eq_fila_g.get(eq, 0) + 1
     paradas_g   = [eq for eq in eq_fila_g if eq_exec_g.get(eq, 0) == 0 and eq_fila_g[eq] >= 2]
     sla_kpi_line = (f"🔴 SLA crítico: <b>{sla_g}</b> OS" if sla_g else "🟢 SLA: sem críticos")
-    lines = [f"📊 <b>CABONNET — PAINEL KPI</b>",
-             f"📅 <i>{hoje_str} às {hora_str}</i>", _TG_DIV, "",
+    lines = _tg_header("📊", "PAINEL KPI") + [
              "<b>VISÃO GLOBAL</b>",
              f"✅ Executadas hoje: <b>{len(exec_g)}</b>   📋 Fila: <b>{len(fila_g)}</b>",
              f"{icon_g} Taxa global: <b>{taxa_g}%</b>", sla_kpi_line,
@@ -529,7 +482,7 @@ def _build_kpi():
     if paradas_g:
         nomes = ", ".join(_tg_esc(e) for e in paradas_g[:4]) + ("…" if len(paradas_g) > 4 else "")
         lines += ["", f"⛔ <b>Equipes paradas ({len(paradas_g)}):</b> {nomes}"]
-    lines += ["", _TG_DIV, f"<i>Dados às {cache_hora} · Cabonnet · KPI Gerencial</i>"]
+    lines += _tg_footer(f"Dados de {cache_hora}")
     return "\n".join(lines)
 
 
@@ -554,10 +507,9 @@ def _build_sla_detalhado():
         eq_data[eq]["ages"].append(age)
         if age >= lim: eq_data[eq]["vencidas"] += 1
     if not eq_data:
-        return f"✅ <b>SLA — Sem OS na fila.</b>\n<i>{hoje_str} às {hora_str}</i>"
+        return f"✅ <b>SLA — Sem OS na fila.</b>\n<i>{hoje_str} · {hora_str}</i>"
     equipes_sorted = sorted(eq_data.items(), key=lambda x: (-x[1]["vencidas"], -max(x[1]["ages"])))
-    linhas = [f"🕐 <b>SLA por Equipe — {hoje_str}</b>",
-              f"<i>Referência: Inst ≥2d · Manut ≥1d · às {hora_str}</i>", _TG_DIV]
+    linhas = _tg_header("🕐", "SLA POR EQUIPE", None, "Referência: Inst ≥2d · Manut ≥1d")
     for eq, d in equipes_sorted:
         avg    = round(sum(d["ages"]) / len(d["ages"]), 1) if d["ages"] else 0
         maximo = max(d["ages"]) if d["ages"] else 0
@@ -578,7 +530,6 @@ def _build_equipe_ficha(sigla):
     sig_up   = sigla.strip().upper()
     hoje     = date.today()
     seg      = hoje - timedelta(days=hoje.weekday())
-    hora_str = datetime.now().strftime("%H:%M")
     hoje_str = hoje.strftime("%d/%m/%Y")
     eq_rows  = [r for r in rows if sig_up in (r.get("nomedaequipe") or "").upper()]
     if not eq_rows:
@@ -599,8 +550,7 @@ def _build_equipe_ficha(sigla):
             r.get("tiposervico", "") or ""
         )
     ))
-    linhas = [f"👷 <b>Equipe: {_tg_esc(nome_eq)}</b>",
-              f"<i>{hoje_str} às {hora_str}</i>", _TG_DIV,
+    linhas = _tg_header("👷", "EQUIPE", _tg_esc(nome_eq)) + [
               f"✅ Executadas hoje: <b>{len(exec_h)}</b>  ·  Semana: <b>{len(exec_sem)}</b>",
               f"🔵 Em atendimento: <b>{len(atend)}</b>",
               f"🟡 Pendentes: <b>{len(pend)}</b>"]
@@ -622,7 +572,6 @@ def _build_equipe_ficha(sigla):
             nome  = _tg_esc((r.get("nomecliente") or "?")[:28])
             dt    = (r.get("dataagendamento") or "")[:10]
             linhas.append(f"  🟡 <b>{numos}</b> · {nome} · {dt}")
-    linhas += ["", _TG_DIV, f"<i>Cabonnet · Ficha {_tg_esc(nome_eq)}</i>"]
     return "\n".join(linhas)
 
 
@@ -641,9 +590,8 @@ def _build_aging():
         return (hoje - dt).days if dt else 0
     fila_sorted = sorted(fila, key=_age, reverse=True)[:20]
     if not fila_sorted:
-        return f"✅ <b>Sem OS na fila.</b>\n<i>{hoje_str} às {hora_str}</i>"
-    linhas = [f"⏳ <b>OS Mais Antigas na Fila — {hoje_str}</b>",
-              f"<i>Top 20 por tempo de espera · {hora_str}</i>", _TG_DIV]
+        return f"✅ <b>Sem OS na fila.</b>\n<i>{hoje_str} · {hora_str}</i>"
+    linhas = _tg_header("⏳", "MAIS ANTIGAS NA FILA", None, "Top 20 por tempo de espera")
     for r in fila_sorted:
         numos  = str(r.get("numos", "?"))
         nome   = _tg_esc((r.get("nomecliente") or "?")[:24])
@@ -680,11 +628,10 @@ def _build_ranking():
             eq_fila[eq] = eq_fila.get(eq, 0) + 1
     todas = set(list(eq_exec.keys()) + list(eq_fila.keys()))
     if not todas:
-        return f"⏳ Sem equipes com OS hoje.\n<i>{hoje_str} às {hora_str}</i>"
+        return f"⏳ Sem equipes com OS hoje.\n<i>{hoje_str} · {hora_str}</i>"
     ranking = sorted(todas, key=lambda eq: (-eq_exec.get(eq, 0), eq))
     maximo  = max((eq_exec.get(eq, 0) for eq in ranking), default=1) or 1
-    linhas  = [f"🏆 <b>Ranking de Produtividade — {hoje_str}</b>",
-               f"<i>Executadas hoje por equipe · {hora_str}</i>", _TG_DIV]
+    linhas  = _tg_header("🏆", "RANKING DE PRODUTIVIDADE", None, "Executadas hoje por equipe")
     for i, eq in enumerate(ranking, 1):
         exec_ = eq_exec.get(eq, 0); fila_ = eq_fila.get(eq, 0)
         bar   = "▓" * round(exec_ / maximo * 8) + "░" * (8 - round(exec_ / maximo * 8))
@@ -711,13 +658,12 @@ def _build_reagendadas():
         return "REAGEND" in eq or "REAGEND" in ts or "REAGEND" in sv
     reagendadas = [r for r in rows if r.get("descsituacao") in ("Pendente", "Atendimento") and _eh_reagendada(r)]
     if not reagendadas:
-        return f"✅ <b>Nenhuma OS reagendada na fila.</b>\n<i>{hoje_str} às {hora_str}</i>"
+        return f"✅ <b>Nenhuma OS reagendada na fila.</b>\n<i>{hoje_str} · {hora_str}</i>"
     def _age(r):
         dt = _parse_data_br(r.get("datacadastro", ""))
         return (hoje - dt).days if dt else 0
     reagendadas.sort(key=_age, reverse=True)
-    linhas = [f"🔄 <b>OS Reagendadas na Fila — {hoje_str}</b>",
-              f"Total: <b>{len(reagendadas)}</b> · às {hora_str}", _TG_DIV]
+    linhas = _tg_header("🔄", "REAGENDADAS NA FILA", None, f"Total: {len(reagendadas)} OS")
     for r in reagendadas[:20]:
         numos  = str(r.get("numos", "?"))
         nome   = _tg_esc((r.get("nomecliente") or "?")[:24])
@@ -729,7 +675,7 @@ def _build_reagendadas():
         linhas.append(f"{sit_ic} <b>{numos}</b> · {age}d · {nome} · {cidade} · {eq}")
     if len(reagendadas) > 20:
         linhas.append(f"<i>… +{len(reagendadas) - 20} OS não exibidas</i>")
-    linhas += ["", "<i>Use /os &lt;número&gt; para detalhes completos</i>"]
+    linhas += _tg_footer("/os &lt;número&gt; para detalhes")
     return "\n".join(linhas)
 
 
@@ -740,7 +686,6 @@ def _build_cidade(nome):
         return "⏳ Sem dados disponíveis."
     nome_norm = _normalizar_busca(nome.strip())
     hoje      = date.today()
-    hora_str  = datetime.now().strftime("%H:%M")
     hoje_str  = hoje.strftime("%d/%m/%Y")
     is_hoje   = lambda r: _parse_data_br(r.get("dataexecucao") or r.get("databaixa")) == hoje
     cid_rows  = [r for r in rows if nome_norm in _normalizar_busca(r.get("nomedacidade") or "")]
@@ -753,9 +698,8 @@ def _build_cidade(nome):
     sem_exec = [r for r in cid_rows if "Sem Execução" in (r.get("descsituacao") or "")
                 and (r.get("databaixa","") or r.get("dataagendamento","")).startswith(hoje_str)]
     sit_ic   = lambda s: ("✅" if "Concluída" in s and "Sem" not in s else "🔵" if "Atendimento" in s else "🟡")
-    linhas   = [f"📍 <b>{_tg_esc(nome_cidade)} — {hoje_str}</b>",
-                f"✅ Executadas hoje: <b>{len(exec_h)}</b>  ·  🔵 Atend: <b>{len(atend)}</b>  ·  🟡 Pend: <b>{len(pend)}</b>",
-                _TG_DIV]
+    linhas   = _tg_header("📍", _tg_esc(nome_cidade.upper()), None,
+                          f"✅ {len(exec_h)} exec hoje · 🔵 {len(atend)} atend · 🟡 {len(pend)} pend")
     todos = exec_h + atend + pend + sem_exec
     for r in todos[:25]:
         sit   = r.get("descsituacao") or ""
@@ -765,7 +709,7 @@ def _build_cidade(nome):
         linhas.append(f"{sit_ic(sit)} <b>{numos}</b> · {nome_} · {eq}")
     if len(todos) > 25:
         linhas.append(f"<i>… +{len(todos) - 25} OS não exibidas</i>")
-    linhas += ["", f"<i>Total em {_tg_esc(nome_cidade)}: {len(cid_rows)} OS · {hora_str}</i>"]
+    linhas += _tg_footer(f"Total em {_tg_esc(nome_cidade)}: {len(cid_rows)} OS")
     return "\n".join(linhas)
 
 
@@ -795,8 +739,7 @@ def _build_turno():
     for r in atend:
         eq = _abrev_equipe(r.get("nomedaequipe", "")) or "Sem equipe"
         por_equipe.setdefault(eq, []).append(r)
-    linhas = [f"🏃 <b>Turno Atual — Equipes em Campo</b>",
-              f"<i>{hoje_str} às {hora_str} · {len(atend)} OS em Atendimento</i>", _TG_DIV]
+    linhas = _tg_header("🏃", "TURNO ATUAL", None, f"{len(atend)} OS em Atendimento")
     for eq in sorted(por_equipe):
         os_eq = por_equipe[eq]
         linhas.append(f"\n👷 <b>{_tg_esc(eq)} ({len(os_eq)} OS)</b>")
@@ -809,7 +752,6 @@ def _build_turno():
             linhas.append(f"  🔵 <b>{numos}</b> · {nome} · {cidade}{tempo_s}")
         if len(os_eq) > 3:
             linhas.append(f"  <i>… +{len(os_eq) - 3} OS</i>")
-    linhas += ["", _TG_DIV, f"<i>Cabonnet · Visão de Turno · {hora_str}</i>"]
     return "\n".join(linhas)
 
 
@@ -820,8 +762,6 @@ def _build_forecast():
         return "⏳ Sem dados disponíveis."
     agora    = datetime.now()
     hoje     = agora.date()
-    hora_str = agora.strftime("%H:%M")
-    hoje_str = hoje.strftime("%d/%m/%Y")
     sem_rede = [r for r in rows if not (r.get("servico") or "").upper().startswith("REDE")]
     is_hoje  = lambda r: _parse_data_br(r.get("dataexecucao") or r.get("databaixa")) == hoje
     exec_h   = [r for r in sem_rede if r.get("descsituacao") == "Concluída" and "Sem" not in (r.get("descsituacao") or "") and is_hoje(r)]
@@ -838,8 +778,7 @@ def _build_forecast():
     taxa_proj   = round(proj / total_op * 100) if total_op else 0
     icon_proj   = "🟢" if taxa_proj >= 80 else "🟡" if taxa_proj >= 60 else "🔴"
     bar_proj    = "▓" * min(10, round(taxa_proj / 10)) + "░" * max(0, 10 - round(taxa_proj / 10))
-    linhas = [f"🔭 <b>Projeção do Dia — {hoje_str}</b>",
-              f"<i>Base: ritmo das últimas {decorrido:.1f}h · {hora_str}</i>", _TG_DIV, "",
+    linhas = _tg_header("🔭", "PROJEÇÃO DO DIA", None, f"Base: ritmo das últimas {decorrido:.1f}h") + [
               f"✅ Executadas até agora: <b>{len(exec_h)}</b>",
               f"📋 Na fila: <b>{fila_restante}</b>  ·  Tempo restante: <b>{restante:.1f}h</b>",
               f"⚡ Ritmo atual: <b>{ritmo:.1f} OS/h</b>", "",
@@ -851,7 +790,6 @@ def _build_forecast():
         linhas.append(f"🟡 <b>Meta em risco.</b> Projeção indica ~{total_op - proj} OS na fila ao fechar.")
     else:
         linhas.append(f"🔴 <b>Meta em perigo.</b> ~{total_op - proj} OS devem ficar sem execução.")
-    linhas += ["", _TG_DIV, f"<i>Cabonnet · Forecast · {hora_str}</i>"]
     return "\n".join(linhas)
 
 
@@ -862,15 +800,11 @@ def _build_listarede():
              and (r.get("servico") or "").upper().startswith("REDE")]
     if not atend:
         return "✅ Nenhuma OS de <b>Rede</b> em Atendimento no momento."
-    hoje     = date.today()
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
-    por_eq   = {}
+    por_eq = {}
     for r in atend:
         eq = (r.get("nomedaequipe") or "Sem equipe").strip()
         por_eq.setdefault(eq, []).append(r)
-    linhas = [f"📡 <b>OS REDE EM ATENDIMENTO — {len(atend)} total</b>",
-              f"📅 <i>{hoje_str} às {hora_str}</i>", _TG_DIV]
+    linhas = _tg_header("📡", "REDE EM ATENDIMENTO", None, f"{len(atend)} OS no total")
     for eq in sorted(por_eq.keys()):
         grupo = por_eq[eq]
         linhas.append(f"\n👤 <b>{_tg_esc(eq)}</b> — {len(grupo)} OS")
@@ -880,7 +814,6 @@ def _build_listarede():
             serv   = _tg_esc((r.get("servico") or "")[:30])
             dt     = r.get("dataagendamento") or "Sem data"
             linhas.append(f"  /os{numos} · {cidade} · {serv} · {dt}")
-    linhas += ["", _TG_DIV, f"<i>Cabonnet · Rede · {hoje_str}</i>"]
     return "\n".join(linhas)
 
 
@@ -899,8 +832,6 @@ def _build_producao_equipe(query):
         return "⏳ Sem dados disponíveis. Verifique a conexão com o Grafana."
     import re as _re
     hoje     = date.today()
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
     query_u  = query.strip().upper()
     frentes_op = _OPERADORA_GRUPOS.get(query_u)
     _eh_frente = bool(_re.match(r'^F\d+$', query_u))
@@ -932,8 +863,7 @@ def _build_producao_equipe(query):
         raw   = r.get("nomedaequipe") or ""
         chave = _abrev_equipe(raw) or raw
         grupos.setdefault(chave, []).append(r)
-    lines = [f"📊 <b>PRODUÇÃO — {_tg_esc(query.upper())}</b>",
-             f"{hoje_str} às {hora_str}", _TG_DIV]
+    lines = _tg_header("📊", "PRODUÇÃO", _tg_esc(query.upper()))
     for eq_name, grp in sorted(grupos.items()):
         em_atend   = [r for r in grp if r.get("descsituacao") == "Atendimento"]
         concl_hoje = [r for r in grp if r.get("descsituacao") == "Concluída" and is_hoje_exec(r)]
@@ -970,7 +900,6 @@ def _build_producao_equipe(query):
             for r in sorted(concl_hoje, key=lambda x: x.get("datainicio") or "")[:12]:
                 lines.append(_os_line(r, modo="concluida"))
             if len(concl_hoje) > 12: lines.append(f"  <i>+{len(concl_hoje)-12} OS omitidas</i>")
-    lines += ["", _TG_DIV, f"<i>Cabonnet · Gestão de OS · {hoje_str}</i>"]
     return "\n".join(lines)
 
 
@@ -1048,29 +977,42 @@ def _build_os_detalhes(numos_str):
                 else "🔵" if "Atendimento" in situacao
                 else "⚠️" if "Sem Execução" in situacao
                 else "🟡")
-    linhas = [f"📋 <b>OS {numos_str}</b>  {sit_icon} {_tg_esc(situacao)}", _TG_DIV, "",
-              f"👤 <b>Cliente:</b>     {v('nomecliente')}",
-              f"🏢 <b>Empresa:</b>     {v('empresa')}",
-              f"📍 <b>Cidade:</b>      {v('nomedacidade')}",
-              f"🏠 <b>Endereço:</b>    {v('logradouro')} {v('numero')} {v('complemento')}".rstrip(),
-              f"🏘 <b>Bairro:</b>      {v('bairro')}",
-              f"🔑 <b>Contrato:</b>    {v('codigocontrato')}", "",
-              f"🔧 <b>Tipo:</b>        {v('tiposervico')}",
-              f"📝 <b>Serviço:</b>     {v('servico')}",
-              f"👥 <b>Equipe:</b>      {v('nomedaequipe')}"]
+    endereco = f"{v('logradouro', '')} {v('numero', '')}".strip()
+    compl    = str(r.get("complemento") or "").strip()
+    if compl:
+        endereco += f" · {_tg_esc(compl)}"
+    bairro_cid = " · ".join(x for x in (_tg_esc(str(r.get("bairro") or "").strip()),
+                                        _tg_esc(str(r.get("nomedacidade") or "").strip())) if x)
+
+    linhas = [f"📋 <b>OS {numos_str}</b>  {sit_icon} {_tg_esc(situacao)}", _TG_DIV,
+              f"👤 <b>Cliente:</b> {v('nomecliente')}",
+              f"🏢 <b>Empresa:</b> {v('empresa')}",
+              f"🔑 <b>Contrato:</b> {v('codigocontrato')}", "",
+              f"📍 <b>Endereço:</b> {endereco or '—'}",
+              f"🏘 <b>Bairro:</b> {bairro_cid or '—'}", "",
+              f"🔧 <b>Tipo:</b> {v('tiposervico')}",
+              f"📝 <b>Serviço:</b> {v('servico')}",
+              f"👥 <b>Equipe:</b> {v('nomedaequipe')}"]
     if r.get("equipeexecutou") and r.get("equipeexecutou") != r.get("nomedaequipe"):
-        linhas.append(f"👷 <b>Executou:</b>     {v('equipeexecutou')}")
+        linhas.append(f"👷 <b>Executou:</b> {v('equipeexecutou')}")
     periodo       = (r.get("periodo")        or "").strip()
     horaatend     = (r.get("horaatendimento") or "").strip()
     periodo_label = periodo
     if horaatend:
         periodo_label = f"{periodo} · {horaatend}h" if periodo else horaatend
-    linhas += ["", f"📅 <b>Cadastro:</b>    {v('datacadastro')}",
-               f"📅 <b>Agendamento:</b> {v('dataagendamento')}"]
-    if periodo_label: linhas.append(f"🕰 <b>Período:</b>      {_tg_esc(periodo_label)}")
-    if r.get("datainicio"):   linhas.append(f"🕐 <b>Início:</b>       {v('datainicio')}")
-    if r.get("dataexecucao"): linhas.append(f"🕐 <b>Execução:</b>     {v('dataexecucao')}")
-    if r.get("databaixa"):    linhas.append(f"🕐 <b>Baixa:</b>        {v('databaixa')}")
+    linhas += ["", f"📅 <b>Cadastro:</b> {v('datacadastro')} · <b>Agendamento:</b> {v('dataagendamento')}"]
+    if periodo_label: linhas.append(f"🕰 <b>Período:</b> {_tg_esc(periodo_label)}")
+    execucao = [(rotulo, (r.get(campo) or "").strip())
+                for rotulo, campo in (("Início", "datainicio"), ("Execução", "dataexecucao"), ("Baixa", "databaixa"))
+                if (r.get(campo) or "").strip()]
+    datas_exec = {val.split(" ")[0] for _, val in execucao}
+    if execucao and len(datas_exec) == 1 and all(" " in val for _, val in execucao):
+        dia    = next(iter(datas_exec))
+        passos = " → ".join(f"{rot} {_tg_esc(val.split(' ', 1)[1])}" for rot, val in execucao)
+        linhas.append(f"🕐 <b>{_tg_esc(dia)}:</b> {passos}")
+    else:
+        for rot, val in execucao:
+            linhas.append(f"🕐 <b>{rot}:</b> {_tg_esc(val)}")
     obs      = (r.get("observacoes")      or "").strip()
     obs_crit = (r.get("observacaocritica") or "").strip()
     if obs:      linhas += ["", "📝 <b>Observações:</b>", f"<i>{_tg_esc(obs[:3000])}</i>"]
@@ -1099,7 +1041,6 @@ def _build_os_detalhes(numos_str):
         linhas += _fmt_materiais(materiais, "Equipamentos/Materiais utilizados", "📦")
     if materiais_retirados:
         linhas += _fmt_materiais(materiais_retirados, "Equipamentos retirados", "📤")
-    linhas += ["", _TG_DIV, f"<i>Cabonnet · OS {numos_str}</i>"]
     return "\n".join(linhas)
 
 
@@ -1139,7 +1080,6 @@ def _build_os_ficha_rapida(numos_str):
     linhas.append(f"📅 <b>Agendado:</b> {v('dataagendamento')}")
     exec_ = (r.get("dataexecucao") or "").strip()
     if exec_: linhas.append(f"🕐 <b>Executado:</b> {_tg_esc(exec_)}")
-    linhas += [_TG_DIV, f"<i>Cabonnet · OS {numos_str}</i>"]
     markup = {"inline_keyboard": [[
         {"text": "🔄 Atualizar",      "callback_data": f"ficha:{numos_str}"},
         {"text": "📄 Ficha completa", "callback_data": f"os:{numos_str}"},
@@ -1177,8 +1117,8 @@ def _build_agenda(data_str=None):
     exec_ok   = sum(1 for r in agendadas if "Concluída" in (r.get("descsituacao") or "") and "Sem" not in (r.get("descsituacao") or ""))
     atend_cnt = sum(1 for r in agendadas if "Atendimento" in (r.get("descsituacao") or ""))
     pend      = total - exec_ok - atend_cnt
-    linhas    = [f"📅 <b>Agenda de {label} — {alvo_str}</b>",
-                 f"Total: {total} OS  ·  ✅ {exec_ok} exec  ·  🔵 {atend_cnt} atend  ·  🟡 {pend} pend", _TG_DIV]
+    linhas    = _tg_header("📅", "AGENDA", f"{label} ({alvo_str})",
+                           f"{total} OS · ✅ {exec_ok} exec · 🔵 {atend_cnt} atend · 🟡 {pend} pend")
     por_equipe = defaultdict(list)
     for r in agendadas:
         eq = (r.get("nomedaequipe") or "Sem equipe").strip()
@@ -1207,7 +1147,6 @@ def _build_pendentes_semequipe():
         return "⏳ Sem dados disponíveis. Acesse o dashboard para carregar os dados."
     hoje     = date.today()
     hora_str = datetime.now().strftime("%H:%M")
-    hoje_str = hoje.strftime("%d/%m/%Y")
     sem_equipe = [r for r in rows if r.get("descsituacao") == "Pendente"
                   and not (r.get("nomedaequipe") or "").strip()]
     if not sem_equipe:
@@ -1217,8 +1156,8 @@ def _build_pendentes_semequipe():
         dt = _parse_data_br(r.get("datacadastro", ""))
         return (hoje - dt).days if dt else 0
     sem_equipe.sort(key=_aging, reverse=True)
-    linhas = [f"⚠️ <b>OS Pendentes sem Equipe — {hoje_str}</b>",
-              f"Total: <b>{len(sem_equipe)}</b> OS aguardando agendamento", _TG_DIV]
+    linhas = _tg_header("⚠️", "PENDENTES SEM EQUIPE", None,
+                        f"{len(sem_equipe)} OS aguardando agendamento")
     for r in sem_equipe[:25]:
         numos  = str(r.get("numos", "?"))
         nome   = _tg_esc((r.get("nomecliente") or "?")[:28])
@@ -1229,7 +1168,7 @@ def _build_pendentes_semequipe():
         linhas.append(f"🟡 <b>{numos}</b> · {nome}" + (f" · {_tg_esc(cidade)}" if cidade else "") + f" · {_tg_esc(ts)}{age_s}")
     if len(sem_equipe) > 25:
         linhas.append(f"<i>… +{len(sem_equipe)-25} OS não exibidas</i>")
-    linhas += ["", f"<i>Use /os &lt;número&gt; para detalhes · Atualizado às {hora_str}</i>"]
+    linhas += _tg_footer("/os &lt;número&gt; para detalhes")
     return "\n".join(linhas)
 
 
@@ -1239,11 +1178,10 @@ def _build_semana():
     if not rows:
         return "⏳ Sem dados disponíveis. Acesse o dashboard para carregar os dados."
     hoje     = date.today()
-    hora_str = datetime.now().strftime("%H:%M")
     seg      = hoje - timedelta(days=hoje.weekday())
     dias_br  = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
-    linhas   = [f"📊 <b>Resumo Semanal — Produtividade</b>",
-                f"<i>Semana de {seg.strftime('%d/%m')} a {hoje.strftime('%d/%m/%Y')}</i>", _TG_DIV]
+    linhas   = _tg_header("📊", "RESUMO SEMANAL", None,
+                          f"Semana de {seg.strftime('%d/%m')} a {hoje.strftime('%d/%m')}")
     total_exec_sem = 0; total_pend_sem = 0
     for offset in range(hoje.weekday() + 1):
         dia     = seg + timedelta(days=offset)
@@ -1266,9 +1204,8 @@ def _build_semana():
         else:
             linhas.append(f"⚪ <b>{label} {dia.strftime('%d/%m')}</b>  Sem OS agendadas{hoje_mark}")
     linhas += [_TG_DIV, f"✅ <b>Total executadas na semana: {total_exec_sem}</b>",
-               f"⏳ Ainda na fila hoje: <b>{total_pend_sem}</b>", "",
-               "<i>Use /executadas · /pendentes · /listatendimento para mais detalhes</i>",
-               f"<i>Atualizado às {hora_str}</i>"]
+               f"⏳ Ainda na fila hoje: <b>{total_pend_sem}</b>"]
+    linhas += _tg_footer("/executadas", "/pendentes", "/listatendimento")
     return "\n".join(linhas)
 
 
@@ -1278,21 +1215,17 @@ def _build_semexec(operadora=None):
     if not rows:
         return "⏳ Sem dados disponíveis."
     hoje     = date.today()
-    hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
-    label    = f" — {operadora}" if operadora else ""
     base     = _filter_by_operadora(rows, operadora) if operadora else rows
     sem_exec = [r for r in base if "Sem Execução" in (r.get("descsituacao") or "")
                 and _parse_data_br(r.get("databaixa") or r.get("dataagendamento")) == hoje]
     if not sem_exec:
-        return (f"✅ <b>Sem Execução{label} — {hoje_str}</b>\n"
-                f"<i>Nenhuma OS encerrada sem execução hoje. · {hora_str}</i>")
+        return "\n".join(_tg_header("✅", "SEM EXECUÇÃO HOJE", operadora)
+                         + ["Nenhuma OS encerrada sem execução hoje."])
     por_equipe = {}
     for r in sem_exec:
         eq = _abrev_equipe(r.get("nomedaequipe", "")) or "Sem equipe"
         por_equipe.setdefault(eq, []).append(r)
-    linhas = [f"🚫 <b>Sem Execução Hoje{label} — {hoje_str}</b>",
-              f"Total: <b>{len(sem_exec)}</b> OS · {hora_str}", _TG_DIV]
+    linhas = _tg_header("🚫", "SEM EXECUÇÃO HOJE", operadora, f"{len(sem_exec)} OS")
     for eq, os_list in sorted(por_equipe.items(), key=lambda x: -len(x[1])):
         linhas.append(f"\n⚠️ <b>{_tg_esc(eq)}</b> — {len(os_list)} OS")
         for r in os_list:
@@ -1301,7 +1234,6 @@ def _build_semexec(operadora=None):
             cidade  = _tg_esc((r.get("nomedacidade") or "")[:16])
             servico = _tg_esc((r.get("tiposervico") or "").replace("INSTALACAO","Inst").replace("MANUTENCAO","Manut")[:18])
             linhas.append(f"  /os{numos} · {nome} · {cidade} · {servico}")
-    linhas += ["", _TG_DIV, f"<i>Cabonnet · Sem Execução · {hoje_str}</i>"]
     return "\n".join(linhas)
 
 
@@ -1312,9 +1244,7 @@ def _build_comparativo():
         return "⏳ Sem dados disponíveis."
     hoje      = date.today()
     ontem     = hoje - timedelta(days=1)
-    hoje_str  = hoje.strftime("%d/%m/%Y")
     ontem_str = ontem.strftime("%d/%m")
-    hora_str  = datetime.now().strftime("%H:%M")
     sem_rede  = [r for r in rows if not (r.get("servico") or "").upper().startswith("REDE")]
     def _exec_dia(dia):
         return [r for r in sem_rede if "Concluída" in (r.get("descsituacao") or "") and "Sem" not in (r.get("descsituacao") or "")
@@ -1335,14 +1265,12 @@ def _build_comparativo():
         sinal = "+" if n > 0 else ""
         icon  = ("📈" if n > 0 else "📉") if not invert else ("📉" if n > 0 else "📈")
         return f"{icon} {sinal}{n}"
-    linhas = [f"📊 <b>Comparativo Diário — {hoje_str}</b>",
-              f"<i>Hoje vs. {ontem_str} · {hora_str}</i>", _TG_DIV, "",
-              f"✅ <b>Executadas:</b>   hoje <b>{len(exec_h)}</b>  ·  ontem {len(exec_o)}  ·  {_delta(diff_exec)}",
+    linhas = _tg_header("📊", "COMPARATIVO DIÁRIO", None, f"Hoje vs. {ontem_str}") + [
+              f"✅ <b>Executadas:</b> hoje <b>{len(exec_h)}</b>  ·  ontem {len(exec_o)}  ·  {_delta(diff_exec)}",
               f"   <i>Instalações: hoje {_inst_dia(exec_h)}  ·  ontem {_inst_dia(exec_o)}</i>",
               f"🚫 <b>Sem Execução:</b> hoje <b>{len(se_h)}</b>  ·  ontem {len(se_o)}  ·  {_delta(diff_se, invert=True)}",
-              f"📋 <b>Fila atual:</b>   <b>{len(fila_h)}</b> OS",
-              f"{'🔴 <b>SLA vencido:</b>  <b>' + str(sla_h) + '</b> OS na fila' if sla_h else '🟢 <b>SLA:</b>  Sem OS vencidas na fila'}"]
-    linhas += ["", _TG_DIV, f"<i>Cabonnet · Comparativo · {hoje_str}</i>"]
+              f"📋 <b>Fila atual:</b> <b>{len(fila_h)}</b> OS",
+              f"{'🔴 <b>SLA vencido:</b> <b>' + str(sla_h) + '</b> OS na fila' if sla_h else '🟢 <b>SLA:</b> Sem OS vencidas na fila'}"]
     return "\n".join(linhas)
 
 
@@ -1361,7 +1289,6 @@ def _build_nota_instacable():
         return "⏳ Sem dados disponíveis. Verifique a conexão com o Grafana."
     hoje     = date.today()
     hoje_str = hoje.strftime("%d/%m/%Y")
-    hora_str = datetime.now().strftime("%H:%M")
     frentes_inst = _OPERADORA_GRUPOS["INSTACABLE"]
     def _eh_instacable(r):
         import re as _re2
@@ -1381,8 +1308,7 @@ def _build_nota_instacable():
     inst_h     = sum(1 for r in concl_hoje if "INSTALAC" in (r.get("tiposervico") or "").upper())
     manut_h    = sum(1 for r in concl_hoje if "MANUTENC" in (r.get("tiposervico") or "").upper())
     serv_h     = len(concl_hoje) - inst_h - manut_h
-    lines = ["📋 <b>FECHAMENTO DE NOTA — INSTACABLE</b>",
-             f"📅 <i>{hoje_str} às {hora_str}</i>", _TG_DIV, "",
+    lines = _tg_header("📋", "FECHAMENTO DE NOTA", "INSTACABLE") + [
              f"🟡 Pendentes: <b>{len(pendentes)}</b>",
              f"🔵 Em Atendimento: <b>{len(em_atend)}</b>",
              f"✅ Concluídas hoje: <b>{len(concl_hoje)}</b>"]
@@ -1407,7 +1333,6 @@ def _build_nota_instacable():
             eq_pend  = sum(1 for r in grp if r.get("descsituacao") == "Pendente")
             icon     = "✅" if eq_concl else ("⏳" if eq_atend + eq_pend else "⛔")
             lines.append(f"  {icon} <b>{_tg_esc(eq_name)}</b>: {eq_concl} concl · {eq_atend} atend · {eq_pend} pend")
-    lines += ["", _TG_DIV, f"<i>Escopo: Instacable · Período: Fechamento de Nota · {hoje_str}</i>"]
     return "\n".join(lines)
 
 
@@ -1470,7 +1395,7 @@ def _build_resumo_diario(periodo):
         log.info("[Telegram] Buscando dados para resumo '%s'...", periodo)
         csv_a = frames_to_csv(grafana_post(SQL_AGENDADO))
         _dados_cache_update(csv_agendado=csv_a or "")
-        titulo = "🌅 <b>Resumo Matinal — Cabonnet</b>" if periodo == "manha" else "🌆 <b>Fechamento do Dia — Cabonnet</b>"
+        titulo = "🌅 <b>RESUMO MATINAL</b>" if periodo == "manha" else "🌆 <b>FECHAMENTO DO DIA</b>"
         status_text = _build_status_text()
         corpo  = status_text.split("\n", 1)[1] if "\n" in status_text else status_text
         linhas = [titulo] + corpo.split("\n")
@@ -1491,15 +1416,14 @@ def _build_manutencoes_hoje():
     manut_hoje = [r for r in rows if "MANUTENC" in (r.get("tiposervico") or "").upper()
                   and (r.get("datacadastro") or "").startswith(hoje_str)]
     if not manut_hoje:
-        return (f"✅ <b>Nenhuma OS de manutenção aberta hoje.</b>\n<i>{hoje_str} às {hora_str}</i>")
+        return (f"✅ <b>Nenhuma OS de manutenção aberta hoje.</b>\n<i>{hoje_str} · {hora_str}</i>")
     por_cidade = {}
     for r in manut_hoje:
         cidade = (r.get("nomedacidade") or "?").strip()
         bairro = (r.get("bairro") or "Bairro não informado").strip()
         por_cidade.setdefault(cidade, {}).setdefault(bairro, []).append(r)
     cidades_sorted = sorted(por_cidade.items(), key=lambda x: -sum(len(v) for v in x[1].values()))
-    linhas = [f"🔧 <b>Manutenções Abertas Hoje — {hoje_str}</b>",
-              f"Total: <b>{len(manut_hoje)}</b> OS · {hora_str}", _TG_DIV]
+    linhas = _tg_header("🔧", "MANUTENÇÕES ABERTAS HOJE", None, f"{len(manut_hoje)} OS")
     for cidade, bairros in cidades_sorted:
         total_cidade = sum(len(v) for v in bairros.values())
         linhas.append(f"\n📍 <b>{_tg_esc(cidade)}</b> — {total_cidade} OS")
@@ -1514,7 +1438,7 @@ def _build_manutencoes_hoje():
                 eq     = _tg_esc(_abrev_equipe(r.get("nomedaequipe", "")) or "Sem equipe")
                 linhas.append(f"    {sit_ic} <b>{numos}</b> · {eq}")
             if len(os_list) > 4: linhas.append(f"    <i>… +{len(os_list)-4} OS</i>")
-    linhas += ["", f"<i>Use /os &lt;número&gt; para detalhes · {hora_str}</i>"]
+    linhas += _tg_footer("/os &lt;número&gt; para detalhes")
     return "\n".join(linhas)
 
 
