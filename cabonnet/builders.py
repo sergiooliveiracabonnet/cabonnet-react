@@ -1033,11 +1033,9 @@ def _build_os_detalhes(numos_str):
         log.warning("[OS %s] Falha ao buscar ocorrências: %s", numos_str, str(ex)[:120])
     materiais = []
     materiais_retirados = []
-    materiais_erro = False
     try:
         materiais = frames_to_dict_list(grafana_post(sql_materiais_utilizados(numos_int)))
     except Exception as ex:
-        materiais_erro = True
         log.warning("[OS %s] Falha ao buscar materiais utilizados: %s", numos_str, str(ex)[:120])
     try:
         materiais_retirados = frames_to_dict_list(grafana_post(sql_materiais_retirados(numos_int)))
@@ -1075,8 +1073,8 @@ def _build_os_detalhes(numos_str):
     if r.get("databaixa"):    linhas.append(f"🕐 <b>Baixa:</b>        {v('databaixa')}")
     obs      = (r.get("observacoes")      or "").strip()
     obs_crit = (r.get("observacaocritica") or "").strip()
-    if obs:      linhas += ["", "📝 <b>Observações:</b>", f"<i>{_tg_esc(obs[:400])}</i>"]
-    if obs_crit: linhas += ["", "⚠️ <b>Obs. Crítica:</b>", f"<i>{_tg_esc(obs_crit[:400])}</i>"]
+    if obs:      linhas += ["", "📝 <b>Observações:</b>", f"<i>{_tg_esc(obs[:3000])}</i>"]
+    if obs_crit: linhas += ["", "⚠️ <b>Obs. Crítica:</b>", f"<i>{_tg_esc(obs_crit[:3000])}</i>"]
     if ocorrencias:
         linhas += ["", f"🗒 <b>Ocorrências ({len(ocorrencias)}):</b>"]
         for oc in ocorrencias[:6]:
@@ -1101,8 +1099,6 @@ def _build_os_detalhes(numos_str):
         linhas += _fmt_materiais(materiais, "Equipamentos/Materiais utilizados", "📦")
     if materiais_retirados:
         linhas += _fmt_materiais(materiais_retirados, "Equipamentos retirados", "📤")
-    if materiais_erro and not materiais:
-        linhas += ["", "⚠️ <i>Equipamentos indisponíveis: sem acesso ao módulo mobile no banco (verificar liberação do schema).</i>"]
     linhas += ["", _TG_DIV, f"<i>Cabonnet · OS {numos_str}</i>"]
     return "\n".join(linhas)
 
