@@ -42,6 +42,15 @@ export default {
         mono:     ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
       },
 
+      // Escala tipográfica semantizada — 5 papéis, mínimo 11px (spec Onda 1)
+      fontSize: {
+        caption: ['11px', { lineHeight: '1.35', fontWeight: '500' }],
+        label:   ['12px', { lineHeight: '1.4',  fontWeight: '500' }],
+        body:    ['13px', { lineHeight: '1.45', fontWeight: '400' }],
+        title:   ['15px', { lineHeight: '1.35', fontWeight: '600' }],
+        display: ['28px', { lineHeight: '1', letterSpacing: '-0.025em', fontWeight: '700' }],
+      },
+
       borderRadius: {
         xs:      '3px',
         sm:      '6px',
