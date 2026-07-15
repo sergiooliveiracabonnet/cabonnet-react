@@ -20,7 +20,7 @@ from cabonnet.utils import _parse_data_br, _parse_datetime_br
 from cabonnet.telegram import (
     _telegram_enabled, _telegram_send, _telegram_send_long,
     _tg_esc, _abrev_equipe, _is_campo, _operadora_da_os,
-    _tg_header, _tg_footer,
+    _tg_header, _tg_footer, _tg_endereco,
 )
 from cabonnet.grafana import grafana_post, frames_to_csv, SQL_AGENDADO
 from cabonnet.builders import (
@@ -144,6 +144,8 @@ def _sla_monitor_loop():
                 sit    = r.get("descsituacao") or ""
                 sit_ic = "🔵" if "Atendimento" in sit else "🟡"
                 linhas.append(f"{sit_ic} <b>{numos}</b> · {age}d · {nome} · {eq}")
+                end = _tg_endereco(r, bairro_cidade=True)
+                if end: linhas.append(f"   📍 {end}")
             if len(novas) > 10: linhas.append(f"<i>… +{len(novas) - 10} OS</i>")
             linhas += _tg_footer("/sla para visão por equipe")
             _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
@@ -200,6 +202,8 @@ def _fila_monitor_loop():
                     cliente = _tg_esc(r.get("nomecliente","—"))[:30]
                     cidade  = _tg_esc(r.get("nomedacidade","—"))
                     linhas.append(f"• OS <b>{numos}</b> — {cliente} ({cidade}) — {round(h)}h")
+                    end = _tg_endereco(r, bairro_cidade=True)
+                    if end: linhas.append(f"   📍 {end}")
                 if len(sem_eq) > 10: linhas.append(f"<i>... e mais {len(sem_eq)-10} OS</i>")
                 _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
                 log_sla.info("[SemEquipe] Alerta enviado — %d OS", len(sem_eq))
@@ -248,9 +252,13 @@ def _manut_monitor_loop():
                 sit_ic   = "🔵" if "Atendimento" in sit else "🟡"
                 cnt_bairro  = len(por_bairro.get((cidade, bairro), []))
                 alerta_cto  = bairro and cnt_bairro >= 3
+                end_manut = _tg_endereco(r)
                 linhas = _tg_header("🔧", "NOVA OS MANUTENÇÃO", f"{sit_ic} OS {numos}") + [
-                          f"👤 <b>Cliente:</b> {nome}",
-                          f"📍 <b>Cidade:</b> {_tg_esc(cidade)}" + (f" · <b>Bairro:</b> {_tg_esc(bairro)}" if bairro else ""),
+                          f"👤 <b>Cliente:</b> {nome}"]
+                if end_manut:
+                    linhas.append(f"📍 <b>Endereço:</b> {end_manut}")
+                linhas += [
+                          f"🏘 <b>Bairro:</b> " + " · ".join(x for x in (_tg_esc(bairro), _tg_esc(cidade)) if x),
                           f"🔧 <b>Serviço:</b> {servico}",
                           f"👷 <b>Equipe:</b> {eq_atual}"]
                 if alerta_cto:
@@ -310,10 +318,11 @@ def _atendimento_travado_loop():
                 numos  = str(r.get("numos", "?"))
                 nome   = _tg_esc((r.get("nomecliente") or "?")[:24])
                 eq     = _tg_esc(_abrev_equipe(r.get("nomedaequipe", "")) or "Sem equipe")
-                cidade = _tg_esc((r.get("nomedacidade") or "")[:14])
                 h, m   = divmod(mins, 60)
                 tempo  = f"{h}h{m:02d}min"
-                linhas.append(f"🔵 <b>{numos}</b> · ⏱ <b>{tempo}</b> · {nome} · {eq} · {cidade}")
+                linhas.append(f"🔵 <b>{numos}</b> · ⏱ <b>{tempo}</b> · {nome} · {eq}")
+                end = _tg_endereco(r, bairro_cidade=True)
+                if end: linhas.append(f"   📍 {end}")
             if len(novas) > 10: linhas.append(f"<i>… +{len(novas) - 10} OS</i>")
             linhas += _tg_footer("Verifique com a equipe e atualize o status no sistema")
             _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
@@ -359,8 +368,9 @@ def _sem_exec_monitor_loop():
                 for r in os_list[:4]:
                     numos  = str(r.get("numos", "?"))
                     nome   = _tg_esc((r.get("nomecliente") or "?")[:24])
-                    cidade = _tg_esc((r.get("nomedacidade") or "")[:14])
-                    linhas.append(f"  /os{numos} · {nome} · {cidade}")
+                    linhas.append(f"  /os{numos} · {nome}")
+                    end = _tg_endereco(r, bairro_cidade=True)
+                    if end: linhas.append(f"      📍 {end}")
                 if len(os_list) > 4: linhas.append(f"  <i>… +{len(os_list) - 4} OS</i>")
             linhas += _tg_footer("/semexec para o relatório completo")
             _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
@@ -654,6 +664,8 @@ def _enviar_alertas_vt(items, tipo):
                 linhas.append(f"🔴 <b>OS {numos}</b> · VT {prazo_h}h · violado há {round(abs(restante), 1)}h · {cli} · {eq}")
             else:
                 linhas.append(f"🟠 <b>OS {numos}</b> · VT {prazo_h}h · faltam {round(restante, 1)}h · {cli} · {eq}")
+            end = _tg_endereco(r, bairro_cidade=True)
+            if end: linhas.append(f"   📍 {end}")
         if len(batch) > 10:
             linhas.append(f"<i>… +{len(batch) - 10} OS</i>")
         texto = "\n".join(linhas)

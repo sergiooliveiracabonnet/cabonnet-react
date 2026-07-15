@@ -115,6 +115,25 @@ def _tg_esc(s):
     return str(s or "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
 
+def _tg_endereco(row, bairro_cidade=False):
+    """Endereço formatado: rua + número (+ complemento se houver).
+
+    Com bairro_cidade=True anexa " — bairro · cidade" ao final.
+    Retorna string já escapada; vazia se a OS não tem endereço.
+    """
+    endereco = " ".join(x for x in (str(row.get("logradouro") or "").strip(),
+                                    str(row.get("numero") or "").strip()) if x)
+    compl = str(row.get("complemento") or "").strip()
+    if compl:
+        endereco += f" · {compl}"
+    if bairro_cidade:
+        local = " · ".join(x for x in (str(row.get("bairro") or "").strip(),
+                                       str(row.get("nomedacidade") or "").strip()) if x)
+        if local:
+            endereco = f"{endereco} — {local}" if endereco else local
+    return _tg_esc(endereco)
+
+
 def _tg_header(emoji, titulo, escopo=None, sub=None):
     """Cabeçalho padrão: título em negrito, data · hora em itálico, divisória.
 
@@ -215,12 +234,7 @@ def _tg_fmt_status_change(row, old_st, new_st):
     dt_agend  = _tg_esc(row.get("dataagendamento", ""))
     local     = " · ".join(x for x in (bairro, cidade) if x)
 
-    endereco = " ".join(x for x in (str(row.get("logradouro") or "").strip(),
-                                    str(row.get("numero") or "").strip()) if x)
-    compl    = str(row.get("complemento") or "").strip()
-    if compl:
-        endereco += f" · {compl}"
-    endereco = _tg_esc(endereco)
+    endereco = _tg_endereco(row)
 
     e_new = _STATUS_EMOJI.get(new_st, "🔄")
 
