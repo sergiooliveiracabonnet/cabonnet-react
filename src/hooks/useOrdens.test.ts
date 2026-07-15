@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { withCopeQuandoPendente } from './useOrdens'
+import { withCopeQuandoPendente, splitAgendaFutura, isAgendadaEm, dataBR } from './useOrdens'
 import { enrichRows } from '../lib/transform'
 import type { OSRow } from '../lib/types'
 
@@ -126,6 +126,57 @@ describe('withCopeQuandoPendente — reincorpora OS da COPE quando status = Pend
     const ordens  = allRows
     const result  = withCopeQuandoPendente(ordens, allRows, 'Pendente')
     expect(result).toHaveLength(1)
+  })
+})
+
+describe('isAgendadaEm / dataBR — comparação em formato BR', () => {
+  it('casa dataagendamento DD/MM/YYYY com o dia em formato BR (bug: ISO nunca casava)', () => {
+    const hoje = dataBR()
+    const r = makeOS({ dataagendamento: `${hoje} 08:00` })
+    expect(isAgendadaEm(r, hoje)).toBe(true)
+    expect(isAgendadaEm(makeOS({ dataagendamento: '01/01/2020' }), hoje)).toBe(false)
+    expect(isAgendadaEm(makeOS({ dataagendamento: '' }), hoje)).toBe(false)
+  })
+
+  it('dataBR formata como DD/MM/YYYY', () => {
+    expect(dataBR(new Date(2026, 6, 15))).toBe('15/07/2026')
+  })
+})
+
+describe('splitAgendaFutura — agenda de amanhã em diante', () => {
+  function amanhaBR(): string {
+    const d = new Date(); d.setDate(d.getDate() + 1)
+    return dataBR(d)
+  }
+
+  it('inclui Pendente e Atendimento agendadas para amanhã', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'P1', descsituacao: 'Pendente',    dataagendamento: amanhaBR() }),
+      makeOS({ numos: 'A1', descsituacao: 'Atendimento', dataagendamento: amanhaBR() }),
+    ])
+    const { amanhaOrdens, futuroOrdens } = splitAgendaFutura(rows)
+    expect(amanhaOrdens).toHaveLength(2)
+    expect(futuroOrdens).toHaveLength(2)
+  })
+
+  it('exclui COPE, reagendamento e concluídas com data futura', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'C1', nomedaequipe: 'COPE VALE',          dataagendamento: amanhaBR() }),
+      makeOS({ numos: 'R1', nomedaequipe: 'REAGENDAMENTO F01',  dataagendamento: amanhaBR() }),
+      makeOS({ numos: 'X1', descsituacao: 'Concluída',          dataagendamento: amanhaBR() }),
+      makeOS({ numos: 'P1', descsituacao: 'Pendente',           dataagendamento: amanhaBR() }),
+    ])
+    const { amanhaOrdens } = splitAgendaFutura(rows)
+    expect(amanhaOrdens.map(r => r.numos)).toEqual(['P1'])
+  })
+
+  it('agendamento de hoje ou passado não entra na agenda futura', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'H1', descsituacao: 'Pendente', dataagendamento: dataBR() }),
+      makeOS({ numos: 'V1', descsituacao: 'Pendente', dataagendamento: '01/01/2020' }),
+    ])
+    const { futuroOrdens } = splitAgendaFutura(rows)
+    expect(futuroOrdens).toHaveLength(0)
   })
 })
 

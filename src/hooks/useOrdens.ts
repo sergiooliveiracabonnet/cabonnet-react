@@ -24,6 +24,40 @@ function parseAgend(str: string | null | undefined): Date | null {
   return isNaN(dt.getTime()) ? null : dt
 }
 
+/** Data no formato do ERP (DD/MM/YYYY) — comparar com ISO nunca casava e o
+ *  KPI "Agend. hoje" ficava permanentemente em zero. */
+export function dataBR(d: Date = new Date()): string {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
+
+export function isAgendadaEm(r: OSRow, diaBR: string): boolean {
+  return ((r.dataagendamento as string) || '').split(' ')[0] === diaBR
+}
+
+// Agenda futura = OS ATIVAS com agendamento de amanhã em diante. Sem o filtro
+// de situação, COPE, reagendamentos e até concluídas adiantadas inflavam os
+// KPIs "Amanhã"/"Agend. Futuro" (mesma correção da aba Cidades).
+export function splitAgendaFutura(allRows: OSRow[]): { amanhaOrdens: OSRow[]; futuroOrdens: OSRow[] } {
+  const hoje  = new Date(); hoje.setHours(0, 0, 0, 0)
+  const amanha = new Date(hoje); amanha.setDate(hoje.getDate() + 1)
+  const amanhaBR = dataBR(amanha)
+  const amanhaOrdens: OSRow[] = [], futuroOrdens: OSRow[] = []
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r)) continue
+    if (!['Pendente', 'Atendimento'].includes(r.descsituacao)) continue
+    const raw = ((r.dataagendamento as string) || '').split(' ')[0]
+    if (!raw) continue
+    const parts = raw.split('/')
+    if (parts.length !== 3) continue
+    const d = new Date(+parts[2], +parts[1] - 1, +parts[0])
+    if (d >= amanha) {
+      futuroOrdens.push(r)
+      if (raw === amanhaBR) amanhaOrdens.push(r)
+    }
+  }
+  return { amanhaOrdens, futuroOrdens }
+}
+
 export function useOrdens() {
   const { derived: { ordens: ordensData }, allRows, isLoading, error } = useOSDerived()
 
@@ -45,30 +79,19 @@ export function useOrdens() {
   const [agendFuturo, setAgendFuturo] = useState(false)
   const [hideRede,    setHideRede]    = useState(false)
   const [sortBy,      setSortBy]      = useState('agendamento')
+  const [tableSort,   setTableSort]   = useState<{ key: string | null; dir: 'asc' | 'desc' }>({ key: null, dir: 'asc' })
   const [density,     setDensity]     = useState('normal')
   const [page,        setPage]        = useState(1)
   const PAGE_SIZE = 50
 
+  const toggleTableSort = (key: string) => {
+    setPage(1)
+    setTableSort(s => ({ key, dir: s.key === key && s.dir === 'asc' ? 'desc' : 'asc' }))
+  }
+
   const { ordens, options } = ordensData as { ordens: OSRow[]; options: OrdensOptions }
 
-  const { amanhaOrdens, futuroOrdens } = useMemo(() => {
-    const hoje  = new Date(); hoje.setHours(0, 0, 0, 0)
-    const amanha = new Date(hoje); amanha.setDate(hoje.getDate() + 1)
-    const amanhaDDMM = `${String(amanha.getDate()).padStart(2,'0')}/${String(amanha.getMonth()+1).padStart(2,'0')}/${amanha.getFullYear()}`
-    const amanhaOrdens: OSRow[] = [], futuroOrdens: OSRow[] = []
-    for (const r of allRows) {
-      const raw = ((r.dataagendamento as string) || '').split(' ')[0]
-      if (!raw) continue
-      const parts = raw.split('/')
-      if (parts.length !== 3) continue
-      const d = new Date(+parts[2], +parts[1] - 1, +parts[0])
-      if (d >= amanha) {
-        futuroOrdens.push(r)
-        if (raw === amanhaDDMM) amanhaOrdens.push(r)
-      }
-    }
-    return { amanhaOrdens, futuroOrdens }
-  }, [allRows])
+  const { amanhaOrdens, futuroOrdens } = useMemo(() => splitAgendaFutura(allRows), [allRows])
 
   // Reagendamentos são excluídos do `ordens` base (buildOrdens), então o filtro de
   // Reagendamento usa a lista ao-vivo (allRows), espelhando os KPIs do Dashboard.
@@ -104,8 +127,8 @@ export function useOrdens() {
     if (critico)    r = r.filter(x => x._slaCritico)
     if (hideRede)   r = r.filter(x => x._fornecedor !== 'REDE')
     if (agendHoje) {
-      const today = new Date().toISOString().slice(0, 10)
-      r = r.filter(x => (x.dataagendamento as string | undefined)?.startsWith(today))
+      const hojeBR = dataBR()
+      r = r.filter(x => isAgendadaEm(x, hojeBR))
     }
     if (aging) {
       r = r.filter(x => {
@@ -130,22 +153,42 @@ export function useOrdens() {
       })
     }
 
+    // Sort por coluna sobre o CONJUNTO filtrado — dentro do DataTable ordenaria
+    // só a página de 50: "ordenar por Risco" não traria as piores do conjunto.
+    if (tableSort.key) {
+      const k = tableSort.key
+      const val = (x: OSRow): number | string => {
+        if (k === '_aging')          return (x._aging ?? x._agingAbertura ?? -1)
+        if (k === 'dataagendamento') return parseAgend(x.dataagendamento as string)?.getTime() ?? Number.MAX_SAFE_INTEGER
+        const v = x[k]
+        return typeof v === 'number' ? v : String(v ?? '')
+      }
+      r = [...r].sort((a, b) => {
+        const av = val(a), bv = val(b)
+        const cmp = typeof av === 'number' && typeof bv === 'number'
+          ? av - bv
+          : String(av).localeCompare(String(bv), undefined, { numeric: true })
+        return tableSort.dir === 'asc' ? cmp : -cmp
+      })
+    }
+
     return r
-  }, [baseOrdens, search, status, reagendTipo, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, hideRede, sortBy])
+  }, [baseOrdens, search, status, reagendTipo, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, hideRede, sortBy, tableSort])
 
   const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
 
   const kpis = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10)
+    const hojeBR = dataBR()
     let criticas = 0, semEquipeCount = 0, agendHojeCount = 0, instalacao = 0, manutencao = 0, servico = 0
     for (const r of filtered) {
-      if (((r._aging as number) ?? 0) >= 6) criticas++
+      // Mesma régua do resto do sistema (e do deep-link do Dashboard): > 2× o SLA
+      if (r._slaCritico) criticas++
       if (!r.nomedaequipe) semEquipeCount++
-      if ((r.dataagendamento as string | undefined)?.startsWith(today)) agendHojeCount++
+      if (isAgendadaEm(r, hojeBR)) agendHojeCount++
       if (r._tipo === 'INSTALACAO') instalacao++
       else if (r._tipo === 'MANUTENCAO') manutencao++
-      else servico++
+      else if (r._tipo === 'OUTRO') servico++   // REDE não é serviço
     }
     return { total: filtered.length, criticas, semEquipe: semEquipeCount, agendHoje: agendHojeCount, agendAmanha: amanhaOrdens.length, agendFuturo: futuroOrdens.length, instalacao, manutencao, servico }
   }, [filtered, amanhaOrdens, futuroOrdens])
@@ -168,6 +211,7 @@ export function useOrdens() {
     agendAmanha, setAgendAmanha, agendFuturo, setAgendFuturo,
     hideRede, setHideRede,
     sortBy, setSortBy,
+    tableSort, toggleTableSort,
     clearFilters, options,
   }
 }

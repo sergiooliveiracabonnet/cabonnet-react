@@ -42,8 +42,8 @@ const reagendTipoOptions = [
 const agingOptions = [
   { value: '1',  label: 'Hoje (0-1 dia)' },
   { value: '2',  label: 'Até 2 dias' },
-  { value: '3',  label: '3-5 dias ⚠' },
-  { value: '6',  label: '≥6 dias 🔴' },
+  { value: '3',  label: '3-5 dias' },
+  { value: '6',  label: '≥6 dias' },
   { value: '11', label: '11+ dias' },
 ]
 
@@ -69,7 +69,9 @@ const columns: { key?: string; label: string; render?: ColRender }[] = [
     render: (v, row) => {
       const active = v as number | null
       const n = active ?? (row._agingAbertura ?? 0)
-      const c = active == null ? 'teal' : n >= 6 ? 'red' : n >= 3 ? 'yellow' : 'cyan'
+      // Régua relativa ao SLA da OS: manutenção com 2d (limite 1d) já estourou
+      const ratio = row._slaLimite > 0 ? n / row._slaLimite : n
+      const c = active == null ? 'teal' : ratio > 2 ? 'red' : ratio > 1 ? 'yellow' : 'cyan'
       return <Badge variant={c}>{n}d</Badge>
     }
   },
@@ -410,9 +412,9 @@ export default function OrdensPage() {
             onClick={() => { os.clearFilters(); scrollToTable() }}
           />
           <KPICard
-            title="Críticas ≥6d" value={os.kpis.criticas} accent="red"
-            sub="aging ≥ 6 dias"
-            onClick={() => { os.clearFilters(); os.setAging('6'); scrollToTable() }}
+            title="Críticas" value={os.kpis.criticas} accent="red"
+            sub="SLA 2× excedido"
+            onClick={() => { os.clearFilters(); os.setCritico(true); scrollToTable() }}
           />
           <KPICard
             title="Sem equipe" value={os.kpis.semEquipe} accent="yellow" icon={AlertTriangle}
@@ -426,12 +428,12 @@ export default function OrdensPage() {
           />
           <KPICard
             title="Amanhã" value={os.kpis.agendAmanha} accent="cyan" icon={CalendarClock}
-            sub="agendadas p/ amanhã"
+            sub="ativas p/ amanhã · geral"
             onClick={() => { os.clearFilters(); os.setAgendAmanha(true); scrollToTable() }}
           />
           <KPICard
             title="Agend. Futuro" value={os.kpis.agendFuturo} accent="orange" icon={CalendarClock}
-            sub="amanhã em diante"
+            sub="ativas, amanhã em diante · geral"
             onClick={() => { os.clearFilters(); os.setAgendFuturo(true); scrollToTable() }}
           />
         </div>
@@ -462,7 +464,7 @@ export default function OrdensPage() {
           </span>
         </button>
         <button
-          onClick={() => { os.clearFilters(); scrollToTable() }}
+          onClick={() => { os.clearFilters(); os.setTipoOs('OUTRO'); scrollToTable() }}
           className="flex items-center gap-1.5 px-3 py-1 rounded-full
                      bg-purple/10 border border-purple/20 text-purple
                      text-[12px] font-semibold hover:bg-purple/20 transition-all duration-fast"
@@ -517,6 +519,7 @@ export default function OrdensPage() {
           <span className="flex items-center gap-2 flex-wrap">
             Exibindo <strong className="text-text">{os.filtered.length}</strong> de{' '}
             <strong className="text-text">{os.ordens.length}</strong> OS
+            {os.critico      && <span className="rounded-full px-2 py-0.5 text-[11px] font-bold bg-red/10 text-red border border-red/20">Críticas · SLA 2×</span>}
             {os.semEquipe    && <span className="badge-yellow  rounded-full px-2 py-0.5 text-[11px] font-bold">Sem equipe</span>}
             {os.agendHoje    && <span className="badge-green   rounded-full px-2 py-0.5 text-[11px] font-bold">Agend. hoje</span>}
             {os.agendAmanha  && <span className="badge-cyan    rounded-full px-2 py-0.5 text-[11px] font-bold">Amanhã</span>}
@@ -550,7 +553,7 @@ export default function OrdensPage() {
             onRowClick={handleRowClick}
           />
         ) : (
-          /* ── Tabela flat padrão ── */
+          /* ── Tabela flat padrão — sort controlado ordena o conjunto inteiro ── */
           <DataTable
             columns={columns}
             rows={os.paginated}
@@ -558,6 +561,8 @@ export default function OrdensPage() {
             onRowClick={handleRowClick}
             onRowHover={handleRowHover}
             onRowLeave={handleRowLeave}
+            sort={os.tableSort}
+            onSort={os.toggleTableSort}
           />
         )}
 

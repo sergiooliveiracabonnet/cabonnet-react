@@ -19,6 +19,10 @@ interface DataTableProps<T extends Record<string, unknown>> {
   onRowLeave?:  () => void
   density?:     Density
   className?:   string
+  /** Modo controlado: o pai ordena o CONJUNTO COMPLETO (antes de paginar) e a
+   *  tabela só exibe. Sem isso, o sort interno ordenaria apenas a página atual. */
+  sort?:        { key: string | null; dir: 'asc' | 'desc' }
+  onSort?:      (key: string) => void
 }
 
 const rowHeight: Record<Density, string> = { normal: 'h-9', compact: 'h-7', mini: 'h-5' }
@@ -26,17 +30,22 @@ const textSize:  Record<Density, string> = { normal: 'text-[12px]', compact: 'te
 
 export function DataTable<T extends Record<string, unknown>>({
   columns, rows, onRowClick, onRowHover, onRowLeave, density = 'normal', className = '',
+  sort, onSort,
 }: DataTableProps<T>) {
-  const [sortKey, setSortKey] = useState<string | null>(null)
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const controlled = !!onSort
+  const [sortKeyLocal, setSortKey] = useState<string | null>(null)
+  const [sortDirLocal, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const sortKey = controlled ? (sort?.key ?? null) : sortKeyLocal
+  const sortDir = controlled ? (sort?.dir ?? 'asc') : sortDirLocal
 
   const handleSort = (key: string | undefined) => {
     if (!key) return
-    setSortDir(sortKey === key && sortDir === 'asc' ? 'desc' : 'asc')
+    if (controlled) { onSort!(key); return }
+    setSortDir(sortKeyLocal === key && sortDirLocal === 'asc' ? 'desc' : 'asc')
     setSortKey(key)
   }
 
-  const sorted = sortKey
+  const sorted = !controlled && sortKey
     ? [...rows].sort((a, b) => {
         const av = a[sortKey] ?? ''
         const bv = b[sortKey] ?? ''
