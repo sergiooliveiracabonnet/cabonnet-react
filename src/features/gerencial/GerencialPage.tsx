@@ -4,9 +4,10 @@ import { toBlob } from 'html-to-image'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useUIStore, PRESETS } from '../../store/uiStore'
 import { isReagend, isExecucaoReal } from '../../lib/transform'
+import type { OSRow } from '../../lib/types'
 import {
   isInst, isVTManut, isServico, isAtend, isAtivo, skip,
-  _parseBR, _isExecNoPeriodo, byCidade, byEquipe,
+  _parseBR, _isExecNoPeriodo, isAgendadaFutura, byCidade, byEquipe,
   type DrillRow,
 } from './gerencialUtils'
 import {
@@ -23,6 +24,9 @@ export default function GerencialPage() {
   const produtividadeRef             = useRef<HTMLDivElement>(null)
 
   const { from, to } = dateFilter ?? {}
+  // Janela ativa explícita nos títulos de seção — "no período" escondia se o
+  // número era de hoje ou do mês
+  const periodoLabel = PRESETS.find(p => p.id === dateFilter?.preset)?.label ?? 'Período custom'
 
   const openDrill = (d: DrillRow) => setDrillDown(d)
 
@@ -65,27 +69,31 @@ export default function GerencialPage() {
   const servAtivosCidades  = useMemo(() => byCidade(servAtivos),         [servAtivos])
 
   // ─── Em Rota — snapshot atual pelas 3 categorias de negócio ──────────────
-  const rotaInst   = useMemo(
-    () => allBase.filter(r => isInst(r) && isAtend(r))
-              .sort((a, b) => (b._agingAbertura ?? 0) - (a._agingAbertura ?? 0)),
-    [allBase]
-  )
-  const rotaVTManut = useMemo(
-    () => allBase.filter(r => isVTManut(r) && isAtend(r))
-              .sort((a, b) => (b._agingAbertura ?? 0) - (a._agingAbertura ?? 0)),
-    [allBase]
-  )
-  const rotaServ   = useMemo(
-    () => allBase.filter(r => isServico(r) && isAtend(r))
-              .sort((a, b) => (b._agingAbertura ?? 0) - (a._agingAbertura ?? 0)),
-    [allBase]
-  )
+  // "Em rota" = na rua HOJE. OS em Atendimento com agendamento futuro estão
+  // atribuídas, mas ainda não saíram — separadas para não inflar o snapshot.
+  const mkRota = (catFilter: (r: OSRow) => boolean) => {
+    const todas = allBase.filter(r => catFilter(r) && isAtend(r))
+    const hoje  = todas.filter(r => !isAgendadaFutura(r))
+      .sort((a, b) => (b._agingAbertura ?? 0) - (a._agingAbertura ?? 0))
+    const futuras = todas.filter(isAgendadaFutura)
+    return { hoje, futuras }
+  }
+  const rotaInstSplit    = useMemo(() => mkRota(isInst),    [allBase])   // eslint-disable-line react-hooks/exhaustive-deps
+  const rotaVTManutSplit = useMemo(() => mkRota(isVTManut), [allBase])   // eslint-disable-line react-hooks/exhaustive-deps
+  const rotaServSplit    = useMemo(() => mkRota(isServico), [allBase])   // eslint-disable-line react-hooks/exhaustive-deps
+  const rotaInst    = rotaInstSplit.hoje
+  const rotaVTManut = rotaVTManutSplit.hoje
+  const rotaServ    = rotaServSplit.hoje
   const rotaInstCidades    = useMemo(() => byCidade(rotaInst),    [rotaInst])
   const rotaVTManutCidades = useMemo(() => byCidade(rotaVTManut), [rotaVTManut])
   const rotaServCidades    = useMemo(() => byCidade(rotaServ),    [rotaServ])
 
-  // ─── Volume por Equipe e KPIs — baseados no filtro global ─────────────────
-  const equipes       = useMemo(() => byEquipe(baseRows), [baseRows])
+  // ─── Volume por Equipe e KPIs — mesmas bases dos cards da seção ───────────
+  // Ativas do filtro + concluídas por data de execução: a soma da tabela fecha
+  // com os KPIs logo acima (antes a coluna Concl. usava a janela de cadastro).
+  const equipesAtivas = useMemo(() => baseRows.filter(isAtivo), [baseRows])
+  const equipes       = useMemo(() => byEquipe(equipesAtivas, concluidas), [equipesAtivas, concluidas])
+  const equipeSource  = useMemo(() => [...new Set([...equipesAtivas, ...concluidas])], [equipesAtivas, concluidas])
   const kpiPendentes  = useMemo(() => baseRows.filter(r => r.descsituacao === 'Pendente'), [baseRows])
   const kpiAtendendo  = useMemo(() => baseRows.filter(isAtend), [baseRows])
   const kpiConcluidas = useMemo(() => concluidas, [concluidas])
@@ -104,9 +112,8 @@ export default function GerencialPage() {
       const now         = new Date()
       const ts          = now.toLocaleDateString('pt-BR') + ' · ' +
                           now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      const presetLabel  = PRESETS.find(p => p.id === dateFilter?.preset)?.label ?? dateFilter?.preset ?? '—'
-      const fmt           = (d: Date | null | undefined) => d ? d.toLocaleDateString('pt-BR') : '—'
-      const periodoLabel  = `${presetLabel} · ${fmt(from)} – ${fmt(to)}`
+      const fmt          = (d: Date | null | undefined) => d ? d.toLocaleDateString('pt-BR') : '—'
+      const periodoCap   = `${periodoLabel} · ${fmt(from)} – ${fmt(to)}`
 
       // Largura real: percorre a subárvore para achar o maior scrollWidth real
       const getTrueWidth = (node: HTMLElement): number => {
@@ -179,7 +186,7 @@ export default function GerencialPage() {
       ctx.fillText('CABONNET · Produtividade', 18 * SCALE, 20 * SCALE)
       ctx.fillStyle = '#3b82f6'
       ctx.font      = `600 ${11 * SCALE}px system-ui,-apple-system,sans-serif`
-      ctx.fillText(periodoLabel, 18 * SCALE, 43 * SCALE)
+      ctx.fillText(periodoCap, 18 * SCALE, 43 * SCALE)
       ctx.textAlign = 'right'
       ctx.fillStyle = colorMuted
       ctx.font      = `${10 * SCALE}px system-ui,-apple-system,sans-serif`
@@ -256,22 +263,22 @@ export default function GerencialPage() {
       {/* ── 1. Instalação ──────────────────────────────────────────────────── */}
       <section className="space-y-3">
         <SectionLabel icon={Package} color="#3b82f6">
-          Instalações — executadas no período
+          Instalações — executadas · {periodoLabel}
         </SectionLabel>
 
         <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-3">
           <div className="space-y-3">
             <HeroCount
-              value={instRows.length}
-              label="Total de Instalações"
-              sub={`${instAtivos.length} em aberto · ${instConclRows.length} concluídas`}
+              value={instConclRows.length}
+              label="Instalações Concluídas"
+              sub={`${instAtivos.length} em aberto · ${instRows.length} no total`}
               color="#3b82f6"
-              onClick={() => openDrill({ title: `Instalações — ${instRows.length} ordens`, rows: instRows, color: '#3b82f6' })}
+              onClick={() => openDrill({ title: `Instalações Concluídas — ${instConclRows.length} ordens`, rows: instConclRows, color: '#3b82f6' })}
             />
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Em aberto',  drillRows: instAtivos,    color: '#facc15' },
-                { label: 'Concluídas', drillRows: instConclRows, color: '#4ade80' },
+                { label: 'Em aberto', drillRows: instAtivos, color: '#facc15' },
+                { label: 'Total',     drillRows: instRows,   color: '#3b82f6' },
               ].map(s => (
                 <div key={s.label}
                      className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
@@ -313,7 +320,7 @@ export default function GerencialPage() {
       {/* ── 2. VT / Manutenção ─────────────────────────────────────────────── */}
       <section className="space-y-3">
         <SectionLabel icon={Wrench} color="#f97316">
-          VT / Manutenção — executadas no período
+          VT / Manutenção — executadas · {periodoLabel}
         </SectionLabel>
         <p className="text-[11px] text-muted -mt-2">
           Inclui Visitas Técnicas (VT 24h, VT 48h, VT 8h) e Manutenções corretivas
@@ -322,16 +329,16 @@ export default function GerencialPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-3">
           <div className="space-y-3">
             <HeroCount
-              value={vtManutRows.length}
-              label="Total VT / Manutenção"
-              sub={`${vtManutAtivos.length} em aberto · ${vtManutConclRows.length} concluídas`}
+              value={vtManutConclRows.length}
+              label="VT / Manutenção Concluídas"
+              sub={`${vtManutAtivos.length} em aberto · ${vtManutRows.length} no total`}
               color="#f97316"
-              onClick={() => openDrill({ title: `VT / Manutenção — ${vtManutRows.length} ordens`, rows: vtManutRows, color: '#f97316' })}
+              onClick={() => openDrill({ title: `VT / Manutenção Concluídas — ${vtManutConclRows.length} ordens`, rows: vtManutConclRows, color: '#f97316' })}
             />
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Em aberto',  drillRows: vtManutAtivos,    color: '#facc15' },
-                { label: 'Concluídas', drillRows: vtManutConclRows, color: '#4ade80' },
+                { label: 'Em aberto', drillRows: vtManutAtivos, color: '#facc15' },
+                { label: 'Total',     drillRows: vtManutRows,   color: '#f97316' },
               ].map(s => (
                 <div key={s.label}
                      className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
@@ -373,7 +380,7 @@ export default function GerencialPage() {
       {/* ── 3. Serviço ─────────────────────────────────────────────────────── */}
       <section className="space-y-3">
         <SectionLabel icon={Briefcase} color="#c4b5fd">
-          Serviço — executados no período
+          Serviço — executados · {periodoLabel}
         </SectionLabel>
         <p className="text-[11px] text-muted -mt-2">
           OS que não são Instalação nem VT/Manutenção (ex: mudança de plano, remanejamento, etc.)
@@ -382,16 +389,16 @@ export default function GerencialPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-3">
           <div className="space-y-3">
             <HeroCount
-              value={servRows.length}
-              label="Total de Serviços"
-              sub={`${servAtivos.length} em aberto · ${servConclRows.length} concluídos`}
+              value={servConclRows.length}
+              label="Serviços Concluídos"
+              sub={`${servAtivos.length} em aberto · ${servRows.length} no total`}
               color="#c4b5fd"
-              onClick={() => openDrill({ title: `Serviços — ${servRows.length} ordens`, rows: servRows, color: '#c4b5fd' })}
+              onClick={() => openDrill({ title: `Serviços Concluídos — ${servConclRows.length} ordens`, rows: servConclRows, color: '#c4b5fd' })}
             />
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Em aberto',  drillRows: servAtivos,    color: '#facc15' },
-                { label: 'Concluídos', drillRows: servConclRows, color: '#4ade80' },
+                { label: 'Em aberto', drillRows: servAtivos, color: '#facc15' },
+                { label: 'Total',     drillRows: servRows,   color: '#c4b5fd' },
               ].map(s => (
                 <div key={s.label}
                      className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
@@ -449,15 +456,26 @@ export default function GerencialPage() {
                 Instalação em rota
               </span>
             </div>
-            <button
-              className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
-                         hover:opacity-80 transition-opacity"
-              style={{ color: '#3b82f6' }}
-              onClick={() => openDrill({ title: `Instalação em Rota — ${rotaInst.length} ordens`, rows: rotaInst, color: '#3b82f6' })}
-              title="Ver todas as OS">
-              {rotaInst.length}
-              <ChevronRight size={14} className="mt-0.5 opacity-60" />
-            </button>
+            <div className="flex items-center gap-3">
+              {rotaInstSplit.futuras.length > 0 && (
+                <button
+                  className="text-[10px] font-semibold text-muted hover:text-secondary border border-white/[0.08]
+                             rounded-full px-2.5 py-1 transition-colors"
+                  onClick={() => openDrill({ title: `Instalação atribuída p/ datas futuras — ${rotaInstSplit.futuras.length} ordens`, rows: rotaInstSplit.futuras, color: '#3b82f6' })}
+                  title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
+                  +{rotaInstSplit.futuras.length} p/ datas futuras
+                </button>
+              )}
+              <button
+                className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
+                           hover:opacity-80 transition-opacity"
+                style={{ color: '#3b82f6' }}
+                onClick={() => openDrill({ title: `Instalação em Rota hoje — ${rotaInst.length} ordens`, rows: rotaInst, color: '#3b82f6' })}
+                title="Ver todas as OS na rua hoje">
+                {rotaInst.length}
+                <ChevronRight size={14} className="mt-0.5 opacity-60" />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             <div>
@@ -490,15 +508,26 @@ export default function GerencialPage() {
                 VT / Manutenção em rota
               </span>
             </div>
-            <button
-              className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
-                         hover:opacity-80 transition-opacity"
-              style={{ color: '#f97316' }}
-              onClick={() => openDrill({ title: `VT/Manutenção em Rota — ${rotaVTManut.length} ordens`, rows: rotaVTManut, color: '#f97316' })}
-              title="Ver todas as OS">
-              {rotaVTManut.length}
-              <ChevronRight size={14} className="mt-0.5 opacity-60" />
-            </button>
+            <div className="flex items-center gap-3">
+              {rotaVTManutSplit.futuras.length > 0 && (
+                <button
+                  className="text-[10px] font-semibold text-muted hover:text-secondary border border-white/[0.08]
+                             rounded-full px-2.5 py-1 transition-colors"
+                  onClick={() => openDrill({ title: `VT/Manutenção atribuída p/ datas futuras — ${rotaVTManutSplit.futuras.length} ordens`, rows: rotaVTManutSplit.futuras, color: '#f97316' })}
+                  title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
+                  +{rotaVTManutSplit.futuras.length} p/ datas futuras
+                </button>
+              )}
+              <button
+                className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
+                           hover:opacity-80 transition-opacity"
+                style={{ color: '#f97316' }}
+                onClick={() => openDrill({ title: `VT/Manutenção em Rota hoje — ${rotaVTManut.length} ordens`, rows: rotaVTManut, color: '#f97316' })}
+                title="Ver todas as OS na rua hoje">
+                {rotaVTManut.length}
+                <ChevronRight size={14} className="mt-0.5 opacity-60" />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             <div>
@@ -532,15 +561,26 @@ export default function GerencialPage() {
                 Serviço em rota
               </span>
             </div>
-            <button
-              className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
-                         hover:opacity-80 transition-opacity"
-              style={{ color: '#c4b5fd' }}
-              onClick={() => openDrill({ title: `Serviço em Rota — ${rotaServ.length} ordens`, rows: rotaServ, color: '#c4b5fd' })}
-              title="Ver todas as OS">
-              {rotaServ.length}
-              <ChevronRight size={14} className="mt-0.5 opacity-60" />
-            </button>
+            <div className="flex items-center gap-3">
+              {rotaServSplit.futuras.length > 0 && (
+                <button
+                  className="text-[10px] font-semibold text-muted hover:text-secondary border border-white/[0.08]
+                             rounded-full px-2.5 py-1 transition-colors"
+                  onClick={() => openDrill({ title: `Serviço atribuído p/ datas futuras — ${rotaServSplit.futuras.length} ordens`, rows: rotaServSplit.futuras, color: '#c4b5fd' })}
+                  title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
+                  +{rotaServSplit.futuras.length} p/ datas futuras
+                </button>
+              )}
+              <button
+                className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
+                           hover:opacity-80 transition-opacity"
+                style={{ color: '#c4b5fd' }}
+                onClick={() => openDrill({ title: `Serviço em Rota hoje — ${rotaServ.length} ordens`, rows: rotaServ, color: '#c4b5fd' })}
+                title="Ver todas as OS na rua hoje">
+                {rotaServ.length}
+                <ChevronRight size={14} className="mt-0.5 opacity-60" />
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -577,10 +617,10 @@ export default function GerencialPage() {
         {/* KPI strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
-            { label: 'Concluídas no período', drillRows: kpiConcluidas, color: '#4ade80' },
-            { label: 'Pendentes no período',   drillRows: kpiPendentes,  color: '#facc15' },
-            { label: 'Em Atendimento',         drillRows: kpiAtendendo,  color: '#22d3ee' },
-            { label: 'Total OS período',       drillRows: baseRows,      color: '#3b82f6' },
+            { label: 'Concluídas no período',            drillRows: kpiConcluidas, color: '#4ade80' },
+            { label: 'Pendentes cadastradas no período', drillRows: kpiPendentes,  color: '#facc15' },
+            { label: 'Em Atendimento',                   drillRows: kpiAtendendo,  color: '#22d3ee' },
+            { label: 'Total OS período',                 drillRows: baseRows,      color: '#3b82f6' },
           ].map(s => (
             <div key={s.label}
                  className="relative overflow-hidden rounded-xl border bg-card px-4 py-3 animate-card-enter
@@ -597,7 +637,7 @@ export default function GerencialPage() {
 
         <EquipeTable
           equipes={equipes}
-          sourceRows={baseRows}
+          sourceRows={equipeSource}
           onDrillDown={openDrill}
         />
       </section>

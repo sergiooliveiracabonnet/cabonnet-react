@@ -70,7 +70,9 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
             <div className="divide-y divide-white/[0.04]">
               {rows.map(r => {
                 const aging = r._aging ?? 0
-                const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : '#94a3b8'
+                // Régua relativa ao SLA da OS: manutenção com 2d (limite 1d) já estourou
+                const ratio = r._slaLimite > 0 ? aging / r._slaLimite : aging
+                const agClr = ratio > 2 ? '#f87171' : ratio > 1 ? '#f97316' : '#94a3b8'
                 const sitVariant = situacaoVariant(r.descsituacao)
                 return (
                   <div key={r.numos}
@@ -223,7 +225,8 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
         {rows.slice(0, 50).map(r => {
           const aging = r._agingAbertura ?? 0
           const pct   = Math.round((aging / max) * 100)
-          const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : color
+          const ratio = r._slaLimite > 0 ? aging / r._slaLimite : aging
+          const agClr = ratio > 2 ? '#f87171' : ratio > 1 ? '#f97316' : color
           return (
             <div key={r.numos} className="grid grid-cols-[1fr_1fr_80px] gap-3 px-4 py-2.5
                                           hover:bg-surface/20 transition-colors items-center">
@@ -307,7 +310,8 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
             <div className="divide-y divide-white/[0.04]">
               {results.map(r => {
                 const aging = r._agingAbertura ?? 0
-                const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : color
+                const ratio = r._slaLimite > 0 ? aging / r._slaLimite : aging
+                const agClr = ratio > 2 ? '#f87171' : ratio > 1 ? '#f97316' : color
                 return (
                   <div
                     key={r.numos}
@@ -353,22 +357,25 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
   return (
     <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
       {/* Header */}
-      <div className="grid grid-cols-[1fr_60px_60px_60px_60px_24px] gap-2 px-4 py-2.5 bg-surface/20
+      <div className="grid grid-cols-[1fr_54px_54px_54px_54px_44px_50px_24px] gap-2 px-4 py-2.5 bg-surface/20
                       border-b border-white/[0.05] text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
         <span>Equipe</span>
         <span className="text-right">Total</span>
         <span className="text-right text-yellow">Pend.</span>
         <span className="text-right text-cyan">Atend.</span>
         <span className="text-right text-green">Concl.</span>
+        <span className="text-right text-red" title="OS com mais de 2× o prazo de SLA">Crít.</span>
+        <span className="text-center" title="% das OS da equipe dentro do prazo de SLA">SLA</span>
         <span />
       </div>
       <div className="divide-y divide-white/[0.04] max-h-96 overflow-y-auto">
         {equipes.map((e, _i) => {
           const pct = Math.round((e.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)
+          const slaCls = e.slaPct >= 90 ? 'text-green bg-green/10' : e.slaPct >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
           return (
             <div key={e.equipe}
-                 className={`grid grid-cols-[1fr_60px_60px_60px_60px_24px] gap-2 px-4 py-3
+                 className={`grid grid-cols-[1fr_54px_54px_54px_54px_44px_50px_24px] gap-2 px-4 py-3
                              transition-colors items-center
                              ${clickable ? 'cursor-pointer hover:bg-surface/30' : 'hover:bg-surface/20'}`}
                  onClick={clickable ? () => {
@@ -388,6 +395,12 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
               <span className="font-mono text-[12px] text-yellow text-right">{e.pendente}</span>
               <span className="font-mono text-[12px] text-cyan text-right">{e.atendimento}</span>
               <span className="font-mono text-[12px] text-green text-right">{e.concluida}</span>
+              <span className={`font-mono text-[12px] text-right ${e.criticas > 0 ? 'text-red font-bold' : 'text-white/20'}`}>
+                {e.criticas > 0 ? e.criticas : '—'}
+              </span>
+              <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 tabular-nums text-center ${slaCls}`}>
+                {e.slaPct}%
+              </span>
               {clickable
                 ? <ChevronRight size={11} className="text-muted justify-self-end" />
                 : <span />}
