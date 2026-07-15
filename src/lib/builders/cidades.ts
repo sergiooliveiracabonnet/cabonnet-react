@@ -1,67 +1,94 @@
-import { isCOPE, isReagend, isConcluida } from '../transform'
-import type { OSRow, KPI } from '../types'
-import { avg } from './_helpers'
+import { isCOPE, isReagend, isExecucaoReal, parseDate } from '../transform'
+import type { OSRow, KPI, CidadeSaude } from '../types'
+import { avg, estourouSLA } from './_helpers'
 
-export function buildCidades(rows: OSRow[]) {
-  const cidMap = new Map<string, { rows: OSRow[] }>()
-  for (const r of rows) {
-    const c = (r.nomedacidade || 'Desconhecida').trim()
-    if (!cidMap.has(c)) cidMap.set(c, { rows: [] })
-    cidMap.get(c)!.rows.push(r)
+// ─── Saúde por Cidade ─────────────────────────────────────────────────────────
+// Recebe allRows (ao vivo, ignora filtro de data): a fila é um conceito de
+// estoque atual e a capacidade vem das execuções dos últimos 14 dias.
+// Exclui COPE/Reagendamento (não são fila de campo) e REDE (infra, não cidade).
+
+const JANELA_CAPACIDADE_DIAS = 14
+
+export function buildCidades(allRows: OSRow[]) {
+  const hoje    = new Date()
+  const hojeStr = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`
+
+  interface Acc {
+    fila: number; atend: number; pend: number
+    criticas: number; breach: number; semEq: number
+    agingArr: number[]; exec14: number
+  }
+  const porCidade = new Map<string, Acc>()
+  const acc = (c: string): Acc => {
+    let e = porCidade.get(c)
+    if (!e) { e = { fila: 0, atend: 0, pend: 0, criticas: 0, breach: 0, semEq: 0, agingArr: [], exec14: 0 }; porCidade.set(c, e) }
+    return e
   }
 
-  const lista = [...cidMap.entries()].map(([cidade, { rows: cr }]) => {
-    const atend    = cr.filter(r => r.descsituacao === 'Atendimento' && !isCOPE(r) && !isReagend(r)).length
-    const pend     = cr.filter(r => r.descsituacao === 'Pendente'    && !isCOPE(r) && !isReagend(r)).length
-    const reagend  = cr.filter(r => isReagend(r) && ['Pendente','Atendimento'].includes(r.descsituacao)).length
-    const concl    = cr.filter(r => isConcluida(r.descsituacao)).length
-    const slaExc   = cr.filter(r => r._slaExcedido).length
-    const criticas = cr.filter(r => r._slaCritico).length
-    const semEq    = cr.filter(r => !r.nomedaequipe?.trim() && !isCOPE(r) && !isReagend(r)).length
-    const agingArr = cr.filter(r => r._aging != null).map(r => r._aging as number)
-    const agingMed = avg(agingArr)
-    const total    = atend + pend + reagend
-    const score    = criticas * 10 + slaExc * 5 + pend * 2 + atend + reagend
-    const taxa     = (total + concl) > 0 ? Math.round(concl / (total + concl) * 100) : 0
-    const status   = criticas > 0 ? 'critico' : slaExc > 0 ? 'alto' : agingMed > 5 ? 'medio' : 'baixo'
-    return { cidade, total, atend, pend, reagend, concl, slaExc, criticas, semEq, agingMed, score, taxa, status }
-  })
+  // Dias úteis com execução na janela (denominador único p/ todas as cidades —
+  // dividir cada cidade pelos próprios dias inflaria a taxa das pequenas).
+  const diasComExec = new Set<string>()
 
-  const cidadesAtivas = lista.filter(c => c.total > 0)
-  const cidadesCriticasCount = cidadesAtivas.filter(c => c.criticas > 0).length
-  const cidadesForaSLACount  = cidadesAtivas.filter(c => c.slaExc  > 0).length
-  const agingMedGeral = cidadesAtivas.length > 0
-    ? Math.round(cidadesAtivas.reduce((s, c) => s + c.agingMed, 0) / cidadesAtivas.length)
-    : 0
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r) || r._tipo === 'REDE') continue
+    const cidade = (r.nomedacidade || 'Sem cidade').trim()
+
+    if (['Pendente', 'Atendimento'].includes(r.descsituacao)) {
+      const e = acc(cidade)
+      e.fila++
+      if (r.descsituacao === 'Atendimento') e.atend++
+      else e.pend++
+      if (r._slaCritico) e.criticas++
+      if (estourouSLA(r)) e.breach++
+      if (!r.nomedaequipe?.trim()) e.semEq++
+      if (r._aging != null) e.agingArr.push(r._aging)
+      continue
+    }
+
+    if (!isExecucaoReal(r.descsituacao)) continue
+    const day = (r.dataexecucao || r.databaixa || '').split(' ')[0]
+    if (!day || day === hojeStr) continue
+    const dt = parseDate(day)
+    // Domingo é plantão (2–4 técnicos) — não representa a capacidade real
+    if (!dt || dt.getDay() === 0 || (hoje.getTime() - dt.getTime()) > JANELA_CAPACIDADE_DIAS * 86400000) continue
+    acc(cidade).exec14++
+    diasComExec.add(day)
+  }
+
+  const nDias     = diasComExec.size
+  const filaTotal = [...porCidade.values()].reduce((s, e) => s + e.fila, 0)
+  const execTotal = [...porCidade.values()].reduce((s, e) => s + e.exec14, 0)
+
+  const saude: CidadeSaude[] = [...porCidade.entries()]
+    .filter(([, e]) => e.fila > 0 || e.exec14 > 0)
+    .map(([cidade, e]) => {
+      const saidasDia   = nDias > 0 ? Math.round(e.exec14 / nDias * 10) / 10 : 0
+      const backlogDias = saidasDia > 0 ? Math.round(e.fila / saidasDia * 10) / 10 : null
+      const shareFila   = filaTotal > 0 ? Math.round(e.fila   / filaTotal * 100) : 0
+      const shareExec   = execTotal > 0 ? Math.round(e.exec14 / execTotal * 100) : 0
+      return {
+        cidade,
+        fila: e.fila, atend: e.atend, pend: e.pend,
+        criticas: e.criticas,
+        slaPct:   e.fila > 0 ? Math.round((e.fila - e.breach) / e.fila * 100) : 100,
+        agingMed: avg(e.agingArr),
+        semEq:    e.semEq,
+        saidasDia, backlogDias, shareFila, shareExec,
+        deltaShare: shareFila - shareExec,
+      }
+    })
+    .sort((a, b) => (b.backlogDias ?? -1) - (a.backlogDias ?? -1) || b.fila - a.fila)
+
+  const comFila       = saude.filter(c => c.fila > 0)
+  const criticasCount = comFila.filter(c => c.criticas > 0).length
+  const acumulando    = comFila.filter(c => c.deltaShare >= 5).length
+  const agingMedGeral = comFila.length > 0 ? Math.round(comFila.reduce((s, c) => s + c.agingMed, 0) / comFila.length) : 0
   const kpis: KPI[] = [
-    { id: 'total',    title: 'Cidades Ativas',  value: cidadesAtivas.length,  sub: 'com OS em aberto',      accent: 'primary' },
-    { id: 'criticas', title: 'Estado Crítico',  value: cidadesCriticasCount,  sub: 'com SLA 2× excedido',   accent: 'red'    },
-    { id: 'foraSla',  title: 'Fora do SLA',     value: cidadesForaSLACount,   sub: 'com SLA excedido',      accent: 'orange' },
-    { id: 'aging',    title: 'Aging Médio',     value: `${agingMedGeral}d`,   sub: 'média geral das filas', accent: agingMedGeral > 5 ? 'red' : agingMedGeral > 2 ? 'yellow' : 'green' },
+    { id: 'total',      title: 'Cidades c/ Fila',   value: comFila.length, sub: 'com OS em aberto',              accent: 'primary' },
+    { id: 'criticas',   title: 'Com OS Crítica',    value: criticasCount,  sub: 'SLA 2× excedido',               accent: criticasCount > 0 ? 'red' : 'green' },
+    { id: 'acumulando', title: 'Acumulando Fila',   value: acumulando,     sub: 'fila cresce acima da execução', accent: acumulando > 0 ? 'orange' : 'green' },
+    { id: 'aging',      title: 'Aging Médio',       value: `${agingMedGeral}d`, sub: 'média geral das filas',    accent: agingMedGeral > 5 ? 'red' : agingMedGeral > 2 ? 'yellow' : 'green' },
   ]
 
-  const todasCidades = [...cidadesAtivas].sort((a, b) => b.score - a.score)
-  const ranking = [...lista].sort((a, b) => b.score - a.score).slice(0, 10)
-    .map(c => ({ cidade: c.cidade, score: c.score, criticas: c.criticas, slaExc: c.slaExc, total: c.total }))
-  const pendencias = cidadesAtivas
-    .sort((a, b) => b.total - a.total).slice(0, 15)
-    .map(c => ({ cidade: c.cidade, atend: c.atend, pend: c.pend, total: c.total, slaRisco: c.slaExc > 0 ? 'Alto' : 'Normal' }))
-  const fila = [...cidadesAtivas]
-    .sort((a, b) => b.agingMed - a.agingMed).slice(0, 15)
-    .map(c => ({ cidade: c.cidade, emAberto: c.total, agingMed: c.agingMed, criticas: c.criticas, semEquipe: c.semEq }))
-  const heatmap = lista.map(c => ({
-    cidade: c.cidade, total: c.total,
-    nivel:  c.criticas > 0 ? 'critico' : c.slaExc > 0 ? 'alto' : c.total > 10 ? 'medio' : 'baixo',
-  }))
-  const execucoes = [...lista].filter(c => c.concl > 0)
-    .sort((a, b) => b.concl - a.concl).slice(0, 10)
-    .map(c => ({ cidade: c.cidade, concluidas: c.concl, total: c.total + c.concl, taxa: c.taxa }))
-  const consolidado = [...lista].sort((a, b) => (b.total + b.concl) - (a.total + a.concl)).slice(0, 15)
-    .map(c => ({ cidade: c.cidade, total: c.total + c.concl, atend: c.atend, pend: c.pend, concl: c.concl, criticas: c.criticas }))
-
-  return { ranking, pendencias, fila, heatmap, execucoes, consolidado, kpis, todasCidades }
+  return { saude, kpis }
 }
-
-// ─── Campo ────────────────────────────────────────────────────────────────────
-
-

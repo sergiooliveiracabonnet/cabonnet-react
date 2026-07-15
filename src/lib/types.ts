@@ -355,84 +355,28 @@ export interface AnomaliasData {
 
 // ─── Cidades Builder ──────────────────────────────────────────────────────────
 
-// Registro completo de uma cidade (todasCidades)
-export interface CidadeItem {
-  cidade:   string
-  total:    number
-  atend:    number
-  pend:     number
-  reagend:  number
-  concl:    number
-  slaExc:   number
-  criticas: number
-  semEq:    number
-  agingMed: number
-  score:    number
-  taxa:     number
-  status:   'critico' | 'alto' | 'medio' | 'baixo'
-}
-
-// Top-10 por score (ranking)
-export interface CidadeRankItem {
-  cidade:   string
-  score:    number
-  criticas: number
-  slaExc:   number
-  total:    number
-}
-
-// Top-15 por total em aberto (pendencias)
-export interface CidadePendItem {
-  cidade:   string
-  atend:    number
-  pend:     number
-  total:    number
-  slaRisco: string
-}
-
-// Top-15 por aging médio (fila)
-export interface CidadeFilaItem {
-  cidade:    string
-  emAberto:  number
-  agingMed:  number
-  criticas:  number
-  semEquipe: number
-}
-
-// Todas as cidades com nível de risco (heatmap)
-export interface CidadeHeatmapItem {
-  cidade: string
-  total:  number
-  nivel:  'critico' | 'alto' | 'medio' | 'baixo'
-}
-
-// Top-10 com concluídas > 0 (execucoes)
-export interface CidadeExecItem {
-  cidade:     string
-  concluidas: number
-  total:      number
-  taxa:       number
-}
-
-// Top-15 por volume total (consolidado)
-export interface CidadeConsolidItem {
-  cidade:   string
-  total:    number
-  atend:    number
-  pend:     number
-  concl:    number
-  criticas: number
+// Saúde operacional de uma cidade — fila ao vivo + capacidade dos últimos 14 dias.
+// Responde "qual cidade está subdimensionada?" (backlogDias) e "qual está
+// acumulando fila?" (deltaShare: % da fila vs % das execuções).
+export interface CidadeSaude {
+  cidade:      string
+  fila:        number          // ativas ao vivo (pend + atend, sem COPE/reagend/REDE)
+  atend:       number
+  pend:        number
+  criticas:    number          // _slaCritico (> 2× SLA)
+  slaPct:      number          // % da fila dentro do prazo (estourouSLA)
+  agingMed:    number
+  semEq:       number
+  saidasDia:   number          // média de execuções/dia útil (14d, sem domingos)
+  backlogDias: number | null   // fila ÷ saidasDia; null sem execuções
+  shareFila:   number          // % da fila total do Vale nesta cidade
+  shareExec:   number          // % das execuções (14d) nesta cidade
+  deltaShare:  number          // shareFila − shareExec; positivo = acumulando fila
 }
 
 export interface CidadesData {
-  ranking:      CidadeRankItem[]
-  pendencias:   CidadePendItem[]
-  fila:         CidadeFilaItem[]
-  heatmap:      CidadeHeatmapItem[]
-  execucoes:    CidadeExecItem[]
-  consolidado:  CidadeConsolidItem[]
-  kpis:         KPI[]
-  todasCidades: CidadeItem[]
+  saude: CidadeSaude[]
+  kpis:  KPI[]
 }
 
 // ─── Campo Builder ────────────────────────────────────────────────────────────

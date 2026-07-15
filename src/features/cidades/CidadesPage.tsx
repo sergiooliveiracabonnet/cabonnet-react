@@ -7,14 +7,14 @@ import { isCOPE, isReagend } from '../../lib/transform'
 import { useAICidades } from '../../hooks/useAICidades'
 import type { OSRow } from '../../lib/types'
 import {
-  PainelCidade, tipoBreakdown, datePart,
+  PainelCidade, SaudeCidadeTable, tipoBreakdown, datePart,
   hojeLocal, amanhaLocal,
   PANEL_FROM, PANEL_HOVER,
   type PanelId,
 } from './CidadesComponents'
 
 export default function CidadesPage() {
-  const { allRows, rows, isLoading } = useOSDerived()
+  const { allRows, rows, isLoading, derived: { cidades, revisitas } } = useOSDerived()
   const [drawerOS,    setDrawerOS]   = useState<OSRow | null>(null)
   const [openPanels,  setOpenPanels] = useState<Record<PanelId, boolean>>({ atend: true, pend: true, concl: true, futuro: true, fila: true, amanha: true })
   const [aiEnabled, setAiEnabled]   = useState(false)
@@ -50,7 +50,8 @@ export default function CidadesPage() {
   const futuroRows = useMemo(() => {
     const amanhaISO = `${amanha.slice(6)}-${amanha.slice(3,5)}-${amanha.slice(0,2)}`
     return allRows.filter(r => {
-      if (r.descsituacao !== 'Atendimento' || isReagend(r) || isCOPE(r)) return false
+      // Pendente agendada também é agenda: só Atendimento subcontava o dia seguinte
+      if (!['Pendente', 'Atendimento'].includes(r.descsituacao) || isReagend(r) || isCOPE(r)) return false
       const agend = datePart(r.dataagendamento)
       if (!agend) return false
       const agendISO = `${agend.slice(6)}-${agend.slice(3,5)}-${agend.slice(0,2)}`
@@ -61,18 +62,22 @@ export default function CidadesPage() {
   const futuroAmanhaRows   = useMemo(() => futuroRows.filter(r => datePart(r.dataagendamento) === amanha), [futuroRows, amanha])
   const futuroRestanteRows = useMemo(() => futuroRows.filter(r => datePart(r.dataagendamento) !== amanha), [futuroRows, amanha])
 
-  const filaRows = useMemo(() => {
-    const fim   = new Date(); fim.setHours(23, 59, 59, 999)
-    const inicio = new Date(); inicio.setDate(inicio.getDate() - 30); inicio.setHours(0, 0, 0, 0)
-    return allRows.filter(r => {
-      if (isReagend(r) || isCOPE(r)) return false
-      if (!['Pendente', 'Atendimento'].includes(r.descsituacao)) return false
+  // Fila COMPLETA — a versão anterior cortava em 30 dias, escondendo justamente
+  // as OS mais antigas (o passivo mais grave) do painel mais alarmante da página.
+  const { filaRows, filaAntiga, filaRecente } = useMemo(() => {
+    const corte = new Date(); corte.setDate(corte.getDate() - 30); corte.setHours(0, 0, 0, 0)
+    const fila = allRows.filter(r =>
+      !isReagend(r) && !isCOPE(r) && ['Pendente', 'Atendimento'].includes(r.descsituacao))
+    const antiga: OSRow[] = [], recente: OSRow[] = []
+    for (const r of fila) {
       const raw = (r.datacadastro || '').split(' ')[0]
-      if (!raw) return true
       const [dd, mm, yy] = raw.split('/')
-      const dCad = new Date(+yy, +mm - 1, +dd)
-      return dCad >= inicio && dCad <= fim
-    })
+      const dCad = raw ? new Date(+yy, +mm - 1, +dd) : null
+      // Sem data de cadastro = idade desconhecida → tratada como antiga (conservador)
+      if (!dCad || isNaN(dCad.getTime()) || dCad < corte) antiga.push(r)
+      else recente.push(r)
+    }
+    return { filaRows: fila, filaAntiga: antiga, filaRecente: recente }
   }, [allRows])
 
   const panels = [
@@ -81,13 +86,17 @@ export default function CidadesPage() {
     { id: 'concl',  title: `Executadas hoje (${hoje.slice(0, 5)})`, icon: CheckCircle, color: 'green', rows: conclRows, defaultOpen: true, breakdown: tipoBreakdown(conclRows) },
     {
       id: 'amanha', title: `Agendado Amanhã · ${amanha.slice(0, 5)}`, icon: CalendarClock, color: 'orange', rows: futuroAmanhaRows, defaultOpen: true,
-      subtitle: `OS com agendamento confirmado para ${amanha}`,
+      subtitle: `OS agendadas para ${amanha} (pendentes e em atendimento)`,
       breakdown: tipoBreakdown(futuroAmanhaRows),
     },
     {
-      id: 'fila', title: 'Fila de Execução (30 dias)', icon: List, color: 'red', rows: filaRows, defaultOpen: true,
-      subtitle: 'OS em Atendimento/Pendente com cadastro nos últimos 30 dias',
+      id: 'fila', title: 'Fila de Execução', icon: List, color: 'red', rows: filaRows, defaultOpen: true,
+      subtitle: 'Toda a fila ativa · OS com mais de 30 dias em destaque',
       breakdown: tipoBreakdown(filaRows),
+      groups: [
+        { label: 'Mais de 30 dias na fila', rows: filaAntiga,  highlight: true, tone: 'red' as const },
+        { label: 'Últimos 30 dias',          rows: filaRecente, highlight: false },
+      ],
     },
     {
       id: 'futuro', title: 'Agendamento Futuro', icon: Calendar, color: 'purple', rows: futuroRows, defaultOpen: true,
@@ -204,6 +213,14 @@ export default function CidadesPage() {
               </button>
             ))}
           </div>
+        )}
+
+        {/* ── Saúde por Cidade — capacidade e acúmulo (ao vivo) ── */}
+        {!isLoading && (
+          <SaudeCidadeTable
+            saude={cidades.saude}
+            revisitasPorCidade={revisitas.porCidade as { cidade: string; taxa: number }[]}
+          />
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

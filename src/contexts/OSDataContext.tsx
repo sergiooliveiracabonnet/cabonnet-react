@@ -14,8 +14,7 @@ import type {
   CampoSemaforo, CampoAgingDist, CampoHeroReal,
   PicoDiaAnomalia, BairroAnomalia, EquipeAnomalia,
   SlaHipotese, SlaResumoItem, SlaRankingItem, SlaSemaforo, SlaCluster,
-  CidadeItem, CidadeRankItem, CidadePendItem, CidadeFilaItem,
-  CidadeHeatmapItem, CidadeExecItem, CidadeConsolidItem,
+  CidadeSaude,
   RevisitaHipotese,
 } from '../lib/types'
 
@@ -92,14 +91,8 @@ const EMPTY_DERIVED = {
     equipesAnomalia: [] as EquipeAnomalia[],
   },
   cidades: {
-    ranking:      [] as CidadeRankItem[],
-    pendencias:   [] as CidadePendItem[],
-    fila:         [] as CidadeFilaItem[],
-    heatmap:      [] as CidadeHeatmapItem[],
-    execucoes:    [] as CidadeExecItem[],
-    consolidado:  [] as CidadeConsolidItem[],
-    kpis:         [] as KPI[],
-    todasCidades: [] as CidadeItem[],
+    saude: [] as CidadeSaude[],
+    kpis:  [] as KPI[],
   },
   campo: {
     kpis:       [] as KPI[],
@@ -198,7 +191,7 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
   const graficos   = useMemo(() => safe('graficos',   () => buildGraficos(activeRows),   EMPTY_DERIVED.graficos),   [activeRows])
   const auditoria  = useMemo(() => safe('auditoria',  () => buildAuditoria(activeRows, discardedLixo, duplicadosLixo), EMPTY_DERIVED.auditoria), [activeRows, discardedLixo, duplicadosLixo])
   const anomalias  = useMemo(() => safe('anomalias',  () => buildAnomalias(activeRows),  EMPTY_DERIVED.anomalias),  [activeRows])
-  const cidades    = useMemo(() => safe('cidades',    () => buildCidades(activeRows),    EMPTY_DERIVED.cidades),    [activeRows])
+  const cidades    = useMemo(() => safe('cidades',    () => buildCidades(activeAllRows), EMPTY_DERIVED.cidades),    [activeAllRows])
   const campo      = useMemo(() => safe('campo',      () => buildCampo(activeRows, activeAllRows), EMPTY_DERIVED.campo), [activeRows, activeAllRows])
   const revisitas  = useMemo(() => safe('revisitas',  () => buildRevisitas(activeRevisitaRows, prevRevisitaRows), EMPTY_DERIVED.revisitas), [activeRevisitaRows, prevRevisitaRows])
   const ordens     = useMemo(() => safe('ordens',     () => buildOrdens(activeRows),     EMPTY_DERIVED.ordens),     [activeRows])

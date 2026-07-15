@@ -1,15 +1,16 @@
 import { useState, useMemo, type ComponentType } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, Activity } from 'lucide-react'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe } from '../../lib/osFormat'
-import type { OSRow } from '../../lib/types'
+import { estourouSLA } from '../../lib/builders/_helpers'
+import type { OSRow, CidadeSaude } from '../../lib/types'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export type IconComp = ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>
 export type PanelId  = 'atend' | 'pend' | 'concl' | 'futuro' | 'fila' | 'amanha'
-export interface CityEntry   { cidade: string; tipos: Record<string, number>; total: number }
-export interface FuturoGroup { label: string; rows: OSRow[]; highlight: boolean }
+export interface CityEntry   { cidade: string; tipos: Record<string, number>; total: number; criticas: number; slaPct: number }
+export interface FuturoGroup { label: string; rows: OSRow[]; highlight: boolean; tone?: 'cyan' | 'red' }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -51,12 +52,22 @@ export function datePart(raw: string | null | undefined): string {
   return (raw || '').trim().split(' ')[0]
 }
 
+// Classificação ÚNICA de tipo para toda a página — via _tipo (enrichRows).
+// Antes o card usava _tipo e a tabela re-derivava de tiposervico por string,
+// e uma OS de equipe REDE contava diferente no card e na matriz do mesmo painel.
+export function tipoDe(r: OSRow): 'INSTALACAO' | 'MANUTENCAO' | 'OUTRO' {
+  if (r._tipo === 'INSTALACAO') return 'INSTALACAO'
+  if (r._tipo === 'MANUTENCAO') return 'MANUTENCAO'
+  return 'OUTRO'
+}
+
 export function tipoBreakdown(rows: OSRow[]): { inst: number; manut: number; serv: number } {
   let inst = 0, manut = 0, serv = 0
   for (const r of rows) {
-    if      (r._tipo === 'INSTALACAO') inst++
-    else if (r._tipo === 'MANUTENCAO') manut++
-    else                               serv++
+    const t = tipoDe(r)
+    if      (t === 'INSTALACAO') inst++
+    else if (t === 'MANUTENCAO') manut++
+    else                         serv++
   }
   return { inst, manut, serv }
 }
@@ -64,26 +75,25 @@ export function tipoBreakdown(rows: OSRow[]): { inst: number; manut: number; ser
 export function buildMatrix(rows: OSRow[]): { cities: CityEntry[]; tipos: string[] } {
   const cityMap = new Map<string, CityEntry>()
   const tipoSet = new Set<string>()
+  const breachMap = new Map<string, number>()
   for (const r of rows) {
     const cidade = (r.nomedacidade || '').trim() || 'Não informada'
-    const t = (r.tiposervico || '').toUpperCase()
-    const tipo = t.includes('INSTALAC') ? 'INSTALACAO' : t.includes('MANUTENC') ? 'MANUTENCAO' : 'OUTRO'
+    const tipo = tipoDe(r)
     tipoSet.add(tipo)
-    if (!cityMap.has(cidade)) cityMap.set(cidade, { cidade, tipos: {}, total: 0 })
+    if (!cityMap.has(cidade)) cityMap.set(cidade, { cidade, tipos: {}, total: 0, criticas: 0, slaPct: 100 })
     const e = cityMap.get(cidade)!
     e.tipos[tipo] = (e.tipos[tipo] ?? 0) + 1
     e.total++
+    if (r._slaCritico) e.criticas++
+    if (estourouSLA(r)) breachMap.set(cidade, (breachMap.get(cidade) ?? 0) + 1)
+  }
+  for (const [cidade, e] of cityMap) {
+    const breach = breachMap.get(cidade) ?? 0
+    e.slaPct = e.total > 0 ? Math.round((e.total - breach) / e.total * 100) : 100
   }
   const tipos  = TIPO_ORDER.filter(t => tipoSet.has(t))
   const cities = [...cityMap.values()].sort((a, b) => b.total - a.total)
   return { cities, tipos }
-}
-
-export function tipoFromServico(tiposervico: string | null | undefined): string {
-  const t = (tiposervico || '').toUpperCase()
-  if (t.includes('INSTALAC')) return 'INSTALACAO'
-  if (t.includes('MANUTENC')) return 'MANUTENCAO'
-  return 'OUTRO'
 }
 
 export function cityOSSortValue(r: OSRow, key: string): string | number {
@@ -95,6 +105,99 @@ export function cityOSSortValue(r: OSRow, key: string): string | number {
     return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : s
   }
   return (r[key] ?? '').toString().toLowerCase()
+}
+
+// ─── SaudeCidadeTable ─────────────────────────────────────────────────────────
+// Visão analítica: capacidade e acúmulo por cidade — responde "qual cidade está
+// subdimensionada de equipe?" (backlog em dias) e "qual está afundando?"
+// (share da fila > share das execuções).
+
+export function SaudeCidadeTable({ saude, revisitasPorCidade }: {
+  saude: CidadeSaude[]
+  revisitasPorCidade?: { cidade: string; taxa: number }[]
+}) {
+  const reincDe = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const r of revisitasPorCidade ?? []) m.set(r.cidade.trim().toUpperCase(), r.taxa)
+    return m
+  }, [revisitasPorCidade])
+
+  if (!saude.length) return null
+  const comFila = saude.filter(c => c.fila > 0)
+
+  return (
+    <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/[0.08] flex-wrap">
+        <Activity size={13} className="text-primary flex-shrink-0" />
+        <span className="font-bold text-[13px] text-text">Saúde por Cidade</span>
+        <span className="text-[11px] text-muted">
+          — fila ao vivo vs capacidade dos últimos 14 dias · ordenado por backlog
+        </span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[12px]">
+          <thead>
+            <tr className="border-b border-white/[0.08] bg-surface">
+              {[
+                { l: 'Cidade',      a: 'left',   t: '' },
+                { l: 'Fila',        a: 'right',  t: 'OS ativas (pendente + atendimento)' },
+                { l: 'Crít.',       a: 'center', t: 'OS com mais de 2× o prazo de SLA' },
+                { l: 'SLA',         a: 'center', t: '% da fila dentro do prazo' },
+                { l: 'Aging',       a: 'right',  t: 'Idade média da fila em dias' },
+                { l: 'Saídas/dia',  a: 'right',  t: 'Média de execuções por dia útil (14 dias, sem domingos)' },
+                { l: 'Backlog',     a: 'right',  t: 'Dias para zerar a fila no ritmo atual — cidade subdimensionada tem backlog alto' },
+                { l: 'Fila × Exec', a: 'center', t: 'Share da fila vs share das execuções — positivo = a cidade acumula fila' },
+                { l: 'Reinc.',      a: 'center', t: 'Taxa de revisitas no período (retrabalho)' },
+              ].map(h => (
+                <th key={h.l} title={h.t}
+                    className={`px-4 py-2.5 text-${h.a} text-[11px] font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap`}>
+                  {h.l}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/[0.04]">
+            {comFila.map(c => {
+              const slaCls  = c.slaPct >= 90 ? 'text-green bg-green/10' : c.slaPct >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
+              const backCls = c.backlogDias == null ? 'text-muted' : c.backlogDias > 5 ? 'text-red' : c.backlogDias > 3 ? 'text-yellow' : 'text-text'
+              const deltaCls = c.deltaShare >= 5 ? 'text-orange' : c.deltaShare <= -5 ? 'text-green' : 'text-muted'
+              const reinc = reincDe.get(c.cidade.toUpperCase())
+              return (
+                <tr key={c.cidade} className="text-secondary hover:bg-primary/[0.04] transition-colors">
+                  <td className="px-4 py-2.5 font-semibold text-text whitespace-nowrap">{c.cidade}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-bold text-text tabular-nums">{c.fila}</td>
+                  <td className="px-4 py-2.5 text-center">
+                    {c.criticas > 0
+                      ? <span className="font-mono font-bold text-red">{c.criticas}</span>
+                      : <span className="text-white/20">—</span>}
+                  </td>
+                  <td className="px-4 py-2.5 text-center">
+                    <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 tabular-nums ${slaCls}`}>{c.slaPct}%</span>
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums">{c.agingMed}d</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums">
+                    {c.saidasDia > 0 ? c.saidasDia.toLocaleString('pt-BR') : '—'}
+                  </td>
+                  <td className={`px-4 py-2.5 text-right font-mono font-bold tabular-nums ${backCls}`}>
+                    {c.backlogDias != null ? `${c.backlogDias.toLocaleString('pt-BR')}d` : '—'}
+                  </td>
+                  <td className={`px-4 py-2.5 text-center font-mono font-semibold tabular-nums ${deltaCls}`}
+                      title={`${c.shareFila}% da fila do Vale vs ${c.shareExec}% das execuções`}>
+                    {c.deltaShare > 0 ? '+' : ''}{c.deltaShare}pp
+                  </td>
+                  <td className="px-4 py-2.5 text-center">
+                    {reinc != null
+                      ? <span className={`font-mono tabular-nums ${reinc > 15 ? 'text-red font-bold' : reinc > 8 ? 'text-yellow' : 'text-muted'}`}>{reinc}%</span>
+                      : <span className="text-white/20">—</span>}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
 }
 
 // ─── PainelCidade ─────────────────────────────────────────────────────────────
@@ -160,13 +263,16 @@ function GrupoFuturo({ group, color, onOS }: { group: FuturoGroup; color: string
   const [expandedCity, setExpandedCity] = useState<string | null>(null)
   const { cities, tipos } = useMemo(() => buildMatrix(group.rows), [group.rows])
   const maxTotal = cities[0]?.total ?? 1
+  const tone     = group.tone ?? 'cyan'
+  const hlBg     = tone === 'red' ? 'bg-red/[0.06]' : 'bg-cyan/[0.06]'
+  const hlText   = tone === 'red' ? 'text-red'      : 'text-cyan'
 
   return (
     <div>
       <div className={`flex items-center gap-2 px-5 py-2 border-y border-white/[0.08]
-                       ${group.highlight ? 'bg-cyan/[0.06]' : 'bg-surface/40'}`}>
+                       ${group.highlight ? hlBg : 'bg-surface/40'}`}>
         <span className={`text-[11px] font-bold uppercase tracking-[0.05em]
-                          ${group.highlight ? 'text-cyan' : 'text-muted'}`}>
+                          ${group.highlight ? hlText : 'text-muted'}`}>
           {group.label}
         </span>
         <span className="text-[11px] text-muted">· {group.rows.length} OS</span>
@@ -212,6 +318,14 @@ function CidadeTable({ cities, tipos, maxTotal, color, expandedCity, setExpanded
                 {TIPO_LABEL[t]}
               </th>
             ))}
+            <th className="px-4 py-2.5 text-center text-[11px] font-bold text-muted uppercase tracking-[0.04em]"
+                title="OS com mais de 2× o prazo de SLA">
+              Crít.
+            </th>
+            <th className="px-4 py-2.5 text-center text-[11px] font-bold text-muted uppercase tracking-[0.04em]"
+                title="% das OS desta cidade dentro do prazo de SLA">
+              SLA
+            </th>
             <th className="px-4 py-2.5 text-right text-[11px] font-bold text-muted uppercase tracking-[0.04em]">
               Total
             </th>
@@ -287,6 +401,17 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
             </td>
           )
         })}
+        <td className="px-4 py-2.5 text-center">
+          {c.criticas > 0
+            ? <span className="font-mono font-bold text-red">{c.criticas}</span>
+            : <span className="text-white/20">—</span>}
+        </td>
+        <td className="px-4 py-2.5 text-center">
+          <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 tabular-nums
+            ${c.slaPct >= 90 ? 'text-green bg-green/10' : c.slaPct >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'}`}>
+            {c.slaPct}%
+          </span>
+        </td>
         <td
           onClick={onToggle}
           className={`px-4 py-2.5 text-right font-mono font-bold cursor-pointer hover:bg-primary/[0.04]
@@ -298,7 +423,7 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
 
       {expanded && (
         <tr>
-          <td colSpan={tipos.length + 2} className="p-0">
+          <td colSpan={tipos.length + 4} className="p-0">
             <CityOSMini rows={cityRows} tipoFilter={tipoFilter} onOS={onOS} />
           </td>
         </tr>
@@ -320,7 +445,7 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
 
   const sorted = useMemo(() => {
     const base = tipoFilter
-      ? rows.filter(r => tipoFromServico(r.tiposervico) === tipoFilter)
+      ? rows.filter(r => tipoDe(r) === tipoFilter)
       : rows
     return [...base].sort((a, b) => {
       const av = cityOSSortValue(a, sort.key)
@@ -365,7 +490,9 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
         <tbody className="divide-y divide-white/[0.03]">
           {sorted.map(os => {
             const aging  = os._aging ?? 0
-            const agVar  = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'
+            // Badge relativo ao SLA da OS: manutenção com 2d (limite 1d) já estourou
+            const ratio  = os._slaLimite > 0 ? aging / os._slaLimite : aging
+            const agVar  = ratio > 2 ? 'red' : ratio > 1 ? 'yellow' : 'cyan'
             const sit    = os._situacaoEfetiva ?? os.descsituacao ?? '—'
             const sVar   = sit.includes('Conclu')  ? 'green'
                          : sit === 'Atendimento'   ? 'cyan'
@@ -373,7 +500,7 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
                          : sit === 'Reagendamento' ? 'orange'
                          : 'secondary'
             const semEquipe = !os.nomedaequipe?.trim()
-            const tipoLabel = TIPO_LABEL[tipoFromServico(os.tiposervico)] ?? '—'
+            const tipoLabel = TIPO_LABEL[tipoDe(os)] ?? '—'
             return (
               <tr key={os.numos} onClick={() => onOS(os)}
                   className={`cursor-pointer transition-colors

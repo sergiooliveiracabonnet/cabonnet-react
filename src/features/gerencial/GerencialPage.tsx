@@ -233,7 +233,7 @@ export default function GerencialPage() {
             </span>
           </div>
           <p className="text-[12px] text-muted">
-            Concluídas filtradas por <strong className="text-secondary">data de execução</strong> · Em Rota = snapshot ao vivo
+            Concluídas filtradas por <strong className="text-secondary">data de execução</strong> (inclui execuções da COPE — por isso pode diferir da aba Por Status) · Em Rota = snapshot ao vivo
           </p>
         </div>
 

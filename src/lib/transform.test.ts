@@ -811,35 +811,27 @@ describe('buildCidades', () => {
     makeOS({ numos: 'CID4', nomedacidade: 'SAO JOSE DOS CAMPOS', descsituacao: 'Atendimento', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(1) }),
   ])
 
-  it('retorna ranking, pendencias, fila, heatmap, kpis', () => {
+  it('retorna saude e kpis', () => {
     const result = buildCidades(rows)
-    expect(Array.isArray(result.ranking)).toBe(true)
-    expect(Array.isArray(result.pendencias)).toBe(true)
-    expect(Array.isArray(result.fila)).toBe(true)
-    expect(Array.isArray(result.heatmap)).toBe(true)
+    expect(Array.isArray(result.saude)).toBe(true)
     expect(Array.isArray(result.kpis)).toBe(true)
+    expect(result.saude.length).toBeGreaterThan(0)
   })
 
-  it('ranking tem campos cidade, total, criticas', () => {
-    const { ranking } = buildCidades(rows)
-    ranking.forEach(r => {
-      expect(typeof r.cidade).toBe('string')
-      expect(typeof r.total).toBe('number')
-      expect(typeof r.criticas).toBe('number')
+  it('saude tem campos cidade, fila, criticas, slaPct, backlogDias', () => {
+    const { saude } = buildCidades(rows)
+    saude.forEach(c => {
+      expect(typeof c.cidade).toBe('string')
+      expect(typeof c.fila).toBe('number')
+      expect(typeof c.criticas).toBe('number')
+      expect(typeof c.slaPct).toBe('number')
+      expect(c.backlogDias === null || typeof c.backlogDias === 'number').toBe(true)
     })
   })
 
-  it('todasCidades lista cidades únicas do dataset', () => {
-    const { todasCidades } = buildCidades(rows)
-    expect(Array.isArray(todasCidades)).toBe(true)
-    expect(todasCidades.length).toBeGreaterThan(0)
-  })
-
-  it('city vazia é mapeada como "Desconhecida" pelo builder', () => {
+  it('city vazia é mapeada como "Sem cidade" pelo builder', () => {
     const empty = enrichRows([makeOS({ numos: 'E1', nomedacidade: '', descsituacao: 'Pendente' })])
     const result = buildCidades(empty)
-    // Builder mapeia cidades sem nome para 'Desconhecida' — não filtra
-    const nomes = result.ranking.map(r => r.cidade)
-    nomes.forEach(n => expect(typeof n).toBe('string'))
+    expect(result.saude.find(c => c.cidade === 'Sem cidade')?.fila).toBe(1)
   })
 })
