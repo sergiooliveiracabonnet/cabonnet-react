@@ -215,6 +215,13 @@ def _tg_fmt_status_change(row, old_st, new_st):
     dt_agend  = _tg_esc(row.get("dataagendamento", ""))
     local     = " · ".join(x for x in (bairro, cidade) if x)
 
+    endereco = " ".join(x for x in (str(row.get("logradouro") or "").strip(),
+                                    str(row.get("numero") or "").strip()) if x)
+    compl    = str(row.get("complemento") or "").strip()
+    if compl:
+        endereco += f" · {compl}"
+    endereco = _tg_esc(endereco)
+
     e_new = _STATUS_EMOJI.get(new_st, "🔄")
 
     lines = [
@@ -225,8 +232,10 @@ def _tg_fmt_status_change(row, old_st, new_st):
     ]
     if tipo:
         lines.append(f"🔧 {tipo}" + (f" · {equipe}" if equipe else ""))
+    if endereco:
+        lines.append(f"📍 {endereco}")
     if local:
-        lines.append(f"📍 {local}")
+        lines.append(f"🏘 {local}")
     if dt_agend:
         lines.append(f"📅 Agendada: {dt_agend}")
     return "\n".join(lines)
