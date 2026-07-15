@@ -104,7 +104,7 @@ export function GaugeChart({ value = 0, max = 100, target, color = '#3b82f6', si
         </text>
       </svg>
       {label && (
-        <span className="text-[10px] font-semibold uppercase tracking-[0.05em]" style={{ color }}>
+        <span className="text-caption font-semibold uppercase tracking-[0.05em]" style={{ color }}>
           {label}
         </span>
       )}

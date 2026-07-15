@@ -311,7 +311,7 @@ export function LoginPage() {
               style={{ color: '#e8edf5', letterSpacing: '-0.02em' }}>
             Gestão de OS
           </h1>
-          <p className="text-[11px] mt-1.5 tracking-[0.06em]"
+          <p className="text-caption mt-1.5 tracking-[0.06em]"
              style={{ color: 'rgba(148,163,184,0.52)' }}>
             Supervisor&nbsp;|&nbsp;Sergio Oliveira
           </p>
@@ -335,7 +335,7 @@ export function LoginPage() {
           }}
         >
           {/* Section label */}
-          <p className="text-[10px] font-medium tracking-[0.14em] uppercase mb-5 text-center"
+          <p className="text-caption font-medium tracking-[0.14em] uppercase mb-5 text-center"
              style={{ color: 'rgba(96,165,250,0.6)' }}>
             Acesso restrito
           </p>
@@ -343,7 +343,7 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Usuário */}
             <div>
-              <label className="block text-[11px] font-medium mb-1.5"
+              <label className="block text-caption font-medium mb-1.5"
                      style={{ color: 'rgba(148,163,184,0.75)', letterSpacing: '0.04em' }}>
                 Usuário
               </label>
@@ -354,7 +354,7 @@ export function LoginPage() {
                 onChange={e => setUsername(e.target.value)}
                 disabled={loading}
                 placeholder="Digite seu usuário"
-                className="w-full rounded-xl px-3.5 py-2.5 text-[13px] outline-none
+                className="w-full rounded-xl px-3.5 py-2.5 text-body outline-none
                            transition-all duration-200 disabled:opacity-50"
                 style={{
                   background: 'rgba(255,255,255,0.04)',
@@ -369,7 +369,7 @@ export function LoginPage() {
 
             {/* Senha */}
             <div>
-              <label className="block text-[11px] font-medium mb-1.5"
+              <label className="block text-caption font-medium mb-1.5"
                      style={{ color: 'rgba(148,163,184,0.75)', letterSpacing: '0.04em' }}>
                 Senha
               </label>
@@ -381,7 +381,7 @@ export function LoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   disabled={loading}
                   placeholder="Senha"
-                  className="w-full rounded-xl px-3.5 py-2.5 pr-10 text-[13px] outline-none
+                  className="w-full rounded-xl px-3.5 py-2.5 pr-10 text-body outline-none
                              transition-all duration-200 disabled:opacity-50"
                   style={{
                     background: 'rgba(255,255,255,0.04)',
@@ -408,8 +408,8 @@ export function LoginPage() {
             {error && (
               <div className="flex items-start gap-2.5 rounded-xl px-3.5 py-3"
                    style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.18)' }}>
-                <span className="text-[10px] font-bold mt-px" style={{ color: '#f87171' }}>!</span>
-                <p className="text-[11px] leading-snug" style={{ color: 'rgba(248,113,113,0.9)' }}>{error}</p>
+                <span className="text-caption font-bold mt-px" style={{ color: '#f87171' }}>!</span>
+                <p className="text-caption leading-snug" style={{ color: 'rgba(248,113,113,0.9)' }}>{error}</p>
               </div>
             )}
 
@@ -420,7 +420,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={loading || success || !username.trim() || !password}
-              className="w-full h-10 rounded-xl text-[13px] font-semibold text-white
+              className="w-full h-10 rounded-xl text-body font-semibold text-white
                          active:scale-[0.985] transition-all duration-150
                          disabled:opacity-40 disabled:cursor-not-allowed
                          flex items-center justify-center gap-2"
@@ -443,7 +443,7 @@ export function LoginPage() {
         {/* Footer */}
         <div className="flex items-center justify-center gap-2 mt-7">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(59,130,246,0.4)' }} />
-          <p className="text-[10px] tracking-[0.06em]" style={{ color: 'rgba(100,116,139,0.55)' }}>
+          <p className="text-caption tracking-[0.06em]" style={{ color: 'rgba(100,116,139,0.55)' }}>
             Cabonnet ISP · Sistema Interno · v{__APP_VERSION__}
           </p>
         </div>

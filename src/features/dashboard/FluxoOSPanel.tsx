@@ -45,7 +45,7 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
   if (len < 2) {
     return (
       <div className="h-full rounded-lg border border-border bg-card p-5 flex items-center justify-center">
-        <p className="text-muted text-[12px]">Sem dados suficientes para o fluxo diário</p>
+        <p className="text-muted text-label">Sem dados suficientes para o fluxo diário</p>
       </div>
     )
   }
@@ -83,10 +83,10 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[13px] font-semibold text-text">Fluxo de OS — {len} dias</p>
-          <p className="text-[11px] text-muted mt-0.5">entradas × concluídas por dia · passe o mouse para detalhar</p>
+          <p className="text-body font-semibold text-text">Fluxo de OS — {len} dias</p>
+          <p className="text-caption text-muted mt-0.5">entradas × concluídas por dia · passe o mouse para detalhar</p>
         </div>
-        <div className="flex gap-4 text-[11px] text-secondary">
+        <div className="flex gap-4 text-caption text-secondary">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-[3px] rounded-full" style={{ background: BLUE }} /> Entradas
           </span>
@@ -97,7 +97,7 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
       </div>
 
       {/* Resumo da janela — direção da fila sem precisar de hover */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px] text-muted tabular-nums">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-caption text-muted tabular-nums">
         <span><span className="font-semibold text-text">{totEntradas}</span> entradas no período</span>
         <span><span className="font-semibold text-text">{totConcl}</span> concluídas</span>
         <span className="font-semibold"
@@ -171,7 +171,7 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
         {hover != null && (
           <div
             className="absolute z-10 min-w-[150px] pointer-events-none rounded border border-border
-                       bg-elevated px-2.5 py-2 text-[11px] shadow-lg"
+                       bg-elevated px-2.5 py-2 text-caption shadow-lg"
             style={{ left: tipLeft, top: tipTop, transform: 'translate(-50%, calc(-100% - 12px))' }}
             role="status"
           >
@@ -200,10 +200,10 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
       </div>
 
       <details className="mt-2">
-        <summary className="text-[11px] text-muted cursor-pointer hover:text-secondary">
+        <summary className="text-caption text-muted cursor-pointer hover:text-secondary">
           ver dados em tabela
         </summary>
-        <table className="w-full border-collapse mt-2 text-[11px]">
+        <table className="w-full border-collapse mt-2 text-caption">
           <thead>
             <tr>
               <th className="text-left  text-muted font-semibold px-2 py-1 border-b border-border">Dia</th>

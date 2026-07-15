@@ -13,7 +13,7 @@ export function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; 
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color }}>
+      <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color }}>
         {children}
       </span>
     </div>
@@ -33,10 +33,10 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
 
         {/* Sub-header: count + legenda */}
         <div className="flex items-center justify-between px-5 py-2.5 border-b border-white/[0.08]">
-          <span className="text-[12px] font-semibold" style={{ color }}>
+          <span className="text-label font-semibold" style={{ color }}>
             {rows.length} {rows.length === 1 ? 'ordem' : 'ordens'}
           </span>
-          <div className="flex items-center gap-4 text-[10px] text-muted">
+          <div className="flex items-center gap-4 text-caption text-muted">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-sm bg-green inline-block" /> Concluída
             </span>
@@ -52,7 +52,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
         {/* Cabeçalho da tabela */}
         <div className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3 px-5 py-2
                         bg-surface/20 border-b border-white/[0.05]
-                        text-[10px] font-bold uppercase tracking-[0.05em] text-muted flex-shrink-0">
+                        text-caption font-bold uppercase tracking-[0.05em] text-muted flex-shrink-0">
           <span>OS #</span>
           <span>Cliente</span>
           <span>Cidade</span>
@@ -63,7 +63,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
         {/* Lista scrollável */}
         <div className="overflow-y-auto flex-1">
           {rows.length === 0 ? (
-            <div className="px-5 py-10 text-center text-[12px] text-muted">
+            <div className="px-5 py-10 text-center text-label text-muted">
               Nenhuma OS encontrada
             </div>
           ) : (
@@ -79,23 +79,23 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
                        className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3
                                   px-5 py-2.5 items-center hover:bg-surface/20 transition-colors">
                     <div className="flex flex-col gap-0.5">
-                      <span className="font-mono font-bold text-[11px]" style={{ color }}>
+                      <span className="font-mono font-bold text-caption" style={{ color }}>
                         {r.numos}
                       </span>
-                      <Badge variant={sitVariant} className="text-[9px] px-1.5 py-px w-fit">
+                      <Badge variant={sitVariant} className="text-caption px-1.5 py-px w-fit">
                         {(r.descsituacao || '—').replace('Concluída/Sem Execução', 'S/Exec')}
                       </Badge>
                     </div>
-                    <span className="text-[12px] font-semibold text-text truncate">
+                    <span className="text-label font-semibold text-text truncate">
                       {r.nomecliente || '—'}
                     </span>
-                    <span className="text-[11px] text-secondary truncate">
+                    <span className="text-caption text-secondary truncate">
                       {r.nomedacidade || '—'}
                     </span>
-                    <span className="text-[11px] text-muted truncate">
+                    <span className="text-caption text-muted truncate">
                       {shortEquipe(r.nomedaequipe) || '—'}
                     </span>
-                    <span className="font-mono font-bold text-[12px] text-right"
+                    <span className="font-mono font-bold text-label text-right"
                           style={{ color: agClr }}>
                       {aging}d
                     </span>
@@ -130,11 +130,11 @@ export function HeroCount({ value, label, sub, color, onClick }: {
            style={{ fontSize: 'clamp(40px, 5vw, 52px)', color }}>
           {value}
         </p>
-        <p className="text-[13px] font-semibold text-text mt-1">{label}</p>
-        {sub && <p className="text-[11px] text-muted mt-0.5">{sub}</p>}
+        <p className="text-body font-semibold text-text mt-1">{label}</p>
+        {sub && <p className="text-caption text-muted mt-0.5">{sub}</p>}
         {clickable && (
           <span className="absolute bottom-3 right-3 flex items-center gap-0.5
-                           text-[9px] font-semibold uppercase tracking-wide"
+                           text-caption font-semibold uppercase tracking-wide"
                 style={{ color: `${color}90` }}>
             Ver OS <ChevronRight size={10} />
           </span>
@@ -155,7 +155,7 @@ export function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no pe
   if (!cidades.length) {
     return (
       <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
-        <p className="text-[12px] text-muted">{emptyMsg}</p>
+        <p className="text-label text-muted">{emptyMsg}</p>
       </div>
     )
   }
@@ -178,7 +178,7 @@ export function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no pe
                    onDrillDown({ title: `${c.cidade} — ${c.total} OS`, rows: filtered, color })
                  } : undefined}>
               <MapPin size={10} className="text-muted flex-shrink-0" />
-              <span className="text-[12px] font-semibold text-text w-36 flex-shrink-0 truncate">
+              <span className="text-label font-semibold text-text w-36 flex-shrink-0 truncate">
                 {c.cidade}
               </span>
               <div className="flex-1 h-1.5 bg-surface/40 rounded-full overflow-hidden">
@@ -186,7 +186,7 @@ export function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no pe
                      style={{ width: `${pct}%`, background: color,
                               boxShadow: `0 0 6px ${color}60` }} />
               </div>
-              <span className="font-mono font-bold text-[13px] w-8 text-right flex-shrink-0"
+              <span className="font-mono font-bold text-body w-8 text-right flex-shrink-0"
                     style={{ color }}>
                 {c.total}
               </span>
@@ -207,7 +207,7 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
   if (!rows.length) {
     return (
       <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
-        <p className="text-[12px] text-muted">Nenhuma OS em rota agora</p>
+        <p className="text-label text-muted">Nenhuma OS em rota agora</p>
       </div>
     )
   }
@@ -216,7 +216,7 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
     <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_1fr_80px] gap-3 px-4 py-2 bg-surface/20
-                      border-b border-white/[0.05] text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
+                      border-b border-white/[0.05] text-caption font-bold uppercase tracking-[0.05em] text-muted">
         <span>Cliente</span>
         <span>Cidade · Equipe</span>
         <span className="text-right">Aging</span>
@@ -234,11 +234,11 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
                 <p className="text-[11.5px] font-semibold text-text truncate">
                   {r.nomecliente || '—'}
                 </p>
-                <p className="text-[10px] font-mono text-muted">{r.numos}</p>
+                <p className="text-caption font-mono text-muted">{r.numos}</p>
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] text-secondary truncate">{r.nomedacidade || '—'}</p>
-                <p className="text-[10px] text-muted truncate">
+                <p className="text-caption text-secondary truncate">{r.nomedacidade || '—'}</p>
+                <p className="text-caption text-muted truncate">
                   {shortEquipe(r.nomedaequipe) || 'Sem equipe'}
                 </p>
               </div>
@@ -246,7 +246,7 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
                 <div className="flex-1 h-1 bg-surface/40 rounded-full overflow-hidden max-w-[32px]">
                   <div className="h-full rounded-full" style={{ width: `${pct}%`, background: agClr }} />
                 </div>
-                <span className="font-mono font-bold text-[12px] flex-shrink-0" style={{ color: agClr }}>
+                <span className="font-mono font-bold text-label flex-shrink-0" style={{ color: agClr }}>
                   {aging}d
                 </span>
               </div>
@@ -254,7 +254,7 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
           )
         })}
         {rows.length > 50 && (
-          <div className="px-4 py-2 text-center text-[11px] text-muted">
+          <div className="px-4 py-2 text-center text-caption text-muted">
             +{rows.length - 50} registros adicionais
           </div>
         )}
@@ -286,7 +286,7 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
           value={q}
           onChange={e => setQ(e.target.value)}
           placeholder="Buscar cliente em rota…"
-          className="w-full pl-7 pr-7 py-1.5 rounded-lg text-[11px] bg-surface/30
+          className="w-full pl-7 pr-7 py-1.5 rounded-lg text-caption bg-surface/30
                      border border-white/[0.08] text-text placeholder:text-muted/50
                      focus:outline-none focus:border-muted/40 transition-colors"
         />
@@ -303,7 +303,7 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
       {term && (
         <div className="rounded-lg border border-white/[0.08] bg-card overflow-hidden">
           {results.length === 0 ? (
-            <p className="px-3 py-2.5 text-[11px] text-muted text-center">
+            <p className="px-3 py-2.5 text-caption text-muted text-center">
               Nenhum cliente em rota
             </p>
           ) : (
@@ -322,13 +322,13 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
                       <p className="text-[11.5px] font-semibold text-text truncate leading-none">
                         {r.nomecliente || '—'}
                       </p>
-                      <p className="text-[10px] text-muted mt-0.5 truncate">
+                      <p className="text-caption text-muted mt-0.5 truncate">
                         {r.nomedacidade || '—'} · {shortEquipe(r.nomedaequipe) || 'Sem equipe'}
                       </p>
                     </div>
                     <div className="flex flex-col items-end flex-shrink-0 gap-0.5">
-                      <span className="font-mono text-[10px]" style={{ color }}>{r.numos}</span>
-                      <span className="font-mono font-bold text-[11px]" style={{ color: agClr }}>{aging}d</span>
+                      <span className="font-mono text-caption" style={{ color }}>{r.numos}</span>
+                      <span className="font-mono font-bold text-caption" style={{ color: agClr }}>{aging}d</span>
                     </div>
                   </div>
                 )
@@ -349,7 +349,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
   if (!equipes.length) {
     return (
       <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
-        <p className="text-[12px] text-muted">Sem dados de equipes no período</p>
+        <p className="text-label text-muted">Sem dados de equipes no período</p>
       </div>
     )
   }
@@ -358,7 +358,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
     <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_54px_54px_54px_54px_44px_50px_24px] gap-2 px-4 py-2.5 bg-surface/20
-                      border-b border-white/[0.05] text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
+                      border-b border-white/[0.05] text-caption font-bold uppercase tracking-[0.05em] text-muted">
         <span>Equipe</span>
         <span className="text-right">Total</span>
         <span className="text-right text-yellow">Pend.</span>
@@ -385,20 +385,20 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
                    onDrillDown({ title: `${e.equipe} — ${e.total} OS`, rows: filtered, color: '#3b82f6' })
                  } : undefined}>
               <div className="min-w-0">
-                <p className="text-[12px] font-semibold text-text truncate">{e.equipe}</p>
+                <p className="text-label font-semibold text-text truncate">{e.equipe}</p>
                 <div className="mt-1 h-1 bg-surface/40 rounded-full overflow-hidden">
                   <div className="h-full rounded-full bg-primary/60 transition-all duration-700"
                        style={{ width: `${pct}%` }} />
                 </div>
               </div>
-              <span className="font-mono font-bold text-[13px] text-text text-right">{e.total}</span>
-              <span className="font-mono text-[12px] text-yellow text-right">{e.pendente}</span>
-              <span className="font-mono text-[12px] text-cyan text-right">{e.atendimento}</span>
-              <span className="font-mono text-[12px] text-green text-right">{e.concluida}</span>
-              <span className={`font-mono text-[12px] text-right ${e.criticas > 0 ? 'text-red font-bold' : 'text-white/20'}`}>
+              <span className="font-mono font-bold text-body text-text text-right">{e.total}</span>
+              <span className="font-mono text-label text-yellow text-right">{e.pendente}</span>
+              <span className="font-mono text-label text-cyan text-right">{e.atendimento}</span>
+              <span className="font-mono text-label text-green text-right">{e.concluida}</span>
+              <span className={`font-mono text-label text-right ${e.criticas > 0 ? 'text-red font-bold' : 'text-white/20'}`}>
                 {e.criticas > 0 ? e.criticas : '—'}
               </span>
-              <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 tabular-nums text-center ${slaCls}`}>
+              <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums text-center ${slaCls}`}>
                 {e.slaPct}%
               </span>
               {clickable

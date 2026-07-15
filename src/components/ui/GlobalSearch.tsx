@@ -90,14 +90,14 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                 value={query}
                 onChange={e => { setQuery(e.target.value); setActiveIdx(-1) }}
                 placeholder="Buscar OS, cliente, cidade, equipe…"
-                className="flex-1 bg-transparent text-[14px] text-text placeholder-muted/60 outline-none"
+                className="flex-1 bg-transparent text-body text-text placeholder-muted/60 outline-none"
               />
               {query && (
                 <button onClick={() => { setQuery(''); setActiveIdx(-1) }} className="text-muted hover:text-secondary transition-colors p-0.5">
                   <X size={13} />
                 </button>
               )}
-              <kbd className="text-[9px] font-mono bg-surface border border-white/[0.08]
+              <kbd className="text-caption font-mono bg-surface border border-white/[0.08]
                               rounded px-1.5 py-0.5 text-muted flex-shrink-0 hidden sm:block leading-none">
                 ESC
               </kbd>
@@ -106,10 +106,10 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
             <div className="max-h-[58vh] overflow-y-auto">
               {query.length < 2 && (
                 <div className="px-5 py-8">
-                  <p className="text-[11px] font-semibold text-muted mb-3">Buscar por</p>
+                  <p className="text-caption font-semibold text-muted mb-3">Buscar por</p>
                   <div className="flex flex-wrap gap-2 mb-8">
                     {HINT_TAGS.map(tag => (
-                      <span key={tag} className="inline-flex items-center text-[11px] font-semibold px-2.5 py-1
+                      <span key={tag} className="inline-flex items-center text-caption font-semibold px-2.5 py-1
                                                  bg-surface/40 border border-white/[0.08] rounded-full text-secondary">
                         {tag}
                       </span>
@@ -124,12 +124,12 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       <div key={label} className="flex items-center gap-1.5">
                         <div className="flex gap-1">
                           {keys.map(k => (
-                            <kbd key={k} className="text-[9px] font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted/70">
+                            <kbd key={k} className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted/70">
                               {k}
                             </kbd>
                           ))}
                         </div>
-                        <span className="text-[10px]">{label}</span>
+                        <span className="text-caption">{label}</span>
                       </div>
                     ))}
                   </div>
@@ -138,8 +138,8 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
               {query.length >= 2 && results.length === 0 && (
                 <div className="px-5 py-10 text-center">
-                  <p className="text-[13px] text-muted">Nenhuma OS para <span className="text-text font-semibold">"{query}"</span></p>
-                  <p className="text-[11px] text-muted/50 mt-1">Tente nº da OS, nome do cliente ou cidade</p>
+                  <p className="text-body text-muted">Nenhuma OS para <span className="text-text font-semibold">"{query}"</span></p>
+                  <p className="text-caption text-muted/50 mt-1">Tente nº da OS, nome do cliente ou cidade</p>
                 </div>
               )}
 
@@ -158,27 +158,27 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                           className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors
                                       ${isActive ? 'bg-surface' : 'hover:bg-surface/30'}`}
                         >
-                          <span className="font-mono text-[12px] text-primary font-bold w-[68px] flex-shrink-0 pt-0.5">
+                          <span className="font-mono text-label text-primary font-bold w-[68px] flex-shrink-0 pt-0.5">
                             {os.numos as string}
                           </span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                              <span className="text-[13px] text-text font-semibold truncate max-w-[220px]">
+                              <span className="text-body text-text font-semibold truncate max-w-[220px]">
                                 {(os.nomecliente as string) || '—'}
                               </span>
                               <Badge variant={situacaoVariant(os.descsituacao as string)}>{os.descsituacao as string}</Badge>
                               {os._slaCritico && <Badge variant="red">Crítico</Badge>}
                             </div>
-                            <p className="text-[11px] text-muted truncate">
+                            <p className="text-caption text-muted truncate">
                               {[os.nomedacidade, os.bairro, shortEquipe(os.nomedaequipe as string) || 'Sem equipe']
                                 .filter(Boolean).join(' · ')}
                             </p>
                           </div>
                           {aging != null && (
-                            <span className={`text-[11px] font-mono font-bold flex-shrink-0 ${agCls}`}>{aging}d</span>
+                            <span className={`text-caption font-mono font-bold flex-shrink-0 ${agCls}`}>{aging}d</span>
                           )}
                           {isActive && (
-                            <kbd className="text-[9px] font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 self-center text-muted leading-none">
+                            <kbd className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 self-center text-muted leading-none">
                               ↵
                             </kbd>
                           )}
@@ -187,10 +187,10 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                     })}
                   </div>
                   <div className="px-4 py-2.5 border-t border-white/[0.08] flex items-center justify-between">
-                    <span className="text-[11px] text-muted">
+                    <span className="text-caption text-muted">
                       {results.length} resultado{results.length !== 1 ? 's' : ''}
                     </span>
-                    <span className="text-[11px] text-muted/50">↑↓ para navegar</span>
+                    <span className="text-caption text-muted/50">↑↓ para navegar</span>
                   </div>
                 </>
               )}

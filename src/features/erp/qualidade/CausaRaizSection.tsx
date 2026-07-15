@@ -93,7 +93,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
 
   if (loadingPares) {
     return (
-      <div className="flex items-center gap-2 py-4 text-[12px] text-muted">
+      <div className="flex items-center gap-2 py-4 text-label text-muted">
         <div className="w-3.5 h-3.5 border border-primary border-t-transparent rounded-full animate-spin" />
         Carregando pares de revisita…
       </div>
@@ -102,7 +102,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
 
   if (!pares.length) {
     return (
-      <p className="text-[12px] text-muted py-4">
+      <p className="text-label text-muted py-4">
         Nenhum par de revisita encontrado no período.
       </p>
     )
@@ -114,11 +114,11 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
       {/* Header + botão */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[12px] text-text">
+          <p className="text-label text-text">
             <span className="font-mono font-bold text-primary">{totalPares}</span>
             {' '}par{totalPares !== 1 ? 'es' : ''} de revisita detectado{totalPares !== 1 ? 's' : ''} no período.
           </p>
-          <p className="text-[11px] text-muted mt-0.5">
+          <p className="text-caption text-muted mt-0.5">
             Cada par relaciona a OS de origem (instalação/1ª manutenção) com a OS de revisita, incluindo as observações técnicas.
           </p>
         </div>
@@ -127,7 +127,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
             <button
               onClick={() => exportParesCsv(pares, analise.analises)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08]
-                         bg-surface/40 text-[12px] text-muted hover:text-text transition-colors">
+                         bg-surface/40 text-label text-muted hover:text-text transition-colors">
               <Download size={11} />
               Exportar CSV
             </button>
@@ -135,7 +135,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
           <button
             onClick={analisar}
             disabled={analisando}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-[12px]
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-label
                        transition-all disabled:opacity-50
                        border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20">
             <Sparkles size={13} className={analisando ? 'animate-pulse' : ''} />
@@ -145,7 +145,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
       </div>
 
       {errMsg && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-[12px] text-red-400">
+        <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-label text-red-400">
           {errMsg}
         </div>
       )}
@@ -158,33 +158,33 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
           <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
             <div className="flex items-start gap-2">
               <Sparkles size={13} className="text-violet-400 flex-shrink-0 mt-0.5" />
-              <p className="text-[12px] text-text leading-relaxed">{analise.narrativa}</p>
+              <p className="text-label text-text leading-relaxed">{analise.narrativa}</p>
             </div>
             {analise.cached && (
-              <p className="text-[10px] text-muted mt-1 ml-5">Resultado em cache</p>
+              <p className="text-caption text-muted mt-1 ml-5">Resultado em cache</p>
             )}
           </div>
 
           {/* Distribuição de causas */}
           {analise.causas_distribuicao.length > 0 && (
             <div className="rounded-xl border border-white/[0.08] bg-card p-4 space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted mb-3">
+              <p className="text-caption font-bold uppercase tracking-[0.07em] text-muted mb-3">
                 Distribuição Real de Causas
               </p>
               {analise.causas_distribuicao
                 .sort((a, b) => b.count - a.count)
                 .map(c => (
                   <div key={c.causa} className="flex items-center gap-3">
-                    <span className="text-[11px] text-text w-48 flex-shrink-0 truncate">{c.causa}</span>
+                    <span className="text-caption text-text w-48 flex-shrink-0 truncate">{c.causa}</span>
                     <div className="flex-1 h-1.5 bg-surface/40 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{ width: `${c.pct}%`, background: causaColor(c.causa) }}
                       />
                     </div>
-                    <span className="font-mono font-bold text-[13px] w-6 text-right"
+                    <span className="font-mono font-bold text-body w-6 text-right"
                           style={{ color: causaColor(c.causa) }}>{c.count}</span>
-                    <span className="text-[10px] text-muted w-9 text-right">{c.pct}%</span>
+                    <span className="text-caption text-muted w-9 text-right">{c.pct}%</span>
                   </div>
                 ))
               }
@@ -197,7 +197,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
       <div>
         <button
           onClick={() => setShowTabela(v => !v)}
-          className="flex items-center gap-1.5 text-[12px] text-muted hover:text-text transition-colors py-1">
+          className="flex items-center gap-1.5 text-label text-muted hover:text-text transition-colors py-1">
           {showTabela ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           {showTabela ? 'Ocultar' : 'Ver'} tabela de pares ({pares.length})
         </button>
@@ -207,12 +207,12 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
         <div className="space-y-2">
           <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-[11px]">
+              <table className="w-full text-caption">
                 <thead>
                   <tr className="border-b border-white/[0.05] bg-surface/10">
                     {['Tipo','Cliente','Cidade','OS Origem','Serviço 1ª OS','Data Orig.',
                       'OS Revisita','Serviço Revisita','Dias','Causa (IA)','O que foi feito','O que faltou'].map(h => (
-                      <th key={h} className="px-2.5 py-2.5 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap">
+                      <th key={h} className="px-2.5 py-2.5 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap">
                         {h}
                       </th>
                     ))}
@@ -225,7 +225,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
                     return (
                       <tr key={i} className="border-b border-white/[0.03] hover:bg-surface/10 transition-colors">
                         <td className="px-2.5 py-2">
-                          <span className="text-[10px] font-bold" style={{ color: cor }}>
+                          <span className="text-caption font-bold" style={{ color: cor }}>
                             {p.tipo === 'inst' ? 'Inst→M' : 'M→M'}
                           </span>
                         </td>
@@ -235,7 +235,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
                         <td className="px-2.5 py-2 max-w-[120px]">
                           <p className="truncate text-muted" title={p.servico_orig}>{p.servico_orig || '—'}</p>
                           {p.obs_orig && (
-                            <p className="truncate text-[10px] text-muted/60 mt-0.5" title={p.obs_orig}>{p.obs_orig}</p>
+                            <p className="truncate text-caption text-muted/60 mt-0.5" title={p.obs_orig}>{p.obs_orig}</p>
                           )}
                         </td>
                         <td className="px-2.5 py-2 text-muted whitespace-nowrap">{p.data_orig.slice(0, 10)}</td>
@@ -243,7 +243,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
                         <td className="px-2.5 py-2 max-w-[120px]">
                           <p className="truncate text-muted" title={p.servico_rev}>{p.servico_rev || '—'}</p>
                           {p.obs_rev && (
-                            <p className="truncate text-[10px] text-muted/60 mt-0.5" title={p.obs_rev}>{p.obs_rev}</p>
+                            <p className="truncate text-caption text-muted/60 mt-0.5" title={p.obs_rev}>{p.obs_rev}</p>
                           )}
                         </td>
                         <td className="px-2.5 py-2 text-center font-mono font-bold"
@@ -252,19 +252,19 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
                         </td>
                         <td className="px-2.5 py-2 whitespace-nowrap">
                           {ia ? (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                            <span className="text-caption font-semibold px-1.5 py-0.5 rounded"
                                   style={{ color: causaColor(ia.causa), background: causaColor(ia.causa) + '18' }}>
                               {ia.causa}
                             </span>
                           ) : (
-                            <span className="text-[10px] text-muted/40">—</span>
+                            <span className="text-caption text-muted/40">—</span>
                           )}
                         </td>
                         <td className="px-2.5 py-2 max-w-[180px]">
-                          <p className="truncate text-muted text-[10px]" title={ia?.feito_primeira}>{ia?.feito_primeira || '—'}</p>
+                          <p className="truncate text-muted text-caption" title={ia?.feito_primeira}>{ia?.feito_primeira || '—'}</p>
                         </td>
                         <td className="px-2.5 py-2 max-w-[180px]">
-                          <p className="truncate text-red-400 text-[10px]" title={ia?.o_que_faltou}>{ia?.o_que_faltou || '—'}</p>
+                          <p className="truncate text-red-400 text-caption" title={ia?.o_que_faltou}>{ia?.o_que_faltou || '—'}</p>
                         </td>
                       </tr>
                     )
@@ -274,12 +274,12 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
             </div>
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-2 border-t border-white/[0.05] bg-surface/10">
-                <span className="text-[11px] text-muted">Página {pagina} de {totalPages}</span>
+                <span className="text-caption text-muted">Página {pagina} de {totalPages}</span>
                 <div className="flex gap-1">
                   <button disabled={pagina === 1} onClick={() => setPagina(p => p - 1)}
-                          className="px-3 py-1 rounded text-[11px] border border-white/[0.08] text-muted disabled:opacity-30 hover:bg-surface/30">‹</button>
+                          className="px-3 py-1 rounded text-caption border border-white/[0.08] text-muted disabled:opacity-30 hover:bg-surface/30">‹</button>
                   <button disabled={pagina === totalPages} onClick={() => setPagina(p => p + 1)}
-                          className="px-3 py-1 rounded text-[11px] border border-white/[0.08] text-muted disabled:opacity-30 hover:bg-surface/30">›</button>
+                          className="px-3 py-1 rounded text-caption border border-white/[0.08] text-muted disabled:opacity-30 hover:bg-surface/30">›</button>
                 </div>
               </div>
             )}

@@ -180,7 +180,7 @@ export default function MapaPage() {
         {/* Ícone + título */}
         <div className="flex items-center gap-2">
           <MapIcon size={15} className="text-primary" />
-          <span className="text-[13px] font-bold text-text">Mapa de Calor</span>
+          <span className="text-body font-bold text-text">Mapa de Calor</span>
         </div>
 
         <div className="w-px h-5 bg-surface" />
@@ -195,7 +195,7 @@ export default function MapaPage() {
               onChange={e => setAddressQuery(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleSearchAddress() }}
               placeholder="Buscar endereço (ex: Rua X, bairro, cidade)"
-              className="w-64 pl-7 pr-2 py-1.5 text-[12px] rounded-lg
+              className="w-64 pl-7 pr-2 py-1.5 text-label rounded-lg
                          bg-bg border border-white/[0.08] text-text placeholder:text-muted
                          outline-none focus:border-primary/40 transition-colors duration-fast"
             />
@@ -203,7 +203,7 @@ export default function MapaPage() {
           <button
             onClick={handleSearchAddress}
             disabled={searching || !addressQuery.trim()}
-            className="flex items-center gap-1.5 h-[30px] px-3 rounded-lg text-[11px] font-semibold
+            className="flex items-center gap-1.5 h-[30px] px-3 rounded-lg text-caption font-semibold
                        bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25
                        disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-fast"
           >
@@ -222,7 +222,7 @@ export default function MapaPage() {
           )}
         </div>
         {searchError && (
-          <span className="text-[11px] text-yellow flex items-center gap-1">
+          <span className="text-caption text-yellow flex items-center gap-1">
             <AlertTriangle size={10} /> {searchError}
           </span>
         )}
@@ -258,7 +258,7 @@ export default function MapaPage() {
               key={val}
               onClick={() => handleGranularity(val)}
               title={`Agrupar por ${label}`}
-              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-[11px] font-semibold
+              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-caption font-semibold
                           transition-all duration-fast
                           ${granularity === val
                             ? 'bg-primary/20 text-primary border border-primary/30'
@@ -283,7 +283,7 @@ export default function MapaPage() {
               key={val}
               onClick={() => setView(val)}
               title={label}
-              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-[11px] font-semibold
+              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-caption font-semibold
                           transition-all duration-fast
                           ${view === val
                             ? 'bg-primary/20 text-primary border border-primary/30'
@@ -301,7 +301,7 @@ export default function MapaPage() {
         <button
           onClick={() => setShowExecucao(v => !v)}
           title="OS em atendimento agora (ponto de início da execução)"
-          className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-[11px] font-semibold
+          className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-caption font-semibold
                       transition-all duration-fast border
                       ${showExecucao
                         ? 'bg-yellow/20 text-yellow border-yellow/30'
@@ -418,7 +418,7 @@ export default function MapaPage() {
             >
               <Tooltip direction="top" offset={[0, -12]} className="map-tooltip">
                 <span className="font-semibold">OS {p.numos}</span>
-                {p.equipeagendada && <span className="block text-[10px]">{p.equipeagendada}</span>}
+                {p.equipeagendada && <span className="block text-caption">{p.equipeagendada}</span>}
               </Tooltip>
             </Marker>
           ))}
@@ -436,7 +436,7 @@ export default function MapaPage() {
         {/* Legenda */}
         <div className="absolute bottom-4 right-4 z-[500]">
           <div className="bg-elevated/85 backdrop-blur border border-white/[0.08] rounded-xl px-3 py-2.5 space-y-1.5">
-            <p className="text-[9px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Criticidade</p>
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Criticidade</p>
             {[
               { color: '#f87171', label: 'SLA Crítico'   },
               { color: '#f97316', label: 'SLA Excedido'  },
@@ -445,7 +445,7 @@ export default function MapaPage() {
             ].map(({ color, label }) => (
               <div key={label} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
-                <span className="text-[10px] text-secondary">{label}</span>
+                <span className="text-caption text-secondary">{label}</span>
               </div>
             ))}
           </div>

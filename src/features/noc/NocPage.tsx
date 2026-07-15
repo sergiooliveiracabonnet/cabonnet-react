@@ -52,7 +52,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
     <div className="h-full p-6 flex flex-col gap-4">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Activity size={13} className="text-muted" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted/70">
+        <p className="text-caption font-bold uppercase tracking-[0.09em] text-muted/70">
           Visão Operacional
         </p>
       </div>
@@ -71,14 +71,14 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
                              flex flex-col items-center justify-center gap-2 p-6 relative overflow-hidden`}
               >
                 <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${acc.bar}`} />
-                <p className="text-[10px] font-bold text-muted uppercase tracking-[0.08em] text-center">
+                <p className="text-caption font-bold text-muted uppercase tracking-[0.08em] text-center">
                   {k.title}
                 </p>
                 <p className={`font-mono text-7xl font-bold tabular-nums ${acc.text}`}>
                   {k.value}
                 </p>
                 {k.sub && (
-                  <p className="text-[11px] text-muted text-center leading-relaxed">{k.sub}</p>
+                  <p className="text-caption text-muted text-center leading-relaxed">{k.sub}</p>
                 )}
               </div>
             )
@@ -99,12 +99,12 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       <div className="flex flex-col gap-2.5 overflow-y-auto">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
           <Users size={13} className="text-muted" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted/70">
+          <p className="text-caption font-bold uppercase tracking-[0.09em] text-muted/70">
             Semáforo por Equipe
           </p>
         </div>
         {semaforo.length === 0 && (
-          <p className="text-muted text-[12px] py-4">Sem dados de equipes</p>
+          <p className="text-muted text-label py-4">Sem dados de equipes</p>
         )}
         {semaforo.map(eq => {
           const cfg = (SEMAFORO_CFG as Record<string, typeof SEMAFORO_CFG.critico>)[eq.status] ?? SEMAFORO_CFG.critico
@@ -117,9 +117,9 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
             >
               <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${cfg.bar}`} />
               <span className={`w-3.5 h-3.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
-              <span className="text-[13px] font-semibold text-text flex-1 truncate">{eq.nome}</span>
-              <span className="font-mono text-[12px] text-secondary tabular-nums">{eq.concl}/{total}</span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cfg.badge}`}>
+              <span className="text-body font-semibold text-text flex-1 truncate">{eq.nome}</span>
+              <span className="font-mono text-label text-secondary tabular-nums">{eq.concl}/{total}</span>
+              <span className={`text-caption font-bold px-2 py-0.5 rounded-full ${cfg.badge}`}>
                 {cfg.label}
               </span>
             </div>
@@ -131,10 +131,10 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       <div className="flex flex-col gap-2.5 overflow-hidden">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
           <AlertCircle size={13} className="text-red flex-shrink-0" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted/70">
+          <p className="text-caption font-bold uppercase tracking-[0.09em] text-muted/70">
             OS com SLA 2× Excedido
           </p>
-          <span className="ml-auto font-mono text-[13px] font-bold text-red tabular-nums">
+          <span className="ml-auto font-mono text-body font-bold text-red tabular-nums">
             {slaCriticas.length}
           </span>
         </div>
@@ -144,7 +144,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-60" />
               <span className="relative inline-flex rounded-full h-3 w-3 bg-green" />
             </span>
-            <span className="text-[13px] text-green font-semibold">Nenhuma OS crítica</span>
+            <span className="text-body text-green font-semibold">Nenhuma OS crítica</span>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto space-y-1.5">
@@ -157,14 +157,14 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
                               ${veryOld ? 'bg-red/[0.07] border-red/25' : 'bg-card border-red/15'}`}
                 >
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 bg-red ${veryOld ? 'animate-pulse' : ''}`} />
-                  <span className="font-mono text-[12px] text-primary font-bold w-20 flex-shrink-0">
+                  <span className="font-mono text-label text-primary font-bold w-20 flex-shrink-0">
                     {os.numos}
                   </span>
-                  <span className="text-[12px] text-text flex-1 truncate">{os.nomecliente}</span>
-                  <span className="text-[11px] text-muted truncate max-w-[120px]">
+                  <span className="text-label text-text flex-1 truncate">{os.nomecliente}</span>
+                  <span className="text-caption text-muted truncate max-w-[120px]">
                     {shortEquipe(os.nomedaequipe) || '—'}
                   </span>
-                  <span className={`font-mono text-[12px] font-bold text-red flex-shrink-0 tabular-nums ${veryOld ? 'animate-pulse' : ''}`}>
+                  <span className={`font-mono text-label font-bold text-red flex-shrink-0 tabular-nums ${veryOld ? 'animate-pulse' : ''}`}>
                     {os._agingAbertura ?? '?'}d
                   </span>
                 </div>
@@ -185,14 +185,14 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
     <div className="h-full p-6 flex flex-col gap-4 overflow-y-auto">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Package size={13} className="text-muted" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted/70">
+        <p className="text-caption font-bold uppercase tracking-[0.09em] text-muted/70">
           Desempenho por Fornecedor
         </p>
       </div>
       <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-4 content-start">
         {fornecedores.length === 0 && (
           <div className="col-span-full flex items-center justify-center py-16">
-            <p className="text-[12px] text-muted">Aguardando dados do servidor</p>
+            <p className="text-label text-muted">Aguardando dados do servidor</p>
           </div>
         )}
         {fornecedores.map(f => {
@@ -206,19 +206,19 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
             >
               <div className="flex items-center gap-2.5">
                 <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: f.cor }} />
-                <p className="text-[13px] font-bold text-text truncate flex-1">{f.nome}</p>
+                <p className="text-body font-bold text-text truncate flex-1">{f.nome}</p>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-[10px] text-muted uppercase tracking-wide mb-1">Ativas</p>
+                  <p className="text-caption text-muted uppercase tracking-wide mb-1">Ativas</p>
                   <p className="font-mono text-2xl font-bold text-text tabular-nums">{f.total}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted uppercase tracking-wide mb-1">Concl.</p>
+                  <p className="text-caption text-muted uppercase tracking-wide mb-1">Concl.</p>
                   <p className="font-mono text-2xl font-bold text-green tabular-nums">{f.concluidas}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted uppercase tracking-wide mb-1">SLA%</p>
+                  <p className="text-caption text-muted uppercase tracking-wide mb-1">SLA%</p>
                   <p className={`font-mono text-2xl font-bold tabular-nums ${slaCls}`}>{f.sla}%</p>
                 </div>
               </div>
@@ -234,8 +234,8 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
                   />
                 </div>
                 <div className="flex justify-between items-center mt-1.5">
-                  <p className="text-[10px] text-muted">{pct}% concluído</p>
-                  <p className="text-[10px] text-muted/60 font-mono tabular-nums">{f.concluidas}/{f.total}</p>
+                  <p className="text-caption text-muted">{pct}% concluído</p>
+                  <p className="text-caption text-muted/60 font-mono tabular-nums">{f.concluidas}/{f.total}</p>
                 </div>
               </div>
             </div>
@@ -360,12 +360,12 @@ function NocInner() {
 
         {/* Current slide label */}
         <SlideIcon size={13} className="text-primary flex-shrink-0" />
-        <span className="text-[12px] font-semibold text-secondary">{slideName}</span>
-        <span className="text-[10px] text-muted/50 font-mono">{slide + 1}/{TOTAL_SLIDES}</span>
+        <span className="text-label font-semibold text-secondary">{slideName}</span>
+        <span className="text-caption text-muted/50 font-mono">{slide + 1}/{TOTAL_SLIDES}</span>
 
         <div className="flex-1" />
 
-        <span className="text-[11px] text-muted font-mono">
+        <span className="text-caption text-muted font-mono">
           {now.toLocaleDateString('pt-BR', {
             weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric',
           })}
@@ -412,13 +412,13 @@ function NocInner() {
             <AlertCircle size={24} className="text-yellow" />
           </div>
           <div>
-            <p className="text-[14px] font-semibold text-text mb-1">Sem dados disponíveis</p>
-            <p className="text-[12px] text-muted">Sessão pode ter expirado após reinício do servidor.</p>
-            <p className="text-[12px] text-muted mt-0.5">Volte ao painel principal e faça login novamente.</p>
+            <p className="text-title font-semibold text-text mb-1">Sem dados disponíveis</p>
+            <p className="text-label text-muted">Sessão pode ter expirado após reinício do servidor.</p>
+            <p className="text-label text-muted mt-0.5">Volte ao painel principal e faça login novamente.</p>
           </div>
           <button
             onClick={() => window.location.href = '/'}
-            className="px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-[12px] font-semibold hover:bg-primary/20 transition-colors"
+            className="px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-label font-semibold hover:bg-primary/20 transition-colors"
           >
             Ir para o Login
           </button>
@@ -429,12 +429,12 @@ function NocInner() {
       {!noData && isCritical && critOverlay && (
         <div className="flex items-center gap-4 px-5 py-3 bg-red/10 border-b border-red/30 flex-shrink-0">
           <AlertCircle size={18} className="text-red flex-shrink-0 animate-pulse" />
-          <p className="text-[12px] font-semibold text-red flex-1">
+          <p className="text-label font-semibold text-red flex-1">
             Situacao critica detectada — {criticas} OS criticas, {semEquipe} sem equipe
           </p>
           <button
             onClick={() => { setCritOverlay(false); setPaused(false) }}
-            className="text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red/30
+            className="text-caption font-bold px-3 py-1.5 rounded-lg border border-red/30
                        text-red hover:bg-red/10 transition-colors flex-shrink-0"
           >
             Retomar slides
@@ -463,7 +463,7 @@ function NocInner() {
             <button
               key={i}
               onClick={() => goSlide(i)}
-              className={`flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-full transition-all
+              className={`flex items-center gap-1.5 text-caption px-3 py-1.5 rounded-full transition-all
                           ${slide === i
                             ? 'bg-primary/15 text-primary font-bold'
                             : 'text-muted hover:text-secondary hover:bg-surface/40'}`}
@@ -489,16 +489,16 @@ function NocInner() {
 
           <div className="flex-1" />
 
-          <span className="text-[10px] text-muted/35 font-mono hidden xl:block mr-3">
+          <span className="text-caption text-muted/35 font-mono hidden xl:block mr-3">
             ←→ slides · Espaço pausar · F tela cheia
           </span>
 
           {paused && (
-            <span className="text-[11px] text-yellow font-bold uppercase tracking-wide animate-pulse mr-2">
+            <span className="text-caption text-yellow font-bold uppercase tracking-wide animate-pulse mr-2">
               Pausado
             </span>
           )}
-          <span className="text-[11px] text-muted font-mono tabular-nums">{remaining}s</span>
+          <span className="text-caption text-muted font-mono tabular-nums">{remaining}s</span>
         </div>
 
         <div className="h-[3px] bg-surface rounded-full overflow-hidden">

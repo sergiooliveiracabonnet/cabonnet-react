@@ -115,7 +115,7 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor }: N
         end={to === '/'}
         className={({ isActive }) =>
           `nav-link-${groupKey} flex items-center gap-3 pl-3 pr-2.5 py-[7px] rounded-lg
-           border-l-2 transition-colors duration-150 text-[12px] font-medium
+           border-l-2 transition-colors duration-150 text-label font-medium
            ${isActive ? 'active' : 'border-transparent text-muted hover:text-secondary'}`
         }
       >
@@ -141,7 +141,7 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor }: N
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-lg
                           bg-elevated border border-white/[0.08]">
             <div className="w-[2px] h-3 rounded-full flex-shrink-0" style={{ background: groupColor }} />
-            <span className="text-[11px] font-medium text-text whitespace-nowrap">{label}</span>
+            <span className="text-caption font-medium text-text whitespace-nowrap">{label}</span>
           </div>
         </div>
       )}
@@ -228,10 +228,10 @@ export function Sidebar() {
         </div>
         {sidebarOpen && (
           <div className="flex flex-col leading-none min-w-0">
-            <span className="font-headline font-bold text-[15px] tracking-wide text-text">
+            <span className="font-headline font-bold text-title tracking-wide text-text">
               CABONNET
             </span>
-            <span className="text-[10px] font-medium text-muted mt-0.5">
+            <span className="text-caption font-medium text-muted mt-0.5">
               ISP Operations
             </span>
           </div>
@@ -249,7 +249,7 @@ export function Sidebar() {
                   style={{ background: group.color }}
                 />
                 <span
-                  className="text-[10px] font-semibold uppercase tracking-[0.07em]"
+                  className="text-caption font-semibold uppercase tracking-[0.07em]"
                   style={{ color: group.color + 'aa' }}
                 >
                   {group.label}
@@ -285,9 +285,9 @@ export function Sidebar() {
         <div className="flex-shrink-0 mx-2 mb-2 rounded-lg px-3 py-2 bg-card-high border border-white/[0.08]">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}${status.breathe ? ' breathe' : ''}`} />
-            <span className={`text-[10px] font-semibold ${status.color}`}>{status.label}</span>
+            <span className={`text-caption font-semibold ${status.color}`}>{status.label}</span>
           </div>
-          <p className="text-[10px] text-muted">Vale do Paraíba · SJC</p>
+          <p className="text-caption text-muted">Vale do Paraíba · SJC</p>
         </div>
       )}
 
@@ -298,12 +298,12 @@ export function Sidebar() {
                           bg-card-high border border-white/[0.08] hover:border-muted/30
                           transition-colors duration-150 cursor-default">
             <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center
-                            font-semibold text-[11px] bg-primary/20 border border-primary/30 text-primary">
+                            font-semibold text-caption bg-primary/20 border border-primary/30 text-primary">
               A
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold text-text truncate leading-none">Admin</p>
-              <p className="text-[10px] text-muted truncate leading-none mt-0.5">
+              <p className="text-label font-semibold text-text truncate leading-none">Admin</p>
+              <p className="text-caption text-muted truncate leading-none mt-0.5">
                 {ROLE_LABELS[role ?? ''] ?? 'Viewer'} · ISP Ops
               </p>
             </div>
@@ -319,7 +319,7 @@ export function Sidebar() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-caption font-semibold
                             bg-primary/20 border border-primary/30 text-primary">
               A
             </div>

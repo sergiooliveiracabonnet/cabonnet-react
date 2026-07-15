@@ -127,7 +127,7 @@ function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; color: 
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
+      <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
     </div>
   )
 }
@@ -139,7 +139,7 @@ function DeltaBadge({ delta }: { delta: number }) {
   const Icon   = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus
   const prefix = delta > 0 ? '+' : ''
   return (
-    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border"
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-caption font-bold border"
           style={{ background: `${color}12`, borderColor: `${color}30`, color }}>
       <Icon size={8} />{prefix}{delta}
     </span>
@@ -188,12 +188,12 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
     <div className="mt-3 rounded-xl border border-white/[0.08] overflow-hidden bg-surface/50">
       {/* Header com resumo por categoria */}
       <div className="px-4 py-2.5 border-b border-white/[0.08] flex items-center gap-4 flex-wrap">
-        <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mr-1">
+        <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted mr-1">
           {rows.length} OS · {dayLabel}
         </span>
         {cats.map(c => (
           <span key={c.label}
-                className="flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                className="flex items-center gap-1.5 text-caption font-semibold px-2 py-0.5 rounded-full"
                 style={{ background: `${c.color}18`, color: c.color }}>
             <c.Icon size={11} />
             {c.label}
@@ -203,12 +203,12 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-[11px]">
+        <table className="w-full text-caption">
           <thead>
             <tr className="border-b border-white/[0.05] bg-surface/20">
               {OS_COLS.map(c => (
                 <th key={c.key}
-                    className="px-3 py-2 text-left text-[10px] font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap">
+                    className="px-3 py-2 text-left text-caption font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap">
                   {c.label}
                 </th>
               ))}
@@ -242,7 +242,7 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
                   </td>
                   {/* Status */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
-                    <Badge variant={situacaoVariant(r.descsituacao)} className="text-[9px] px-1.5 py-px">
+                    <Badge variant={situacaoVariant(r.descsituacao)} className="text-caption px-1.5 py-px">
                       {r.descsituacao === 'Atendimento/Finalizadas' ? 'Executada' : r.descsituacao ?? '—'}
                     </Badge>
                   </td>
@@ -291,18 +291,18 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
         {/* Rank */}
         <td className="px-4 py-3 w-10">
           {rank <= 3 ? (
-            <span className="font-mono font-black text-[13px]"
+            <span className="font-mono font-black text-body"
                   style={{ color: ['#fbbf24','#94a3b8','#cd7c3c'][rank-1] }}>
               #{rank}
             </span>
           ) : (
-            <span className="font-mono text-[12px] text-muted">{rank}</span>
+            <span className="font-mono text-label text-muted">{rank}</span>
           )}
         </td>
 
         {/* Team name */}
         <td className="px-3 py-3">
-          <p className="text-[12px] font-semibold text-text truncate max-w-[140px]">{entry.team}</p>
+          <p className="text-label font-semibold text-text truncate max-w-[140px]">{entry.team}</p>
         </td>
 
         {/* Sparkline */}
@@ -319,7 +319,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                                 background: val > 0 ? color : 'rgba(255,255,255,0.06)' }} />
                   {val > 0 && (
                     <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2
-                                    bg-elevated border border-white/[0.08] text-text text-[9px]
+                                    bg-elevated border border-white/[0.08] text-text text-caption
                                     font-bold px-1.5 py-0.5 rounded whitespace-nowrap
                                     opacity-0 group-hover:opacity-100 pointer-events-none z-10">
                       {d.label}: {val}
@@ -333,22 +333,22 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
 
         <td className="px-3 py-3 text-right">
           <p className="font-mono font-bold text-[18px] leading-none text-text">{entry.thisWeek}</p>
-          <p className="text-[9px] text-muted mt-0.5">últimos {thisLen}d</p>
+          <p className="text-caption text-muted mt-0.5">últimos {thisLen}d</p>
         </td>
 
         <td className="px-3 py-3 text-right">
           <DeltaBadge delta={entry.delta} />
-          <p className="text-[9px] text-muted mt-1">vs {prevLen}d ant.</p>
+          <p className="text-caption text-muted mt-1">vs {prevLen}d ant.</p>
         </td>
 
         <td className="px-3 py-3 text-right">
-          <p className="font-mono text-[14px] text-secondary">{entry.total}</p>
-          <p className="text-[9px] text-muted mt-0.5">{days.length} dias</p>
+          <p className="font-mono text-body text-secondary">{entry.total}</p>
+          <p className="text-caption text-muted mt-0.5">{days.length} dias</p>
         </td>
 
         <td className="px-3 py-3 text-right">
-          <p className="font-mono text-[13px] text-secondary">{peak}</p>
-          <p className="text-[9px] text-muted mt-0.5">pico/dia</p>
+          <p className="font-mono text-body text-secondary">{peak}</p>
+          <p className="text-caption text-muted mt-0.5">pico/dia</p>
         </td>
 
         <td className="px-4 py-3 w-8">
@@ -395,10 +395,10 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                     } as React.CSSProperties}
                     title={clickable ? (isActive ? 'Fechar' : `Ver ${val} OS de ${d.label}`) : undefined}
                   >
-                    <span className={`text-[9px] font-bold ${d.isToday ? 'text-primary' : 'text-muted'}`}>
+                    <span className={`text-caption font-bold ${d.isToday ? 'text-primary' : 'text-muted'}`}>
                       {d.dow}
                     </span>
-                    <span className="text-[10px] text-muted">{d.label}</span>
+                    <span className="text-caption text-muted">{d.label}</span>
                     <span className="font-mono font-black text-[20px] leading-none"
                           style={{ color: val > 0 ? color : 'rgba(255,255,255,0.15)' }}>
                       {val}
@@ -510,7 +510,7 @@ export default function ProdutividadePage() {
       {/* Header */}
       <div>
         <h1 className="text-[20px] font-headline font-bold text-text mb-0.5">Produtividade por Equipe</h1>
-        <p className="text-[12px] text-muted">
+        <p className="text-label text-muted">
           Histórico de {days.length} dia{days.length > 1 ? 's' : ''} · OS executadas por equipe · expanda e clique no dia para ver as ordens
         </p>
       </div>
@@ -530,13 +530,13 @@ export default function ProdutividadePage() {
                style={{ borderColor: `${k.color}22` }}>
             <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: k.color }} />
             <div className="p-4">
-              <p className="text-[11px] text-muted mb-2">{k.label}</p>
+              <p className="text-caption text-muted mb-2">{k.label}</p>
               <div className="flex items-end gap-2">
                 <p className="font-mono font-black text-[30px] leading-none tabular-nums"
                    style={{ color: k.color }}>{k.value}</p>
                 {k.delta != null && <DeltaBadge delta={k.delta} />}
               </div>
-              <p className="text-[10px] text-muted mt-1 truncate">{k.sub}</p>
+              <p className="text-caption text-muted mt-1 truncate">{k.sub}</p>
             </div>
           </div>
         ))}
@@ -548,7 +548,7 @@ export default function ProdutividadePage() {
 
         {teams.length === 0 ? (
           <div className="rounded-2xl border border-white/[0.08] bg-card px-4 py-12 text-center">
-            <p className="text-[12px] text-muted">Nenhuma OS executada no período</p>
+            <p className="text-label text-muted">Nenhuma OS executada no período</p>
           </div>
         ) : (
           <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
@@ -559,7 +559,7 @@ export default function ProdutividadePage() {
               <div className="flex flex-1 gap-[2px] min-w-0">
                 {days.map(d => (
                   <div key={d.key} className="flex-1 text-center">
-                    <span className={`text-[8px] font-bold ${d.isToday ? 'text-primary' : 'text-muted/50'}`}>
+                    <span className={`text-caption font-bold ${d.isToday ? 'text-primary' : 'text-muted/50'}`}>
                       {d.dow}
                     </span>
                   </div>
@@ -577,12 +577,12 @@ export default function ProdutividadePage() {
                 <thead>
                   <tr className="border-b border-white/[0.05] bg-surface/10">
                     <th className="px-4 py-2 text-left w-10" />
-                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Equipe</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Últimos {days.length} dias</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">{thisLen}d</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Δ</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">{days.length}d</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Pico</th>
+                    <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Equipe</th>
+                    <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Últimos {days.length} dias</th>
+                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">{thisLen}d</th>
+                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Δ</th>
+                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">{days.length}d</th>
+                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Pico</th>
                     <th className="w-8" />
                   </tr>
                 </thead>
@@ -614,11 +614,11 @@ export default function ProdutividadePage() {
         <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles size={12} className="text-primary/40" />
-            <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Análise de Quedas de Produtividade · IA</span>
+            <span className="text-caption font-bold text-muted uppercase tracking-wide">Análise de Quedas de Produtividade · IA</span>
           </div>
           <button
             onClick={() => setAiEnabled(true)}
-            className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+            className="flex items-center gap-1.5 text-caption font-semibold text-primary/70 hover:text-primary
                        px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                        transition-all duration-fast"
           >
@@ -629,17 +629,17 @@ export default function ProdutividadePage() {
         <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles size={12} className="text-primary" />
-            <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
+            <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
               Análise de Quedas de Produtividade · IA
             </span>
             {aiLoading && (
-              <span className="text-[10px] text-muted animate-pulse ml-auto">Analisando…</span>
+              <span className="text-caption text-muted animate-pulse ml-auto">Analisando…</span>
             )}
           </div>
           {aiProdutividade && (
             <>
               {aiProdutividade.narrativa && (
-                <p className="text-[12px] text-secondary leading-relaxed">{aiProdutividade.narrativa}</p>
+                <p className="text-label text-secondary leading-relaxed">{aiProdutividade.narrativa}</p>
               )}
               {aiProdutividade.analises && aiProdutividade.analises.length > 0 && (
                 <div className="space-y-2">
@@ -647,13 +647,13 @@ export default function ProdutividadePage() {
                     <div key={i} className="rounded-lg border border-white/[0.06] bg-surface/30 p-3 space-y-1">
                       <div className="flex items-center gap-2">
                         <TrendingDown size={12} className="text-red flex-shrink-0" />
-                        <span className="text-[12px] font-semibold text-text">{a.equipe}</span>
+                        <span className="text-label font-semibold text-text">{a.equipe}</span>
                       </div>
-                      <p className="text-[11px] text-muted pl-5">
+                      <p className="text-caption text-muted pl-5">
                         <span className="font-semibold text-secondary">Causa: </span>
                         {a.causa}
                       </p>
-                      <p className="text-[11px] text-muted pl-5">
+                      <p className="text-caption text-muted pl-5">
                         <span className="font-semibold text-primary/70">Recomendação: </span>
                         {a.recomendacao}
                       </p>
@@ -667,7 +667,7 @@ export default function ProdutividadePage() {
       )}
 
       {/* Legenda */}
-      <div className="flex items-center gap-4 text-[10px] text-muted flex-wrap">
+      <div className="flex items-center gap-4 text-caption text-muted flex-wrap">
         {[['#3b82f6','Hoje'], ['#3b82f6','Dias úteis'], ['rgba(255,255,255,0.06)','Sem OS']].map(([c,l]) => (
           <span key={l} className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-sm" style={{ background: c }} />{l}

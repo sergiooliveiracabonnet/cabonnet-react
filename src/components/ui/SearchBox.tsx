@@ -39,7 +39,7 @@ export function SearchBox({ value, onChange, placeholder = 'Buscar…', classNam
         value={local}
         onChange={(e) => handleChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-7 pr-7 py-1.5 text-[12px] rounded-lg
+        className="w-full pl-7 pr-7 py-1.5 text-label rounded-lg
                    bg-surface border border-white/[0.08] text-text placeholder:text-muted
                    outline-none focus:border-primary/40 transition-colors duration-fast"
       />

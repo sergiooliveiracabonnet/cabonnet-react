@@ -219,14 +219,14 @@ export default function QualidadePage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-[20px] font-headline font-bold text-text mb-0.5">Qualidade — Revisitas</h1>
-          <p className="text-[12px] text-muted">
+          <p className="text-label text-muted">
             Clientes que abriram nova OS após atendimento recente · instalação · manutenção · serviço
           </p>
         </div>
 
         {/* Controles de período */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-[12px]">
+          <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-label">
             {(['atual','anterior','custom'] as Preset[]).map((v, i) => (
               <button key={v} onClick={() => setPreset(v)}
                       className={`px-3 py-1.5 transition-colors ${
@@ -240,16 +240,16 @@ export default function QualidadePage() {
             <div className="flex items-center gap-1.5">
               <input type="date" value={customIni} onChange={e => setCustomIni(e.target.value)}
                      className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
-                                text-[12px] text-text focus:outline-none" />
-              <span className="text-[11px] text-muted">até</span>
+                                text-label text-text focus:outline-none" />
+              <span className="text-caption text-muted">até</span>
               <input type="date" value={customFim} onChange={e => setCustomFim(e.target.value)}
                      className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
-                                text-[12px] text-text focus:outline-none" />
+                                text-label text-text focus:outline-none" />
             </div>
           )}
           <button onClick={() => refetch()} disabled={isFetching}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08]
-                             bg-surface/40 text-[12px] text-muted hover:text-text transition-colors disabled:opacity-50">
+                             bg-surface/40 text-label text-muted hover:text-text transition-colors disabled:opacity-50">
             <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
             Atualizar
           </button>
@@ -267,8 +267,8 @@ export default function QualidadePage() {
       {isError && !data && (
         <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-8 text-center">
           <AlertTriangle size={20} className="text-red-400 mx-auto mb-2" />
-          <p className="text-[13px] text-red-400">Erro ao carregar dados.</p>
-          <button onClick={() => refetch()} className="mt-3 text-[11px] text-muted underline">Tentar novamente</button>
+          <p className="text-body text-red-400">Erro ao carregar dados.</p>
+          <button onClick={() => refetch()} className="mt-3 text-caption text-muted underline">Tentar novamente</button>
         </div>
       )}
 
@@ -277,10 +277,10 @@ export default function QualidadePage() {
 
           {/* Período + status */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted">Período:</span>
-            <span className="text-[11px] font-semibold text-text">{fmtPeriodo(data.periodo)}</span>
+            <span className="text-caption text-muted">Período:</span>
+            <span className="text-caption font-semibold text-text">{fmtPeriodo(data.periodo)}</span>
             {isFetching && (
-              <span className="flex items-center gap-1 text-[10px] text-primary">
+              <span className="flex items-center gap-1 text-caption text-primary">
                 <RefreshCw size={10} className="animate-spin" /> Atualizando…
               </span>
             )}
@@ -291,7 +291,7 @@ export default function QualidadePage() {
             <section className="space-y-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-[3px] h-4 rounded-full bg-violet-400 flex-shrink-0" />
-                <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-violet-400">
+                <span className="text-caption font-bold uppercase tracking-[0.07em] text-violet-400">
                   Acompanhamento Diário — Instalação vs Manutenção
                 </span>
               </div>
@@ -330,14 +330,14 @@ export default function QualidadePage() {
               const ativo = tipoAtivo === t
               return (
                 <button key={t} onClick={() => setTipoAtivo(t)}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[12px]
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-label
                                     transition-all ${ativo
                                       ? 'font-bold border-current'
                                       : 'border-white/[0.08] text-muted hover:text-text bg-surface/30'}`}
                         style={ativo ? { color, borderColor: `${color}50`, background: `${color}10` } : {}}>
                   {Icon && <Icon size={12} />}
                   <span>{TIPO_LABEL[t]}</span>
-                  <span className={`font-mono font-black text-[14px] tabular-nums ml-1`}
+                  <span className={`font-mono font-black text-body tabular-nums ml-1`}
                         style={{ color: ativo ? color : undefined }}>{count}</span>
                 </button>
               )
@@ -373,7 +373,7 @@ export default function QualidadePage() {
             <section className="space-y-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: cor }} />
-                <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
+                <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
                   Principais Ocorrências — clique para ver as OS
                 </span>
               </div>
@@ -407,7 +407,7 @@ export default function QualidadePage() {
                       />
                     </BarChart>
                   </div>
-                  <p className="text-[10px] text-muted mt-2 text-center">Clique numa barra para ver as OS</p>
+                  <p className="text-caption text-muted mt-2 text-center">Clique numa barra para ver as OS</p>
                 </div>
 
                 {/* Painel de OS da ocorrência selecionada */}
@@ -416,26 +416,26 @@ export default function QualidadePage() {
                     <>
                       <div className="px-4 py-3 border-b border-white/[0.05] flex items-start justify-between gap-2">
                         <div>
-                          <p className="text-[11px] font-bold text-text leading-tight">{ocSelecionada.servico}</p>
-                          <p className="text-[10px] text-muted mt-0.5">{ocSelecionada.count} revisitas</p>
+                          <p className="text-caption font-bold text-text leading-tight">{ocSelecionada.servico}</p>
+                          <p className="text-caption text-muted mt-0.5">{ocSelecionada.count} revisitas</p>
                         </div>
                         <button onClick={() => setOcSelecionada(null)}
-                                className="text-[11px] text-muted hover:text-text transition-colors flex-shrink-0">✕</button>
+                                className="text-caption text-muted hover:text-text transition-colors flex-shrink-0">✕</button>
                       </div>
                       <div className="overflow-y-auto max-h-[340px] divide-y divide-white/[0.04]">
                         {ocSelecionada.os.map(r => (
                           <div key={r.numos} className="px-4 py-2.5 hover:bg-surface/20 transition-colors">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="font-mono text-[12px] text-primary flex-shrink-0">{r.numos}</span>
-                              <span className="text-[10px] text-muted flex-shrink-0">{r.datacadastro}</span>
+                              <span className="font-mono text-label text-primary flex-shrink-0">{r.numos}</span>
+                              <span className="text-caption text-muted flex-shrink-0">{r.datacadastro}</span>
                             </div>
                             <p className="text-[11.5px] text-text truncate mt-0.5">{r.nomecliente}</p>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] text-muted">{r.nomedacidade}</span>
-                              <span className="text-[10px] text-muted/50">·</span>
-                              <span className="text-[10px] text-muted truncate">{r.nomedaequipe || '—'}</span>
-                              <span className="text-[10px] text-muted/50 ml-auto flex-shrink-0">·</span>
-                              <span className="text-[10px] text-muted flex-shrink-0">{r.descsituacao}</span>
+                              <span className="text-caption text-muted">{r.nomedacidade}</span>
+                              <span className="text-caption text-muted/50">·</span>
+                              <span className="text-caption text-muted truncate">{r.nomedaequipe || '—'}</span>
+                              <span className="text-caption text-muted/50 ml-auto flex-shrink-0">·</span>
+                              <span className="text-caption text-muted flex-shrink-0">{r.descsituacao}</span>
                             </div>
                           </div>
                         ))}
@@ -444,8 +444,8 @@ export default function QualidadePage() {
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted">
                       <Search size={24} className="opacity-30" />
-                      <p className="text-[12px]">Selecione uma ocorrência no gráfico</p>
-                      <p className="text-[10px] opacity-60">para ver as OS associadas</p>
+                      <p className="text-label">Selecione uma ocorrência no gráfico</p>
+                      <p className="text-caption opacity-60">para ver as OS associadas</p>
                     </div>
                   )}
                 </div>
@@ -462,7 +462,7 @@ export default function QualidadePage() {
                 <div className="flex items-center gap-2.5">
                   <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: cor }} />
                   <Users size={12} style={{ color: cor }} className="flex-shrink-0" />
-                  <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
+                  <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
                     Ranking — Revisitas por Equipe
                   </span>
                 </div>
@@ -473,7 +473,7 @@ export default function QualidadePage() {
                         <tr className="border-b border-white/[0.05] bg-surface/10">
                           {['#','Equipe','Total OS','Revisitas','Taxa','Status'].map(h => (
                             <th key={h} className="px-3 py-2.5 text-right first:text-left first:px-4
-                                                    text-[10px] font-bold uppercase tracking-[0.05em] text-muted">
+                                                    text-caption font-bold uppercase tracking-[0.05em] text-muted">
                               {h}
                             </th>
                           ))}
@@ -499,7 +499,7 @@ export default function QualidadePage() {
                   <div className="flex items-center gap-2.5">
                     <div className="w-[3px] h-4 rounded-full bg-cyan-400 flex-shrink-0" />
                     <MapPin size={12} className="text-cyan-400 flex-shrink-0" />
-                    <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-cyan-400">
+                    <span className="text-caption font-bold uppercase tracking-[0.07em] text-cyan-400">
                       Por Cidade
                     </span>
                   </div>
@@ -509,13 +509,13 @@ export default function QualidadePage() {
                       const maxC  = porCidade[0]?.rev ?? 1
                       return (
                         <div key={c.cidade} className="flex items-center gap-3 px-4 py-3 hover:bg-surface/20 transition-colors">
-                          <span className="text-[12px] font-semibold text-text w-32 flex-shrink-0 truncate">{c.cidade}</span>
+                          <span className="text-label font-semibold text-text w-32 flex-shrink-0 truncate">{c.cidade}</span>
                           <div className="flex-1 h-1.5 bg-surface/40 rounded-full overflow-hidden">
                             <div className="h-full rounded-full"
                                  style={{ width: `${Math.round((c.rev/maxC)*100)}%`, background: color }} />
                           </div>
-                          <span className="font-mono font-bold text-[13px] w-8 text-right" style={{ color }}>{c.rev}</span>
-                          <span className="text-[10px] text-muted w-9 text-right">{c.taxa}%</span>
+                          <span className="font-mono font-bold text-body w-8 text-right" style={{ color }}>{c.rev}</span>
+                          <span className="text-caption text-muted w-9 text-right">{c.taxa}%</span>
                         </div>
                       )
                     })}
@@ -529,7 +529,7 @@ export default function QualidadePage() {
                   <div className="flex items-center gap-2.5">
                     <div className="w-[3px] h-4 rounded-full bg-red-400 flex-shrink-0" />
                     <AlertTriangle size={12} className="text-red-400 flex-shrink-0" />
-                    <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-red-400">
+                    <span className="text-caption font-bold uppercase tracking-[0.07em] text-red-400">
                       Crônicos — 2+ revisitas
                     </span>
                   </div>
@@ -540,7 +540,7 @@ export default function QualidadePage() {
                         return (
                           <div key={c.nome} className="flex items-center gap-2 px-4 py-2.5 hover:bg-surface/20 transition-colors">
                             <p className="flex-1 text-[11.5px] text-text truncate">{c.nome}</p>
-                            <span className="font-mono font-bold text-[13px]" style={{ color }}>{c.count}×</span>
+                            <span className="font-mono font-bold text-body" style={{ color }}>{c.count}×</span>
                           </div>
                         )
                       })}
@@ -554,7 +554,7 @@ export default function QualidadePage() {
           {/* Drill-down */}
           <div>
             <button onClick={() => setShowDrill(v => !v)}
-                    className="text-[12px] text-muted hover:text-text transition-colors py-1 flex items-center gap-1">
+                    className="text-label text-muted hover:text-text transition-colors py-1 flex items-center gap-1">
               {showDrill ? '▲ Ocultar' : '▼ Ver'} lista completa de revisitas ({fmt(revisitasFiltradas.length)})
             </button>
           </div>
@@ -565,7 +565,7 @@ export default function QualidadePage() {
             <div className="flex items-center gap-2.5">
               <div className="w-[3px] h-4 rounded-full bg-teal-400 flex-shrink-0" />
               <ClipboardCheck size={12} className="text-teal-400 flex-shrink-0" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-teal-400">
+              <span className="text-caption font-bold uppercase tracking-[0.07em] text-teal-400">
                 Causa Raiz Registrada pelo Time
               </span>
             </div>
@@ -577,7 +577,7 @@ export default function QualidadePage() {
             <div className="flex items-center gap-2.5">
               <div className="w-[3px] h-4 rounded-full bg-violet-500 flex-shrink-0" />
               <Sparkles size={12} className="text-violet-400 flex-shrink-0" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-violet-400">
+              <span className="text-caption font-bold uppercase tracking-[0.07em] text-violet-400">
                 Causa Raiz de Revisitas (IA, inferida das observações)
               </span>
             </div>

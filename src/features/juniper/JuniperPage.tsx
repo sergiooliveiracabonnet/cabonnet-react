@@ -194,10 +194,10 @@ export default function JuniperPage() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
           </span>
-          <span className="text-[11px] text-muted">atualiza a cada 5 min</span>
+          <span className="text-caption text-muted">atualiza a cada 5 min</span>
         </div>
         {apiConfig.cluster && (
-          <span className="ml-auto text-[10px] font-bold uppercase tracking-[0.06em] px-2.5 py-0.5
+          <span className="ml-auto text-caption font-bold uppercase tracking-[0.06em] px-2.5 py-0.5
                            rounded-full bg-primary/10 text-primary border border-primary/20">
             {apiConfig.cluster}
           </span>
@@ -209,8 +209,8 @@ export default function JuniperPage() {
         <div className="flex items-center gap-3 px-4 py-3 bg-yellow/[0.08] border border-yellow/30 rounded-xl">
           <Clock size={16} className="text-yellow flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-[12px] font-semibold text-yellow">Dados desatualizados</p>
-            <p className="text-[11px] text-muted mt-0.5">A última coleta está defasada — verifique a conexão com o servidor.</p>
+            <p className="text-label font-semibold text-yellow">Dados desatualizados</p>
+            <p className="text-caption text-muted mt-0.5">A última coleta está defasada — verifique a conexão com o servidor.</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw size={11} /> Atualizar agora
@@ -226,8 +226,8 @@ export default function JuniperPage() {
             <AlertCircle size={22} className="text-red relative" />
           </div>
           <div className="flex-1">
-            <p className="font-bold text-[13px] text-red">ALERTA — Sessões PPPoE problemáticas detectadas!</p>
-            <p className="text-[11px] text-muted mt-0.5">Última verificação: {kpis.ultima ?? '—'}</p>
+            <p className="font-bold text-body text-red">ALERTA — Sessões PPPoE problemáticas detectadas!</p>
+            <p className="text-caption text-muted mt-0.5">Última verificação: {kpis.ultima ?? '—'}</p>
           </div>
           <Button variant="danger" size="sm" onClick={() => refetch()}>
             <RefreshCw size={11} /> Verificar
@@ -238,7 +238,7 @@ export default function JuniperPage() {
       {/* ── Config API ── */}
       <div className="bg-card border border-white/[0.08] border-l-[4px] border-l-primary rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
+          <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
             <Settings size={11} /> Fonte de Dados
           </p>
           <StatusPill nivel={hero.nivel ?? ''} txt={hero.statusTxt ?? 'Não verificado'} />
@@ -251,14 +251,14 @@ export default function JuniperPage() {
               const l   = ['Servidor Local', 'Grafana API'][idx]
               return (
                 <button key={v} onClick={() => setFonte(v)}
-                  className={`flex items-center gap-1.5 text-[12px] font-semibold px-4 py-1.5 rounded-md transition-all duration-fast
+                  className={`flex items-center gap-1.5 text-label font-semibold px-4 py-1.5 rounded-md transition-all duration-fast
                               ${fonte === v ? 'bg-primary text-white shadow-sm' : 'text-muted hover:text-secondary'}`}>
                   <Icon size={13} /> {l}
                 </button>
               )
             })}
           </div>
-          {fonte === 'local' && <span className="text-[11px] text-muted font-mono">localhost:5000</span>}
+          {fonte === 'local' && <span className="text-caption text-muted font-mono">localhost:5000</span>}
         </div>
 
         {fonte === 'api' && (
@@ -271,13 +271,13 @@ export default function JuniperPage() {
               { label: 'Cluster',        key: 'cluster', placeholder: 'Vale' },
             ].map((f) => (
               <div key={f.key}>
-                <label className="text-[11px] font-bold uppercase tracking-[0.04em] text-muted block mb-1">{f.label}</label>
+                <label className="text-caption font-bold uppercase tracking-[0.04em] text-muted block mb-1">{f.label}</label>
                 <input
                   type={f.type ?? 'text'}
                   value={(apiConfig as Record<string, string>)[f.key]}
                   placeholder={f.placeholder}
                   onChange={(e) => setApiConfig(c => ({ ...c, [f.key]: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-[11px] rounded-lg bg-card-high border border-white/[0.08]
+                  className="w-full px-3 py-1.5 text-caption rounded-lg bg-card-high border border-white/[0.08]
                              text-text outline-none focus:border-primary/40 transition-colors"
                 />
               </div>
@@ -300,16 +300,16 @@ export default function JuniperPage() {
             <p className={`font-headline font-bold text-[22px] ${heroStyle.text}`}>
               {hero.nivel_label ?? 'Sem conexão ativa'}
             </p>
-            <p className="text-[12px] text-muted mt-1">{hero.desc ?? 'Configure a fonte acima para exibir clientes PPPoE'}</p>
-            <p className="text-[11px] text-muted mt-1 font-mono">{hero.meta ?? 'Nenhuma coleta realizada ainda'}</p>
+            <p className="text-label text-muted mt-1">{hero.desc ?? 'Configure a fonte acima para exibir clientes PPPoE'}</p>
+            <p className="text-caption text-muted mt-1 font-mono">{hero.meta ?? 'Nenhuma coleta realizada ainda'}</p>
             {(onlineCount > 0 || offlineCount > 0) && (
               <div className="flex items-center gap-4 mt-3">
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-green">
+                <span className="flex items-center gap-1.5 text-caption font-semibold text-green">
                   <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse inline-block" />
                   {onlineCount} online
                 </span>
                 {offlineCount > 0 && (
-                  <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+                  <span className="flex items-center gap-1.5 text-caption font-semibold text-muted">
                     <span className="w-1.5 h-1.5 rounded-full bg-red/50 inline-block" />
                     {offlineCount} offline
                   </span>
@@ -321,7 +321,7 @@ export default function JuniperPage() {
             <p className={`font-headline font-bold text-[52px] leading-none tabular-nums ${heroStyle.text}`}>
               {kpis.total ?? '—'}
             </p>
-            <p className="text-[11px] text-muted mt-1">clientes conectados</p>
+            <p className="text-caption text-muted mt-1">clientes conectados</p>
           </div>
         </div>
       </div>
@@ -363,7 +363,7 @@ export default function JuniperPage() {
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/[0.08] bg-surface/20 flex-wrap">
           <div className="flex items-center gap-2">
             <Users size={15} className="text-primary" />
-            <span className="text-[13px] font-bold text-text">Clientes Conectados</span>
+            <span className="text-body font-bold text-text">Clientes Conectados</span>
           </div>
           <div className="flex items-center gap-3 ml-1">
             {(() => {
@@ -371,12 +371,12 @@ export default function JuniperPage() {
               const offline = clientesFiltrados.length - online
               return (
                 <>
-                  <span className="flex items-center gap-1.5 text-[11px] font-semibold text-green">
+                  <span className="flex items-center gap-1.5 text-caption font-semibold text-green">
                     <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse inline-block" />
                     {online} online
                   </span>
                   {offline > 0 && (
-                    <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+                    <span className="flex items-center gap-1.5 text-caption font-semibold text-muted">
                       <span className="w-1.5 h-1.5 rounded-full bg-red/60 inline-block" />
                       {offline} offline
                     </span>
@@ -391,7 +391,7 @@ export default function JuniperPage() {
             <div className="flex bg-surface/30 border border-white/[0.08] rounded-md p-0.5 gap-0.5">
               {[['card', 'Cards'], ['table', 'Tabela']].map(([v, l]) => (
                 <button key={v} onClick={() => setViewMode(v)}
-                  className={`text-[11px] px-3 py-1 rounded transition-all
+                  className={`text-caption px-3 py-1 rounded transition-all
                               ${viewMode === v ? 'bg-primary text-white' : 'text-muted hover:text-secondary'}`}>
                   {l}
                 </button>
@@ -403,8 +403,8 @@ export default function JuniperPage() {
         {clientesFiltrados.length === 0 ? (
           <div className="py-16 text-center text-muted">
             <Zap size={40} className="mx-auto mb-4 opacity-20" />
-            <p className="text-[14px] font-semibold text-secondary mb-2">Nenhum dado disponível</p>
-            <p className="text-[12px]">Configure a fonte de dados acima.</p>
+            <p className="text-title font-semibold text-secondary mb-2">Nenhum dado disponível</p>
+            <p className="text-label">Configure a fonte de dados acima.</p>
           </div>
         ) : viewMode === 'card' ? (
           <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -414,12 +414,12 @@ export default function JuniperPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-body">
               <thead>
                 <tr className="border-b-2 border-white/[0.08]">
-                  <th className="px-4 py-2.5 text-left text-[11px] font-bold text-muted uppercase tracking-[0.04em] w-8" />
+                  <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em] w-8" />
                   {['Usuário', 'IP', 'MAC', 'Interface', 'Uptime'].map(h => (
-                    <th key={h} className="px-4 py-2.5 text-left text-[11px] font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
+                    <th key={h} className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -434,7 +434,7 @@ export default function JuniperPage() {
                       </td>
                       <td className="px-4 py-2.5 font-bold text-text antialiased uppercase">{c.usuario}</td>
                       <td className="px-4 py-2.5 font-mono font-semibold text-primary antialiased uppercase">{c.ip}</td>
-                      <td className="px-4 py-2.5 font-mono text-[12px] uppercase">{c.mac}</td>
+                      <td className="px-4 py-2.5 font-mono text-label uppercase">{c.mac}</td>
                       <td className="px-4 py-2.5 uppercase">{c.iface}</td>
                       <td className="px-4 py-2.5 uppercase">{c.uptime}</td>
                     </tr>
@@ -452,16 +452,16 @@ export default function JuniperPage() {
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] bg-surface/20">
           <div className="flex items-center gap-2">
             <Activity size={12} className="text-muted" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted">
+            <span className="text-caption font-bold uppercase tracking-[0.06em] text-muted">
               {historico.length} snapshots
             </span>
-            <span className="text-[10px] text-muted/40">· máx {MAX_SNAPS}</span>
+            <span className="text-caption text-muted/40">· máx {MAX_SNAPS}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-muted/60">Salvo localmente</span>
+            <span className="text-caption text-muted/60">Salvo localmente</span>
             {historico.length > 0 && (
               <button onClick={limparHistorico}
-                className="flex items-center gap-1 text-[11px] text-red/60 hover:text-red transition-colors"
+                className="flex items-center gap-1 text-caption text-red/60 hover:text-red transition-colors"
                 title="Limpar histórico">
                 <Trash2 size={10} /> Limpar
               </button>
@@ -470,7 +470,7 @@ export default function JuniperPage() {
         </div>
         <div className="divide-y divide-white/[0.04] min-h-[120px] max-h-[600px] overflow-y-auto">
           {historico.length === 0 ? (
-            <p className="text-center text-muted text-[12px] py-10">
+            <p className="text-center text-muted text-label py-10">
               O histórico será salvo automaticamente a cada coleta (5 min).
             </p>
           ) : (
@@ -489,11 +489,11 @@ export default function JuniperPage() {
       {/* ── Correlação OS × Cidade ── */}
       <SectionTitle icon={GitMerge}>Correlação — OS Técnicas Abertas por Cidade</SectionTitle>
       <div className="bg-card border border-white/[0.08] rounded-xl p-4">
-        <p className="text-[11px] text-muted mb-4 leading-relaxed">
+        <p className="text-caption text-muted mb-4 leading-relaxed">
           Alta concentração de OS em uma cidade pode indicar degradação de infraestrutura — correlacione com alertas PPPoE.
         </p>
         {osCidades.length === 0 ? (
-          <p className="text-center text-muted text-[12px] py-6">Nenhuma OS ativa hoje.</p>
+          <p className="text-center text-muted text-label py-6">Nenhuma OS ativa hoje.</p>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {osCidades.map(c => <OsCityCard key={c.cidade} cidade={c.cidade} total={c.total} maxOsCity={maxOsCity} />)}
@@ -508,11 +508,11 @@ export default function JuniperPage() {
           <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles size={12} className="text-primary/40" />
-              <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Correlação Inativos × OS · IA</span>
+              <span className="text-caption font-bold text-muted uppercase tracking-wide">Correlação Inativos × OS · IA</span>
             </div>
             <button
               onClick={() => setAiEnabled(true)}
-              className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+              className="flex items-center gap-1.5 text-caption font-semibold text-primary/70 hover:text-primary
                          px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                          transition-all duration-fast"
             >
@@ -522,14 +522,14 @@ export default function JuniperPage() {
         ) : (
           <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
             {aiLoading && !aiJuniper ? (
-              <p className="text-[12px] text-muted animate-pulse">Consultando IA…</p>
+              <p className="text-label text-muted animate-pulse">Consultando IA…</p>
             ) : aiJuniper ? (
               <>
                 {aiJuniper.narrativa && (
-                  <p className="text-[12px] text-secondary leading-relaxed">{aiJuniper.narrativa}</p>
+                  <p className="text-label text-secondary leading-relaxed">{aiJuniper.narrativa}</p>
                 )}
                 {aiJuniper.sem_os.length === 0 ? (
-                  <p className="text-[12px] text-green font-semibold">Nenhum cliente inativo sem OS ativa identificado.</p>
+                  <p className="text-label text-green font-semibold">Nenhum cliente inativo sem OS ativa identificado.</p>
                 ) : (
                   <div className="space-y-1.5">
                     {aiJuniper.sem_os.map((item, i) => (
@@ -537,10 +537,10 @@ export default function JuniperPage() {
                            className="flex items-start gap-3 bg-card border border-orange/20 rounded-lg px-3 py-2.5">
                         <span className="w-2 h-2 rounded-full bg-orange mt-1.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-[12px] font-semibold text-text">{item.nome}</p>
-                          <p className="text-[11px] text-muted">{item.cidade}</p>
+                          <p className="text-label font-semibold text-text">{item.nome}</p>
+                          <p className="text-caption text-muted">{item.cidade}</p>
                         </div>
-                        <p className="text-[11px] text-orange text-right max-w-[200px] flex-shrink-0">{item.alerta}</p>
+                        <p className="text-caption text-orange text-right max-w-[200px] flex-shrink-0">{item.alerta}</p>
                       </div>
                     ))}
                   </div>

@@ -19,7 +19,7 @@ export function FilterSelect({ value, onChange, options, placeholder, className 
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none pl-3 pr-7 py-1.5 text-[12px] rounded-md
+        className="w-full appearance-none pl-3 pr-7 py-1.5 text-label rounded-md
                    bg-surface border border-white/[0.08] text-text rounded-lg
                    outline-none focus:border-primary/40 transition-colors duration-fast
                    cursor-pointer"

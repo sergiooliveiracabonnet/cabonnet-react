@@ -29,7 +29,7 @@ export function ChartCard({ title, dot, children, height = 'h-48', onExpand, cla
               style={{ background: dot }}
             />
           )}
-          <p className="text-[11px] font-medium text-muted">{title}</p>
+          <p className="text-caption font-medium text-muted">{title}</p>
         </div>
         {onExpand && (
           <button

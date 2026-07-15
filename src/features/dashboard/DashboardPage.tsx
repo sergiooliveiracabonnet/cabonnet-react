@@ -59,8 +59,8 @@ export default function DashboardPage() {
         <div className="w-14 h-14 rounded-full bg-red/10 border border-red/20 flex items-center justify-center">
           <AlertCircle size={24} className="text-red" />
         </div>
-        <p className="text-[14px] font-semibold text-text">Servidor indisponível</p>
-        <p className="text-[12px] text-muted text-center max-w-xs leading-relaxed">
+        <p className="text-title font-semibold text-text">Servidor indisponível</p>
+        <p className="text-label text-muted text-center max-w-xs leading-relaxed">
           {(error as Error)?.message ?? String(error)}
         </p>
       </div>
@@ -132,7 +132,7 @@ export default function DashboardPage() {
 
         {/* ── Aviso de falha interna de builder (visível só em erro real) ── */}
         {builderErrors.length > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow/10 border border-yellow/20 text-[11px] text-yellow">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow/10 border border-yellow/20 text-caption text-yellow">
             <AlertCircle size={13} />
             <span>Erro interno em: <strong>{builderErrors.join(', ')}</strong> — dados parciais. Verifique o console.</span>
           </div>
@@ -265,7 +265,7 @@ export default function DashboardPage() {
               {modal?.foco && FOCO_NAVEGAVEL.has(modal.foco) && (
                 <button
                   onClick={() => { const foco = modal!.foco; setModal(null); navigate('/ordens', { state: { foco } }) }}
-                  className="flex items-center gap-1.5 text-[10px] font-semibold text-primary
+                  className="flex items-center gap-1.5 text-caption font-semibold text-primary
                              border border-primary/30 hover:bg-primary/10 rounded-md px-2.5 py-1
                              transition-all duration-fast"
                 >
@@ -277,7 +277,7 @@ export default function DashboardPage() {
                   const date = new Date().toISOString().slice(0, 10)
                   exportCSV(modal!.rows, `os_${modal!.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
                 }}
-                className="flex items-center gap-1.5 text-[10px] text-muted hover:text-primary
+                className="flex items-center gap-1.5 text-caption text-muted hover:text-primary
                            border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
                            transition-all duration-fast"
               >

@@ -20,14 +20,14 @@ export function ProjecaoRiscoPanel({ proj, criticasAgora, onOpen }: {
     >
       <div className="flex items-center gap-2">
         <TrendingUp size={14} className="text-orange" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">Projeção de risco</span>
+        <span className="text-caption font-bold uppercase tracking-[0.07em] text-muted">Projeção de risco</span>
       </div>
-      <span className="text-[12px] text-secondary">
+      <span className="text-label text-secondary">
         <span className="font-semibold text-text tabular-nums">{criticasAgora}</span> críticas agora
         {' · '}<span className="font-semibold text-orange tabular-nums">+{proj.proj24h}</span> em ≤24h
         {' · '}<span className="font-semibold text-yellow tabular-nums">+{proj.proj48h}</span> em ≤48h
       </span>
-      <span className="sm:ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-orange">
+      <span className="sm:ml-auto inline-flex items-center gap-1 text-caption font-semibold text-orange">
         {totalProj} em risco — ver OS <ArrowUpRight size={12} />
       </span>
     </button>
@@ -43,17 +43,17 @@ export function MudancasStrip({ tendencia, mudancas }: { tendencia: ScoreTendenc
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-card border border-border px-4 py-2.5">
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">Tendência</span>
-        <span className="text-[12px] font-semibold tabular-nums" style={{ color: cor }}>
+        <span className="text-caption font-bold uppercase tracking-[0.07em] text-muted">Tendência</span>
+        <span className="text-label font-semibold tabular-nums" style={{ color: cor }}>
           {flat ? '— estável' : `${up ? '↑' : '↓'} ${up ? '+' : ''}${tendencia.delta} pts`}
         </span>
-        <span className="text-[10px] text-muted">vs período anterior · score do período {tendencia.atual}</span>
+        <span className="text-caption text-muted">vs período anterior · score do período {tendencia.atual}</span>
       </div>
       <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-        <span className="text-[10px] text-muted">O que mudou:</span>
+        <span className="text-caption text-muted">O que mudou:</span>
         {mudancas.map(m => (
           <span key={m.id}
-            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border tabular-nums
+            className={`inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border tabular-nums
                         ${m.melhorou ? 'text-green bg-green/10 border-green/20' : 'text-red bg-red/10 border-red/20'}`}
             title={`${m.label}: ${m.anterior}${m.unidade} → ${m.atual}${m.unidade}`}>
             {m.melhorou ? '↑' : '↓'} {m.label} {m.atual}{m.unidade}
@@ -72,11 +72,11 @@ export function AlertaTopoBanner({ clustersCount, anomaliasCount, onScrollCluste
   return (
     <div className="flex items-center gap-3 flex-wrap rounded-xl border border-red/25 bg-red/[0.06] px-4 py-2.5">
       <AlertCircle size={13} className="text-red flex-shrink-0" />
-      <span className="text-[12px] font-bold text-red">Atenção necessária:</span>
+      <span className="text-label font-bold text-red">Atenção necessária:</span>
       {clustersCount > 0 && (
         <button
           onClick={onScrollClusters}
-          className="text-[12px] text-text underline-offset-2 hover:underline hover:text-red transition-colors"
+          className="text-label text-text underline-offset-2 hover:underline hover:text-red transition-colors"
         >
           {clustersCount} cluster{clustersCount !== 1 ? 's' : ''} de falha detectado{clustersCount !== 1 ? 's' : ''}
         </button>
@@ -85,7 +85,7 @@ export function AlertaTopoBanner({ clustersCount, anomaliasCount, onScrollCluste
       {anomaliasCount > 0 && (
         <button
           onClick={onScrollAnomalias}
-          className="text-[12px] text-text underline-offset-2 hover:underline hover:text-red transition-colors"
+          className="text-label text-text underline-offset-2 hover:underline hover:text-red transition-colors"
         >
           {anomaliasCount} anomalia{anomaliasCount !== 1 ? 's' : ''} detectada{anomaliasCount !== 1 ? 's' : ''}
         </button>
@@ -101,7 +101,7 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
         <SectionLabel icon={Zap} color="#4ade80">Clusters de Falha</SectionLabel>
         <div className="flex items-center gap-3 mt-4">
           <CheckCircle2 size={18} className="text-green flex-shrink-0" />
-          <p className="text-[13px] text-green font-semibold">
+          <p className="text-body text-green font-semibold">
             Nenhum cluster detectado — sem bairros com 4+ OS de manutenção nas últimas 24h
           </p>
         </div>
@@ -114,25 +114,25 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
       <div className="p-5">
         <div className="flex items-start justify-between mb-4">
           <SectionLabel icon={Zap} color="#f87171">Clusters de Falha</SectionLabel>
-          <span className="text-[10px] font-bold uppercase tracking-[0.05em] bg-red/15 text-red
+          <span className="text-caption font-bold uppercase tracking-[0.05em] bg-red/15 text-red
                            border border-red/25 rounded-full px-2.5 py-1">
             ALERTA
           </span>
         </div>
 
-        <p className="text-[13px] font-semibold text-text mb-1">
+        <p className="text-body font-semibold text-text mb-1">
           {clusters.length} bairro{clusters.length !== 1 ? 's' : ''} com possível problema de infraestrutura
         </p>
-        <p className="text-[11px] text-muted mb-4">4+ OS de manutenção abertas no mesmo bairro nas últimas 24h</p>
+        <p className="text-caption text-muted mb-4">4+ OS de manutenção abertas no mesmo bairro nas últimas 24h</p>
 
         <div className="space-y-2">
           {clusters.map((cl, i) => (
             <div key={i} className="flex items-center gap-3 bg-red/[0.04] border border-red/[0.12]
                                     rounded-lg px-3 py-2.5">
               <MapPin size={11} className="text-red/60 flex-shrink-0" />
-              <span className="text-[12px] font-semibold text-text flex-1 truncate">{cl.bairro}</span>
-              <span className="text-[11px] text-muted">{cl.cidade}</span>
-              <span className="font-mono text-[13px] font-bold text-red flex-shrink-0">{cl.total}</span>
+              <span className="text-label font-semibold text-text flex-1 truncate">{cl.bairro}</span>
+              <span className="text-caption text-muted">{cl.cidade}</span>
+              <span className="font-mono text-body font-bold text-red flex-shrink-0">{cl.total}</span>
             </div>
           ))}
         </div>
@@ -162,7 +162,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
 
   if (!agingTotal) return (
     <div className="h-full rounded-lg border border-border bg-card p-5 flex items-center justify-center">
-      <p className="text-muted text-[12px]">Sem dados de aging</p>
+      <p className="text-muted text-label">Sem dados de aging</p>
     </div>
   )
 
@@ -177,7 +177,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <SectionLabel icon={Clock} color="#3b82f6">Fila Ativa — Prazo Consumido</SectionLabel>
-        <span className="text-[11px] text-muted tabular-nums">
+        <span className="text-caption text-muted tabular-nums">
           {agingTotal} OS abertas
           {backlogDias != null && <> · ≈ <span className="font-semibold text-text">{backlogDias.toLocaleString('pt-BR')} dias</span> de fila no ritmo atual</>}
         </span>
@@ -191,19 +191,19 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
             <button key={e.key} type="button" onClick={() => abrirBucket(e)}
                     className="flex-1 h-full flex flex-col items-center justify-end gap-1.5 cursor-pointer group bg-transparent border-0 p-0"
                     title={`${e.label}: ${val} OS (${pct}%) — % do prazo de SLA já consumido · clique para listar`}>
-              <span className={`text-[12px] font-bold tabular-nums ${e.hot ? 'text-red' : 'text-text'}`}>
+              <span className={`text-label font-bold tabular-nums ${e.hot ? 'text-red' : 'text-text'}`}>
                 {val}
               </span>
               <div className="w-full max-w-[56px] rounded-t transition-all duration-700 group-hover:brightness-125"
                    style={{ height: `${Math.max(3, Math.round(val / maxVal * 96))}px`, background: e.color }} />
-              <span className={`text-[10px] ${e.hot ? 'text-red font-semibold' : 'text-muted group-hover:text-secondary'}`}>{e.label}</span>
+              <span className={`text-caption ${e.hot ? 'text-red font-semibold' : 'text-muted group-hover:text-secondary'}`}>{e.label}</span>
             </button>
           )
         })}
       </div>
 
       {criticas > 0 && (
-        <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted">
+        <p className="mt-3 flex items-center gap-1.5 text-caption text-muted">
           <AlertCircle size={11} className="text-red flex-shrink-0" />
           <span><span className="text-red font-semibold tabular-nums">{criticas} OS além de 2× o SLA</span> — priorizar hoje</span>
         </p>
@@ -235,7 +235,7 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
   if (total === 0) {
     return (
       <div className="h-full rounded-lg border border-border bg-card p-5 flex items-center justify-center">
-        <p className="text-muted text-[12px]">Fila vazia — sem composição para analisar</p>
+        <p className="text-muted text-label">Fila vazia — sem composição para analisar</p>
       </div>
     )
   }
@@ -249,7 +249,7 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <SectionLabel icon={Layers} color="#3b82f6">Composição da Fila — Tipo de Serviço</SectionLabel>
-        <span className="text-[11px] text-muted tabular-nums">top 3 = {pctTop3}% da fila</span>
+        <span className="text-caption text-muted tabular-nums">top 3 = {pctTop3}% da fila</span>
       </div>
 
       <div className="mt-2">
@@ -262,15 +262,15 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
                                border-b border-border/60 last:border-b-0 bg-transparent border-x-0 border-t-0
                                cursor-pointer group text-left"
                     title={`${g.nome}: ${g.rows.length} OS (${pct}%) — clique para listar`}>
-              <span className="text-[11px] font-semibold text-secondary truncate group-hover:text-text transition-colors">
+              <span className="text-caption font-semibold text-secondary truncate group-hover:text-text transition-colors">
                 {g.nome}
               </span>
-              <span className="text-[12px] font-bold text-right tabular-nums">{g.rows.length}</span>
+              <span className="text-label font-bold text-right tabular-nums">{g.rows.length}</span>
               <div className="h-2 rounded-full bg-surface">
                 <div className="h-full rounded-full transition-all duration-700 group-hover:brightness-125"
                      style={{ width: `${Math.round(g.rows.length / maxVal * 100)}%`, background: 'rgba(59,130,246,.75)' }} />
               </div>
-              <span className="text-[10px] text-muted text-right tabular-nums">{pct}%</span>
+              <span className="text-caption text-muted text-right tabular-nums">{pct}%</span>
             </button>
           )
         })}
@@ -297,7 +297,7 @@ export function FornecedoresPanel({ fornecedores }: {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <SectionLabel icon={Package} color="#c4b5fd">Fornecedores — SLA do Período</SectionLabel>
-        <span className="text-[11px] text-muted">barra = volume · badge = % dentro do prazo</span>
+        <span className="text-caption text-muted">barra = volume · badge = % dentro do prazo</span>
       </div>
 
       <div className="mt-2">
@@ -309,15 +309,15 @@ export function FornecedoresPanel({ fornecedores }: {
                  title={`${f.nome}: ${f.total} OS no período · SLA ${f.sla}% dentro do prazo · ${f.concluidas} concluídas (${f.conclPct ?? '—'}%)`}>
               <span className="flex items-center gap-2 min-w-0">
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: f.cor }} />
-                <span className="text-[11px] font-semibold text-secondary truncate">{f.nome}</span>
+                <span className="text-caption font-semibold text-secondary truncate">{f.nome}</span>
               </span>
-              <span className="text-[12px] font-bold text-right tabular-nums">{f.total}</span>
+              <span className="text-label font-bold text-right tabular-nums">{f.total}</span>
               <div className="h-2 rounded-full bg-surface">
                 <div className="h-full rounded-full transition-all duration-700"
                      style={{ width: `${Math.round(f.total / maxTotal * 100)}%`, background: f.cor }} />
               </div>
               <span className="flex items-center gap-1.5 justify-end min-w-[76px]">
-                <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 tabular-nums ${tier}`}>{f.sla}%</span>
+                <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums ${tier}`}>{f.sla}%</span>
                 {f.slaTrend && <TrendPill trend={f.slaTrend} />}
               </span>
             </div>
@@ -359,7 +359,7 @@ export function CidadesValePanel({ filaAtiva, onOpen }: {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <SectionLabel icon={MapPin} color="#3b82f6">Cidades do Vale — Fila e SLA</SectionLabel>
-        <span className="text-[11px] text-muted">parcela vermelha = OS críticas</span>
+        <span className="text-caption text-muted">parcela vermelha = OS críticas</span>
       </div>
 
       <div className="mt-2">
@@ -376,17 +376,17 @@ export function CidadesValePanel({ filaAtiva, onOpen }: {
                                border-b border-border/60 last:border-b-0 bg-transparent border-x-0 border-t-0
                                cursor-pointer group text-left"
                     title={`${c.nome}: ${c.rows.length} OS na fila · ${c.criticas} críticas · SLA ${c.sla}% — clique para listar`}>
-              <span className="text-[11px] font-semibold text-secondary truncate group-hover:text-text transition-colors">
+              <span className="text-caption font-semibold text-secondary truncate group-hover:text-text transition-colors">
                 {c.nome}
               </span>
-              <span className="text-[12px] font-bold text-right tabular-nums">{c.rows.length}</span>
+              <span className="text-label font-bold text-right tabular-nums">{c.rows.length}</span>
               <div className="flex h-2 rounded-full bg-surface overflow-hidden" style={{ width: `${wTotal}%`, minWidth: 8 }}>
                 {c.criticas > 0 && (
                   <div className="h-full flex-shrink-0" style={{ width: `${wCrit * 100}%`, background: 'rgb(248,113,113)' }} />
                 )}
                 <div className="h-full flex-1" style={{ background: 'rgba(59,130,246,.75)' }} />
               </div>
-              <span className={`text-[10px] font-bold text-center rounded px-1.5 py-0.5 tabular-nums ${slaCls}`}>
+              <span className={`text-caption font-bold text-center rounded px-1.5 py-0.5 tabular-nums ${slaCls}`}>
                 {c.sla}%
               </span>
             </button>
@@ -405,7 +405,7 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
       <div className="h-full rounded-lg border border-border bg-card p-5">
         <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
         <div className="flex items-center justify-center py-8">
-          <p className="text-muted text-[12px]">Ainda sem histórico de ritmo para comparar hoje</p>
+          <p className="text-muted text-label">Ainda sem histórico de ritmo para comparar hoje</p>
         </div>
       </div>
     )
@@ -425,7 +425,7 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
         <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
-        <span className="text-[11px] text-muted">tracejado = baseline da equipe</span>
+        <span className="text-caption text-muted">tracejado = baseline da equipe</span>
       </div>
 
       <div className="mt-2">
@@ -436,7 +436,7 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
             <div key={e.nome}
                  className="grid grid-cols-[96px_1fr_58px] items-center gap-3 py-2 border-b border-border/60 last:border-b-0"
                  title={`${e.nome}: ${r.atual} hoje · baseline ${r.baseline}`}>
-              <span className="text-[11px] font-semibold text-secondary truncate">{e.nome}</span>
+              <span className="text-caption font-semibold text-secondary truncate">{e.nome}</span>
               <div className="relative h-2 rounded-full bg-surface">
                 <div className="absolute -top-[3px] -bottom-[3px] border-l-[1.5px] border-dashed border-muted/60"
                      style={{ left: `${Math.min(100, r.baseline / escala * 100)}%` }} />
@@ -446,7 +446,7 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
                        background: abaixo ? 'rgb(var(--c-orange))' : 'rgb(var(--c-primary))',
                      }} />
               </div>
-              <span className="text-[12px] font-bold text-right tabular-nums">
+              <span className="text-label font-bold text-right tabular-nums">
                 {r.atual}<span className="text-muted font-medium">/{r.baseline}</span>
               </span>
             </div>
@@ -464,9 +464,9 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
       <div className="h-full rounded-lg border border-border bg-card p-5">
         <div className="flex items-center gap-2.5">
           <Target size={14} className="text-muted" />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.09em] text-secondary">Meta do Mês</span>
+          <span className="text-caption font-semibold uppercase tracking-[0.09em] text-secondary">Meta do Mês</span>
         </div>
-        <p className="text-[12px] text-muted/60 mt-3">
+        <p className="text-label text-muted/60 mt-3">
           {meta.concluidas} concluídas até agora · sem histórico dos 3 meses anteriores para definir uma meta
         </p>
       </div>
@@ -482,16 +482,16 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
       <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div className="flex items-center gap-2.5">
           <Target size={14} style={{ color: cor }} />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.09em] text-secondary">Meta do Mês</span>
+          <span className="text-caption font-semibold uppercase tracking-[0.09em] text-secondary">Meta do Mês</span>
         </div>
-        <span className="text-[11px] text-muted">{diasLabel}</span>
+        <span className="text-caption text-muted">{diasLabel}</span>
       </div>
 
       <div className="flex items-end gap-3 mb-2">
         <span className="font-mono font-black leading-none" style={{ fontSize: '32px', color: cor }}>
           {meta.pct}%
         </span>
-        <span className="text-[12px] text-muted mb-1">
+        <span className="text-label text-muted mb-1">
           {meta.concluidas} concluídas · meta ~{meta.meta} (média 3 meses)
         </span>
       </div>
@@ -502,7 +502,7 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
       </div>
 
       {meta.projecaoFinal != null && (
-        <p className="mt-2.5 text-[11px]" style={{ color: cor }}>
+        <p className="mt-2.5 text-caption" style={{ color: cor }}>
           {meta.status === 'acima' ? '↑ No ritmo atual' : meta.status === 'abaixo' ? '↓ No ritmo atual' : 'No ritmo atual'}:
           {' '}projeção de <strong>{meta.projecaoFinal}</strong> até o fim do mês
           {meta.status === 'abaixo' ? ' — abaixo da meta' : meta.status === 'acima' ? ' — acima da meta' : ''}

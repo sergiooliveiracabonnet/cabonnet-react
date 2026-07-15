@@ -72,7 +72,7 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
   }, [rows])
 
   if (groups.length === 0) {
-    return <p className="px-6 py-10 text-center text-[12px] text-muted italic">Nenhuma OS encontrada.</p>
+    return <p className="px-6 py-10 text-center text-label text-muted italic">Nenhuma OS encontrada.</p>
   }
 
   return (
@@ -86,22 +86,22 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
             {/* Header do grupo */}
             <div className="flex items-center gap-2 px-4 py-2 bg-elevated/40 border-b border-white/[0.05]">
               <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
-                <span className="text-[12px] font-bold text-text truncate">{g.nome}</span>
+                <span className="text-label font-bold text-text truncate">{g.nome}</span>
                 {g.codigo && (
-                  <span className="text-[10px] text-muted font-mono flex-shrink-0">#{g.codigo}</span>
+                  <span className="text-caption text-muted font-mono flex-shrink-0">#{g.codigo}</span>
                 )}
                 {g.rows.length > 1 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full badge-orange flex-shrink-0">
+                  <span className="text-caption font-bold px-1.5 py-0.5 rounded-full badge-orange flex-shrink-0">
                     {g.rows.length} OS
                   </span>
                 )}
                 {g.nRevisitas > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full badge-red flex-shrink-0">
+                  <span className="text-caption font-bold px-1.5 py-0.5 rounded-full badge-red flex-shrink-0">
                     {g.nRevisitas} revisita{g.nRevisitas > 1 ? 's' : ''}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-muted flex-shrink-0">
+              <span className="text-caption text-muted flex-shrink-0">
                 {primeiraData}{primeiraData !== ultimaData ? ` → ${ultimaData}` : ''}
               </span>
             </div>
@@ -113,7 +113,7 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
                 key={g.sorted[0].numos}
                 className="w-full text-left flex items-center gap-3 px-4 py-2.5
                            hover:bg-primary/[0.04] border-b border-white/[0.03]
-                           transition-colors text-[11px] cursor-pointer"
+                           transition-colors text-caption cursor-pointer"
                 onClick={() => onRowClick?.(g.sorted[0])}
               >
                 <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${_dotColor(g.sorted[0]._situacaoEfetiva)}`} />
@@ -142,10 +142,10 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
                     <div key={r.numos}>
                       {/* Conector de gap entre OS */}
                       {i > 0 && showGap && (
-                        <div className="flex items-center gap-2 py-1 text-[9px] text-muted/50">
+                        <div className="flex items-center gap-2 py-1 text-caption text-muted/50">
                           {gap != null ? `${gap}d depois` : ''}
                           {badge && (
-                            <Badge variant={badge.variant} className="text-[9px] px-1 py-px">
+                            <Badge variant={badge.variant} className="text-caption px-1 py-px">
                               {badge.label}
                             </Badge>
                           )}
@@ -153,14 +153,14 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
                       )}
                       {i > 0 && !showGap && badge && (
                         <div className="py-0.5">
-                          <Badge variant={badge.variant} className="text-[9px] px-1 py-px">{badge.label}</Badge>
+                          <Badge variant={badge.variant} className="text-caption px-1 py-px">{badge.label}</Badge>
                         </div>
                       )}
 
                       {/* Linha da OS */}
                       <button
                         className="relative w-full text-left flex items-center gap-3 py-2
-                                   hover:bg-primary/[0.04] transition-colors text-[11px] cursor-pointer"
+                                   hover:bg-primary/[0.04] transition-colors text-caption cursor-pointer"
                         onClick={() => onRowClick?.(r)}
                       >
                         {/* Dot no rail */}
@@ -169,14 +169,14 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
                                           ${dotCls} ${isLast && ativo ? 'animate-pulse' : ''}`} />
 
                         <span className="font-mono text-primary w-20 flex-shrink-0">{r.numos}</span>
-                        <span className="text-muted w-28 flex-shrink-0 text-[10px]">
+                        <span className="text-muted w-28 flex-shrink-0 text-caption">
                           {r.datacadastro?.split(' ')[0] ?? '—'}
                         </span>
                         <span className="text-secondary truncate flex-1 min-w-0">{r.tiposervico ?? '—'}</span>
-                        <span className="text-muted text-[10px] flex-shrink-0 hidden sm:block">
+                        <span className="text-muted text-caption flex-shrink-0 hidden sm:block">
                           {shortEquipe(r.nomedaequipe) || '—'}
                         </span>
-                        <Badge variant={situacaoVariant(r._situacaoEfetiva)} className="flex-shrink-0 text-[9px]">
+                        <Badge variant={situacaoVariant(r._situacaoEfetiva)} className="flex-shrink-0 text-caption">
                           {r._situacaoEfetiva}
                         </Badge>
                       </button>

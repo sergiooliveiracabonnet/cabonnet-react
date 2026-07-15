@@ -79,12 +79,12 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
           {/* Gauge */}
           <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
             <GaugeChart value={score} target={target} color={scoreColor} label={scoreLabel} size={100} />
-            <span className="text-[10px] font-bold uppercase tracking-[0.06em]"
+            <span className="text-caption font-bold uppercase tracking-[0.06em]"
                   style={{ color: `${scoreColor}99` }}>
               Score
             </span>
             {tendencia?.delta != null && tendencia.delta !== 0 && (
-              <span className={`inline-flex items-center gap-1 text-[10px] font-bold tabular-nums
+              <span className={`inline-flex items-center gap-1 text-caption font-bold tabular-nums
                                 px-2 py-0.5 rounded-full border
                                 ${tendencia.delta > 0
                                   ? 'text-green bg-green/[0.07] border-green/20'
@@ -104,10 +104,10 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                 return (
                   <div key={item.id}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className={`text-[9px] ${isWeakest ? 'font-bold text-text' : 'text-muted'}`}>
+                      <span className={`text-caption ${isWeakest ? 'font-bold text-text' : 'text-muted'}`}>
                         {item.label}{isWeakest ? ' ⚠' : ''}
                       </span>
-                      <span className="text-[10px] font-mono font-semibold" style={{ color: cor }}>
+                      <span className="text-caption font-mono font-semibold" style={{ color: cor }}>
                         {item.value}
                       </span>
                     </div>
@@ -118,7 +118,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                   </div>
                 )
               })}
-              <span className="text-[8px] text-muted/70 leading-tight">
+              <span className="text-caption text-muted/70 leading-tight">
                 Peso: SLA 45% · Taxa 35% · MTTR 20%
               </span>
             </div>
@@ -128,11 +128,11 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
           <div className="flex-1 min-w-[200px]">
             <div className="flex items-center gap-2 mb-3">
               <Activity size={10} className="text-muted" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">
+              <span className="text-caption font-bold uppercase tracking-[0.07em] text-muted">
                 Análise Operacional
               </span>
               {aiData && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary/80
+                <span className="inline-flex items-center gap-1 text-caption font-bold text-primary/80
                                  bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full">
                   <Sparkles size={7} /> IA
                 </span>
@@ -146,14 +146,14 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                   onChange={e => setDraftObs(e.target.value)}
                   placeholder="Contexto opcional para a IA: ex. tivemos queda de energia hoje, o que pode justificar menor fluxo de atendimentos."
                   rows={2}
-                  className="w-full text-[11px] text-secondary placeholder:text-muted/50
+                  className="w-full text-caption text-secondary placeholder:text-muted/50
                              bg-surface/60 border border-white/[0.08] rounded-lg px-3 py-2
                              resize-none focus:outline-none focus:border-primary/30
                              leading-relaxed"
                 />
                 <button
                   onClick={() => onRequestAI(draftObs)}
-                  className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+                  className="flex items-center gap-1.5 text-caption font-semibold text-primary/70 hover:text-primary
                              px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                              transition-all duration-fast"
                 >
@@ -181,24 +181,24 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                 <div className="flex gap-2.5 items-start">
                   <span className="mt-[3px] flex-shrink-0 w-1.5 h-1.5 rounded-full bg-red" />
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-red/70 mb-0.5">Problema</p>
-                    <p className="text-[12px] text-secondary leading-snug">{aiData.problema}</p>
+                    <p className="text-caption font-bold uppercase tracking-[0.08em] text-red/70 mb-0.5">Problema</p>
+                    <p className="text-label text-secondary leading-snug">{aiData.problema}</p>
                   </div>
                 </div>
                 {/* Sugestão */}
                 <div className="flex gap-2.5 items-start">
                   <span className="mt-[3px] flex-shrink-0 w-1.5 h-1.5 rounded-full bg-yellow" />
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-yellow/70 mb-0.5">Sugestão</p>
-                    <p className="text-[12px] text-secondary leading-snug">{aiData.sugestao}</p>
+                    <p className="text-caption font-bold uppercase tracking-[0.08em] text-yellow/70 mb-0.5">Sugestão</p>
+                    <p className="text-label text-secondary leading-snug">{aiData.sugestao}</p>
                   </div>
                 </div>
                 {/* Ação */}
                 <div className="flex gap-2.5 items-start">
                   <Zap size={10} className="mt-[2px] flex-shrink-0 text-green" />
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-green/70 mb-0.5">Ação Imediata</p>
-                    <p className="text-[12px] font-semibold text-text leading-snug">{aiData.acao}</p>
+                    <p className="text-caption font-bold uppercase tracking-[0.08em] text-green/70 mb-0.5">Ação Imediata</p>
+                    <p className="text-label font-semibold text-text leading-snug">{aiData.acao}</p>
                   </div>
                 </div>
 
@@ -206,7 +206,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                 {onRequestAI && !showReanalysis && (
                   <button
                     onClick={() => setShowReanalysis(true)}
-                    className="mt-1 flex items-center gap-1 text-[10px] text-muted/60 hover:text-primary
+                    className="mt-1 flex items-center gap-1 text-caption text-muted/60 hover:text-primary
                                transition-colors duration-fast"
                   >
                     <Sparkles size={9} /> Reanalisar com novo contexto
@@ -219,7 +219,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                       onChange={e => setDraftObs(e.target.value)}
                       placeholder="Novo contexto para a IA..."
                       rows={2}
-                      className="w-full text-[11px] text-secondary placeholder:text-muted/50
+                      className="w-full text-caption text-secondary placeholder:text-muted/50
                                  bg-surface/60 border border-white/[0.08] rounded-lg px-3 py-2
                                  resize-none focus:outline-none focus:border-primary/30
                                  leading-relaxed"
@@ -227,7 +227,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                     <div className="flex gap-2">
                       <button
                         onClick={() => { onRequestAI(draftObs); setShowReanalysis(false) }}
-                        className="flex items-center gap-1 text-[10px] font-semibold text-primary/70 hover:text-primary
+                        className="flex items-center gap-1 text-caption font-semibold text-primary/70 hover:text-primary
                                    px-2.5 py-1 rounded-md border border-primary/20 hover:border-primary/40
                                    hover:bg-primary/[0.08] transition-all duration-fast"
                       >
@@ -235,7 +235,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                       </button>
                       <button
                         onClick={() => setShowReanalysis(false)}
-                        className="text-[10px] text-muted/60 hover:text-muted px-2 py-1 transition-colors duration-fast"
+                        className="text-caption text-muted/60 hover:text-muted px-2 py-1 transition-colors duration-fast"
                       >
                         Cancelar
                       </button>
@@ -244,7 +244,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                 )}
               </div>
             ) : (
-              <p className="text-[12px] text-secondary leading-[1.7]">
+              <p className="text-label text-secondary leading-[1.7]">
                 {displayNarrative || 'Carregando análise operacional…'}
               </p>
             )}
@@ -255,12 +255,12 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
             {miniStats.map(s => (
               <div key={s.label} title={s.hint}
                    className="flex flex-col border border-border rounded-md bg-bg/40 px-3 py-2 min-w-[104px]">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-muted">{s.label}</p>
+                <p className="text-caption font-semibold uppercase tracking-[0.04em] text-muted">{s.label}</p>
                 <p className={`font-bold text-[18px] leading-none tabular-nums tracking-tight mt-1
                                ${s.danger ? 'text-red' : s.warn ? 'text-yellow' : 'text-text'}`}>
                   {s.value}
                 </p>
-                {s.sub && <p className="text-[9px] text-muted/70 mt-0.5 leading-none">{s.sub}</p>}
+                {s.sub && <p className="text-caption text-muted/70 mt-0.5 leading-none">{s.sub}</p>}
               </div>
             ))}
           </div>
@@ -272,7 +272,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
             {displayInsights.map((ins, i) => (
               <span
                 key={i}
-                className={`inline-flex items-center gap-1.5 text-[11px] font-semibold
+                className={`inline-flex items-center gap-1.5 text-caption font-semibold
                             px-2.5 py-[5px] rounded-full border ${INSIGHT_CLS[ins.level] ?? INSIGHT_CLS.cyan}`}
               >
                 {ins.ai

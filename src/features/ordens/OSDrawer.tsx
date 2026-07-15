@@ -226,7 +226,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
             <button
               onClick={() => setShowModal(true)}
               className="flex items-center gap-1.5 px-3 h-8 rounded-xl border border-primary/30 bg-primary/10
-                         text-[12px] font-semibold text-primary hover:bg-primary/20 transition-all duration-fast ml-1"
+                         text-label font-semibold text-primary hover:bg-primary/20 transition-all duration-fast ml-1"
             >
               <ExternalLink size={12} /> Detalhes
             </button>
@@ -245,23 +245,23 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
 
                 {/* Situação */}
                 <div className="flex-1 px-4 py-3 flex flex-col gap-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Situação</span>
+                  <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Situação</span>
                   <Badge variant={situacaoVariant(sit)} className="w-fit">{sit ?? '—'}</Badge>
                 </div>
 
                 {/* Aging */}
                 {os._aging != null && (
                   <div className="px-4 py-3 flex flex-col gap-1 items-center justify-center min-w-[72px]">
-                    <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Aging</span>
+                    <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Aging</span>
                     <span className={`font-mono font-black text-[22px] leading-none ${agingCls}`}>
-                      {os._aging}<span className="text-[12px] font-semibold ml-0.5 opacity-60">d</span>
+                      {os._aging}<span className="text-label font-semibold ml-0.5 opacity-60">d</span>
                     </span>
                   </div>
                 )}
 
                 {/* SLA */}
                 <div className="px-4 py-3 flex flex-col gap-1.5 items-center justify-center min-w-[80px]">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">SLA</span>
+                  <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">SLA</span>
                   {os._slaCritico
                     ? <Badge variant="red">Crítico</Badge>
                     : os._slaExcedido
@@ -273,8 +273,8 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                 {/* Fornecedor */}
                 {fornLabel && (
                   <div className="px-4 py-3 flex flex-col gap-1.5 items-center justify-center min-w-[72px]">
-                    <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Frente</span>
-                    <span className="text-[11px] font-semibold text-secondary">{fornLabel}</span>
+                    <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Frente</span>
+                    <span className="text-caption font-semibold text-secondary">{fornLabel}</span>
                   </div>
                 )}
               </div>
@@ -284,18 +284,18 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
             <Section label="Observações">
               {obsCrit && (
                 <div className="bg-red/[0.08] border border-red/20 rounded-xl p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-red mb-2 flex items-center gap-1.5">
+                  <p className="text-caption font-bold uppercase tracking-[0.05em] text-red mb-2 flex items-center gap-1.5">
                     <AlertTriangle size={11} /> Observação Crítica
                   </p>
-                  <p className="text-[12px] text-red/85 leading-relaxed whitespace-pre-wrap">{obsCrit as string}</p>
+                  <p className="text-label text-red/85 leading-relaxed whitespace-pre-wrap">{obsCrit as string}</p>
                 </div>
               )}
               {obsGeral ? (
                 <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
-                  <p className="text-[12px] text-secondary leading-relaxed whitespace-pre-wrap">{obsGeral as string}</p>
+                  <p className="text-label text-secondary leading-relaxed whitespace-pre-wrap">{obsGeral as string}</p>
                 </div>
               ) : !obsCrit && (
-                <p className="text-[12px] text-muted/60 italic px-1">Nenhuma observação registrada.</p>
+                <p className="text-label text-muted/60 italic px-1">Nenhuma observação registrada.</p>
               )}
               {isConcluida && (
                 <ClassificarEncerramento
@@ -317,15 +317,15 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
               >
                 <MapPin size={14} className="text-muted flex-shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] text-muted font-medium mb-0.5">
+                  <p className="text-caption text-muted font-medium mb-0.5">
                     {[os.nomedacidade, os.bairro].filter(Boolean).join(' · ') || '—'}
                   </p>
                   {(os.logradouro || os.enderecoconexao) ? (
-                    <p className="text-[13px] font-semibold text-text leading-snug">
+                    <p className="text-body font-semibold text-text leading-snug">
                       {[os.logradouro || os.enderecoconexao, os.numero, os.complemento].filter(Boolean).join(', ')}
                     </p>
                   ) : (
-                    <p className="text-[12px] text-muted italic">Endereço não cadastrado</p>
+                    <p className="text-label text-muted italic">Endereço não cadastrado</p>
                   )}
                 </div>
                 <ExternalLink size={11} className="text-muted/40 group-hover:text-primary/60 flex-shrink-0 mt-1 transition-colors" />
@@ -368,7 +368,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                     os._diasAteAgendamento!= null && { label: 'Dias até agend.',        value: `${os._diasAteAgendamento}d`, color: 'text-secondary' },
                   ].filter(Boolean).map((item) => { const { label, value, color } = item as { label: string; value: string; color: string }; return (
                     <div key={label} className="bg-surface/30 border border-white/[0.08] rounded-xl p-3 text-center">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 leading-tight">{label}</p>
+                      <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 leading-tight">{label}</p>
                       <p className={`font-mono text-[20px] font-black leading-none ${color}`}>{value}</p>
                     </div>
                   )})}
@@ -380,26 +380,26 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
             {(loadingDetails || dataContratacao || dataInstalacao || situacaoContratoLabel) && (
               <Section label="Contrato do cliente">
                 {loadingDetails ? (
-                  <p className="text-[12px] text-muted/60 italic px-1">Carregando dados do contrato…</p>
+                  <p className="text-label text-muted/60 italic px-1">Carregando dados do contrato…</p>
                 ) : (
                   <div className="bg-surface/30 border border-white/[0.08] rounded-xl overflow-hidden">
                     <div className="grid grid-cols-2 divide-x divide-white/[0.06]">
                       {dataContratacao && (
                         <div className="px-4 py-3 flex flex-col gap-1">
-                          <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
+                          <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
                             <FileText size={10} /> Contratação
                           </span>
-                          <span className="text-[13px] font-semibold text-text font-mono tabular-nums">
+                          <span className="text-body font-semibold text-text font-mono tabular-nums">
                             {dataContratacao}
                           </span>
                         </div>
                       )}
                       {dataInstalacao && (
                         <div className="px-4 py-3 flex flex-col gap-1">
-                          <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
+                          <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
                             <Wrench size={10} /> Instalação
                           </span>
-                          <span className="text-[13px] font-semibold text-text font-mono tabular-nums">
+                          <span className="text-body font-semibold text-text font-mono tabular-nums">
                             {dataInstalacao}
                           </span>
                         </div>
@@ -409,8 +409,8 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                       <div className="border-t border-white/[0.06] grid grid-cols-2 divide-x divide-white/[0.06]">
                         {situacaoContratoLabel && (
                           <div className="px-4 py-3 flex flex-col gap-1">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Situação</span>
-                            <span className={`text-[12px] font-semibold ${
+                            <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Situação</span>
+                            <span className={`text-label font-semibold ${
                               situacaoContrato === 2 ? 'text-green' :
                               situacaoContrato === 5 ? 'text-red' :
                               situacaoContrato === 3 || situacaoContrato === 4 ? 'text-yellow' : 'text-secondary'
@@ -421,8 +421,8 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                         )}
                         {valorContrato != null && valorContrato > 0 && (
                           <div className="px-4 py-3 flex flex-col gap-1">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Valor mensal</span>
-                            <span className="text-[13px] font-semibold text-text tabular-nums">
+                            <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Valor mensal</span>
+                            <span className="text-body font-semibold text-text tabular-nums">
                               {valorContrato.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                             </span>
                           </div>
@@ -470,7 +470,7 @@ function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap">{label}</p>
+        <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap">{label}</p>
         <div className="flex-1 h-px bg-surface" />
       </div>
       {children}
@@ -490,19 +490,19 @@ function InfoCard({ icon: Icon, label, value, prominent = false, action = null }
                        : 'bg-surface/30 border-white/[0.08]'}`}>
       <div className="flex items-center gap-1.5">
         <Icon size={12} className={prominent ? 'text-primary/60' : 'text-muted'} />
-        <p className={`text-[11px] font-bold uppercase tracking-[0.05em] leading-none
+        <p className={`text-caption font-bold uppercase tracking-[0.05em] leading-none
                        ${prominent ? 'text-primary/70' : 'text-muted'}`}>
           {label}
         </p>
       </div>
-      <p className={`text-[12px] font-semibold leading-snug break-words
+      <p className={`text-label font-semibold leading-snug break-words
                      ${prominent ? 'text-text' : 'text-secondary'}`}>
         {value}
       </p>
       {action && (
         <button
           onClick={action.onClick}
-          className="text-[10px] font-semibold text-primary/70 hover:text-primary text-left
+          className="text-caption font-semibold text-primary/70 hover:text-primary text-left
                      transition-colors leading-none"
         >
           {action.label} →
@@ -515,8 +515,8 @@ function InfoCard({ icon: Icon, label, value, prominent = false, action = null }
 function MetaItem({ label, value, mono = false }: { label: string; value: string | null | undefined; mono?: boolean }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[10px] text-muted">{label}:</span>
-      <span className={`text-[11px] text-secondary ${mono ? 'font-mono' : 'font-medium'}`}>{value}</span>
+      <span className="text-caption text-muted">{label}:</span>
+      <span className={`text-caption text-secondary ${mono ? 'font-mono' : 'font-medium'}`}>{value}</span>
     </div>
   )
 }

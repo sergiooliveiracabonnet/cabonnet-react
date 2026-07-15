@@ -26,7 +26,7 @@ interface DataTableProps<T extends Record<string, unknown>> {
 }
 
 const rowHeight: Record<Density, string> = { normal: 'h-9', compact: 'h-7', mini: 'h-5' }
-const textSize:  Record<Density, string> = { normal: 'text-[12px]', compact: 'text-[11px]', mini: 'text-[10px]' }
+const textSize:  Record<Density, string> = { normal: 'text-label', compact: 'text-caption', mini: 'text-caption' }
 
 export function DataTable<T extends Record<string, unknown>>({
   columns, rows, onRowClick, onRowHover, onRowLeave, density = 'normal', className = '',
@@ -65,7 +65,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 key={col.key ?? col.label}
                 onClick={() => handleSort(col.key)}
                 scope="col"
-                className={`px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.6px] text-muted
+                className={`px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted
                             whitespace-nowrap select-none
                             ${col.key ? 'cursor-pointer hover:text-secondary' : ''}
                             ${col.align === 'right' ? 'text-right' : ''}
@@ -110,7 +110,7 @@ export function DataTable<T extends Record<string, unknown>>({
           ))}
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={columns.length} className="py-12 text-center text-muted text-[11px]">
+              <td colSpan={columns.length} className="py-12 text-center text-muted text-caption">
                 Nenhum resultado encontrado.
               </td>
             </tr>

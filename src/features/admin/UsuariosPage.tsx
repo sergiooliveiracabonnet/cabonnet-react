@@ -9,7 +9,7 @@ import type { UserRole, UsuarioItem } from '../../lib/api'
 
 const ROLE_LABEL: Record<UserRole, string> = { gestor: 'Gestor', operador: 'Operador', viewer: 'Viewer' }
 
-const inputCls = 'w-full rounded-lg px-3 py-2 text-[13px] bg-surface/40 border border-white/[0.08] ' +
+const inputCls = 'w-full rounded-lg px-3 py-2 text-body bg-surface/40 border border-white/[0.08] ' +
   'text-text outline-none focus:border-primary/40 transition-colors'
 
 function errMsg(e: unknown): string {
@@ -50,20 +50,20 @@ function NovoUsuarioModal({ open, onClose }: { open: boolean; onClose: () => voi
     <Modal open={open} onClose={() => { reset(); onClose() }} title="Novo usuário" maxWidth="420px">
       <div className="space-y-3">
         <div>
-          <label className="block text-[11px] font-medium text-secondary mb-1">Usuário</label>
+          <label className="block text-caption font-medium text-secondary mb-1">Usuário</label>
           <input autoFocus value={username} onChange={e => setUsername(e.target.value)} className={inputCls} />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-secondary mb-1">Senha</label>
+          <label className="block text-caption font-medium text-secondary mb-1">Senha</label>
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} className={inputCls} />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-secondary mb-1">Papel</label>
+          <label className="block text-caption font-medium text-secondary mb-1">Papel</label>
           <select value={role} onChange={e => setRole(e.target.value as UserRole)} className={inputCls}>
             {(Object.keys(ROLE_LABEL) as UserRole[]).map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
           </select>
         </div>
-        {error && <p className="text-[12px] text-red flex items-center gap-1.5"><AlertTriangle size={12} /> {error}</p>}
+        {error && <p className="text-label text-red flex items-center gap-1.5"><AlertTriangle size={12} /> {error}</p>}
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" size="sm" onClick={() => { reset(); onClose() }}>Cancelar</Button>
           <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Salvando…' : 'Criar'}</Button>
@@ -101,7 +101,7 @@ function ResetSenhaModal({ user, onClose }: { user: UsuarioItem | null; onClose:
       <div className="space-y-3">
         <input type="password" autoFocus value={password} onChange={e => setPassword(e.target.value)}
                placeholder="Nova senha" className={inputCls} />
-        {error && <p className="text-[12px] text-red flex items-center gap-1.5"><AlertTriangle size={12} /> {error}</p>}
+        {error && <p className="text-label text-red flex items-center gap-1.5"><AlertTriangle size={12} /> {error}</p>}
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
           <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Salvando…' : 'Redefinir'}</Button>
@@ -117,7 +117,7 @@ function PermissoesMatrix() {
   const [pending, setPending] = useState<Record<string, boolean>>({})
   const [error, setError] = useState('')
 
-  if (isLoading || !data) return <p className="text-[12px] text-muted p-4">Carregando permissões…</p>
+  if (isLoading || !data) return <p className="text-label text-muted p-4">Carregando permissões…</p>
 
   const roles: UserRole[] = ['gestor', 'operador', 'viewer']
 
@@ -139,14 +139,14 @@ function PermissoesMatrix() {
 
   return (
     <div>
-      {error && <p className="text-[12px] text-red flex items-center gap-1.5 mb-2"><AlertTriangle size={12} /> {error}</p>}
+      {error && <p className="text-label text-red flex items-center gap-1.5 mb-2"><AlertTriangle size={12} /> {error}</p>}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[12px]">
+        <table className="w-full border-collapse text-label">
           <thead>
             <tr className="border-b-2 border-white/[0.08]">
-              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.6px] text-muted">Módulo</th>
+              <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Módulo</th>
               {roles.map(r => (
-                <th key={r} className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-[0.6px] text-muted">
+                <th key={r} className="px-3 py-2 text-center text-caption font-bold uppercase tracking-[0.6px] text-muted">
                   {ROLE_LABEL[r]}
                 </th>
               ))}
@@ -203,7 +203,7 @@ export default function UsuariosPage() {
           <h1 className="text-[20px] font-bold text-text flex items-center gap-2">
             <Shield size={18} className="text-primary" /> Usuários e Permissões
           </h1>
-          <p className="text-[12px] text-muted mt-0.5">Cadastro de usuários e módulos liberados por papel</p>
+          <p className="text-label text-muted mt-0.5">Cadastro de usuários e módulos liberados por papel</p>
         </div>
         <Button variant="primary" size="sm" className="gap-1.5" onClick={() => setNovoOpen(true)}>
           <UserPlus size={14} /> Novo usuário
@@ -212,29 +212,29 @@ export default function UsuariosPage() {
 
       <div className="rounded-xl bg-card border border-white/[0.08] overflow-hidden">
         {isLoading ? (
-          <p className="text-[12px] text-muted p-4">Carregando…</p>
+          <p className="text-label text-muted p-4">Carregando…</p>
         ) : usuariosList.length === 0 ? (
-          <p className="text-[12px] text-muted p-4">Nenhum usuário cadastrado</p>
+          <p className="text-label text-muted p-4">Nenhum usuário cadastrado</p>
         ) : (
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b-2 border-white/[0.08]">
-                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.6px] text-muted">Usuário</th>
-                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.6px] text-muted">Papel</th>
-                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.6px] text-muted">Status</th>
-                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-[0.6px] text-muted">Ações</th>
+                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Usuário</th>
+                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Papel</th>
+                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Status</th>
+                <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.6px] text-muted">Ações</th>
               </tr>
             </thead>
             <tbody>
               {usuariosList.map(u => (
                 <Fragment key={u.id}>
-                  <tr className="border-b border-white/[0.05] hover:bg-white/[0.02] text-[12px]">
+                  <tr className="border-b border-white/[0.05] hover:bg-white/[0.02] text-label">
                     <td className="px-3 py-2.5 text-text font-medium">{u.username}</td>
                     <td className="px-3 py-2.5">
                       <select
                         value={u.role}
                         onChange={e => handleUpdate(u, { role: e.target.value as UserRole })}
-                        className="bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-[11px] text-text outline-none focus:border-primary/40"
+                        className="bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40"
                       >
                         {(Object.keys(ROLE_LABEL) as UserRole[]).map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
                       </select>
@@ -266,7 +266,7 @@ export default function UsuariosPage() {
                   {rowError?.id === u.id && (
                     <tr>
                       <td colSpan={4} className="px-3 pb-2.5">
-                        <p className="text-[11px] text-red flex items-center gap-1.5">
+                        <p className="text-caption text-red flex items-center gap-1.5">
                           <AlertTriangle size={11} /> {rowError.msg}
                         </p>
                       </td>
@@ -280,8 +280,8 @@ export default function UsuariosPage() {
       </div>
 
       <div className="rounded-xl bg-card border border-white/[0.08] p-4">
-        <h2 className="text-[13px] font-semibold text-text mb-1">Permissões por papel</h2>
-        <p className="text-[11px] text-muted mb-3">Gestor sempre tem acesso total a todos os módulos. Operador e Viewer são configuráveis abaixo.</p>
+        <h2 className="text-body font-semibold text-text mb-1">Permissões por papel</h2>
+        <p className="text-caption text-muted mb-3">Gestor sempre tem acesso total a todos os módulos. Operador e Viewer são configuráveis abaixo.</p>
         <PermissoesMatrix />
       </div>
 

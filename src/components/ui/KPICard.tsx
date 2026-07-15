@@ -49,7 +49,7 @@ export function KPICard({
       {/* Header — label + icon */}
       <div className="flex items-center justify-between mb-3">
         {title && (
-          <span className="text-[11px] font-medium text-muted leading-none">
+          <span className="text-caption font-medium text-muted leading-none">
             {title}
           </span>
         )}
@@ -61,7 +61,7 @@ export function KPICard({
       </div>
 
       {/* Value */}
-      <p className={`number-display text-[28px] leading-none tracking-tight ${c.text}`}>
+      <p className={`number-display text-display leading-none tracking-tight ${c.text}`}>
         {value ?? '—'}
       </p>
 
@@ -69,7 +69,7 @@ export function KPICard({
       {(sub || trend) && (
         <div className="flex items-center justify-between gap-2 mt-2.5">
           {sub && (
-            <p className="text-[12px] text-muted leading-snug truncate">{sub}</p>
+            <p className="text-label text-muted leading-snug truncate">{sub}</p>
           )}
           {trend && <TrendTag trend={trend} />}
         </div>
@@ -83,7 +83,7 @@ function TrendTag({ trend }: { trend: Trend }) {
 
   if (delta === 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-medium
+      <span className="inline-flex items-center gap-1 text-caption font-medium
                        text-muted bg-border/40 rounded-full px-2 py-0.5 flex-shrink-0">
         — igual
       </span>
@@ -99,7 +99,7 @@ function TrendTag({ trend }: { trend: Trend }) {
   const label = pct != null ? `${pct > 0 ? '+' : ''}${pct}%` : `${up ? '+' : ''}${delta}`
 
   return (
-    <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold
+    <span className={`inline-flex items-center gap-0.5 text-caption font-semibold
                       rounded-full px-2 py-0.5 flex-shrink-0 tabular-nums ${cls}`}>
       {arrow} {label}
     </span>
