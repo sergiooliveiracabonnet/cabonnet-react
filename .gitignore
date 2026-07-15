@@ -51,7 +51,7 @@ claude-code-skills/
 claude-git-pr-skill/
 planning-with-files/
 studio-recipes/
-superpowers/
+/superpowers/
 web-quality-skills/
 *.apk
 *.zip
