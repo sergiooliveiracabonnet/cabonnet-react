@@ -5,7 +5,7 @@ import { useOSDerived } from '../../../contexts/OSDataContext'
 import { useAuditStore } from '../../../store/auditStore'
 import { useFilaGeralStore } from '../../../store/filaGeralStore'
 import { filaUrgenciaTier, filaUrgenciaScore } from '../../../lib/builders/fila'
-import { KPICard } from '../../../components/ui/KPICard'
+import { StatCard } from '../../../components/ui/StatCard'
 import { FilterSelect } from '../../../components/ui/FilterSelect'
 import { SearchBox } from '../../../components/ui/SearchBox'
 import { DataTable } from '../../../components/ui/DataTable'
@@ -416,15 +416,14 @@ export default function FilaPage() {
       </div>
 
       <div className="grid grid-cols-5 gap-4">
-        <KPICard title="Violadas" value={kpis.violadas} accent="red" icon={AlertTriangle} />
-        <KPICard title="Atenção" value={kpis.atencao} accent="orange" icon={Flame} />
-        <KPICard title="Sem Equipe" value={kpis.semEquipe} accent="yellow" icon={UserX} />
-        <KPICard title="No prazo" value={kpis.noPrazo} accent="green" icon={CheckCircle2} />
-        <KPICard
+        <StatCard title="Violadas" value={kpis.violadas} tone="critical" icon={AlertTriangle} />
+        <StatCard title="Atenção" value={kpis.atencao} tone="warning" icon={Flame} />
+        <StatCard title="Sem Equipe" value={kpis.semEquipe} tone="warning" icon={UserX} />
+        <StatCard title="No prazo" value={kpis.noPrazo} tone="ok" icon={CheckCircle2} />
+        <StatCard
           title="Cumprimento SLA"
           value={cumprimento.pct != null ? `${cumprimento.pct}%` : '—'}
           sub={cumprimento.total > 0 ? `${cumprimento.noPrazo}/${cumprimento.total} no prazo` : 'Sem execuções no período'}
-          accent="teal"
           icon={Gauge}
           trend={cumprimento.deltaPp != null ? { delta: cumprimento.deltaPp, higherIsBetter: true } : undefined}
         />

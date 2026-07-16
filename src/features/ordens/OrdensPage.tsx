@@ -4,7 +4,7 @@ import { BarChart2, ChevronUp, AlertTriangle, Download, Send, CheckCircle, Calen
 import type { OSRow } from '../../lib/types'
 type ColRender = (value: unknown, row: OSRow) => React.ReactNode
 import { useOrdens } from '../../hooks/useOrdens'
-import { KPICard } from '../../components/ui/KPICard'
+import { StatCard } from '../../components/ui/StatCard'
 import { SearchBox } from '../../components/ui/SearchBox'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { DataTable } from '../../components/ui/DataTable'
@@ -405,35 +405,35 @@ export default function OrdensPage() {
 
       {/* ── KPI cards ── */}
       {kpiVisible && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 stagger">
-          <KPICard
-            title="Total OS" value={os.kpis.total} accent="primary"
-            sub="ver todas"
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <StatCard
+            title="Total OS" value={os.kpis.total}
+            sub="ver todas" delay={0}
             onClick={() => { os.clearFilters(); scrollToTable() }}
           />
-          <KPICard
-            title="Críticas" value={os.kpis.criticas} accent="red"
-            sub="SLA 2× excedido"
+          <StatCard
+            title="Críticas" value={os.kpis.criticas} tone="critical"
+            sub="SLA 2× excedido" delay={40}
             onClick={() => { os.clearFilters(); os.setCritico(true); scrollToTable() }}
           />
-          <KPICard
-            title="Sem equipe" value={os.kpis.semEquipe} accent="yellow" icon={AlertTriangle}
-            sub="sem alocação"
+          <StatCard
+            title="Sem equipe" value={os.kpis.semEquipe} tone="warning" icon={AlertTriangle}
+            sub="sem alocação" delay={80}
             onClick={() => { os.clearFilters(); os.setSemEquipe(true); scrollToTable() }}
           />
-          <KPICard
-            title="Agend. hoje" value={os.kpis.agendHoje} accent="green"
-            sub="para hoje"
+          <StatCard
+            title="Agend. hoje" value={os.kpis.agendHoje} tone="ok"
+            sub="para hoje" delay={120}
             onClick={() => { os.clearFilters(); os.setAgendHoje(true); scrollToTable() }}
           />
-          <KPICard
-            title="Amanhã" value={os.kpis.agendAmanha} accent="cyan" icon={CalendarClock}
-            sub="ativas p/ amanhã · geral"
+          <StatCard
+            title="Amanhã" value={os.kpis.agendAmanha} icon={CalendarClock}
+            sub="ativas p/ amanhã · geral" delay={160}
             onClick={() => { os.clearFilters(); os.setAgendAmanha(true); scrollToTable() }}
           />
-          <KPICard
-            title="Agend. Futuro" value={os.kpis.agendFuturo} accent="orange" icon={CalendarClock}
-            sub="ativas, amanhã em diante · geral"
+          <StatCard
+            title="Agend. Futuro" value={os.kpis.agendFuturo} tone="warning" icon={CalendarClock}
+            sub="ativas, amanhã em diante · geral" delay={200}
             onClick={() => { os.clearFilters(); os.setAgendFuturo(true); scrollToTable() }}
           />
         </div>

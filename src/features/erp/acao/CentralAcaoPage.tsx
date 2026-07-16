@@ -5,7 +5,7 @@ import { useOSDerived } from '../../../contexts/OSDataContext'
 import { filaUrgenciaTier, filaUrgenciaScore } from '../../../lib/builders/fila'
 import { shortEquipe, fmtHorasMin } from '../../../lib/osFormat'
 import { Badge } from '../../../components/ui/Badge'
-import { KPICard } from '../../../components/ui/KPICard'
+import { StatCard } from '../../../components/ui/StatCard'
 import OSDrawer from '../../ordens/OSDrawer'
 import type { OSRow } from '../../../lib/types'
 
@@ -173,9 +173,9 @@ export default function CentralAcaoPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <KPICard title="Críticos" value={kpis.criticos} accent="red" icon={AlertTriangle} />
-        <KPICard title="Atenção" value={kpis.atencao} accent="yellow" icon={Flame} />
-        <KPICard title="Fontes ativas" value={kpis.fontes} accent="primary" icon={ListTodo} />
+        <StatCard title="Críticos" value={kpis.criticos} tone="critical" icon={AlertTriangle} />
+        <StatCard title="Atenção" value={kpis.atencao} tone="warning" icon={Flame} />
+        <StatCard title="Fontes ativas" value={kpis.fontes} icon={ListTodo} />
       </div>
 
       {agenda.length === 0 ? (

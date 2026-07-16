@@ -11,7 +11,7 @@ import { useAIJuniper } from '../../hooks/useAIJuniper'
 import { storage } from '../../lib/storage'
 import { transformJuniper } from '../../lib/builders'
 import { useOSDerived } from '../../contexts/OSDataContext'
-import { KPICard } from '../../components/ui/KPICard'
+import { StatCard } from '../../components/ui/StatCard'
 import { SectionTitle } from '../../components/ui/SectionTitle'
 import { ChartCard } from '../../components/ui/ChartCard'
 import { Button } from '../../components/ui/Button'
@@ -328,12 +328,12 @@ export default function JuniperPage() {
 
       {/* ── KPIs ── */}
       {isLoading ? <KPIGridSkeleton count={5} /> : (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 stagger">
-          <KPICard title="Total Conectados"   value={kpis.total}      sub="clientes PPPoE ativos"  accent="primary"   />
-          <KPICard title="Interfaces Ativas"  value={kpis.interfaces} sub="portas / VLANs em uso"  accent="cyan"      />
-          <KPICard title="IPs Únicos"         value={kpis.ips}        sub="endereços distintos"     accent="teal"      />
-          <KPICard title="Última Coleta"      value={kpis.ultima}     sub="horário da verificação"  accent="secondary" />
-          <KPICard title="Próx. Atualização"  value={kpis.proximo}    sub="inicia após 1ª coleta"   accent="muted"     />
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <StatCard title="Total Conectados"   value={kpis.total}      sub="clientes PPPoE ativos"  delay={0}   />
+          <StatCard title="Interfaces Ativas"  value={kpis.interfaces} sub="portas / VLANs em uso"  delay={40}  />
+          <StatCard title="IPs Únicos"         value={kpis.ips}        sub="endereços distintos"     delay={80}  />
+          <StatCard title="Última Coleta"      value={kpis.ultima}     sub="horário da verificação"  delay={120} />
+          <StatCard title="Próx. Atualização"  value={kpis.proximo}    sub="inicia após 1ª coleta"   delay={160} />
         </div>
       )}
 

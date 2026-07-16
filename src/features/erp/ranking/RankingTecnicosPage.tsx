@@ -4,7 +4,7 @@ import { useOSDerived } from '../../../contexts/OSDataContext'
 import { isCOPE, isReagend, isExecucaoReal } from '../../../lib/transform'
 import { shortEquipe } from '../../../lib/osFormat'
 import { Badge } from '../../../components/ui/Badge'
-import { KPICard } from '../../../components/ui/KPICard'
+import { StatCard } from '../../../components/ui/StatCard'
 import { useTecnicos, useTecnicosActions } from '../../../hooks/useTecnicos'
 import type { TecnicoItem } from '../../../lib/api'
 
@@ -161,10 +161,10 @@ export default function RankingTecnicosPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Técnicos ativos" value={kpis.total} accent="primary" />
-        <KPICard title="SLA médio" value={kpis.slaMedio != null ? `${kpis.slaMedio}%` : '—'} accent="teal" />
-        <KPICard title="Retrabalho médio" value={kpis.revMedia != null ? `${kpis.revMedia}%` : '—'} accent="orange" />
-        <KPICard title="Com OS crítica" value={kpis.criticos} accent="red" />
+        <StatCard title="Técnicos ativos" value={kpis.total} />
+        <StatCard title="SLA médio" value={kpis.slaMedio != null ? `${kpis.slaMedio}%` : '—'} />
+        <StatCard title="Retrabalho médio" value={kpis.revMedia != null ? `${kpis.revMedia}%` : '—'} tone="warning" />
+        <StatCard title="Com OS crítica" value={kpis.criticos} tone="critical" />
       </div>
 
       <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
