@@ -104,7 +104,7 @@ export default function DashboardPage() {
                   trend={k.trend ?? undefined}
                   icon={KPI_ICONS[k.id]}
                   delay={i * 60}
-                  scope="aovivo"
+                  scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
                 />
               ))}
             </div>
@@ -122,7 +122,7 @@ export default function DashboardPage() {
                   trend={k.trend ?? undefined}
                   icon={KPI_ICONS[k.id]}
                   delay={i * 60}
-                  scope="aovivo"
+                  scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
                 />
               ))}
             </div>

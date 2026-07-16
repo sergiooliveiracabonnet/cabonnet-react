@@ -30,6 +30,11 @@ describe('DataTable — sort acessível', () => {
 })
 
 describe('DataTable — virtualização', () => {
+  const originalInnerHeight = window.innerHeight
+  afterEach(() => {
+    Object.defineProperty(window, 'innerHeight', { value: originalInnerHeight, configurable: true })
+  })
+
   it('virtualiza listas grandes (renderiza menos linhas que o total)', () => {
     Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true })
     const muitas = Array.from({ length: 500 }, (_, i) => ({ _id: i, nome: `Item ${i}`, qtd: i }))
@@ -41,5 +46,19 @@ describe('DataTable — virtualização', () => {
   it('não virtualiza listas pequenas', () => {
     render(<DataTable columns={columns} rows={rows} />)
     expect(screen.getAllByRole('row')).toHaveLength(rows.length + 1)
+  })
+})
+
+describe('DataTable — estado vazio', () => {
+  it('exibe título padrão do EmptyState quando rows está vazio', () => {
+    render(<DataTable columns={columns} rows={[]} />)
+    expect(screen.getByText('Nenhum resultado encontrado')).toBeInTheDocument()
+  })
+
+  it('exibe título e descrição customizados quando informados', () => {
+    render(<DataTable columns={columns} rows={[]} emptyTitle="Sem OS" emptyDescription="Ajuste os filtros" />)
+    expect(screen.getByText('Sem OS')).toBeInTheDocument()
+    expect(screen.getByText('Ajuste os filtros')).toBeInTheDocument()
+    expect(screen.queryByText('Nenhum resultado encontrado')).not.toBeInTheDocument()
   })
 })

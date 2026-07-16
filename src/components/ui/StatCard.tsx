@@ -83,7 +83,7 @@ export function StatCard({
     return (
       <div className={`flex items-center gap-1.5 ${onClick ? `cursor-pointer ${FOCUS_RING}` : ''} ${className}`} {...interactive}>
         <span className="text-caption font-bold uppercase tracking-[0.04em] text-muted">{title}:</span>
-        <span className="text-body font-semibold tabular-nums" style={{ color: valColor }}>{value}</span>
+        <span className="text-body font-semibold tabular-nums" style={{ color: valColor }}>{value ?? '—'}</span>
       </div>
     )
   }
@@ -96,7 +96,7 @@ export function StatCard({
         className={`bg-bg rounded-lg p-3 text-center animate-card-enter
                     ${onClick ? `cursor-pointer ${FOCUS_RING}` : ''} ${className}`}
       >
-        <p className="text-[22px] font-bold tabular-nums leading-none" style={{ color: valColor }}>{value}</p>
+        <p className="text-[22px] font-bold tabular-nums leading-none" style={{ color: valColor }}>{value ?? '—'}</p>
         <p className="text-caption text-muted mt-1 uppercase tracking-wide">{title}</p>
         {sub && <p className="text-caption text-muted mt-0.5">{sub}</p>}
       </div>

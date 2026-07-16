@@ -121,7 +121,11 @@ export function DataTable<T extends Record<string, unknown>>({
           </tr>
         </thead>
         <tbody>
-          {padTop > 0 && <tr aria-hidden="true" style={{ height: padTop }} />}
+          {padTop > 0 && (
+            <tr aria-hidden="true">
+              <td colSpan={columns.length} style={{ height: padTop, padding: 0, border: 'none' }} />
+            </tr>
+          )}
           {visible.map((row, i) => (
             <tr
               key={(row._id as string | number) ?? (virtualItems ? virtualItems[i].index : i)}
@@ -148,7 +152,11 @@ export function DataTable<T extends Record<string, unknown>>({
               ))}
             </tr>
           ))}
-          {padBottom > 0 && <tr aria-hidden="true" style={{ height: padBottom }} />}
+          {padBottom > 0 && (
+            <tr aria-hidden="true">
+              <td colSpan={columns.length} style={{ height: padBottom, padding: 0, border: 'none' }} />
+            </tr>
+          )}
           {sorted.length === 0 && (
             <tr>
               <td colSpan={columns.length}>

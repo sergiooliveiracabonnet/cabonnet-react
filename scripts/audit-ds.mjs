@@ -14,7 +14,7 @@ const RULES = [
   },
   {
     name: 'Import de componente removido do design system',
-    test: (src) => [...src.matchAll(/from\s+['"][^'"]*ui\/KPICard['"]|(?:\bBentoKPICard\b|\bKpiBadge\b)/g)].map(m => m[0]),
+    test: (src) => [...src.matchAll(/from\s+['"][^'"]*ui\/KPICard['"]|(?:\bBentoKPICard\b|\bKpiBadge\b|\bKpiCard\b)/g)].map(m => m[0]),
   },
 ]
 
