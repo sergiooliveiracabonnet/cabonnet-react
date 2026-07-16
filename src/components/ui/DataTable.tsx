@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import { ChevronUp, ChevronDown } from 'lucide-react'
+import { ChevronUp, ChevronDown, Inbox } from 'lucide-react'
+import { EmptyState } from './EmptyState'
 
 interface Column<T = Record<string, unknown>> {
   key?:       string
@@ -12,17 +13,19 @@ interface Column<T = Record<string, unknown>> {
 type Density = 'normal' | 'compact' | 'mini'
 
 interface DataTableProps<T extends Record<string, unknown>> {
-  columns:      Column<T>[]
-  rows:         T[]
-  onRowClick?:  (row: T) => void
-  onRowHover?:  (row: T, rect: DOMRect) => void
-  onRowLeave?:  () => void
-  density?:     Density
-  className?:   string
+  columns:              Column<T>[]
+  rows:                 T[]
+  onRowClick?:          (row: T) => void
+  onRowHover?:          (row: T, rect: DOMRect) => void
+  onRowLeave?:          () => void
+  density?:             Density
+  className?:           string
   /** Modo controlado: o pai ordena o CONJUNTO COMPLETO (antes de paginar) e a
    *  tabela só exibe. Sem isso, o sort interno ordenaria apenas a página atual. */
-  sort?:        { key: string | null; dir: 'asc' | 'desc' }
-  onSort?:      (key: string) => void
+  sort?:                { key: string | null; dir: 'asc' | 'desc' }
+  onSort?:              (key: string) => void
+  emptyTitle?:          string
+  emptyDescription?:    string
 }
 
 const rowHeight: Record<Density, string> = { normal: 'h-9', compact: 'h-7', mini: 'h-5' }
@@ -30,7 +33,7 @@ const textSize:  Record<Density, string> = { normal: 'text-label', compact: 'tex
 
 export function DataTable<T extends Record<string, unknown>>({
   columns, rows, onRowClick, onRowHover, onRowLeave, density = 'normal', className = '',
-  sort, onSort,
+  sort, onSort, emptyTitle, emptyDescription,
 }: DataTableProps<T>) {
   const controlled = !!onSort
   const [sortKeyLocal, setSortKey] = useState<string | null>(null)
@@ -116,8 +119,10 @@ export function DataTable<T extends Record<string, unknown>>({
           ))}
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={columns.length} className="py-12 text-center text-muted text-caption">
-                Nenhum resultado encontrado.
+              <td colSpan={columns.length}>
+                <EmptyState icon={Inbox}
+                            title={emptyTitle ?? 'Nenhum resultado encontrado'}
+                            description={emptyDescription} />
               </td>
             </tr>
           )}
