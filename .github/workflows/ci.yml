@@ -34,6 +34,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Design system audit
+        run: npm run audit:ds
+
       - name: Test
         run: npm test
 

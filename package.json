@@ -7,6 +7,7 @@
     "dev": "node servidor.js --dev",
     "build": "vite build",
     "lint": "eslint .",
+    "audit:ds": "node scripts/audit-ds.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

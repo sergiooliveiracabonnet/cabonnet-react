@@ -1,0 +1,190 @@
+{
+  "globalHex": [
+    "#3b82f6",
+    "#60a5fa",
+    "#2563eb",
+    "#22d3ee",
+    "#4ade80",
+    "#facc15",
+    "#f87171",
+    "#fb923c",
+    "#a78bfa",
+    "#c4b5fd",
+    "#f472b6",
+    "#2dd4bf",
+    "#71717a",
+    "#09090b",
+    "#fafafa"
+  ],
+  "files": {
+    "src/components/ErrorBoundary.tsx": [
+      "#07090f",
+      "#0d1220",
+      "#e2eeff",
+      "#fca5a5"
+    ],
+    "src/components/global/PicoAlertaModal.tsx": [
+      "#374151",
+      "#ef4444"
+    ],
+    "src/components/ui/bar-chart.tsx": [
+      "#27272a",
+      "#e4e4e7"
+    ],
+    "src/components/ui/pie-chart.tsx": [
+      "#27272a",
+      "#e4e4e7"
+    ],
+    "src/features/auth/LoginPage.tsx": [
+      "#010509",
+      "#020810",
+      "#040c18",
+      "#047857",
+      "#059669",
+      "#07111f",
+      "#0d2147",
+      "#1d4ed8",
+      "#1e40af",
+      "#38bdf8",
+      "#4f46e5",
+      "#6366f1",
+      "#818cf8",
+      "#93c5fd",
+      "#e2e8f0",
+      "#e8edf5"
+    ],
+    "src/features/dashboard/DashboardHeroBlock.tsx": [
+      "#818cf8",
+      "#94a3b8",
+      "#f59e0b"
+    ],
+    "src/features/dashboard/DashboardPaineis.tsx": [
+      "#94a3b8"
+    ],
+    "src/features/erp/alertas/AlertasComponents.tsx": [
+      "#f97316"
+    ],
+    "src/features/erp/alertas/AlertasPage.tsx": [
+      "#f97316"
+    ],
+    "src/features/erp/fila/FilaPage.tsx": [
+      "#0d1117",
+      "#0f172a",
+      "#111827",
+      "#64748b",
+      "#94a3b8",
+      "#e2e8f0",
+      "#ef4444",
+      "#f0f4ff",
+      "#ffffff"
+    ],
+    "src/features/erp/planner/PlannerComponents.tsx": [
+      "#64748b",
+      "#f97316"
+    ],
+    "src/features/erp/planner/PlannerPage.tsx": [
+      "#374151",
+      "#64748b",
+      "#f97316"
+    ],
+    "src/features/erp/produtividade/ProdutividadePage.tsx": [
+      "#374151",
+      "#475569",
+      "#64748b",
+      "#6b7280",
+      "#94a3b8",
+      "#cd7c3c",
+      "#f59e0b",
+      "#f97316",
+      "#fbbf24"
+    ],
+    "src/features/erp/qualidade/CausaRaizSection.tsx": [
+      "#6b7280",
+      "#94a3b8",
+      "#c084fc",
+      "#f97316"
+    ],
+    "src/features/erp/qualidade/QualidadeComponents.tsx": [
+      "#f97316"
+    ],
+    "src/features/erp/qualidade/QualidadePage.tsx": [
+      "#f97316"
+    ],
+    "src/features/erp/qualidade/RevisitaMotivosSection.tsx": [
+      "#94a3b8",
+      "#f97316"
+    ],
+    "src/features/erp/ranking/RankingTecnicosPage.tsx": [
+      "#94a3b8"
+    ],
+    "src/features/erp/relatorios/RelatoriosComponents.tsx": [
+      "#94a3b8",
+      "#f97316"
+    ],
+    "src/features/erp/relatorios/RelatoriosPage.tsx": [
+      "#34d399",
+      "#f97316"
+    ],
+    "src/features/fornecedor/FornecedorPage.tsx": [
+      "#94a3b8",
+      "#f97316"
+    ],
+    "src/features/gerencial/GerencialComponents.tsx": [
+      "#94a3b8",
+      "#f97316"
+    ],
+    "src/features/gerencial/GerencialPage.tsx": [
+      "#0d1117",
+      "#0f172a",
+      "#111827",
+      "#64748b",
+      "#94a3b8",
+      "#e2e8f0",
+      "#f0f4ff",
+      "#f97316",
+      "#ffffff"
+    ],
+    "src/features/graficos/GraficosComponents.tsx": [
+      "#64748b",
+      "#84cc16",
+      "#8b5cf6",
+      "#ec4899",
+      "#f97316"
+    ],
+    "src/features/juniper/JuniperComponents.tsx": [
+      "#0f1b2d",
+      "#1a0f0f"
+    ],
+    "src/features/mapa/MapaComponents.tsx": [
+      "#0d1117",
+      "#7dd3fc",
+      "#86efac",
+      "#a855f7",
+      "#f97316",
+      "#fca5a5",
+      "#fdba74"
+    ],
+    "src/features/mapa/MapaPage.tsx": [
+      "#0d1117",
+      "#7dd3fc",
+      "#86efac",
+      "#f97316",
+      "#fca5a5",
+      "#fdba74"
+    ],
+    "src/features/ordens/OrdensPage.tsx": [
+      "#0d1117",
+      "#0f172a",
+      "#111827",
+      "#64748b",
+      "#94a3b8",
+      "#e2e8f0",
+      "#f0f4ff",
+      "#ffffff"
+    ],
+    "src/features/ordens/TelegramOrdensModal.tsx": [
+      "#94a3b8",
+      "#f97316"
+    ]
+  }
+}
