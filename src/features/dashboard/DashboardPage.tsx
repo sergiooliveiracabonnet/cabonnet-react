@@ -12,7 +12,8 @@ import OSDrawer from '../ordens/OSDrawer'
 import { PulsoHero } from './PulsoHero'
 import { FluxoOSPanel } from './FluxoOSPanel'
 import { AnomaliaSection } from './AnomaliaSection'
-import { SectionLabel, BentoKPICard } from './DashboardKpiPrimitives'
+import { StatCard, accentToTone } from '../../components/ui/StatCard'
+import { SectionLabel } from './DashboardKpiPrimitives'
 import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
   MetaMesCard, AlertaTopoBanner, ClustersBairroPanel, AgingPanel,
@@ -94,7 +95,17 @@ export default function DashboardPage() {
             <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
               {riskStats.map((k, i) => (
-                <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} scope="aovivo" />
+                <StatCard
+                  key={k.id}
+                  title={k.title}
+                  value={k.value}
+                  sub={k.sub}
+                  tone={accentToTone(k.accent)}
+                  trend={k.trend ?? undefined}
+                  icon={KPI_ICONS[k.id]}
+                  delay={i * 60}
+                  scope="aovivo"
+                />
               ))}
             </div>
           </section>
@@ -102,7 +113,17 @@ export default function DashboardPage() {
             <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
               {perfStats.map((k, i) => (
-                <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} scope="aovivo" />
+                <StatCard
+                  key={k.id}
+                  title={k.title}
+                  value={k.value}
+                  sub={k.sub}
+                  tone={accentToTone(k.accent)}
+                  trend={k.trend ?? undefined}
+                  icon={KPI_ICONS[k.id]}
+                  delay={i * 60}
+                  scope="aovivo"
+                />
               ))}
             </div>
           </section>
@@ -165,9 +186,13 @@ export default function DashboardPage() {
           <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
             {riskKpis.map((k, i) => (
-              <BentoKPICard
+              <StatCard
                 key={k.id}
-                kpi={k}
+                title={k.title}
+                value={k.value}
+                sub={k.sub}
+                tone={accentToTone(k.accent)}
+                trend={k.trend ?? undefined}
                 icon={KPI_ICONS[k.id]}
                 delay={i * 60}
                 onClick={KPI_FILTERS[k.id] ? () => openKpi(k) : undefined}
@@ -198,9 +223,13 @@ export default function DashboardPage() {
           <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
             {perfKpis.map((k, i) => (
-              <BentoKPICard
+              <StatCard
                 key={k.id}
-                kpi={k}
+                title={k.title}
+                value={k.value}
+                sub={k.sub}
+                tone={accentToTone(k.accent)}
+                trend={k.trend ?? undefined}
                 icon={KPI_ICONS[k.id]}
                 delay={i * 60}
                 onClick={KPI_FILTERS[k.id] ? () => openKpi(k) : undefined}

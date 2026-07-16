@@ -3,7 +3,8 @@ import {
   TrendingUp, ArrowUpRight, Zap, CheckCircle2, MapPin, Clock, Gauge, Target, AlertCircle, Layers, Package,
 } from 'lucide-react'
 import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } from '../../lib/types'
-import { SectionLabel, TrendPill } from './DashboardKpiPrimitives'
+import { TrendPill } from '../../components/ui/StatCard'
+import { SectionLabel } from './DashboardKpiPrimitives'
 import type { ProjecaoRisco, ScoreTendencia, DashMover, DashFornCard } from './DashboardTypes'
 
 // Painel preditivo: OS que vão estourar o SLA nas próximas 24-48h (clicável → drill-down)
