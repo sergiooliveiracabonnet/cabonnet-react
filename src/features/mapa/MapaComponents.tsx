@@ -10,7 +10,7 @@ import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import type { OSRow } from '../../lib/types'
 
-export const PROXIMIDADE_KM = 5
+export const PROXIMIDADE_KM = 3
 
 export const searchPinIcon = L.divIcon({
   className: 'address-search-pin',
