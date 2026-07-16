@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildEquipeOptions } from './geo'
+import { aggregateByBairro, buildEquipeOptions, getBairroCoords } from './geo'
 import type { OSRow } from '../../lib/types'
 
 function makeOS(overrides: Record<string, unknown> = {}): OSRow {
@@ -51,5 +51,32 @@ describe('buildEquipeOptions', () => {
       makeOS({ numos: 'D', nomedaequipe: '  INST F01  ' }),
     ]
     expect(buildEquipeOptions(rows)).toEqual([{ value: 'INST F01', label: 'INST F01 - FELIPE' }])
+  })
+})
+
+describe('getBairroCoords', () => {
+  it('retorna null quando a cidade não é conhecida', () => {
+    expect(getBairroCoords('CIDADE INEXISTENTE', 'CENTRO')).toBeNull()
+  })
+
+  it('retorna coordenadas deslocadas do centro da cidade, deterministicamente', () => {
+    const a = getBairroCoords('TAUBATE', 'CENTRO')
+    const b = getBairroCoords('TAUBATE', 'CENTRO')
+    expect(a).not.toBeNull()
+    expect(a).toEqual(b)
+  })
+
+  it('bairros diferentes na mesma cidade produzem coordenadas diferentes', () => {
+    const a = getBairroCoords('TAUBATE', 'CENTRO')
+    const b = getBairroCoords('TAUBATE', 'JARDIM AMERICA')
+    expect(a).not.toEqual(b)
+  })
+})
+
+describe('aggregateByBairro — coordenadas vêm de getBairroCoords', () => {
+  it('as coordenadas do bairro batem com getBairroCoords', () => {
+    const rows = [makeOS({ numos: 'A', nomedacidade: 'TAUBATE', bairro: 'CENTRO' })]
+    const [agg] = aggregateByBairro(rows)
+    expect(agg.coords).toEqual(getBairroCoords('TAUBATE', 'CENTRO'))
   })
 })
