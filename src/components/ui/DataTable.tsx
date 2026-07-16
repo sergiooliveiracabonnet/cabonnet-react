@@ -68,10 +68,13 @@ export function DataTable<T extends Record<string, unknown>>({
   const wrapRef = useRef<HTMLDivElement>(null)
   // Offset medido via effect (nunca lido de ref durante o render) — usado como scrollMargin
   // para o virtualizador saber a posição real da tabela dentro do scroll da página.
+  // Sem array de dependências: um layout effect roda após TODO commit, então o offset
+  // se auto-corrige caso algo acima da tabela mude de altura após o mount (filtro
+  // expandindo/recolhendo, banner sumindo, resize) — sem precisar ler ref.current no render.
   const [scrollMargin, setScrollMargin] = useState(0)
   useLayoutEffect(() => {
     setScrollMargin(wrapRef.current?.offsetTop ?? 0)
-  }, [])
+  })
 
   const virtual = sorted.length > VIRTUALIZE_MIN
   const virtualizer = useWindowVirtualizer({
