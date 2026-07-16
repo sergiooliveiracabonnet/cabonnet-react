@@ -93,7 +93,11 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                 className="flex-1 bg-transparent text-body text-text placeholder-muted/60 outline-none"
               />
               {query && (
-                <button onClick={() => { setQuery(''); setActiveIdx(-1) }} className="text-muted hover:text-secondary transition-colors p-0.5">
+                <button
+                  onClick={() => { setQuery(''); setActiveIdx(-1) }}
+                  aria-label="Limpar busca"
+                  className="text-muted hover:text-secondary transition-colors p-0.5"
+                >
                   <X size={13} />
                 </button>
               )}

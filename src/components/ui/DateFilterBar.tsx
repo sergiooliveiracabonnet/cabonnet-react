@@ -83,6 +83,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
               <button
                 onClick={mensalPrevMonth}
                 title="Mês anterior"
+                aria-label="Mês anterior"
                 className="w-5 h-5 flex items-center justify-center rounded-full text-muted hover:text-secondary hover:bg-surface/60 transition-colors"
               >
                 <ChevronLeft size={12} />
@@ -102,6 +103,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                 onClick={mensalNextMonth}
                 disabled={mensalAtual}
                 title={mensalAtual ? 'Mês atual' : 'Próximo mês'}
+                aria-label={mensalAtual ? 'Mês atual' : 'Próximo mês'}
                 className="w-5 h-5 flex items-center justify-center rounded-full text-muted hover:text-secondary hover:bg-surface/60 transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-muted"
               >
                 <ChevronRight size={12} />

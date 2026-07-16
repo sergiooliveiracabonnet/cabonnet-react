@@ -46,6 +46,7 @@ export function SearchBox({ value, onChange, placeholder = 'Buscar…', classNam
       {local && (
         <button
           onClick={handleClear}
+          aria-label="Limpar busca"
           className="absolute right-2 text-muted hover:text-text transition-colors"
         >
           <X size={11} />

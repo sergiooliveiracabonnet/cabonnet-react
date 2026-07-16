@@ -63,20 +63,26 @@ export function DataTable<T extends Record<string, unknown>>({
             {columns.map((col) => (
               <th
                 key={col.key ?? col.label}
-                onClick={() => handleSort(col.key)}
                 scope="col"
+                aria-sort={col.key && sortKey === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
                 className={`px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted
                             whitespace-nowrap select-none
-                            ${col.key ? 'cursor-pointer hover:text-secondary' : ''}
                             ${col.align === 'right' ? 'text-right' : ''}
                             ${col.className ?? ''}`}
               >
-                <span className="inline-flex items-center gap-1">
-                  {col.label}
-                  {col.key && sortKey === col.key && (
-                    sortDir === 'asc' ? <ChevronUp size={9} /> : <ChevronDown size={9} />
-                  )}
-                </span>
+                {col.key ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSort(col.key)}
+                    className="inline-flex items-center gap-1 uppercase tracking-[0.6px] font-bold
+                               hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+                  >
+                    {col.label}
+                    {sortKey === col.key && (sortDir === 'asc' ? <ChevronUp size={9} /> : <ChevronDown size={9} />)}
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1">{col.label}</span>
+                )}
               </th>
             ))}
           </tr>
