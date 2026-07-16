@@ -81,7 +81,7 @@ export function StatCard({
 
   if (size === 'inline') {
     return (
-      <div className={`flex items-center gap-1.5 ${className}`} {...interactive}>
+      <div className={`flex items-center gap-1.5 ${onClick ? `cursor-pointer ${FOCUS_RING}` : ''} ${className}`} {...interactive}>
         <span className="text-caption font-bold uppercase tracking-[0.04em] text-muted">{title}:</span>
         <span className="text-body font-semibold tabular-nums" style={{ color: valColor }}>{value}</span>
       </div>

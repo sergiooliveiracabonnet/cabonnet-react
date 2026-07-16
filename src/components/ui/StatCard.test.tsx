@@ -80,6 +80,11 @@ describe('StatCard', () => {
     expect(screen.getByText('3')).toBeInTheDocument()
   })
 
+  it('size inline clicável recebe cursor e anel de foco', () => {
+    const { container } = render(<StatCard title="Críticas" value={3} size="inline" onClick={() => {}} />)
+    expect(container.firstChild).toHaveClass('cursor-pointer')
+  })
+
   it('size sm renderiza tile compacto', () => {
     render(<StatCard title="Total" value={99} size="sm" />)
     expect(screen.getByText('99')).toBeInTheDocument()
