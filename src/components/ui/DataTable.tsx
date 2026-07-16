@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { ChevronUp, ChevronDown, Inbox } from 'lucide-react'
 import { EmptyState } from './EmptyState'
 
@@ -26,14 +27,20 @@ interface DataTableProps<T extends Record<string, unknown>> {
   onSort?:              (key: string) => void
   emptyTitle?:          string
   emptyDescription?:    string
+  /** Sticky no header — offset padrão assume navbar + barra de filtro acima. Default false. */
+  stickyHeader?:        boolean
 }
 
 const rowHeight: Record<Density, string> = { normal: 'h-9', compact: 'h-7', mini: 'h-5' }
 const textSize:  Record<Density, string> = { normal: 'text-label', compact: 'text-caption', mini: 'text-caption' }
 
+// Acima disso, renderizar todas as linhas no DOM pesa demais — passa a virtualizar por janela.
+const VIRTUALIZE_MIN = 100
+const ROW_PX: Record<Density, number> = { normal: 36, compact: 28, mini: 20 }
+
 export function DataTable<T extends Record<string, unknown>>({
   columns, rows, onRowClick, onRowHover, onRowLeave, density = 'normal', className = '',
-  sort, onSort, emptyTitle, emptyDescription,
+  sort, onSort, emptyTitle, emptyDescription, stickyHeader = false,
 }: DataTableProps<T>) {
   const controlled = !!onSort
   const [sortKeyLocal, setSortKey] = useState<string | null>(null)
@@ -58,10 +65,30 @@ export function DataTable<T extends Record<string, unknown>>({
       })
     : rows
 
+  const wrapRef = useRef<HTMLDivElement>(null)
+  // Offset medido via effect (nunca lido de ref durante o render) — usado como scrollMargin
+  // para o virtualizador saber a posição real da tabela dentro do scroll da página.
+  const [scrollMargin, setScrollMargin] = useState(0)
+  useLayoutEffect(() => {
+    setScrollMargin(wrapRef.current?.offsetTop ?? 0)
+  }, [])
+
+  const virtual = sorted.length > VIRTUALIZE_MIN
+  const virtualizer = useWindowVirtualizer({
+    count: virtual ? sorted.length : 0,
+    estimateSize: () => ROW_PX[density],
+    overscan: 15,
+    scrollMargin,
+  })
+  const virtualItems = virtual ? virtualizer.getVirtualItems() : null
+  const padTop = virtualItems?.length ? virtualItems[0].start - scrollMargin : 0
+  const padBottom = virtualItems?.length ? virtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end : 0
+  const visible = virtualItems ? virtualItems.map((v) => sorted[v.index]) : sorted
+
   return (
-    <div className={`overflow-x-auto ${className}`}>
+    <div ref={wrapRef} className={`overflow-x-auto ${className}`}>
       <table className="w-full border-collapse">
-        <thead>
+        <thead className={stickyHeader ? 'sticky top-24 z-sticky bg-card' : undefined}>
           <tr className="border-b-2 border-white/[0.08]">
             {columns.map((col) => (
               <th
@@ -91,9 +118,10 @@ export function DataTable<T extends Record<string, unknown>>({
           </tr>
         </thead>
         <tbody>
-          {sorted.map((row, i) => (
+          {padTop > 0 && <tr aria-hidden="true" style={{ height: padTop }} />}
+          {visible.map((row, i) => (
             <tr
-              key={(row._id as string | number) ?? i}
+              key={(row._id as string | number) ?? (virtualItems ? virtualItems[i].index : i)}
               onClick={() => onRowClick?.(row)}
               onMouseEnter={(e) => onRowHover?.(row, e.currentTarget.getBoundingClientRect())}
               onMouseLeave={() => onRowLeave?.()}
@@ -117,6 +145,7 @@ export function DataTable<T extends Record<string, unknown>>({
               ))}
             </tr>
           ))}
+          {padBottom > 0 && <tr aria-hidden="true" style={{ height: padBottom }} />}
           {sorted.length === 0 && (
             <tr>
               <td colSpan={columns.length}>

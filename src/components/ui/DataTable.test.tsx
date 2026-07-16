@@ -28,3 +28,18 @@ describe('DataTable — sort acessível', () => {
     expect(within(primeiraLinha).getByText('Alfa')).toBeInTheDocument()
   })
 })
+
+describe('DataTable — virtualização', () => {
+  it('virtualiza listas grandes (renderiza menos linhas que o total)', () => {
+    Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true })
+    const muitas = Array.from({ length: 500 }, (_, i) => ({ _id: i, nome: `Item ${i}`, qtd: i }))
+    render(<DataTable columns={columns} rows={muitas} />)
+    const bodyRows = screen.getAllByRole('row').length - 1 // menos o header
+    expect(bodyRows).toBeLessThan(200)
+  })
+
+  it('não virtualiza listas pequenas', () => {
+    render(<DataTable columns={columns} rows={rows} />)
+    expect(screen.getAllByRole('row')).toHaveLength(rows.length + 1)
+  })
+})
