@@ -1,4 +1,5 @@
 import type { OSRow } from '../../lib/types'
+import { shortEquipe } from '../../lib/osFormat'
 
 // Coordenadas das cidades da Cabonnet ISP — Vale do Paraíba / SP
 // Cidades atendidas: SJC, Caçapava, Taubaté, Tremembé, Pindamonhangaba
@@ -184,4 +185,15 @@ export function buildHeatPoints(rows: OSRow[]): [number, number, number][] {
   return Array.from(byCity.values()).map(({ coords, weight }) => [
     coords.lat, coords.lng, weight,
   ])
+}
+
+export function buildEquipeOptions(rows: OSRow[]): { value: string; label: string }[] {
+  const set = new Set<string>()
+  for (const r of rows) {
+    const eq = (r.nomedaequipe || '').trim()
+    if (eq) set.add(eq)
+  }
+  return Array.from(set)
+    .map(nome => ({ value: nome, label: shortEquipe(nome) }))
+    .sort((a, b) => a.label.localeCompare(b.label))
 }
