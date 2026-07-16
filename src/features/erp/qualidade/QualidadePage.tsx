@@ -4,12 +4,19 @@ import { useBacklog, type BacklogRow } from '../../../hooks/useBacklog'
 import { AreaChart, Area, XAxis, YAxis, Grid, ChartTooltip, Legend } from '../../../components/ui/line-chart'
 import { BarChart, Bar, XAxis as BXAxis, YAxis as BYAxis, Grid as BGrid, ChartTooltip as BTip } from '../../../components/ui/bar-chart'
 import {
-  KpiCard, EquipeRow, DrillTable,
+  EquipeRow, DrillTable,
   type Tipo, TIPO_LABEL, TIPO_COLOR,
   taxaColor,
 } from './QualidadeComponents'
 import { CausaRaizSection } from './CausaRaizSection'
 import { RevisitaMotivosSection } from './RevisitaMotivosSection'
+import { StatCard, type StatTone } from '../../../components/ui/StatCard'
+
+function taxaTone(taxa: number): StatTone {
+  if (taxa >= 15) return 'critical'
+  if (taxa >= 8)  return 'warning'
+  return 'ok'
+}
 
 // ─── Datas (hora local, sem desvio UTC) ───────────────────────────────────────
 
@@ -346,26 +353,26 @@ export default function QualidadePage() {
 
           {/* KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <KpiCard label="Taxa de Primeira Visita"
-                     value={`${taxaPrimeiraVisita}%`}
-                     sub={`${fmt(totalOS - revisitasFiltradas.length)} de ${fmt(totalOS)} OS resolvidas sem retorno`}
-                     color={taxaColor(taxaGeral)} delay={0} />
-            <KpiCard label={`Revisitas${tipoAtivo !== 'todos' ? ` · ${TIPO_LABEL[tipoAtivo]}` : ' · Total'}`}
-                     value={revisitasFiltradas.length}
-                     sub={`${taxaGeral}% do total de ${fmt(totalOS)} OS no período`}
-                     color={cor} delay={30} />
-            <KpiCard label="Inst → Manut (BI)"
-                     value={data?.kpis.rev_inst ?? 0}
-                     sub="instalações que geraram VT no mesmo mês"
-                     color="#3b82f6" delay={60} />
-            <KpiCard label="Manut Repetida (BI)"
-                     value={data?.kpis.rev_manut ?? 0}
-                     sub="2ª+ manutenção do mesmo cliente no mês"
-                     color="#f97316" delay={90} />
-            <KpiCard label="Serviço → Manut (BI)"
-                     value={data?.kpis.rev_serv ?? 0}
-                     sub="serviço técnico que gerou VT no mesmo mês"
-                     color="#22d3ee" delay={120} />
+            <StatCard title="Taxa de Primeira Visita"
+                      value={`${taxaPrimeiraVisita}%`}
+                      sub={`${fmt(totalOS - revisitasFiltradas.length)} de ${fmt(totalOS)} OS resolvidas sem retorno`}
+                      tone={taxaTone(taxaGeral)} delay={0} />
+            <StatCard title={`Revisitas${tipoAtivo !== 'todos' ? ` · ${TIPO_LABEL[tipoAtivo]}` : ' · Total'}`}
+                      value={fmt(revisitasFiltradas.length)}
+                      sub={`${taxaGeral}% do total de ${fmt(totalOS)} OS no período`}
+                      tone={taxaTone(taxaGeral)} delay={30} />
+            <StatCard title="Inst → Manut (BI)"
+                      value={fmt(data?.kpis.rev_inst ?? 0)}
+                      sub="instalações que geraram VT no mesmo mês"
+                      delay={60} />
+            <StatCard title="Manut Repetida (BI)"
+                      value={fmt(data?.kpis.rev_manut ?? 0)}
+                      sub="2ª+ manutenção do mesmo cliente no mês"
+                      tone="warning" delay={90} />
+            <StatCard title="Serviço → Manut (BI)"
+                      value={fmt(data?.kpis.rev_serv ?? 0)}
+                      sub="serviço técnico que gerou VT no mesmo mês"
+                      delay={120} />
           </div>
 
           {/* ── Ocorrências que causam revisitas ────────────────────────── */}

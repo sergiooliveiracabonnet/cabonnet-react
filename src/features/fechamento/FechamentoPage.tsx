@@ -11,6 +11,7 @@ import {
 import { generateFechamentoPDF } from './fechamentoPDF'
 import { useFechamentoAutomation, type FechamentoSnapshot } from './useFechamentoAutomation'
 import type { OSRow } from '../../lib/types'
+import { StatCard, type StatTone } from '../../components/ui/StatCard'
 
 const ABAS     = ['global', 'instacable', 'wes', 'thm', 'rede']
 const PERIODOS = [
@@ -218,12 +219,12 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }: {
   stats: FechamentoStats; periodoLabel: string
   onCSV: () => void; onPDF: () => void; onPrint: () => void
 }) {
-  const kpis = [
-    { label: 'Total OS',     value: stats.total,      cls: 'text-primary' },
-    { label: 'Concluídas',   value: stats.concluidas, cls: 'text-green'   },
-    { label: 'Sem Execução', value: stats.semExec,    cls: 'text-orange'  },
-    { label: 'Pendentes',    value: stats.pendentes,  cls: 'text-yellow'  },
-    { label: 'SLA Vencidas', value: stats.slaVenc,    cls: stats.slaVenc > 0 ? 'text-red' : 'text-green' },
+  const kpis: { label: string; value: number; tone?: StatTone }[] = [
+    { label: 'Total OS',     value: stats.total },
+    { label: 'Concluídas',   value: stats.concluidas, tone: 'ok' },
+    { label: 'Sem Execução', value: stats.semExec,    tone: 'warning' },
+    { label: 'Pendentes',    value: stats.pendentes,  tone: 'warning' },
+    { label: 'SLA Vencidas', value: stats.slaVenc,    tone: stats.slaVenc > 0 ? 'critical' : 'ok' },
   ]
   return (
     <div className="bg-card border border-white/[0.08] rounded-xl p-5">
@@ -245,12 +246,7 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }: {
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {kpis.map(k => (
-          <div key={k.label} className="bg-bg rounded-lg p-3 text-center">
-            <p className={`text-2xl font-bold font-mono leading-none ${k.cls}`}>{k.value}</p>
-            <p className="text-caption text-muted mt-1 uppercase tracking-wide">{k.label}</p>
-          </div>
-        ))}
+        {kpis.map(k => <StatCard key={k.label} size="sm" title={k.label} value={k.value} tone={k.tone} />)}
       </div>
     </div>
   )

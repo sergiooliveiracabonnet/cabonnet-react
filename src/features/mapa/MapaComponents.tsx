@@ -509,12 +509,3 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
     </div>
   )
 }
-
-export function KpiBadge({ label, value, color }: { label: string; value: string | number; color: string }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-caption font-bold uppercase tracking-[0.04em] text-muted">{label}:</span>
-      <span className={`text-body font-black font-mono ${color}`}>{value}</span>
-    </div>
-  )
-}

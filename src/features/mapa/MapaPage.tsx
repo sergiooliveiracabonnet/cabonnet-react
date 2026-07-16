@@ -8,12 +8,13 @@ import { isConcluida } from '../../lib/transform'
 import { aggregateByCidade, aggregateByBairro, buildHeatPoints, type BairroAgg } from './geo'
 import { geocodeAddress, haversineKm, type GeocodeResult } from './searchAddress'
 import { FilterSelect } from '../../components/ui/FilterSelect'
+import { StatCard } from '../../components/ui/StatCard'
 import OSDrawer from '../ordens/OSDrawer'
 import { useOSExecucaoGeo } from '../../hooks/useOSExecucaoGeo'
 import type { OSRow } from '../../lib/types'
 import {
   MapResizer, FlyTo, HeatLayer, bubbleRadius, CidadePanel, AddressSearchPanel,
-  RankingPanel, BairroRankingPanel, BairroPanel, KpiBadge,
+  RankingPanel, BairroRankingPanel, BairroPanel,
   PROXIMIDADE_KM, searchPinIcon, execucaoIcon,
   type CidadeAgg, type ProximidadeInfo, type BairroProx,
 } from './MapaComponents'
@@ -230,13 +231,13 @@ export default function MapaPage() {
         <div className="w-px h-5 bg-surface" />
 
         {/* KPIs inline */}
-        <KpiBadge label={filterStatus === '' ? 'OS Ativas' : 'OS'} value={rows.length} color="text-text" />
-        <KpiBadge label="Críticas"  value={totalCriticos}  color="text-red"    />
-        <KpiBadge label="Excedidas" value={totalExcedidos} color="text-orange" />
-        <KpiBadge label="Aging med" value={`${avgAging}d`} color="text-cyan"   />
+        <StatCard size="inline" title={filterStatus === '' ? 'OS Ativas' : 'OS'} value={rows.length} />
+        <StatCard size="inline" title="Críticas"  value={totalCriticos}  tone="critical" />
+        <StatCard size="inline" title="Excedidas" value={totalExcedidos} tone="warning" />
+        <StatCard size="inline" title="Aging med" value={`${avgAging}d`} />
         {granularity === 'cidade'
-          ? <KpiBadge label="Cidades" value={cidades.length} color="text-primary"/>
-          : <KpiBadge label="Bairros" value={bairros.length} color="text-purple"/>
+          ? <StatCard size="inline" title="Cidades" value={cidades.length} />
+          : <StatCard size="inline" title="Bairros" value={bairros.length} />
         }
 
         <div className="flex-1" />

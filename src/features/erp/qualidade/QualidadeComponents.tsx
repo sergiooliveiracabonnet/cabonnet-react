@@ -77,26 +77,6 @@ export function taxaLabel(taxa: number): string {
   return 'OK'
 }
 
-// ─── KpiCard ─────────────────────────────────────────────────────────────────
-
-export function KpiCard({ label, value, sub, color, delay = 0 }: {
-  label: string; value: string | number; sub: string; color: string; delay?: number
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-xl border bg-card animate-card-enter"
-         style={{ borderColor: `${color}22`, animationDelay: `${delay}ms` }}>
-      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: color }} />
-      <div className="p-4">
-        <p className="text-caption text-muted mb-2">{label}</p>
-        <p className="font-mono font-black tabular-nums text-display leading-none" style={{ color }}>
-          {typeof value === 'number' ? fmt(value) : value}
-        </p>
-        <p className="text-caption text-muted mt-1">{sub}</p>
-      </div>
-    </div>
-  )
-}
-
 // ─── EquipeRow ────────────────────────────────────────────────────────────────
 
 export interface EquipeStats { equipe: string; total: number; rev: number; taxa: number }
