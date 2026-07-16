@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
-import { aggregateByCidade, aggregateByBairro, buildHeatPoints, type BairroAgg } from './geo'
+import { aggregateByCidade, aggregateByBairro, buildHeatPoints, buildEquipeOptions, type BairroAgg } from './geo'
 import { geocodeAddress, haversineKm, type GeocodeResult } from './searchAddress'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { StatCard } from '../../components/ui/StatCard'
@@ -30,6 +30,7 @@ export default function MapaPage() {
   const [filterTipo,   setFilterTipo]   = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterAging,  setFilterAging]  = useState('')
+  const [filterEquipe, setFilterEquipe] = useState('')
   const [selectedCidade, setSelectedCidade] = useState<CidadeAgg | null>(null)
   const [selectedBairro, setSelectedBairro] = useState<BairroAgg | null>(null)
   const [drawerOS,       setDrawerOS]       = useState<OSRow | null>(null)
@@ -96,12 +97,18 @@ export default function MapaPage() {
     }
 
     if (filterTipo)   r = r.filter(x => (x._tipo || '').toUpperCase() === filterTipo.toUpperCase())
+    if (filterEquipe) r = r.filter(x => (x.nomedaequipe || '').trim() === filterEquipe)
     if (filterAging === '1-2')   r = r.filter(x => x._aging != null && x._aging <= 2)
     if (filterAging === '3-5')   r = r.filter(x => x._aging != null && x._aging >= 3  && x._aging <= 5)
     if (filterAging === '6-10')  r = r.filter(x => x._aging != null && x._aging >= 6  && x._aging <= 10)
     if (filterAging === '11+')   r = r.filter(x => x._aging != null && x._aging >= 11)
     return r
-  }, [globalRows, filterStatus, filterTipo, filterAging])
+  }, [globalRows, filterStatus, filterTipo, filterEquipe, filterAging])
+
+  const equipeOpts = useMemo(() => [
+    { value: '', label: 'Todas as equipes' },
+    ...buildEquipeOptions(globalRows || []),
+  ], [globalRows])
 
   const cidades    = useMemo(() => aggregateByCidade(rows), [rows])
   const bairros    = useMemo(() => aggregateByBairro(rows), [rows])
@@ -245,6 +252,7 @@ export default function MapaPage() {
         {/* Filtros */}
         <FilterSelect value={filterStatus} onChange={setFilterStatus} options={statusOpts} placeholder="Status" />
         <FilterSelect value={filterTipo}   onChange={setFilterTipo}   options={tipoOpts}   placeholder="Tipo" />
+        <FilterSelect value={filterEquipe} onChange={setFilterEquipe} options={equipeOpts} placeholder="Equipe" />
         <FilterSelect value={filterAging}  onChange={setFilterAging}  options={agingOpts}  placeholder="Aging" />
 
         <div className="w-px h-5 bg-surface" />
