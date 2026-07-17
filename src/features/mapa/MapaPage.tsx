@@ -6,6 +6,7 @@ import {
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
 import { aggregateByCidade, aggregateByBairro, buildHeatPoints, buildEquipeOptions, type BairroAgg } from './geo'
+import { useGeocodedEquipeOS } from './useGeocodedEquipeOS'
 import { geocodeAddress, haversineKm, type GeocodeResult } from './searchAddress'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { StatCard } from '../../components/ui/StatCard'
@@ -16,6 +17,7 @@ import {
   MapResizer, FlyTo, HeatLayer, bubbleRadius, CidadePanel, AddressSearchPanel,
   RankingPanel, BairroRankingPanel, BairroPanel,
   PROXIMIDADE_KM, searchPinIcon, execucaoIcon,
+  osPointColor, EquipeGeocodeStatus,
   type CidadeAgg, type ProximidadeInfo, type BairroProx,
 } from './MapaComponents'
 
@@ -109,6 +111,8 @@ export default function MapaPage() {
     { value: '', label: 'Todas as equipes' },
     ...buildEquipeOptions(globalRows || []),
   ], [globalRows])
+
+  const equipeGeo = useGeocodedEquipeOS(rows, !!filterEquipe)
 
   const cidades    = useMemo(() => aggregateByCidade(rows), [rows])
   const bairros    = useMemo(() => aggregateByBairro(rows), [rows])
@@ -343,12 +347,12 @@ export default function MapaPage() {
           />
 
           {/* Heatmap layer */}
-          {(view === 'calor' || view === 'ambos') && heatPoints.length > 0 && (
+          {!filterEquipe && (view === 'calor' || view === 'ambos') && heatPoints.length > 0 && (
             <HeatLayer points={heatPoints as [number, number, number][]} />
           )}
 
           {/* Bubble markers */}
-          {(view === 'bolhas' || view === 'ambos') && markers.map(g => {
+          {!filterEquipe && (view === 'bolhas' || view === 'ambos') && markers.map(g => {
             const isCidade = granularity === 'cidade'
             const gc = g as CidadeAgg
             const gb = g as BairroAgg
@@ -396,6 +400,34 @@ export default function MapaPage() {
             )
           })}
 
+          {/* Pontos individuais de OS da equipe selecionada */}
+          {filterEquipe && equipeGeo.points.map(({ os, lat, lng, approx }) => {
+            const { fill, stroke } = osPointColor(os)
+            const enderecoconexao = typeof os.enderecoconexao === 'string' ? os.enderecoconexao : ''
+            const address = [os.logradouro || enderecoconexao, os.numero].filter(Boolean).join(', ')
+            const sit = os._situacaoEfetiva ?? os.descsituacao
+
+            return (
+              <CircleMarker
+                key={os.numos}
+                center={[lat, lng]}
+                radius={9}
+                pathOptions={{
+                  fillColor: fill, fillOpacity: 0.75,
+                  color: stroke, weight: 2, opacity: 0.95,
+                  dashArray: approx ? '3 3' : undefined,
+                }}
+                eventHandlers={{ click: () => setDrawerOS(os) }}
+              >
+                <Tooltip direction="top" offset={[0, -12]} className="map-tooltip">
+                  <span className="font-semibold">{os.nomecliente || `OS ${os.numos}`}</span>
+                  {address && <span className="block text-caption">{address}</span>}
+                  <span className="block text-caption">{sit} · {os._aging ?? 0}d{approx ? ' · aprox.' : ''}</span>
+                </Tooltip>
+              </CircleMarker>
+            )
+          })}
+
           {/* Resultado da busca de endereço */}
           {searchResult && (
             <>
@@ -432,6 +464,16 @@ export default function MapaPage() {
             </Marker>
           ))}
         </MapContainer>
+
+        {/* Progresso da geocodificação da equipe selecionada */}
+        {filterEquipe && (
+          <EquipeGeocodeStatus
+            resolved={equipeGeo.resolved}
+            total={equipeGeo.total}
+            capped={equipeGeo.capped}
+            totalEquipe={rows.length}
+          />
+        )}
 
         {/* Resultado da busca de endereço */}
         {searchResult && proximidade && (

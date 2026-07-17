@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import {
-  TrendingUp, X, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, MapPin as PinIcon,
+  TrendingUp, X, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, MapPin as PinIcon, Loader2,
 } from 'lucide-react'
 import L from 'leaflet'
 import type { BairroAgg } from './geo'
@@ -100,6 +100,15 @@ export function bubbleColor(g: CidadeAgg): { fill: string; stroke: string } {
   if (g.excedidos > 0)  return { fill: '#f97316', stroke: '#fdba74' }
   if (g.pendentes > 0)  return { fill: '#3b82f6', stroke: '#7dd3fc' }
   return                       { fill: '#4ade80', stroke: '#86efac' }
+}
+
+// ── Cor de um ponto individual de OS (mesma paleta de bubbleColor, por linha) ─
+export function osPointColor(os: OSRow): { fill: string; stroke: string } {
+  if (os._slaCritico)  return { fill: '#f87171', stroke: '#fca5a5' }
+  if (os._slaExcedido) return { fill: '#f97316', stroke: '#fdba74' }
+  const sit = os._situacaoEfetiva ?? os.descsituacao
+  if (sit === 'Pendente' || sit === 'Atendimento') return { fill: '#3b82f6', stroke: '#7dd3fc' }
+  return { fill: '#4ade80', stroke: '#86efac' }
 }
 
 // ── Radius proporcional à raiz quadrada do count ──────────────────────────────
@@ -281,6 +290,33 @@ export function Stat({ label, value, color }: { label: string; value: string | n
     <div className="flex flex-col items-center py-2.5 px-1 gap-0.5">
       <span className={`text-[18px] font-black font-mono leading-none ${color}`}>{value}</span>
       <span className="text-caption font-bold uppercase tracking-[0.04em] text-muted text-center leading-tight">{label}</span>
+    </div>
+  )
+}
+
+// ── Status de geocodificação da equipe selecionada ────────────────────────────
+export function EquipeGeocodeStatus({ resolved, total, capped, totalEquipe }: {
+  resolved:    number
+  total:       number
+  capped:      boolean
+  totalEquipe: number
+}) {
+  if (total === 0) return null
+  const done = resolved >= total
+  return (
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500]">
+      <div className="flex items-center gap-2 bg-elevated/90 backdrop-blur-md border border-white/[0.08]
+                       rounded-full px-3.5 py-1.5 shadow-2xl">
+        {!done && <Loader2 size={11} className="animate-spin text-primary" />}
+        <span className="text-caption font-semibold text-secondary">
+          {done ? `${total} OS localizadas` : `Localizando ${resolved}/${total}…`}
+        </span>
+        {capped && (
+          <span className="text-caption text-yellow font-semibold">
+            · {total} de {totalEquipe} — refine por Status/Tipo/Aging
+          </span>
+        )}
+      </div>
     </div>
   )
 }
