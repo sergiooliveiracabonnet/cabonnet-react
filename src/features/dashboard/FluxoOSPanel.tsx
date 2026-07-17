@@ -88,10 +88,16 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
         </div>
         <div className="flex gap-4 text-caption text-secondary">
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-[3px] rounded-full" style={{ background: BLUE }} /> Entradas
+            <svg width="14" height="6" aria-hidden="true">
+              <line x1="0" y1="3" x2="14" y2="3" stroke={BLUE} strokeWidth={2} />
+            </svg>
+            Entradas
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-[3px] rounded-full" style={{ background: PURPLE }} /> Concluídas
+            <svg width="14" height="6" aria-hidden="true">
+              <line x1="0" y1="3" x2="14" y2="3" stroke={PURPLE} strokeWidth={2} strokeDasharray="3.5 2.5" />
+            </svg>
+            Concluídas
           </span>
         </div>
       </div>
@@ -134,9 +140,9 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
             : null
           ))}
 
-          {/* séries */}
+          {/* séries — Concluídas tracejada para diferenciar sem depender só de cor */}
           <path d={path(serie.abertas)} fill="none" stroke={BLUE} strokeWidth={2} strokeLinecap="round" />
-          <path d={path(serie.concl)}   fill="none" stroke={PURPLE} strokeWidth={2} strokeLinecap="round" />
+          <path d={path(serie.concl)}   fill="none" stroke={PURPLE} strokeWidth={2} strokeLinecap="round" strokeDasharray="6 4" />
 
           {/* pontos finais + rótulo direto */}
           <circle cx={x(len - 1)} cy={y(ultAbertas)} r={3.5} fill={BLUE}
