@@ -65,3 +65,14 @@ LOGO.png
 *.xls
 ~$*
 eslint_report.json
+
+# Arquivos soltos fora de escopo (propostas/logo avulsos, planos do projeto separado Cabonnet PAP)
+LOGO CABONNET.png
+dashboard-proposta-sobria.html
+dashboard-redesign-proposta.html
+docs/superpowers/plans/2026-06-16-builders-tests-split-gitignore.md
+docs/superpowers/plans/2026-06-25-cabonnet-pap-*.md
+docs/superpowers/plans/2026-06-26-cabonnet-pap-*.md
+docs/superpowers/plans/2026-06-27-cabonnet-pap-*.md
+docs/superpowers/specs/2026-06-25-cabonnet-pap-*.md
+docs/superpowers/specs/2026-06-26-cabonnet-pap-*.md
