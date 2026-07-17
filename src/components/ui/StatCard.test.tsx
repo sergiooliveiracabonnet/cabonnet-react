@@ -94,4 +94,24 @@ describe('StatCard', () => {
     const { container } = render(<StatCard title="KPI" value={1} className="minha-classe" />)
     expect(container.firstChild).toHaveClass('minha-classe')
   })
+
+  it('renderiza sparkline quando fornecida (size md)', () => {
+    const { container } = render(<StatCard title="Entradas" value={46} sparkline={[10, 20, 15, 30, 25]} />)
+    expect(container.querySelector('svg[aria-hidden="true"] path')).toBeInTheDocument()
+  })
+
+  it('renderiza sparkline quando fornecida (size sm)', () => {
+    const { container } = render(<StatCard title="Entradas" value={46} size="sm" sparkline={[10, 20, 15, 30, 25]} />)
+    expect(container.querySelector('svg[aria-hidden="true"] path')).toBeInTheDocument()
+  })
+
+  it('não renderiza sparkline com menos de 2 pontos', () => {
+    const { container } = render(<StatCard title="Entradas" value={46} sparkline={[10]} />)
+    expect(container.querySelector('svg[aria-hidden="true"]')).not.toBeInTheDocument()
+  })
+
+  it('sem prop sparkline não renderiza nenhum svg de série', () => {
+    const { container } = render(<StatCard title="Entradas" value={46} />)
+    expect(container.querySelector('svg[aria-hidden="true"]')).not.toBeInTheDocument()
+  })
 })

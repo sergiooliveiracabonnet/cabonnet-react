@@ -1,6 +1,21 @@
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react'
 import { Minus, TrendingUp, TrendingDown, Calendar } from 'lucide-react'
 
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  if (data.length < 2) return null
+  const w = 64, h = 20, pad = 2
+  const min = Math.min(...data), max = Math.max(...data)
+  const range = max - min || 1
+  const x = (i: number) => pad + (i * (w - pad * 2)) / (data.length - 1)
+  const y = (v: number) => h - pad - ((v - min) / range) * (h - pad * 2)
+  const d = data.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="mt-2" aria-hidden="true">
+      <path d={d} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export type StatTone  = 'neutral' | 'critical' | 'warning' | 'ok' | 'info'
 export type StatScope = 'aovivo' | 'periodo'
 export type StatSize  = 'md' | 'sm' | 'inline'
@@ -55,13 +70,14 @@ export interface StatCardProps {
   onClick?:   () => void
   delay?:     number
   className?: string
+  sparkline?: number[]
 }
 
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
 
 export function StatCard({
   title, value, sub, icon: Icon, tone = 'neutral', trend, scope,
-  size = 'md', onClick, delay = 0, className = '',
+  size = 'md', onClick, delay = 0, className = '', sparkline,
 }: StatCardProps) {
   const statusColor = tone !== 'neutral' ? TONE_COLOR[tone] : undefined
   // ok mantém o valor neutro (padrão aprovado do dashboard): a borda já sinaliza.
@@ -99,6 +115,11 @@ export function StatCard({
         <p className="text-[22px] font-bold tabular-nums leading-none" style={{ color: valColor }}>{value ?? '—'}</p>
         <p className="text-caption text-muted mt-1 uppercase tracking-wide">{title}</p>
         {sub && <p className="text-caption text-muted mt-0.5">{sub}</p>}
+        {sparkline && sparkline.length > 1 && (
+          <div className="flex justify-center">
+            <Sparkline data={sparkline} color={valColor} />
+          </div>
+        )}
       </div>
     )
   }
@@ -135,6 +156,8 @@ export function StatCard({
       </p>
 
       {sub && <p className="text-caption text-muted leading-snug mt-2">{sub}</p>}
+
+      {sparkline && sparkline.length > 1 && <Sparkline data={sparkline} color={valColor} />}
     </div>
   )
 }
