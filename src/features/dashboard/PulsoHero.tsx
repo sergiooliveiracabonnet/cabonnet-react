@@ -66,7 +66,10 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
           {/* Gauge + breakdown em popover (hover/foco) */}
           <div className="group relative flex flex-col items-center gap-1.5 flex-shrink-0">
             <div
+              role="button"
               tabIndex={scoreBreakdown.length > 0 ? 0 : undefined}
+              aria-label="Detalhar composição do score"
+              aria-describedby={scoreBreakdown.length > 0 ? "score-breakdown-popover" : undefined}
               className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <GaugeChart value={score} target={target} color={scoreColor} label={scoreLabel} size={100} />
@@ -88,6 +91,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
 
             {scoreBreakdown.length > 0 && (
               <div
+                id="score-breakdown-popover"
                 role="tooltip"
                 className="hidden group-hover:flex group-focus-within:flex flex-col gap-2
                            absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[150px] z-20

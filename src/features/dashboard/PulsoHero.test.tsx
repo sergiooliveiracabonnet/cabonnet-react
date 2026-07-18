@@ -66,4 +66,31 @@ describe('PulsoHero', () => {
     render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} onRequestAI={() => {}} evolucao={evolucao} />)
     expect(screen.getByRole('button', { name: /Analisar com IA/ })).toBeInTheDocument()
   })
+
+  it('score breakdown popover tem nome acessivel e aria-describedby', () => {
+    const { container } = render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} evolucao={evolucao} />)
+
+    // Localizar o trigger (div com role="button")
+    const trigger = container.querySelector('[role="button"][aria-label="Detalhar composição do score"]')
+    expect(trigger).toBeInTheDocument()
+    expect(trigger).toHaveAttribute('aria-describedby', 'score-breakdown-popover')
+
+    // Localizar o popover panel
+    const popover = container.querySelector('#score-breakdown-popover')
+    expect(popover).toBeInTheDocument()
+    expect(popover).toHaveAttribute('role', 'tooltip')
+  })
+
+  it('score breakdown não renderiza quando scoreBreakdown está vazio', () => {
+    const { container } = render(<PulsoHero pulso={makePulso({ scoreBreakdown: [] })} aiData={null} isLoadingAI={false} evolucao={evolucao} />)
+
+    // Trigger não deve ter aria-describedby quando não há breakdown
+    const trigger = container.querySelector('[role="button"][aria-label="Detalhar composição do score"]')
+    expect(trigger).toBeInTheDocument()
+    expect(trigger).not.toHaveAttribute('aria-describedby')
+
+    // Popover não deve ser renderizado
+    const popover = container.querySelector('#score-breakdown-popover')
+    expect(popover).not.toBeInTheDocument()
+  })
 })
