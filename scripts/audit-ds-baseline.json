@@ -82,12 +82,12 @@
       "#64748b",
       "#f97316"
     ],
-    "src/features/erp/planner/PlannerPage.tsx": [
+    "src/features/erp/planner/PlannerPlanejadoView.tsx": [
       "#374151",
       "#64748b",
       "#f97316"
     ],
-    "src/features/erp/produtividade/ProdutividadePage.tsx": [
+    "src/features/erp/planner/PlannerExecutadoView.tsx": [
       "#374151",
       "#475569",
       "#64748b",
