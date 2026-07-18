@@ -44,34 +44,34 @@ interface NavGroup {
 
 const baseGroups: NavGroup[] = [
   {
-    key: 'erp', label: 'ERP', color: '#c4b5fd',
+    key: 'agora', label: 'Agora', color: '#c4b5fd',
     links: [
-      { to: '/erp/relatorios',    label: 'Relatórios',     icon: BarChart2   },
-      { to: '/erp/alertas',       label: 'Alertas',        icon: Bell        },
-      { to: '/erp/ranking',       label: 'Ranking Técnicos', icon: Medal     },
-      { to: '/erp/qualidade',      label: 'Qualidade',      icon: Award       },
-      { to: '/erp/planner',        label: 'Planner',        icon: CalendarDays},
-      { to: '/erp/fila',           label: 'Fila de Prioridade', icon: Siren  },
+      { to: '/',             label: 'Dashboard',        icon: LayoutDashboard },
+      { to: '/erp/fila',     label: 'Fila de Prioridade', icon: Siren         },
+      { to: '/erp/alertas',  label: 'Alertas',          icon: Bell            },
     ],
   },
   {
-    key: 'ops', label: 'Operacional', color: '#22d3ee',
+    key: 'operar', label: 'Operar', color: '#22d3ee',
     links: [
-      { to: '/',             label: 'Dashboard',  icon: LayoutDashboard },
-      { to: '/cidades',      label: 'Cidades',    icon: MapPin          },
-      { to: '/mapa',         label: 'Mapa',       icon: Map             },
-      { to: '/ordens',       label: 'Ordens',     icon: ClipboardList   },
+      { to: '/ordens',      label: 'Ordens',  icon: ClipboardList },
+      { to: '/erp/planner', label: 'Planner', icon: CalendarDays  },
+      { to: '/mapa',        label: 'Mapa',    icon: Map            },
     ],
   },
   {
-    key: 'anal', label: 'Análise', color: '#4ade80',
+    key: 'analisar', label: 'Analisar', color: '#4ade80',
     links: [
-      { to: '/graficos',   label: 'Gráficos',   icon: PieChart  },
-      { to: '/fechamento', label: 'Fechamento', icon: FileText  },
+      { to: '/cidades',       label: 'Cidades',        icon: MapPin    },
+      { to: '/erp/ranking',   label: 'Ranking Técnicos', icon: Medal   },
+      { to: '/erp/qualidade', label: 'Qualidade',      icon: Award     },
+      { to: '/erp/relatorios',label: 'Relatórios',     icon: BarChart2 },
+      { to: '/graficos',      label: 'Gráficos',       icon: PieChart  },
+      { to: '/fechamento',    label: 'Fechamento',     icon: FileText  },
     ],
   },
   {
-    key: 'infra', label: 'Campo & Infra', color: '#fb923c',
+    key: 'infra', label: 'Infra & Campo', color: '#fb923c',
     links: [
       { to: '/fornecedor', label: 'Fornecedor', icon: Shield  },
       { to: '/juniper',    label: 'Juniper',    icon: Zap     },
@@ -172,7 +172,7 @@ export function Sidebar() {
       .filter(g => g.links.length > 0)
     if (role === 'gestor') {
       return filtrados.map(g =>
-        g.key === 'erp'
+        g.key === 'infra'
           ? { ...g, links: [...g.links, { to: '/erp/usuarios', label: 'Usuários', icon: Users }] }
           : g
       )
