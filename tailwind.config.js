@@ -142,7 +142,7 @@ export default {
   },
   safelist: [
     'stagger', 'tilt-card', 'glass', 'aurora-bg', 'shimmer-bg', 'breathe',
-    'nav-link-erp', 'nav-link-ops', 'nav-link-anal', 'nav-link-infra',
+    'nav-link-agora', 'nav-link-operar', 'nav-link-analisar', 'nav-link-infra',
     'grp-erp-line', 'grp-ops-line', 'grp-anal-line', 'grp-infra-line',
     'grp-erp-text', 'grp-ops-text', 'grp-anal-text', 'grp-infra-text',
     'grp-dot-erp', 'grp-dot-ops', 'grp-dot-anal', 'grp-dot-infra',
