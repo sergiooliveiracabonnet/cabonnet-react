@@ -48,7 +48,7 @@ export function buildSla(rows: OSRow[]) {
     .filter(r => r.total > 0)
 
   const ranking  = [...equipes].sort((a, b) => b.sla - a.sla).slice(0, 5)
-  const semaforo = equipes.map(e => ({ nome: e.nome, tipo: e.tipo, sla: e.sla, total: e.total, criticas: e.criticas }))
+  const semaforo = equipes.map(e => ({ nome: e.nome, tipo: e.tipo, sla: e.sla, total: e.total, criticas: e.criticas, agingMed: e.agingMed }))
 
   const topAging = [...equipes].sort((a, b) => b.agingMed - a.agingMed).slice(0, 10)
   const agingEq  = { labels: topAging.map(e => shortName(e.nome)), values: topAging.map(e => e.agingMed) }
