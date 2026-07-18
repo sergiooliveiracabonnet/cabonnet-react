@@ -73,6 +73,9 @@ export function buildRankingTecnicos(
   const revMap = new Map(revisitasPorEquipe.map(e => [e.equipe, e]))
 
   const nomes = new Set<string>([...volMap.keys(), ...slaMap.keys(), ...revMap.keys(), ...queueMap.keys()])
+  // "Sem equipe" é um bucket sentinela usado por buildSla e buildRevisitas para
+  // agrupar OS sem equipe atribuída — não é um técnico real, não deve aparecer aqui.
+  nomes.delete('Sem equipe')
 
   return [...nomes].map(nome => {
     const exec = execMap.get(nome) ?? { inst: 0, manut: 0, servico: 0 }

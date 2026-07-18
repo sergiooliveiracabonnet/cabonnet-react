@@ -49,4 +49,11 @@ describe('buildRankingTecnicos', () => {
     const rows = [makeRow({ nomedaequipe: '' })]
     expect(buildRankingTecnicos(rows, [], [])).toHaveLength(0)
   })
+
+  it('nao cria linha fantasma "Sem equipe" a partir do semaforo ou de revisitas', () => {
+    const semaforo = [{ nome: 'Sem equipe', tipo: 'INSTALACAO', sla: 60, total: 3, criticas: 0, agingMed: 2 }]
+    const revisitas = [{ equipe: 'Sem equipe', taxa: 8 }]
+    const result = buildRankingTecnicos([], semaforo, revisitas)
+    expect(result.find(r => r.nome === 'Sem equipe')).toBeUndefined()
+  })
 })
