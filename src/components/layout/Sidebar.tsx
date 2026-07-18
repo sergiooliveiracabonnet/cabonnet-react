@@ -5,7 +5,7 @@ import {
   BarChart2, PieChart, MapPin,
   Zap, Monitor, LogOut, FileText, Map,
   Bell, ChevronRight,
-  TrendingUp, Award, CalendarDays, Shield, Siren, Medal, Users,
+  Award, CalendarDays, Shield, Siren, Medal, Users,
 } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
 import { useAuthStore } from '../../store/authStore'
@@ -48,7 +48,6 @@ const baseGroups: NavGroup[] = [
     links: [
       { to: '/erp/relatorios',    label: 'Relatórios',     icon: BarChart2   },
       { to: '/erp/alertas',       label: 'Alertas',        icon: Bell        },
-      { to: '/erp/produtividade', label: 'Produtividade',  icon: TrendingUp  },
       { to: '/erp/ranking',       label: 'Ranking Técnicos', icon: Medal     },
       { to: '/erp/qualidade',      label: 'Qualidade',      icon: Award       },
       { to: '/erp/planner',        label: 'Planner',        icon: CalendarDays},
