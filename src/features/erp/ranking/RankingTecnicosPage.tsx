@@ -7,6 +7,7 @@ import { Badge } from '../../../components/ui/Badge'
 import { StatCard } from '../../../components/ui/StatCard'
 import { useTecnicos, useTecnicosActions } from '../../../hooks/useTecnicos'
 import type { TecnicoItem } from '../../../lib/api'
+import type { OSRow } from '../../../lib/types'
 
 // "Equipe" neste sistema é, na prática, 1 técnico (código de frente, ex: F04) —
 // não uma equipe multi-pessoa. Essa granularidade já existia espalhada em 3
@@ -17,12 +18,79 @@ import type { TecnicoItem } from '../../../lib/api'
 
 type SortKey = 'volume' | 'sla' | 'taxaRevisita' | 'criticas'
 
-interface RankRow {
+export interface RankRow {
   nome:         string
   volume:       number
   sla:          number | null
   criticas:     number
   taxaRevisita: number | null
+  execInst:     number
+  execManut:    number
+  execServico:  number
+  queue:        number
+  slaVenc:      number
+  avgAging:     number | null
+}
+
+interface SemaforoEntry { nome: string; sla: number; criticas: number; agingMed: number }
+interface RevisitaEntry { equipe: string; taxa: number }
+
+// eslint-disable-next-line react-refresh/only-export-components -- função pura exportada para ser testada isoladamente (Task 5)
+export function buildRankingTecnicos(
+  rows: OSRow[],
+  semaforo: SemaforoEntry[],
+  revisitasPorEquipe: RevisitaEntry[]
+): RankRow[] {
+  const base = rows.filter(r => !isCOPE(r) && !isReagend(r))
+
+  const volMap   = new Map<string, number>()
+  const execMap  = new Map<string, { inst: number; manut: number; servico: number }>()
+  const queueMap = new Map<string, number>()
+  const slaVencMap = new Map<string, number>()
+
+  for (const r of base) {
+    const nome = (r.nomedaequipe || '').trim()
+    if (!nome) continue
+
+    if (isExecucaoReal(r.descsituacao)) {
+      volMap.set(nome, (volMap.get(nome) ?? 0) + 1)
+      const exec = execMap.get(nome) ?? { inst: 0, manut: 0, servico: 0 }
+      if (r._tipo === 'INSTALACAO')      exec.inst++
+      else if (r._tipo === 'MANUTENCAO') exec.manut++
+      else                               exec.servico++
+      execMap.set(nome, exec)
+    }
+
+    if (r.descsituacao === 'Pendente' || r.descsituacao === 'Atendimento') {
+      queueMap.set(nome, (queueMap.get(nome) ?? 0) + 1)
+      if (r._slaExcedido || r._slaSemAgend) {
+        slaVencMap.set(nome, (slaVencMap.get(nome) ?? 0) + 1)
+      }
+    }
+  }
+
+  const slaMap = new Map(semaforo.map(e => [e.nome, e]))
+  const revMap = new Map(revisitasPorEquipe.map(e => [e.equipe, e]))
+
+  const nomes = new Set<string>([...volMap.keys(), ...slaMap.keys(), ...revMap.keys(), ...queueMap.keys()])
+
+  return [...nomes].map(nome => {
+    const exec = execMap.get(nome) ?? { inst: 0, manut: 0, servico: 0 }
+    const sla  = slaMap.get(nome)
+    return {
+      nome,
+      volume:       volMap.get(nome) ?? 0,
+      sla:          sla?.sla ?? null,
+      criticas:     sla?.criticas ?? 0,
+      taxaRevisita: revMap.get(nome)?.taxa ?? null,
+      execInst:     exec.inst,
+      execManut:    exec.manut,
+      execServico:  exec.servico,
+      queue:        queueMap.get(nome) ?? 0,
+      slaVenc:      slaVencMap.get(nome) ?? 0,
+      avgAging:     sla?.agingMed ?? null,
+    }
+  })
 }
 
 function slaColor(sla: number | null): string {
@@ -93,30 +161,10 @@ export default function RankingTecnicosPage() {
   const [sortKey, setSortKey] = useState<SortKey>('volume')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
-  const ranking = useMemo<RankRow[]>(() => {
-    const base = rows.filter(r => !isCOPE(r) && !isReagend(r))
-
-    const volMap = new Map<string, number>()
-    for (const r of base) {
-      if (!isExecucaoReal(r.descsituacao)) continue
-      const nome = (r.nomedaequipe || '').trim() || 'Sem equipe'
-      volMap.set(nome, (volMap.get(nome) ?? 0) + 1)
-    }
-
-    const slaMap = new Map(derived.sla.semaforo.map(e => [e.nome, e]))
-    const revMap = new Map(derived.revisitas.porEquipe.map(e => [e.equipe, e]))
-
-    const nomes = new Set<string>([...volMap.keys(), ...slaMap.keys(), ...revMap.keys()])
-    nomes.delete('Sem equipe')
-
-    return [...nomes].map(nome => ({
-      nome,
-      volume:       volMap.get(nome) ?? 0,
-      sla:          slaMap.get(nome)?.sla ?? null,
-      criticas:     slaMap.get(nome)?.criticas ?? 0,
-      taxaRevisita: revMap.get(nome)?.taxa ?? null,
-    }))
-  }, [rows, derived.sla.semaforo, derived.revisitas.porEquipe])
+  const ranking = useMemo(
+    () => buildRankingTecnicos(rows, derived.sla.semaforo, derived.revisitas.porEquipe),
+    [rows, derived.sla.semaforo, derived.revisitas.porEquipe]
+  )
 
   const sorted = useMemo(() => {
     const dir = sortDir === 'asc' ? 1 : -1
@@ -189,6 +237,12 @@ export default function RankingTecnicosPage() {
                     onClick={() => toggleSort('taxaRevisita')}>
                   <span className="inline-flex items-center gap-1">Retrabalho <SortIcon col="taxaRevisita" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Exec. Instalação</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Exec. Manutenção</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Exec. Serviço</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">OS na Fila</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">SLA Vencido</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Aging Médio</th>
               </tr>
             </thead>
             <tbody>
@@ -211,11 +265,21 @@ export default function RankingTecnicosPage() {
                       ? <span className="font-mono font-bold tabular-nums" style={{ color: revisitaColor(r.taxaRevisita) }}>{r.taxaRevisita}%</span>
                       : <span className="text-muted/40">—</span>}
                   </td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.execInst || <span className="text-muted/40">—</span>}</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.execManut || <span className="text-muted/40">—</span>}</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.execServico || <span className="text-muted/40">—</span>}</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.queue}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    {r.slaVenc > 0 ? <Badge variant="red" dot={false}>{r.slaVenc}</Badge> : <span className="text-muted/40">0</span>}
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-muted">
+                    {r.avgAging != null ? `${r.avgAging.toFixed(1)}d` : '—'}
+                  </td>
                 </tr>
               ))}
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted text-label">
+                  <td colSpan={11} className="px-4 py-8 text-center text-muted text-label">
                     Nenhum técnico com OS no período selecionado.
                   </td>
                 </tr>
