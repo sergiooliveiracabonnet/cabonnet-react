@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   BarChart2, TrendingUp, Clock, AlertTriangle,
-  Download, Printer, ChevronRight,
+  ChevronRight,
 } from 'lucide-react'
 import type { OSRow } from '../../../lib/types'
 
@@ -16,8 +16,6 @@ import { shortEquipe } from '../../../lib/osFormat'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 import { OSListModal, Section, Empty } from './RelatoriosComponents'
-import { exportCSV } from './relatoriosUtils'
-import { printRelatoriosPDF } from './relatoriosPDF'
 
 export default function RelatoriosPage() {
   const { rows, allRows, isLoading, derived } = useOSDerived()
@@ -191,25 +189,6 @@ export default function RelatoriosPage() {
   const drillConclInst= useMemo(() => drillConcl.filter(r => r._tipo === 'INSTALACAO'),                 [drillConcl])
   const drillConclMt  = useMemo(() => drillConcl.filter(r => r._tipo === 'MANUTENCAO'),                 [drillConcl])
   const drillConclSv  = useMemo(() => drillConcl.filter(r => r._tipo !== 'INSTALACAO' && r._tipo !== 'MANUTENCAO'), [drillConcl])
-
-  function handleExportRanking() {
-    exportCSV('ranking_equipes.csv', ranking.map(r => ({
-      Equipe: r.code,
-      Líder: r.leader,
-      'Exec. Instalação': r.execInst,
-      'Exec. Manutenção': r.execManut,
-      'Exec. Serviço': r.execServico,
-      'Exec. Total': r.execInst + r.execManut + r.execServico,
-      'OS na Fila': r.queue,
-      'SLA %': r.sla.toFixed(1),
-      'SLA Vencido': r.criticas,
-      'Aging Médio (d)': r.avgAging.toFixed(1),
-    })))
-  }
-
-  function exportPDF(theme: string) {
-    printRelatoriosPDF(theme, ranking, totals, kpis, periodoFilter, tipoFilter)
-  }
 
   return (
     <div className="flex flex-col gap-5 p-6">
@@ -450,190 +429,6 @@ export default function RelatoriosPage() {
                 )
                 : <Empty />}
             </Section>
-          </div>
-
-          {/* ── Ranking de equipes ── */}
-          <div className="bg-elevated border border-white/[0.08] rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
-              <div>
-                <p className="text-body font-semibold text-text">Ranking de Equipes</p>
-                <p className="text-caption text-muted mt-0.5">Desempenho consolidado</p>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={handleExportRanking}
-                  className="flex items-center gap-1.5 text-caption text-secondary hover:text-text
-                             px-3 py-1.5 rounded-lg border border-white/[0.08] hover:border-muted/30
-                             transition-colors"
-                  title="Exportar tabela como CSV"
-                >
-                  <Download size={12} />
-                  CSV
-                </button>
-                <button
-                  onClick={() => exportPDF('dark')}
-                  className="flex items-center gap-1.5 text-caption text-secondary hover:text-text
-                             px-3 py-1.5 rounded-lg border border-white/[0.08] hover:border-muted/30
-                             transition-colors"
-                  title="Exportar PDF com tema escuro"
-                >
-                  <Printer size={12} />
-                  PDF Escuro
-                </button>
-                <button
-                  onClick={() => exportPDF('light')}
-                  className="flex items-center gap-1.5 text-caption text-secondary hover:text-text
-                             px-3 py-1.5 rounded-lg border border-white/[0.08] hover:border-muted/30
-                             transition-colors"
-                  title="Exportar PDF com tema claro"
-                >
-                  <Printer size={12} />
-                  PDF Claro
-                </button>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-label">
-                <thead>
-                  {/* Grupo "Executadas" */}
-                  <tr className="border-b border-white/[0.03]">
-                    <th colSpan={2} className="px-4 py-1" />
-                    <th colSpan={4}
-                        className="px-4 py-1.5 text-center text-caption font-bold uppercase tracking-widest
-                                   text-primary/70 border-l border-white/[0.08]">
-                      Executadas no período
-                    </th>
-                    <th colSpan={4} className="px-4 py-1" />
-                  </tr>
-                  <tr className="border-b border-white/[0.05]">
-                    {['#', 'Equipe'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-caption font-bold uppercase tracking-wider text-muted">
-                        {h}
-                      </th>
-                    ))}
-                    {[
-                      { label: 'Instalação', color: '#60a5fa' },
-                      { label: 'Manutenção', color: '#fb923c' },
-                      { label: 'Serviço',    color: '#34d399' },
-                    ].map((h, i) => (
-                      <th key={h.label}
-                          className={`text-left px-4 py-3 text-caption font-bold uppercase tracking-wider
-                                      ${i === 0 ? 'border-l border-white/[0.08]' : ''}`}
-                          style={{ color: h.color }}>
-                        {h.label}
-                      </th>
-                    ))}
-                    <th className="text-left px-4 py-3 text-caption font-bold uppercase tracking-wider text-text">
-                      Total
-                    </th>
-                    {['OS Fila', 'SLA', 'SLA Venc.', 'Aging Méd.'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-caption font-bold uppercase tracking-wider text-muted">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {ranking.map((r, i) => (
-                    <tr key={r.code}
-                        className="border-b border-white/[0.04] hover:bg-surface/20 transition-colors">
-                      <td className="px-4 py-3 text-muted font-mono">{i + 1}</td>
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-text">{r.code}</p>
-                        <p className="text-caption text-muted capitalize">
-                          {r.leader.charAt(0) + r.leader.slice(1).toLowerCase()}
-                        </p>
-                      </td>
-                      {/* ── Executadas ── */}
-                      <td className="px-4 py-3 border-l border-white/[0.08]">
-                        <span className={`font-mono font-bold tabular-nums ${r.execInst > 0 ? 'text-primary' : 'text-muted'}`}>
-                          {r.execInst > 0 ? r.execInst : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`font-mono font-bold tabular-nums ${r.execManut > 0 ? 'text-orange' : 'text-muted'}`}>
-                          {r.execManut > 0 ? r.execManut : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`font-mono font-bold tabular-nums ${r.execServico > 0 ? 'text-green' : 'text-muted'}`}>
-                          {r.execServico > 0 ? r.execServico : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono font-black tabular-nums text-text">
-                          {r.execInst + r.execManut + r.execServico || '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono font-bold tabular-nums text-text">{r.queue}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`font-mono font-bold tabular-nums
-                          ${r.sla >= 90 ? 'text-green' : r.sla >= 75 ? 'text-orange' : 'text-red'}`}>
-                          {r.sla > 0 ? `${r.sla.toFixed(0)}%` : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`font-mono font-bold tabular-nums ${r.criticas > 0 ? 'text-red' : 'text-muted'}`}>
-                          {r.criticas}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono font-bold tabular-nums text-muted">{r.avgAging.toFixed(1)}d</span>
-                      </td>
-                    </tr>
-                  ))}
-                  {ranking.length === 0 && (
-                    <tr>
-                      <td colSpan={10} className="px-4 py-12 text-center text-muted text-sm">
-                        Nenhuma equipe com OS atribuída
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-                {ranking.length > 0 && (
-                  <tfoot>
-                    <tr className="border-t-2 border-white/[0.08] bg-surface/20">
-                      <td colSpan={2} className="px-4 py-3">
-                        <span className="text-caption font-bold text-text uppercase tracking-wide">Total Geral</span>
-                        <span className="text-caption text-muted ml-1.5">· {ranking.length} equipes</span>
-                      </td>
-                      <td className="px-4 py-3 border-l border-white/[0.08]">
-                        <span className="font-mono font-black text-title tabular-nums text-primary">{totals.execInst}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono font-black text-title tabular-nums text-orange">{totals.execManut}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono font-black text-title tabular-nums text-green">{totals.execServico}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono font-black text-title tabular-nums text-text">{totals.execTotal}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono font-bold text-body tabular-nums text-text">{totals.queue}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`font-mono font-bold text-body tabular-nums
-                          ${totals.avgSla >= 90 ? 'text-green' : totals.avgSla >= 75 ? 'text-orange' : 'text-red'}`}>
-                          {totals.avgSla > 0 ? `${totals.avgSla.toFixed(0)}%` : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`font-mono font-bold text-body tabular-nums ${totals.slaVenc > 0 ? 'text-red' : 'text-muted'}`}>
-                          {totals.slaVenc}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono font-bold text-body tabular-nums text-muted">{totals.avgAging.toFixed(1)}d</span>
-                      </td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
-            </div>
           </div>
 
         </>
