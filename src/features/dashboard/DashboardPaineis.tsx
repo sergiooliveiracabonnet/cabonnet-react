@@ -540,7 +540,7 @@ export function QualidadePeriodoCard({ pulso, taxaRevisitas }: { pulso: Pulso; t
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
-      <SectionLabel icon={Activity} color="#818cf8">Qualidade do Período</SectionLabel>
+      <SectionLabel icon={Activity} color="#a78bfa">Qualidade do Período</SectionLabel>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
         {stats.map(s => (
           <div key={s.label} title={s.hint}
