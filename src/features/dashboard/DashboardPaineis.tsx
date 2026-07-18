@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import {
-  TrendingUp, ArrowUpRight, Zap, CheckCircle2, MapPin, Clock, Gauge, Target, AlertCircle, Layers, Package,
+  TrendingUp, ArrowUpRight, Zap, CheckCircle2, MapPin, Clock, Gauge, Target, AlertCircle, Layers, Package, Activity,
 } from 'lucide-react'
 import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } from '../../lib/types'
 import { TrendPill } from '../../components/ui/StatCard'
@@ -509,6 +509,51 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
           {meta.status === 'abaixo' ? ' — abaixo da meta' : meta.status === 'acima' ? ' — acima da meta' : ''}
         </p>
       )}
+    </div>
+  )
+}
+
+// Qualidade do período — indicadores que antes viviam sempre-visíveis no Hero
+// (SLA/MTTR/Aging/Revisitas). Mesmo cálculo, agora como painel de Nível 5.
+export function QualidadePeriodoCard({ pulso, taxaRevisitas }: { pulso: Pulso; taxaRevisitas?: number | null }) {
+  const { slaFila, slaAtingimento, mttr, mttrP90, agingMed, semAgendamento } = pulso
+
+  type MiniStat = { label: string; value: string; sub?: string; hint?: string; warn: boolean; danger: boolean }
+  const stats: MiniStat[] = [
+    { label: 'SLA da Fila',  value: `${slaFila}%`, hint: 'Estoque: % da fila atual ainda dentro do prazo',
+      warn: slaFila < 90, danger: slaFila < 75 },
+    { label: 'SLA Atendido', value: slaAtingimento != null ? `${slaAtingimento}%` : '—',
+      sub: 'das concluídas', hint: 'Fluxo: % das OS concluídas no período entregues dentro do SLA',
+      warn: slaAtingimento != null && slaAtingimento < 90, danger: slaAtingimento != null && slaAtingimento < 75 },
+    { label: 'MTTR',         value: mttr > 0 ? `${mttr.toLocaleString('pt-BR')}d` : '—',
+      sub: mttrP90 > 0 ? `P90 ${mttrP90.toLocaleString('pt-BR')}d` : undefined,
+      hint: 'Mediana do tempo abertura → baixa das concluídas · P90 = cauda',
+      warn: mttr > 2, danger: mttr > 5 },
+    { label: 'Aging Médio',  value: agingMed > 0 ? `${agingMed.toLocaleString('pt-BR')}d` : '—',
+      warn: agingMed > 3, danger: agingMed > 7 },
+    { label: 'Sem Agend.',   value: String(semAgendamento),
+      warn: semAgendamento > 5, danger: semAgendamento > 20 },
+    { label: 'Revisitas',    value: taxaRevisitas != null ? `${taxaRevisitas.toLocaleString('pt-BR')}%` : '—',
+      sub: 'reincidência', hint: 'Clientes com nova manutenção no mesmo mês — retrabalho',
+      warn: taxaRevisitas != null && taxaRevisitas > 8, danger: taxaRevisitas != null && taxaRevisitas > 15 },
+  ]
+
+  return (
+    <div className="h-full rounded-lg border border-border bg-card p-5">
+      <SectionLabel icon={Activity} color="#818cf8">Qualidade do Período</SectionLabel>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
+        {stats.map(s => (
+          <div key={s.label} title={s.hint}
+               className="flex flex-col border border-border rounded-md bg-bg/40 px-3 py-2">
+            <p className="text-caption font-semibold uppercase tracking-[0.04em] text-muted">{s.label}</p>
+            <p className={`font-bold text-[18px] leading-none tabular-nums tracking-tight mt-1
+                           ${s.danger ? 'text-red' : s.warn ? 'text-yellow' : 'text-text'}`}>
+              {s.value}
+            </p>
+            {s.sub && <p className="text-caption text-muted/70 mt-0.5 leading-none">{s.sub}</p>}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
