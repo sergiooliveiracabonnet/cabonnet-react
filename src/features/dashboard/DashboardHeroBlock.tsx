@@ -19,7 +19,7 @@ function RitmoIndicator({ p }: { p: CampoProjecaoReal }) {
   const cor  = p.status === 'acima' ? '#4ade80' : p.status === 'abaixo' ? '#facc15' : '#94a3b8'
   const Icon = p.status === 'acima' ? TrendingUp : p.status === 'abaixo' ? TrendingDown : Gauge
   return (
-    <div className="flex items-center gap-1.5 text-[11px]">
+    <div className="flex items-center gap-1.5 text-caption">
       <Icon size={11} style={{ color: cor }} />
       <span className="font-semibold" style={{ color: cor }}>
         {p.status === 'acima' ? 'No ritmo' : p.status === 'abaixo' ? 'Abaixo do ritmo' : 'Início do dia'}
@@ -34,7 +34,7 @@ function FluxoIndicator({ f }: { f: FluxoHoje }) {
   const cor  = crescendo ? '#fb923c' : f.saldo < 0 ? '#4ade80' : '#94a3b8'
   const Icon = crescendo ? ArrowUpRight : f.saldo < 0 ? ArrowDownRight : Minus
   return (
-    <div className="flex items-center gap-1.5 text-[11px]">
+    <div className="flex items-center gap-1.5 text-caption">
       <Icon size={11} style={{ color: cor }} />
       <span className="font-semibold" style={{ color: cor }}>
         Fila {crescendo ? `+${f.saldo}` : f.saldo} hoje
@@ -63,21 +63,21 @@ function RitmoIntradiarioBar({ r }: { r: PulsoRitmoIntradiario }) {
   return (
     <div className="mt-4 pt-3 border-t border-white/[0.05]">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Ritmo por turno hoje</span>
+        <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ritmo por turno hoje</span>
         {r.alerta && (
-          <span className="text-[10px] font-semibold text-yellow flex items-center gap-1"
+          <span className="text-caption font-semibold text-yellow flex items-center gap-1"
                 title={`Com ${Math.round(r.fracTarde * 100)}% do turno decorrido, o esperado no ritmo da manhã seria ~${r.esperadoTarde}`}>
             <AlertCircle size={9} /> Tarde abaixo do ritmo — {r.tarde} de ~{r.esperadoTarde} esperadas
           </span>
         )}
       </div>
       <div className="flex items-center gap-4 mb-1.5">
-        <span className="flex items-center gap-1.5 text-[11px]">
+        <span className="flex items-center gap-1.5 text-caption">
           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#f59e0b' }} />
           <span className="text-muted">Manhã</span>
           <span className="font-mono font-bold text-text">{r.manha}</span>
         </span>
-        <span className="flex items-center gap-1.5 text-[11px]">
+        <span className="flex items-center gap-1.5 text-caption">
           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#818cf8' }} />
           <span className="text-muted">Tarde</span>
           <span className={`font-mono font-bold ${r.alerta ? 'text-yellow' : 'text-text'}`}>
@@ -122,7 +122,7 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, o
           {total > 0 && (
             <button
               onClick={() => onOpenModal('Executadas Hoje', hojeRows)}
-              className="text-[11px] text-muted hover:text-green border border-white/[0.08]
+              className="text-caption text-muted hover:text-green border border-white/[0.08]
                          hover:border-green/30 rounded-lg px-2.5 py-1 transition-all duration-fast"
             >
               Ver todas →
@@ -140,7 +140,7 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, o
         {total === 0 ? (
           <div className="flex items-center gap-3 py-4">
             <p className="number-display text-[64px] leading-none text-muted/20">0</p>
-            <p className="text-[13px] text-muted/60">Nenhuma OS concluída registrada ainda.</p>
+            <p className="text-body text-muted/60">Nenhuma OS concluída registrada ainda.</p>
           </div>
         ) : (
           <div className="flex items-end gap-6 flex-wrap">
@@ -150,7 +150,7 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, o
                     style={{ fontSize: 'clamp(44px, 5vw, 60px)' }}>
                 {total}
               </span>
-              <span className="text-[13px] text-muted mb-2">OS hoje</span>
+              <span className="text-body text-muted mb-2">OS hoje</span>
             </div>
 
             {/* Type breakdown */}
@@ -171,13 +171,13 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, o
                         ? <GIcon size={12} style={{ color: g.color }} />
                         : <span className="w-3 h-3 rounded-full" style={{ background: g.color }} />
                       }
-                      <span className="text-[10px] font-mono text-muted">{pct}%</span>
+                      <span className="text-caption font-mono text-muted">{pct}%</span>
                     </div>
                     <p className="font-mono font-bold text-[26px] leading-none mb-1"
                        style={{ color: g.color }}>
                       {g.rows.length}
                     </p>
-                    <p className="text-[11px] text-muted truncate">{g.label}</p>
+                    <p className="text-caption text-muted truncate">{g.label}</p>
                     <div className="mt-2 h-[3px] rounded-full bg-surface/40 overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-500"
                            style={{ width: `${pct}%`, background: g.color }} />

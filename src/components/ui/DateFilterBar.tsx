@@ -83,6 +83,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
               <button
                 onClick={mensalPrevMonth}
                 title="Mês anterior"
+                aria-label="Mês anterior"
                 className="w-5 h-5 flex items-center justify-center rounded-full text-muted hover:text-secondary hover:bg-surface/60 transition-colors"
               >
                 <ChevronLeft size={12} />
@@ -90,7 +91,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             )}
             <button
               onClick={() => setPreset(p.id)}
-              className={`text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all duration-fast whitespace-nowrap
+              className={`text-caption font-bold px-2.5 py-1 rounded-full border transition-all duration-fast whitespace-nowrap
                           ${preset === p.id
                             ? 'bg-primary/15 border-primary/40 text-primary'
                             : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
@@ -102,6 +103,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                 onClick={mensalNextMonth}
                 disabled={mensalAtual}
                 title={mensalAtual ? 'Mês atual' : 'Próximo mês'}
+                aria-label={mensalAtual ? 'Mês atual' : 'Próximo mês'}
                 className="w-5 h-5 flex items-center justify-center rounded-full text-muted hover:text-secondary hover:bg-surface/60 transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-muted"
               >
                 <ChevronRight size={12} />
@@ -112,7 +114,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
           <button
             key={p.id}
             onClick={() => setPreset(p.id)}
-            className={`text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all duration-fast whitespace-nowrap
+            className={`text-caption font-bold px-2.5 py-1 rounded-full border transition-all duration-fast whitespace-nowrap
                         ${preset === p.id
                           ? p.id === 'amanha'
                             ? 'bg-cyan/15 border-cyan/40 text-cyan'
@@ -135,21 +137,21 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             value={toInputVal(from)}
             onChange={e => setCustomRange(fromInputVal(e.target.value)!, to!)}
             className="bg-surface border border-white/[0.08] rounded-md px-2 py-0.5 font-mono text-secondary
-                       outline-none focus:border-primary/50 w-[120px] text-[11px]"
+                       outline-none focus:border-primary/50 w-[120px] text-caption"
           />
-          <span className="text-muted text-[10px]">→</span>
+          <span className="text-muted text-caption">→</span>
           <input
             type="date"
             value={toInputVal(to)}
             onChange={e => setCustomRange(from!, toEndOfDay(e.target.value)!)}
             className="bg-surface border border-white/[0.08] rounded-md px-2 py-0.5 font-mono text-secondary
-                       outline-none focus:border-primary/50 w-[120px] text-[11px]"
+                       outline-none focus:border-primary/50 w-[120px] text-caption"
           />
         </div>
       )}
 
       {preset !== 'custom' && (
-        <span className="text-[11px] text-muted font-mono whitespace-nowrap flex-shrink-0">
+        <span className="text-caption text-muted font-mono whitespace-nowrap flex-shrink-0">
           {rangeLabel}
         </span>
       )}
@@ -159,7 +161,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
       <div className="relative flex-shrink-0">
         <button
           onClick={() => setShowCampo(v => !v)}
-          className="flex items-center gap-1 text-[11px] text-muted hover:text-secondary transition-colors"
+          className="flex items-center gap-1 text-caption text-muted hover:text-secondary transition-colors"
         >
           <span className="opacity-60">por</span>
           <span className="font-semibold">{campoLabel}</span>
@@ -174,7 +176,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                 <button
                   key={c.value}
                   onClick={() => { setCampo(c.value); setShowCampo(false) }}
-                  className={`w-full text-left px-3 py-2 text-[11px] transition-colors
+                  className={`w-full text-left px-3 py-2 text-caption transition-colors
                               ${campo === c.value ? 'text-primary bg-primary/10' : 'text-secondary hover:bg-surface/40'}`}
                 >
                   {c.label}
@@ -190,7 +192,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
       <button
         onClick={toggleHideRede}
         title={hideRede ? 'Rede Interna oculta — clique para exibir' : 'Clique para ocultar OS de Rede Interna'}
-        className={`flex items-center gap-1.5 h-6 px-2.5 rounded-full border text-[10px] font-semibold
+        className={`flex items-center gap-1.5 h-6 px-2.5 rounded-full border text-caption font-semibold
                     transition-all duration-fast flex-shrink-0
                     ${hideRede
                       ? 'border-orange/40 bg-orange/[0.07] text-orange'
@@ -198,7 +200,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
       >
         <Server size={10} className="flex-shrink-0" />
         <span>Rede</span>
-        {hideRede && <span className="text-[9px] font-bold opacity-80">OFF</span>}
+        {hideRede && <span className="text-caption font-bold opacity-80">OFF</span>}
       </button>
     </div>
   )

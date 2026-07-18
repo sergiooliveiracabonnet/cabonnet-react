@@ -81,7 +81,7 @@ export function Navbar() {
       </button>
       <div className="w-px h-5 bg-border flex-shrink-0" />
       <div className="flex-1 min-w-0">
-        <h1 className="font-headline font-bold text-text text-[14px] leading-none tracking-tight truncate">
+        <h1 className="font-headline font-bold text-text text-title leading-none tracking-tight truncate">
           {title}
         </h1>
       </div>
@@ -94,8 +94,8 @@ export function Navbar() {
                    transition-colors duration-150 flex-shrink-0 min-w-[160px]"
       >
         <Search size={12} className="flex-shrink-0" />
-        <span className="text-[11px] flex-1 text-left hidden sm:block">Buscar OS, cliente…</span>
-        <kbd className="hidden md:flex items-center text-[9px] font-mono
+        <span className="text-caption flex-1 text-left hidden sm:block">Buscar OS, cliente…</span>
+        <kbd className="hidden md:flex items-center text-caption font-mono
                         bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted">⌃K</kbd>
       </button>
 
@@ -112,7 +112,7 @@ export function Navbar() {
           <Send size={13} />
           {naoLidos > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
-                             bg-primary text-[10px] font-bold text-white flex items-center justify-center leading-none">
+                             bg-primary text-caption font-bold text-white flex items-center justify-center leading-none">
               {naoLidos > 9 ? '9+' : naoLidos}
             </span>
           )}

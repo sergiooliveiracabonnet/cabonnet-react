@@ -130,16 +130,16 @@ export function DrillModal({ drill, onClose }: { drill: DrillState | null; onClo
       <div className="p-4 space-y-3">
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por OS, cliente, cidade ou equipe..."
-          className="w-full bg-surface border border-white/[0.08] rounded-xl px-3 py-2.5 text-[12px]
+          className="w-full bg-surface border border-white/[0.08] rounded-xl px-3 py-2.5 text-label
                      text-text placeholder:text-muted/60 outline-none focus:border-primary/50 transition-colors"
           autoFocus />
         <div className="overflow-auto max-h-[55vh]">
-          <table className="w-full text-[11px]">
+          <table className="w-full text-caption">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-white/[0.08] bg-surface">
                 {DRILL_COLS.map(col => (
                   <th key={col.key} onClick={() => toggleSort(col.key)}
-                    className="px-3 py-2 text-left text-[11px] font-bold text-muted uppercase tracking-wide
+                    className="px-3 py-2 text-left text-caption font-bold text-muted uppercase tracking-wide
                                whitespace-nowrap cursor-pointer select-none hover:text-secondary transition-colors">
                     <span className="flex items-center gap-1">
                       {col.label}
@@ -159,7 +159,7 @@ export function DrillModal({ drill, onClose }: { drill: DrillState | null; onClo
                   <td className="px-3 py-2 font-mono text-primary whitespace-nowrap">{r.numos}</td>
                   <td className="px-3 py-2 text-secondary max-w-[140px] truncate">{r.nomecliente || '—'}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${
+                    <span className={`text-caption font-bold px-1.5 py-0.5 rounded-full ${
                       r.descsituacao === 'Concluída'   ? 'badge-green'  :
                       r.descsituacao === 'Atendimento' ? 'badge-cyan'   :
                       r.descsituacao === 'Pendente'    ? 'badge-yellow' :
@@ -182,12 +182,12 @@ export function DrillModal({ drill, onClose }: { drill: DrillState | null; onClo
             </tbody>
           </table>
           {sorted.length > 250 && (
-            <p className="text-center text-[11px] text-muted py-3">
+            <p className="text-center text-caption text-muted py-3">
               Mostrando 250 de {sorted.length} resultados — refine a busca para ver mais
             </p>
           )}
           {sorted.length === 0 && (
-            <p className="text-center text-[11px] text-muted py-8">Nenhuma OS encontrada para este filtro</p>
+            <p className="text-center text-caption text-muted py-8">Nenhuma OS encontrada para este filtro</p>
           )}
         </div>
       </div>
@@ -225,29 +225,29 @@ export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown
     <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-5 space-y-4">
       <div className="flex items-center gap-2">
         <Sparkles size={14} className="text-primary" />
-        <span className="text-[13px] font-bold text-text">Previsão de Demanda — próximos 7 dias</span>
-        <span className="text-[9px] text-muted/60 ml-1">regressão linear + sazonalidade · R²={forecast.r2}</span>
-        {isFetching && <span className="text-[10px] text-muted animate-pulse ml-auto">Analisando…</span>}
-        {cached && !isFetching && <span className="text-[10px] text-muted/50 ml-auto">cache</span>}
+        <span className="text-body font-bold text-text">Previsão de Demanda — próximos 7 dias</span>
+        <span className="text-caption text-muted/60 ml-1">regressão linear + sazonalidade · R²={forecast.r2}</span>
+        {isFetching && <span className="text-caption text-muted animate-pulse ml-auto">Analisando…</span>}
+        {cached && !isFetching && <span className="text-caption text-muted/50 ml-auto">cache</span>}
       </div>
 
       <div className="flex items-start gap-3">
         {tend && <tend.Icon size={16} className={`${tend.cls} flex-shrink-0 mt-0.5`} />}
         <div className="flex-1">
-          <span className={`text-[11px] font-bold uppercase tracking-wider ${tend?.cls ?? 'text-muted'}`}>
+          <span className={`text-caption font-bold uppercase tracking-wider ${tend?.cls ?? 'text-muted'}`}>
             {forecast.tendencia}
           </span>
           {narrativa ? (
-            <p className="text-[11px] text-secondary mt-0.5 leading-relaxed">{narrativa}</p>
+            <p className="text-caption text-secondary mt-0.5 leading-relaxed">{narrativa}</p>
           ) : !aiEnabled ? (
             <button
               onClick={() => setAiEnabled(true)}
-              className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary mt-1"
+              className="flex items-center gap-1.5 text-caption font-semibold text-primary/70 hover:text-primary mt-1"
             >
               <Sparkles size={11} /> Explicar com IA
             </button>
           ) : isError ? (
-            <p className="text-[11px] text-muted mt-0.5">Explicação indisponível — verifique ANTHROPIC_API_KEY no servidor.</p>
+            <p className="text-caption text-muted mt-0.5">Explicação indisponível — verifique ANTHROPIC_API_KEY no servidor.</p>
           ) : null}
         </div>
       </div>
@@ -255,7 +255,7 @@ export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown
       {forecast.pico_previsto && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange/[0.07] border border-orange/20">
           <TrendingUp size={12} className="text-orange flex-shrink-0" />
-          <span className="text-[11px] text-secondary">
+          <span className="text-caption text-secondary">
             Pico previsto: <span className="font-bold text-text">{forecast.pico_previsto.data}</span>
             {' '}— <span className="font-bold text-orange">{forecast.pico_previsto.volume} OS</span>
           </span>
@@ -265,11 +265,11 @@ export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown
       <div className="grid grid-cols-7 gap-1.5">
         {forecast.previsao.map((d, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
-            <span className="text-[9px] text-muted font-semibold">{d.data}</span>
+            <span className="text-caption text-muted font-semibold">{d.data}</span>
             <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-surface border border-white/[0.08]">
-              <span className="text-[13px] font-bold text-text">{d.volume}</span>
+              <span className="text-body font-bold text-text">{d.volume}</span>
             </div>
-            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${CONF_STYLE[d.confianca] ?? CONF_STYLE['media']}`}>
+            <span className={`text-caption font-bold px-1.5 py-0.5 rounded-full border ${CONF_STYLE[d.confianca] ?? CONF_STYLE['media']}`}>
               {d.confianca}
             </span>
           </div>
@@ -565,7 +565,7 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
   return (
     <div className="space-y-4">
       <SectionTitle icon={ZoomIn}>Cohort de Resolução por Mês de Abertura</SectionTitle>
-      <p className="text-[11px] text-muted -mt-2">
+      <p className="text-caption text-muted -mt-2">
         Cada coluna representa as OS abertas naquele mês e como evoluíram (últimos 12 meses)
       </p>
 
@@ -607,7 +607,7 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
       {c.labels.length > 0 && (
         <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-white/[0.08]">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-muted">
+            <p className="text-caption font-bold uppercase tracking-wide text-muted">
               Tabela Cohort Detalhada
               <span className="ml-2 font-normal normal-case tracking-normal text-muted/50">
                 — clique em uma linha para ver as OS
@@ -615,11 +615,11 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
             </p>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-[11px]">
+            <table className="w-full text-caption">
               <thead>
                 <tr className="border-b border-white/[0.08] bg-surface">
                   {['Mês','Abertas','Concluídas','Mesmo Mês','Taxa Res.','MTTR Méd.'].map(h => (
-                    <th key={h} className="px-4 py-2.5 text-left text-[11px] font-bold text-muted uppercase tracking-wide">{h}</th>
+                    <th key={h} className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -635,12 +635,12 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
                       <td className="px-4 py-2.5 font-mono text-green">{c.concluidas[i] ?? 0}</td>
                       <td className="px-4 py-2.5 font-mono text-purple-400">{c.mesmoMes[i] ?? 0}</td>
                       <td className="px-4 py-2.5">
-                        <span className={`font-mono text-[11px] font-semibold ${taxa >= 80 ? 'text-green' : taxa >= 50 ? 'text-yellow' : 'text-red'}`}>
+                        <span className={`font-mono text-caption font-semibold ${taxa >= 80 ? 'text-green' : taxa >= 50 ? 'text-yellow' : 'text-red'}`}>
                           {taxa}%
                         </span>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className={`font-mono text-[11px] ${mttrV <= 2 ? 'text-green' : mttrV <= 5 ? 'text-yellow' : 'text-red'}`}>
+                        <span className={`font-mono text-caption ${mttrV <= 2 ? 'text-green' : mttrV <= 5 ? 'text-yellow' : 'text-red'}`}>
                           {mttrV}d
                         </span>
                       </td>

@@ -41,9 +41,9 @@ const variants = {
 } as const
 
 const sizes = {
-  sm: 'h-7  px-3   text-[12px]',
-  md: 'h-9  px-4   text-[13px]',
-  lg: 'h-10 px-5   text-[14px]',
+  sm: 'h-7  px-3   text-label',
+  md: 'h-9  px-4   text-body',
+  lg: 'h-10 px-5   text-body',
 } as const
 
 type Variant = keyof typeof variants

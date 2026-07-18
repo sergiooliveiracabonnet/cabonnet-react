@@ -20,7 +20,7 @@ export function TabBar({ tabs, active, onChange, className = '' }: TabBarProps) 
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-[12px] font-semibold
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-label font-semibold
                       whitespace-nowrap border-b-2 transition-all duration-fast
                       ${active === tab.id
                         ? 'border-primary text-primary'

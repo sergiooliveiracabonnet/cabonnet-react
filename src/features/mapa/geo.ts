@@ -1,4 +1,5 @@
 import type { OSRow } from '../../lib/types'
+import { shortEquipe } from '../../lib/osFormat'
 
 // Coordenadas das cidades da Cabonnet ISP — Vale do Paraíba / SP
 // Cidades atendidas: SJC, Caçapava, Taubaté, Tremembé, Pindamonhangaba
@@ -124,9 +125,16 @@ function bairroOffset(bairro: string): { dlat: number; dlng: number } {
   return { dlat: Math.sin(angle) * dist, dlng: Math.cos(angle) * dist }
 }
 
+export function getBairroCoords(cidade: string, bairro: string): { lat: number; lng: number } | null {
+  const cityCoords = getCityCoords(cidade)
+  if (!cityCoords) return null
+  const { dlat, dlng } = bairroOffset(normalize(bairro))
+  return { lat: cityCoords.lat + dlat, lng: cityCoords.lng + dlng }
+}
+
 export function aggregateByBairro(rows: OSRow[]): BairroAgg[] {
   type Acc = {
-    bairro: string; cidade: string; cityCoords: { lat: number; lng: number }
+    bairro: string; cidade: string
     count: number; criticos: number; excedidos: number; pendentes: number
     semEquipe: number; aging: number[]
   }
@@ -136,13 +144,12 @@ export function aggregateByBairro(rows: OSRow[]): BairroAgg[] {
     const city   = normalize(r.nomedacidade)
     const bairro = (r.bairro || '').trim()
     if (!city || !bairro) continue
-    const cityCoords = getCityCoords(city)
-    if (!cityCoords) continue
+    if (!getCityCoords(city)) continue
 
     const key = `${city}::${normalize(bairro)}`
     if (!map.has(key)) {
       map.set(key, {
-        bairro, cidade: (r.nomedacidade || '').trim(), cityCoords,
+        bairro, cidade: (r.nomedacidade || '').trim(),
         count: 0, criticos: 0, excedidos: 0, pendentes: 0, semEquipe: 0, aging: [],
       })
     }
@@ -158,14 +165,14 @@ export function aggregateByBairro(rows: OSRow[]): BairroAgg[] {
   return Array.from(map.values())
     .filter(g => g.count > 0)
     .map(g => {
-      const { dlat, dlng } = bairroOffset(normalize(g.bairro))
+      const coords = getBairroCoords(g.cidade, g.bairro)!
       const avgAging = g.aging.length
         ? g.aging.reduce((a, b) => a + b, 0) / g.aging.length : 0
       return {
         bairro: g.bairro, cidade: g.cidade,
         count: g.count, criticos: g.criticos, excedidos: g.excedidos,
         pendentes: g.pendentes, semEquipe: g.semEquipe, avgAging,
-        coords: { lat: g.cityCoords.lat + dlat, lng: g.cityCoords.lng + dlng },
+        coords,
       }
     })
     .sort((a, b) => b.count - a.count)
@@ -184,4 +191,15 @@ export function buildHeatPoints(rows: OSRow[]): [number, number, number][] {
   return Array.from(byCity.values()).map(({ coords, weight }) => [
     coords.lat, coords.lng, weight,
   ])
+}
+
+export function buildEquipeOptions(rows: OSRow[]): { value: string; label: string }[] {
+  const set = new Set<string>()
+  for (const r of rows) {
+    const eq = (r.nomedaequipe || '').trim()
+    if (eq) set.add(eq)
+  }
+  return Array.from(set)
+    .map(nome => ({ value: nome, label: shortEquipe(nome) }))
+    .sort((a, b) => a.label.localeCompare(b.label))
 }

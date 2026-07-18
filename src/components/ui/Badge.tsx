@@ -23,7 +23,7 @@ export function Badge({ children, variant = 'cyan', dot = true, className = '' }
   const cls = variants[variant as BadgeVariant] ?? ''
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                      text-[11px] font-semibold ${cls} ${className}`}>
+                      text-caption font-semibold ${cls} ${className}`}>
       {dot && (
         <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70 flex-shrink-0" />
       )}

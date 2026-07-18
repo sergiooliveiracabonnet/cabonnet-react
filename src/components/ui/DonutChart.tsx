@@ -161,11 +161,11 @@ export function DonutChart({ data = [], colors = [], onClick, centerLabel = 'Tot
             >
               <div className="flex items-center gap-2">
                 <span className="flex-shrink-0 rounded-sm" style={{ width: 10, height: 10, background: s.color }} />
-                <span className="flex-1 min-w-0 truncate text-[11px] leading-none text-muted">
+                <span className="flex-1 min-w-0 truncate text-caption leading-none text-muted">
                   {s.name}
                 </span>
                 <span
-                  className="flex-shrink-0 text-[11px] font-mono font-semibold tabular-nums"
+                  className="flex-shrink-0 text-caption font-mono font-semibold tabular-nums"
                   style={{ color: isHov ? s.color : '#71717a', transition: 'color 0.18s ease' }}
                 >
                   {s.pct}%

@@ -113,7 +113,7 @@ export const RefreshControl = memo(function RefreshControl() {
                       : 'border-white/[0.08] text-secondary hover:border-muted/40 hover:text-text'}`}
       >
         <RefreshCw size={12} className={`flex-shrink-0 ${spinning ? 'animate-spin' : ''}`} />
-        <span className="text-[11px] font-mono tabular-nums w-[36px] text-center">{btnLabel}</span>
+        <span className="text-caption font-mono tabular-nums w-[36px] text-center">{btnLabel}</span>
         <ChevronDown size={10} className={`transition-transform ${showMenu ? 'rotate-180' : ''}`} />
       </button>
 
@@ -124,7 +124,7 @@ export const RefreshControl = memo(function RefreshControl() {
             onClick={handleRefresh}
             disabled={isLoading}
             className="w-full flex items-center gap-2.5 px-3 py-2.5
-                       text-[11px] font-semibold text-primary hover:bg-primary/10
+                       text-caption font-semibold text-primary hover:bg-primary/10
                        border-b border-white/[0.08] transition-colors disabled:opacity-50"
           >
             <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
@@ -133,24 +133,24 @@ export const RefreshControl = memo(function RefreshControl() {
           <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.08]">
             <div className="flex items-center gap-1.5">
               <Clock size={10} className="text-muted" />
-              <span className="text-[11px] text-muted">
+              <span className="text-caption text-muted">
                 <span className="font-mono text-secondary">{fmtAgeLabel(dataUpdatedAt as number | undefined)}</span>
               </span>
             </div>
             {interval && (
-              <span className={`text-[11px] font-mono font-bold tabular-nums ${urgent ? 'text-yellow' : 'text-muted'}`}>
+              <span className={`text-caption font-mono font-bold tabular-nums ${urgent ? 'text-yellow' : 'text-muted'}`}>
                 -{fmtCountdown(countdown)}
               </span>
             )}
           </div>
           <div className="px-3 py-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Auto-refresh</p>
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Auto-refresh</p>
             {INTERVALS.map((opt) => (
               <button
                 key={String(opt.value)}
                 onClick={() => { setIntervalVal(opt.value); setShowMenu(false) }}
                 className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md
-                            text-[12px] transition-colors
+                            text-label transition-colors
                             ${interval === opt.value
                               ? 'bg-primary/15 text-primary font-semibold'
                               : 'text-secondary hover:bg-surface/40'}`}
@@ -222,7 +222,7 @@ export function AIStatusBadge() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
               <div className="flex items-center gap-2">
                 <Sparkles size={13} className="text-primary" />
-                <span className="text-[12px] font-bold text-text">Anthropic API</span>
+                <span className="text-label font-bold text-text">Anthropic API</span>
               </div>
               <button onClick={() => setOpen(false)} className="text-muted hover:text-text transition-colors">
                 <XIcon size={13} />
@@ -232,31 +232,31 @@ export function AIStatusBadge() {
             {/* Status */}
             <div className="px-4 py-3 border-b border-white/[0.05]">
               {isLoading ? (
-                <p className="text-[11px] text-muted animate-pulse">Verificando chave…</p>
+                <p className="text-caption text-muted animate-pulse">Verificando chave…</p>
               ) : valid ? (
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-green" />
-                  <span className="text-[12px] text-green font-semibold">Chave válida</span>
-                  <span className="text-[10px] text-muted ml-auto">{d?.model?.replace('claude-', 'Claude ')}</span>
+                  <span className="text-label text-green font-semibold">Chave válida</span>
+                  <span className="text-caption text-muted ml-auto">{d?.model?.replace('claude-', 'Claude ')}</span>
                 </div>
               ) : noConn ? (
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-orange flex-shrink-0" />
-                    <span className="text-[12px] text-orange font-semibold">Sem conexão com a Anthropic</span>
+                    <span className="text-label text-orange font-semibold">Sem conexão com a Anthropic</span>
                   </div>
                   {d?.reason && (
-                    <p className="text-[10px] text-muted/70 pl-4">{d.reason}</p>
+                    <p className="text-caption text-muted/70 pl-4">{d.reason}</p>
                   )}
                 </div>
               ) : (
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-red flex-shrink-0" />
-                    <span className="text-[12px] text-red font-semibold">Chave inválida</span>
+                    <span className="text-label text-red font-semibold">Chave inválida</span>
                   </div>
                   {d?.reason && (
-                    <p className="text-[10px] text-muted/70 pl-4">{d.reason}</p>
+                    <p className="text-caption text-muted/70 pl-4">{d.reason}</p>
                   )}
                 </div>
               )}
@@ -265,26 +265,26 @@ export function AIStatusBadge() {
             {/* Uso desta sessão */}
             {usage && (
               <div className="px-4 py-3 border-b border-white/[0.05] space-y-2">
-                <p className="text-[9px] font-bold uppercase tracking-[0.06em] text-muted">Esta sessão do servidor</p>
+                <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted">Esta sessão do servidor</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                   <div>
-                    <p className="text-[9px] text-muted">Chamadas</p>
-                    <p className="text-[14px] font-mono font-bold text-text">{usage.calls}</p>
+                    <p className="text-caption text-muted">Chamadas</p>
+                    <p className="text-body font-mono font-bold text-text">{usage.calls}</p>
                   </div>
                   <div>
-                    <p className="text-[9px] text-muted">Tokens totais</p>
-                    <p className="text-[14px] font-mono font-bold text-text">{usage.total_tokens.toLocaleString('pt-BR')}</p>
+                    <p className="text-caption text-muted">Tokens totais</p>
+                    <p className="text-body font-mono font-bold text-text">{usage.total_tokens.toLocaleString('pt-BR')}</p>
                   </div>
                   <div>
-                    <p className="text-[9px] text-muted">Custo estimado</p>
-                    <p className="text-[14px] font-mono font-bold text-cyan">USD {usage.cost_usd.toFixed(4)}</p>
+                    <p className="text-caption text-muted">Custo estimado</p>
+                    <p className="text-body font-mono font-bold text-cyan">USD {usage.cost_usd.toFixed(4)}</p>
                   </div>
                   <div>
-                    <p className="text-[9px] text-muted">Em reais (est.)</p>
-                    <p className="text-[14px] font-mono font-bold text-cyan">R$ {usage.cost_brl.toFixed(2)}</p>
+                    <p className="text-caption text-muted">Em reais (est.)</p>
+                    <p className="text-body font-mono font-bold text-cyan">R$ {usage.cost_brl.toFixed(2)}</p>
                   </div>
                 </div>
-                <div className="flex justify-between text-[9px] text-muted/60 pt-1">
+                <div className="flex justify-between text-caption text-muted/60 pt-1">
                   <span>Entrada: {usage.input_tokens.toLocaleString('pt-BR')} tokens</span>
                   <span>Saída: {usage.output_tokens.toLocaleString('pt-BR')} tokens</span>
                 </div>
@@ -293,7 +293,7 @@ export function AIStatusBadge() {
 
             {/* Link para saldo real */}
             <div className="px-4 py-3">
-              <p className="text-[10px] text-muted mb-2">
+              <p className="text-caption text-muted mb-2">
                 O saldo real só está disponível no console da Anthropic.
               </p>
               <a
@@ -301,7 +301,7 @@ export function AIStatusBadge() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full py-2 rounded-lg
-                           bg-primary/10 border border-primary/30 text-primary text-[11px] font-semibold
+                           bg-primary/10 border border-primary/30 text-primary text-caption font-semibold
                            hover:bg-primary/20 transition-colors"
               >
                 Ver saldo no Console Anthropic
@@ -345,7 +345,7 @@ export function SlaCriticasBadge({ slaCriticas }: { slaCriticas: OSRow[] }) {
       >
         <AlertTriangle size={14} />
         <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
-                         bg-red text-[10px] font-bold text-white flex items-center justify-center leading-none">
+                         bg-red text-caption font-bold text-white flex items-center justify-center leading-none">
           {slaCriticas.length > 9 ? '9+' : slaCriticas.length}
         </span>
       </button>
@@ -355,7 +355,7 @@ export function SlaCriticasBadge({ slaCriticas }: { slaCriticas: OSRow[] }) {
                         bg-elevated border border-red/30 rounded-lg shadow-accent overflow-hidden">
           <div className="flex items-center gap-2 px-3 py-2.5 border-b border-red/20 bg-red/[0.06]">
             <AlertTriangle size={13} className="text-red flex-shrink-0" />
-            <p className="text-[12px] font-bold text-red flex-1">
+            <p className="text-label font-bold text-red flex-1">
               {slaCriticas.length} OS com SLA 2× excedido
             </p>
           </div>
@@ -363,20 +363,20 @@ export function SlaCriticasBadge({ slaCriticas }: { slaCriticas: OSRow[] }) {
             {slaCriticas.map((os, i) => (
               <div key={(os.numos as string) ?? i} className="px-3 py-2.5">
                 <div className="flex items-center justify-between gap-2 mb-0.5">
-                  <span className="text-[12px] font-bold text-text font-mono">{os.numos as string}</span>
+                  <span className="text-label font-bold text-text font-mono">{os.numos as string}</span>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className="text-[11px] font-bold text-red bg-red/10 px-1.5 py-0.5 rounded">
+                    <span className="text-caption font-bold text-red bg-red/10 px-1.5 py-0.5 rounded">
                       {(os._agingAbertura as number) ?? '?'}d aberta
                     </span>
                     {(os._diasAcimaSLA as number) > 0 && (
-                      <span className="text-[11px] font-bold text-orange bg-orange/10 px-1.5 py-0.5 rounded">
+                      <span className="text-caption font-bold text-orange bg-orange/10 px-1.5 py-0.5 rounded">
                         +{os._diasAcimaSLA as number}d SLA
                       </span>
                     )}
                   </div>
                 </div>
-                <p className="text-[11px] text-secondary truncate">{os.nomecliente as string}</p>
-                <p className="text-[10px] text-muted mt-0.5">
+                <p className="text-caption text-secondary truncate">{os.nomecliente as string}</p>
+                <p className="text-caption text-muted mt-0.5">
                   {os.nomedacidade as string} · {shortEquipe(os.nomedaequipe as string) || 'Sem equipe'} · {os._slaTipoLabel as string}
                 </p>
               </div>
@@ -385,7 +385,7 @@ export function SlaCriticasBadge({ slaCriticas }: { slaCriticas: OSRow[] }) {
           <div className="px-3 py-2 border-t border-white/[0.08]">
             <button
               onClick={() => { navigate('/ordens'); setShowAlerta(false) }}
-              className="w-full text-center text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+              className="w-full text-center text-caption font-semibold text-primary hover:text-primary/80 transition-colors"
             >
               Ver todas em Ordens →
             </button>
@@ -432,7 +432,7 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
         <Bell size={14} />
         {alerts.length > 0 && (
           <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
-                           bg-yellow text-[10px] font-bold text-black flex items-center justify-center leading-none">
+                           bg-yellow text-caption font-bold text-black flex items-center justify-center leading-none">
             {alerts.length > 9 ? '9+' : alerts.length}
           </span>
         )}
@@ -442,14 +442,14 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
         <div className="absolute right-0 top-10 z-50 w-80
                         bg-elevated border border-white/[0.08] rounded-lg shadow-accent overflow-hidden">
           <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-white/[0.08] bg-surface/30">
-            <span className="text-[12px] font-bold text-text">Motor de Alertas</span>
-            <button onClick={resetRules} className="text-[10px] text-muted hover:text-secondary transition-colors">
+            <span className="text-label font-bold text-text">Motor de Alertas</span>
+            <button onClick={resetRules} className="text-caption text-muted hover:text-secondary transition-colors">
               Restaurar padrões
             </button>
           </div>
           {alerts.length > 0 && (
             <div className="border-b border-white/[0.08]">
-              <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted px-3 pt-2.5 pb-1.5">
+              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted px-3 pt-2.5 pb-1.5">
                 Ativos ({alerts.length})
               </p>
               {alerts.map(a => (
@@ -458,8 +458,8 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
                     a.severity === 'critical' ? 'bg-red' :
                     a.severity === 'warning'  ? 'bg-yellow' : 'bg-cyan'
                   }`} />
-                  <span className="text-[11px] text-text flex-1 truncate">{a.label}</span>
-                  <span className={`text-[11px] font-mono font-bold ${severityCls(a.severity)}`}>
+                  <span className="text-caption text-text flex-1 truncate">{a.label}</span>
+                  <span className={`text-caption font-mono font-bold ${severityCls(a.severity)}`}>
                     {a.currentValue}
                   </span>
                 </div>
@@ -467,7 +467,7 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
             </div>
           )}
           <div className="px-3 py-2.5 space-y-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Regras</p>
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Regras</p>
             {rules.map(rule => (
               <div key={rule.id} className="flex items-center gap-2">
                 <button
@@ -478,15 +478,15 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
                   <span className={`absolute w-3 h-3 rounded-full bg-white shadow transition-transform
                                     ${rule.enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
                 </button>
-                <span className={`text-[11px] flex-1 truncate ${rule.enabled ? 'text-text' : 'text-muted'}`}>
+                <span className={`text-caption flex-1 truncate ${rule.enabled ? 'text-text' : 'text-muted'}`}>
                   {rule.label}
                 </span>
-                <span className="text-[10px] text-muted font-mono flex-shrink-0">{rule.operator}</span>
+                <span className="text-caption text-muted font-mono flex-shrink-0">{rule.operator}</span>
                 <input
                   type="number"
                   value={rule.threshold}
                   onChange={e => updateRule(rule.id, { threshold: +e.target.value })}
-                  className="w-12 text-[11px] font-mono text-right tabular-nums
+                  className="w-12 text-caption font-mono text-right tabular-nums
                              bg-card border border-white/[0.08] rounded px-1.5 py-0.5
                              outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 text-text"
                 />
@@ -494,7 +494,7 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
             ))}
           </div>
           {alerts.length === 0 && (
-            <p className="text-[11px] text-muted text-center px-3 py-2 border-t border-white/[0.08]">
+            <p className="text-caption text-muted text-center px-3 py-2 border-t border-white/[0.08]">
               Nenhuma regra disparada
             </p>
           )}
@@ -540,16 +540,16 @@ export function AuditLogBadge() {
           <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.08] bg-surface/30">
             <div className="flex items-center gap-2">
               <History size={12} className="text-muted" />
-              <span className="text-[12px] font-bold text-text">Log de Atividade</span>
+              <span className="text-label font-bold text-text">Log de Atividade</span>
             </div>
             {auditEntries.length > 0 && (
-              <button onClick={clearAudit} className="text-[10px] text-muted hover:text-secondary transition-colors">
+              <button onClick={clearAudit} className="text-caption text-muted hover:text-secondary transition-colors">
                 Limpar
               </button>
             )}
           </div>
           {auditEntries.length === 0 ? (
-            <p className="text-[11px] text-muted text-center px-3 py-6 italic">
+            <p className="text-caption text-muted text-center px-3 py-6 italic">
               Nenhuma ação registrada nesta sessão.
             </p>
           ) : (
@@ -566,16 +566,16 @@ export function AuditLogBadge() {
                 return (
                   <div key={e.id} className="px-3 py-2.5">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${catCls[e.category] ?? catCls.other}`}>
+                      <span className={`text-caption font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${catCls[e.category] ?? catCls.other}`}>
                         {e.category}
                       </span>
-                      <span className="text-[11px] font-semibold text-text flex-1 truncate">{e.action}</span>
-                      <span className="text-[10px] font-mono text-muted flex-shrink-0">
+                      <span className="text-caption font-semibold text-text flex-1 truncate">{e.action}</span>
+                      <span className="text-caption font-mono text-muted flex-shrink-0">
                         {new Date(e.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                     {e.detail && (
-                      <p className="text-[10px] text-muted truncate pl-1">{e.detail}</p>
+                      <p className="text-caption text-muted truncate pl-1">{e.detail}</p>
                     )}
                   </div>
                 )

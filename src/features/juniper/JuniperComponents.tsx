@@ -59,7 +59,7 @@ export function StatusPill({ nivel, txt }: { nivel: string; txt: string }) {
   const dot    = isOk ? 'bg-green' : isWarn ? 'bg-yellow' : 'bg-muted'
   const border = isOk ? 'border-green/20' : isWarn ? 'border-yellow/20' : 'border-white/[0.08]'
   return (
-    <div className={`inline-flex items-center gap-2 text-[11px] font-bold px-3 py-1.5 rounded-full
+    <div className={`inline-flex items-center gap-2 text-caption font-bold px-3 py-1.5 rounded-full
                     bg-card-high border ${border} text-secondary`}>
       <span className="relative flex h-2 w-2 flex-shrink-0">
         {isOk && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-60" />}
@@ -93,11 +93,11 @@ export function ClientCard({ c }: { c: JuniperClient }) {
             <div className="flex items-center gap-2 mb-0.5">
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0
                 ${isOnline ? 'bg-green shadow-[0_0_6px_rgba(74,222,128,0.8)] animate-pulse' : 'bg-red/60'}`} />
-              <p className="text-[13px] font-bold text-text truncate uppercase antialiased leading-tight">{c.usuario}</p>
+              <p className="text-body font-bold text-text truncate uppercase antialiased leading-tight">{c.usuario}</p>
             </div>
-            <p className="text-[11px] text-muted/60 ml-3.5 uppercase tracking-[0.04em] font-mono truncate">{c.iface}</p>
+            <p className="text-caption text-muted/60 ml-3.5 uppercase tracking-[0.04em] font-mono truncate">{c.iface}</p>
           </div>
-          <span className={`flex-shrink-0 text-[8px] font-bold px-2.5 py-1 rounded-full tracking-widest border
+          <span className={`flex-shrink-0 text-caption font-bold px-2.5 py-1 rounded-full tracking-widest border
             ${isOnline ? 'bg-green/[0.10] text-green border-green/25' : 'bg-red/[0.12] text-red border-red/25'}`}>
             {isOnline ? '● ONLINE' : '● OFFLINE'}
           </span>
@@ -106,15 +106,15 @@ export function ClientCard({ c }: { c: JuniperClient }) {
         <div className={`rounded-xl px-3 py-2.5 mb-3 border ${isOnline
           ? 'bg-primary/[0.08] border-primary/[0.15]'
           : 'bg-surface/20 border-white/[0.05]'}`}>
-          <p className="text-[8px] font-bold uppercase tracking-[0.05em] text-muted mb-1">Endereço IP</p>
-          <p className={`text-[15px] font-mono font-bold uppercase antialiased leading-none tracking-wide
+          <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-1">Endereço IP</p>
+          <p className={`text-title font-mono font-bold uppercase antialiased leading-none tracking-wide
             ${isOnline ? 'text-primary' : 'text-secondary'}`}>{c.ip}</p>
         </div>
 
         {c.mac !== '—' && (
           <div className="mb-3">
-            <p className="text-[8px] font-bold uppercase tracking-[0.05em] text-muted/60 mb-0.5">MAC Address</p>
-            <p className="text-[11px] font-mono text-secondary/80 uppercase tracking-wider">{c.mac}</p>
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted/60 mb-0.5">MAC Address</p>
+            <p className="text-caption font-mono text-secondary/80 uppercase tracking-wider">{c.mac}</p>
           </div>
         )}
 
@@ -123,12 +123,12 @@ export function ClientCard({ c }: { c: JuniperClient }) {
             {c.uptime !== '—' && (
               <>
                 <Clock size={10} className="text-muted/50 flex-shrink-0" />
-                <span className="text-[11px] font-mono text-muted uppercase">{c.uptime}</span>
+                <span className="text-caption font-mono text-muted uppercase">{c.uptime}</span>
               </>
             )}
           </div>
           {c.loginTime !== '—' && (
-            <span className="text-[11px] text-muted/50 font-mono uppercase">{c.loginTime}</span>
+            <span className="text-caption text-muted/50 font-mono uppercase">{c.loginTime}</span>
           )}
         </div>
       </div>
@@ -145,20 +145,20 @@ export function InterfaceCard({ iface, maxIface }: { iface: IfaceRow; maxIface: 
   return (
     <div className="bg-card border border-white/[0.08] rounded-xl p-4 flex flex-col gap-3">
       <div>
-        <p className="text-[11px] font-bold text-text truncate mb-0.5">{iface.nome}</p>
+        <p className="text-caption font-bold text-text truncate mb-0.5">{iface.nome}</p>
         <div className="flex items-baseline gap-2">
           <p className="font-mono font-bold text-2xl text-primary tabular-nums">{iface.total}</p>
-          <p className="text-[11px] text-muted">clientes</p>
+          <p className="text-caption text-muted">clientes</p>
         </div>
         {iface.online > 0 && (
-          <p className="text-[10px] text-green mt-0.5 font-semibold">{iface.online} online</p>
+          <p className="text-caption text-green mt-0.5 font-semibold">{iface.online} online</p>
         )}
       </div>
       <div>
         <div className="h-1.5 bg-surface rounded-full overflow-hidden">
           <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%`, transition: 'width 0.6s ease' }} />
         </div>
-        <p className="text-[10px] text-muted/50 mt-1 font-mono text-right">{pct}%</p>
+        <p className="text-caption text-muted/50 mt-1 font-mono text-right">{pct}%</p>
       </div>
     </div>
   )
@@ -181,28 +181,28 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
           ? <ChevronDown  size={12} className="text-muted flex-shrink-0" />
           : <ChevronRight size={12} className="text-muted flex-shrink-0" />}
         <div className="flex-shrink-0 w-[72px]">
-          <p className="font-mono text-[12px] text-text">{snap.hora}</p>
-          {relTxt && <p className="text-[10px] text-muted/50">{relTxt}</p>}
+          <p className="font-mono text-label text-text">{snap.hora}</p>
+          {relTxt && <p className="text-caption text-muted/50">{relTxt}</p>}
         </div>
-        <span className="text-[11px] text-muted w-[80px] flex-shrink-0">{snap.data}</span>
+        <span className="text-caption text-muted w-[80px] flex-shrink-0">{snap.data}</span>
         <Badge variant="cyan">{snap.total} conectados</Badge>
         <Badge variant="green">{snap.online} online</Badge>
         <div className="flex-1 max-w-[80px] hidden md:block">
           <div className="h-1 bg-surface rounded-full overflow-hidden">
             <div className="h-full bg-green rounded-full" style={{ width: `${onlinePct}%` }} />
           </div>
-          <p className="text-[9px] text-muted/40 font-mono mt-0.5">{onlinePct}%</p>
+          <p className="text-caption text-muted/40 font-mono mt-0.5">{onlinePct}%</p>
         </div>
-        <span className="text-[10px] text-muted ml-auto font-mono">{(snap.clientes ?? []).length} reg.</span>
+        <span className="text-caption text-muted ml-auto font-mono">{(snap.clientes ?? []).length} reg.</span>
       </button>
 
       {isOpen && (
         <div className="overflow-x-auto border-t border-white/[0.04] bg-surface/15">
-          <table className="w-full text-[12px]">
+          <table className="w-full text-label">
             <thead>
               <tr className="border-b border-white/[0.08]">
                 {['Usuário', 'IP', 'MAC', 'Interface', 'Uptime', 'Login'].map(h => (
-                  <th key={h} className="px-4 py-2 text-left text-[11px] font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
+                  <th key={h} className="px-4 py-2 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -213,7 +213,7 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
                   <tr key={ci} className="hover:bg-primary/[0.04]">
                     <td className="px-4 py-2 font-bold text-text uppercase antialiased">{cl.usuario}</td>
                     <td className="px-4 py-2 font-mono font-semibold text-primary uppercase antialiased">{cl.ip}</td>
-                    <td className="px-4 py-2 font-mono text-[12px] font-semibold text-text uppercase antialiased">{cl.mac}</td>
+                    <td className="px-4 py-2 font-mono text-label font-semibold text-text uppercase antialiased">{cl.mac}</td>
                     <td className="px-4 py-2 text-secondary uppercase">{cl.iface}</td>
                     <td className="px-4 py-2 text-muted uppercase">{cl.uptime}</td>
                     <td className="px-4 py-2 text-muted uppercase">{cl.loginTime}</td>
@@ -236,13 +236,13 @@ export function OsCityCard({ cidade, total, maxOsCity }: { cidade: string; total
   return (
     <div className={`${style.bg} bg-surface border border-white/[0.08] rounded-xl p-3 flex flex-col gap-2`}>
       <div className="flex items-center justify-between gap-1">
-        <p className="text-[11px] font-semibold text-text truncate flex-1">{cidade}</p>
+        <p className="text-caption font-semibold text-text truncate flex-1">{cidade}</p>
         <p className={`font-mono font-bold text-xl tabular-nums flex-shrink-0 ${style.text}`}>{total}</p>
       </div>
       <div className="h-1.5 bg-surface rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${style.bar}`} style={{ width: `${pct}%`, transition: 'width 0.6s ease' }} />
       </div>
-      <p className="text-[10px] text-muted">OS abertas</p>
+      <p className="text-caption text-muted">OS abertas</p>
     </div>
   )
 }

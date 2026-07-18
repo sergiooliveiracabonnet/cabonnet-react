@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import {
-  TrendingUp, X, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, MapPin as PinIcon,
+  TrendingUp, X, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, MapPin as PinIcon, Loader2,
 } from 'lucide-react'
 import L from 'leaflet'
 import type { BairroAgg } from './geo'
@@ -10,7 +10,7 @@ import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import type { OSRow } from '../../lib/types'
 
-export const PROXIMIDADE_KM = 5
+export const PROXIMIDADE_KM = 3
 
 export const searchPinIcon = L.divIcon({
   className: 'address-search-pin',
@@ -102,6 +102,15 @@ export function bubbleColor(g: CidadeAgg): { fill: string; stroke: string } {
   return                       { fill: '#4ade80', stroke: '#86efac' }
 }
 
+// ── Cor de um ponto individual de OS (mesma paleta de bubbleColor, por linha) ─
+export function osPointColor(os: OSRow): { fill: string; stroke: string } {
+  if (os._slaCritico)  return { fill: '#f87171', stroke: '#fca5a5' }
+  if (os._slaExcedido) return { fill: '#f97316', stroke: '#fdba74' }
+  const sit = os._situacaoEfetiva ?? os.descsituacao
+  if (sit === 'Pendente' || sit === 'Atendimento') return { fill: '#3b82f6', stroke: '#7dd3fc' }
+  return { fill: '#4ade80', stroke: '#86efac' }
+}
+
 // ── Radius proporcional à raiz quadrada do count ──────────────────────────────
 export const bubbleRadius = (count: number): number => Math.max(10, Math.min(42, 6 + Math.sqrt(count) * 3.2))
 
@@ -116,7 +125,7 @@ export function CidadePanel({ cidade, onClose }: { cidade: CidadeAgg | null; onC
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full" style={{ background: fill }} />
-            <p className="text-[13px] font-bold text-text capitalize">
+            <p className="text-body font-bold text-text capitalize">
               {cidade.cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
             </p>
           </div>
@@ -144,16 +153,16 @@ export function CidadePanel({ cidade, onClose }: { cidade: CidadeAgg | null; onC
         {/* Top bairros */}
         {cidade.topBairros?.length > 0 && (
           <div className="px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Top bairros</p>
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Top bairros</p>
             <div className="space-y-1.5">
               {cidade.topBairros.map((b: { bairro: string; count: number; criticos: number }, i: number) => (
                 <div key={i} className="flex items-center gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-[11px] text-secondary truncate capitalize">
+                      <span className="text-caption text-secondary truncate capitalize">
                         {(b.bairro || '—').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                       </span>
-                      <span className="text-[11px] font-mono text-text ml-2 flex-shrink-0">{b.count}</span>
+                      <span className="text-caption font-mono text-text ml-2 flex-shrink-0">{b.count}</span>
                     </div>
                     <div className="h-1 rounded-full bg-surface overflow-hidden">
                       <div
@@ -218,14 +227,14 @@ export function AddressSearchPanel({ result, info, onClose }: {
           <div>
             {temEquipesProximas ? (
               <>
-                <p className="text-[12px] font-bold text-green leading-snug">
+                <p className="text-label font-bold text-green leading-snug">
                   {equipes.length} equipe{equipes.length !== 1 ? 's' : ''} com OS nas proximidades
                 </p>
                 <p className="text-[10.5px] text-muted mt-0.5">raio de {PROXIMIDADE_KM} km</p>
               </>
             ) : (
               <>
-                <p className="text-[12px] font-bold text-yellow leading-snug">
+                <p className="text-label font-bold text-yellow leading-snug">
                   Nenhuma equipe com OS ativa em até {PROXIMIDADE_KM} km
                 </p>
                 {maisProximo && (
@@ -241,10 +250,10 @@ export function AddressSearchPanel({ result, info, onClose }: {
         {/* Equipes próximas */}
         {equipes.length > 0 && (
           <div className="px-4 py-3 border-b border-white/[0.08]">
-            <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Equipes com OS ativas</p>
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Equipes com OS ativas</p>
             <div className="flex flex-wrap gap-1.5">
               {equipes.map(e => (
-                <span key={e.nome} className="text-[11px] bg-surface/40 border border-white/[0.08] rounded-full px-2.5 py-1">
+                <span key={e.nome} className="text-caption bg-surface/40 border border-white/[0.08] rounded-full px-2.5 py-1">
                   <span className="text-text font-semibold">{shortEquipe(e.nome)}</span>
                   <span className="text-muted ml-1.5 font-mono">{e.count}</span>
                 </span>
@@ -256,16 +265,16 @@ export function AddressSearchPanel({ result, info, onClose }: {
         {/* Bairros próximos */}
         {proximos.length > 0 && (
           <div className="px-4 py-3 max-h-48 overflow-y-auto">
-            <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Bairros próximos</p>
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Bairros próximos</p>
             <div className="space-y-1.5">
               {proximos.map(b => (
-                <div key={`${b.cidade}::${b.bairro}`} className="flex items-center gap-2 text-[11px]">
+                <div key={`${b.cidade}::${b.bairro}`} className="flex items-center gap-2 text-caption">
                   <span className="flex-1 min-w-0 truncate text-secondary capitalize">
                     {b.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                   </span>
                   <span className="text-muted font-mono flex-shrink-0">{b.distKm.toFixed(1)}km</span>
                   <span className="font-mono font-semibold text-text flex-shrink-0 w-6 text-right">{b.count}</span>
-                  {b.criticos > 0 && <span className="text-[10px] font-bold text-red flex-shrink-0">⚠{b.criticos}</span>}
+                  {b.criticos > 0 && <span className="text-caption font-bold text-red flex-shrink-0">⚠{b.criticos}</span>}
                 </div>
               ))}
             </div>
@@ -280,7 +289,34 @@ export function Stat({ label, value, color }: { label: string; value: string | n
   return (
     <div className="flex flex-col items-center py-2.5 px-1 gap-0.5">
       <span className={`text-[18px] font-black font-mono leading-none ${color}`}>{value}</span>
-      <span className="text-[9px] font-bold uppercase tracking-[0.04em] text-muted text-center leading-tight">{label}</span>
+      <span className="text-caption font-bold uppercase tracking-[0.04em] text-muted text-center leading-tight">{label}</span>
+    </div>
+  )
+}
+
+// ── Status de geocodificação da equipe selecionada ────────────────────────────
+export function EquipeGeocodeStatus({ resolved, total, capped, totalEquipe }: {
+  resolved:    number
+  total:       number
+  capped:      boolean
+  totalEquipe: number
+}) {
+  if (total === 0) return null
+  const done = resolved >= total
+  return (
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500]">
+      <div className="flex items-center gap-2 bg-elevated/90 backdrop-blur-md border border-white/[0.08]
+                       rounded-full px-3.5 py-1.5 shadow-2xl">
+        {!done && <Loader2 size={11} className="animate-spin text-primary" />}
+        <span className="text-caption font-semibold text-secondary">
+          {done ? `${total} OS localizadas` : `Localizando ${resolved}/${total}…`}
+        </span>
+        {capped && (
+          <span className="text-caption text-yellow font-semibold">
+            · {total} de {totalEquipe} — refine por Status/Tipo/Aging
+          </span>
+        )}
+      </div>
     </div>
   )
 }
@@ -296,7 +332,7 @@ export function RankingPanel({ cidades, onSelect, selected }: {
       <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.08]">
           <TrendingUp size={12} className="text-primary" />
-          <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Ranking de cidades</p>
+          <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking de cidades</p>
         </div>
         <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
           {cidades.slice(0, 15).map((g: CidadeAgg, i: number) => {
@@ -309,20 +345,20 @@ export function RankingPanel({ cidades, onSelect, selected }: {
                 className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-left transition-all
                             ${isSelected ? 'bg-primary/10' : 'hover:bg-surface/30'}`}
               >
-                <span className="text-[11px] font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
+                <span className="text-caption font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: fill }} />
-                <span className="flex-1 text-[11px] text-secondary truncate capitalize">
+                <span className="flex-1 text-caption text-secondary truncate capitalize">
                   {g.cidade.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
                 </span>
-                <span className="text-[11px] font-mono font-semibold text-text flex-shrink-0">{g.count}</span>
+                <span className="text-caption font-mono font-semibold text-text flex-shrink-0">{g.count}</span>
                 {g.criticos > 0 && (
-                  <span className="text-[10px] font-bold text-red flex-shrink-0">{g.criticos}⚠</span>
+                  <span className="text-caption font-bold text-red flex-shrink-0">{g.criticos}⚠</span>
                 )}
               </button>
             )
           })}
           {cidades.length === 0 && (
-            <p className="text-[11px] text-muted/50 italic px-4 py-3">Nenhum dado com coordenadas.</p>
+            <p className="text-caption text-muted/50 italic px-4 py-3">Nenhum dado com coordenadas.</p>
           )}
         </div>
       </div>
@@ -388,8 +424,8 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: fill }} />
             <div className="min-w-0">
-              <p className="text-[13px] font-bold text-text leading-tight truncate">{bairroFmt}</p>
-              <p className="text-[10px] text-muted">{cidadeFmt}</p>
+              <p className="text-body font-bold text-text leading-tight truncate">{bairroFmt}</p>
+              <p className="text-caption text-muted">{cidadeFmt}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-6 h-6 rounded-lg flex items-center justify-center text-muted hover:text-text hover:bg-surface transition-all flex-shrink-0">
@@ -414,14 +450,14 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
           <>
             {/* Cabeçalho da tabela */}
             <div className="flex items-center px-3 py-1.5 border-b border-white/[0.05] bg-surface/30 flex-shrink-0">
-              <button onClick={() => toggleSort('numos')} className="flex items-center gap-0.5 text-[9px] font-bold uppercase text-muted hover:text-secondary w-14 flex-shrink-0">
+              <button onClick={() => toggleSort('numos')} className="flex items-center gap-0.5 text-caption font-bold uppercase text-muted hover:text-secondary w-14 flex-shrink-0">
                 Nº OS <SortIcon k="numos" sortKey={sortKey} sortDir={sortDir} />
               </button>
-              <span className="flex-1 text-[9px] font-bold uppercase text-muted">Cliente / Equipe</span>
-              <button onClick={() => toggleSort('descsituacao')} className="flex items-center gap-0.5 text-[9px] font-bold uppercase text-muted hover:text-secondary mr-2">
+              <span className="flex-1 text-caption font-bold uppercase text-muted">Cliente / Equipe</span>
+              <button onClick={() => toggleSort('descsituacao')} className="flex items-center gap-0.5 text-caption font-bold uppercase text-muted hover:text-secondary mr-2">
                 Status <SortIcon k="descsituacao" sortKey={sortKey} sortDir={sortDir} />
               </button>
-              <button onClick={() => toggleSort('_aging')} className="flex items-center gap-0.5 text-[9px] font-bold uppercase text-muted hover:text-secondary w-8 text-right">
+              <button onClick={() => toggleSort('_aging')} className="flex items-center gap-0.5 text-caption font-bold uppercase text-muted hover:text-secondary w-8 text-right">
                 Age <SortIcon k="_aging" sortKey={sortKey} sortDir={sortDir} />
               </button>
             </div>
@@ -440,10 +476,10 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
                     onClick={() => onOS(os)}
                     className="w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-primary/[0.05] transition-colors"
                   >
-                    <span className="text-[11px] font-mono font-bold text-primary flex-shrink-0 w-14 pt-0.5">{os.numos}</span>
+                    <span className="text-caption font-mono font-bold text-primary flex-shrink-0 w-14 pt-0.5">{os.numos}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] text-text truncate leading-tight">{os.nomecliente || '—'}</p>
-                      <p className={`text-[9px] truncate ${semEq ? 'text-orange font-semibold' : 'text-muted'}`}>
+                      <p className="text-caption text-text truncate leading-tight">{os.nomecliente || '—'}</p>
+                      <p className={`text-caption truncate ${semEq ? 'text-orange font-semibold' : 'text-muted'}`}>
                         {semEq ? 'Sem equipe' : shortEquipe(os.nomedaequipe)}
                       </p>
                     </div>
@@ -473,7 +509,7 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
       <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.08]">
           <TrendingUp size={12} className="text-primary" />
-          <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Ranking por bairro</p>
+          <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking por bairro</p>
         </div>
         <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
           {bairros.slice(0, 20).map((b, i) => {
@@ -486,35 +522,26 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
                 className={`w-full flex items-center gap-2 px-3.5 py-2 text-left transition-all
                             ${isSelected ? 'bg-primary/10' : 'hover:bg-surface/30'}`}
               >
-                <span className="text-[10px] font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
+                <span className="text-caption font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
                 <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: fill }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-secondary truncate capitalize">
+                  <p className="text-caption text-secondary truncate capitalize">
                     {b.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                   </p>
-                  <p className="text-[9px] text-muted/60 truncate capitalize">
+                  <p className="text-caption text-muted/60 truncate capitalize">
                     {b.cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                   </p>
                 </div>
-                <span className="text-[11px] font-mono font-semibold text-text flex-shrink-0">{b.count}</span>
-                {b.criticos > 0 && <span className="text-[10px] font-bold text-red flex-shrink-0">{b.criticos}⚠</span>}
+                <span className="text-caption font-mono font-semibold text-text flex-shrink-0">{b.count}</span>
+                {b.criticos > 0 && <span className="text-caption font-bold text-red flex-shrink-0">{b.criticos}⚠</span>}
               </button>
             )
           })}
           {bairros.length === 0 && (
-            <p className="text-[11px] text-muted/50 italic px-4 py-3">Nenhum bairro com OS no filtro atual.</p>
+            <p className="text-caption text-muted/50 italic px-4 py-3">Nenhum bairro com OS no filtro atual.</p>
           )}
         </div>
       </div>
-    </div>
-  )
-}
-
-export function KpiBadge({ label, value, color }: { label: string; value: string | number; color: string }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-[10px] font-bold uppercase tracking-[0.04em] text-muted">{label}:</span>
-      <span className={`text-[13px] font-black font-mono ${color}`}>{value}</span>
     </div>
   )
 }

@@ -13,10 +13,10 @@ function Field({ label, value, mono = false, full = false, highlight = false }: 
     <div className={`rounded-xl p-4 border
                      ${highlight ? 'bg-primary/5 border-primary/20' : 'bg-surface/30 border-white/[0.08]'}
                      ${full ? 'col-span-2' : ''}`}>
-      <p className="font-headline text-[10px] font-bold uppercase tracking-[0.06em] text-muted mb-1.5">
+      <p className="font-headline text-caption font-bold uppercase tracking-[0.06em] text-muted mb-1.5">
         {label}
       </p>
-      <p className={`text-[13px] font-semibold text-text break-words leading-snug
+      <p className={`text-body font-semibold text-text break-words leading-snug
                      ${mono ? 'font-mono' : 'font-headline'}`}>
         {value ?? '—'}
       </p>
@@ -26,7 +26,7 @@ function Field({ label, value, mono = false, full = false, highlight = false }: 
 
 function SectionDivider({ children }: { children: ReactNode }) {
   return (
-    <p className="font-headline text-[10px] font-bold uppercase tracking-[0.07em] text-muted/70 mb-3 flex items-center gap-3">
+    <p className="font-headline text-caption font-bold uppercase tracking-[0.07em] text-muted/70 mb-3 flex items-center gap-3">
       <span className="flex-1 h-px bg-surface" />
       {children}
       <span className="flex-1 h-px bg-surface" />
@@ -172,17 +172,17 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
             <div className="space-y-3">
               {os.observacaocritica && (
                 <div className="bg-red/[0.07] border border-red/25 rounded-xl p-4">
-                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.05em] text-red mb-1.5">
+                  <p className="font-headline text-caption font-bold uppercase tracking-[0.05em] text-red mb-1.5">
                     ⚠ Observação Crítica
                   </p>
-                  <p className="text-[13px] text-red/90 leading-relaxed font-sans whitespace-pre-wrap">
+                  <p className="text-body text-red/90 leading-relaxed font-sans whitespace-pre-wrap">
                     {os.observacaocritica}
                   </p>
                 </div>
               )}
               {(os.observacoes || os.obs || os.observacao) && (
                 <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
-                  <p className="text-[13px] text-secondary leading-relaxed font-sans whitespace-pre-wrap">
+                  <p className="text-body text-secondary leading-relaxed font-sans whitespace-pre-wrap">
                     {os.observacoes || os.obs || os.observacao}
                   </p>
                 </div>
@@ -197,7 +197,7 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
             <SectionDivider>Motivo de Inconclusão</SectionDivider>
             <div className="bg-yellow/[0.07] border border-yellow/25 rounded-xl p-4 flex items-start gap-2.5">
               <XCircle size={15} className="text-yellow flex-shrink-0 mt-0.5" />
-              <p className="text-[13px] text-yellow/90 leading-relaxed">{motivoInconclusivo}</p>
+              <p className="text-body text-yellow/90 leading-relaxed">{motivoInconclusivo}</p>
             </div>
           </div>
         )}
@@ -212,8 +212,8 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
                   {item.checked
                     ? <CheckSquare size={13} className="text-green flex-shrink-0" />
                     : <Square size={13} className="text-muted/50 flex-shrink-0" />}
-                  <span className="text-[12px] text-secondary flex-1">{item.descricao}</span>
-                  <span className="text-[10px] text-muted">{item.servico}</span>
+                  <span className="text-label text-secondary flex-1">{item.descricao}</span>
+                  <span className="text-caption text-muted">{item.servico}</span>
                 </div>
               ))}
             </div>

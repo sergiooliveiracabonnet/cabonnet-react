@@ -23,11 +23,11 @@ export function ClassificarEncerramento({ numos, nomedaequipe, nomedacidade }: {
   return (
     <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-3.5 space-y-2.5">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold text-secondary">
+        <p className="text-caption font-semibold text-secondary">
           {existente ? 'Motivo do encerramento' : 'Classificar motivo do encerramento'}
         </p>
         {existente && (
-          <span className="flex items-center gap-1 text-[10px] font-semibold text-green">
+          <span className="flex items-center gap-1 text-caption font-semibold text-green">
             <Check size={11} /> {existente.motivo}
           </span>
         )}
@@ -39,7 +39,7 @@ export function ClassificarEncerramento({ numos, nomedaequipe, nomedacidade }: {
             <button
               key={m.value}
               onClick={() => classificar(m.value, { nomedaequipe, nomedacidade })}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-caption font-medium
                           transition-colors ${
                             ativo
                               ? 'border-green/40 bg-green/10 text-green'

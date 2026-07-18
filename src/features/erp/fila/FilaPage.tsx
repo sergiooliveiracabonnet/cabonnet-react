@@ -5,7 +5,7 @@ import { useOSDerived } from '../../../contexts/OSDataContext'
 import { useAuditStore } from '../../../store/auditStore'
 import { useFilaGeralStore } from '../../../store/filaGeralStore'
 import { filaUrgenciaTier, filaUrgenciaScore } from '../../../lib/builders/fila'
-import { KPICard } from '../../../components/ui/KPICard'
+import { StatCard } from '../../../components/ui/StatCard'
 import { FilterSelect } from '../../../components/ui/FilterSelect'
 import { SearchBox } from '../../../components/ui/SearchBox'
 import { DataTable } from '../../../components/ui/DataTable'
@@ -83,9 +83,9 @@ function TendenciaPanel({ items }: { items: TendenciaItem[] }) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-muted" />
-          <h3 className="text-[12px] font-semibold text-text">Violações da Fila · 7 dias</h3>
+          <h3 className="text-label font-semibold text-text">Violações da Fila · 7 dias</h3>
         </div>
-        <span className="text-[11px] text-muted tabular-nums">{totalViol} no total</span>
+        <span className="text-caption text-muted tabular-nums">{totalViol} no total</span>
       </div>
       <div className="flex items-end gap-1.5">
         {items.map(d => (
@@ -95,7 +95,7 @@ function TendenciaPanel({ items }: { items: TendenciaItem[] }) {
               <div className="w-full rounded-t bg-red/60"
                    style={{ height: `${(d.violadas / max) * 100}%`, minHeight: d.violadas > 0 ? 3 : 0 }} />
             </div>
-            <span className="text-[9px] text-muted tabular-nums">{d.label}</span>
+            <span className="text-caption text-muted tabular-nums">{d.label}</span>
           </div>
         ))}
       </div>
@@ -110,14 +110,14 @@ function CargaPanel({ title, icon: Icon, items }: { title: string; icon: typeof 
     <div className="rounded-xl bg-card border border-white/[0.08] p-4">
       <div className="flex items-center gap-2 mb-3">
         <Icon size={14} className="text-muted" />
-        <h3 className="text-[12px] font-semibold text-text">{title}</h3>
+        <h3 className="text-label font-semibold text-text">{title}</h3>
       </div>
       {items.length === 0 ? (
-        <p className="text-[12px] text-muted py-2">Sem OS em aberto</p>
+        <p className="text-label text-muted py-2">Sem OS em aberto</p>
       ) : (
         <div className="space-y-1.5">
           {items.slice(0, 6).map(c => (
-            <div key={c.nome} className="flex items-center justify-between gap-3 text-[12px]">
+            <div key={c.nome} className="flex items-center justify-between gap-3 text-label">
               <span className="text-secondary truncate">{c.nome}</span>
               <div className="flex items-center gap-1.5 flex-shrink-0 tabular-nums">
                 {c.violadas > 0 && <Badge variant="red" dot={false}>{c.violadas} viol.</Badge>}
@@ -370,7 +370,7 @@ export default function FilaPage() {
           <div className="flex items-center gap-1">
             <button
               onClick={(e) => handleNotificar(row, e)}
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-caption font-medium
                          text-muted hover:text-primary hover:bg-primary/10 transition-colors"
             >
               {st === 'ok' ? <Check size={12} className="text-green" /> : <Send size={12} />}
@@ -378,7 +378,7 @@ export default function FilaPage() {
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); toggleTratativa(row.numos) }}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-caption font-medium transition-colors
                          ${tratando ? 'text-teal bg-teal/10' : 'text-muted hover:text-teal hover:bg-teal/10'}`}
             >
               <Wrench size={12} />
@@ -405,26 +405,25 @@ export default function FilaPage() {
   ]
 
   if (isLoading) {
-    return <div className="p-6 text-muted text-[12px]">Carregando fila…</div>
+    return <div className="p-6 text-muted text-label">Carregando fila…</div>
   }
 
   return (
     <div className="p-6 space-y-5">
       <div>
         <h1 className="text-[20px] font-bold text-text">Fila de Prioridade</h1>
-        <p className="text-[12px] text-muted mt-0.5">Toda OS ativa numa fila só — VT (prazo em horas) e as demais (SLA em dias), ordenadas pela mesma gravidade real</p>
+        <p className="text-label text-muted mt-0.5">Toda OS ativa numa fila só — VT (prazo em horas) e as demais (SLA em dias), ordenadas pela mesma gravidade real</p>
       </div>
 
       <div className="grid grid-cols-5 gap-4">
-        <KPICard title="Violadas" value={kpis.violadas} accent="red" icon={AlertTriangle} />
-        <KPICard title="Atenção" value={kpis.atencao} accent="orange" icon={Flame} />
-        <KPICard title="Sem Equipe" value={kpis.semEquipe} accent="yellow" icon={UserX} />
-        <KPICard title="No prazo" value={kpis.noPrazo} accent="green" icon={CheckCircle2} />
-        <KPICard
+        <StatCard title="Violadas" value={kpis.violadas} tone="critical" icon={AlertTriangle} />
+        <StatCard title="Atenção" value={kpis.atencao} tone="warning" icon={Flame} />
+        <StatCard title="Sem Equipe" value={kpis.semEquipe} tone="warning" icon={UserX} />
+        <StatCard title="No prazo" value={kpis.noPrazo} tone="ok" icon={CheckCircle2} />
+        <StatCard
           title="Cumprimento SLA"
           value={cumprimento.pct != null ? `${cumprimento.pct}%` : '—'}
           sub={cumprimento.total > 0 ? `${cumprimento.noPrazo}/${cumprimento.total} no prazo` : 'Sem execuções no período'}
-          accent="teal"
           icon={Gauge}
           trend={cumprimento.deltaPp != null ? { delta: cumprimento.deltaPp, higherIsBetter: true } : undefined}
         />
@@ -442,7 +441,7 @@ export default function FilaPage() {
         <SearchBox value={search} onChange={setSearch} placeholder="Buscar por cliente ou nº OS…" className="w-64" />
         <button
           onClick={handleCopyImage}
-          className={`ml-auto flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold
+          className={`ml-auto flex items-center gap-1.5 px-3 py-2 rounded-lg text-label font-semibold
                      border transition-all duration-300
                      ${copiedImage
                        ? 'border-green-500/50 text-green bg-green-500/10'
@@ -455,7 +454,7 @@ export default function FilaPage() {
         <button
           onClick={handleNotificarCriticas}
           disabled={criticas.length === 0 || enviandoLote}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-label font-semibold
                      text-red bg-red/10 hover:bg-red/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Megaphone size={14} />
@@ -465,7 +464,7 @@ export default function FilaPage() {
 
       {fila.length === 0 ? (
         <div className="rounded-xl bg-card border border-white/[0.08] p-12 text-center">
-          <p className="text-[14px] text-secondary">Nenhuma OS em aberto 🎉</p>
+          <p className="text-body text-secondary">Nenhuma OS em aberto 🎉</p>
         </div>
       ) : (
         <div ref={tableRef} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">

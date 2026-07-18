@@ -5,16 +5,19 @@ import {
 } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
-import { aggregateByCidade, aggregateByBairro, buildHeatPoints, type BairroAgg } from './geo'
+import { aggregateByCidade, aggregateByBairro, buildHeatPoints, buildEquipeOptions, type BairroAgg } from './geo'
+import { useGeocodedEquipeOS } from './useGeocodedEquipeOS'
 import { geocodeAddress, haversineKm, type GeocodeResult } from './searchAddress'
 import { FilterSelect } from '../../components/ui/FilterSelect'
+import { StatCard } from '../../components/ui/StatCard'
 import OSDrawer from '../ordens/OSDrawer'
 import { useOSExecucaoGeo } from '../../hooks/useOSExecucaoGeo'
 import type { OSRow } from '../../lib/types'
 import {
   MapResizer, FlyTo, HeatLayer, bubbleRadius, CidadePanel, AddressSearchPanel,
-  RankingPanel, BairroRankingPanel, BairroPanel, KpiBadge,
+  RankingPanel, BairroRankingPanel, BairroPanel,
   PROXIMIDADE_KM, searchPinIcon, execucaoIcon,
+  osPointColor, EquipeGeocodeStatus,
   type CidadeAgg, type ProximidadeInfo, type BairroProx,
 } from './MapaComponents'
 
@@ -29,6 +32,7 @@ export default function MapaPage() {
   const [filterTipo,   setFilterTipo]   = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterAging,  setFilterAging]  = useState('')
+  const [filterEquipe, setFilterEquipe] = useState('')
   const [selectedCidade, setSelectedCidade] = useState<CidadeAgg | null>(null)
   const [selectedBairro, setSelectedBairro] = useState<BairroAgg | null>(null)
   const [drawerOS,       setDrawerOS]       = useState<OSRow | null>(null)
@@ -95,12 +99,20 @@ export default function MapaPage() {
     }
 
     if (filterTipo)   r = r.filter(x => (x._tipo || '').toUpperCase() === filterTipo.toUpperCase())
+    if (filterEquipe) r = r.filter(x => (x.nomedaequipe || '').trim() === filterEquipe)
     if (filterAging === '1-2')   r = r.filter(x => x._aging != null && x._aging <= 2)
     if (filterAging === '3-5')   r = r.filter(x => x._aging != null && x._aging >= 3  && x._aging <= 5)
     if (filterAging === '6-10')  r = r.filter(x => x._aging != null && x._aging >= 6  && x._aging <= 10)
     if (filterAging === '11+')   r = r.filter(x => x._aging != null && x._aging >= 11)
     return r
-  }, [globalRows, filterStatus, filterTipo, filterAging])
+  }, [globalRows, filterStatus, filterTipo, filterEquipe, filterAging])
+
+  const equipeOpts = useMemo(() => [
+    { value: '', label: 'Todas as equipes' },
+    ...buildEquipeOptions(globalRows || []),
+  ], [globalRows])
+
+  const equipeGeo = useGeocodedEquipeOS(rows, !!filterEquipe)
 
   const cidades    = useMemo(() => aggregateByCidade(rows), [rows])
   const bairros    = useMemo(() => aggregateByBairro(rows), [rows])
@@ -180,7 +192,7 @@ export default function MapaPage() {
         {/* Ícone + título */}
         <div className="flex items-center gap-2">
           <MapIcon size={15} className="text-primary" />
-          <span className="text-[13px] font-bold text-text">Mapa de Calor</span>
+          <span className="text-body font-bold text-text">Mapa de Calor</span>
         </div>
 
         <div className="w-px h-5 bg-surface" />
@@ -195,7 +207,7 @@ export default function MapaPage() {
               onChange={e => setAddressQuery(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleSearchAddress() }}
               placeholder="Buscar endereço (ex: Rua X, bairro, cidade)"
-              className="w-64 pl-7 pr-2 py-1.5 text-[12px] rounded-lg
+              className="w-64 pl-7 pr-2 py-1.5 text-label rounded-lg
                          bg-bg border border-white/[0.08] text-text placeholder:text-muted
                          outline-none focus:border-primary/40 transition-colors duration-fast"
             />
@@ -203,7 +215,7 @@ export default function MapaPage() {
           <button
             onClick={handleSearchAddress}
             disabled={searching || !addressQuery.trim()}
-            className="flex items-center gap-1.5 h-[30px] px-3 rounded-lg text-[11px] font-semibold
+            className="flex items-center gap-1.5 h-[30px] px-3 rounded-lg text-caption font-semibold
                        bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25
                        disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-fast"
           >
@@ -222,7 +234,7 @@ export default function MapaPage() {
           )}
         </div>
         {searchError && (
-          <span className="text-[11px] text-yellow flex items-center gap-1">
+          <span className="text-caption text-yellow flex items-center gap-1">
             <AlertTriangle size={10} /> {searchError}
           </span>
         )}
@@ -230,13 +242,13 @@ export default function MapaPage() {
         <div className="w-px h-5 bg-surface" />
 
         {/* KPIs inline */}
-        <KpiBadge label={filterStatus === '' ? 'OS Ativas' : 'OS'} value={rows.length} color="text-text" />
-        <KpiBadge label="Críticas"  value={totalCriticos}  color="text-red"    />
-        <KpiBadge label="Excedidas" value={totalExcedidos} color="text-orange" />
-        <KpiBadge label="Aging med" value={`${avgAging}d`} color="text-cyan"   />
+        <StatCard size="inline" title={filterStatus === '' ? 'OS Ativas' : 'OS'} value={rows.length} />
+        <StatCard size="inline" title="Críticas"  value={totalCriticos}  tone="critical" />
+        <StatCard size="inline" title="Excedidas" value={totalExcedidos} tone="warning" />
+        <StatCard size="inline" title="Aging med" value={`${avgAging}d`} />
         {granularity === 'cidade'
-          ? <KpiBadge label="Cidades" value={cidades.length} color="text-primary"/>
-          : <KpiBadge label="Bairros" value={bairros.length} color="text-purple"/>
+          ? <StatCard size="inline" title="Cidades" value={cidades.length} />
+          : <StatCard size="inline" title="Bairros" value={bairros.length} />
         }
 
         <div className="flex-1" />
@@ -244,6 +256,7 @@ export default function MapaPage() {
         {/* Filtros */}
         <FilterSelect value={filterStatus} onChange={setFilterStatus} options={statusOpts} placeholder="Status" />
         <FilterSelect value={filterTipo}   onChange={setFilterTipo}   options={tipoOpts}   placeholder="Tipo" />
+        <FilterSelect value={filterEquipe} onChange={setFilterEquipe} options={equipeOpts} placeholder="Equipe" />
         <FilterSelect value={filterAging}  onChange={setFilterAging}  options={agingOpts}  placeholder="Aging" />
 
         <div className="w-px h-5 bg-surface" />
@@ -258,7 +271,7 @@ export default function MapaPage() {
               key={val}
               onClick={() => handleGranularity(val)}
               title={`Agrupar por ${label}`}
-              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-[11px] font-semibold
+              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-caption font-semibold
                           transition-all duration-fast
                           ${granularity === val
                             ? 'bg-primary/20 text-primary border border-primary/30'
@@ -283,7 +296,7 @@ export default function MapaPage() {
               key={val}
               onClick={() => setView(val)}
               title={label}
-              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-[11px] font-semibold
+              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-caption font-semibold
                           transition-all duration-fast
                           ${view === val
                             ? 'bg-primary/20 text-primary border border-primary/30'
@@ -301,7 +314,7 @@ export default function MapaPage() {
         <button
           onClick={() => setShowExecucao(v => !v)}
           title="OS em atendimento agora (ponto de início da execução)"
-          className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-[11px] font-semibold
+          className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-caption font-semibold
                       transition-all duration-fast border
                       ${showExecucao
                         ? 'bg-yellow/20 text-yellow border-yellow/30'
@@ -334,12 +347,12 @@ export default function MapaPage() {
           />
 
           {/* Heatmap layer */}
-          {(view === 'calor' || view === 'ambos') && heatPoints.length > 0 && (
+          {!filterEquipe && (view === 'calor' || view === 'ambos') && heatPoints.length > 0 && (
             <HeatLayer points={heatPoints as [number, number, number][]} />
           )}
 
           {/* Bubble markers */}
-          {(view === 'bolhas' || view === 'ambos') && markers.map(g => {
+          {!filterEquipe && (view === 'bolhas' || view === 'ambos') && markers.map(g => {
             const isCidade = granularity === 'cidade'
             const gc = g as CidadeAgg
             const gb = g as BairroAgg
@@ -387,6 +400,34 @@ export default function MapaPage() {
             )
           })}
 
+          {/* Pontos individuais de OS da equipe selecionada */}
+          {filterEquipe && equipeGeo.points.map(({ os, lat, lng, approx }) => {
+            const { fill, stroke } = osPointColor(os)
+            const enderecoconexao = typeof os.enderecoconexao === 'string' ? os.enderecoconexao : ''
+            const address = [os.logradouro || enderecoconexao, os.numero].filter(Boolean).join(', ')
+            const sit = os._situacaoEfetiva ?? os.descsituacao
+
+            return (
+              <CircleMarker
+                key={os.numos}
+                center={[lat, lng]}
+                radius={9}
+                pathOptions={{
+                  fillColor: fill, fillOpacity: 0.75,
+                  color: stroke, weight: 2, opacity: 0.95,
+                  dashArray: approx ? '3 3' : undefined,
+                }}
+                eventHandlers={{ click: () => setDrawerOS(os) }}
+              >
+                <Tooltip direction="top" offset={[0, -12]} className="map-tooltip">
+                  <span className="font-semibold">{os.nomecliente || `OS ${os.numos}`}</span>
+                  {address && <span className="block text-caption">{address}</span>}
+                  <span className="block text-caption">{sit} · {os._aging ?? 0}d{approx ? ' · aprox.' : ''}</span>
+                </Tooltip>
+              </CircleMarker>
+            )
+          })}
+
           {/* Resultado da busca de endereço */}
           {searchResult && (
             <>
@@ -418,11 +459,21 @@ export default function MapaPage() {
             >
               <Tooltip direction="top" offset={[0, -12]} className="map-tooltip">
                 <span className="font-semibold">OS {p.numos}</span>
-                {p.equipeagendada && <span className="block text-[10px]">{p.equipeagendada}</span>}
+                {p.equipeagendada && <span className="block text-caption">{p.equipeagendada}</span>}
               </Tooltip>
             </Marker>
           ))}
         </MapContainer>
+
+        {/* Progresso da geocodificação da equipe selecionada */}
+        {filterEquipe && (
+          <EquipeGeocodeStatus
+            resolved={equipeGeo.resolved}
+            total={equipeGeo.total}
+            capped={equipeGeo.capped}
+            totalEquipe={rows.length}
+          />
+        )}
 
         {/* Resultado da busca de endereço */}
         {searchResult && proximidade && (
@@ -436,7 +487,7 @@ export default function MapaPage() {
         {/* Legenda */}
         <div className="absolute bottom-4 right-4 z-[500]">
           <div className="bg-elevated/85 backdrop-blur border border-white/[0.08] rounded-xl px-3 py-2.5 space-y-1.5">
-            <p className="text-[9px] font-bold uppercase tracking-[0.05em] text-muted mb-2">Criticidade</p>
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Criticidade</p>
             {[
               { color: '#f87171', label: 'SLA Crítico'   },
               { color: '#f97316', label: 'SLA Excedido'  },
@@ -445,7 +496,7 @@ export default function MapaPage() {
             ].map(({ color, label }) => (
               <div key={label} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
-                <span className="text-[10px] text-secondary">{label}</span>
+                <span className="text-caption text-secondary">{label}</span>
               </div>
             ))}
           </div>

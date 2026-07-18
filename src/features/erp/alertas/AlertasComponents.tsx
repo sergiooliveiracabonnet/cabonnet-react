@@ -122,7 +122,7 @@ export function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; 
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
+      <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
     </div>
   )
 }
@@ -154,7 +154,7 @@ export function AlertCard({ alert, delay = 0 }: { alert: AlertEntry; delay?: num
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <p className="text-[13.5px] font-semibold text-text">{alert.title}</p>
-            <span className="text-[9px] font-bold uppercase tracking-[0.05em] px-2 py-0.5 rounded-full border flex-shrink-0"
+            <span className="text-caption font-bold uppercase tracking-[0.05em] px-2 py-0.5 rounded-full border flex-shrink-0"
                   style={{ background: sev.bg, borderColor: `${sev.color}40`, color: sev.color }}>
               {sev.label}
             </span>
@@ -178,14 +178,14 @@ export function AlertCard({ alert, delay = 0 }: { alert: AlertEntry; delay?: num
                 <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                      style={{ background: sev.dot, boxShadow: `0 0 5px ${sev.dot}80` }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-medium text-text truncate">{item.label}</p>
-                  <p className="text-[10px] text-muted mt-0.5">{item.sub}</p>
+                  <p className="text-label font-medium text-text truncate">{item.label}</p>
+                  <p className="text-caption text-muted mt-0.5">{item.sub}</p>
                 </div>
               </div>
             ))}
           </div>
           {extra > 0 && (
-            <p className="text-[11px] text-muted text-center py-3 border-t"
+            <p className="text-caption text-muted text-center py-3 border-t"
                style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
               +{extra} item{extra > 1 ? 's' : ''} adicionais
             </p>
@@ -218,10 +218,10 @@ export function RuleCard({ rule, delay = 0 }: { rule: FiredAlert; delay?: number
           <p className="text-[10.5px] text-secondary mt-0.5">{rule.desc}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="font-mono font-black tabular-nums text-[28px] leading-none" style={{ color: sev.color }}>
+          <p className="font-mono font-black tabular-nums text-display leading-none" style={{ color: sev.color }}>
             {rule.currentValue}
           </p>
-          <p className="text-[10px] text-muted mt-0.5">{rule.operator} {rule.threshold}</p>
+          <p className="text-caption text-muted mt-0.5">{rule.operator} {rule.threshold}</p>
         </div>
       </div>
     </div>
@@ -259,9 +259,9 @@ export function GrafanaCityStrip({ cidades, loading }: { cidades: GrafanaCidade[
             )}
             <div className="flex items-center gap-1.5">
               <MapPin size={10} className="text-muted flex-shrink-0" />
-              <p className="text-[10px] font-semibold text-secondary truncate">{c.cidade}</p>
+              <p className="text-caption font-semibold text-secondary truncate">{c.cidade}</p>
             </div>
-            <p className="font-mono font-black text-[28px] leading-none tabular-nums text-text">{c.pendentes ?? 0}</p>
+            <p className="font-mono font-black text-display leading-none tabular-nums text-text">{c.pendentes ?? 0}</p>
             <div className="h-1.5 rounded-full bg-surface/40 overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700"
                    style={{ width: `${pct}%`, background: barClr, boxShadow: `0 0 6px ${barClr}60` }} />
@@ -322,8 +322,8 @@ export function SettingsPanel({ settings, onSave, onClose }: {
 
         <div className="flex items-center justify-between p-5 border-b border-white/[0.08]">
           <div>
-            <h2 className="text-[14px] font-bold text-text">Configurar Alertas</h2>
-            <p className="text-[10px] text-muted mt-0.5">Thresholds e limites de SLA</p>
+            <h2 className="text-title font-bold text-text">Configurar Alertas</h2>
+            <p className="text-caption text-muted mt-0.5">Thresholds e limites de SLA</p>
           </div>
           <button onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center
@@ -334,14 +334,14 @@ export function SettingsPanel({ settings, onSave, onClose }: {
 
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-4">
+            <p className="text-caption font-bold uppercase tracking-widest text-muted mb-4">
               Thresholds do Motor de Alertas
             </p>
             <div className="space-y-5">
               {alertFields.map(f => (
                 <div key={f.key} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-[12px] text-secondary font-medium">{f.label}</label>
+                    <label className="text-label text-secondary font-medium">{f.label}</label>
                     <span className="text-[16px] font-bold text-primary tabular-nums font-mono">
                       {(draft as unknown as Record<string, number>)[f.key]}{f.suffix}
                     </span>
@@ -352,7 +352,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
                     onChange={e => setDraft(d => ({ ...d, [f.key]: +e.target.value }))}
                     className="w-full accent-primary"
                   />
-                  <div className="flex justify-between text-[10px] text-muted">
+                  <div className="flex justify-between text-caption text-muted">
                     <span>{f.min}{f.suffix}</span><span>{f.max}{f.suffix}</span>
                   </div>
                 </div>
@@ -362,33 +362,33 @@ export function SettingsPanel({ settings, onSave, onClose }: {
 
           <div className="pt-2 border-t border-white/[0.08]">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted">
+              <p className="text-caption font-bold uppercase tracking-widest text-muted">
                 Limites de SLA por Tipo (dias)
               </p>
               <button
                 onClick={() => { resetSlaLimits(); setSlaD({ INSTALACAO: 2, MANUTENCAO: 1, SERVICO: 2, VT24H: 1, VT48H: 2, VT08H: 1 }) }}
-                className="text-[9px] text-muted hover:text-secondary transition-colors underline underline-offset-2">
+                className="text-caption text-muted hover:text-secondary transition-colors underline underline-offset-2">
                 Restaurar padrões
               </button>
             </div>
             <div className="space-y-3">
               {slaFields.map(f => (
                 <div key={f.key} className="flex items-center justify-between gap-3">
-                  <label className="text-[12px] text-secondary flex-1">{f.label}</label>
+                  <label className="text-label text-secondary flex-1">{f.label}</label>
                   <div className="flex items-center gap-1.5">
                     <input
                       type="number" min={1} max={30} value={(slaD as Record<string, number>)[f.key] ?? 2}
                       onChange={e => setSlaD(d => ({ ...d, [f.key]: Number(e.target.value) }))}
                       className="w-14 bg-surface border border-white/[0.08] rounded-md px-2 py-1
-                                 text-[12px] font-mono text-text text-center outline-none
+                                 text-label font-mono text-text text-center outline-none
                                  focus:border-primary/50 transition-colors"
                     />
-                    <span className="text-[11px] text-muted">d</span>
+                    <span className="text-caption text-muted">d</span>
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-[10px] text-muted/50 mt-3">
+            <p className="text-caption text-muted/50 mt-3">
               Afeta todos os cálculos de SLA do sistema em tempo real.
             </p>
           </div>
@@ -396,12 +396,12 @@ export function SettingsPanel({ settings, onSave, onClose }: {
 
         <div className="p-5 border-t border-white/[0.08] flex gap-2">
           <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-white/[0.08] text-[12px] text-secondary
+            className="flex-1 py-2.5 rounded-xl border border-white/[0.08] text-label text-secondary
                        hover:text-text hover:border-muted/40 transition-colors">
             Cancelar
           </button>
           <button onClick={handleSave} disabled={!isGestor}
-            className="flex-1 py-2.5 rounded-xl bg-primary text-white text-[12px] font-semibold
+            className="flex-1 py-2.5 rounded-xl bg-primary text-white text-label font-semibold
                        hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title={!isGestor ? 'Apenas gestores podem alterar configurações' : undefined}>
             {isGestor ? 'Salvar' : 'Sem permissão'}

@@ -42,7 +42,7 @@ function SortHeader({ label, active, dir, onClick, className = '' }: {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors flex-shrink-0
+      className={`flex items-center gap-0.5 text-caption font-semibold uppercase tracking-wide transition-colors flex-shrink-0
                   ${active ? 'text-primary' : 'text-muted hover:text-secondary'} ${className}`}
     >
       {label}
@@ -56,14 +56,14 @@ function SortHeader({ label, active, dir, onClick, className = '' }: {
 // Timeline de reagendamentos/ocorrências de uma OS — busca /detalhes sob demanda.
 function OcorrenciasExpand({ numos }: { numos: string }) {
   const { details, isLoading } = useOSDetails(numos)
-  if (isLoading) return <p className="px-10 py-3 text-[11px] text-muted">⏳ Carregando histórico…</p>
+  if (isLoading) return <p className="px-10 py-3 text-caption text-muted">⏳ Carregando histórico…</p>
   const hist = details?.historico ?? []
   const equipeReagend = details?.equipeReagend
-  if (!hist.length) return <p className="px-10 py-3 text-[11px] text-muted/60 italic">Sem ocorrências registradas.</p>
+  if (!hist.length) return <p className="px-10 py-3 text-caption text-muted/60 italic">Sem ocorrências registradas.</p>
   return (
     <div className="px-10 py-3 space-y-2 bg-surface/20">
       {equipeReagend && (
-        <p className="text-[10px] text-muted flex items-center gap-1.5">
+        <p className="text-caption text-muted flex items-center gap-1.5">
           <Users size={10} className="opacity-50" /> Equipe do reagendamento:
           <span className="text-secondary font-medium">{shortEquipe(equipeReagend)}</span>
         </p>
@@ -73,14 +73,14 @@ function OcorrenciasExpand({ numos }: { numos: string }) {
              className={`rounded-xl px-3 py-2 border ${e.isReagend ? 'bg-orange/[0.08] border-orange/25' : 'bg-surface/30 border-white/[0.06]'}`}>
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             {e.isReagend && (
-              <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-orange/80">
+              <span className="flex items-center gap-1 text-caption font-bold uppercase tracking-wide text-orange/80">
                 <RotateCcw size={9} /> Reagendamento
               </span>
             )}
-            {e.autor && <span className="text-[10px] font-semibold text-muted">{e.autor}</span>}
-            {e.data && <span className="font-mono text-[10px] text-muted/60">{e.data}{e.hora ? ` ${e.hora}` : ''}</span>}
+            {e.autor && <span className="text-caption font-semibold text-muted">{e.autor}</span>}
+            {e.data && <span className="font-mono text-caption text-muted/60">{e.data}{e.hora ? ` ${e.hora}` : ''}</span>}
           </div>
-          <p className={`text-[11px] leading-relaxed whitespace-pre-wrap ${e.isReagend ? 'text-orange/90' : 'text-secondary'}`}>
+          <p className={`text-caption leading-relaxed whitespace-pre-wrap ${e.isReagend ? 'text-orange/90' : 'text-secondary'}`}>
             {e.texto}
           </p>
         </div>
@@ -138,7 +138,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
     return [...map.entries()].sort((a, b) => b[1].length - a[1].length)
   }, [rows, sortKey, sortDir])
 
-  if (!rows.length) return <p className="text-center text-muted text-[12px] py-10">Nenhuma OS encontrada.</p>
+  if (!rows.length) return <p className="text-center text-muted text-label py-10">Nenhuma OS encontrada.</p>
 
   return (
     <div className="overflow-auto max-h-[72vh]">
@@ -161,14 +161,14 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
         <div key={cidade} className={gi > 0 ? 'border-t-2 border-white/[0.12]' : ''}>
           {/* Cabeçalho da cidade */}
           <div className="sticky top-9 z-10 flex items-center justify-between gap-2 bg-surface px-5 py-2.5 border-b border-white/[0.08]">
-            <span className="flex items-center gap-1.5 text-[11px] font-bold text-text uppercase tracking-[0.03em]">
+            <span className="flex items-center gap-1.5 text-caption font-bold text-text uppercase tracking-[0.03em]">
               <MapPin size={11} className="text-primary/70" /> {cidade}
-              <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-[10px] font-bold tabular-nums">
+              <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-caption font-bold tabular-nums">
                 {list.length} OS
               </span>
             </span>
             <button onClick={() => copyCity(cidade, list)} title="Copiar todas as OS desta cidade"
-                    className="flex items-center gap-1 text-[10px] font-semibold text-muted hover:text-primary transition-colors">
+                    className="flex items-center gap-1 text-caption font-semibold text-muted hover:text-primary transition-colors">
               {copied === `city:${cidade}` ? <Check size={11} className="text-green" /> : <Copy size={11} />} Copiar cidade
             </button>
           </div>
@@ -183,7 +183,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
               const catLabel = CATEGORIA_LABEL[os._categoria] ?? os._categoria
               return (
                 <div key={os.numos}>
-                  <div className="flex items-center gap-3 px-5 py-2.5 hover:bg-surface/30 transition-colors text-[12px]">
+                  <div className="flex items-center gap-3 px-5 py-2.5 hover:bg-surface/30 transition-colors text-label">
                     <button onClick={() => setExpanded(v => v === os.numos ? null : os.numos)}
                             title="Ver histórico de reagendamentos"
                             className={`${COL_W.chevron} flex-shrink-0 text-muted/50 hover:text-primary transition-colors`}>
@@ -195,7 +195,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                       <span className={`hidden sm:flex ${COL_W.tipo} flex-shrink-0`}>
                         <span
                           title={`${catLabel} · ${os.tiposervico || os.servico || ''}`}
-                          className="text-[9px] font-bold uppercase tracking-wide px-2 py-1 rounded-full leading-none"
+                          className="text-caption font-bold uppercase tracking-wide px-2 py-1 rounded-full leading-none"
                           style={{ color: catColor, background: `${catColor}1a`, border: `1px solid ${catColor}40` }}
                         >
                           {catLabel}

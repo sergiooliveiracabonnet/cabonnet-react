@@ -12,12 +12,13 @@ import OSDrawer from '../ordens/OSDrawer'
 import { PulsoHero } from './PulsoHero'
 import { FluxoOSPanel } from './FluxoOSPanel'
 import { AnomaliaSection } from './AnomaliaSection'
-import { SectionLabel, BentoKPICard } from './DashboardKpiPrimitives'
+import { StatCard, accentToTone } from '../../components/ui/StatCard'
+import { SectionLabel } from './DashboardKpiPrimitives'
 import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
   MetaMesCard, AlertaTopoBanner, ClustersBairroPanel, AgingPanel,
   RitmoEquipesPanel, MudancasStrip, ProjecaoRiscoPanel,
-  ParetoServicoPanel, CidadesValePanel, FornecedoresPanel,
+  ParetoServicoPanel, CidadesValePanel, FornecedoresPanel, QualidadePeriodoCard,
 } from './DashboardPaineis'
 import { KpiModalTable } from './DashboardKpiModal'
 import {
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const { kpis, fornecedores, pulso, scoreTendencia, mudancas, metaScore, projecaoRisco } = dashboard as unknown as TypedDashboard
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
   const fluxoHoje = { entradas: pulso.entradasHoje, saidas: pulso.saidasHoje, saldo: pulso.fluxoHoje, mediaEntrada: pulso.entradaMediaDia }
+  const taxaRevisitas = (revisitas as { taxa?: { geral?: number } } | null)?.taxa?.geral ?? null
   const { clustersAtivos = [] } = pulso
   const clustersRef  = useRef<HTMLDivElement>(null)
   const anomaliasRef = useRef<HTMLDivElement>(null)
@@ -59,8 +61,8 @@ export default function DashboardPage() {
         <div className="w-14 h-14 rounded-full bg-red/10 border border-red/20 flex items-center justify-center">
           <AlertCircle size={24} className="text-red" />
         </div>
-        <p className="text-[14px] font-semibold text-text">Servidor indisponível</p>
-        <p className="text-[12px] text-muted text-center max-w-xs leading-relaxed">
+        <p className="text-title font-semibold text-text">Servidor indisponível</p>
+        <p className="text-label text-muted text-center max-w-xs leading-relaxed">
           {(error as Error)?.message ?? String(error)}
         </p>
       </div>
@@ -94,7 +96,17 @@ export default function DashboardPage() {
             <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
               {riskStats.map((k, i) => (
-                <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} scope="aovivo" />
+                <StatCard
+                  key={k.id}
+                  title={k.title}
+                  value={k.value}
+                  sub={k.sub}
+                  tone={accentToTone(k.accent)}
+                  trend={k.trend ?? undefined}
+                  icon={KPI_ICONS[k.id]}
+                  delay={i * 60}
+                  scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
+                />
               ))}
             </div>
           </section>
@@ -102,7 +114,17 @@ export default function DashboardPage() {
             <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
               {perfStats.map((k, i) => (
-                <BentoKPICard key={k.id} kpi={k} icon={KPI_ICONS[k.id]} delay={i * 60} scope="aovivo" />
+                <StatCard
+                  key={k.id}
+                  title={k.title}
+                  value={k.value}
+                  sub={k.sub}
+                  tone={accentToTone(k.accent)}
+                  trend={k.trend ?? undefined}
+                  icon={KPI_ICONS[k.id]}
+                  delay={i * 60}
+                  scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
+                />
               ))}
             </div>
           </section>
@@ -132,13 +154,13 @@ export default function DashboardPage() {
 
         {/* ── Aviso de falha interna de builder (visível só em erro real) ── */}
         {builderErrors.length > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow/10 border border-yellow/20 text-[11px] text-yellow">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow/10 border border-yellow/20 text-caption text-yellow">
             <AlertCircle size={13} />
             <span>Erro interno em: <strong>{builderErrors.join(', ')}</strong> — dados parciais. Verifique o console.</span>
           </div>
         )}
 
-        {/* ── Alerta no topo: clusters/anomalias sobem quando ativos ──────── */}
+        {/* ═══ NÍVEL 1 — Estado geral (<2s) ═══ */}
         <AlertaTopoBanner
           clustersCount={clustersAtivos.length}
           anomaliasCount={anomalias?.total ?? 0}
@@ -146,28 +168,30 @@ export default function DashboardPage() {
           onScrollAnomalias={() => anomaliasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
         />
 
-        {/* ── 1. HERO — Pulso Operacional ──────────────────────────────── */}
         <PulsoHero
           pulso={pulso}
           target={metaScore}
           tendencia={scoreTendencia}
-          taxaRevisitas={(revisitas as { taxa?: { geral?: number } } | null)?.taxa?.geral ?? null}
+          evolucao={graficos.evolucao}
           aiData={aiData}
           isLoadingAI={isLoadingAI}
           onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
         />
 
-        {/* ── 1b. Trajetória — Δ do score do período + o que mudou ──────── */}
         <MudancasStrip tendencia={scoreTendencia} mudancas={mudancas} />
 
-        {/* ── 2. KPI BENTO — Alertas & Risco ───────────────────────────── */}
+        {/* ═══ NÍVEL 2 — KPIs principais ═══ */}
         <section>
           <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
             {riskKpis.map((k, i) => (
-              <BentoKPICard
+              <StatCard
                 key={k.id}
-                kpi={k}
+                title={k.title}
+                value={k.value}
+                sub={k.sub}
+                tone={accentToTone(k.accent)}
+                trend={k.trend ?? undefined}
                 icon={KPI_ICONS[k.id]}
                 delay={i * 60}
                 onClick={KPI_FILTERS[k.id] ? () => openKpi(k) : undefined}
@@ -177,65 +201,37 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── 2b. Projeção de risco preditiva (24-48h) ──────────────────── */}
+        <section>
+          <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
+            {perfKpis.map((k, i) => (
+              <StatCard
+                key={k.id}
+                title={k.title}
+                value={k.value}
+                sub={k.sub}
+                tone={accentToTone(k.accent)}
+                trend={k.trend ?? undefined}
+                icon={KPI_ICONS[k.id]}
+                delay={i * 60}
+                onClick={KPI_FILTERS[k.id] ? () => openKpi(k) : undefined}
+                scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* ═══ NÍVEL 3 — Alertas críticos ═══ */}
         <ProjecaoRiscoPanel
           proj={projecaoRisco}
           criticasAgora={pulso.criticasTotal ?? 0}
           onOpen={(rows) => setModal({ title: 'Risco de violação · próximas 48h', rows })}
         />
 
-        {/* ── 3. Executadas Hoje ─────────────────────────────────────────── */}
-        <ExecutadasHeroBlock
-          rows={allRows}
-          projecao={projecaoHoje}
-          fluxo={fluxoHoje}
-          ritmoIntradiario={pulso.ritmoIntradiario}
-          onOpenModal={(title, filtered) => setModal({ title, rows: filtered })}
-        />
-
-        {/* ── 4. KPI BENTO — Fila & Performance ────────────────────────── */}
-        <section>
-          <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
-            {perfKpis.map((k, i) => (
-              <BentoKPICard
-                key={k.id}
-                kpi={k}
-                icon={KPI_ICONS[k.id]}
-                delay={i * 60}
-                onClick={KPI_FILTERS[k.id] ? () => openKpi(k) : undefined}
-                scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* ── 5. Painéis analíticos — grid único de 3 colunas ───────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
-          <div className="lg:col-span-2">
-            <FluxoOSPanel evolucao={graficos.evolucao} />
-          </div>
-          <AgingPanel pulso={pulso} filaAtiva={filaAtiva}
-                      onOpen={(title, rows) => setModal({ title, rows })} />
+        <div ref={clustersRef}>
+          <ClustersBairroPanel clusters={clustersAtivos} />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-          <ParetoServicoPanel filaAtiva={filaAtiva}
-                              onOpen={(title, rows) => setModal({ title, rows })} />
-          <CidadesValePanel filaAtiva={filaAtiva}
-                            onOpen={(title, rows) => setModal({ title, rows })} />
-          <MetaMesCard meta={pulso.metaMes} />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-          <div ref={clustersRef} className="h-full">
-            <ClustersBairroPanel clusters={clustersAtivos} />
-          </div>
-          <RitmoEquipesPanel semaforo={campo.semaforo} />
-          <FornecedoresPanel fornecedores={fornecedores} />
-        </div>
-
-        {/* ── 8. Anomalias ──────────────────────────────────────────────── */}
         {anomalias?.total > 0 && (
           <div ref={anomaliasRef}>
             <AnomaliaSection
@@ -249,6 +245,38 @@ export default function DashboardPage() {
             />
           </div>
         )}
+
+        {/* ═══ NÍVEL 4 — Detalhamento operacional ═══ */}
+        <ExecutadasHeroBlock
+          rows={allRows}
+          projecao={projecaoHoje}
+          fluxo={fluxoHoje}
+          ritmoIntradiario={pulso.ritmoIntradiario}
+          onOpenModal={(title, filtered) => setModal({ title, rows: filtered })}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
+          <div className="lg:col-span-2">
+            <FluxoOSPanel evolucao={graficos.evolucao} />
+          </div>
+          <AgingPanel pulso={pulso} filaAtiva={filaAtiva}
+                      onOpen={(title, rows) => setModal({ title, rows })} />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+          <RitmoEquipesPanel semaforo={campo.semaforo} />
+          <CidadesValePanel filaAtiva={filaAtiva}
+                            onOpen={(title, rows) => setModal({ title, rows })} />
+          <ParetoServicoPanel filaAtiva={filaAtiva}
+                              onOpen={(title, rows) => setModal({ title, rows })} />
+        </div>
+
+        {/* ═══ NÍVEL 5 — Análises secundárias ═══ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+          <MetaMesCard meta={pulso.metaMes} />
+          <FornecedoresPanel fornecedores={fornecedores} />
+          <QualidadePeriodoCard pulso={pulso} taxaRevisitas={taxaRevisitas} />
+        </div>
 
       </div>
 
@@ -265,7 +293,7 @@ export default function DashboardPage() {
               {modal?.foco && FOCO_NAVEGAVEL.has(modal.foco) && (
                 <button
                   onClick={() => { const foco = modal!.foco; setModal(null); navigate('/ordens', { state: { foco } }) }}
-                  className="flex items-center gap-1.5 text-[10px] font-semibold text-primary
+                  className="flex items-center gap-1.5 text-caption font-semibold text-primary
                              border border-primary/30 hover:bg-primary/10 rounded-md px-2.5 py-1
                              transition-all duration-fast"
                 >
@@ -277,7 +305,7 @@ export default function DashboardPage() {
                   const date = new Date().toISOString().slice(0, 10)
                   exportCSV(modal!.rows, `os_${modal!.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
                 }}
-                className="flex items-center gap-1.5 text-[10px] text-muted hover:text-primary
+                className="flex items-center gap-1.5 text-caption text-muted hover:text-primary
                            border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
                            transition-all duration-fast"
               >

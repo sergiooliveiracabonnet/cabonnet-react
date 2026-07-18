@@ -23,11 +23,11 @@ export function TelegramIndicator() {
   return (
     <div className="flex items-center gap-1.5">
       <Send size={12} className={enabled ? 'text-green' : 'text-muted'} />
-      <span className={`text-[10px] font-semibold ${enabled ? 'text-green' : 'text-muted'}`}>
+      <span className={`text-caption font-semibold ${enabled ? 'text-green' : 'text-muted'}`}>
         {enabled ? 'TG' : 'TG off'}
       </span>
       {naoLidos > 0 && (
-        <span className="w-4 h-4 rounded-full bg-red text-white text-[9px] font-bold flex items-center justify-center">
+        <span className="w-4 h-4 rounded-full bg-red text-white text-caption font-bold flex items-center justify-center">
           {naoLidos > 9 ? '9+' : naoLidos}
         </span>
       )}
@@ -97,13 +97,13 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
       <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.08]">
         <Send size={15} className={store.enabled ? 'text-green' : 'text-muted'} />
         <div className="flex-1">
-          <p className="font-bold text-[14px] text-text">Alertas & Telegram</p>
-          <p className={`text-[10px] ${store.enabled ? 'text-green' : 'text-muted'}`}>
+          <p className="font-bold text-title text-text">Alertas & Telegram</p>
+          <p className={`text-caption ${store.enabled ? 'text-green' : 'text-muted'}`}>
             {store.enabled ? '● Bot configurado e ativo' : '● Bot não configurado no servidor'}
           </p>
         </div>
         <button onClick={() => store.setAtivo(!store.ativo)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-bold transition-all
             ${store.ativo ? 'bg-green/15 text-green border border-green/30' : 'bg-surface/40 text-muted border border-white/[0.08] hover:text-secondary'}`}
         >
           {store.ativo ? <><Bell size={11} /> Ativo</> : <><BellOff size={11} /> Inativo</>}
@@ -115,7 +115,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
       <div className="flex border-b border-white/[0.08]">
         {[['alertas', `Histórico${naoLidos ? ` (${naoLidos})` : ''}`], ['config', 'Configurações']].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
-            className={`flex-1 py-2.5 text-[11px] font-bold transition-colors
+            className={`flex-1 py-2.5 text-caption font-bold transition-colors
               ${tab === id ? 'text-primary border-b-2 border-primary' : 'text-muted hover:text-secondary'}`}
           >{label}</button>
         ))}
@@ -125,15 +125,15 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
       {tab === 'alertas' && (
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.05]">
-            <span className="text-[10px] text-muted uppercase tracking-wide">{store.history.length} alertas</span>
+            <span className="text-caption text-muted uppercase tracking-wide">{store.history.length} alertas</span>
             <div className="flex gap-2">
               {naoLidos > 0 && (
-                <button onClick={store.markAllRead} className="flex items-center gap-1 text-[10px] text-cyan hover:text-primary transition-colors">
+                <button onClick={store.markAllRead} className="flex items-center gap-1 text-caption text-cyan hover:text-primary transition-colors">
                   <CheckCheck size={10} /> Marcar todos lidos
                 </button>
               )}
               {store.history.length > 0 && (
-                <button onClick={store.clearHistory} className="flex items-center gap-1 text-[10px] text-red/70 hover:text-red transition-colors">
+                <button onClick={store.clearHistory} className="flex items-center gap-1 text-caption text-red/70 hover:text-red transition-colors">
                   <Trash2 size={10} /> Limpar
                 </button>
               )}
@@ -144,8 +144,8 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
             {store.history.length === 0 ? (
               <div className="py-12 text-center">
                 <Bell size={32} className="mx-auto text-muted/30 mb-3" />
-                <p className="text-[12px] text-muted">Nenhum alerta registrado ainda.</p>
-                <p className="text-[10px] text-muted/60 mt-1">Ative o motor para começar o monitoramento.</p>
+                <p className="text-label text-muted">Nenhum alerta registrado ainda.</p>
+                <p className="text-caption text-muted/60 mt-1">Ative o motor para começar o monitoramento.</p>
               </div>
             ) : store.history.map((a: any, i: number) => {
               const Icon = (ICON_MAP as Record<string, any>)[a.icon] ?? Bell
@@ -157,12 +157,12 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <Badge variant={cor}>{a.nivel}</Badge>
-                      <span className="text-[11px] font-semibold text-text truncate">{a.titulo}</span>
+                      <span className="text-caption font-semibold text-text truncate">{a.titulo}</span>
                       {!a.lido && <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />}
                     </div>
-                    <p className="text-[10px] text-muted">{a.msg}</p>
+                    <p className="text-caption text-muted">{a.msg}</p>
                   </div>
-                  <span className="text-[10px] text-muted/60 flex-shrink-0 tabular-nums">
+                  <span className="text-caption text-muted/60 flex-shrink-0 tabular-nums">
                     {ts.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -180,20 +180,20 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
           <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${store.enabled ? 'bg-green/[0.07] border-green/25' : 'bg-surface/30 border-white/[0.08]'}`}>
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${store.enabled ? 'bg-green' : 'bg-muted'}`} />
             <div className="flex-1">
-              <p className="text-[11px] font-bold text-text">{store.enabled ? 'Bot Telegram configurado' : 'Bot não configurado'}</p>
-              <p className="text-[10px] text-muted">Token e chat_id definidos em .env no servidor</p>
+              <p className="text-caption font-bold text-text">{store.enabled ? 'Bot Telegram configurado' : 'Bot não configurado'}</p>
+              <p className="text-caption text-muted">Token e chat_id definidos em .env no servidor</p>
             </div>
           </div>
 
           {/* Nível de verbosidade */}
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted block mb-2">
+            <label className="text-caption font-bold uppercase tracking-[0.06em] text-muted block mb-2">
               <Settings size={9} className="inline mr-1" /> Nível de Alertas Telegram
             </label>
             <div className="flex flex-col gap-1.5">
               {[['critico','🔴 Apenas críticos'],['atencao','🟡 Críticos + Atenção'],['todos','🔵 Todos']].map(([v, l]) => (
                 <button key={v} onClick={() => store.setNivel(v)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-[11px] transition-all
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-caption transition-all
                     ${store.nivel === v ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/[0.08] text-muted hover:text-secondary'}`}
                 >{l}</button>
               ))}
@@ -202,11 +202,11 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
 
           {/* Alertas de aging individual */}
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted block mb-2">Alertas OS Individuais</label>
+            <label className="text-caption font-bold uppercase tracking-[0.06em] text-muted block mb-2">Alertas OS Individuais</label>
             <div className="flex items-center justify-between px-3 py-2.5 bg-surface border border-white/[0.08] rounded-lg">
               <div>
-                <p className="text-[11px] font-semibold text-text">OS com SLA vencido</p>
-                <p className="text-[10px] text-muted">Até 3 OS por ciclo de verificação</p>
+                <p className="text-caption font-semibold text-text">OS com SLA vencido</p>
+                <p className="text-caption text-muted">Até 3 OS por ciclo de verificação</p>
               </div>
               <button onClick={() => store.setAlertaAging(!store.alertaAging)}
                 className={`w-9 h-5 rounded-full transition-all relative ${store.alertaAging ? 'bg-primary' : 'bg-muted/25'}`}
@@ -219,37 +219,37 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
           {/* Thresholds */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wide text-muted block mb-1.5">Fila Alta (OS)</label>
+              <label className="text-caption font-bold uppercase tracking-wide text-muted block mb-1.5">Fila Alta (OS)</label>
               <input type="number" min={5} max={500} value={store.filaThreshold}
                 onChange={e => store.setFilaThreshold(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-[12px] bg-surface border border-white/[0.08] rounded-lg text-text outline-none focus:border-primary/40"
+                className="w-full px-3 py-1.5 text-label bg-surface border border-white/[0.08] rounded-lg text-text outline-none focus:border-primary/40"
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wide text-muted block mb-1.5">Intervalo (min)</label>
+              <label className="text-caption font-bold uppercase tracking-wide text-muted block mb-1.5">Intervalo (min)</label>
               <input type="number" min={1} max={60} value={store.pollMin}
                 onChange={e => store.setPollMin(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-[12px] bg-surface border border-white/[0.08] rounded-lg text-text outline-none focus:border-primary/40"
+                className="w-full px-3 py-1.5 text-label bg-surface border border-white/[0.08] rounded-lg text-text outline-none focus:border-primary/40"
               />
             </div>
           </div>
 
           {/* Briefing Executivo */}
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted block mb-2">
+            <label className="text-caption font-bold uppercase tracking-[0.06em] text-muted block mb-2">
               <Sparkles size={9} className="inline mr-1 text-primary" /> Briefing Executivo IA
             </label>
             {briefing?.texto ? (
               <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4 space-y-3 mb-2">
                 <div className="flex items-center gap-2">
                   <Sparkles size={11} className="text-primary flex-shrink-0" />
-                  <span className="text-[10px] text-muted">{briefing.data || 'Hoje'}</span>
+                  <span className="text-caption text-muted">{briefing.data || 'Hoje'}</span>
                 </div>
-                <p className="text-[11px] text-text leading-relaxed">{briefing.texto}</p>
+                <p className="text-caption text-text leading-relaxed">{briefing.texto}</p>
                 {briefing.acoes?.length > 0 && (
                   <div className="space-y-1 pt-1 border-t border-white/[0.08]">
                     {briefing.acoes.map((a, i) => (
-                      <p key={i} className="text-[10px] text-secondary">
+                      <p key={i} className="text-caption text-secondary">
                         <span className="text-primary font-bold mr-1">{i + 1}.</span>{a}
                       </p>
                     ))}
@@ -257,13 +257,13 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
                 )}
               </div>
             ) : (
-              <p className="text-[10px] text-muted/60 mb-2">Nenhum briefing gerado hoje. Será enviado automaticamente às 7h.</p>
+              <p className="text-caption text-muted/60 mb-2">Nenhum briefing gerado hoje. Será enviado automaticamente às 7h.</p>
             )}
           </div>
 
           {/* Feedback */}
           {statusMsg && (
-            <div className={`px-3 py-2 rounded-lg text-[11px] font-semibold ${statusMsg.ok ? 'bg-green/10 text-green border border-green/25' : 'bg-red/10 text-red border border-red/25'}`}>
+            <div className={`px-3 py-2 rounded-lg text-caption font-semibold ${statusMsg.ok ? 'bg-green/10 text-green border border-green/25' : 'bg-red/10 text-red border border-red/25'}`}>
               {statusMsg.txt}
             </div>
           )}
@@ -271,17 +271,17 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
           {/* Botões de ação */}
           <div className="flex flex-col gap-2 pt-1">
             <button onClick={gerarBriefing} disabled={!!enviando}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary/15 border border-primary/30 text-primary text-[12px] font-bold hover:bg-primary/25 transition-all disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary/15 border border-primary/30 text-primary text-label font-bold hover:bg-primary/25 transition-all disabled:opacity-50"
             >
               <Sparkles size={12} /> {enviando === 'briefing' ? 'Gerando…' : 'Gerar briefing executivo agora'}
             </button>
             <button onClick={testar} disabled={!!enviando}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface/40 border border-white/[0.08] text-secondary text-[12px] font-bold hover:bg-surface transition-all disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface/40 border border-white/[0.08] text-secondary text-label font-bold hover:bg-surface transition-all disabled:opacity-50"
             >
               <Send size={12} /> {enviando === 'teste' ? 'Enviando…' : 'Enviar mensagem de teste'}
             </button>
             <button onClick={enviarStatusNow} disabled={!!enviando}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface/40 border border-white/[0.08] text-secondary text-[12px] font-bold hover:bg-surface transition-all disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface/40 border border-white/[0.08] text-secondary text-label font-bold hover:bg-surface transition-all disabled:opacity-50"
             >
               <Bell size={12} /> {enviando === 'status' ? 'Enviando…' : 'Enviar status operacional agora'}
             </button>

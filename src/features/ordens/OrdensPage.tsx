@@ -4,7 +4,7 @@ import { BarChart2, ChevronUp, AlertTriangle, Download, Send, CheckCircle, Calen
 import type { OSRow } from '../../lib/types'
 type ColRender = (value: unknown, row: OSRow) => React.ReactNode
 import { useOrdens } from '../../hooks/useOrdens'
-import { KPICard } from '../../components/ui/KPICard'
+import { StatCard } from '../../components/ui/StatCard'
 import { SearchBox } from '../../components/ui/SearchBox'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { DataTable } from '../../components/ui/DataTable'
@@ -99,7 +99,7 @@ const columns: { key?: string; label: string; render?: ColRender }[] = [
   { key: 'nomecliente',     label: 'Cliente',
     render: (v, row) => v
       ? (v as string)
-      : <span className="text-muted italic text-[11px]">
+      : <span className="text-muted italic text-caption">
           {row?.codigocliente ? `Cód. ${row.codigocliente}` : '(Sem nome)'}
         </span>
   },
@@ -334,7 +334,7 @@ export default function OrdensPage() {
         {/* KPI toggle */}
         <button
           onClick={() => setKpiVisible(v => !v)}
-          className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary hover:text-text
+          className="flex items-center gap-1.5 text-caption font-semibold text-secondary hover:text-text
                      border border-white/[0.08] rounded-xl px-3 py-1.5 transition-all duration-fast"
         >
           <BarChart2 size={12} /> KPIs
@@ -344,7 +344,7 @@ export default function OrdensPage() {
         {/* GroupBy toggle */}
         <button
           onClick={() => setGroupBy(g => g === 'cliente' ? 'none' : 'cliente')}
-          className={`flex items-center gap-1.5 text-[11px] font-semibold
+          className={`flex items-center gap-1.5 text-caption font-semibold
                      border rounded-xl px-3 py-1.5 transition-all duration-fast
                      ${groupBy === 'cliente'
                        ? 'bg-primary/15 border-primary/40 text-primary'
@@ -359,7 +359,7 @@ export default function OrdensPage() {
             <button
               key={d.value}
               onClick={() => os.setDensity(d.value)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all duration-fast
+              className={`px-2.5 py-1 rounded-lg text-caption font-semibold transition-all duration-fast
                           ${os.density === d.value
                             ? 'bg-primary/15 text-primary'
                             : 'text-muted hover:text-secondary'}`}
@@ -405,35 +405,35 @@ export default function OrdensPage() {
 
       {/* ── KPI cards ── */}
       {kpiVisible && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 stagger">
-          <KPICard
-            title="Total OS" value={os.kpis.total} accent="primary"
-            sub="ver todas"
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <StatCard
+            title="Total OS" value={os.kpis.total}
+            sub="ver todas" delay={0}
             onClick={() => { os.clearFilters(); scrollToTable() }}
           />
-          <KPICard
-            title="Críticas" value={os.kpis.criticas} accent="red"
-            sub="SLA 2× excedido"
+          <StatCard
+            title="Críticas" value={os.kpis.criticas} tone="critical"
+            sub="SLA 2× excedido" delay={40}
             onClick={() => { os.clearFilters(); os.setCritico(true); scrollToTable() }}
           />
-          <KPICard
-            title="Sem equipe" value={os.kpis.semEquipe} accent="yellow" icon={AlertTriangle}
-            sub="sem alocação"
+          <StatCard
+            title="Sem equipe" value={os.kpis.semEquipe} tone="warning" icon={AlertTriangle}
+            sub="sem alocação" delay={80}
             onClick={() => { os.clearFilters(); os.setSemEquipe(true); scrollToTable() }}
           />
-          <KPICard
-            title="Agend. hoje" value={os.kpis.agendHoje} accent="green"
-            sub="para hoje"
+          <StatCard
+            title="Agend. hoje" value={os.kpis.agendHoje} tone="ok"
+            sub="para hoje" delay={120}
             onClick={() => { os.clearFilters(); os.setAgendHoje(true); scrollToTable() }}
           />
-          <KPICard
-            title="Amanhã" value={os.kpis.agendAmanha} accent="cyan" icon={CalendarClock}
-            sub="ativas p/ amanhã · geral"
+          <StatCard
+            title="Amanhã" value={os.kpis.agendAmanha} icon={CalendarClock}
+            sub="ativas p/ amanhã · geral" delay={160}
             onClick={() => { os.clearFilters(); os.setAgendAmanha(true); scrollToTable() }}
           />
-          <KPICard
-            title="Agend. Futuro" value={os.kpis.agendFuturo} accent="orange" icon={CalendarClock}
-            sub="ativas, amanhã em diante · geral"
+          <StatCard
+            title="Agend. Futuro" value={os.kpis.agendFuturo} tone="warning" icon={CalendarClock}
+            sub="ativas, amanhã em diante · geral" delay={200}
             onClick={() => { os.clearFilters(); os.setAgendFuturo(true); scrollToTable() }}
           />
         </div>
@@ -445,10 +445,10 @@ export default function OrdensPage() {
           onClick={() => { os.clearFilters(); os.setTipoOs('INSTALACAO'); scrollToTable() }}
           className="flex items-center gap-1.5 px-3 py-1 rounded-full
                      bg-cyan/10 border border-cyan/20 text-cyan
-                     text-[12px] font-semibold hover:bg-cyan/20 transition-all duration-fast"
+                     text-label font-semibold hover:bg-cyan/20 transition-all duration-fast"
         >
           <Router size={12} /> Instalação
-          <span className="bg-cyan/20 text-cyan rounded-full px-1.5 py-0 text-[11px] font-bold tabular-nums">
+          <span className="bg-cyan/20 text-cyan rounded-full px-1.5 py-0 text-caption font-bold tabular-nums">
             {os.kpis.instalacao}
           </span>
         </button>
@@ -456,10 +456,10 @@ export default function OrdensPage() {
           onClick={() => { os.clearFilters(); os.setTipoOs('MANUTENCAO'); scrollToTable() }}
           className="flex items-center gap-1.5 px-3 py-1 rounded-full
                      bg-orange/10 border border-orange/20 text-orange
-                     text-[12px] font-semibold hover:bg-orange/20 transition-all duration-fast"
+                     text-label font-semibold hover:bg-orange/20 transition-all duration-fast"
         >
           <Wrench size={12} /> Manutenção
-          <span className="bg-orange/20 text-orange rounded-full px-1.5 py-0 text-[11px] font-bold tabular-nums">
+          <span className="bg-orange/20 text-orange rounded-full px-1.5 py-0 text-caption font-bold tabular-nums">
             {os.kpis.manutencao}
           </span>
         </button>
@@ -467,10 +467,10 @@ export default function OrdensPage() {
           onClick={() => { os.clearFilters(); os.setTipoOs('OUTRO'); scrollToTable() }}
           className="flex items-center gap-1.5 px-3 py-1 rounded-full
                      bg-purple/10 border border-purple/20 text-purple
-                     text-[12px] font-semibold hover:bg-purple/20 transition-all duration-fast"
+                     text-label font-semibold hover:bg-purple/20 transition-all duration-fast"
         >
           <HardHat size={12} /> Serviço
-          <span className="bg-purple/20 text-purple rounded-full px-1.5 py-0 text-[11px] font-bold tabular-nums">
+          <span className="bg-purple/20 text-purple rounded-full px-1.5 py-0 text-caption font-bold tabular-nums">
             {os.kpis.servico}
           </span>
         </button>
@@ -499,7 +499,7 @@ export default function OrdensPage() {
         {/* Toggle Rede */}
         <button
           onClick={() => os.setHideRede(v => !v)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-semibold
                       border transition-all duration-fast flex-shrink-0
                       ${os.hideRede
                         ? 'bg-red/[0.08] border-red/20 text-red/80 hover:bg-red/[0.14]'
@@ -515,19 +515,19 @@ export default function OrdensPage() {
       {/* Banner filtros ativos */}
       {os.filtered.length !== os.ordens.length && (
         <div className="flex items-center justify-between px-4 py-2.5 rounded-xl
-                        bg-primary/[0.06] border border-primary/20 text-[12px] text-secondary">
+                        bg-primary/[0.06] border border-primary/20 text-label text-secondary">
           <span className="flex items-center gap-2 flex-wrap">
             Exibindo <strong className="text-text">{os.filtered.length}</strong> de{' '}
             <strong className="text-text">{os.ordens.length}</strong> OS
-            {os.critico      && <span className="rounded-full px-2 py-0.5 text-[11px] font-bold bg-red/10 text-red border border-red/20">Críticas · SLA 2×</span>}
-            {os.semEquipe    && <span className="badge-yellow  rounded-full px-2 py-0.5 text-[11px] font-bold">Sem equipe</span>}
-            {os.agendHoje    && <span className="badge-green   rounded-full px-2 py-0.5 text-[11px] font-bold">Agend. hoje</span>}
-            {os.agendAmanha  && <span className="badge-cyan    rounded-full px-2 py-0.5 text-[11px] font-bold">Amanhã</span>}
-            {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-[11px] font-bold">Agend. Futuro</span>}
-            {os.hideRede     && <span className="rounded-full px-2 py-0.5 text-[11px] font-bold bg-red/10 text-red/80 border border-red/20">Rede oculta</span>}
-            {os.periodo      && <span className="badge-purple  rounded-full px-2 py-0.5 text-[11px] font-bold">{os.periodo}</span>}
+            {os.critico      && <span className="rounded-full px-2 py-0.5 text-caption font-bold bg-red/10 text-red border border-red/20">Críticas · SLA 2×</span>}
+            {os.semEquipe    && <span className="badge-yellow  rounded-full px-2 py-0.5 text-caption font-bold">Sem equipe</span>}
+            {os.agendHoje    && <span className="badge-green   rounded-full px-2 py-0.5 text-caption font-bold">Agend. hoje</span>}
+            {os.agendAmanha  && <span className="badge-cyan    rounded-full px-2 py-0.5 text-caption font-bold">Amanhã</span>}
+            {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-caption font-bold">Agend. Futuro</span>}
+            {os.hideRede     && <span className="rounded-full px-2 py-0.5 text-caption font-bold bg-red/10 text-red/80 border border-red/20">Rede oculta</span>}
+            {os.periodo      && <span className="badge-purple  rounded-full px-2 py-0.5 text-caption font-bold">{os.periodo}</span>}
           </span>
-          <button onClick={os.clearFilters} className="text-muted hover:text-red transition-colors text-[11px] font-semibold">
+          <button onClick={os.clearFilters} className="text-muted hover:text-red transition-colors text-caption font-semibold">
             Limpar filtros
           </button>
         </div>
@@ -569,7 +569,7 @@ export default function OrdensPage() {
         {/* Paginação — apenas no modo flat */}
         {!os.equipe && os.totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3
-                          border-t border-white/[0.05] text-[11px] text-muted">
+                          border-t border-white/[0.05] text-caption text-muted">
             <span>
               Página {os.page} de {os.totalPages} — {os.filtered.length} OS
             </span>

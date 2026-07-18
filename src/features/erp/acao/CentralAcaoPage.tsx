@@ -5,7 +5,7 @@ import { useOSDerived } from '../../../contexts/OSDataContext'
 import { filaUrgenciaTier, filaUrgenciaScore } from '../../../lib/builders/fila'
 import { shortEquipe, fmtHorasMin } from '../../../lib/osFormat'
 import { Badge } from '../../../components/ui/Badge'
-import { KPICard } from '../../../components/ui/KPICard'
+import { StatCard } from '../../../components/ui/StatCard'
 import OSDrawer from '../../ordens/OSDrawer'
 import type { OSRow } from '../../../lib/types'
 
@@ -158,7 +158,7 @@ export default function CentralAcaoPage() {
   }
 
   if (isLoading) {
-    return <div className="p-6 text-muted text-[12px]">Montando a agenda…</div>
+    return <div className="p-6 text-muted text-label">Montando a agenda…</div>
   }
 
   return (
@@ -167,20 +167,20 @@ export default function CentralAcaoPage() {
         <h1 className="text-[20px] font-bold text-text flex items-center gap-2">
           <ListTodo size={18} className="text-primary" /> Central de Ação
         </h1>
-        <p className="text-[12px] text-muted mt-0.5">
+        <p className="text-label text-muted mt-0.5">
           O que precisa de atenção agora, em ordem — reúne Fila, Equipes, Cidades e SLA numa lista só
         </p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <KPICard title="Críticos" value={kpis.criticos} accent="red" icon={AlertTriangle} />
-        <KPICard title="Atenção" value={kpis.atencao} accent="yellow" icon={Flame} />
-        <KPICard title="Fontes ativas" value={kpis.fontes} accent="primary" icon={ListTodo} />
+        <StatCard title="Críticos" value={kpis.criticos} tone="critical" icon={AlertTriangle} />
+        <StatCard title="Atenção" value={kpis.atencao} tone="warning" icon={Flame} />
+        <StatCard title="Fontes ativas" value={kpis.fontes} icon={ListTodo} />
       </div>
 
       {agenda.length === 0 ? (
         <div className="rounded-xl border border-white/[0.08] bg-card p-12 text-center">
-          <p className="text-[14px] text-secondary">Nada precisa de atenção imediata agora 🎉</p>
+          <p className="text-body text-secondary">Nada precisa de atenção imediata agora 🎉</p>
         </div>
       ) : (
         <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden divide-y divide-white/[0.04]">
@@ -198,7 +198,7 @@ export default function CentralAcaoPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[12.5px] font-semibold text-text truncate">{item.titulo}</p>
-                  <p className="text-[11px] text-muted truncate">{item.motivo}</p>
+                  <p className="text-caption text-muted truncate">{item.motivo}</p>
                 </div>
                 <Badge variant={item.severidade === 'critico' ? 'red' : 'yellow'} dot={false}>{item.fonte}</Badge>
                 {clickable && <ChevronRight size={14} className="text-muted/40 flex-shrink-0" />}
@@ -209,7 +209,7 @@ export default function CentralAcaoPage() {
       )}
 
       {truncado && (
-        <p className="text-[11px] text-muted text-center">
+        <p className="text-caption text-muted text-center">
           Mostrando os {LIMITE_ITENS} itens mais urgentes de {agenda.length} no total.
         </p>
       )}

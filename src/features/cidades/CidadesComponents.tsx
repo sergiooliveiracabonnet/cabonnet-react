@@ -129,13 +129,13 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade }: {
     <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/[0.08] flex-wrap">
         <Activity size={13} className="text-primary flex-shrink-0" />
-        <span className="font-bold text-[13px] text-text">Saúde por Cidade</span>
-        <span className="text-[11px] text-muted">
+        <span className="font-bold text-body text-text">Saúde por Cidade</span>
+        <span className="text-caption text-muted">
           — fila ao vivo vs capacidade dos últimos 14 dias · ordenado por backlog
         </span>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-label">
           <thead>
             <tr className="border-b border-white/[0.08] bg-surface">
               {[
@@ -150,7 +150,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade }: {
                 { l: 'Reinc.',      a: 'center', t: 'Taxa de revisitas no período (retrabalho)' },
               ].map(h => (
                 <th key={h.l} title={h.t}
-                    className={`px-4 py-2.5 text-${h.a} text-[11px] font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap`}>
+                    className={`px-4 py-2.5 text-${h.a} text-caption font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap`}>
                   {h.l}
                 </th>
               ))}
@@ -172,7 +172,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade }: {
                       : <span className="text-white/20">—</span>}
                   </td>
                   <td className="px-4 py-2.5 text-center">
-                    <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 tabular-nums ${slaCls}`}>{c.slaPct}%</span>
+                    <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums ${slaCls}`}>{c.slaPct}%</span>
                   </td>
                   <td className="px-4 py-2.5 text-right font-mono tabular-nums">{c.agingMed}d</td>
                   <td className="px-4 py-2.5 text-right font-mono tabular-nums">
@@ -224,8 +224,8 @@ export function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, gro
       >
         <Icon size={14} className={`text-${color} flex-shrink-0`} />
         <div className="flex-1 min-w-0">
-          <span className="font-bold text-[14px] text-text">{title}</span>
-          {subtitle && <p className="text-[11px] text-muted mt-0.5 truncate">{subtitle}</p>}
+          <span className="font-bold text-title text-text">{title}</span>
+          {subtitle && <p className="text-caption text-muted mt-0.5 truncate">{subtitle}</p>}
         </div>
         <Badge variant={color}>{rows.length} OS</Badge>
         {(semEquipe ?? 0) > 0 && (
@@ -239,7 +239,7 @@ export function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, gro
       {open && (
         <div className="border-t border-white/[0.08]">
           {isLoading || isEmpty ? (
-            <p className="text-center text-muted text-[12px] py-8">Nenhuma OS nesta categoria.</p>
+            <p className="text-center text-muted text-label py-8">Nenhuma OS nesta categoria.</p>
           ) : groups ? (
             groups.map(g => g.rows.length > 0 && (
               <GrupoFuturo key={g.label} group={g} color={color} onOS={onOS} />
@@ -271,11 +271,11 @@ function GrupoFuturo({ group, color, onOS }: { group: FuturoGroup; color: string
     <div>
       <div className={`flex items-center gap-2 px-5 py-2 border-y border-white/[0.08]
                        ${group.highlight ? hlBg : 'bg-surface/40'}`}>
-        <span className={`text-[11px] font-bold uppercase tracking-[0.05em]
+        <span className={`text-caption font-bold uppercase tracking-[0.05em]
                           ${group.highlight ? hlText : 'text-muted'}`}>
           {group.label}
         </span>
-        <span className="text-[11px] text-muted">· {group.rows.length} OS</span>
+        <span className="text-caption text-muted">· {group.rows.length} OS</span>
       </div>
       <CidadeTable
         cities={cities} tipos={tipos} maxTotal={maxTotal} color={color}
@@ -307,26 +307,26 @@ function CidadeTable({ cities, tipos, maxTotal, color, expandedCity, setExpanded
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[12px]">
+      <table className="w-full text-label">
         <thead>
           <tr className="border-b border-white/[0.08] bg-surface">
-            <th className="px-4 py-2.5 text-left text-[11px] font-bold text-muted uppercase tracking-[0.04em]">
+            <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">
               Cidade
             </th>
             {tipos.map(t => (
-              <th key={t} className="px-4 py-2.5 text-center text-[11px] font-bold text-muted uppercase tracking-[0.04em]">
+              <th key={t} className="px-4 py-2.5 text-center text-caption font-bold text-muted uppercase tracking-[0.04em]">
                 {TIPO_LABEL[t]}
               </th>
             ))}
-            <th className="px-4 py-2.5 text-center text-[11px] font-bold text-muted uppercase tracking-[0.04em]"
+            <th className="px-4 py-2.5 text-center text-caption font-bold text-muted uppercase tracking-[0.04em]"
                 title="OS com mais de 2× o prazo de SLA">
               Crít.
             </th>
-            <th className="px-4 py-2.5 text-center text-[11px] font-bold text-muted uppercase tracking-[0.04em]"
+            <th className="px-4 py-2.5 text-center text-caption font-bold text-muted uppercase tracking-[0.04em]"
                 title="% das OS desta cidade dentro do prazo de SLA">
               SLA
             </th>
-            <th className="px-4 py-2.5 text-right text-[11px] font-bold text-muted uppercase tracking-[0.04em]">
+            <th className="px-4 py-2.5 text-right text-caption font-bold text-muted uppercase tracking-[0.04em]">
               Total
             </th>
           </tr>
@@ -407,7 +407,7 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
             : <span className="text-white/20">—</span>}
         </td>
         <td className="px-4 py-2.5 text-center">
-          <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 tabular-nums
+          <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums
             ${c.slaPct >= 90 ? 'text-green bg-green/10' : c.slaPct >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'}`}>
             {c.slaPct}%
           </span>
@@ -459,20 +459,20 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
     <div className="max-h-72 overflow-y-auto bg-surface/60 border-y border-white/[0.05]">
       {tipoFilter && (
         <div className="px-4 py-1.5 border-b border-white/[0.04] flex items-center gap-2 bg-surface/30">
-          <span className={`text-[11px] font-bold uppercase tracking-[0.05em] ${TIPO_COLOR[tipoFilter]}`}>
+          <span className={`text-caption font-bold uppercase tracking-[0.05em] ${TIPO_COLOR[tipoFilter]}`}>
             {TIPO_LABEL[tipoFilter]}
           </span>
-          <span className="text-[11px] text-muted">· {sorted.length} OS · clique no número da coluna para mudar filtro</span>
+          <span className="text-caption text-muted">· {sorted.length} OS · clique no número da coluna para mudar filtro</span>
         </div>
       )}
-      <table className="w-full text-[11px]">
+      <table className="w-full text-caption">
         <thead className="sticky top-0 bg-elevated z-10">
           <tr className="border-b border-white/[0.08]">
             {CITY_OS_COLS.map(col => (
               <th
                 key={col.key}
                 onClick={() => toggleSort(col.key)}
-                className="px-4 py-2 text-left text-[11px] font-bold text-muted uppercase tracking-[0.03em]
+                className="px-4 py-2 text-left text-caption font-bold text-muted uppercase tracking-[0.03em]
                            cursor-pointer select-none hover:text-secondary transition-colors whitespace-nowrap"
               >
                 <span className="flex items-center gap-1">

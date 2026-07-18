@@ -45,10 +45,10 @@ function BuilderErrorBanner() {
         >
           <AlertTriangle size={13} className="text-yellow flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-semibold text-text leading-snug">
+            <p className="text-label font-semibold text-text leading-snug">
               {BUILDER_LABELS[name] ?? name} temporariamente indisponível
             </p>
-            <p className="text-[11px] text-muted mt-0.5">
+            <p className="text-caption text-muted mt-0.5">
               Exibindo última versão dos dados — será resolvido no próximo recarregamento.
             </p>
           </div>

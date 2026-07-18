@@ -231,7 +231,7 @@ export default function GerencialPage() {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-[20px] font-headline font-bold text-text">Visão Gerencial</h1>
-            <span className="flex items-center gap-1.5 text-[10px] text-muted">
+            <span className="flex items-center gap-1.5 text-caption text-muted">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green" />
@@ -239,7 +239,7 @@ export default function GerencialPage() {
               Ao vivo
             </span>
           </div>
-          <p className="text-[12px] text-muted">
+          <p className="text-label text-muted">
             Concluídas filtradas por <strong className="text-secondary">data de execução</strong> (inclui execuções da COPE — por isso pode diferir da aba Por Status) · Em Rota = snapshot ao vivo
           </p>
         </div>
@@ -286,7 +286,7 @@ export default function GerencialPage() {
                      onClick={() => openDrill({ title: `Instalações ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
                      style={{ color: s.color }}>{s.drillRows.length}</p>
-                  <p className="text-[10px] text-muted mt-1">{s.label}</p>
+                  <p className="text-caption text-muted mt-1">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -294,7 +294,7 @@ export default function GerencialPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
@@ -304,7 +304,7 @@ export default function GerencialPage() {
               />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Concluídas por cidade
               </p>
               <CidadeTable
@@ -322,7 +322,7 @@ export default function GerencialPage() {
         <SectionLabel icon={Wrench} color="#f97316">
           VT / Manutenção — executadas · {periodoLabel}
         </SectionLabel>
-        <p className="text-[11px] text-muted -mt-2">
+        <p className="text-caption text-muted -mt-2">
           Inclui Visitas Técnicas (VT 24h, VT 48h, VT 8h) e Manutenções corretivas
         </p>
 
@@ -346,7 +346,7 @@ export default function GerencialPage() {
                      onClick={() => openDrill({ title: `VT/Manutenção ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
                      style={{ color: s.color }}>{s.drillRows.length}</p>
-                  <p className="text-[10px] text-muted mt-1">{s.label}</p>
+                  <p className="text-caption text-muted mt-1">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -354,7 +354,7 @@ export default function GerencialPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
@@ -364,7 +364,7 @@ export default function GerencialPage() {
               />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Concluídas por cidade
               </p>
               <CidadeTable
@@ -382,7 +382,7 @@ export default function GerencialPage() {
         <SectionLabel icon={Briefcase} color="#c4b5fd">
           Serviço — executados · {periodoLabel}
         </SectionLabel>
-        <p className="text-[11px] text-muted -mt-2">
+        <p className="text-caption text-muted -mt-2">
           OS que não são Instalação nem VT/Manutenção (ex: mudança de plano, remanejamento, etc.)
         </p>
 
@@ -406,7 +406,7 @@ export default function GerencialPage() {
                      onClick={() => openDrill({ title: `Serviços ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
                      style={{ color: s.color }}>{s.drillRows.length}</p>
-                  <p className="text-[10px] text-muted mt-1">{s.label}</p>
+                  <p className="text-caption text-muted mt-1">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -414,7 +414,7 @@ export default function GerencialPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
@@ -424,7 +424,7 @@ export default function GerencialPage() {
               />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Concluídos por cidade
               </p>
               <CidadeTable
@@ -451,7 +451,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-2">
               <div className="w-[3px] h-3.5 rounded-full" style={{ background: '#3b82f6' }} />
               <Package size={11} style={{ color: '#3b82f6' }} />
-              <span className="text-[11px] font-bold uppercase tracking-[0.06em]"
+              <span className="text-caption font-bold uppercase tracking-[0.06em]"
                     style={{ color: '#3b82f6' }}>
                 Instalação em rota
               </span>
@@ -459,7 +459,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-3">
               {rotaInstSplit.futuras.length > 0 && (
                 <button
-                  className="text-[10px] font-semibold text-muted hover:text-secondary border border-white/[0.08]
+                  className="text-caption font-semibold text-muted hover:text-secondary border border-white/[0.08]
                              rounded-full px-2.5 py-1 transition-colors"
                   onClick={() => openDrill({ title: `Instalação atribuída p/ datas futuras — ${rotaInstSplit.futuras.length} ordens`, rows: rotaInstSplit.futuras, color: '#3b82f6' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
@@ -479,7 +479,7 @@ export default function GerencialPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             <div>
-              <p className="text-[10px] text-muted mb-1.5 flex items-center gap-1">
+              <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <MapPin size={9} /> Por cidade
               </p>
               <CidadeTable rows={rotaInstCidades} color="#3b82f6"
@@ -489,7 +489,7 @@ export default function GerencialPage() {
               <ClienteSearch rows={rotaInst} color="#3b82f6" onDrillDown={openDrill} />
             </div>
             <div className="lg:col-span-3">
-              <p className="text-[10px] text-muted mb-1.5 flex items-center gap-1">
+              <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <Clock size={9} /> Detalhe · aging
               </p>
               <EmRotaCard rows={rotaInst} color="#3b82f6" />
@@ -503,7 +503,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-2">
               <div className="w-[3px] h-3.5 rounded-full" style={{ background: '#f97316' }} />
               <Wrench size={11} style={{ color: '#f97316' }} />
-              <span className="text-[11px] font-bold uppercase tracking-[0.06em]"
+              <span className="text-caption font-bold uppercase tracking-[0.06em]"
                     style={{ color: '#f97316' }}>
                 VT / Manutenção em rota
               </span>
@@ -511,7 +511,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-3">
               {rotaVTManutSplit.futuras.length > 0 && (
                 <button
-                  className="text-[10px] font-semibold text-muted hover:text-secondary border border-white/[0.08]
+                  className="text-caption font-semibold text-muted hover:text-secondary border border-white/[0.08]
                              rounded-full px-2.5 py-1 transition-colors"
                   onClick={() => openDrill({ title: `VT/Manutenção atribuída p/ datas futuras — ${rotaVTManutSplit.futuras.length} ordens`, rows: rotaVTManutSplit.futuras, color: '#f97316' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
@@ -531,7 +531,7 @@ export default function GerencialPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             <div>
-              <p className="text-[10px] text-muted mb-1.5 flex items-center gap-1">
+              <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <MapPin size={9} /> Por cidade
               </p>
               <CidadeTable rows={rotaVTManutCidades} color="#f97316"
@@ -541,7 +541,7 @@ export default function GerencialPage() {
               <ClienteSearch rows={rotaVTManut} color="#f97316" onDrillDown={openDrill} />
             </div>
             <div className="lg:col-span-3">
-              <p className="text-[10px] text-muted mb-1.5 flex items-center gap-1">
+              <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <Clock size={9} /> Detalhe · aging
               </p>
               <EmRotaCard rows={rotaVTManut} color="#f97316" />
@@ -556,7 +556,7 @@ export default function GerencialPage() {
               <div className="w-[3px] h-3.5 rounded-full" style={{ background: '#c4b5fd' }} />
 
               <Briefcase size={11} style={{ color: '#c4b5fd' }} />
-              <span className="text-[11px] font-bold uppercase tracking-[0.06em]"
+              <span className="text-caption font-bold uppercase tracking-[0.06em]"
                     style={{ color: '#c4b5fd' }}>
                 Serviço em rota
               </span>
@@ -564,7 +564,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-3">
               {rotaServSplit.futuras.length > 0 && (
                 <button
-                  className="text-[10px] font-semibold text-muted hover:text-secondary border border-white/[0.08]
+                  className="text-caption font-semibold text-muted hover:text-secondary border border-white/[0.08]
                              rounded-full px-2.5 py-1 transition-colors"
                   onClick={() => openDrill({ title: `Serviço atribuído p/ datas futuras — ${rotaServSplit.futuras.length} ordens`, rows: rotaServSplit.futuras, color: '#c4b5fd' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
@@ -585,7 +585,7 @@ export default function GerencialPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             <div>
-              <p className="text-[10px] text-muted mb-1.5 flex items-center gap-1">
+              <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <MapPin size={9} /> Por cidade
               </p>
               <CidadeTable rows={rotaServCidades} color="#c4b5fd"
@@ -595,7 +595,7 @@ export default function GerencialPage() {
               <ClienteSearch rows={rotaServ} color="#c4b5fd" onDrillDown={openDrill} />
             </div>
             <div className="lg:col-span-3">
-              <p className="text-[10px] text-muted mb-1.5 flex items-center gap-1">
+              <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <Clock size={9} /> Detalhe · aging
               </p>
               <EmRotaCard rows={rotaServ} color="#c4b5fd" />
@@ -611,7 +611,7 @@ export default function GerencialPage() {
           <SectionLabel icon={Users} color="#4ade80">
             Volume Total por Equipe
           </SectionLabel>
-          <span className="text-[11px] text-muted">{equipes.length} equipes · concluídas por data de execução</span>
+          <span className="text-caption text-muted">{equipes.length} equipes · concluídas por data de execução</span>
         </div>
 
         {/* KPI strip */}
@@ -628,9 +628,9 @@ export default function GerencialPage() {
                  style={{ borderColor: `${s.color}20` }}
                  onClick={() => openDrill({ title: `${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
               <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: s.color }} />
-              <p className="font-mono font-black tabular-nums text-[28px] leading-none"
+              <p className="font-mono font-black tabular-nums text-display leading-none"
                  style={{ color: s.color }}>{s.drillRows.length}</p>
-              <p className="text-[11px] text-muted mt-1">{s.label}</p>
+              <p className="text-caption text-muted mt-1">{s.label}</p>
             </div>
           ))}
         </div>

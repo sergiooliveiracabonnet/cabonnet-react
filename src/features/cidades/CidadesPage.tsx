@@ -115,7 +115,7 @@ export default function CidadesPage() {
         <div className="flex items-center gap-2">
           <MapPin size={16} className="text-primary" />
           <h2 className="font-headline text-xl font-semibold text-text">Ordens de Serviço por Cidade</h2>
-          <span className="text-[11px] text-muted">— clique em uma cidade para ver as OS</span>
+          <span className="text-caption text-muted">— clique em uma cidade para ver as OS</span>
         </div>
 
         {/* ── AI Clusters Panel ── */}
@@ -123,11 +123,11 @@ export default function CidadesPage() {
           <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles size={12} className="text-primary/40" />
-              <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Clusters de Pendências · IA</span>
+              <span className="text-caption font-bold text-muted uppercase tracking-wide">Clusters de Pendências · IA</span>
             </div>
             <button
               onClick={() => setAiEnabled(true)}
-              className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+              className="flex items-center gap-1.5 text-caption font-semibold text-primary/70 hover:text-primary
                          px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                          transition-all duration-fast"
             >
@@ -138,27 +138,27 @@ export default function CidadesPage() {
           <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Sparkles size={13} className="text-primary" />
-              <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
+              <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
                 Clusters de pendencias detectados
               </span>
             </div>
             {aiClusters.narrativa && (
-              <p className="text-[12px] text-secondary leading-relaxed">{aiClusters.narrativa}</p>
+              <p className="text-label text-secondary leading-relaxed">{aiClusters.narrativa}</p>
             )}
             <div className="flex flex-wrap gap-2">
               {aiClusters.clusters.map((cl, i) => (
                 <div key={i}
                      className="flex-1 min-w-[200px] bg-card border border-white/[0.08] rounded-lg px-3 py-2.5 space-y-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-[12px] font-semibold text-text truncate">{cl.bairro}</p>
-                    <span className="font-mono text-[13px] font-bold text-primary tabular-nums flex-shrink-0">{cl.count}</span>
+                    <p className="text-label font-semibold text-text truncate">{cl.bairro}</p>
+                    <span className="font-mono text-body font-bold text-primary tabular-nums flex-shrink-0">{cl.count}</span>
                   </div>
-                  <p className="text-[10px] text-muted">{cl.cidade}</p>
+                  <p className="text-caption text-muted">{cl.cidade}</p>
                   {cl.tipos.length > 0 && (
-                    <p className="text-[10px] text-secondary">{cl.tipos.join(', ')}</p>
+                    <p className="text-caption text-secondary">{cl.tipos.join(', ')}</p>
                   )}
                   {cl.sugestao && (
-                    <p className="text-[11px] text-muted italic leading-snug">{cl.sugestao}</p>
+                    <p className="text-caption text-muted italic leading-snug">{cl.sugestao}</p>
                   )}
                 </div>
               ))}
@@ -182,30 +182,30 @@ export default function CidadesPage() {
                             rounded-xl p-4 text-left cursor-pointer transition-all duration-normal
                             hover:shadow-md hover:-translate-y-0.5`}
               >
-                <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted mb-1">{p.title}</p>
+                <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted mb-1">{p.title}</p>
                 <p className={`font-mono font-bold text-3xl text-${p.color}`}>{p.rows.length}</p>
-                <p className="text-[11px] text-muted mt-0.5">ordens</p>
+                <p className="text-caption text-muted mt-0.5">ordens</p>
                 {(p.semEquipe ?? 0) > 0 && (
-                  <p className="text-[11px] text-orange font-semibold mt-1">{p.semEquipe} sem equipe</p>
+                  <p className="text-caption text-orange font-semibold mt-1">{p.semEquipe} sem equipe</p>
                 )}
                 {(p.breakdown.inst > 0 || p.breakdown.manut > 0 || p.breakdown.serv > 0) && (
                   <div className="mt-2 pt-2 border-t border-white/[0.08] space-y-0.5">
                     {p.breakdown.inst  > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-[10px] text-muted">Instalação</span>
-                        <span className="text-[10px] font-mono font-bold text-cyan tabular-nums">{p.breakdown.inst}</span>
+                        <span className="text-caption text-muted">Instalação</span>
+                        <span className="text-caption font-mono font-bold text-cyan tabular-nums">{p.breakdown.inst}</span>
                       </div>
                     )}
                     {p.breakdown.manut > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-[10px] text-muted">Manutenção</span>
-                        <span className="text-[10px] font-mono font-bold text-orange tabular-nums">{p.breakdown.manut}</span>
+                        <span className="text-caption text-muted">Manutenção</span>
+                        <span className="text-caption font-mono font-bold text-orange tabular-nums">{p.breakdown.manut}</span>
                       </div>
                     )}
                     {p.breakdown.serv  > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-[10px] text-muted">Serviço</span>
-                        <span className="text-[10px] font-mono font-bold text-muted tabular-nums">{p.breakdown.serv}</span>
+                        <span className="text-caption text-muted">Serviço</span>
+                        <span className="text-caption font-mono font-bold text-muted tabular-nums">{p.breakdown.serv}</span>
                       </div>
                     )}
                   </div>

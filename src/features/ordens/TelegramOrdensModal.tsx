@@ -100,7 +100,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
 
         {/* Seletor de fornecedor */}
         <div className="space-y-2">
-          <p className="text-[11px] font-bold text-muted uppercase tracking-wide">Fornecedor</p>
+          <p className="text-caption font-bold text-muted uppercase tracking-wide">Fornecedor</p>
           <div className="flex flex-wrap gap-2">
             {FORNECEDOR_OPTS.map(o => {
               const cnt    = ordens.filter(r => r._fornecedor === o.value).length
@@ -110,7 +110,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
                   key={o.value}
                   onClick={() => { setFornecedor(o.value); setResult(null) }}
                   disabled={!!sending}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[12px] font-semibold
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-label font-semibold
                               transition-all duration-fast
                               ${active
                                 ? 'border-border0 bg-surface text-text'
@@ -118,7 +118,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
                 >
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: o.color }} />
                   {o.label}
-                  <span className={`text-[10px] font-normal ${active ? 'text-secondary' : 'text-muted'}`}>{cnt}</span>
+                  <span className={`text-caption font-normal ${active ? 'text-secondary' : 'text-muted'}`}>{cnt}</span>
                 </button>
               )
             })}
@@ -126,38 +126,38 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
         </div>
 
         {/* Preview */}
-        <div className="rounded-lg bg-elevated border border-white/[0.08] px-4 py-3 text-[12px] space-y-2">
+        <div className="rounded-lg bg-elevated border border-white/[0.08] px-4 py-3 text-label space-y-2">
           <div className="flex items-center justify-between">
             <p className="font-semibold text-text">{opt?.label}</p>
-            <span className="text-[10px] text-muted">Alertas | Cabonnet</span>
+            <span className="text-caption text-muted">Alertas | Cabonnet</span>
           </div>
           {isFornGrupo && (
-            <p className="text-[10px] text-cyan font-semibold">
+            <p className="text-caption text-cyan font-semibold">
               📅 Somente OS agendadas para hoje ({rows.length} de {allRows.length} total)
             </p>
           )}
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-surface/30 rounded px-3 py-2 space-y-0.5">
-              <p className="text-[11px] font-bold text-muted uppercase tracking-wide">Resumo</p>
-              <p className="text-secondary text-[12px]">{equipes} equipes · {rows.length} OS</p>
-              <p className="text-muted text-[11px]">Imagem · {scopeLabel}</p>
+              <p className="text-caption font-bold text-muted uppercase tracking-wide">Resumo</p>
+              <p className="text-secondary text-label">{equipes} equipes · {rows.length} OS</p>
+              <p className="text-muted text-caption">Imagem · {scopeLabel}</p>
             </div>
             <div className="bg-surface/30 rounded px-3 py-2 space-y-0.5">
-              <p className="text-[11px] font-bold text-muted uppercase tracking-wide">Detalhado</p>
-              <p className="text-secondary text-[12px]">{rows.length} OS individualmente</p>
-              <p className="text-muted text-[11px]">Documento · {scopeLabel}</p>
+              <p className="text-caption font-bold text-muted uppercase tracking-wide">Detalhado</p>
+              <p className="text-secondary text-label">{rows.length} OS individualmente</p>
+              <p className="text-muted text-caption">Documento · {scopeLabel}</p>
             </div>
           </div>
         </div>
 
         {/* Feedback */}
         {result === 'ok' && (
-          <div className="flex items-center gap-2 text-green text-[13px] font-semibold">
+          <div className="flex items-center gap-2 text-green text-body font-semibold">
             <CheckCircle size={16} /> Enviado com sucesso!
           </div>
         )}
         {result === 'error' && (
-          <div className="flex items-center gap-2 text-red text-[13px] font-semibold">
+          <div className="flex items-center gap-2 text-red text-body font-semibold">
             <XCircle size={16} /> Falha ao enviar. Verifique o servidor.
           </div>
         )}

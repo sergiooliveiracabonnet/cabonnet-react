@@ -36,16 +36,16 @@ export default function GraficosPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="font-headline text-xl font-semibold text-text">Gráficos &amp; Análises</h2>
-          <div className="flex items-center gap-1.5 mt-1 text-[11px] text-muted/60">
+          <div className="flex items-center gap-1.5 mt-1 text-caption text-muted/60">
             <MousePointerClick size={11} className="flex-shrink-0" />
             <span>Clique nos gráficos para ver as OS detalhadas</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] font-medium text-muted/60 mr-0.5">Frente:</span>
+          <span className="text-caption font-medium text-muted/60 mr-0.5">Frente:</span>
           {FORN_PILLS.map(f => (
             <button key={f.value} onClick={() => setFornecedor(f.value)}
-              className={`text-[11px] font-medium px-3 py-1 rounded-md border transition-all duration-150 cursor-pointer
+              className={`text-caption font-medium px-3 py-1 rounded-md border transition-all duration-150 cursor-pointer
                           ${fornecedor === f.value
                             ? 'border-primary/40 bg-primary/10 text-primary'
                             : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}>

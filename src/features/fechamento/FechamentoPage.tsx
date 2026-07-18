@@ -11,6 +11,7 @@ import {
 import { generateFechamentoPDF } from './fechamentoPDF'
 import { useFechamentoAutomation, type FechamentoSnapshot } from './useFechamentoAutomation'
 import type { OSRow } from '../../lib/types'
+import { StatCard, type StatTone } from '../../components/ui/StatCard'
 
 const ABAS     = ['global', 'instacable', 'wes', 'thm', 'rede']
 const PERIODOS = [
@@ -103,7 +104,7 @@ export default function FechamentoPage() {
       <div className="flex items-center gap-2 flex-wrap">
         <FileText size={16} className="text-primary flex-shrink-0" />
         <h2 className="font-headline text-xl font-semibold text-text">Relatório de Fechamento</h2>
-        <span className="text-[11px] text-muted">— fechamento operacional por período e escopo</span>
+        <span className="text-caption text-muted">— fechamento operacional por período e escopo</span>
       </div>
 
       {/* ── Toolbar: Período ── */}
@@ -113,7 +114,7 @@ export default function FechamentoPage() {
             <button
               key={p.key}
               onClick={() => setPeriodo(p.key)}
-              className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-fast
+              className={`px-3 py-1.5 rounded-md text-caption font-semibold transition-all duration-fast
                 ${periodo === p.key
                   ? 'bg-primary text-white'
                   : 'bg-bg text-secondary border border-white/[0.08] hover:bg-surface/40 hover:text-text'}`}
@@ -129,14 +130,14 @@ export default function FechamentoPage() {
               type="date"
               value={customFrom}
               onChange={e => setCustomFrom(e.target.value)}
-              className="px-2 py-1.5 rounded-md text-[11px] bg-bg border border-white/[0.08] text-text focus:outline-none focus:border-primary"
+              className="px-2 py-1.5 rounded-md text-caption bg-bg border border-white/[0.08] text-text focus:outline-none focus:border-primary"
             />
             <ChevronRight size={12} className="text-muted" />
             <input
               type="date"
               value={customTo}
               onChange={e => setCustomTo(e.target.value)}
-              className="px-2 py-1.5 rounded-md text-[11px] bg-bg border border-white/[0.08] text-text focus:outline-none focus:border-primary"
+              className="px-2 py-1.5 rounded-md text-caption bg-bg border border-white/[0.08] text-text focus:outline-none focus:border-primary"
             />
           </div>
         )}
@@ -147,7 +148,7 @@ export default function FechamentoPage() {
             <button
               key={a}
               onClick={() => setAba(a)}
-              className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-fast
+              className={`px-3 py-1.5 rounded-md text-caption font-semibold transition-all duration-fast
                 ${aba === a
                   ? 'bg-surface text-text border border-muted/40'
                   : 'text-secondary hover:bg-surface/30 hover:text-text'}`}
@@ -188,21 +189,21 @@ export default function FechamentoPage() {
       <div className="flex gap-2 justify-end pt-2">
         <button
           onClick={handleExportPDF}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-caption font-semibold
                      bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-all"
         >
           <FileText size={13} /> PDF
         </button>
         <button
           onClick={handleExportCSV}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-caption font-semibold
                      bg-card border border-white/[0.08] text-secondary hover:text-text hover:bg-surface/40 transition-all"
         >
           <Download size={13} /> CSV
         </button>
         <button
           onClick={handlePrint}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-caption font-semibold
                      bg-card border border-white/[0.08] text-secondary hover:text-text hover:bg-surface/40 transition-all"
         >
           <Printer size={13} /> Imprimir
@@ -218,39 +219,34 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }: {
   stats: FechamentoStats; periodoLabel: string
   onCSV: () => void; onPDF: () => void; onPrint: () => void
 }) {
-  const kpis = [
-    { label: 'Total OS',     value: stats.total,      cls: 'text-primary' },
-    { label: 'Concluídas',   value: stats.concluidas, cls: 'text-green'   },
-    { label: 'Sem Execução', value: stats.semExec,    cls: 'text-orange'  },
-    { label: 'Pendentes',    value: stats.pendentes,  cls: 'text-yellow'  },
-    { label: 'SLA Vencidas', value: stats.slaVenc,    cls: stats.slaVenc > 0 ? 'text-red' : 'text-green' },
+  const kpis: { label: string; value: number; tone?: StatTone }[] = [
+    { label: 'Total OS',     value: stats.total },
+    { label: 'Concluídas',   value: stats.concluidas, tone: 'ok' },
+    { label: 'Sem Execução', value: stats.semExec,    tone: 'warning' },
+    { label: 'Pendentes',    value: stats.pendentes,  tone: 'warning' },
+    { label: 'SLA Vencidas', value: stats.slaVenc,    tone: stats.slaVenc > 0 ? 'critical' : 'ok' },
   ]
   return (
     <div className="bg-card border border-white/[0.08] rounded-xl p-5">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
         <div>
-          <p className="text-[13px] font-semibold text-text">Relatório de Fechamento Operacional</p>
-          <p className="text-[11px] text-muted mt-0.5">{periodoLabel}</p>
+          <p className="text-body font-semibold text-text">Relatório de Fechamento Operacional</p>
+          <p className="text-caption text-muted mt-0.5">{periodoLabel}</p>
         </div>
         <div className="flex gap-2 flex-shrink-0">
-          <button onClick={onPDF}   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-all">
+          <button onClick={onPDF}   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-semibold bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-all">
             <FileText size={12} /> PDF
           </button>
-          <button onClick={onCSV}   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-bg border border-white/[0.08] text-secondary hover:text-text transition-all">
+          <button onClick={onCSV}   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-semibold bg-bg border border-white/[0.08] text-secondary hover:text-text transition-all">
             <Download size={12} /> CSV
           </button>
-          <button onClick={onPrint} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-bg border border-white/[0.08] text-secondary hover:text-text transition-all">
+          <button onClick={onPrint} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-semibold bg-bg border border-white/[0.08] text-secondary hover:text-text transition-all">
             <Printer size={12} /> Imprimir
           </button>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {kpis.map(k => (
-          <div key={k.label} className="bg-bg rounded-lg p-3 text-center">
-            <p className={`text-2xl font-bold font-mono leading-none ${k.cls}`}>{k.value}</p>
-            <p className="text-[10px] text-muted mt-1 uppercase tracking-wide">{k.label}</p>
-          </div>
-        ))}
+        {kpis.map(k => <StatCard key={k.label} size="sm" title={k.label} value={k.value} tone={k.tone} />)}
       </div>
     </div>
   )
@@ -260,7 +256,7 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }: {
 function Section({ title, children, borderColor }: { title: string; children: React.ReactNode; borderColor?: string }) {
   return (
     <div className={`bg-card border rounded-xl p-5 ${borderColor ? `border-${borderColor}` : 'border-white/[0.08]'}`}>
-      <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-4">{title}</p>
+      <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-4">{title}</p>
       {children}
     </div>
   )
@@ -277,29 +273,29 @@ function EquipesTable({ byEquipe }: { byEquipe: Record<string, TeamStats> }) {
     .sort((a, b) => b.exec - a.exec)
 
   if (!equipes.length) {
-    return <p className="text-[12px] text-muted">Sem dados para o período.</p>
+    return <p className="text-label text-muted">Sem dados para o período.</p>
   }
 
   const medals = ['🥇', '🥈', '🥉']
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[11px]">
+      <table className="w-full text-caption">
         <thead>
           <tr className="border-b border-white/[0.08]">
-            <th className="px-2 py-2 text-center text-[10px] font-bold text-muted uppercase w-8">#</th>
-            <th className="px-2 py-2 text-left   text-[10px] font-bold text-muted uppercase">Equipe</th>
-            <th className="px-2 py-2 text-center text-[10px] font-bold text-muted uppercase">Exec.</th>
-            <th className="px-2 py-2 text-center text-[10px] font-bold text-muted uppercase">S/Exec</th>
-            <th className="px-2 py-2 text-center text-[10px] font-bold text-muted uppercase">Pend.</th>
-            <th className="px-2 py-2 text-center text-[10px] font-bold text-muted uppercase">SLA Venc.</th>
-            <th className="px-2 py-2 text-center text-[10px] font-bold text-muted uppercase">Taxa</th>
+            <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase w-8">#</th>
+            <th className="px-2 py-2 text-left   text-caption font-bold text-muted uppercase">Equipe</th>
+            <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">Exec.</th>
+            <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">S/Exec</th>
+            <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">Pend.</th>
+            <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">SLA Venc.</th>
+            <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">Taxa</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-white/[0.04]">
           {equipes.map((e, i) => (
             <tr key={e.eq} className="hover:bg-surface/20">
-              <td className="px-2 py-2 text-center text-[11px]">{i < 3 ? medals[i] : i + 1}</td>
+              <td className="px-2 py-2 text-center text-caption">{i < 3 ? medals[i] : i + 1}</td>
               <td className="px-2 py-2 font-semibold text-text">{e.eq}</td>
               <td className="px-2 py-2 text-center font-bold text-green">{e.exec}</td>
               <td className="px-2 py-2 text-center text-orange">{e.semExec || '—'}</td>
@@ -328,7 +324,7 @@ function CidadesChart({ byCidade }: { byCidade: Record<string, CidadeStats> }) {
     .sort((a, b) => b.exec - a.exec)
 
   if (!cidades.length) {
-    return <p className="text-[12px] text-muted">Sem dados para o período.</p>
+    return <p className="text-label text-muted">Sem dados para o período.</p>
   }
 
   const maxExec = Math.max(...cidades.map(c => c.exec), 1)
@@ -341,10 +337,10 @@ function CidadesChart({ byCidade }: { byCidade: Record<string, CidadeStats> }) {
         return (
           <div key={c.cidade}>
             <div className="flex justify-between items-baseline mb-1 gap-2">
-              <span className="text-[11px] font-semibold text-text truncate max-w-[140px]" title={c.cidade}>
+              <span className="text-caption font-semibold text-text truncate max-w-[140px]" title={c.cidade}>
                 {c.cidade}
               </span>
-              <div className="flex items-center gap-2 flex-shrink-0 text-[10px]">
+              <div className="flex items-center gap-2 flex-shrink-0 text-caption">
                 <span className="font-bold text-green">{c.exec}</span>
                 {c.pend    > 0 && <span className="text-yellow">{c.pend} pend</span>}
                 {c.slaVenc > 0 && <span className="text-red font-semibold">{c.slaVenc} SLA</span>}
@@ -375,7 +371,7 @@ function TiposCards({ byTipo }: { byTipo: Record<string, TeamStats> }) {
   })
 
   if (!tipos.length) {
-    return <p className="text-[12px] text-muted">Sem dados para o período.</p>
+    return <p className="text-label text-muted">Sem dados para o período.</p>
   }
 
   return (
@@ -385,8 +381,8 @@ function TiposCards({ byTipo }: { byTipo: Record<string, TeamStats> }) {
         return (
           <div key={t.tipo} className={`bg-bg rounded-lg p-3 border-l-2 ${TIPO_BORDER[t.tipo] ?? 'border-muted'}`}>
             <div className="flex justify-between items-center mb-2">
-              <span className={`text-[11px] font-bold ${TIPO_COR[t.tipo] ?? 'text-muted'}`}>{t.tipo}</span>
-              <span className={`text-[13px] font-bold ${tc}`}>{t.taxa}%</span>
+              <span className={`text-caption font-bold ${TIPO_COR[t.tipo] ?? 'text-muted'}`}>{t.tipo}</span>
+              <span className={`text-body font-bold ${tc}`}>{t.taxa}%</span>
             </div>
             <div className="flex gap-4 flex-wrap">
               <Stat label="Exec."   value={t.exec}    cls="text-green" />
@@ -411,7 +407,7 @@ function Stat({ label, value, cls }: { label: string; value: number; cls: string
   return (
     <div className="text-center">
       <p className={`text-base font-bold leading-none ${cls}`}>{value}</p>
-      <p className="text-[9px] text-muted mt-0.5">{label}</p>
+      <p className="text-caption text-muted mt-0.5">{label}</p>
     </div>
   )
 }
@@ -432,37 +428,37 @@ function RedeBlock({ rows, stats, periodoLabel, isMain = false }: {
     <div className="bg-card border-2 border-cyan/40 rounded-xl p-5 space-y-4">
       {isMain && (
         <div className="mb-1">
-          <p className="text-[13px] font-semibold text-text">Relatório — Rede</p>
-          <p className="text-[11px] text-muted mt-0.5">{periodoLabel}</p>
+          <p className="text-body font-semibold text-text">Relatório — Rede</p>
+          <p className="text-caption text-muted mt-0.5">{periodoLabel}</p>
         </div>
       )}
 
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-cyan mb-3">
+        <p className="text-caption font-bold uppercase tracking-[0.05em] text-cyan mb-3">
           Rede — Bloco Independente
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           {kpisRede.map(k => (
             <div key={k.label} className="bg-bg rounded-lg p-3 text-center">
               <p className={`text-xl font-bold font-mono leading-none ${k.cls}`}>{k.value}</p>
-              <p className="text-[10px] text-muted mt-1 uppercase tracking-wide">{k.label}</p>
+              <p className="text-caption text-muted mt-1 uppercase tracking-wide">{k.label}</p>
             </div>
           ))}
         </div>
       </div>
 
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-3">Equipes de Rede</p>
+        <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-3">Equipes de Rede</p>
         <EquipesTable byEquipe={stats.byEquipe} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-3">Produtividade por Cidade</p>
+          <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-3">Produtividade por Cidade</p>
           <CidadesChart byCidade={stats.byCidade} />
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-3">Clientes Atendidos</p>
+          <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-3">Clientes Atendidos</p>
           <ClientesRedeList rows={rows} />
         </div>
       </div>
@@ -481,7 +477,7 @@ function ClientesRedeList({ rows }: { rows: OSRow[] }) {
     })
 
   if (!concl.length) {
-    return <p className="text-[12px] text-muted">Nenhuma OS concluída.</p>
+    return <p className="text-label text-muted">Nenhuma OS concluída.</p>
   }
 
   return (
@@ -491,11 +487,11 @@ function ClientesRedeList({ rows }: { rows: OSRow[] }) {
         const m   = String(raw).match(/(\d{2})\/(\d{2})\/(\d{2,4})/)
         const dt  = m ? `${m[1]}/${m[2]}/${m[3].slice(-2)}` : (raw ? String(raw).slice(0, 8) : '—')
         return (
-          <div key={i} className="flex gap-2 items-center bg-bg rounded px-2 py-1.5 text-[11px]">
+          <div key={i} className="flex gap-2 items-center bg-bg rounded px-2 py-1.5 text-caption">
             <span className="font-bold text-cyan flex-shrink-0">{r.numos || '—'}</span>
             <span className="text-text truncate flex-1">{r.nomecliente || '—'}</span>
-            <span className="text-muted flex-shrink-0 text-[10px]">{r.nomedacidade || ''}</span>
-            <span className="text-muted flex-shrink-0 text-[10px]">{dt}</span>
+            <span className="text-muted flex-shrink-0 text-caption">{r.nomedacidade || ''}</span>
+            <span className="text-muted flex-shrink-0 text-caption">{dt}</span>
           </div>
         )
       })}

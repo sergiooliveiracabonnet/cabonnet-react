@@ -77,26 +77,6 @@ export function taxaLabel(taxa: number): string {
   return 'OK'
 }
 
-// ─── KpiCard ─────────────────────────────────────────────────────────────────
-
-export function KpiCard({ label, value, sub, color, delay = 0 }: {
-  label: string; value: string | number; sub: string; color: string; delay?: number
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-xl border bg-card animate-card-enter"
-         style={{ borderColor: `${color}22`, animationDelay: `${delay}ms` }}>
-      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: color }} />
-      <div className="p-4">
-        <p className="text-[11px] text-muted mb-2">{label}</p>
-        <p className="font-mono font-black tabular-nums text-[28px] leading-none" style={{ color }}>
-          {typeof value === 'number' ? fmt(value) : value}
-        </p>
-        <p className="text-[10px] text-muted mt-1">{sub}</p>
-      </div>
-    </div>
-  )
-}
-
 // ─── EquipeRow ────────────────────────────────────────────────────────────────
 
 export interface EquipeStats { equipe: string; total: number; rev: number; taxa: number }
@@ -108,14 +88,14 @@ export function EquipeRow({ rank, eq, max }: { rank: number; eq: EquipeStats; ma
     <tr className="border-b border-white/[0.04] hover:bg-surface/20 transition-colors">
       <td className="px-4 py-3 w-10">
         {rank <= 3
-          ? <span className="font-mono font-black text-[13px]"
+          ? <span className="font-mono font-black text-body"
                   style={{ color: ['#f87171','#f97316','#facc15'][rank - 1] }}>#{rank}</span>
-          : <span className="font-mono text-[12px] text-muted">{rank}</span>}
+          : <span className="font-mono text-label text-muted">{rank}</span>}
       </td>
       <td className="px-3 py-3 max-w-[180px]">
-        <p className="text-[12px] font-semibold text-text truncate">{eq.equipe}</p>
+        <p className="text-label font-semibold text-text truncate">{eq.equipe}</p>
       </td>
-      <td className="px-3 py-3 text-right font-mono text-[13px] text-muted">{fmt(eq.total)}</td>
+      <td className="px-3 py-3 text-right font-mono text-body text-muted">{fmt(eq.total)}</td>
       <td className="px-3 py-3 text-right">
         <p className="font-mono font-bold text-[16px] leading-none" style={{ color }}>{fmt(eq.rev)}</p>
         <div className="mt-1 h-1 w-16 ml-auto bg-surface/40 rounded-full overflow-hidden">
@@ -126,7 +106,7 @@ export function EquipeRow({ rank, eq, max }: { rank: number; eq: EquipeStats; ma
         <p className="font-mono font-bold text-[16px] leading-none" style={{ color }}>{eq.taxa}%</p>
       </td>
       <td className="px-3 py-3 text-right">
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+        <span className="text-caption font-bold px-2 py-0.5 rounded-full border"
               style={{ background: `${color}12`, borderColor: `${color}30`, color }}>
           {taxaLabel(eq.taxa)}
         </span>
@@ -165,13 +145,13 @@ export function DrillTable({ rows }: { rows: BacklogRow[] }) {
           <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
                  placeholder="Buscar numos ou cliente…"
                  className="w-full pl-8 pr-3 py-2 rounded-lg border border-white/[0.08] bg-surface/40
-                            text-[12px] text-text placeholder-muted focus:outline-none focus:border-primary/40" />
+                            text-label text-text placeholder-muted focus:outline-none focus:border-primary/40" />
         </div>
         <select value={cidade} onChange={e => { setCidade(e.target.value); setPage(1) }}
-                className="px-3 py-2 rounded-lg border border-white/[0.08] bg-surface/40 text-[12px] text-text focus:outline-none">
+                className="px-3 py-2 rounded-lg border border-white/[0.08] bg-surface/40 text-label text-text focus:outline-none">
           {cidades.map(c => <option key={c}>{c}</option>)}
         </select>
-        <span className="text-[11px] text-muted ml-auto">{fmt(filtered.length)} revisitas</span>
+        <span className="text-caption text-muted ml-auto">{fmt(filtered.length)} revisitas</span>
       </div>
 
       <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
@@ -180,7 +160,7 @@ export function DrillTable({ rows }: { rows: BacklogRow[] }) {
             <thead>
               <tr className="border-b border-white/[0.05] bg-surface/10">
                 {['N° OS','Cliente','Cidade','Tipo','Serviço','Equipe','Cadastro','Situação'].map(h => (
-                  <th key={h} className="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap">
+                  <th key={h} className="px-3 py-2.5 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -195,7 +175,7 @@ export function DrillTable({ rows }: { rows: BacklogRow[] }) {
                     <td className="px-3 py-2.5 max-w-[140px]"><p className="truncate text-text">{r.nomecliente}</p></td>
                     <td className="px-3 py-2.5 text-muted whitespace-nowrap">{r.nomedacidade}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">
-                      <span className="text-[10px] font-bold" style={{ color: tc }}>
+                      <span className="text-caption font-bold" style={{ color: tc }}>
                         {TIPO_LABEL[classificaTipo(r.servico, r.tiposervico)]}
                       </span>
                     </td>
@@ -203,14 +183,14 @@ export function DrillTable({ rows }: { rows: BacklogRow[] }) {
                     <td className="px-3 py-2.5 max-w-[120px]"><p className="truncate text-muted">{r.nomedaequipe || '—'}</p></td>
                     <td className="px-3 py-2.5 text-muted whitespace-nowrap">{r.datacadastro}</td>
                     <td className="px-3 py-2.5">
-                      <span className="text-[10px] text-muted">{r.descsituacao}</span>
+                      <span className="text-caption text-muted">{r.descsituacao}</span>
                     </td>
                   </tr>
                 )
               })}
               {slice.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-muted text-[12px]">
+                  <td colSpan={8} className="px-4 py-8 text-center text-muted text-label">
                     Nenhuma revisita encontrada.
                   </td>
                 </tr>
@@ -220,13 +200,13 @@ export function DrillTable({ rows }: { rows: BacklogRow[] }) {
         </div>
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-2 border-t border-white/[0.05] bg-surface/10">
-            <span className="text-[11px] text-muted">Página {page} de {totalPages}</span>
+            <span className="text-caption text-muted">Página {page} de {totalPages}</span>
             <div className="flex gap-1">
               <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
-                      className="px-3 py-1 rounded text-[11px] border border-white/[0.08] text-muted
+                      className="px-3 py-1 rounded text-caption border border-white/[0.08] text-muted
                                  disabled:opacity-30 hover:bg-surface/30 transition-colors">‹</button>
               <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)}
-                      className="px-3 py-1 rounded text-[11px] border border-white/[0.08] text-muted
+                      className="px-3 py-1 rounded text-caption border border-white/[0.08] text-muted
                                  disabled:opacity-30 hover:bg-surface/30 transition-colors">›</button>
             </div>
           </div>

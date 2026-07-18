@@ -45,15 +45,15 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
         {/* Nome da equipe filtrada */}
         {equipe && (
           <div className="flex items-center gap-2 px-4 py-2 bg-primary/[0.05] border-b border-primary/20">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Equipe</span>
-            <span className="text-[12px] font-bold text-primary">{shortEquipe(equipe)}</span>
-            <span className="text-[11px] text-muted">— {rows.length} OS</span>
+            <span className="text-caption font-bold uppercase tracking-wider text-muted">Equipe</span>
+            <span className="text-label font-bold text-primary">{shortEquipe(equipe)}</span>
+            <span className="text-caption text-muted">— {rows.length} OS</span>
           </div>
         )}
 
         {/* Cabeçalho de colunas */}
         <div className="flex items-center gap-3 px-4 py-2 bg-elevated/40 border-b border-white/[0.08]
-                        text-[10px] font-bold uppercase tracking-wide text-muted">
+                        text-caption font-bold uppercase tracking-wide text-muted">
           <span className={`${C.aging}  text-center`}>Aging</span>
           <span className={C.numos}>Nº OS</span>
           <span className={C.cliente}>Cliente</span>
@@ -65,7 +65,7 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
         </div>
 
         {groups.length === 0 && (
-          <p className="px-6 py-10 text-center text-[12px] text-muted italic">
+          <p className="px-6 py-10 text-center text-label text-muted italic">
             Nenhuma OS encontrada para esta equipe.
           </p>
         )}
@@ -94,13 +94,13 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                   <div className={`flex items-center gap-2.5 px-4 py-2.5 border-b ${border}
                                   ${gi > 0 ? 'border-t border-white/[0.08]' : ''} ${bg}`}>
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />
-                    <span className={`text-[11px] font-bold uppercase tracking-[0.06em] ${color}`}>
+                    <span className={`text-caption font-bold uppercase tracking-[0.06em] ${color}`}>
                       Período: {periodo}
                     </span>
-                    <span className="text-[11px] font-mono text-muted ml-1">— {periodoRows.length} OS</span>
+                    <span className="text-caption font-mono text-muted ml-1">— {periodoRows.length} OS</span>
                     <div className="ml-auto flex items-center gap-2">
                       {tipoItems.map(({ n, label }, idx) => (
-                        <span key={label} className="flex items-center gap-1.5 text-[11px] text-muted">
+                        <span key={label} className="flex items-center gap-1.5 text-caption text-muted">
                           {idx > 0 && <span className="text-white/20">|</span>}
                           <span className="font-mono font-bold text-secondary">{n}</span>
                           <span>{label}</span>
@@ -126,29 +126,29 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                                 hover:bg-surface/30 transition-all border-b border-white/[0.03]`}
                   >
                     <span className={`${C.aging} text-center`}>
-                      <span className={`inline-block font-mono font-bold text-[11px] rounded-full px-2 py-0.5 ${agingColor} ${agingBg}`}>
+                      <span className={`inline-block font-mono font-bold text-caption rounded-full px-2 py-0.5 ${agingColor} ${agingBg}`}>
                         {aging}d
                       </span>
                     </span>
-                    <span className={`${C.numos} font-mono text-[11px] text-secondary`}>
+                    <span className={`${C.numos} font-mono text-caption text-secondary`}>
                       {row.numos}
                     </span>
                     <span
-                      className={`${C.cliente} text-[12px] ${row.nomecliente ? 'text-text font-medium' : 'text-muted italic'}`}
+                      className={`${C.cliente} text-label ${row.nomecliente ? 'text-text font-medium' : 'text-muted italic'}`}
                       title={(row.nomecliente || row.codigocliente || 'Sem nome no cadastro') as string}
                     >
                       {row.nomecliente || (row.codigocliente ? `Cód. ${row.codigocliente}` : '(Sem nome)')}
                     </span>
-                    <span className={`${C.tipo} text-[11px] text-muted`}>
+                    <span className={`${C.tipo} text-caption text-muted`}>
                       {row.tiposervico || '—'}
                     </span>
-                    <span className={`${C.cidade} text-[12px] text-muted`} title={row.nomedacidade}>
+                    <span className={`${C.cidade} text-label text-muted`} title={row.nomedacidade}>
                       {(row.nomedacidade || '—').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                     </span>
-                    <span className={`${C.bairro} text-[12px] text-secondary`} title={row.bairro}>
+                    <span className={`${C.bairro} text-label text-secondary`} title={row.bairro}>
                       {(row.bairro || '—').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                     </span>
-                    <span className={`${C.logr} text-[12px] text-muted`}
+                    <span className={`${C.logr} text-label text-muted`}
                           title={[row.logradouro, row.numero, row.complemento].filter(Boolean).join(', ') || '—'}>
                       {[row.logradouro, row.numero, row.complemento].filter(Boolean).join(', ') || '—'}
                     </span>

@@ -88,7 +88,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         messages.length > 0 ? (
           <button
             onClick={() => { setMessages([]); setError(null) }}
-            className="text-[11px] text-muted hover:text-secondary transition-colors px-2 py-1 rounded"
+            className="text-caption text-muted hover:text-secondary transition-colors px-2 py-1 rounded"
           >
             Limpar
           </button>
@@ -104,7 +104,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
             placeholder="Pergunte algo… (Enter para enviar, Shift+Enter = nova linha)"
             rows={2}
             disabled={loading}
-            className="flex-1 resize-none rounded-lg bg-card border border-white/[0.08] text-[13px] text-text
+            className="flex-1 resize-none rounded-lg bg-card border border-white/[0.08] text-body text-text
                        placeholder:text-muted/50 px-3 py-2 outline-none
                        focus:border-primary/60 focus:ring-1 focus:ring-primary/20
                        transition-all disabled:opacity-50 leading-snug"
@@ -130,14 +130,14 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
             </div>
             <div>
               <p className="text-sm font-semibold text-text">Assistente operacional</p>
-              <p className="text-[12px] text-muted mt-1">Consulta dados de OS em tempo real via ferramentas</p>
+              <p className="text-label text-muted mt-1">Consulta dados de OS em tempo real via ferramentas</p>
             </div>
             <div className="w-full space-y-1.5">
               {SUGGESTIONS.map(q => (
                 <button
                   key={q}
                   onClick={() => pickSuggestion(q)}
-                  className="w-full text-left text-[12px] text-secondary hover:text-text
+                  className="w-full text-left text-label text-secondary hover:text-text
                              px-3 py-2 rounded-lg border border-white/[0.06]
                              hover:border-white/[0.14] hover:bg-surface/40
                              transition-all duration-150"
@@ -163,7 +163,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                 <div className="flex flex-wrap gap-1">
                   {[...new Set(msg.toolCalls)].map(t => (
                     <span key={t}
-                      className="flex items-center gap-1 text-[10px] text-muted
+                      className="flex items-center gap-1 text-caption text-muted
                                  bg-surface border border-white/[0.06] rounded-full px-2 py-0.5">
                       <Wrench size={9} />
                       {TOOL_LABELS[t] ?? t}
@@ -171,7 +171,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                   ))}
                 </div>
               )}
-              <div className={`rounded-2xl px-3.5 py-2.5 text-[13px] whitespace-pre-wrap leading-relaxed break-words
+              <div className={`rounded-2xl px-3.5 py-2.5 text-body whitespace-pre-wrap leading-relaxed break-words
                               ${msg.role === 'user'
                                 ? 'bg-primary/12 text-text border border-primary/15 rounded-tr-sm'
                                 : 'bg-card border border-white/[0.08] text-text rounded-tl-sm'}`}>
@@ -189,14 +189,14 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
             </div>
             <div className="flex items-center gap-2 bg-card border border-white/[0.08] rounded-2xl rounded-tl-sm px-3.5 py-2.5">
               <Loader2 size={12} className="text-primary animate-spin flex-shrink-0" />
-              <span className="text-[12px] text-muted">Consultando dados…</span>
+              <span className="text-label text-muted">Consultando dados…</span>
             </div>
           </div>
         )}
 
         {error && (
           <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl
-                          bg-red/[0.07] border border-red/20 text-red text-[12px]">
+                          bg-red/[0.07] border border-red/20 text-red text-label">
             <AlertCircle size={13} className="flex-shrink-0" />
             <span>{error}</span>
           </div>

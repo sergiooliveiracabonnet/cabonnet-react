@@ -76,10 +76,10 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
           disabled={!hasExtra}
           className={`w-full text-left flex items-center gap-1 ${hasExtra ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
         >
-          <p className={`text-[12px] font-semibold leading-snug flex-1 ${done ? `text-${color}` : 'text-muted'}`}>
+          <p className={`text-label font-semibold leading-snug flex-1 ${done ? `text-${color}` : 'text-muted'}`}>
             {label}
             {d.reagendada === true && (
-              <span className="ml-1.5 text-[10px] font-bold text-orange/80 uppercase tracking-wide">· reagendada</span>
+              <span className="ml-1.5 text-caption font-bold text-orange/80 uppercase tracking-wide">· reagendada</span>
             )}
           </p>
           {hasExtra && (
@@ -92,13 +92,13 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
         {/* Data + equipe */}
         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
           {date && (
-            <span className="font-mono text-[11px] text-secondary flex items-center gap-1">
+            <span className="font-mono text-caption text-secondary flex items-center gap-1">
               <Calendar size={9} className="opacity-50 flex-shrink-0" />
               {date}
             </span>
           )}
           {equipe && (
-            <span className="text-[11px] text-muted flex items-center gap-1">
+            <span className="text-caption text-muted flex items-center gap-1">
               <Users size={9} className="opacity-50 flex-shrink-0" />
               {equipe}
             </span>
@@ -108,7 +108,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
         {/* Obs inline quando fechado */}
         {obs && !open && (
           <div className="mt-1.5 bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2">
-            <p className="text-[11px] text-secondary leading-relaxed">{obs}</p>
+            <p className="text-caption text-secondary leading-relaxed">{obs}</p>
           </div>
         )}
 
@@ -130,10 +130,10 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Troca de equipe — agendada vs. executante */}
             {d.equipeAgendada && (
               <div className="bg-yellow/[0.07] border border-yellow/20 rounded-xl px-3 py-2.5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-yellow/80 mb-1.5 flex items-center gap-1.5">
+                <p className="text-caption font-bold uppercase tracking-[0.05em] text-yellow/80 mb-1.5 flex items-center gap-1.5">
                   <Users size={10} /> Equipe diferente da agendada
                 </p>
-                <div className="flex items-center gap-3 text-[11px]">
+                <div className="flex items-center gap-3 text-caption">
                   <span className="text-muted">Agendada:</span>
                   <span className="text-secondary font-medium">{d.equipeAgendada}</span>
                 </div>
@@ -148,7 +148,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Histórico de notas / reagendamentos */}
             {(d.historico?.length ?? 0) > 0 && (
               <div className="space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
+                <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
                   <MessageSquare size={10} /> Histórico de ocorrências
                 </p>
                 {d.historico!.map((entry, i) => (
@@ -164,19 +164,19 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
                     {(entry.autor || entry.data) && (
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         {entry.isReagend && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-orange/80">
+                          <span className="flex items-center gap-1 text-caption font-bold uppercase tracking-wide text-orange/80">
                             <RotateCcw size={9} /> Reagendamento
                           </span>
                         )}
                         {entry.autor && (
-                          <span className="text-[10px] font-semibold text-muted">{entry.autor}</span>
+                          <span className="text-caption font-semibold text-muted">{entry.autor}</span>
                         )}
                         {entry.data && (
-                          <span className="font-mono text-[10px] text-muted/60">{entry.data}{entry.hora ? ` ${entry.hora}` : ''}</span>
+                          <span className="font-mono text-caption text-muted/60">{entry.data}{entry.hora ? ` ${entry.hora}` : ''}</span>
                         )}
                       </div>
                     )}
-                    <p className={`text-[11px] leading-relaxed whitespace-pre-wrap ${
+                    <p className={`text-caption leading-relaxed whitespace-pre-wrap ${
                       entry.isReagend ? 'text-orange/90' : 'text-secondary'
                     }`}>
                       {entry.texto}
@@ -194,15 +194,15 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Materiais utilizados */}
             {(d.materiais?.length ?? 0) > 0 && (
               <div className="bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2.5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+                <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
                   <Package size={10} /> Materiais utilizados
                 </p>
                 <div className="space-y-1">
                   {d.materiais!.map((m, i) => (
                     <div key={i} className="flex items-baseline gap-2">
-                      <span className="text-[11px] text-cyan font-mono font-semibold min-w-[28px] text-right">{m.quantidade}×</span>
-                      <span className="text-[11px] text-secondary leading-snug flex-1">{m.nome}</span>
-                      {m.id && <span className="text-[10px] text-muted font-mono">{m.id}</span>}
+                      <span className="text-caption text-cyan font-mono font-semibold min-w-[28px] text-right">{m.quantidade}×</span>
+                      <span className="text-caption text-secondary leading-snug flex-1">{m.nome}</span>
+                      {m.id && <span className="text-caption text-muted font-mono">{m.id}</span>}
                     </div>
                   ))}
                 </div>
@@ -212,15 +212,15 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Materiais retirados */}
             {(d.matRetirados?.length ?? 0) > 0 && (
               <div className="bg-red/[0.05] border border-red/15 rounded-xl px-3 py-2.5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-red/70 mb-2 flex items-center gap-1.5">
+                <p className="text-caption font-bold uppercase tracking-[0.05em] text-red/70 mb-2 flex items-center gap-1.5">
                   <Package size={10} /> Materiais retirados
                 </p>
                 <div className="space-y-1">
                   {d.matRetirados!.map((m, i) => (
                     <div key={i} className="flex items-baseline gap-2">
-                      <span className="text-[11px] text-red/70 font-mono font-semibold min-w-[28px] text-right">{m.quantidade}×</span>
-                      <span className="text-[11px] text-secondary/80 leading-snug flex-1">{m.nome}</span>
-                      {m.id && <span className="text-[10px] text-muted font-mono">{m.id}</span>}
+                      <span className="text-caption text-red/70 font-mono font-semibold min-w-[28px] text-right">{m.quantidade}×</span>
+                      <span className="text-caption text-secondary/80 leading-snug flex-1">{m.nome}</span>
+                      {m.id && <span className="text-caption text-muted font-mono">{m.id}</span>}
                     </div>
                   ))}
                 </div>
@@ -239,8 +239,8 @@ function Meta({ icon: Icon, label, value, mono }: MetaProps) {
   return (
     <div className="flex items-center gap-1.5">
       <Icon size={10} className="text-muted/40 flex-shrink-0" />
-      <span className="text-[10px] font-bold uppercase tracking-[0.04em] text-muted">{label}:</span>
-      <span className={`text-[11px] text-secondary font-medium ${mono ? 'font-mono' : ''}`}>{value}</span>
+      <span className="text-caption font-bold uppercase tracking-[0.04em] text-muted">{label}:</span>
+      <span className={`text-caption text-secondary font-medium ${mono ? 'font-mono' : ''}`}>{value}</span>
     </div>
   )
 }
@@ -248,8 +248,8 @@ function Meta({ icon: Icon, label, value, mono }: MetaProps) {
 function InfoBlock({ label, text }: { label: string; text: string }) {
   return (
     <div className="bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2.5">
-      <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted mb-1">{label}</p>
-      <p className="text-[11px] text-secondary leading-relaxed whitespace-pre-wrap">{text}</p>
+      <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-1">{label}</p>
+      <p className="text-caption text-secondary leading-relaxed whitespace-pre-wrap">{text}</p>
     </div>
   )
 }

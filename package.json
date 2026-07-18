@@ -7,6 +7,7 @@
     "dev": "node servidor.js --dev",
     "build": "vite build",
     "lint": "eslint .",
+    "audit:ds": "node scripts/audit-ds.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -19,6 +20,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.99.2",
+    "@tanstack/react-virtual": "^3.14.6",
     "framer-motion": "^12.38.0",
     "html-to-image": "^1.11.13",
     "jspdf": "^4.2.1",

@@ -45,7 +45,7 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
   if (len < 2) {
     return (
       <div className="h-full rounded-lg border border-border bg-card p-5 flex items-center justify-center">
-        <p className="text-muted text-[12px]">Sem dados suficientes para o fluxo diário</p>
+        <p className="text-muted text-label">Sem dados suficientes para o fluxo diário</p>
       </div>
     )
   }
@@ -83,21 +83,27 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[13px] font-semibold text-text">Fluxo de OS — {len} dias</p>
-          <p className="text-[11px] text-muted mt-0.5">entradas × concluídas por dia · passe o mouse para detalhar</p>
+          <p className="text-body font-semibold text-text">Fluxo de OS — {len} dias</p>
+          <p className="text-caption text-muted mt-0.5">entradas × concluídas por dia · passe o mouse para detalhar</p>
         </div>
-        <div className="flex gap-4 text-[11px] text-secondary">
+        <div className="flex gap-4 text-caption text-secondary">
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-[3px] rounded-full" style={{ background: BLUE }} /> Entradas
+            <svg width="14" height="6" aria-hidden="true">
+              <line x1="0" y1="3" x2="14" y2="3" stroke={BLUE} strokeWidth={2} />
+            </svg>
+            Entradas
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-[3px] rounded-full" style={{ background: PURPLE }} /> Concluídas
+            <svg width="14" height="6" aria-hidden="true">
+              <line x1="0" y1="3" x2="14" y2="3" stroke={PURPLE} strokeWidth={2} strokeDasharray="3.5 2.5" />
+            </svg>
+            Concluídas
           </span>
         </div>
       </div>
 
       {/* Resumo da janela — direção da fila sem precisar de hover */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px] text-muted tabular-nums">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-caption text-muted tabular-nums">
         <span><span className="font-semibold text-text">{totEntradas}</span> entradas no período</span>
         <span><span className="font-semibold text-text">{totConcl}</span> concluídas</span>
         <span className="font-semibold"
@@ -134,9 +140,9 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
             : null
           ))}
 
-          {/* séries */}
+          {/* séries — Concluídas tracejada para diferenciar sem depender só de cor */}
           <path d={path(serie.abertas)} fill="none" stroke={BLUE} strokeWidth={2} strokeLinecap="round" />
-          <path d={path(serie.concl)}   fill="none" stroke={PURPLE} strokeWidth={2} strokeLinecap="round" />
+          <path d={path(serie.concl)}   fill="none" stroke={PURPLE} strokeWidth={2} strokeLinecap="round" strokeDasharray="6 4" />
 
           {/* pontos finais + rótulo direto */}
           <circle cx={x(len - 1)} cy={y(ultAbertas)} r={3.5} fill={BLUE}
@@ -171,7 +177,7 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
         {hover != null && (
           <div
             className="absolute z-10 min-w-[150px] pointer-events-none rounded border border-border
-                       bg-elevated px-2.5 py-2 text-[11px] shadow-lg"
+                       bg-elevated px-2.5 py-2 text-caption shadow-lg"
             style={{ left: tipLeft, top: tipTop, transform: 'translate(-50%, calc(-100% - 12px))' }}
             role="status"
           >
@@ -200,10 +206,10 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
       </div>
 
       <details className="mt-2">
-        <summary className="text-[11px] text-muted cursor-pointer hover:text-secondary">
+        <summary className="text-caption text-muted cursor-pointer hover:text-secondary">
           ver dados em tabela
         </summary>
-        <table className="w-full border-collapse mt-2 text-[11px]">
+        <table className="w-full border-collapse mt-2 text-caption">
           <thead>
             <tr>
               <th className="text-left  text-muted font-semibold px-2 py-1 border-b border-border">Dia</th>

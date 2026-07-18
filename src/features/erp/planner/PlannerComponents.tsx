@@ -109,7 +109,7 @@ export function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; 
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
+      <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
     </div>
   )
 }
@@ -129,17 +129,17 @@ export function OsRowItem({ r }: { r: OSRow }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[11px] font-bold text-primary">{r.numos}</span>
-          <span className="text-[11px] text-text truncate flex-1">{r.nomecliente || '—'}</span>
+          <span className="font-mono text-caption font-bold text-primary">{r.numos}</span>
+          <span className="text-caption text-text truncate flex-1">{r.nomecliente || '—'}</span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[10px] text-muted">{r.nomedacidade || '—'}</span>
+          <span className="text-caption text-muted">{r.nomedacidade || '—'}</span>
           {r.tiposervico && (
-            <><span className="text-muted/40">·</span><span className="text-[10px] text-muted truncate">{r.tiposervico}</span></>
+            <><span className="text-muted/40">·</span><span className="text-caption text-muted truncate">{r.tiposervico}</span></>
           )}
         </div>
       </div>
-      <Badge variant={situacaoVariant(r.descsituacao)} className="text-[9px] px-1.5 py-px flex-shrink-0">
+      <Badge variant={situacaoVariant(r.descsituacao)} className="text-caption px-1.5 py-px flex-shrink-0">
         {r.descsituacao ?? '—'}
       </Badge>
     </div>
@@ -164,14 +164,14 @@ export function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null
 
         <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-white/[0.08]">
           <div>
-            <p className="text-[14px] font-bold text-text leading-tight">{team}</p>
-            <p className="text-[11px] text-muted mt-0.5">
+            <p className="text-title font-bold text-text leading-tight">{team}</p>
+            <p className="text-caption text-muted mt-0.5">
               {day.dow}, {day.label}
               {day.isToday && <span className="ml-2 text-primary font-semibold">· Hoje</span>}
             </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="flex items-center gap-2 text-[11px]">
+            <div className="flex items-center gap-2 text-caption">
               {nPending   > 0 && <span className="flex items-center gap-1 text-yellow font-semibold"><Clock size={11}/>{nPending}</span>}
               {nConcluded > 0 && <span className="flex items-center gap-1 text-green  font-semibold"><CheckCircle2 size={11}/>{nConcluded}</span>}
             </div>
@@ -188,7 +188,7 @@ export function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null
             <div>
               <div className="px-4 pt-3 pb-1.5 flex items-center gap-2">
                 <Clock size={10} className="text-yellow" />
-                <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-yellow">
+                <span className="text-caption font-bold uppercase tracking-[0.06em] text-yellow">
                   Pendentes / Em atendimento ({nPending})
                 </span>
               </div>
@@ -199,7 +199,7 @@ export function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null
             <div>
               <div className={`px-4 pb-1.5 flex items-center gap-2 ${pending.length > 0 ? 'pt-3 border-t border-white/[0.08] mt-1' : 'pt-3'}`}>
                 <CheckCircle2 size={10} className="text-green" />
-                <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-green">
+                <span className="text-caption font-bold uppercase tracking-[0.06em] text-green">
                   Concluídas ({nConcluded})
                 </span>
               </div>
@@ -207,13 +207,13 @@ export function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null
             </div>
           )}
           {total === 0 && (
-            <p className="text-center text-[12px] text-muted py-10">Nenhuma OS para este dia</p>
+            <p className="text-center text-label text-muted py-10">Nenhuma OS para este dia</p>
           )}
         </div>
 
         <div className="px-5 py-3 border-t border-white/[0.08] flex items-center justify-between">
-          <span className="text-[11px] text-muted">{total} OS agendadas neste dia</span>
-          <button onClick={onClose} className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors">
+          <span className="text-caption text-muted">{total} OS agendadas neste dia</span>
+          <button onClick={onClose} className="text-caption font-semibold text-primary hover:text-primary/80 transition-colors">
             Fechar
           </button>
         </div>
@@ -245,7 +245,7 @@ export function PlannerCell({ rows = [] as OSRow[], isPast, _isToday: _isToday =
     return (
       <td className={`px-2 py-2 text-center border-r border-white/[0.08] last:border-r-0 w-[100px]
                       ${isPast ? 'opacity-40' : ''} ${isWeekend ? 'bg-surface/20' : ''}`}>
-        <span className="text-[10px] text-muted/60">—</span>
+        <span className="text-caption text-muted/60">—</span>
       </td>
     )
   }
@@ -282,8 +282,8 @@ export function PlannerCell({ rows = [] as OSRow[], isPast, _isToday: _isToday =
                         bg-elevated border border-white/[0.08] rounded-xl shadow-xl
                         min-w-[200px] max-w-[260px] p-3 pointer-events-none">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-text">{count} OS</span>
-            <div className="flex gap-2 text-[9px]">
+            <span className="text-caption font-bold text-text">{count} OS</span>
+            <div className="flex gap-2 text-caption">
               {nPending > 0 && <span className="text-yellow flex items-center gap-0.5"><Clock size={9}/>{nPending}</span>}
               {nConcl   > 0 && <span className="text-green  flex items-center gap-0.5"><CheckCircle2 size={9}/>{nConcl}</span>}
             </div>
@@ -293,15 +293,15 @@ export function PlannerCell({ rows = [] as OSRow[], isPast, _isToday: _isToday =
               const { color: tc } = tipoIcon(r)
               const concl = isConcluida(r.descsituacao)
               return (
-                <div key={r.numos} className={`flex items-center gap-2 text-[10px] ${concl ? 'opacity-60' : ''}`}>
+                <div key={r.numos} className={`flex items-center gap-2 text-caption ${concl ? 'opacity-60' : ''}`}>
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: tc }} />
                   <span className="text-text truncate flex-1">{r.nomecliente || r.numos}</span>
                   <span className="text-muted flex-shrink-0">{concl ? '✓' : r.nomedacidade || '—'}</span>
                 </div>
               )
             })}
-            {rows.length > 5  && <p className="text-[9px] text-muted/60 pt-0.5">+{rows.length - 5} OS · clique para ver todas</p>}
-            {rows.length <= 5 && <p className="text-[9px] text-primary/60 pt-1 text-center">Clique para ver detalhes</p>}
+            {rows.length > 5  && <p className="text-caption text-muted/60 pt-0.5">+{rows.length - 5} OS · clique para ver todas</p>}
+            {rows.length <= 5 && <p className="text-caption text-primary/60 pt-1 text-center">Clique para ver detalhes</p>}
           </div>
         </div>
       )}

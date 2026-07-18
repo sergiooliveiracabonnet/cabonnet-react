@@ -43,7 +43,7 @@ describe('Button', () => {
   it('aplica tamanho sm corretamente', () => {
     const { container } = render(<Button size="sm">Pequeno</Button>)
     const btn = container.querySelector('button')
-    expect(btn?.className).toContain('text-[12px]')
+    expect(btn?.className).toContain('text-label')
   })
 
   it('botão é um elemento button no DOM', () => {

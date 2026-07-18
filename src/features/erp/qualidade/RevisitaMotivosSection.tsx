@@ -32,10 +32,10 @@ export function RevisitaMotivosSection() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-[11px] text-muted">
+        <p className="text-caption text-muted">
           Motivo registrado pelo time — pelo Telegram na revisita ou classificado direto na OS. Não é estimativa.
         </p>
-        <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-[11px]">
+        <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-caption">
           {PERIODOS.map(p => (
             <button key={p.value} onClick={() => setDias(p.value)}
                     className={`px-2.5 py-1 transition-colors ${
@@ -48,23 +48,23 @@ export function RevisitaMotivosSection() {
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2 py-4 text-[12px] text-muted">
+        <div className="flex items-center gap-2 py-4 text-label text-muted">
           <div className="w-3.5 h-3.5 border border-primary border-t-transparent rounded-full animate-spin" />
           Carregando motivos registrados…
         </div>
       )}
 
       {isError && (
-        <p className="text-[12px] text-red-400 py-4">Erro ao carregar motivos de revisita.</p>
+        <p className="text-label text-red-400 py-4">Erro ao carregar motivos de revisita.</p>
       )}
 
       {data && data.total === 0 && (
         <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-6 text-center">
           <ClipboardCheck size={18} className="text-muted mx-auto mb-2" />
-          <p className="text-[12px] text-muted">
+          <p className="text-label text-muted">
             Nenhuma revisita foi classificada pelo time nos últimos {dias} dias.
           </p>
-          <p className="text-[11px] text-muted/70 mt-1">
+          <p className="text-caption text-muted/70 mt-1">
             A classificação acontece pelo botão que o Telegram envia quando detecta o retorno de um cliente.
           </p>
         </div>
@@ -72,19 +72,19 @@ export function RevisitaMotivosSection() {
 
       {data && data.total > 0 && (
         <div className="rounded-xl border border-white/[0.08] bg-card p-4 space-y-2">
-          <p className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted mb-3">
+          <p className="text-caption font-bold uppercase tracking-[0.07em] text-muted mb-3">
             {data.total} revisita{data.total !== 1 ? 's' : ''} classificada{data.total !== 1 ? 's' : ''} pelo time
           </p>
           {data.distribuicao.map(d => (
             <div key={d.motivo} className="flex items-center gap-3">
-              <span className="text-[11px] text-text w-44 flex-shrink-0 truncate">{d.motivo}</span>
+              <span className="text-caption text-text w-44 flex-shrink-0 truncate">{d.motivo}</span>
               <div className="flex-1 h-1.5 bg-surface/40 rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all"
                      style={{ width: `${d.pct}%`, background: motivoColor(d.motivo) }} />
               </div>
-              <span className="font-mono font-bold text-[13px] w-6 text-right"
+              <span className="font-mono font-bold text-body w-6 text-right"
                     style={{ color: motivoColor(d.motivo) }}>{d.count}</span>
-              <span className="text-[10px] text-muted w-9 text-right">{d.pct}%</span>
+              <span className="text-caption text-muted w-9 text-right">{d.pct}%</span>
             </div>
           ))}
         </div>

@@ -83,10 +83,10 @@ function AlertaPainel({
       <div className="flex items-start gap-3 p-3 rounded-xl border border-red-500/20 bg-red-500/5">
         <AlertTriangle size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-[13px] font-bold text-text">
+          <p className="text-body font-bold text-text">
             {fmt(alerta.count_os)} OS abertas em {alerta.data}
           </p>
-          <p className="text-[11px] text-muted mt-0.5">
+          <p className="text-caption text-muted mt-0.5">
             Z-score {alerta.zscore}σ — volume {Math.round(alerta.zscore * 100 / 2)}% acima da média esperada
           </p>
         </div>
@@ -94,7 +94,7 @@ function AlertaPainel({
 
       {/* Campo contexto */}
       <div className="space-y-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">
+        <label className="text-caption font-bold uppercase tracking-[0.07em] text-muted">
           O que aconteceu neste dia? <span className="font-normal normal-case tracking-normal text-muted/50">(opcional)</span>
         </label>
         <textarea
@@ -103,7 +103,7 @@ function AlertaPainel({
           placeholder="Ex: Troca em massa de roteadores Zyxel contaminados…"
           rows={2}
           className="w-full rounded-xl border border-white/[0.08] bg-surface/30 px-3 py-2.5
-                     text-[12px] text-text placeholder:text-muted/40 resize-none
+                     text-label text-text placeholder:text-muted/40 resize-none
                      focus:outline-none focus:border-violet-500/40 transition-colors"
         />
       </div>
@@ -113,7 +113,7 @@ function AlertaPainel({
         <button
           onClick={gerarIA}
           disabled={iaLoading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-[12px]
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-label
                      transition-all disabled:opacity-50
                      border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20">
           <Sparkles size={12} className={iaLoading ? 'animate-pulse' : ''} />
@@ -123,7 +123,7 @@ function AlertaPainel({
           <button
             onClick={salvarEFechar}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-[12px]
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-label
                        transition-all disabled:opacity-50
                        border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20">
             <Bookmark size={12} />
@@ -133,7 +133,7 @@ function AlertaPainel({
       </div>
 
       {iaError && (
-        <p className="text-[11px] text-red-400 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2">{iaError}</p>
+        <p className="text-caption text-red-400 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2">{iaError}</p>
       )}
 
       {/* Resultado IA expansível */}
@@ -141,7 +141,7 @@ function AlertaPainel({
         <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 overflow-hidden">
           <button
             onClick={() => setExpanded(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-[11px] text-violet-300">
+            className="w-full flex items-center justify-between px-4 py-2.5 text-caption text-violet-300">
             <span className="flex items-center gap-1.5">
               <Sparkles size={11} />
               Resultado da análise
@@ -149,18 +149,18 @@ function AlertaPainel({
             {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
           {expanded && (
-            <div className="px-4 pb-4 space-y-2.5 text-[12px]">
+            <div className="px-4 pb-4 space-y-2.5 text-label">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.07em] text-violet-400/70 mb-0.5">Causa Principal</p>
+                <p className="text-caption font-bold uppercase tracking-[0.07em] text-violet-400/70 mb-0.5">Causa Principal</p>
                 <p className="text-text leading-relaxed">{iaResult.causa_principal}</p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted mb-0.5">Impacto</p>
+                <p className="text-caption font-bold uppercase tracking-[0.07em] text-muted mb-0.5">Impacto</p>
                 <p className="text-text leading-relaxed">{iaResult.impacto}</p>
               </div>
               {iaResult.acoes?.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted mb-1">Ações</p>
+                  <p className="text-caption font-bold uppercase tracking-[0.07em] text-muted mb-1">Ações</p>
                   <ul className="space-y-0.5">
                     {iaResult.acoes.map((a, i) => (
                       <li key={i} className="flex gap-1.5 text-text"><span className="text-violet-400">•</span>{a}</li>
@@ -169,7 +169,7 @@ function AlertaPainel({
                 </div>
               )}
               <div className="pt-2 border-t border-violet-500/10">
-                <p className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted mb-0.5">Recomendação para Gestão</p>
+                <p className="text-caption font-bold uppercase tracking-[0.07em] text-muted mb-0.5">Recomendação para Gestão</p>
                 <p className="text-violet-200 font-medium">{iaResult.recomendacao_gestao}</p>
               </div>
             </div>
@@ -180,7 +180,7 @@ function AlertaPainel({
       {/* Ignorar */}
       <button
         onClick={onDismiss}
-        className="text-[11px] text-muted/50 hover:text-muted transition-colors underline underline-offset-2">
+        className="text-caption text-muted/50 hover:text-muted transition-colors underline underline-offset-2">
         Ignorar este alerta
       </button>
     </div>
@@ -239,8 +239,8 @@ export function PicoAlertaModal() {
               <div className="flex items-center gap-2.5">
                 <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                 <div>
-                  <p className="text-[13px] font-bold text-text">Pico de OS Detectado — 17h</p>
-                  <p className="text-[11px] text-muted mt-0.5">
+                  <p className="text-body font-bold text-text">Pico de OS Detectado — 17h</p>
+                  <p className="text-caption text-muted mt-0.5">
                     Volume anômalo identificado automaticamente
                     {alertas.length > 1 && ` · ${idx + 1} de ${alertas.length}`}
                   </p>

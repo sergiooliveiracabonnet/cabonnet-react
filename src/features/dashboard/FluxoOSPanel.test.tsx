@@ -72,4 +72,13 @@ describe('FluxoOSPanel', () => {
     // 14 linhas de dados + cabeçalho
     expect(tabela.querySelectorAll('tbody tr')).toHaveLength(14)
   })
+
+  it('diferencia as linhas por traço, não só por cor', () => {
+    render(<FluxoOSPanel evolucao={makeEvolucao(14)} />)
+    const svg = screen.getByRole('img', { name: /entradas e conclusões diárias/i })
+    const paths = svg.querySelectorAll('path')
+    expect(paths).toHaveLength(2)
+    expect(paths[0]).not.toHaveAttribute('stroke-dasharray')  // Entradas — linha sólida
+    expect(paths[1]).toHaveAttribute('stroke-dasharray')      // Concluídas — linha tracejada
+  })
 })

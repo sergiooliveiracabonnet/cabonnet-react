@@ -95,21 +95,21 @@ export default function AlertasPage() {
               Notificações &amp; Alertas
             </h1>
             {hasAny ? (
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full border"
+              <span className="inline-flex items-center gap-1.5 text-caption font-bold px-2 py-0.5 rounded-full border"
                     style={{ background: 'rgba(248,113,113,0.12)', borderColor: 'rgba(248,113,113,0.35)', color: '#f87171' }}>
                 {totalAlerts} ativo{totalAlerts > 1 ? 's' : ''}
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full border"
+              <span className="inline-flex items-center gap-1.5 text-caption font-bold px-2 py-0.5 rounded-full border"
                     style={{ background: 'rgba(74,222,128,0.10)', borderColor: 'rgba(74,222,128,0.30)', color: '#4ade80' }}>
                 OK
               </span>
             )}
           </div>
           <div className="flex items-center gap-3">
-            <p className="text-[12px] text-secondary">Motor de regras em tempo real · ERP</p>
+            <p className="text-label text-secondary">Motor de regras em tempo real · ERP</p>
             {!isLoading && (
-              <span className="flex items-center gap-1.5 text-[10px] text-muted">
+              <span className="flex items-center gap-1.5 text-caption text-muted">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green" />
@@ -122,7 +122,7 @@ export default function AlertasPage() {
 
         <button
           onClick={() => setShowSettings(true)}
-          className="flex items-center gap-1.5 text-[11px] text-secondary hover:text-text
+          className="flex items-center gap-1.5 text-caption text-secondary hover:text-text
                      px-3 py-1.5 rounded-xl border border-white/[0.08] hover:border-muted/40
                      hover:bg-surface/30 transition-all duration-150 flex-shrink-0"
         >
@@ -152,7 +152,7 @@ export default function AlertasPage() {
                        style={{ background: s.bg, border: `1px solid ${s.color}30` }}>
                     <SIcon size={18} style={{ color: s.color }} />
                   </div>
-                  <span className="text-[9px] font-bold uppercase tracking-[0.07em]"
+                  <span className="text-caption font-bold uppercase tracking-[0.07em]"
                         style={{ color: `${s.color}80` }}>
                     {s.label}
                   </span>
@@ -161,7 +161,7 @@ export default function AlertasPage() {
                    style={{ fontSize: 'clamp(36px, 5vw, 48px)', color: s.color }}>
                   {(counts as Record<string, number>)[sev]}
                 </p>
-                <p className="text-[11px]" style={{ color: `${s.color}70` }}>{desc}</p>
+                <p className="text-caption" style={{ color: `${s.color}70` }}>{desc}</p>
               </div>
             </div>
           )
@@ -184,11 +184,11 @@ export default function AlertasPage() {
                  style={{ borderColor: `${k.color}20`, animationDelay: `${240 + i * 60}ms` }}>
               <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: k.color }} />
               <div className="p-4">
-                <p className="text-[11px] text-muted mb-2">{k.label}</p>
+                <p className="text-caption text-muted mb-2">{k.label}</p>
                 <p className="font-mono font-black tabular-nums text-[30px] leading-none" style={{ color: k.color }}>
                   {k.value}
                 </p>
-                <p className="text-[10px] text-muted mt-1">{k.sub}</p>
+                <p className="text-caption text-muted mt-1">{k.sub}</p>
               </div>
             </div>
           ))}
@@ -200,11 +200,11 @@ export default function AlertasPage() {
         <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles size={12} className="text-primary/40" />
-            <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Análise de Alertas · IA</span>
+            <span className="text-caption font-bold text-muted uppercase tracking-wide">Análise de Alertas · IA</span>
           </div>
           <button
             onClick={() => setAiEnabled(true)}
-            className="flex items-center gap-1.5 text-[11px] font-semibold text-primary/70 hover:text-primary
+            className="flex items-center gap-1.5 text-caption font-semibold text-primary/70 hover:text-primary
                        px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                        transition-all duration-fast"
           >
@@ -215,20 +215,20 @@ export default function AlertasPage() {
         <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles size={12} className="text-primary" />
-            <span className="text-[11px] font-bold text-primary/80 uppercase tracking-wide">
+            <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
               Análise de Alertas · IA
             </span>
             {aiLoading && (
-              <span className="text-[10px] text-muted animate-pulse ml-auto">Analisando…</span>
+              <span className="text-caption text-muted animate-pulse ml-auto">Analisando…</span>
             )}
           </div>
           {aiAlertas && (
             <>
               {aiAlertas.prioridade && (
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-muted">Prioridade</span>
+                  <span className="text-caption font-bold uppercase tracking-wide text-muted">Prioridade</span>
                   <span
-                    className="text-[11px] font-bold px-2 py-0.5 rounded-full border"
+                    className="text-caption font-bold px-2 py-0.5 rounded-full border"
                     style={{
                       background: aiAlertas.prioridade === 'CRITICA' ? 'rgba(248,113,113,0.12)' : 'rgba(249,115,22,0.10)',
                       borderColor: aiAlertas.prioridade === 'CRITICA' ? 'rgba(248,113,113,0.35)' : 'rgba(249,115,22,0.30)',
@@ -241,14 +241,14 @@ export default function AlertasPage() {
               )}
               {aiAlertas.causa_raiz && (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-1">Causa raiz</p>
-                  <p className="text-[12px] text-secondary leading-relaxed">{aiAlertas.causa_raiz}</p>
+                  <p className="text-caption font-bold uppercase tracking-wide text-muted mb-1">Causa raiz</p>
+                  <p className="text-label text-secondary leading-relaxed">{aiAlertas.causa_raiz}</p>
                 </div>
               )}
               {aiAlertas.acao_imediata && (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted mb-1">Ação imediata</p>
-                  <p className="text-[12px] text-text font-semibold leading-relaxed">{aiAlertas.acao_imediata}</p>
+                  <p className="text-caption font-bold uppercase tracking-wide text-muted mb-1">Ação imediata</p>
+                  <p className="text-label text-text font-semibold leading-relaxed">{aiAlertas.acao_imediata}</p>
                 </div>
               )}
               {aiAlertas.insights && aiAlertas.insights.length > 0 && (
@@ -256,7 +256,7 @@ export default function AlertasPage() {
                   {aiAlertas.insights.map((ins, i) => (
                     <span
                       key={i}
-                      className="text-[11px] px-2.5 py-1 rounded-full border border-primary/20 bg-primary/[0.06] text-primary/80"
+                      className="text-caption px-2.5 py-1 rounded-full border border-primary/20 bg-primary/[0.06] text-primary/80"
                     >
                       {ins}
                     </span>
@@ -279,13 +279,13 @@ export default function AlertasPage() {
               {!!grafOS.totais && (() => {
                 const t = grafOS.totais as Record<string, unknown>
                 return (
-                  <span className="text-[10px] text-muted tabular-nums">
+                  <span className="text-caption text-muted tabular-nums">
                     {String(t['pendentes'] ?? '—')} pendentes · {String(t['fechados_7d'] ?? '—')} fechados/7d
                   </span>
                 )
               })()}
               {grafOS.lastSync && (
-                <span className="text-[9px] text-muted">
+                <span className="text-caption text-muted">
                   {grafOS.lastSync.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
@@ -298,7 +298,7 @@ export default function AlertasPage() {
           </div>
           <GrafanaCityStrip cidades={grafOS.cidades as GrafanaCidade[]} loading={grafOS.loading} />
           {grafOS.error && (
-            <p className="text-[10px] text-muted/50 mt-1.5">iManager offline · usando dados ERP locais</p>
+            <p className="text-caption text-muted/50 mt-1.5">iManager offline · usando dados ERP locais</p>
           )}
         </section>
       )}
@@ -319,8 +319,8 @@ export default function AlertasPage() {
                  style={{ background: 'rgba(74,222,128,0.10)', border: '1px solid rgba(74,222,128,0.25)' }}>
               <ShieldCheck size={28} className="text-green" />
             </div>
-            <p className="text-[15px] font-semibold text-text mb-1">Tudo certo!</p>
-            <p className="text-[12px] text-muted">Nenhum alerta ativo com os thresholds configurados</p>
+            <p className="text-title font-semibold text-text mb-1">Tudo certo!</p>
+            <p className="text-label text-muted">Nenhum alerta ativo com os thresholds configurados</p>
           </div>
         </div>
       ) : (

@@ -4,7 +4,7 @@ import { useOSDerived } from '../../../contexts/OSDataContext'
 import { isCOPE, isReagend, isExecucaoReal } from '../../../lib/transform'
 import { shortEquipe } from '../../../lib/osFormat'
 import { Badge } from '../../../components/ui/Badge'
-import { KPICard } from '../../../components/ui/KPICard'
+import { StatCard } from '../../../components/ui/StatCard'
 import { useTecnicos, useTecnicosActions } from '../../../hooks/useTecnicos'
 import type { TecnicoItem } from '../../../lib/api'
 
@@ -58,12 +58,12 @@ function TecnicoCell({ codigo, cadastro }: { codigo: string; cadastro: TecnicoIt
         <input
           autoFocus value={nome} onChange={e => setNome(e.target.value)}
           placeholder="Nome real"
-          className="w-28 text-[11px] bg-surface/40 border border-white/[0.08] rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
+          className="w-28 text-caption bg-surface/40 border border-white/[0.08] rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
         />
         <input
           value={contato} onChange={e => setContato(e.target.value)}
           placeholder="Contato"
-          className="w-24 text-[11px] bg-surface/40 border border-white/[0.08] rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
+          className="w-24 text-caption bg-surface/40 border border-white/[0.08] rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
         />
         <button onClick={() => { upsert({ codigo, nome_real: nome, contato }); setEditing(false) }}
                 className="text-green hover:text-green/80"><Check size={13} /></button>
@@ -75,11 +75,11 @@ function TecnicoCell({ codigo, cadastro }: { codigo: string; cadastro: TecnicoIt
   return (
     <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 group text-left">
       <div>
-        <p className="font-semibold text-text text-[14px]">
+        <p className="font-semibold text-text text-title">
           {cadastro?.nome_real || shortEquipe(codigo)}
-          {cadastro?.contato && <span className="ml-1.5 font-normal text-[12px] text-muted">| {cadastro.contato}</span>}
+          {cadastro?.contato && <span className="ml-1.5 font-normal text-label text-muted">| {cadastro.contato}</span>}
         </p>
-        {cadastro?.nome_real && <p className="text-[10px] text-muted font-mono">{shortEquipe(codigo)}</p>}
+        {cadastro?.nome_real && <p className="text-caption text-muted font-mono">{shortEquipe(codigo)}</p>}
       </div>
       <Pencil size={10} className="text-muted/0 group-hover:text-muted/60 transition-colors flex-shrink-0" />
     </button>
@@ -146,7 +146,7 @@ export default function RankingTecnicosPage() {
   }, [ranking])
 
   if (isLoading) {
-    return <div className="p-6 text-muted text-[12px]">Carregando ranking…</div>
+    return <div className="p-6 text-muted text-label">Carregando ranking…</div>
   }
 
   return (
@@ -155,37 +155,37 @@ export default function RankingTecnicosPage() {
         <h1 className="text-[20px] font-bold text-text flex items-center gap-2">
           <Award size={18} className="text-primary" /> Ranking de Técnicos
         </h1>
-        <p className="text-[12px] text-muted mt-0.5">
+        <p className="text-label text-muted mt-0.5">
           Volume, SLA e taxa de retrabalho por técnico, lado a lado — sem score composto, sem peso inventado
         </p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Técnicos ativos" value={kpis.total} accent="primary" />
-        <KPICard title="SLA médio" value={kpis.slaMedio != null ? `${kpis.slaMedio}%` : '—'} accent="teal" />
-        <KPICard title="Retrabalho médio" value={kpis.revMedia != null ? `${kpis.revMedia}%` : '—'} accent="orange" />
-        <KPICard title="Com OS crítica" value={kpis.criticos} accent="red" />
+        <StatCard title="Técnicos ativos" value={kpis.total} />
+        <StatCard title="SLA médio" value={kpis.slaMedio != null ? `${kpis.slaMedio}%` : '—'} />
+        <StatCard title="Retrabalho médio" value={kpis.revMedia != null ? `${kpis.revMedia}%` : '—'} tone="warning" />
+        <StatCard title="Com OS crítica" value={kpis.criticos} tone="critical" />
       </div>
 
       <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-[12px]">
+          <table className="w-full text-label">
             <thead>
               <tr className="border-b border-white/[0.05] bg-surface/10">
-                <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.05em] text-muted">Técnico</th>
-                <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
+                <th className="px-4 py-3 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Técnico</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('volume')}>
                   <span className="inline-flex items-center gap-1">Volume concluído <SortIcon col="volume" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('sla')}>
                   <span className="inline-flex items-center gap-1">SLA <SortIcon col="sla" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('criticas')}>
                   <span className="inline-flex items-center gap-1">Críticas <SortIcon col="criticas" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('taxaRevisita')}>
                   <span className="inline-flex items-center gap-1">Retrabalho <SortIcon col="taxaRevisita" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
@@ -215,7 +215,7 @@ export default function RankingTecnicosPage() {
               ))}
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted text-[12px]">
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted text-label">
                     Nenhum técnico com OS no período selecionado.
                   </td>
                 </tr>
