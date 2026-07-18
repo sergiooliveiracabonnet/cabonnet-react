@@ -8,7 +8,7 @@ import { api } from './lib/api'
 import {
   ERPRelatoriosPage,
   ERPAlertasPage,
-  ERPProdutividadePage, ERPQualidadePage, ERPPlannerPage, ERPFilaPage, ERPRankingTecnicosPage, ERPCentralAcaoPage,
+  ERPQualidadePage, ERPPlannerPage, ERPFilaPage, ERPRankingTecnicosPage,
   DashboardPage, OrdensPage,
   GraficosPage, CidadesGerencialPage,
   FornecedorPage, JuniperPage, NotFoundPage, NocPage, FechamentoPage,
@@ -59,14 +59,15 @@ export default function App() {
         <Route path="erp">
           <Route path="relatorios"    element={<RequireModulo modulo="erp_relatorios">   <ERPRelatoriosPage />   </RequireModulo>} />
           <Route path="alertas"       element={<RequireModulo modulo="erp_alertas">      <ERPAlertasPage />      </RequireModulo>} />
-          <Route path="produtividade" element={<RequireModulo modulo="erp_produtividade"><ERPProdutividadePage /></RequireModulo>} />
+          <Route path="produtividade" element={<Navigate to="/erp/planner" replace />} />
           <Route path="qualidade"     element={<RequireModulo modulo="erp_qualidade">    <ERPQualidadePage />    </RequireModulo>} />
           <Route path="planner"       element={<RequireModulo modulo="erp_planner">      <ERPPlannerPage />      </RequireModulo>} />
           <Route path="fila"          element={<RequireModulo modulo="erp_fila">         <ERPFilaPage />         </RequireModulo>} />
           {/* /erp/vt virou a fila unica em /erp/fila */}
           <Route path="vt"            element={<Navigate to="/erp/fila" replace />} />
           <Route path="ranking"       element={<RequireModulo modulo="erp_ranking">      <ERPRankingTecnicosPage /></RequireModulo>} />
-          <Route path="acao"          element={<RequireModulo modulo="erp_acao">         <ERPCentralAcaoPage />  </RequireModulo>} />
+          {/* /erp/acao removido — agregava dado que já existe em /erp/alertas e no Dashboard */}
+          <Route path="acao"          element={<Navigate to="/" replace />} />
           <Route path="usuarios"      element={<RequireGestor>                           <UsuariosPage />        </RequireGestor>} />
         </Route>
 

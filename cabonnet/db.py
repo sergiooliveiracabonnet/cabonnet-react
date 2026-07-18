@@ -22,18 +22,26 @@ log_db = logging.getLogger("CaboNetServer.DB")
 ALL_MODULOS = [
     "dashboard", "ordens", "graficos", "cidades", "fornecedor", "juniper",
     "fechamento", "mapa", "noc",
-    "erp_relatorios", "erp_alertas", "erp_produtividade", "erp_qualidade",
-    "erp_planner", "erp_fila", "erp_ranking", "erp_acao",
+    "erp_relatorios", "erp_alertas", "erp_qualidade",
+    "erp_planner", "erp_fila", "erp_ranking",
 ]
 
 # Defaults semeados no bootstrap — só o ponto de partida, ajustável depois pela
 # própria tela de permissões.
 _DEFAULT_OPERADOR_MODULOS = [
     "dashboard", "ordens", "cidades", "mapa", "juniper",
-    "erp_relatorios", "erp_alertas", "erp_produtividade", "erp_qualidade",
-    "erp_planner", "erp_fila", "erp_ranking", "erp_acao",
+    "erp_relatorios", "erp_alertas", "erp_qualidade",
+    "erp_planner", "erp_fila", "erp_ranking",
 ]
 _DEFAULT_VIEWER_MODULOS = ["dashboard", "graficos", "cidades", "mapa"]
+
+# Onda 3a (2026-07): erp_produtividade fundido em erp_planner, erp_acao removido
+# (redirect pra dashboard). Mapa usado por _db_migrate_onda3a_modulos() pra
+# preservar o acesso de quem já tinha o módulo antigo liberado.
+_MODULOS_RENOMEADOS_ONDA3A = {
+    "erp_produtividade": "erp_planner",
+    "erp_acao":          "dashboard",
+}
 
 
 def _db_init():
@@ -156,6 +164,30 @@ def _db_init():
                 PRIMARY KEY (role, modulo)
             )
         """)
+        con.commit()
+        con.close()
+
+    _db_migrate_onda3a_modulos()
+
+
+def _db_migrate_onda3a_modulos():
+    """Migração idempotente: para cada papel que tinha um módulo removido na
+    Onda 3a (erp_produtividade, erp_acao), garante que o módulo substituto
+    (erp_planner, dashboard) esteja liberado antes de apagar a entrada antiga.
+    Roda no startup, toda vez — tabela pequena, no-op barato quando já migrado.
+    Ver docs/superpowers/specs/2026-07-18-onda3a-fusoes-erp-design.md §4.4."""
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        for antigo, novo in _MODULOS_RENOMEADOS_ONDA3A.items():
+            papeis = [r[0] for r in con.execute(
+                "SELECT DISTINCT role FROM role_permissoes WHERE modulo=?", (antigo,)
+            ).fetchall()]
+            for papel in papeis:
+                con.execute(
+                    "INSERT OR IGNORE INTO role_permissoes (role, modulo) VALUES (?,?)",
+                    (papel, novo)
+                )
+            con.execute("DELETE FROM role_permissoes WHERE modulo=?", (antigo,))
         con.commit()
         con.close()
 

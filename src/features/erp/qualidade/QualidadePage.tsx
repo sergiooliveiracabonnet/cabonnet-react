@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, MapPin, Users, RefreshCw, Wrench, Home, Star, Search, Sparkles, ClipboardCheck } from 'lucide-react'
+import { AlertTriangle, MapPin, RefreshCw, Wrench, Home, Star, Search, Sparkles, ClipboardCheck } from 'lucide-react'
 import { useBacklog, type BacklogRow } from '../../../hooks/useBacklog'
 import { AreaChart, Area, XAxis, YAxis, Grid, ChartTooltip, Legend } from '../../../components/ui/line-chart'
 import { BarChart, Bar, XAxis as BXAxis, YAxis as BYAxis, Grid as BGrid, ChartTooltip as BTip } from '../../../components/ui/bar-chart'
 import {
-  EquipeRow, DrillTable,
+  DrillTable,
   type Tipo, TIPO_LABEL, TIPO_COLOR,
   taxaColor,
 } from './QualidadeComponents'
@@ -145,33 +145,6 @@ export default function QualidadePage() {
     servico:    revisitas.filter(r => Number(r.revisita_serv)  === 1).length,
   }), [revisitas])
 
-  // Ranking por equipe — usa revisitasFiltradas vs total do mesmo tipo
-  const rankingEquipe = useMemo(() => {
-    const allRows = data?.rows ?? []
-    const totalMap: Record<string, number> = {}
-    const revMap:   Record<string, number> = {}
-
-    for (const r of allRows) {
-      const eq    = r.nomedaequipe || 'Sem equipe'
-      const isRev = tipoAtivo === 'todos'
-        ? (Number(r.revisita_inst) + Number(r.revisita_manut) + Number(r.revisita_serv)) > 0
-        : tipoAtivo === 'instalacao' ? Number(r.revisita_inst)  === 1
-        : tipoAtivo === 'manutencao' ? Number(r.revisita_manut) === 1
-        :                               Number(r.revisita_serv)  === 1
-      totalMap[eq] = (totalMap[eq] ?? 0) + 1
-      if (isRev) revMap[eq] = (revMap[eq] ?? 0) + 1
-    }
-    return Object.entries(revMap)
-      .map(([equipe, rev]) => ({
-        equipe,
-        total: totalMap[equipe] ?? 0,
-        rev,
-        taxa: totalMap[equipe] ? Math.round((rev / totalMap[equipe]) * 100) : 0,
-      }))
-      .sort((a, b) => b.rev - a.rev)
-      .slice(0, 15)
-  }, [data, tipoAtivo])
-
   // Clientes crônicos (3+ revisitas no período)
   const cronicos = useMemo(() => {
     const cnt: Record<string, { nome: string; count: number }> = {}
@@ -205,7 +178,6 @@ export default function QualidadePage() {
       .sort((a, b) => b.rev - a.rev)
   }, [data, tipoAtivo])
 
-  const maxRev    = Math.max(1, ...rankingEquipe.map(e => e.rev))
   const taxaGeral = totalOS > 0 ? Math.round((revisitasFiltradas.length / totalOS) * 100) : 0
   // Taxa de primeira visita (first-time-fix): OS do período que NÃO precisaram de retorno.
   // É o complemento direto da taxa de revisita — já era calculável, só nunca tinha sido
@@ -460,102 +432,64 @@ export default function QualidadePage() {
             </section>
           )}
 
-          {/* Ranking equipe + Cidades + Crônicos */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4">
+          {/* Cidades + Crônicos */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-            {/* Ranking por equipe */}
-            {rankingEquipe.length > 0 && (
+            {/* Por cidade */}
+            {porCidade.length > 0 && (
               <section className="space-y-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: cor }} />
-                  <Users size={12} style={{ color: cor }} className="flex-shrink-0" />
-                  <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
-                    Ranking — Revisitas por Equipe
+                  <div className="w-[3px] h-4 rounded-full bg-cyan-400 flex-shrink-0" />
+                  <MapPin size={12} className="text-cyan-400 flex-shrink-0" />
+                  <span className="text-caption font-bold uppercase tracking-[0.07em] text-cyan-400">
+                    Por Cidade
                   </span>
                 </div>
-                <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-white/[0.05] bg-surface/10">
-                          {['#','Equipe','Total OS','Revisitas','Taxa','Status'].map(h => (
-                            <th key={h} className="px-3 py-2.5 text-right first:text-left first:px-4
-                                                    text-caption font-bold uppercase tracking-[0.05em] text-muted">
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rankingEquipe.map((eq, i) => (
-                          <EquipeRow key={eq.equipe} rank={i + 1} eq={eq} max={maxRev} />
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden divide-y divide-white/[0.04]">
+                  {porCidade.map(c => {
+                    const color = taxaColor(c.taxa)
+                    const maxC  = porCidade[0]?.rev ?? 1
+                    return (
+                      <div key={c.cidade} className="flex items-center gap-3 px-4 py-3 hover:bg-surface/20 transition-colors">
+                        <span className="text-label font-semibold text-text w-32 flex-shrink-0 truncate">{c.cidade}</span>
+                        <div className="flex-1 h-1.5 bg-surface/40 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full"
+                               style={{ width: `${Math.round((c.rev/maxC)*100)}%`, background: color }} />
+                        </div>
+                        <span className="font-mono font-bold text-body w-8 text-right" style={{ color }}>{c.rev}</span>
+                        <span className="text-caption text-muted w-9 text-right">{c.taxa}%</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </section>
             )}
 
-            {/* Coluna direita: cidades + crônicos */}
-            <div className="space-y-3">
-
-              {/* Por cidade */}
-              {porCidade.length > 0 && (
-                <section className="space-y-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-[3px] h-4 rounded-full bg-cyan-400 flex-shrink-0" />
-                    <MapPin size={12} className="text-cyan-400 flex-shrink-0" />
-                    <span className="text-caption font-bold uppercase tracking-[0.07em] text-cyan-400">
-                      Por Cidade
-                    </span>
-                  </div>
-                  <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden divide-y divide-white/[0.04]">
-                    {porCidade.map(c => {
-                      const color = taxaColor(c.taxa)
-                      const maxC  = porCidade[0]?.rev ?? 1
+            {/* Clientes crônicos */}
+            {cronicos.length > 0 && (
+              <section className="space-y-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-[3px] h-4 rounded-full bg-red-400 flex-shrink-0" />
+                  <AlertTriangle size={12} className="text-red-400 flex-shrink-0" />
+                  <span className="text-caption font-bold uppercase tracking-[0.07em] text-red-400">
+                    Crônicos — 2+ revisitas
+                  </span>
+                </div>
+                <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
+                  <div className="max-h-64 overflow-y-auto divide-y divide-white/[0.04]">
+                    {cronicos.map(c => {
+                      const color = c.count >= 4 ? '#f87171' : c.count >= 3 ? '#f97316' : '#facc15'
                       return (
-                        <div key={c.cidade} className="flex items-center gap-3 px-4 py-3 hover:bg-surface/20 transition-colors">
-                          <span className="text-label font-semibold text-text w-32 flex-shrink-0 truncate">{c.cidade}</span>
-                          <div className="flex-1 h-1.5 bg-surface/40 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full"
-                                 style={{ width: `${Math.round((c.rev/maxC)*100)}%`, background: color }} />
-                          </div>
-                          <span className="font-mono font-bold text-body w-8 text-right" style={{ color }}>{c.rev}</span>
-                          <span className="text-caption text-muted w-9 text-right">{c.taxa}%</span>
+                        <div key={c.nome} className="flex items-center gap-2 px-4 py-2.5 hover:bg-surface/20 transition-colors">
+                          <p className="flex-1 text-[11.5px] text-text truncate">{c.nome}</p>
+                          <span className="font-mono font-bold text-body" style={{ color }}>{c.count}×</span>
                         </div>
                       )
                     })}
                   </div>
-                </section>
-              )}
-
-              {/* Clientes crônicos */}
-              {cronicos.length > 0 && (
-                <section className="space-y-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-[3px] h-4 rounded-full bg-red-400 flex-shrink-0" />
-                    <AlertTriangle size={12} className="text-red-400 flex-shrink-0" />
-                    <span className="text-caption font-bold uppercase tracking-[0.07em] text-red-400">
-                      Crônicos — 2+ revisitas
-                    </span>
-                  </div>
-                  <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
-                    <div className="max-h-64 overflow-y-auto divide-y divide-white/[0.04]">
-                      {cronicos.map(c => {
-                        const color = c.count >= 4 ? '#f87171' : c.count >= 3 ? '#f97316' : '#facc15'
-                        return (
-                          <div key={c.nome} className="flex items-center gap-2 px-4 py-2.5 hover:bg-surface/20 transition-colors">
-                            <p className="flex-1 text-[11.5px] text-text truncate">{c.nome}</p>
-                            <span className="font-mono font-bold text-body" style={{ color }}>{c.count}×</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </section>
-              )}
-            </div>
+                </div>
+              </section>
+            )}
           </div>
 
           {/* Drill-down */}

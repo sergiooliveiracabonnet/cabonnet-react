@@ -538,12 +538,10 @@ _MODULO_LABELS = {
     "noc":                "NOC",
     "erp_relatorios":     "Relatórios",
     "erp_alertas":        "Alertas",
-    "erp_produtividade":  "Produtividade",
     "erp_qualidade":      "Qualidade",
     "erp_planner":        "Planner",
     "erp_fila":           "Fila de Prioridade",
     "erp_ranking":        "Ranking Técnicos",
-    "erp_acao":           "Central de Ação",
 }
 _ROLES_VALIDOS = ("gestor", "operador", "viewer")
 

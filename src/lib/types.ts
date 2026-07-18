@@ -230,6 +230,7 @@ export interface SlaSemaforo {
   sla:      number
   total:    number
   criticas: number
+  agingMed: number
 }
 
 export interface SlaData {
