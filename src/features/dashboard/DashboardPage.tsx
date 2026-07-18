@@ -18,7 +18,7 @@ import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
   MetaMesCard, AlertaTopoBanner, ClustersBairroPanel, AgingPanel,
   RitmoEquipesPanel, MudancasStrip, ProjecaoRiscoPanel,
-  ParetoServicoPanel, CidadesValePanel, FornecedoresPanel,
+  ParetoServicoPanel, CidadesValePanel, FornecedoresPanel, QualidadePeriodoCard,
 } from './DashboardPaineis'
 import { KpiModalTable } from './DashboardKpiModal'
 import {
@@ -27,10 +27,11 @@ import {
 } from './DashboardTypes'
 
 export default function DashboardPage() {
-  const { derived: { dashboard, anomalias, campo, graficos }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
+  const { derived: { dashboard, anomalias, campo, graficos, revisitas }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
   const { kpis, fornecedores, pulso, scoreTendencia, mudancas, metaScore, projecaoRisco } = dashboard as unknown as TypedDashboard
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
   const fluxoHoje = { entradas: pulso.entradasHoje, saidas: pulso.saidasHoje, saldo: pulso.fluxoHoje, mediaEntrada: pulso.entradaMediaDia }
+  const taxaRevisitas = (revisitas as { taxa?: { geral?: number } } | null)?.taxa?.geral ?? null
   const { clustersAtivos = [] } = pulso
   const clustersRef  = useRef<HTMLDivElement>(null)
   const anomaliasRef = useRef<HTMLDivElement>(null)
@@ -159,7 +160,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── Alerta no topo: clusters/anomalias sobem quando ativos ──────── */}
+        {/* ═══ NÍVEL 1 — Estado geral (<2s) ═══ */}
         <AlertaTopoBanner
           clustersCount={clustersAtivos.length}
           anomaliasCount={anomalias?.total ?? 0}
@@ -167,7 +168,6 @@ export default function DashboardPage() {
           onScrollAnomalias={() => anomaliasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
         />
 
-        {/* ── 1. HERO — Pulso Operacional ──────────────────────────────── */}
         <PulsoHero
           pulso={pulso}
           target={metaScore}
@@ -178,10 +178,9 @@ export default function DashboardPage() {
           onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
         />
 
-        {/* ── 1b. Trajetória — Δ do score do período + o que mudou ──────── */}
         <MudancasStrip tendencia={scoreTendencia} mudancas={mudancas} />
 
-        {/* ── 2. KPI BENTO — Alertas & Risco ───────────────────────────── */}
+        {/* ═══ NÍVEL 2 — KPIs principais ═══ */}
         <section>
           <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
@@ -202,23 +201,6 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── 2b. Projeção de risco preditiva (24-48h) ──────────────────── */}
-        <ProjecaoRiscoPanel
-          proj={projecaoRisco}
-          criticasAgora={pulso.criticasTotal ?? 0}
-          onOpen={(rows) => setModal({ title: 'Risco de violação · próximas 48h', rows })}
-        />
-
-        {/* ── 3. Executadas Hoje ─────────────────────────────────────────── */}
-        <ExecutadasHeroBlock
-          rows={allRows}
-          projecao={projecaoHoje}
-          fluxo={fluxoHoje}
-          ritmoIntradiario={pulso.ritmoIntradiario}
-          onOpenModal={(title, filtered) => setModal({ title, rows: filtered })}
-        />
-
-        {/* ── 4. KPI BENTO — Fila & Performance ────────────────────────── */}
         <section>
           <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
@@ -239,32 +221,17 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── 5. Painéis analíticos — grid único de 3 colunas ───────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
-          <div className="lg:col-span-2">
-            <FluxoOSPanel evolucao={graficos.evolucao} />
-          </div>
-          <AgingPanel pulso={pulso} filaAtiva={filaAtiva}
-                      onOpen={(title, rows) => setModal({ title, rows })} />
+        {/* ═══ NÍVEL 3 — Alertas críticos ═══ */}
+        <ProjecaoRiscoPanel
+          proj={projecaoRisco}
+          criticasAgora={pulso.criticasTotal ?? 0}
+          onOpen={(rows) => setModal({ title: 'Risco de violação · próximas 48h', rows })}
+        />
+
+        <div ref={clustersRef}>
+          <ClustersBairroPanel clusters={clustersAtivos} />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-          <ParetoServicoPanel filaAtiva={filaAtiva}
-                              onOpen={(title, rows) => setModal({ title, rows })} />
-          <CidadesValePanel filaAtiva={filaAtiva}
-                            onOpen={(title, rows) => setModal({ title, rows })} />
-          <MetaMesCard meta={pulso.metaMes} />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-          <div ref={clustersRef} className="h-full">
-            <ClustersBairroPanel clusters={clustersAtivos} />
-          </div>
-          <RitmoEquipesPanel semaforo={campo.semaforo} />
-          <FornecedoresPanel fornecedores={fornecedores} />
-        </div>
-
-        {/* ── 8. Anomalias ──────────────────────────────────────────────── */}
         {anomalias?.total > 0 && (
           <div ref={anomaliasRef}>
             <AnomaliaSection
@@ -278,6 +245,38 @@ export default function DashboardPage() {
             />
           </div>
         )}
+
+        {/* ═══ NÍVEL 4 — Detalhamento operacional ═══ */}
+        <ExecutadasHeroBlock
+          rows={allRows}
+          projecao={projecaoHoje}
+          fluxo={fluxoHoje}
+          ritmoIntradiario={pulso.ritmoIntradiario}
+          onOpenModal={(title, filtered) => setModal({ title, rows: filtered })}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
+          <div className="lg:col-span-2">
+            <FluxoOSPanel evolucao={graficos.evolucao} />
+          </div>
+          <AgingPanel pulso={pulso} filaAtiva={filaAtiva}
+                      onOpen={(title, rows) => setModal({ title, rows })} />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+          <RitmoEquipesPanel semaforo={campo.semaforo} />
+          <CidadesValePanel filaAtiva={filaAtiva}
+                            onOpen={(title, rows) => setModal({ title, rows })} />
+          <ParetoServicoPanel filaAtiva={filaAtiva}
+                              onOpen={(title, rows) => setModal({ title, rows })} />
+        </div>
+
+        {/* ═══ NÍVEL 5 — Análises secundárias ═══ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+          <MetaMesCard meta={pulso.metaMes} />
+          <FornecedoresPanel fornecedores={fornecedores} />
+          <QualidadePeriodoCard pulso={pulso} taxaRevisitas={taxaRevisitas} />
+        </div>
 
       </div>
 
