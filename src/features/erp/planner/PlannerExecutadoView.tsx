@@ -431,9 +431,9 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
   )
 }
 
-// ─── ProdutividadePage ────────────────────────────────────────────────────────
+// ─── PlannerExecutadoView ─────────────────────────────────────────────────────
 
-export default function ProdutividadePage() {
+export default function PlannerExecutadoView() {
   const { rows, isLoading } = useERPRows()
   const { dateFilter } = useUIStore()
   const [expanded,    setExpanded]    = useState<string | null>(null)
@@ -507,13 +507,10 @@ export default function ProdutividadePage() {
   return (
     <div className="space-y-4 max-w-[1600px]">
 
-      {/* Header */}
-      <div>
-        <h1 className="text-[20px] font-headline font-bold text-text mb-0.5">Produtividade por Equipe</h1>
-        <p className="text-label text-muted">
-          Histórico de {days.length} dia{days.length > 1 ? 's' : ''} · OS executadas por equipe · expanda e clique no dia para ver as ordens
-        </p>
-      </div>
+      {/* Descrição do período — título da página vem da casca PlannerPage */}
+      <p className="text-label text-muted">
+        Histórico de {days.length} dia{days.length > 1 ? 's' : ''} · OS executadas por equipe · expanda e clique no dia para ver as ordens
+      </p>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

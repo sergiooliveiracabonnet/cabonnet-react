@@ -2,7 +2,6 @@ import { lazy } from 'react'
 
 export const ERPRelatoriosPage    = lazy(() => import('../features/erp/relatorios/RelatoriosPage'))
 export const ERPAlertasPage       = lazy(() => import('../features/erp/alertas/AlertasPage'))
-export const ERPProdutividadePage = lazy(() => import('../features/erp/produtividade/ProdutividadePage'))
 export const ERPQualidadePage     = lazy(() => import('../features/erp/qualidade/QualidadePage'))
 export const ERPPlannerPage          = lazy(() => import('../features/erp/planner/PlannerPage'))
 export const ERPFilaPage = lazy(() => import('../features/erp/fila/FilaPage'))
