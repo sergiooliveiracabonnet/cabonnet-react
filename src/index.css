@@ -241,21 +241,21 @@ body {
 }
 
 /* ── Nav links por grupo ── */
-.nav-link-erp,
-.nav-link-ops,
-.nav-link-anal,
+.nav-link-agora,
+.nav-link-operar,
+.nav-link-analisar,
 .nav-link-infra {
   transition: background 150ms ease, color 150ms ease;
 }
-.nav-link-erp.active   { background: rgba(139,92,246,0.12); color: #c4b5fd; font-weight: 500; }
-.nav-link-ops.active   { background: rgba(34,211,238,0.10); color: #67e8f9; font-weight: 500; }
-.nav-link-anal.active  { background: rgba(74,222,128,0.10); color: #86efac; font-weight: 500; }
-.nav-link-infra.active { background: rgba(251,146,60,0.11); color: #fdba74; font-weight: 500; }
+.nav-link-agora.active    { background: rgba(139,92,246,0.12); color: #c4b5fd; font-weight: 500; }
+.nav-link-operar.active   { background: rgba(34,211,238,0.10); color: #67e8f9; font-weight: 500; }
+.nav-link-analisar.active { background: rgba(74,222,128,0.10); color: #86efac; font-weight: 500; }
+.nav-link-infra.active    { background: rgba(251,146,60,0.11); color: #fdba74; font-weight: 500; }
 
-.nav-link-erp:hover:not(.active)   { background: rgba(139,92,246,0.07); color: #ddd6fe; }
-.nav-link-ops:hover:not(.active)   { background: rgba(34,211,238,0.07); color: #a5f3fc; }
-.nav-link-anal:hover:not(.active)  { background: rgba(74,222,128,0.07); color: #bbf7d0; }
-.nav-link-infra:hover:not(.active) { background: rgba(251,146,60,0.08); color: #fed7aa; }
+.nav-link-agora:hover:not(.active)    { background: rgba(139,92,246,0.07); color: #ddd6fe; }
+.nav-link-operar:hover:not(.active)   { background: rgba(34,211,238,0.07); color: #a5f3fc; }
+.nav-link-analisar:hover:not(.active) { background: rgba(74,222,128,0.07); color: #bbf7d0; }
+.nav-link-infra:hover:not(.active)    { background: rgba(251,146,60,0.08); color: #fed7aa; }
 
 /* Fallback active nav */
 .nav-active {
