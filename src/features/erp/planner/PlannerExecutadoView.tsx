@@ -10,6 +10,7 @@ import { isCOPE, isReagend, isConcluida } from '../../../lib/transform'
 import { Badge } from '../../../components/ui/Badge'
 import type { OSRow } from '../../../lib/types'
 import { useAIProdutividade } from '../../../hooks/useAIProdutividade'
+import { SectionLabel } from './PlannerComponents'
 
 // Limite de colunas no grid de dias — ranges longos (mensal/anual/custom) mostram
 // só os dias mais recentes dentro do range, senão o grid quebra o layout.
@@ -118,18 +119,6 @@ function buildProdutividade(allRows: OSRow[], days: DayInfo[]): { teams: TeamEnt
 
   const globalMax = Math.max(...teams.flatMap(t => days.map((d: DayInfo) => cnt(t.daily, d.key))), 1)
   return { teams, globalMax }
-}
-
-// ─── SectionLabel ─────────────────────────────────────────────────────────────
-
-function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; color: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
-      <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
-    </div>
-  )
 }
 
 // ─── DeltaBadge ───────────────────────────────────────────────────────────────
@@ -513,7 +502,7 @@ export default function PlannerExecutadoView() {
       </p>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: `Executadas (últimos ${thisLen}d)`, value: totalThis,  sub: `${totalPrev} nos ${prevLen}d anteriores`,  color: '#3b82f6', delta: totalDelta },
           { label: 'Equipes melhoraram',       value: melhorou,  sub: `${piorou} reduziram · ${teams.length - melhorou - piorou} estáveis`, color: '#4ade80' },
