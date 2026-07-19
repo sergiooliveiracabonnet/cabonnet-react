@@ -28,4 +28,27 @@ describe('PageHeader', () => {
     expect(h1).toHaveClass('text-title', 'font-semibold', 'text-text')
     expect(h1).not.toHaveClass('flex', 'items-center', 'gap-2')
   })
+  it('renderiza titleExtra ao lado do título e aplica flex no h1', () => {
+    const { container } = render(
+      <PageHeader title="Notificações & Alertas" titleExtra={<span data-testid="badge">3 ativos</span>} />
+    )
+    expect(screen.getByTestId('badge')).toBeInTheDocument()
+    const h1 = container.querySelector('h1')
+    expect(h1).toHaveClass('flex', 'items-center', 'gap-2')
+  })
+  it('renderiza descriptionExtra ao lado da descrição quando description está presente', () => {
+    render(
+      <PageHeader
+        title="Alertas"
+        description="Motor de regras em tempo real"
+        descriptionExtra={<span data-testid="live">Ao vivo</span>}
+      />
+    )
+    expect(screen.getByTestId('live')).toBeInTheDocument()
+    expect(screen.getByText('Motor de regras em tempo real')).toBeInTheDocument()
+  })
+  it('não renderiza descriptionExtra se description não for fornecida', () => {
+    render(<PageHeader title="X" descriptionExtra={<span data-testid="live">Ao vivo</span>} />)
+    expect(screen.queryByTestId('live')).not.toBeInTheDocument()
+  })
 })
