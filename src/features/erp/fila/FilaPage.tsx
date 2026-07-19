@@ -6,6 +6,7 @@ import { useAuditStore } from '../../../store/auditStore'
 import { useFilaGeralStore } from '../../../store/filaGeralStore'
 import { filaUrgenciaTier, filaUrgenciaScore } from '../../../lib/builders/fila'
 import { StatCard } from '../../../components/ui/StatCard'
+import { PageHeader } from '../../../components/ui/PageHeader'
 import { FilterSelect } from '../../../components/ui/FilterSelect'
 import { SearchBox } from '../../../components/ui/SearchBox'
 import { DataTable } from '../../../components/ui/DataTable'
@@ -325,12 +326,37 @@ export default function FilaPage() {
 
   return (
     <div className="p-6 space-y-5">
-      <div>
-        <h1 className="text-[20px] font-bold text-text">Fila de Prioridade</h1>
-        <p className="text-label text-muted mt-0.5">Toda OS ativa numa fila só — VT (prazo em horas) e as demais (SLA em dias), ordenadas pela mesma gravidade real</p>
-      </div>
+      <PageHeader
+        title="Fila de Prioridade"
+        description="Toda OS ativa numa fila só — VT (prazo em horas) e as demais (SLA em dias), ordenadas pela mesma gravidade real"
+        actions={
+          <>
+            <button
+              onClick={handleCopyImage}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-label font-semibold
+                         border transition-all duration-300
+                         ${copiedImage
+                           ? 'border-green-500/50 text-green bg-green-500/10'
+                           : 'border-green/30 text-green hover:bg-green/10'}`}
+            >
+              {copiedImage
+                ? <><CheckCircle2 size={14} /> Copiado!</>
+                : <><ImageIcon size={14} /> Copiar Imagem</>}
+            </button>
+            <button
+              onClick={handleNotificarCriticas}
+              disabled={criticas.length === 0 || enviandoLote}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-label font-semibold
+                         text-red bg-red/10 hover:bg-red/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Megaphone size={14} />
+              {enviandoLote ? 'Enviando…' : `Notificar violadas (${criticas.length})`}
+            </button>
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <StatCard title="Violadas" value={kpis.violadas} tone="critical" icon={AlertTriangle} />
         <StatCard title="Atenção" value={kpis.atencao} tone="warning" icon={Flame} />
         <StatCard title="Sem Equipe" value={kpis.semEquipe} tone="warning" icon={UserX} />
@@ -354,27 +380,6 @@ export default function FilaPage() {
         <FilterSelect value={tipo} onChange={setTipo} options={tipoOptions} placeholder="Todos os tipos" className="w-40" />
         <FilterSelect value={fornecedor} onChange={setFornecedor} options={fornecedorOptions} placeholder="Todos os fornecedores" className="w-48" />
         <SearchBox value={search} onChange={setSearch} placeholder="Buscar por cliente ou nº OS…" className="w-64" />
-        <button
-          onClick={handleCopyImage}
-          className={`ml-auto flex items-center gap-1.5 px-3 py-2 rounded-lg text-label font-semibold
-                     border transition-all duration-300
-                     ${copiedImage
-                       ? 'border-green-500/50 text-green bg-green-500/10'
-                       : 'border-green/30 text-green hover:bg-green/10'}`}
-        >
-          {copiedImage
-            ? <><CheckCircle2 size={14} /> Copiado!</>
-            : <><ImageIcon size={14} /> Copiar Imagem</>}
-        </button>
-        <button
-          onClick={handleNotificarCriticas}
-          disabled={criticas.length === 0 || enviandoLote}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-label font-semibold
-                     text-red bg-red/10 hover:bg-red/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          <Megaphone size={14} />
-          {enviandoLote ? 'Enviando…' : `Notificar violadas (${criticas.length})`}
-        </button>
       </div>
 
       {fila.length === 0 ? (
