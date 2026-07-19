@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, MapPin, RefreshCw, Wrench, Home, Star, Search, Sparkles, ClipboardCheck } from 'lucide-react'
+import { AlertTriangle, MapPin, RefreshCw, Wrench, Home, Star, Search, Sparkles, ClipboardCheck, Activity, BarChart3 } from 'lucide-react'
 import { useBacklog, type BacklogRow } from '../../../hooks/useBacklog'
 import { AreaChart, Area, XAxis, YAxis, Grid, ChartTooltip, Legend } from '../../../components/ui/line-chart'
 import { BarChart, Bar, XAxis as BXAxis, YAxis as BYAxis, Grid as BGrid, ChartTooltip as BTip } from '../../../components/ui/bar-chart'
@@ -11,6 +11,8 @@ import {
 import { CausaRaizSection } from './CausaRaizSection'
 import { RevisitaMotivosSection } from './RevisitaMotivosSection'
 import { StatCard, type StatTone } from '../../../components/ui/StatCard'
+import { PageHeader } from '../../../components/ui/PageHeader'
+import { SectionLabel } from '../../../components/ui/SectionLabel'
 
 function taxaTone(taxa: number): StatTone {
   if (taxa >= 15) return 'critical'
@@ -195,44 +197,40 @@ export default function QualidadePage() {
     <div className="space-y-4 max-w-[1600px]">
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-[20px] font-headline font-bold text-text mb-0.5">Qualidade — Revisitas</h1>
-          <p className="text-label text-muted">
-            Clientes que abriram nova OS após atendimento recente · instalação · manutenção · serviço
-          </p>
-        </div>
+      <PageHeader
+        title="Qualidade — Revisitas"
+        description="Clientes que abriram nova OS após atendimento recente · instalação · manutenção · serviço"
+      />
 
-        {/* Controles de período */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-label">
-            {(['atual','anterior','custom'] as Preset[]).map((v, i) => (
-              <button key={v} onClick={() => setPreset(v)}
-                      className={`px-3 py-1.5 transition-colors ${
-                        preset === v ? 'bg-primary/20 text-primary font-semibold' : 'text-muted hover:text-text'
-                      }`}>
-                {['Mês Atual','Mês Anterior','Personalizado'][i]}
-              </button>
-            ))}
-          </div>
-          {preset === 'custom' && (
-            <div className="flex items-center gap-1.5">
-              <input type="date" value={customIni} onChange={e => setCustomIni(e.target.value)}
-                     className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
-                                text-label text-text focus:outline-none" />
-              <span className="text-caption text-muted">até</span>
-              <input type="date" value={customFim} onChange={e => setCustomFim(e.target.value)}
-                     className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
-                                text-label text-text focus:outline-none" />
-            </div>
-          )}
-          <button onClick={() => refetch()} disabled={isFetching}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08]
-                             bg-surface/40 text-label text-muted hover:text-text transition-colors disabled:opacity-50">
-            <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
-            Atualizar
-          </button>
+      {/* Controles de período */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-label">
+          {(['atual','anterior','custom'] as Preset[]).map((v, i) => (
+            <button key={v} onClick={() => setPreset(v)}
+                    className={`px-3 py-1.5 transition-colors ${
+                      preset === v ? 'bg-primary/20 text-primary font-semibold' : 'text-muted hover:text-text'
+                    }`}>
+              {['Mês Atual','Mês Anterior','Personalizado'][i]}
+            </button>
+          ))}
         </div>
+        {preset === 'custom' && (
+          <div className="flex items-center gap-1.5">
+            <input type="date" value={customIni} onChange={e => setCustomIni(e.target.value)}
+                   className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
+                              text-label text-text focus:outline-none" />
+            <span className="text-caption text-muted">até</span>
+            <input type="date" value={customFim} onChange={e => setCustomFim(e.target.value)}
+                   className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
+                              text-label text-text focus:outline-none" />
+          </div>
+        )}
+        <button onClick={() => refetch()} disabled={isFetching}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08]
+                           bg-surface/40 text-label text-muted hover:text-text transition-colors disabled:opacity-50">
+          <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
+          Atualizar
+        </button>
       </div>
 
       {/* Loading inicial */}
@@ -268,12 +266,9 @@ export default function QualidadePage() {
           {/* ── Gráfico diário ───────────────────────────────────────────── */}
           {diario.length > 0 && (
             <section className="space-y-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-[3px] h-4 rounded-full bg-violet-400 flex-shrink-0" />
-                <span className="text-caption font-bold uppercase tracking-[0.07em] text-violet-400">
-                  Acompanhamento Diário — Instalação vs Manutenção
-                </span>
-              </div>
+              <SectionLabel icon={Activity} color="#a78bfa">
+                Acompanhamento Diário — Instalação vs Manutenção
+              </SectionLabel>
               <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                 <div style={{ height: 220 }}>
                   <AreaChart data={diario}>
@@ -324,7 +319,7 @@ export default function QualidadePage() {
           </div>
 
           {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             <StatCard title="Taxa de Primeira Visita"
                       value={`${taxaPrimeiraVisita}%`}
                       sub={`${fmt(totalOS - revisitasFiltradas.length)} de ${fmt(totalOS)} OS resolvidas sem retorno`}
@@ -350,12 +345,9 @@ export default function QualidadePage() {
           {/* ── Ocorrências que causam revisitas ────────────────────────── */}
           {ocorrencias.length > 0 && (
             <section className="space-y-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: cor }} />
-                <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
-                  Principais Ocorrências — clique para ver as OS
-                </span>
-              </div>
+              <SectionLabel icon={BarChart3} color={cor}>
+                Principais Ocorrências — clique para ver as OS
+              </SectionLabel>
 
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-4">
 
@@ -438,13 +430,9 @@ export default function QualidadePage() {
             {/* Por cidade */}
             {porCidade.length > 0 && (
               <section className="space-y-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-[3px] h-4 rounded-full bg-cyan-400 flex-shrink-0" />
-                  <MapPin size={12} className="text-cyan-400 flex-shrink-0" />
-                  <span className="text-caption font-bold uppercase tracking-[0.07em] text-cyan-400">
-                    Por Cidade
-                  </span>
-                </div>
+                <SectionLabel icon={MapPin} color="#22d3ee">
+                  Por Cidade
+                </SectionLabel>
                 <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden divide-y divide-white/[0.04]">
                   {porCidade.map(c => {
                     const color = taxaColor(c.taxa)
@@ -468,13 +456,9 @@ export default function QualidadePage() {
             {/* Clientes crônicos */}
             {cronicos.length > 0 && (
               <section className="space-y-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-[3px] h-4 rounded-full bg-red-400 flex-shrink-0" />
-                  <AlertTriangle size={12} className="text-red-400 flex-shrink-0" />
-                  <span className="text-caption font-bold uppercase tracking-[0.07em] text-red-400">
-                    Crônicos — 2+ revisitas
-                  </span>
-                </div>
+                <SectionLabel icon={AlertTriangle} color="#f87171">
+                  Crônicos — 2+ revisitas
+                </SectionLabel>
                 <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
                   <div className="max-h-64 overflow-y-auto divide-y divide-white/[0.04]">
                     {cronicos.map(c => {
@@ -503,25 +487,17 @@ export default function QualidadePage() {
 
           {/* ── Causa Raiz registrada pelo time (real, via Telegram) ─── */}
           <section className="space-y-2 pt-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-[3px] h-4 rounded-full bg-teal-400 flex-shrink-0" />
-              <ClipboardCheck size={12} className="text-teal-400 flex-shrink-0" />
-              <span className="text-caption font-bold uppercase tracking-[0.07em] text-teal-400">
-                Causa Raiz Registrada pelo Time
-              </span>
-            </div>
+            <SectionLabel icon={ClipboardCheck} color="#2dd4bf">
+              Causa Raiz Registrada pelo Time
+            </SectionLabel>
             <RevisitaMotivosSection />
           </section>
 
           {/* ── Causa Raiz por IA (inferida das observações) ─────────── */}
           <section className="space-y-2 pt-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-[3px] h-4 rounded-full bg-violet-500 flex-shrink-0" />
-              <Sparkles size={12} className="text-violet-400 flex-shrink-0" />
-              <span className="text-caption font-bold uppercase tracking-[0.07em] text-violet-400">
-                Causa Raiz de Revisitas (IA, inferida das observações)
-              </span>
-            </div>
+            <SectionLabel icon={Sparkles} color="#8b5cf6">
+              Causa Raiz de Revisitas (IA, inferida das observações)
+            </SectionLabel>
             <CausaRaizSection inicio={inicio} fim={fim} />
           </section>
 
