@@ -1,19 +1,13 @@
-import { useRef, useState, useEffect, useMemo, type ComponentType, type CSSProperties } from 'react'
+import { useRef, useState, useEffect, type ComponentType, type CSSProperties } from 'react'
 import { NavLink } from 'react-router-dom'
-import {
-  LayoutDashboard, ClipboardList,
-  BarChart2, PieChart, MapPin,
-  Zap, Monitor, LogOut, FileText, Map,
-  Bell, ChevronRight,
-  Award, CalendarDays, Shield, Siren, Medal, Users,
-} from 'lucide-react'
+import { ChevronRight, LogOut } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
 import { useAuthStore } from '../../store/authStore'
 import { useAuditStore } from '../../store/auditStore'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { api } from '../../lib/api'
 import { LogoIcon } from '../ui/LogoIcon'
-import { rotaParaModulo } from '../../lib/modulos'
+import { useVisibleNavGroups } from '../../lib/navigation'
 
 const ROLE_LABELS: Record<string, string> = {
   gestor:   'Gestor',
@@ -28,57 +22,6 @@ const STATUS_CFG: Record<StatusKey, { color: string; dot: string; label: string;
   stale:   { color: 'text-yellow',  dot: 'bg-yellow',  label: 'Desatualizado',   breathe: false },
   online:  { color: 'text-green',   dot: 'bg-green',   label: 'Online',          breathe: true  },
 }
-
-interface NavLinkDef {
-  to:    string
-  label: string
-  icon:  ComponentType<{ size?: number; className?: string; style?: CSSProperties }>
-}
-
-interface NavGroup {
-  key:   string
-  label: string
-  color: string
-  links: NavLinkDef[]
-}
-
-const baseGroups: NavGroup[] = [
-  {
-    key: 'agora', label: 'Agora', color: '#c4b5fd',
-    links: [
-      { to: '/',             label: 'Dashboard',        icon: LayoutDashboard },
-      { to: '/erp/fila',     label: 'Fila de Prioridade', icon: Siren         },
-      { to: '/erp/alertas',  label: 'Alertas',          icon: Bell            },
-    ],
-  },
-  {
-    key: 'operar', label: 'Operar', color: '#22d3ee',
-    links: [
-      { to: '/ordens',      label: 'Ordens',  icon: ClipboardList },
-      { to: '/erp/planner', label: 'Planner', icon: CalendarDays  },
-      { to: '/mapa',        label: 'Mapa',    icon: Map            },
-    ],
-  },
-  {
-    key: 'analisar', label: 'Analisar', color: '#4ade80',
-    links: [
-      { to: '/cidades',       label: 'Cidades',        icon: MapPin    },
-      { to: '/erp/ranking',   label: 'Ranking Técnicos', icon: Medal   },
-      { to: '/erp/qualidade', label: 'Qualidade',      icon: Award     },
-      { to: '/erp/relatorios',label: 'Relatórios',     icon: BarChart2 },
-      { to: '/graficos',      label: 'Gráficos',       icon: PieChart  },
-      { to: '/fechamento',    label: 'Fechamento',     icon: FileText  },
-    ],
-  },
-  {
-    key: 'infra', label: 'Infra & Campo', color: '#fb923c',
-    links: [
-      { to: '/fornecedor', label: 'Fornecedor', icon: Shield  },
-      { to: '/juniper',    label: 'Juniper',    icon: Zap     },
-      { to: '/noc',        label: 'NOC',        icon: Monitor },
-    ],
-  },
-]
 
 // ─── NavItem ─────────────────────────────────────────────────────────────────
 
@@ -153,32 +96,10 @@ export function Sidebar() {
   const { sidebarOpen } = useUIStore()
   const setUnauthed = useAuthStore(s => s.setUnauthed)
   const role        = useAuthStore(s => s.role)
-  const modulos     = useAuthStore(s => s.modulos)
   const logAudit    = useAuditStore(s => s.log)
   const { isLoading, error, dataUpdatedAt } = useOSDerived()
 
-  // Gestor vê tudo. Operador/Viewer só os links cujo módulo está liberado
-  // (ver src/lib/modulos.ts) — grupos que ficam sem nenhum link visível somem.
-  // "Usuários" é acrescentado só pra gestor: não é um módulo togleável, é a
-  // própria tela de administração desses módulos.
-  const groups = useMemo<NavGroup[]>(() => {
-    const podeVer = (to: string) => {
-      if (role === 'gestor') return true
-      const modulo = rotaParaModulo(to)
-      return modulo ? modulos.includes(modulo) : false
-    }
-    const filtrados = baseGroups
-      .map(g => ({ ...g, links: g.links.filter(l => podeVer(l.to)) }))
-      .filter(g => g.links.length > 0)
-    if (role === 'gestor') {
-      return filtrados.map(g =>
-        g.key === 'infra'
-          ? { ...g, links: [...g.links, { to: '/erp/usuarios', label: 'Usuários', icon: Users }] }
-          : g
-      )
-    }
-    return filtrados
-  }, [role, modulos])
+  const groups = useVisibleNavGroups()
 
   // nowTs actualizado a cada minuto para que a badge de status reflicta o tempo real
   // Usamos useState com lazy initializer para não chamar Date.now() diretamente no render
