@@ -3,6 +3,7 @@ import {
   AlertTriangle, ShieldAlert, ShieldCheck, Info,
   Activity, RefreshCw, Settings, BarChart3, Sparkles,
 } from 'lucide-react'
+import { PageHeader } from '../../../components/ui/PageHeader'
 import { useERPRows }    from '../useERPRows'
 import { useERPStore }   from '../../../store/erpStore'
 import { useAlerts }     from '../../../hooks/useAlerts'
@@ -88,50 +89,47 @@ export default function AlertasPage() {
     <div className="space-y-4 max-w-[1600px]">
 
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-[20px] font-headline font-bold text-text">
-              Notificações &amp; Alertas
-            </h1>
-            {hasAny ? (
-              <span className="inline-flex items-center gap-1.5 text-caption font-bold px-2 py-0.5 rounded-full border"
-                    style={{ background: 'rgba(248,113,113,0.12)', borderColor: 'rgba(248,113,113,0.35)', color: '#f87171' }}>
-                {totalAlerts} ativo{totalAlerts > 1 ? 's' : ''}
+      <PageHeader
+        title="Notificações & Alertas"
+        titleExtra={
+          hasAny ? (
+            <span className="inline-flex items-center gap-1.5 text-caption font-bold px-2 py-0.5 rounded-full border"
+                  style={{ background: 'rgba(248,113,113,0.12)', borderColor: 'rgba(248,113,113,0.35)', color: '#f87171' }}>
+              {totalAlerts} ativo{totalAlerts > 1 ? 's' : ''}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-caption font-bold px-2 py-0.5 rounded-full border"
+                  style={{ background: 'rgba(74,222,128,0.10)', borderColor: 'rgba(74,222,128,0.30)', color: '#4ade80' }}>
+              OK
+            </span>
+          )
+        }
+        description="Motor de regras em tempo real · ERP"
+        descriptionExtra={
+          !isLoading && (
+            <span className="flex items-center gap-1.5 text-caption text-muted">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green" />
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 text-caption font-bold px-2 py-0.5 rounded-full border"
-                    style={{ background: 'rgba(74,222,128,0.10)', borderColor: 'rgba(74,222,128,0.30)', color: '#4ade80' }}>
-                OK
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <p className="text-label text-secondary">Motor de regras em tempo real · ERP</p>
-            {!isLoading && (
-              <span className="flex items-center gap-1.5 text-caption text-muted">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green" />
-                </span>
-                Ao vivo
-              </span>
-            )}
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowSettings(true)}
-          className="flex items-center gap-1.5 text-caption text-secondary hover:text-text
-                     px-3 py-1.5 rounded-xl border border-white/[0.08] hover:border-muted/40
-                     hover:bg-surface/30 transition-all duration-150 flex-shrink-0"
-        >
-          <Settings size={13} /> Configurar
-        </button>
-      </div>
+              Ao vivo
+            </span>
+          )
+        }
+        actions={
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-1.5 text-caption text-secondary hover:text-text
+                       px-3 py-1.5 rounded-xl border border-white/[0.08] hover:border-muted/40
+                       hover:bg-surface/30 transition-all duration-150 flex-shrink-0"
+          >
+            <Settings size={13} /> Configurar
+          </button>
+        }
+      />
 
       {/* ── Severity Bento ────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {[
           { sev: 'CRITICO', Icon: ShieldAlert,  desc: 'situações críticas' },
           { sev: 'ALTO',    Icon: AlertTriangle, desc: 'pontos de atenção'  },
@@ -170,7 +168,7 @@ export default function AlertasPage() {
 
       {/* ── Context KPIs ──────────────────────────────────────────────────── */}
       {pulso && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[
             { label: 'OS na Fila',    value: totalFila, color: '#3b82f6', sub: 'registros ativos' },
             { label: 'Score Saúde',   value: `${pulso.score ?? 0}%`,
