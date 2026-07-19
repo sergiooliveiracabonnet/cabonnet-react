@@ -9,6 +9,7 @@ interface DrillState { title: string; rows: OSRow[]; color?: string }
 
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid, Legend, Cell } from '../../../components/ui/bar-chart'
 import { DonutChart } from '../../../components/ui/DonutChart'
+import { PageHeader } from '../../../components/ui/PageHeader'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 import { TEAMS } from '../erpConstants'
 import { shortEquipe } from '../../../lib/osFormat'
@@ -194,53 +195,52 @@ export default function RelatoriosPage() {
     <div className="flex flex-col gap-5 p-6">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-headline font-bold text-text">Relatórios Operacionais</h1>
-          <p className="text-label text-secondary mt-0.5">Análise de desempenho · ERP</p>
+      <PageHeader
+        title="Relatórios Operacionais"
+        description="Análise de desempenho · ERP"
+      />
+
+      {/* ── Filtros ── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Filtro de período */}
+        <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
+          {[
+            { value: 'all',   label: 'Tudo'          },
+            { value: 'month', label: 'Últimos 30 dias' },
+            { value: 'week',  label: 'Últimos 7 dias'  },
+          ].map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setPeriodoFilter(opt.value)}
+              className={`px-3 py-1.5 rounded-md text-caption font-medium transition-all duration-150
+                ${periodoFilter === opt.value
+                  ? 'bg-primary/20 text-primary'
+                  : 'text-secondary hover:text-text hover:bg-surface/40'}`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
 
-        <div className="flex flex-col items-end gap-2">
-          {/* Filtro de período */}
-          <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
-            {[
-              { value: 'all',   label: 'Tudo'          },
-              { value: 'month', label: 'Últimos 30 dias' },
-              { value: 'week',  label: 'Últimos 7 dias'  },
-            ].map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setPeriodoFilter(opt.value)}
-                className={`px-3 py-1.5 rounded-md text-caption font-medium transition-all duration-150
-                  ${periodoFilter === opt.value
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-secondary hover:text-text hover:bg-surface/40'}`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Filtro de tipo */}
-          <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
-            {[
-              { value: '',           label: 'Todos'      },
-              { value: 'INSTALACAO', label: 'Instalação' },
-              { value: 'MANUTENCAO', label: 'Manutenção' },
-              { value: 'REDE',       label: 'Rede'       },
-            ].map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setTipoFilter(opt.value)}
-                className={`px-3 py-1.5 rounded-md text-caption font-medium transition-all duration-150
-                  ${tipoFilter === opt.value
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-secondary hover:text-text hover:bg-surface/40'}`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+        {/* Filtro de tipo */}
+        <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
+          {[
+            { value: '',           label: 'Todos'      },
+            { value: 'INSTALACAO', label: 'Instalação' },
+            { value: 'MANUTENCAO', label: 'Manutenção' },
+            { value: 'REDE',       label: 'Rede'       },
+          ].map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setTipoFilter(opt.value)}
+              className={`px-3 py-1.5 rounded-md text-caption font-medium transition-all duration-150
+                ${tipoFilter === opt.value
+                  ? 'bg-primary/20 text-primary'
+                  : 'text-secondary hover:text-text hover:bg-surface/40'}`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </div>
 
