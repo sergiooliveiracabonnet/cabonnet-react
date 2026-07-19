@@ -11,6 +11,7 @@ import {
 import { CausaRaizSection } from './CausaRaizSection'
 import { RevisitaMotivosSection } from './RevisitaMotivosSection'
 import { StatCard, type StatTone } from '../../../components/ui/StatCard'
+import { PageHeader } from '../../../components/ui/PageHeader'
 
 function taxaTone(taxa: number): StatTone {
   if (taxa >= 15) return 'critical'
@@ -195,44 +196,40 @@ export default function QualidadePage() {
     <div className="space-y-4 max-w-[1600px]">
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-[20px] font-headline font-bold text-text mb-0.5">Qualidade — Revisitas</h1>
-          <p className="text-label text-muted">
-            Clientes que abriram nova OS após atendimento recente · instalação · manutenção · serviço
-          </p>
-        </div>
+      <PageHeader
+        title="Qualidade — Revisitas"
+        description="Clientes que abriram nova OS após atendimento recente · instalação · manutenção · serviço"
+      />
 
-        {/* Controles de período */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-label">
-            {(['atual','anterior','custom'] as Preset[]).map((v, i) => (
-              <button key={v} onClick={() => setPreset(v)}
-                      className={`px-3 py-1.5 transition-colors ${
-                        preset === v ? 'bg-primary/20 text-primary font-semibold' : 'text-muted hover:text-text'
-                      }`}>
-                {['Mês Atual','Mês Anterior','Personalizado'][i]}
-              </button>
-            ))}
-          </div>
-          {preset === 'custom' && (
-            <div className="flex items-center gap-1.5">
-              <input type="date" value={customIni} onChange={e => setCustomIni(e.target.value)}
-                     className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
-                                text-label text-text focus:outline-none" />
-              <span className="text-caption text-muted">até</span>
-              <input type="date" value={customFim} onChange={e => setCustomFim(e.target.value)}
-                     className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
-                                text-label text-text focus:outline-none" />
-            </div>
-          )}
-          <button onClick={() => refetch()} disabled={isFetching}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08]
-                             bg-surface/40 text-label text-muted hover:text-text transition-colors disabled:opacity-50">
-            <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
-            Atualizar
-          </button>
+      {/* Controles de período */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex rounded-lg border border-white/[0.08] bg-surface/40 overflow-hidden text-label">
+          {(['atual','anterior','custom'] as Preset[]).map((v, i) => (
+            <button key={v} onClick={() => setPreset(v)}
+                    className={`px-3 py-1.5 transition-colors ${
+                      preset === v ? 'bg-primary/20 text-primary font-semibold' : 'text-muted hover:text-text'
+                    }`}>
+              {['Mês Atual','Mês Anterior','Personalizado'][i]}
+            </button>
+          ))}
         </div>
+        {preset === 'custom' && (
+          <div className="flex items-center gap-1.5">
+            <input type="date" value={customIni} onChange={e => setCustomIni(e.target.value)}
+                   className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
+                              text-label text-text focus:outline-none" />
+            <span className="text-caption text-muted">até</span>
+            <input type="date" value={customFim} onChange={e => setCustomFim(e.target.value)}
+                   className="px-2 py-1.5 rounded-lg border border-white/[0.08] bg-surface/40
+                              text-label text-text focus:outline-none" />
+          </div>
+        )}
+        <button onClick={() => refetch()} disabled={isFetching}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08]
+                           bg-surface/40 text-label text-muted hover:text-text transition-colors disabled:opacity-50">
+          <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
+          Atualizar
+        </button>
       </div>
 
       {/* Loading inicial */}
@@ -324,7 +321,7 @@ export default function QualidadePage() {
           </div>
 
           {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             <StatCard title="Taxa de Primeira Visita"
                       value={`${taxaPrimeiraVisita}%`}
                       sub={`${fmt(totalOS - revisitasFiltradas.length)} de ${fmt(totalOS)} OS resolvidas sem retorno`}
