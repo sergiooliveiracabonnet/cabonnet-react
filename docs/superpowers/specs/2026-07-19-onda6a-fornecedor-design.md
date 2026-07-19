@@ -24,7 +24,7 @@
 ## 2. Decisões de escopo (resolvidas com o usuário)
 
 1. **Decomposição de Onda 6**: 4 sub-ondas (Fornecedor, Juniper, Fechamento, Usuários), uma tela por vez — Mapa/NOC/Login fora do escopo deste ciclo.
-2. **Cabeçalho de Fornecedor**: `<PageHeader title="Análise por Fornecedor" icon={Home} />`, sem `description` (não existe hoje). O `<h2>` vira semanticamente `<h1>` (única mudança estrutural real — `PageHeader` sempre renderiza `<h1>`, e esta é a primeira tela onde o título principal não era `<h1>`; consequência positiva, cada página passa a ter exatamente um `<h1>`, consistente com as 7 telas já migradas).
+2. **Cabeçalho de Fornecedor**: `<PageHeader title="Análise por Fornecedor" icon={Home} />`, sem `description` (não existe hoje). O `<h2>` vira semanticamente `<h1>` (única mudança estrutural real — `PageHeader` sempre renderiza `<h1>`, e esta é a primeira tela onde o título principal não era `<h1>`). **Nota de precisão (pós-revisão final):** isso padroniza Fornecedor com as 7 telas já migradas, mas não resulta em "exatamente um `<h1>` por página" — o `Navbar.tsx` já renderiza seu próprio `<h1>{title}</h1>` por rota (via `ROUTE_LABELS`) em toda tela autenticada, então as 8 telas com `PageHeader` (incluindo Fornecedor a partir de agora) têm dois `<h1>` cada. Fornecedor era, antes desta mudança, a única tela com um único `<h1>`; agora ela passa a ter dois, igual às outras 7 — um padrão sistêmico pré-existente, não introduzido por esta sub-onda, registrado como item de limpeza futura (não endereçado aqui).
 
 ---
 

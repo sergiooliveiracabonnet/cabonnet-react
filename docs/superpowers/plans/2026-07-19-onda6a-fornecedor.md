@@ -69,7 +69,7 @@ Expected: sem erros.
 Run: `npm run dev` (porta 3000, `strictPort: true`).
 
 No navegador, autenticado, em `/fornecedor`:
-1. `PageHeader` mostra o ícone `Home` antes do título "Análise por Fornecedor", no mesmo estilo visual de antes (só agora via `<h1>` semântico em vez de `<h2>`).
+1. `PageHeader` mostra o ícone `Home` antes do título "Análise por Fornecedor", no mesmo estilo visual das 7 telas já migradas (título via `<h1>` semântico em vez de `<h2>` — nota: isso padroniza com as outras telas, mas não deixa a página com um único `<h1>`, já que o `Navbar.tsx` também renderiza um `<h1>` por rota; ver spec §2.2).
 2. Filtro por operadora (pills coloridos) continua funcionando abaixo do cabeçalho.
 3. Ranking por Score Composto, edição de meta (se gestor), análise de IA e os painéis por fornecedor (KPIs, tabela de equipes, gráfico, custo mensal editável) continuam funcionando normalmente.
 
