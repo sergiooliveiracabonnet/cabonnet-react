@@ -11,7 +11,7 @@ import { SearchBox } from '../../../components/ui/SearchBox'
 import { DataTable } from '../../../components/ui/DataTable'
 import { Badge } from '../../../components/ui/Badge'
 import { shortEquipe, fmtHorasMin, buildOSWhatsApp } from '../../../lib/osFormat'
-import { toBlob } from 'html-to-image'
+import { captureTableAsImage } from '../../../lib/captureTableImage'
 import { parseOSDetails, osDetailsQuery } from '../../../hooks/useOSDetails'
 import { tgVTUrgente, chatKeyForFornecedor } from '../../../lib/tgTemplates'
 import { telegram } from '../../../lib/api'
@@ -209,99 +209,14 @@ export default function FilaPage() {
   async function handleCopyImage() {
     if (!tableRef.current) return
     try {
-      const isDark     = !document.documentElement.classList.contains('light')
-      const bg         = isDark ? '#0d1117' : '#ffffff'
-      const bgHdr      = isDark ? '#111827' : '#f0f4ff'
-      const colorText  = isDark ? '#e2e8f0' : '#0f172a'
-      const colorMuted = isDark ? '#94a3b8' : '#64748b'
-      const borderClr  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
-      const now        = new Date()
-      const ts         = now.toLocaleDateString('pt-BR') + ' · ' +
-                         now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-
-      const tableEl = tableRef.current
-
-      // Largura real: o overflow-hidden pai esconde o scrollWidth dos filhos;
-      // percorre a subárvore para encontrar o maior scrollWidth real.
-      const getTrueWidth = (el: HTMLElement): number => {
-        let w = el.scrollWidth
-        for (const c of el.children) w = Math.max(w, getTrueWidth(c as HTMLElement))
-        return w
-      }
-      const capW = getTrueWidth(tableEl)
-
-      // Clone off-screen sem constraints de overflow/maxHeight.
-      const stripOverflow = (el: HTMLElement) => {
-        el.style.overflow  = 'visible'
-        el.style.overflowX = 'visible'
-        el.style.overflowY = 'visible'
-        el.style.maxHeight = 'none'
-        el.style.maxWidth  = 'none'
-        for (const c of el.children) stripOverflow(c as HTMLElement)
-      }
-      const wrapper = document.createElement('div')
-      wrapper.style.cssText = `position:fixed;top:-99999px;left:0;width:${capW}px;pointer-events:none;`
-
-      const clone = tableEl.cloneNode(true) as HTMLDivElement
-      clone.style.width        = `${capW}px`
-      clone.style.borderRadius = '0'
-      stripOverflow(clone)
-
-      wrapper.appendChild(clone)
-      document.body.appendChild(wrapper)
-
-      // Dois frames para o browser recalcular o layout no clone
-      await new Promise<void>(r => requestAnimationFrame(() => { requestAnimationFrame(() => r()) }))
-      const capH = clone.scrollHeight
-
-      const contentBlob = await toBlob(clone, {
-        pixelRatio: 2,
-        width:  capW,
-        height: capH,
-        backgroundColor: bg,
-        style:  { borderRadius: '0' },
+      const blob = await captureTableAsImage({
+        tableEl:     tableRef.current,
+        title:       'CABONNET · Fila de Prioridade',
+        subtitle:    fornecedor ? `Fornecedor: ${fornecedor}` : 'Todos os Fornecedores',
+        accentColor: '#ef4444',
+        itemCount:   fila.length,
       })
-      document.body.removeChild(wrapper)
-      if (!contentBlob) return
-
-      // Composita cabeçalho Canvas + conteúdo capturado
-      const SCALE      = 2
-      const HDR_H      = 60
-      const contentImg = await createImageBitmap(contentBlob)
-      const canvas     = document.createElement('canvas')
-      canvas.width     = contentImg.width
-      canvas.height    = contentImg.height + HDR_H * SCALE
-      const ctx        = canvas.getContext('2d')!
-
-      ctx.fillStyle = bg
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = bgHdr
-      ctx.fillRect(0, 0, canvas.width, HDR_H * SCALE)
-      ctx.fillStyle = '#ef4444'
-      ctx.fillRect(0, 0, 4 * SCALE, HDR_H * SCALE)
-      ctx.strokeStyle = borderClr
-      ctx.lineWidth   = 1 * SCALE
-      ctx.beginPath(); ctx.moveTo(0, HDR_H * SCALE); ctx.lineTo(canvas.width, HDR_H * SCALE); ctx.stroke()
-
-      ctx.textBaseline = 'middle'
-      ctx.fillStyle    = colorText
-      ctx.font         = `bold ${14 * SCALE}px system-ui,-apple-system,sans-serif`
-      ctx.fillText('CABONNET · Fila de Prioridade', 18 * SCALE, 20 * SCALE)
-      ctx.fillStyle = '#ef4444'
-      ctx.font      = `600 ${11 * SCALE}px system-ui,-apple-system,sans-serif`
-      ctx.fillText(fornecedor ? `Fornecedor: ${fornecedor}` : 'Todos os Fornecedores', 18 * SCALE, 43 * SCALE)
-      ctx.textAlign = 'right'
-      ctx.fillStyle = colorMuted
-      ctx.font      = `${10 * SCALE}px system-ui,-apple-system,sans-serif`
-      ctx.fillText(ts, canvas.width - 16 * SCALE, 20 * SCALE)
-      ctx.fillText(`${fila.length} OS`, canvas.width - 16 * SCALE, 43 * SCALE)
-      ctx.textAlign = 'left'
-      ctx.drawImage(contentImg, 0, HDR_H * SCALE)
-
-      const finalBlob = await new Promise<Blob>((resolve, reject) =>
-        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png')
-      )
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': finalBlob })])
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
       logAudit('Imagem copiada (fila de prioridade)', `${fila.length} OS`, 'export')
       setCopiedImage(true)
       setTimeout(() => setCopiedImage(false), 2500)
