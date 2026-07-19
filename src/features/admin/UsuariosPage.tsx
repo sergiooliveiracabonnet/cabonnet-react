@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import type { UserRole, UsuarioItem } from '../../lib/api'
+import { PageHeader } from '../../components/ui/PageHeader'
 
 const ROLE_LABEL: Record<UserRole, string> = { gestor: 'Gestor', operador: 'Operador', viewer: 'Viewer' }
 
@@ -198,17 +199,16 @@ export default function UsuariosPage() {
 
   return (
     <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[20px] font-bold text-text flex items-center gap-2">
-            <Shield size={18} className="text-primary" /> Usuários e Permissões
-          </h1>
-          <p className="text-label text-muted mt-0.5">Cadastro de usuários e módulos liberados por papel</p>
-        </div>
-        <Button variant="primary" size="sm" className="gap-1.5" onClick={() => setNovoOpen(true)}>
-          <UserPlus size={14} /> Novo usuário
-        </Button>
-      </div>
+      <PageHeader
+        title="Usuários e Permissões"
+        description="Cadastro de usuários e módulos liberados por papel"
+        icon={Shield}
+        actions={
+          <Button variant="primary" size="sm" className="gap-1.5" onClick={() => setNovoOpen(true)}>
+            <UserPlus size={14} /> Novo usuário
+          </Button>
+        }
+      />
 
       <div className="rounded-xl bg-card border border-white/[0.08] overflow-hidden">
         {isLoading ? (
