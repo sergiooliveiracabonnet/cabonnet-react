@@ -5,6 +5,7 @@ import OSDrawer from '../../features/ordens/OSDrawer'
 import { Badge } from './Badge'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import type { OSRow } from '../../lib/types'
+import type { NavGroup, NavLinkDef } from '../../lib/navigation'
 
 function matchOS(r: OSRow, q: string): boolean {
   return !!(
@@ -28,6 +29,22 @@ function searchRows(allRows: OSRow[], query: string): OSRow[] {
              ((a._aging as number) ?? (a._agingAbertura as number) ?? -1)
     })
     .slice(0, 20)
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function matchPages(groups: NavGroup[], query: string): NavLinkDef[] {
+  if (!query.trim()) return []
+  const q = query.toLowerCase().trim()
+  return groups
+    .flatMap(g => g.links)
+    .filter(l => l.label.toLowerCase().includes(q))
+    .sort((a, b) => {
+      const aExact = a.label.toLowerCase() === q
+      const bExact = b.label.toLowerCase() === q
+      if (aExact && !bExact) return -1
+      if (bExact && !aExact) return 1
+      return 0
+    })
 }
 
 const HINT_TAGS = ['nº OS', 'Cliente', 'Bairro', 'Cidade', 'Equipe']
