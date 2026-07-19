@@ -1,7 +1,36 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertCircle, Bot, Loader2, Send, User, Wrench } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Drawer } from '../../components/ui/Drawer'
 import { ai } from '../../lib/api'
+
+const MARKDOWN_COMPONENTS = {
+  p:          ({ children }: { children?: React.ReactNode }) => <p className="mb-2 last:mb-0">{children}</p>,
+  strong:     ({ children }: { children?: React.ReactNode }) => <strong className="font-semibold text-text">{children}</strong>,
+  em:         ({ children }: { children?: React.ReactNode }) => <em className="italic">{children}</em>,
+  ul:         ({ children }: { children?: React.ReactNode }) => <ul className="list-disc pl-4 mb-2 space-y-0.5 last:mb-0">{children}</ul>,
+  ol:         ({ children }: { children?: React.ReactNode }) => <ol className="list-decimal pl-4 mb-2 space-y-0.5 last:mb-0">{children}</ol>,
+  li:         ({ children }: { children?: React.ReactNode }) => <li>{children}</li>,
+  h1:         ({ children }: { children?: React.ReactNode }) => <h1 className="text-sm font-semibold text-text mb-1.5 mt-2 first:mt-0">{children}</h1>,
+  h2:         ({ children }: { children?: React.ReactNode }) => <h2 className="text-sm font-semibold text-text mb-1.5 mt-2 first:mt-0">{children}</h2>,
+  h3:         ({ children }: { children?: React.ReactNode }) => <h3 className="text-body font-semibold text-text mb-1 mt-2 first:mt-0">{children}</h3>,
+  hr:         () => <hr className="border-white/[0.08] my-2" />,
+  a:          ({ children, href }: { children?: React.ReactNode; href?: string }) => (
+    <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">{children}</a>
+  ),
+  code:       ({ children }: { children?: React.ReactNode }) => (
+    <code className="px-1 py-0.5 rounded bg-surface border border-white/[0.08] text-caption font-mono">{children}</code>
+  ),
+  table:      ({ children }: { children?: React.ReactNode }) => (
+    <div className="overflow-x-auto mb-2 last:mb-0 rounded-lg border border-white/[0.08]">
+      <table className="w-full text-caption border-collapse">{children}</table>
+    </div>
+  ),
+  thead:      ({ children }: { children?: React.ReactNode }) => <thead className="bg-surface">{children}</thead>,
+  th:         ({ children }: { children?: React.ReactNode }) => <th className="text-left font-semibold text-text px-2 py-1.5 border-b border-white/[0.08]">{children}</th>,
+  td:         ({ children }: { children?: React.ReactNode }) => <td className="px-2 py-1.5 border-b border-white/[0.06] align-top">{children}</td>,
+}
 
 interface Message {
   role: 'user' | 'assistant'
@@ -171,11 +200,17 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                   ))}
                 </div>
               )}
-              <div className={`rounded-2xl px-3.5 py-2.5 text-body whitespace-pre-wrap leading-relaxed break-words
+              <div className={`rounded-2xl px-3.5 py-2.5 text-body leading-relaxed break-words min-w-0
                               ${msg.role === 'user'
-                                ? 'bg-primary/12 text-text border border-primary/15 rounded-tr-sm'
+                                ? 'bg-primary/12 text-text border border-primary/15 rounded-tr-sm whitespace-pre-wrap'
                                 : 'bg-card border border-white/[0.08] text-text rounded-tl-sm'}`}>
-                {msg.content}
+                {msg.role === 'assistant' ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+                    {msg.content}
+                  </ReactMarkdown>
+                ) : (
+                  msg.content
+                )}
               </div>
             </div>
           </div>
