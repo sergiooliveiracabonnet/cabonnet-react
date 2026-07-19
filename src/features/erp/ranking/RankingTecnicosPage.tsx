@@ -4,6 +4,7 @@ import { useOSDerived } from '../../../contexts/OSDataContext'
 import { isCOPE, isReagend, isExecucaoReal } from '../../../lib/transform'
 import { shortEquipe } from '../../../lib/osFormat'
 import { Badge } from '../../../components/ui/Badge'
+import { PageHeader } from '../../../components/ui/PageHeader'
 import { StatCard } from '../../../components/ui/StatCard'
 import { useTecnicos, useTecnicosActions } from '../../../hooks/useTecnicos'
 import type { TecnicoItem } from '../../../lib/api'
@@ -202,16 +203,13 @@ export default function RankingTecnicosPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-[20px] font-bold text-text flex items-center gap-2">
-          <Award size={18} className="text-primary" /> Ranking de Técnicos
-        </h1>
-        <p className="text-label text-muted mt-0.5">
-          Volume, SLA e taxa de retrabalho por técnico, lado a lado — sem score composto, sem peso inventado
-        </p>
-      </div>
+      <PageHeader
+        title="Ranking de Técnicos"
+        description="Volume, SLA e taxa de retrabalho por técnico, lado a lado — sem score composto, sem peso inventado"
+        icon={Award}
+      />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard title="Técnicos ativos" value={kpis.total} />
         <StatCard title="SLA médio" value={kpis.slaMedio != null ? `${kpis.slaMedio}%` : '—'} />
         <StatCard title="Retrabalho médio" value={kpis.revMedia != null ? `${kpis.revMedia}%` : '—'} tone="warning" />
