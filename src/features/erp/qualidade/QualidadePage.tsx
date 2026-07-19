@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, MapPin, RefreshCw, Wrench, Home, Star, Search, Sparkles, ClipboardCheck } from 'lucide-react'
+import { AlertTriangle, MapPin, RefreshCw, Wrench, Home, Star, Search, Sparkles, ClipboardCheck, Activity, BarChart3 } from 'lucide-react'
 import { useBacklog, type BacklogRow } from '../../../hooks/useBacklog'
 import { AreaChart, Area, XAxis, YAxis, Grid, ChartTooltip, Legend } from '../../../components/ui/line-chart'
 import { BarChart, Bar, XAxis as BXAxis, YAxis as BYAxis, Grid as BGrid, ChartTooltip as BTip } from '../../../components/ui/bar-chart'
@@ -12,6 +12,7 @@ import { CausaRaizSection } from './CausaRaizSection'
 import { RevisitaMotivosSection } from './RevisitaMotivosSection'
 import { StatCard, type StatTone } from '../../../components/ui/StatCard'
 import { PageHeader } from '../../../components/ui/PageHeader'
+import { SectionLabel } from '../../../components/ui/SectionLabel'
 
 function taxaTone(taxa: number): StatTone {
   if (taxa >= 15) return 'critical'
@@ -265,12 +266,9 @@ export default function QualidadePage() {
           {/* ── Gráfico diário ───────────────────────────────────────────── */}
           {diario.length > 0 && (
             <section className="space-y-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-[3px] h-4 rounded-full bg-violet-400 flex-shrink-0" />
-                <span className="text-caption font-bold uppercase tracking-[0.07em] text-violet-400">
-                  Acompanhamento Diário — Instalação vs Manutenção
-                </span>
-              </div>
+              <SectionLabel icon={Activity} color="#a78bfa">
+                Acompanhamento Diário — Instalação vs Manutenção
+              </SectionLabel>
               <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                 <div style={{ height: 220 }}>
                   <AreaChart data={diario}>
@@ -347,12 +345,9 @@ export default function QualidadePage() {
           {/* ── Ocorrências que causam revisitas ────────────────────────── */}
           {ocorrencias.length > 0 && (
             <section className="space-y-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: cor }} />
-                <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color: cor }}>
-                  Principais Ocorrências — clique para ver as OS
-                </span>
-              </div>
+              <SectionLabel icon={BarChart3} color={cor}>
+                Principais Ocorrências — clique para ver as OS
+              </SectionLabel>
 
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-4">
 
@@ -435,13 +430,9 @@ export default function QualidadePage() {
             {/* Por cidade */}
             {porCidade.length > 0 && (
               <section className="space-y-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-[3px] h-4 rounded-full bg-cyan-400 flex-shrink-0" />
-                  <MapPin size={12} className="text-cyan-400 flex-shrink-0" />
-                  <span className="text-caption font-bold uppercase tracking-[0.07em] text-cyan-400">
-                    Por Cidade
-                  </span>
-                </div>
+                <SectionLabel icon={MapPin} color="#22d3ee">
+                  Por Cidade
+                </SectionLabel>
                 <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden divide-y divide-white/[0.04]">
                   {porCidade.map(c => {
                     const color = taxaColor(c.taxa)
@@ -465,13 +456,9 @@ export default function QualidadePage() {
             {/* Clientes crônicos */}
             {cronicos.length > 0 && (
               <section className="space-y-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-[3px] h-4 rounded-full bg-red-400 flex-shrink-0" />
-                  <AlertTriangle size={12} className="text-red-400 flex-shrink-0" />
-                  <span className="text-caption font-bold uppercase tracking-[0.07em] text-red-400">
-                    Crônicos — 2+ revisitas
-                  </span>
-                </div>
+                <SectionLabel icon={AlertTriangle} color="#f87171">
+                  Crônicos — 2+ revisitas
+                </SectionLabel>
                 <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
                   <div className="max-h-64 overflow-y-auto divide-y divide-white/[0.04]">
                     {cronicos.map(c => {
@@ -500,25 +487,17 @@ export default function QualidadePage() {
 
           {/* ── Causa Raiz registrada pelo time (real, via Telegram) ─── */}
           <section className="space-y-2 pt-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-[3px] h-4 rounded-full bg-teal-400 flex-shrink-0" />
-              <ClipboardCheck size={12} className="text-teal-400 flex-shrink-0" />
-              <span className="text-caption font-bold uppercase tracking-[0.07em] text-teal-400">
-                Causa Raiz Registrada pelo Time
-              </span>
-            </div>
+            <SectionLabel icon={ClipboardCheck} color="#2dd4bf">
+              Causa Raiz Registrada pelo Time
+            </SectionLabel>
             <RevisitaMotivosSection />
           </section>
 
           {/* ── Causa Raiz por IA (inferida das observações) ─────────── */}
           <section className="space-y-2 pt-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-[3px] h-4 rounded-full bg-violet-500 flex-shrink-0" />
-              <Sparkles size={12} className="text-violet-400 flex-shrink-0" />
-              <span className="text-caption font-bold uppercase tracking-[0.07em] text-violet-400">
-                Causa Raiz de Revisitas (IA, inferida das observações)
-              </span>
-            </div>
+            <SectionLabel icon={Sparkles} color="#8b5cf6">
+              Causa Raiz de Revisitas (IA, inferida das observações)
+            </SectionLabel>
             <CausaRaizSection inicio={inicio} fim={fim} />
           </section>
 
