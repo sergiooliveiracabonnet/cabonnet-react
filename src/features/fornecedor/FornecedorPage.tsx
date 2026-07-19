@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid } from '../../component
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { buildFornecedor } from '../../lib/builders'
 import { SectionTitle } from '../../components/ui/SectionTitle'
+import { PageHeader } from '../../components/ui/PageHeader'
 import { Badge } from '../../components/ui/Badge'
 import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import { useAlertStore } from '../../store/alertStore'
@@ -75,10 +76,7 @@ export default function FornecedorPage() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <div className="flex items-center gap-2">
-        <Home size={16} className="text-primary" />
-        <h2 className="font-headline text-xl font-semibold text-text">Análise por Fornecedor</h2>
-      </div>
+      <PageHeader title="Análise por Fornecedor" icon={Home} />
 
       {/* Filtro */}
       <div className="flex flex-wrap gap-2">
