@@ -13,6 +13,7 @@ import { transformJuniper } from '../../lib/builders'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { StatCard } from '../../components/ui/StatCard'
 import { SectionTitle } from '../../components/ui/SectionTitle'
+import { PageHeader } from '../../components/ui/PageHeader'
 import { ChartCard } from '../../components/ui/ChartCard'
 import { Button } from '../../components/ui/Button'
 import { SearchBox } from '../../components/ui/SearchBox'
@@ -184,25 +185,27 @@ export default function JuniperPage() {
     <div className="space-y-4 animate-fade-in">
 
       {/* ── Header ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Zap size={16} className="text-primary" />
-        <h2 className="font-headline text-xl font-semibold text-text">
-          Juniper PPPoE — Validação de Clientes
-        </h2>
-        <div className="flex items-center gap-1.5 ml-1">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+      <PageHeader
+        title="Juniper PPPoE — Validação de Clientes"
+        icon={Zap}
+        titleExtra={
+          <span className="flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+            </span>
+            <span className="text-caption text-muted">atualiza a cada 5 min</span>
           </span>
-          <span className="text-caption text-muted">atualiza a cada 5 min</span>
-        </div>
-        {apiConfig.cluster && (
-          <span className="ml-auto text-caption font-bold uppercase tracking-[0.06em] px-2.5 py-0.5
-                           rounded-full bg-primary/10 text-primary border border-primary/20">
-            {apiConfig.cluster}
-          </span>
-        )}
-      </div>
+        }
+        actions={
+          apiConfig.cluster && (
+            <span className="text-caption font-bold uppercase tracking-[0.06em] px-2.5 py-0.5
+                             rounded-full bg-primary/10 text-primary border border-primary/20">
+              {apiConfig.cluster}
+            </span>
+          )
+        }
+      />
 
       {/* ── Banner dados desatualizados ── */}
       {isStale && (
@@ -262,7 +265,7 @@ export default function JuniperPage() {
         </div>
 
         {fonte === 'api' && (
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 animate-slide-down">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 animate-slide-down">
             {[
               { label: 'URL do Grafana', key: 'url',     placeholder: 'https://monitoramento.cabonnet.com.br' },
               { label: 'UID Datasource', key: 'dsuid',   placeholder: 'e5b84361-...' },
@@ -328,7 +331,7 @@ export default function JuniperPage() {
 
       {/* ── KPIs ── */}
       {isLoading ? <KPIGridSkeleton count={5} /> : (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           <StatCard title="Total Conectados"   value={kpis.total}      sub="clientes PPPoE ativos"  delay={0}   />
           <StatCard title="Interfaces Ativas"  value={kpis.interfaces} sub="portas / VLANs em uso"  delay={40}  />
           <StatCard title="IPs Únicos"         value={kpis.ips}        sub="endereços distintos"     delay={80}  />
@@ -341,7 +344,7 @@ export default function JuniperPage() {
       {interfaces.length > 0 && (
         <>
           <SectionTitle icon={Layers}>Distribuição por Interface</SectionTitle>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {interfaces.map(iface => <InterfaceCard key={iface.nome} iface={iface} maxIface={maxIface} />)}
           </div>
         </>
@@ -495,7 +498,7 @@ export default function JuniperPage() {
         {osCidades.length === 0 ? (
           <p className="text-center text-muted text-label py-6">Nenhuma OS ativa hoje.</p>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {osCidades.map(c => <OsCityCard key={c.cidade} cidade={c.cidade} total={c.total} maxOsCity={maxOsCity} />)}
           </div>
         )}
