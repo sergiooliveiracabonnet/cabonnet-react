@@ -5,6 +5,7 @@ import type { OSRow } from '../../lib/types'
 type ColRender = (value: unknown, row: OSRow) => React.ReactNode
 import { useOrdens } from '../../hooks/useOrdens'
 import { StatCard } from '../../components/ui/StatCard'
+import { PageHeader } from '../../components/ui/PageHeader'
 import { SearchBox } from '../../components/ui/SearchBox'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { DataTable } from '../../components/ui/DataTable'
@@ -238,12 +239,46 @@ export default function OrdensPage() {
   return (
     <div className="space-y-4 animate-fade-in">
 
-      {/* ── Header: título + controles + ações ── */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <h2 className="font-headline text-xl font-semibold text-text flex-1 min-w-0">
-          Ordens de Serviço
-        </h2>
+      {/* ── Header ── */}
+      <PageHeader
+        title="Ordens de Serviço"
+        actions={
+          <>
+            <Button
+              variant="outline" size="sm"
+              className={`gap-1.5 transition-all duration-300
+                ${copied
+                  ? 'border-green-500/50 text-green bg-green-500/10'
+                  : 'border-green/30 text-green hover:bg-green/10'}`}
+              onClick={handleCopyImage}
+            >
+              {copied
+                ? <><CheckCircle size={11} /> Copiado!</>
+                : <><Copy size={11} /> Copiar Imagem</>}
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
+              <Download size={11} /> CSV ({os.filtered.length})
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="gap-1.5 border-cyan/30 text-cyan hover:bg-cyan/10"
+              onClick={handleExportPDF}
+            >
+              <FileText size={11} /> PDF
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+              onClick={() => setTgModal(true)}
+            >
+              <Send size={11} /> Telegram
+            </Button>
+          </>
+        }
+      />
 
+      {/* ── Opções de visualização ── */}
+      <div className="flex items-center gap-3 flex-wrap">
         {/* KPI toggle */}
         <button
           onClick={() => setKpiVisible(v => !v)}
@@ -280,39 +315,6 @@ export default function OrdensPage() {
               {d.label}
             </button>
           ))}
-        </div>
-
-        {/* Ações */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline" size="sm"
-            className={`gap-1.5 transition-all duration-300
-              ${copied
-                ? 'border-green-500/50 text-green bg-green-500/10'
-                : 'border-green/30 text-green hover:bg-green/10'}`}
-            onClick={handleCopyImage}
-          >
-            {copied
-              ? <><CheckCircle size={11} /> Copiado!</>
-              : <><Copy size={11} /> Copiar Imagem</>}
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
-            <Download size={11} /> CSV ({os.filtered.length})
-          </Button>
-          <Button
-            variant="outline" size="sm"
-            className="gap-1.5 border-cyan/30 text-cyan hover:bg-cyan/10"
-            onClick={handleExportPDF}
-          >
-            <FileText size={11} /> PDF
-          </Button>
-          <Button
-            variant="outline" size="sm"
-            className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
-            onClick={() => setTgModal(true)}
-          >
-            <Send size={11} /> Telegram
-          </Button>
         </div>
       </div>
 
