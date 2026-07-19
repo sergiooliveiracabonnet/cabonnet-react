@@ -112,7 +112,7 @@ O ramo de `OrdensPage` com `os.equipe` selecionado (que usa `captureOSPorPeriodo
 
 ## 5. Testes
 
-- `src/lib/captureTableImage.test.ts`: testar a função pura no que for testável sem um ambiente DOM completo de canvas (ex.: validar que a função existe e tem a assinatura esperada; testes de canvas/`html-to-image` real ficam cobertos por verificação manual, já que o projeto não tem precedente de testar renderização de canvas em jsdom — mesma decisão já tomada na Onda 3c pra componentes com dependências pesadas de ambiente).
+- **Sem teste dedicado para `captureTableImage.ts`**: `jsdom` não suporta `CanvasRenderingContext2D` (documentado no próprio `captureOSTable.test.ts:4-7`, que testa só a lógica pura de agrupamento/ordenação daquele arquivo, não as funções de canvas). `captureTableAsImage` não tem lógica de negócio pura equivalente pra extrair e testar — é só medição de DOM + composição de canvas. Um teste que só verifica "a função existe"/assinatura seria tautológico (não verifica comportamento real) — decidido não escrever esse teste, seguindo o mesmo precedente já estabelecido em `captureOSTable.ts`. Cobertura fica com type-check (assinatura/uso corretos nos dois call sites) + regressão da suíte completa + verificação manual.
 - Suíte completa (`npm test`) deve continuar 100% verde após a extração — nenhuma mudança de comportamento esperada.
 - Verificação manual no navegador: cabeçalho de Ordens (ações + toggles na posição nova), cabeçalho da Fila (ações no header, filtros sem os botões), grid de KPIs da Fila responsivo em 3 larguras (375px/768px/1440px), botão "Copiar Imagem" gerando a mesma imagem de antes em ambas as telas.
 
@@ -120,7 +120,6 @@ O ramo de `OrdensPage` com `os.equipe` selecionado (que usa `captureOSPorPeriodo
 
 ## 6. Arquivos afetados
 
-- `src/lib/captureTableImage.ts` (novo) — função `captureTableAsImage`.
+- `src/lib/captureTableImage.ts` (novo) — função `captureTableAsImage`. Sem teste dedicado (ver §5).
 - `src/features/ordens/OrdensPage.tsx` — adota `PageHeader`, realoca toggles, usa o novo helper.
 - `src/features/erp/fila/FilaPage.tsx` — adota `PageHeader`, move ações pro header, grid responsivo, usa o novo helper.
-- Teste correspondente para `lib/captureTableImage.ts` (no que for testável).
