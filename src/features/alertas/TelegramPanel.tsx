@@ -38,6 +38,7 @@ export function TelegramIndicator() {
 interface StatusMsg { ok: boolean; txt: string }
 export default function TelegramPanel({ onClose }: { onClose: () => void }) {
   const store = useTelegramStore()
+  const setEnabled = useTelegramStore(s => s.setEnabled)
   const [tab,       setTab]       = useState('alertas')
   const [enviando,  setEnviando]  = useState<string | null>(null)
   const [statusMsg, setStatusMsg] = useState<StatusMsg | null>(null)
@@ -45,9 +46,9 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     telegram.status()
-      .then((d: any) => store.setEnabled(d?.enabled === true))
-      .catch(() => store.setEnabled(false))
-  }, [store])
+      .then((d: any) => setEnabled(d?.enabled === true))
+      .catch(() => setEnabled(false))
+  }, [setEnabled])
 
   useEffect(() => {
     if (tab === 'config') {
