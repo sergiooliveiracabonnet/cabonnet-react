@@ -12,7 +12,7 @@ export function PageHeader({ title, description, icon: Icon, actions, className 
   return (
     <div className={`flex items-start justify-between gap-4 flex-wrap ${className}`}>
       <div className="min-w-0">
-        <h1 className="text-title font-semibold text-text flex items-center gap-2">
+        <h1 className={`text-title font-semibold text-text ${Icon ? 'flex items-center gap-2' : ''}`}>
           {Icon && <Icon size={18} className="text-primary" />}
           {title}
         </h1>

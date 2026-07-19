@@ -22,4 +22,10 @@ describe('PageHeader', () => {
     const { container } = render(<PageHeader title="Ordens de Serviço" />)
     expect(container.querySelector('svg')).not.toBeInTheDocument()
   })
+  it('h1 sem ícone não tem classes flex', () => {
+    const { container } = render(<PageHeader title="Ordens de Serviço" />)
+    const h1 = container.querySelector('h1')
+    expect(h1).toHaveClass('text-title', 'font-semibold', 'text-text')
+    expect(h1).not.toHaveClass('flex', 'items-center', 'gap-2')
+  })
 })
