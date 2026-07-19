@@ -4,7 +4,7 @@
 
 **Goal:** `QualidadePage.tsx` adota o `PageHeader` (já usado em Ordens/Fila, Onda 4) e um novo `SectionLabel` canônico (extraído das 3 cópias já existentes no repo, nunca usado em Qualidade) nas suas 6 seções.
 
-**Architecture:** Cria `src/components/ui/SectionLabel.tsx`, um componente puro `{ icon, color, children }` idêntico em forma às 3 cópias já espalhadas pelo repo (`DashboardKpiPrimitives.tsx`, `AlertasComponents.tsx`, `PlannerExecutadoView.tsx` — nenhuma delas é tocada nesta onda). `QualidadePage.tsx` reorganiza o cabeçalho pra usar `PageHeader` (título+descrição, controles de período viram linha própria) e substitui os 6 blocos de "barra colorida + ícone + texto" hand-rolled por `<SectionLabel>`.
+**Architecture:** Cria `src/components/ui/SectionLabel.tsx`, um componente puro `{ icon, color, children }` na forma do `DashboardKpiPrimitives.tsx` (texto neutro) — que diverge das outras 2 cópias espalhadas pelo repo, `AlertasComponents.tsx`/`PlannerExecutadoView.tsx`, que usam texto colorido (ver spec §1/§2 pra a correção sobre essa divergência); nenhuma das 3 é tocada nesta onda. `QualidadePage.tsx` reorganiza o cabeçalho pra usar `PageHeader` (título+descrição, controles de período viram linha própria) e substitui os 6 blocos de "barra colorida + ícone + texto" hand-rolled por `<SectionLabel>`.
 
 **Tech Stack:** React 18 + TypeScript, Vitest + Testing Library (já usados em `PageHeader.test.tsx`, mesmo padrão RTL puro aplicável aqui pois `SectionLabel` não depende de contexto/router/query).
 
