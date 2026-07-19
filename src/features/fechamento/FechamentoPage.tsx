@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { FileText, Download, Printer, ChevronRight } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
+import { PageHeader } from '../../components/ui/PageHeader'
 import {
   ABA_LABEL, SLA_MIN,
   getPeriodDates, getPeriodoNome,
@@ -101,11 +102,11 @@ export default function FechamentoPage() {
     <div className="space-y-4 animate-fade-in">
 
       {/* ── Cabeçalho ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <FileText size={16} className="text-primary flex-shrink-0" />
-        <h2 className="font-headline text-xl font-semibold text-text">Relatório de Fechamento</h2>
-        <span className="text-caption text-muted">— fechamento operacional por período e escopo</span>
-      </div>
+      <PageHeader
+        title="Relatório de Fechamento"
+        description="Fechamento operacional por período e escopo"
+        icon={FileText}
+      />
 
       {/* ── Toolbar: Período ── */}
       <div className="bg-card border border-white/[0.08] rounded-xl p-4 space-y-3">
