@@ -92,7 +92,7 @@ describe('buildAnomalias — composição da anomalia de bairro', () => {
       makeOS({ numos: `arr${i}`, bairro: 'ARRASTAO', nomedaequipe: 'F20', tiposervico: 'INSTALACAO', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' })
     )
     const normalBairros = [1, 2, 3].flatMap(n => Array.from({ length: 5 }, (_, i) =>
-      makeOS({ numos: `n${n}-${i}`, bairro: `BAIRRO${n}`, nomedaequipe: 'F09' })
+      makeOS({ numos: `n${n}-${i}`, bairro: `BAIRRO${n}`, nomedaequipe: 'F09', tiposervico: 'MANUTENCAO' })
     ))
 
     const rows = enrichRows([...arrastao, ...normalBairros])
