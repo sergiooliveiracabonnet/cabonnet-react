@@ -13,6 +13,7 @@ import { PageHeader } from '../../../components/ui/PageHeader'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 import { TEAMS } from '../erpConstants'
 import { shortEquipe } from '../../../lib/osFormat'
+import { isFilaAtiva } from '../../../lib/transform'
 
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -51,6 +52,7 @@ export default function RelatoriosPage() {
     const map: Record<string, { queue: number; criticas: number }> = {}
     filteredRows.forEach(r => {
       if (!r.nomedaequipe) return
+      if (!isFilaAtiva(r._situacaoEfetiva)) return
       const code = shortEquipe(r.nomedaequipe).split(' - ')[0].trim()
       if (!map[code]) map[code] = { queue: 0, criticas: 0 }
       map[code].queue++
@@ -140,7 +142,7 @@ export default function RelatoriosPage() {
         queue: 0, agingSum: 0, agingCount: 0,
         execInst: 0, execManut: 0, execServico: 0,
       }
-      map[code].queue++
+      if (isFilaAtiva(r._situacaoEfetiva)) map[code].queue++
       if (r._agingAbertura != null) { map[code].agingSum += r._agingAbertura; map[code].agingCount++ }
       if (r.descsituacao === 'Concluída') {
         if (r._tipo === 'INSTALACAO')      map[code].execInst++

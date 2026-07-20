@@ -12,6 +12,12 @@ export const isConcluida = (s: string | undefined | null): boolean =>
 export const isExecucaoReal = (s: string | undefined | null): boolean =>
   s === 'Concluída' || s === 'Atendimento/Finalizadas'
 
+// OS que ainda está na fila ativa de uma equipe (não fechada).
+// Usar para: contagem de carga/fila por equipe — Concluída/Sem Execução não conta mais
+// como carga da equipe assim que a OS fecha (procedimento interno da operação).
+export const isFilaAtiva = (s: string | undefined | null): boolean =>
+  s === 'Pendente' || s === 'Atendimento'
+
 // ─── Date Filter ─────────────────────────────────────────────────────────────
 
 export function applyDateFilter(rows: OSRow[], dateFilter: DateFilter | null): OSRow[] {

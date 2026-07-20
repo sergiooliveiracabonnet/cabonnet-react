@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { OSRow, DateFilter } from './types'
-import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, parseDateTime, isConcluida, isExecucaoReal } from './transform.js'
+import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, parseDateTime, isConcluida, isExecucaoReal, isFilaAtiva } from './transform.js'
 import { buildDashboard, buildSla, buildAnomalias, buildCidades } from './builders.js'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -759,6 +759,33 @@ describe('isExecucaoReal', () => {
 
   it('Pendente retorna false', () => {
     expect(isExecucaoReal('Pendente')).toBe(false)
+  })
+})
+
+describe('isFilaAtiva', () => {
+  it('Pendente retorna true', () => {
+    expect(isFilaAtiva('Pendente')).toBe(true)
+  })
+
+  it('Atendimento retorna true', () => {
+    expect(isFilaAtiva('Atendimento')).toBe(true)
+  })
+
+  it('Concluída retorna false', () => {
+    expect(isFilaAtiva('Concluída')).toBe(false)
+  })
+
+  it('Concluída/Sem Execução retorna false', () => {
+    expect(isFilaAtiva('Concluída/Sem Execução')).toBe(false)
+  })
+
+  it('Reagendamento retorna false', () => {
+    expect(isFilaAtiva('Reagendamento')).toBe(false)
+  })
+
+  it('null/undefined retorna false', () => {
+    expect(isFilaAtiva(null)).toBe(false)
+    expect(isFilaAtiva(undefined)).toBe(false)
   })
 })
 

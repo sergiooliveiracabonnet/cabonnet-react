@@ -1,8 +1,9 @@
 import type { OSRow } from '../types'
+import { isFilaAtiva } from '../transform'
 
 export function buildAuditoria(rows: OSRow[], discardedLixo = 0, duplicadosLixo = 0) {
   const total      = rows.length
-  const semEquipe  = rows.filter(r => !r.nomedaequipe?.trim()).length
+  const semEquipe  = rows.filter(r => isFilaAtiva(r._situacaoEfetiva) && !r.nomedaequipe?.trim()).length
   const semData    = rows.filter(r => !r.datacadastro?.trim()).length
   const semCidade  = rows.filter(r => !r.nomedacidade?.trim()).length
   const semTipo    = rows.filter(r => !r.tiposervico?.trim()).length
@@ -25,7 +26,7 @@ export function buildAuditoria(rows: OSRow[], discardedLixo = 0, duplicadosLixo 
     semEquipe > 0 && {
       title: 'OS sem equipe atribuída', severity: 'red',
       desc:  `${semEquipe} OS em aberto sem equipe definida. Verifique a fila de distribuição.`,
-      rows:  rows.filter(r => !r.nomedaequipe?.trim()).slice(0, 50).map(r => ({ numos: r.numos, status: r.descsituacao, cidade: r.nomedacidade })),
+      rows:  rows.filter(r => isFilaAtiva(r._situacaoEfetiva) && !r.nomedaequipe?.trim()).slice(0, 50).map(r => ({ numos: r.numos, status: r.descsituacao, cidade: r.nomedacidade })),
     },
     semData > 0 && {
       title: 'OS sem data de cadastro', severity: 'yellow',

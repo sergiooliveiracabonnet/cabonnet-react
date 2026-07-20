@@ -9,6 +9,7 @@ import { useERPStore }   from '../../../store/erpStore'
 import { useAlerts }     from '../../../hooks/useAlerts'
 import { useGrafanaOS }  from '../../../hooks/useGrafanaOS'
 import { shortEquipe }   from '../../../lib/osFormat'
+import { isFilaAtiva } from '../../../lib/transform'
 import {
   SEV_CFG, SEV_CFG_MAP, buildAlerts,
   SectionLabel, AlertCard, RuleCard, GrafanaCityStrip, SettingsPanel,
@@ -38,6 +39,7 @@ export default function AlertasPage() {
     const map: Record<string, { queue: number; criticas: number }> = {}
     rows.forEach(row => {
       if (!row.nomedaequipe) return
+      if (!isFilaAtiva(row._situacaoEfetiva)) return
       const code = shortEquipe(row.nomedaequipe).split(' - ')[0].trim()
       if (!map[code]) map[code] = { queue: 0, criticas: 0 }
       map[code].queue++
@@ -61,7 +63,7 @@ export default function AlertasPage() {
   const totalAlerts = alerts.length + ruleAlerts.length
   const pulso       = derived?.dashboard?.pulso
   const totalFila   = useMemo(
-    () => rows.filter(r => r._situacaoEfetiva !== 'Concluída').length,
+    () => rows.filter(r => isFilaAtiva(r._situacaoEfetiva)).length,
     [rows]
   )
   const hasAny = totalAlerts > 0
