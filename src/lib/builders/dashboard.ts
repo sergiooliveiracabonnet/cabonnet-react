@@ -360,11 +360,12 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     `${taxa}% concluídas no período`,
   ].filter(Boolean).join(' · ')
 
-  // Instalação em massa no mesmo bairro é prática normal do PAP (arrastão), não indício de
-  // falha de infraestrutura — só conta OS de Manutenção/Outro para "Cluster de Falha".
+  // Instalação e Serviço em massa no mesmo bairro são prática comercial normal (arrastão do
+  // PAP, demanda de serviço), não indício de falha de infraestrutura — só conta OS de
+  // Manutenção para "Cluster de Falha".
   const clusterBairroMap = new Map<string, { bairro: string; cidade: string; total: number }>()
   for (const r of allRows) {
-    if (isCOPE(r) || isReagend(r) || isRede(r) || r._tipo === 'INSTALACAO') continue
+    if (isCOPE(r) || isReagend(r) || isRede(r) || r._tipo === 'INSTALACAO' || r._tipo === 'OUTRO') continue
     if (!isAtivo(r)) continue
     if (r._agingAbertura == null || r._agingAbertura > 1) continue
     const b = (r.bairro || '').trim()

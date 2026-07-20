@@ -158,6 +158,17 @@ describe('clustersAtivos (Clusters de Falha)', () => {
     const clusters = (pulso as { clustersAtivos: { bairro: string; total: number }[] }).clustersAtivos
     expect(clusters.find(c => c.bairro === 'JARDIM SUL')?.total).toBe(6)
   })
+
+  it('não sinaliza bairro com muitas OS de Serviço (demanda comercial não é falha de infra)', () => {
+    const rows = enrichRows(
+      Array.from({ length: 6 }, (_, i) => makeOS({
+        numos: `SRV${i}`, bairro: 'JARDIM SERVICO', tiposervico: 'SERVICO',
+        descsituacao: 'Pendente', datacadastro: daysAgo(0), dataagendamento: '', dataexecucao: '', databaixa: '',
+      }))
+    )
+    const { pulso } = buildDashboard(rows)
+    expect((pulso as { clustersAtivos: { bairro: string }[] }).clustersAtivos).toHaveLength(0)
+  })
 })
 
 describe('fornecedores — SLA de prazo (não taxa de conclusão)', () => {

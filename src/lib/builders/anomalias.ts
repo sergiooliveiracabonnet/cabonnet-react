@@ -54,8 +54,11 @@ function buildComposicao(rows: OSRow[], outraDimensao: 'equipe' | 'bairro'): Com
 export function buildAnomalias(rows: OSRow[]) {
   const base = rows.filter(r => !isCOPE(r) && !isReagend(r))
 
+  // Instalação e Serviço em massa não são anomalia (prática comercial normal) — só
+  // Manutenção/Rede entram no detector de pico de fluxo diário.
   const diaCnt = new Map<string, number>()
   for (const r of base) {
+    if (r._tipo === 'INSTALACAO' || r._tipo === 'OUTRO') continue
     const d = (r.datacadastro || '').split(' ')[0]
     if (d) diaCnt.set(d, (diaCnt.get(d) ?? 0) + 1)
   }
@@ -67,11 +70,12 @@ export function buildAnomalias(rows: OSRow[]) {
     .sort((a, b) => b[1] - a[1]).slice(0, 5)
     .map(([date, count]) => ({ date, count, zScore: diaStd > 0 ? +(((count - diaMean) / diaStd).toFixed(1)) : 0 }))
 
-  // Instalação em massa no mesmo bairro é prática normal do PAP (arrastão), não anomalia —
-  // excluída para não dominar a composição nem inflar a taxa de SLA excedido do bairro.
+  // Instalação e Serviço em massa no mesmo bairro são prática comercial normal (arrastão do
+  // PAP, demanda de serviço), não anomalia — excluídos para não dominar a composição nem
+  // inflar a taxa de SLA excedido do bairro.
   const bairroMap = new Map<string, { total: number; slaExc: number; rows: OSRow[] }>()
   for (const r of base) {
-    if (r._tipo === 'INSTALACAO') continue
+    if (r._tipo === 'INSTALACAO' || r._tipo === 'OUTRO') continue
     const b = (r.bairro || '').trim()
     if (!b) continue
     if (!bairroMap.has(b)) bairroMap.set(b, { total: 0, slaExc: 0, rows: [] })
