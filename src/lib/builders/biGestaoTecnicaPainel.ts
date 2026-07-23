@@ -86,7 +86,14 @@ export function buildBiGestaoTecnicaPainel(rows: BacklogRow[]): BiGestaoTecnicaP
       return { mes: key, label: `${MESES_LABEL[m - 1]} ${y}`, ...v }
     })
 
-  const revisitas = contarRevisitasPorTipo(rows)
+  // Cada contagem de revisita usa só as linhas já classificadas naquele tipo
+  // (porTipo), nunca o array `rows` inteiro — senão o numerador mede uma
+  // população diferente do denominador e o percentual pode passar de 100%
+  // (ex: uma linha classificada REDE ou de outro tipo que carregue a flag
+  // de revisita do tipo em questão).
+  const revisitaInstalacao = contarRevisitasPorTipo(porTipo.instalacao).instalacao
+  const revisitaManutencao = contarRevisitasPorTipo(porTipo.manutencao).manutencao
+  const revisitaServico    = contarRevisitasPorTipo(porTipo.servico).servico
 
   return {
     totalInstalacao,
@@ -106,9 +113,9 @@ export function buildBiGestaoTecnicaPainel(rows: BacklogRow[]): BiGestaoTecnicaP
       servico:    cumprimentoAgenda(porTipo.servico),
     },
     revisitaPct: {
-      instalacao: totalInstalacao > 0 ? Math.round((revisitas.instalacao / totalInstalacao) * 100) : 0,
-      manutencao: totalManutencao > 0 ? Math.round((revisitas.manutencao / totalManutencao) * 100) : 0,
-      servico:    totalServico    > 0 ? Math.round((revisitas.servico    / totalServico)    * 100) : 0,
+      instalacao: totalInstalacao > 0 ? Math.round((revisitaInstalacao / totalInstalacao) * 100) : 0,
+      manutencao: totalManutencao > 0 ? Math.round((revisitaManutencao / totalManutencao) * 100) : 0,
+      servico:    totalServico    > 0 ? Math.round((revisitaServico    / totalServico)    * 100) : 0,
     },
   }
 }

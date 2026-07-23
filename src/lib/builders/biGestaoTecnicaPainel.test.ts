@@ -75,6 +75,16 @@ describe('buildBiGestaoTecnicaPainel', () => {
     expect(buildBiGestaoTecnicaPainel(rows).revisitaPct.manutencao).toBe(50)
   })
 
+  it('revisitaPct ignora flag de revisita em linha de outro tipo (REDE) — nunca passa de 100%', () => {
+    const rows = [
+      makeRow({ numos: '1', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01', revisita_manut: 0 }),
+      makeRow({ numos: '2', tiposervico: 'MANUTENCAO', nomedaequipe: '03-VAL-REDE F04', revisita_manut: 1 }),
+    ]
+    const painel = buildBiGestaoTecnicaPainel(rows)
+    expect(painel.totalManutencao).toBe(1)
+    expect(painel.revisitaPct.manutencao).toBe(0)
+  })
+
   it('retorna zeros quando não há linhas', () => {
     const painel = buildBiGestaoTecnicaPainel([])
     expect(painel.totalGeral).toBe(0)
