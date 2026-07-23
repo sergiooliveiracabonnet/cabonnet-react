@@ -18,6 +18,7 @@ export const MODULO_ROTA: Record<string, string> = {
   erp_planner:       '/erp/planner',
   erp_fila:          '/erp/fila',
   erp_ranking:       '/erp/ranking',
+  erp_bi_tecnica:    '/erp/bi-gestao-tecnica',
 }
 
 export function moduloParaRota(chave: string): string | undefined {

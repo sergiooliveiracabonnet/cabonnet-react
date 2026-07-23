@@ -9,6 +9,10 @@ import {
   taxaColor,
 } from './QualidadeComponents'
 import { CausaRaizSection } from './CausaRaizSection'
+import {
+  isRevisitaAtiva, filtrarRevisitasAtivas, filtrarRevisitaPorTipo, contarRevisitasPorTipo,
+  revisitaPorCidade, clientesCronicos,
+} from '../../../lib/builders/revisitaPorTipo'
 import { RevisitaMotivosSection } from './RevisitaMotivosSection'
 import { StatCard, type StatTone } from '../../../components/ui/StatCard'
 import { PageHeader } from '../../../components/ui/PageHeader'
@@ -121,63 +125,36 @@ export default function QualidadePage() {
   const { data, isLoading, isError, refetch, isFetching } = useBacklog(inicio, fim)
 
   // ── Revisitas = qualquer flag de revisita ativo ───────────────────────
-  const revisitas = useMemo(
-    () => (data?.rows ?? []).filter(r =>
-      Number(r.revisita_inst) === 1 ||
-      Number(r.revisita_manut) === 1 ||
-      Number(r.revisita_serv) === 1
-    ),
-    [data]
-  )
+  const revisitas = useMemo(() => filtrarRevisitasAtivas(data?.rows ?? []), [data])
   const totalOS   = data?.kpis.total ?? 0
 
   // Filtradas pelo tipo ativo — usa os flags do SQL
   const revisitasFiltradas = useMemo(() => {
-    if (tipoAtivo === 'todos')       return revisitas
-    if (tipoAtivo === 'instalacao')  return revisitas.filter(r => Number(r.revisita_inst)  === 1)
-    if (tipoAtivo === 'manutencao')  return revisitas.filter(r => Number(r.revisita_manut) === 1)
-    if (tipoAtivo === 'servico')     return revisitas.filter(r => Number(r.revisita_serv)  === 1)
-    return revisitas
+    if (tipoAtivo === 'todos') return revisitas
+    return filtrarRevisitaPorTipo(revisitas, tipoAtivo)
   }, [revisitas, tipoAtivo])
 
   // Contagens diretas pelos flags SQL
-  const contagens = useMemo(() => ({
-    instalacao: revisitas.filter(r => Number(r.revisita_inst)  === 1).length,
-    manutencao: revisitas.filter(r => Number(r.revisita_manut) === 1).length,
-    servico:    revisitas.filter(r => Number(r.revisita_serv)  === 1).length,
-  }), [revisitas])
+  const contagens = useMemo(() => contarRevisitasPorTipo(revisitas), [revisitas])
 
-  // Clientes crônicos (3+ revisitas no período)
-  const cronicos = useMemo(() => {
-    const cnt: Record<string, { nome: string; count: number }> = {}
-    for (const r of revisitasFiltradas) {
-      const k = String(r.codigocliente || r.nomecliente)
-      if (!cnt[k]) cnt[k] = { nome: r.nomecliente, count: 0 }
-      cnt[k].count++
-    }
-    return Object.values(cnt)
-      .filter(c => c.count >= 2)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 20)
-  }, [revisitasFiltradas])
+  // Clientes crônicos (2+ revisitas no período)
+  const cronicos = useMemo(() => clientesCronicos(revisitasFiltradas), [revisitasFiltradas])
 
   // Por cidade
   const porCidade = useMemo(() => {
-    const m: Record<string, { rev: number; total: number }> = {}
-    for (const r of (data?.rows ?? [])) {
-      const c     = r.nomedacidade || 'Sem cidade'
-      const isRev = tipoAtivo === 'todos'
-        ? (Number(r.revisita_inst) + Number(r.revisita_manut) + Number(r.revisita_serv)) > 0
-        : tipoAtivo === 'instalacao' ? Number(r.revisita_inst)  === 1
-        : tipoAtivo === 'manutencao' ? Number(r.revisita_manut) === 1
-        :                               Number(r.revisita_serv)  === 1
-      if (!m[c]) m[c] = { rev: 0, total: 0 }
-      m[c].total++
-      if (isRev) m[c].rev++
+    if (tipoAtivo === 'todos') {
+      const m: Record<string, { rev: number; total: number }> = {}
+      for (const r of (data?.rows ?? [])) {
+        const c = r.nomedacidade || 'Sem cidade'
+        if (!m[c]) m[c] = { rev: 0, total: 0 }
+        m[c].total++
+        if (isRevisitaAtiva(r)) m[c].rev++
+      }
+      return Object.entries(m)
+        .map(([cidade, v]) => ({ cidade, ...v, taxa: v.total ? Math.round((v.rev / v.total) * 100) : 0 }))
+        .sort((a, b) => b.rev - a.rev)
     }
-    return Object.entries(m)
-      .map(([cidade, v]) => ({ cidade, ...v, taxa: v.total ? Math.round((v.rev / v.total) * 100) : 0 }))
-      .sort((a, b) => b.rev - a.rev)
+    return revisitaPorCidade(data?.rows ?? [], tipoAtivo)
   }, [data, tipoAtivo])
 
   const taxaGeral = totalOS > 0 ? Math.round((revisitasFiltradas.length / totalOS) * 100) : 0

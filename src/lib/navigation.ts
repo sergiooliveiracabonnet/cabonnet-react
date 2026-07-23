@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ClipboardList,
   BarChart2, PieChart, MapPin,
   Zap, Monitor, FileText, Map,
-  Bell, Award, CalendarDays, Shield, Siren, Medal, Users,
+  Bell, Award, CalendarDays, Shield, Siren, Medal, Users, Wrench,
 } from 'lucide-react'
 import { useAuthStore, type UserRole } from '../store/authStore'
 import { rotaParaModulo } from './modulos'
@@ -44,6 +44,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/cidades',        label: 'Cidades',          icon: MapPin    },
       { to: '/erp/ranking',    label: 'Ranking Técnicos', icon: Medal     },
       { to: '/erp/qualidade',  label: 'Qualidade',        icon: Award     },
+      { to: '/erp/bi-gestao-tecnica', label: 'BI Técnico', icon: Wrench   },
       { to: '/erp/relatorios', label: 'Relatórios',       icon: BarChart2 },
       { to: '/graficos',       label: 'Gráficos',         icon: PieChart  },
       { to: '/fechamento',     label: 'Fechamento',       icon: FileText  },
