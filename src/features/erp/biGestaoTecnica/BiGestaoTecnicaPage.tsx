@@ -5,6 +5,8 @@ import { TabBar } from '../../../components/ui/TabBar'
 import { PageHeader } from '../../../components/ui/PageHeader'
 import { PainelTab } from './PainelTab'
 import { RevisitaTab } from './RevisitaTab'
+import { FiltrosBiTecnica } from './FiltrosBiTecnica'
+import { filtrarBacklogRows, FILTROS_VAZIOS, type BiTecnicaFiltros } from '../../../lib/builders/biTecnicaFiltros'
 
 function isoDate(d: Date): string {
   const y   = d.getFullYear()
@@ -38,6 +40,7 @@ export default function BiGestaoTecnicaPage() {
   const [preset,    setPreset]    = useState<Preset>('atual')
   const [customIni, setCustomIni] = useState(() => mesAnteriorRange()[0])
   const [customFim, setCustomFim] = useState(() => isoDate(new Date()))
+  const [filtros,   setFiltros]   = useState<BiTecnicaFiltros>(FILTROS_VAZIOS)
 
   const [inicio, fim] = useMemo<[string, string]>(() => {
     if (preset === 'atual')    return mesAtualRange()
@@ -50,6 +53,11 @@ export default function BiGestaoTecnicaPage() {
   }, [preset, customIni, customFim])
 
   const { data, isLoading, isError, refetch, isFetching } = useBacklog(inicio, fim)
+
+  const dataFiltrado = useMemo(
+    () => data ? filtrarBacklogRows(data, filtros) : undefined,
+    [data, filtros]
+  )
 
   return (
     <div className="space-y-4 max-w-[1600px]">
@@ -106,11 +114,14 @@ export default function BiGestaoTecnicaPage() {
       )}
 
       {data && (
-        <div className={`transition-opacity duration-200 ${isFetching ? 'opacity-60' : ''}`}>
-          {tab === 'painel'     && <PainelTab data={data} />}
-          {tab === 'instalacao' && <RevisitaTab data={data} tipo="instalacao" />}
-          {tab === 'servico'    && <RevisitaTab data={data} tipo="servico" />}
-          {tab === 'manutencao' && <RevisitaTab data={data} tipo="manutencao" />}
+        <div className={`space-y-4 transition-opacity duration-200 ${isFetching ? 'opacity-60' : ''}`}>
+          <FiltrosBiTecnica rows={data.rows} filtros={filtros} onChange={setFiltros} />
+          <div>
+            {tab === 'painel'     && <PainelTab data={dataFiltrado} />}
+            {tab === 'instalacao' && <RevisitaTab data={dataFiltrado} tipo="instalacao" />}
+            {tab === 'servico'    && <RevisitaTab data={dataFiltrado} tipo="servico" />}
+            {tab === 'manutencao' && <RevisitaTab data={dataFiltrado} tipo="manutencao" />}
+          </div>
         </div>
       )}
     </div>
