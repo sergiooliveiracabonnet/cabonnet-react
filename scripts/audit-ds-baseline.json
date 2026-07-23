@@ -67,6 +67,12 @@
     "src/features/erp/alertas/AlertasPage.tsx": [
       "#f97316"
     ],
+    "src/features/erp/biGestaoTecnica/PainelTab.tsx": [
+      "#f97316"
+    ],
+    "src/features/erp/biGestaoTecnica/RevisitaTab.tsx": [
+      "#f97316"
+    ],
     "src/features/erp/fila/FilaPage.tsx": [
       "#0d1117",
       "#0f172a",
