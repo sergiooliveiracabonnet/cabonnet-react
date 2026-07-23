@@ -250,7 +250,12 @@ def _refresh_cache_from_grafana(origem: str = "manual") -> bool:
                 args=(csv_p or "", csv_a or "", csv_f or "", ts_now),
                 daemon=True,
             ).start()
-        threading.Thread(target=_dados_cache_update, args=(csv_p or "", csv_a or "", csv_f or ""), daemon=True).start()
+        threading.Thread(
+            target=_dados_cache_update,
+            args=(csv_p or "", csv_a or "", csv_f or ""),
+            kwargs={"origem": origem},
+            daemon=True,
+        ).start()
         import csv as _csv, io as _io
         def _n(t): return sum(1 for _ in _csv.reader(_io.StringIO(t or ""))) - 1
         log.info("[Cache] Refresh OK (%s) — P=%d A=%d F=%d", origem, _n(csv_p), _n(csv_a), _n(csv_f))

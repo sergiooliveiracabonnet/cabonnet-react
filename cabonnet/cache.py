@@ -92,7 +92,7 @@ def _verificar_revisitas(novas_os):
         log.info("[Revisita] Alerta enviado — OS %s (cliente %s)", numos, cod if len(cod) < 20 else cod[:20]+"…")
 
 
-def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro="", detect_changes=True):
+def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro="", detect_changes=True, origem="?"):
     """Atualiza state._dados_cache e, quando detect_changes=True, compara contra o
     snapshot global de status/equipe para detectar mudanças e disparar alertas.
 
@@ -124,6 +124,9 @@ def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro="", detect_
     new_snap    = {n: r.get("descsituacao", "")  for n, r in row_map.items()}
     new_eq_snap = {n: (r.get("nomedaequipe", ""), r.get("dataagendamento", "")) for n, r in row_map.items()}
 
+    tid = threading.get_ident()
+    log.info("[Cache][diag] _dados_cache_update início — origem=%s thread=%s", origem, tid)
+
     with state._status_snapshot_lock:
         old_snap              = state._status_snapshot.copy()
         state._status_snapshot.clear()
@@ -139,7 +142,7 @@ def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro="", detect_
     with state._dados_cache_lock:
         state._dados_cache["agendado"] = rows_agendado
         state._dados_cache["ts"]       = _time_mod.time()
-    log.info("[Cache] Dados atualizados — %d linhas", len(rows_agendado))
+    log.info("[Cache] Dados atualizados — %d linhas (origem=%s thread=%s)", len(rows_agendado), origem, tid)
 
     if first_load:
         log.info("[Status] Snapshot inicial — %d OS indexadas", len(new_snap))
@@ -163,7 +166,9 @@ def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro="", detect_
     ]
     if not changes:
         return
-    log.info("[Status] %d mudança(s) detectada(s)", len(changes))
+    changes_desc = ", ".join(f"{r.get('numos','?')}({old}->{new})" for r, old, new in changes)
+    log.info("[Status] %d mudança(s) detectada(s) (origem=%s thread=%s) — %s",
+              len(changes), origem, tid, changes_desc)
     threading.Thread(target=_db_save_status_changes, args=(changes,), daemon=True).start()
     _tg_broadcast_status_changes(changes)
     threading.Thread(target=state.sse_broadcast,

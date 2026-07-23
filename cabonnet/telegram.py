@@ -313,9 +313,11 @@ def _tg_broadcast_status_changes(changes):
     rede_ch  = [(r, o, n) for r, o, n in changes if _operadora_da_os(r) == "REDE"]
     thm_ch   = [(r, o, n) for r, o, n in changes if _operadora_da_os(r) == "THM"        and not _is_equipe_rede_ou_manut(r)]
 
-    def _send_batch(batch, chat_id):
+    def _send_batch(batch, chat_id, label=""):
         if not chat_id or not batch:
             return
+        numos_list = ", ".join(str(r.get("numos", "?")) for r, _, _ in batch)
+        log.info("[Telegram][diag] status-change → grupo=%s chat=%s OS=%s", label, chat_id, numos_list)
         if len(batch) > _STATUS_CHANGE_BATCH_LIMIT:
             _telegram_send(_tg_fmt_status_summary(batch), chat_id_override=chat_id)
         else:
@@ -323,14 +325,14 @@ def _tg_broadcast_status_changes(changes):
                 _telegram_send(_tg_fmt_status_change(row, old_st, new_st), chat_id_override=chat_id)
 
     # Alertas — recebe TODAS as mudanças
-    _send_batch(changes, TELEGRAM_CHAT_ALERTAS)
+    _send_batch(changes, TELEGRAM_CHAT_ALERTAS, "ALERTAS")
 
     # Operacional (Produtividade) — somente instalações
     inst_ch_op = [(r, o, n) for r, o, n in changes if "INSTALAC" in (r.get("tiposervico", "") or "").upper()]
-    _send_batch(inst_ch_op, TELEGRAM_CHAT_ID)
+    _send_batch(inst_ch_op, TELEGRAM_CHAT_ID, "OPERACIONAL")
 
     # Grupos restritos — apenas OS da própria operadora
-    _send_batch(wes_ch,  TELEGRAM_CHAT_WES)
-    _send_batch(inst_ch, TELEGRAM_CHAT_INSTACABLE)
-    _send_batch(rede_ch, TELEGRAM_CHAT_REDE)
-    _send_batch(thm_ch,  TELEGRAM_CHAT_OPERACIONAL_THM)
+    _send_batch(wes_ch,  TELEGRAM_CHAT_WES, "WES")
+    _send_batch(inst_ch, TELEGRAM_CHAT_INSTACABLE, "INSTACABLE")
+    _send_batch(rede_ch, TELEGRAM_CHAT_REDE, "REDE")
+    _send_batch(thm_ch,  TELEGRAM_CHAT_OPERACIONAL_THM, "THM")
