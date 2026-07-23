@@ -23,7 +23,7 @@ ALL_MODULOS = [
     "dashboard", "ordens", "graficos", "cidades", "fornecedor", "juniper",
     "fechamento", "mapa", "noc",
     "erp_relatorios", "erp_alertas", "erp_qualidade",
-    "erp_planner", "erp_fila", "erp_ranking",
+    "erp_planner", "erp_fila", "erp_ranking", "erp_bi_tecnica",
 ]
 
 # Defaults semeados no bootstrap — só o ponto de partida, ajustável depois pela

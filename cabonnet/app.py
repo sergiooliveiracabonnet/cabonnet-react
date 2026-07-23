@@ -542,6 +542,7 @@ _MODULO_LABELS = {
     "erp_planner":        "Planner",
     "erp_fila":           "Fila de Prioridade",
     "erp_ranking":        "Ranking Técnicos",
+    "erp_bi_tecnica":     "BI-Gestão Técnica",
 }
 _ROLES_VALIDOS = ("gestor", "operador", "viewer")
 

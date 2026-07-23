@@ -152,3 +152,12 @@ def test_migracao_nao_afeta_papel_sem_modulos_antigos():
     db._db_set_permissoes("operador", ["dashboard", "erp_fila"])
     db._db_migrate_onda3a_modulos()
     assert set(db._db_get_permissoes("operador")) == {"dashboard", "erp_fila"}
+
+
+def test_erp_bi_tecnica_modulo_registrado(client, gestor):
+    with patch("cabonnet.app._auth_enabled", return_value=True):
+        r = client.get("/api/permissoes", headers=gestor)
+    assert r.status_code == 200
+    modulos = {m["key"]: m["label"] for m in r.json()["modulos"]}
+    assert modulos.get("erp_bi_tecnica") == "BI-Gestão Técnica"
+    assert "erp_bi_tecnica" in db.ALL_MODULOS
