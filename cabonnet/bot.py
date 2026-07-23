@@ -423,7 +423,7 @@ def _telegram_poll_loop_inner():
                     _telegram_send("⏳ Atualizando dados do Grafana...", chat_id_override=cid)
                     try:
                         csv_a = frames_to_csv(grafana_post(SQL_AGENDADO))
-                        _dados_cache_update(csv_agendado=csv_a or "")
+                        _dados_cache_update(csv_agendado=csv_a or "", detect_changes=False)
                         hora_str = datetime.now().strftime("%H:%M:%S")
                         _telegram_send(f"✅ <b>Cache atualizado</b> às {hora_str}", chat_id_override=cid)
                     except Exception as ex:

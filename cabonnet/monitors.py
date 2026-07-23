@@ -586,7 +586,7 @@ def _resumo_scheduler_loop():
             def _enviar_executadas(hora=agora.hour):
                 try:
                     csv_a = frames_to_csv(grafana_post(SQL_AGENDADO))
-                    _dados_cache_update(csv_agendado=csv_a or "")
+                    _dados_cache_update(csv_agendado=csv_a or "", detect_changes=False)
                     texto_global = _build_executadas_hoje(operadora=None)
                     if texto_global: _telegram_send(texto_global)
                     for _op, _chat in [("INSTACABLE", TELEGRAM_CHAT_INSTACABLE),

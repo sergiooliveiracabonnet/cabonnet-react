@@ -823,7 +823,7 @@ def _build_producao_equipe(query):
     if not rows:
         try:
             csv_a = frames_to_csv(grafana_post(SQL_AGENDADO))
-            _dados_cache_update(csv_agendado=csv_a or "")
+            _dados_cache_update(csv_agendado=csv_a or "", detect_changes=False)
             with state._dados_cache_lock:
                 rows = list(state._dados_cache["agendado"])
         except Exception as ex:
@@ -1280,7 +1280,7 @@ def _build_nota_instacable():
     if not rows:
         try:
             csv_a = frames_to_csv(grafana_post(SQL_AGENDADO))
-            _dados_cache_update(csv_agendado=csv_a or "")
+            _dados_cache_update(csv_agendado=csv_a or "", detect_changes=False)
             with state._dados_cache_lock:
                 rows = list(state._dados_cache["agendado"])
         except Exception as ex:
@@ -1394,7 +1394,7 @@ def _build_resumo_diario(periodo):
     try:
         log.info("[Telegram] Buscando dados para resumo '%s'...", periodo)
         csv_a = frames_to_csv(grafana_post(SQL_AGENDADO))
-        _dados_cache_update(csv_agendado=csv_a or "")
+        _dados_cache_update(csv_agendado=csv_a or "", detect_changes=False)
         titulo = "🌅 <b>RESUMO MATINAL</b>" if periodo == "manha" else "🌆 <b>FECHAMENTO DO DIA</b>"
         status_text = _build_status_text()
         corpo  = status_text.split("\n", 1)[1] if "\n" in status_text else status_text

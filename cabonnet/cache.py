@@ -92,13 +92,34 @@ def _verificar_revisitas(novas_os):
         log.info("[Revisita] Alerta enviado — OS %s (cliente %s)", numos, cod if len(cod) < 20 else cod[:20]+"…")
 
 
-def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro=""):
+def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro="", detect_changes=True):
+    """Atualiza state._dados_cache e, quando detect_changes=True, compara contra o
+    snapshot global de status/equipe para detectar mudanças e disparar alertas.
+
+    detect_changes=False é usado por chamadores que só precisam de linhas frescas
+    de 'agendado' para montar um relatório pontual (resumo diário, /atualizar,
+    fallback de cache vazio etc.) — eles buscam do Grafana de forma independente
+    do ciclo de auto-refresh de 3min, e SEMPRE tratar essas buscas como fonte de
+    verdade do snapshot global causava corrida: duas atualizações concorrentes
+    (uma com dados mais novos, outra com dados um pouco mais velhos) podiam se
+    sobrescrever fora de ordem e reenviar a MESMA mudança de status como se fosse
+    nova. O ciclo de auto-refresh (_refresh_cache_from_grafana) é o único writer
+    do snapshot — só ele deve chamar com detect_changes=True.
+    """
+    rows_agendado = _parse_csv_rows(csv_agendado)
+
+    if not detect_changes:
+        with state._dados_cache_lock:
+            state._dados_cache["agendado"] = rows_agendado
+            state._dados_cache["ts"]       = _time_mod.time()
+        log.info("[Cache] Dados atualizados (sem detecção de mudança) — %d linhas", len(rows_agendado))
+        return
+
     all_rows = (
         _parse_csv_rows(csv_pendente) +
         _parse_csv_rows(csv_agendado) +
         _parse_csv_rows(csv_futuro)
     )
-    rows_agendado = _parse_csv_rows(csv_agendado)
     row_map     = {r["numos"]: r for r in all_rows if r.get("numos")}
     new_snap    = {n: r.get("descsituacao", "")  for n, r in row_map.items()}
     new_eq_snap = {n: (r.get("nomedaequipe", ""), r.get("dataagendamento", "")) for n, r in row_map.items()}
