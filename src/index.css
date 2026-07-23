@@ -211,6 +211,45 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,.09), 0 1px 3px rgba(0,0,0,.06);
 }
 
+/* ── Card âncora — fundo navy fixo, independente do tema ativo ──
+   Redeclara localmente os tokens de superfície/texto/semânticos nos valores
+   do tema dark pós-restyle (2026-07-22). Como custom properties são herdadas,
+   qualquer classe descendente que leia var(--c-text)/var(--c-surface)/etc
+   (inclusive o override .light [class*="border-white/"]) resolve sozinha
+   para os valores fixos abaixo — nenhum className interno do PulsoHero
+   precisa ser tocado. Escopo: só o PulsoHero nesta onda. */
+.card-anchor {
+  --c-bg:            10  15  28;
+  --c-elevated:      16  24  39;
+  --c-surface:       20  28  46;
+  --c-card:          15  23  38;
+  --c-card-high:     22  33  58;
+  --c-card-highest:  30  44  72;
+  --c-border:        35  49  80;
+
+  --c-text:         245 247 251;
+  --c-secondary:    196 206 224;
+  --c-muted:        148 163 191;
+  --c-disabled:      63  63  70;
+
+  --c-primary:       59 130 246;
+  --c-primary-light: 96 165 250;
+  --c-primary-dark:  37  99 235;
+  --c-cyan:          34 211 238;
+
+  --c-green:  74 222 128;
+  --c-yellow: 250 204  21;
+  --c-red:    248 113 113;
+  --c-orange: 251 146  60;
+  --c-purple: 167 139 250;
+  --c-pink:   244 114 182;
+  --c-teal:    45 212 191;
+
+  background: linear-gradient(135deg, rgb(15 31 61) 0%, rgb(20 40 74) 100%);
+  border: 1px solid rgb(var(--c-border));
+  color: rgb(var(--c-text));
+}
+
 /* ── Glass — apenas para overlays/modais (não em cards) ── */
 .glass {
   background: rgb(var(--c-elevated) / 0.92);

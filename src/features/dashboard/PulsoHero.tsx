@@ -56,7 +56,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
 
   return (
     <div
-      className="rounded-lg border border-border bg-card"
+      className="rounded-lg card-anchor"
       style={{ borderLeft: `2px solid ${scoreColor}` }}
     >
       <div className="p-5 space-y-4">
