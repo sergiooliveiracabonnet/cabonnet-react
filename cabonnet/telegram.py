@@ -264,11 +264,12 @@ def _tg_fmt_status_change(row, old_st, new_st):
 
     endereco = _tg_endereco(row)
 
+    e_old = _STATUS_EMOJI.get(old_st, "🔄")
     e_new = _STATUS_EMOJI.get(new_st, "🔄")
 
     lines = [
         f"{e_new} <b>OS {numos} — {_tg_esc(new_st)}</b>",
-        f"<i>{_tg_esc(old_st)} → {_tg_esc(new_st)}</i>",
+        f"<i>{e_old} {_tg_esc(old_st)} → {e_new} {_tg_esc(new_st)}</i>",
         _TG_DIV,
         f"👤 {cliente}",
     ]
