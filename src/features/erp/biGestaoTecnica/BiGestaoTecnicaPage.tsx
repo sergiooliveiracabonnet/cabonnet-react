@@ -42,9 +42,11 @@ export default function BiGestaoTecnicaPage() {
   const [inicio, fim] = useMemo<[string, string]>(() => {
     if (preset === 'atual')    return mesAtualRange()
     if (preset === 'anterior') return mesAnteriorRange()
-    const f      = customFim < customIni ? customIni : customFim
-    const amanha = isoDate(new Date(new Date(f).getTime() + 86_400_000))
-    return [customIni, amanha]
+    // Se o usuário escolher as datas invertidas, troca em vez de descartar a
+    // data final — evita colapsar silenciosamente pra uma janela de 1 dia.
+    const [ini, fimEscolhido] = customIni <= customFim ? [customIni, customFim] : [customFim, customIni]
+    const amanha = isoDate(new Date(new Date(fimEscolhido).getTime() + 86_400_000))
+    return [ini, amanha]
   }, [preset, customIni, customFim])
 
   const { data, isLoading, isError, refetch, isFetching } = useBacklog(inicio, fim)
