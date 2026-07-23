@@ -813,13 +813,23 @@ describe('buildAnomalias', () => {
 
   it('picosDia tem campos date, count e zScore', () => {
     const rows: OSRow[] = []
-    const baseDate = daysAgo(5)
-    for (let i = 0; i < 30; i++) {
-      rows.push(makeOS({ numos: `P${i}`, datacadastro: baseDate, descsituacao: 'Pendente' }))
+    const peakDate = daysAgo(5)
+    for (let i = 0; i < 20; i++) {
+      rows.push(makeOS({ numos: `P${i}`, datacadastro: peakDate, descsituacao: 'Pendente', tiposervico: 'MANUTENCAO' }))
     }
-    rows.push(makeOS({ numos: 'OUTROS', datacadastro: daysAgo(1), descsituacao: 'Pendente' }))
+    // picosDia exige (count > média + 2×desvio padrão) — com só 2 dias distintos essa
+    // condição é matematicamente impossível de satisfazer (o dia maior nunca ultrapassa
+    // média + 2×desvio quando há apenas 1 outro dia). Por isso o dataset precisa de
+    // vários dias de baixo volume ao redor do dia de pico para o cálculo estatístico
+    // conseguir de fato detectar o pico (bug já ocorreu: ver commit que corrige esta suite).
+    ;[1, 2, 3, 4, 6, 7].forEach(n => {
+      rows.push(makeOS({ numos: `N${n}`, datacadastro: daysAgo(n), descsituacao: 'Pendente', tiposervico: 'MANUTENCAO' }))
+    })
     const enriched = enrichRows(rows)
     const result   = buildAnomalias(enriched)
+    // Garante que o dia de pico foi de fato detectado — sem isso, o forEach abaixo
+    // passaria trivialmente mesmo com picosDia vazio.
+    expect(result.picosDia.length).toBeGreaterThan(0)
     result.picosDia.forEach(p => {
       expect(typeof p.date).toBe('string')
       expect(typeof p.count).toBe('number')
