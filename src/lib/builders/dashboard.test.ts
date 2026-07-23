@@ -53,10 +53,10 @@ describe('periodHealth', () => {
     expect(h.score).toBeGreaterThan(80)
   })
 
-  it('OS com agendamento além do prazo derruba o slaPct', () => {
+  it('OS que demorou para fechar (aging desde a abertura) derruba o slaPct', () => {
     const rows = enrichRows([
-      makeOS({ numos: 'A' }),                                   // dentro do prazo
-      makeOS({ numos: 'B', dataagendamento: '10/06/2026' }),    // 9 dias > limite 1 → viola
+      makeOS({ numos: 'A' }),                                                             // dentro do prazo
+      makeOS({ numos: 'B', dataexecucao: '15/06/2026', databaixa: '15/06/2026' }),        // 14 dias > limite 1 → viola
     ])
     const h = periodHealth(rows)
     expect(h.slaPct).toBeLessThan(100)

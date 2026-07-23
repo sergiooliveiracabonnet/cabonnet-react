@@ -130,33 +130,35 @@ describe('enrichRows — SLA', () => {
     expect(r._slaLimite).toBe(1)
   })
 
-  it('_slaExcedido = true quando agendamento > limite (Pendente)', () => {
+  it('_slaExcedido = true quando aging desde a abertura > limite, mesmo com agendamento rápido', () => {
+    // Agendada em 1h (dentro do limite), mas segue ativa 10 dias depois — deve
+    // contar a partir da abertura, não travar no prazo de agendamento.
     const os = makeOS({
       descsituacao:    'Pendente',
       datacadastro:    daysAgo(10),
-      dataagendamento: daysAgo(8),   // 2 dias após abertura — excede limite Manutenção (1d)
+      dataagendamento: daysAgo(10),
       tiposervico:     'MANUTENCAO',
     })
     const [r] = enrichRows([os])
     expect(r._slaExcedido).toBe(true)
   })
 
-  it('_slaExcedido = false quando agendamento dentro do limite', () => {
+  it('_slaExcedido = false quando aging desde a abertura está dentro do limite', () => {
     const os = makeOS({
       descsituacao:    'Pendente',
-      datacadastro:    daysAgo(5),
-      dataagendamento: daysAgo(4),   // 1 dia após abertura — dentro do limite (1d)
+      datacadastro:    daysAgo(1),
+      dataagendamento: daysAgo(1),
       tiposervico:     'MANUTENCAO',
     })
     const [r] = enrichRows([os])
     expect(r._slaExcedido).toBe(false)
   })
 
-  it('_slaCritico = true quando SLA > 2× o limite', () => {
+  it('_slaCritico = true quando aging desde a abertura > 2× o limite', () => {
     const os = makeOS({
       descsituacao:    'Pendente',
-      datacadastro:    daysAgo(10),
-      dataagendamento: daysAgo(7),   // 3 dias > 2× limite manutenção (1d)
+      datacadastro:    daysAgo(3),   // 3 dias > 2× limite manutenção (1d)
+      dataagendamento: daysAgo(3),
       tiposervico:     'MANUTENCAO',
     })
     const [r] = enrichRows([os])
@@ -172,6 +174,18 @@ describe('enrichRows — SLA', () => {
     })
     const [r] = enrichRows([os])
     expect(r._slaSemAgend).toBe(true)
+  })
+
+  it('_slaSemAgend = false quando excedido mas com agendamento (mesmo que atrasado)', () => {
+    const os = makeOS({
+      descsituacao:    'Pendente',
+      datacadastro:    daysAgo(10),
+      dataagendamento: daysAgo(10),
+      tiposervico:     'MANUTENCAO',
+    })
+    const [r] = enrichRows([os])
+    expect(r._slaExcedido).toBe(true)
+    expect(r._slaSemAgend).toBe(false)
   })
 })
 

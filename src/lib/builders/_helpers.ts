@@ -25,13 +25,11 @@ export function scoreComposto(sla: number, taxa: number, mttr: number): number {
 }
 
 // ─── SLA — predicado único de violação ────────────────────────────────────────
-// Com agendamento: o prazo até a data agendada estourou o limite.
-// Sem agendamento: o aging (congelado na baixa para concluídas) estourou o limite.
+// Sempre conta a partir da abertura da OS: aging (congelado na baixa para
+// concluídas) contra o limite do tipo de serviço. Agendamento é só informativo.
 
 export function estourouSLA(r: OSRow): boolean {
-  return r._diasAteAgendamento != null
-    ? r._diasAteAgendamento > r._slaLimite
-    : (r._agingAbertura != null && r._agingAbertura > r._slaLimite)
+  return r._agingAbertura != null && r._agingAbertura > r._slaLimite
 }
 
 /** % das OS do conjunto que NÃO estouraram o SLA (100 se vazio). */

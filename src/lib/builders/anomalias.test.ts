@@ -37,22 +37,23 @@ function daysAgo(n: number): string {
 
 describe('buildAnomalias — composição da anomalia de bairro', () => {
   it('decompõe o bairro anômalo por tipo de serviço, equipes distintas e cliente recorrente', () => {
-    // SLA estourado: agendamento ~70 dias após a abertura, bem acima de qualquer limite configurado
+    // SLA estourado: aberta há 70 dias e segue ativa (Pendente) — bem acima de qualquer
+    // limite configurado, contado a partir da HORA DE ABERTURA da OS (não do agendamento).
     // tiposervico precisa conter "MANUTENC" (sem acento) pra classificar como _tipo
     // MANUTENCAO em getEquipeTipo — do contrário cai em OUTRO (Serviço) e é excluído do
     // detector de anomalia de bairro pela regra de negócio corrigida nesta task.
     const problemBairro = [
-      makeOS({ numos: '1', bairro: 'ESPLANADA', nomedaequipe: 'F01', tiposervico: 'Manutencao Sinal Fraco', codigocliente: 'C1', nomecliente: 'JOAO SILVA', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
-      makeOS({ numos: '2', bairro: 'ESPLANADA', nomedaequipe: 'F01', tiposervico: 'Manutencao Sinal Fraco', codigocliente: 'C1', nomecliente: 'JOAO SILVA', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
-      makeOS({ numos: '3', bairro: 'ESPLANADA', nomedaequipe: 'F02', tiposervico: 'Manutencao Sinal Fraco', codigocliente: 'C2', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
-      makeOS({ numos: '4', bairro: 'ESPLANADA', nomedaequipe: 'F03', tiposervico: 'Manutencao Sinal Fraco', codigocliente: 'C3', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
-      makeOS({ numos: '5', bairro: 'ESPLANADA', nomedaequipe: 'F03', tiposervico: 'Manutencao Sem Sinal',   codigocliente: 'C4', datacadastro: '01/01/2026', dataagendamento: '15/03/2026' }),
+      makeOS({ numos: '1', bairro: 'ESPLANADA', nomedaequipe: 'F01', tiposervico: 'Manutencao Sinal Fraco', codigocliente: 'C1', nomecliente: 'JOAO SILVA', datacadastro: daysAgo(70), dataagendamento: daysAgo(70) }),
+      makeOS({ numos: '2', bairro: 'ESPLANADA', nomedaequipe: 'F01', tiposervico: 'Manutencao Sinal Fraco', codigocliente: 'C1', nomecliente: 'JOAO SILVA', datacadastro: daysAgo(70), dataagendamento: daysAgo(70) }),
+      makeOS({ numos: '3', bairro: 'ESPLANADA', nomedaequipe: 'F02', tiposervico: 'Manutencao Sinal Fraco', codigocliente: 'C2', datacadastro: daysAgo(70), dataagendamento: daysAgo(70) }),
+      makeOS({ numos: '4', bairro: 'ESPLANADA', nomedaequipe: 'F03', tiposervico: 'Manutencao Sinal Fraco', codigocliente: 'C3', datacadastro: daysAgo(70), dataagendamento: daysAgo(70) }),
+      makeOS({ numos: '5', bairro: 'ESPLANADA', nomedaequipe: 'F03', tiposervico: 'Manutencao Sem Sinal',   codigocliente: 'C4', datacadastro: daysAgo(70), dataagendamento: daysAgo(70) }),
     ]
-    // Bairros normais: agendado no mesmo dia da abertura -> SLA nunca excedido
+    // Bairros normais: abertas hoje mesmo -> SLA nunca excedido
     // tiposervico: 'MANUTENCAO' (sem acento) pra não cair em OUTRO e sumir do bairroMap,
     // o que zeraria a variância (bStd) usada pelo filtro estatístico da anomalia.
     const normalBairros = [1, 2, 3].flatMap(n => Array.from({ length: 5 }, (_, i) =>
-      makeOS({ numos: `n${n}-${i}`, bairro: `BAIRRO${n}`, nomedaequipe: 'F09', tiposervico: 'MANUTENCAO' })
+      makeOS({ numos: `n${n}-${i}`, bairro: `BAIRRO${n}`, nomedaequipe: 'F09', tiposervico: 'MANUTENCAO', datacadastro: daysAgo(0), dataagendamento: daysAgo(0) })
     ))
 
     const rows = enrichRows([...problemBairro, ...normalBairros])

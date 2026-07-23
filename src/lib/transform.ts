@@ -341,18 +341,15 @@ export function enrichRows(rows: OSRow[], slaLimits: SlaLimits | null = null): O
     row._slaLimite    = sla.limite
     row._slaTipoLabel = sla.label
 
+    // Dias até agendamento é só informativo (exibido na UI) — não entra mais no
+    // cálculo do SLA. O SLA sempre conta a partir da hora de abertura da OS.
     const diasAgend = (dtAbertura && dtAgend)
       ? Math.max(0, Math.floor((dtAgend.getTime() - dtAbertura.getTime()) / 86400000))
       : null
     row._diasAteAgendamento = diasAgend
 
-    if (diasAgend !== null) {
-      row._slaExcedido = isAtiva && diasAgend > sla.limite
-      row._slaSemAgend = false
-    } else {
-      row._slaExcedido = false
-      row._slaSemAgend = isAtiva && row._agingAbertura != null && row._agingAbertura > sla.limite
-    }
+    row._slaExcedido = isAtiva && row._agingAbertura != null && row._agingAbertura > sla.limite
+    row._slaSemAgend = isAtiva && !dtAgend && row._slaExcedido
 
     row._slaCritico      = isAtiva && row._agingAbertura != null && row._agingAbertura > sla.limite * 2
     row._slaCriticoHoras = isAtiva && row._agingHoras != null && row._agingHoras > sla.limite * 24
