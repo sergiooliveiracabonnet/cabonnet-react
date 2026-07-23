@@ -7,18 +7,19 @@
 
 /* ═══════════════════════════════════════════════════════════════
    DESIGN TOKENS — Stripe / Clerk reference
-   Paleta zinc-neutral (sem saturação azulada no fundo).
+   Paleta navy-tintada (restyle 2026-07-22 — ver docs/superpowers/specs/
+   2026-07-22-dashboard-restyle-navy-teal-design.md).
    Dark = padrão (:root) · Light = sobrescrito por .light em <html>
 ═══════════════════════════════════════════════════════════════ */
 :root {
-  /* ── Superfícies — zinc neutral dark ── */
-  --c-bg:           9   9  11;    /* #09090B  zinc-950               */
-  --c-elevated:    18  18  20;    /* #121214  1 grau acima           */
-  --c-surface:     24  24  27;    /* #18181B  zinc-900               */
-  --c-card:        19  19  21;    /* #131315  card base              */
-  --c-card-high:   26  26  29;    /* #1A1A1D  card elevado           */
-  --c-card-highest:33  33  37;    /* #212125  card destaque          */
-  --c-border:      39  39  42;    /* #27272A  zinc-800 — sólido      */
+  /* ── Superfícies — navy dark ── */
+  --c-bg:           10  15  28;   /* #0A0F1C  navy-950               */
+  --c-elevated:     16  24  39;   /* #101827  1 grau acima           */
+  --c-surface:      20  28  46;   /* #141C2E  navy-900               */
+  --c-card:         15  23  38;   /* #0F1726  card base              */
+  --c-card-high:    22  33  58;   /* #16213A  card elevado           */
+  --c-card-highest: 30  44  72;   /* #1E2C48  card destaque          */
+  --c-border:       35  49  80;   /* #233150  navy-800 — sólido      */
 
   /* ── Texto ── */
   --c-text:      250 250 250;     /* #FAFAFA  near-white             */
@@ -51,14 +52,14 @@
 /* ─── Tema claro ─────────────────────────────────────────────── */
 .light {
   /* Hierarquia de superfícies no estilo Stripe:
-     bg (zinc-100) → card (branco) → surface (gray-50, hovers visíveis) */
-  --c-bg:           244 244 245; /* zinc-100 — fundo da página             */
+     bg (lavanda clara, navy-tintada) → card (branco) → surface (gray-50, hovers visíveis) */
+  --c-bg:           238 240 247; /* #EEF0F7 — fundo da página, navy-tintado */
   --c-elevated:     255 255 255; /* white    — overlays, dropdowns          */
   --c-surface:      249 250 251; /* gray-50  — hover, inputs, superfícies   */
   --c-card:         255 255 255; /* white    — cards se destacam do bg cinza*/
   --c-card-high:    243 244 246; /* gray-100 — row hover, elementos elevados*/
   --c-card-highest: 229 231 235; /* gray-200 — maior destaque dentro de card*/
-  --c-border:       228 228 231; /* zinc-200 */
+  --c-border:       222 226 237; /* #DEE2ED — navy-tintado */
 
   --c-text:       9   9  11;     /* zinc-950 */
   --c-secondary:  82  82  91;    /* zinc-600 */
