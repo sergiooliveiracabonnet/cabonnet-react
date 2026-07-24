@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react'
 import { RefreshCw, AlertTriangle, LayoutDashboard, Home, Wrench, Star } from 'lucide-react'
 import { useBacklog } from '../../../hooks/useBacklog'
+import { useOSDerived } from '../../../contexts/OSDataContext'
 import { TabBar } from '../../../components/ui/TabBar'
 import { PageHeader } from '../../../components/ui/PageHeader'
 import { PainelTab } from './PainelTab'
 import { RevisitaTab } from './RevisitaTab'
 import { FiltrosBiTecnica } from './FiltrosBiTecnica'
 import { filtrarBacklogRows, FILTROS_VAZIOS, type BiTecnicaFiltros } from '../../../lib/builders/biTecnicaFiltros'
+import { buildVt24hStats } from '../../../lib/builders/vt24h'
 
 function isoDate(d: Date): string {
   const y   = d.getFullYear()
@@ -53,10 +55,15 @@ export default function BiGestaoTecnicaPage() {
   }, [preset, customIni, customFim])
 
   const { data, isLoading, isError, refetch, isFetching } = useBacklog(inicio, fim)
+  const { allRows } = useOSDerived()
 
   const dataFiltrado = useMemo(
     () => data ? filtrarBacklogRows(data, filtros) : undefined,
     [data, filtros]
+  )
+  const vt24h = useMemo(
+    () => buildVt24hStats(allRows, inicio, fim, filtros),
+    [allRows, inicio, fim, filtros]
   )
 
   return (
@@ -117,7 +124,7 @@ export default function BiGestaoTecnicaPage() {
         <div className={`space-y-4 transition-opacity duration-200 ${isFetching ? 'opacity-60' : ''}`}>
           <FiltrosBiTecnica rows={data.rows} filtros={filtros} onChange={setFiltros} />
           <div>
-            {tab === 'painel'     && <PainelTab data={dataFiltrado} />}
+            {tab === 'painel'     && <PainelTab data={dataFiltrado} vt24h={vt24h} />}
             {tab === 'instalacao' && <RevisitaTab data={dataFiltrado} tipo="instalacao" />}
             {tab === 'servico'    && <RevisitaTab data={dataFiltrado} tipo="servico" />}
             {tab === 'manutencao' && <RevisitaTab data={dataFiltrado} tipo="manutencao" />}

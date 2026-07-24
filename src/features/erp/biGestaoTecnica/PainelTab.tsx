@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Wrench, Home, Star, Layers } from 'lucide-react'
 import type { BacklogData } from '../../../hooks/useBacklog'
+import type { Vt24hStats } from '../../../lib/builders/vt24h'
 import { buildBiGestaoTecnicaPainel } from '../../../lib/builders/biGestaoTecnicaPainel'
 import { StatCard } from '../../../components/ui/StatCard'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
@@ -15,10 +16,11 @@ const TIPO_TITULO: Record<'instalacao' | 'manutencao' | 'servico', string> = {
 }
 
 interface PainelTabProps {
-  data: BacklogData | undefined
+  data:  BacklogData | undefined
+  vt24h: Vt24hStats
 }
 
-export function PainelTab({ data }: PainelTabProps) {
+export function PainelTab({ data, vt24h }: PainelTabProps) {
   const painel = useMemo(() => buildBiGestaoTecnicaPainel(data?.rows ?? []), [data])
 
   if (!data) return null
@@ -73,6 +75,28 @@ export function PainelTab({ data }: PainelTabProps) {
           </section>
         ))}
       </div>
+
+      <section className="rounded-xl border border-white/[0.08] bg-card p-4 space-y-3 max-w-lg">
+        <h3 className="text-label font-semibold text-text">VT24H</h3>
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div>
+            <p className="text-[18px] font-bold tabular-nums" style={{ color: '#4ade80' }}>{fmt(vt24h.executouPrazo)}</p>
+            <p className="text-caption text-muted mt-0.5">Executou no prazo</p>
+          </div>
+          <div>
+            <p className="text-[18px] font-bold tabular-nums" style={{ color: '#f87171' }}>{fmt(vt24h.executouForaPrazo)}</p>
+            <p className="text-caption text-muted mt-0.5">Fora do prazo</p>
+          </div>
+          <div>
+            <p className="text-[18px] font-bold tabular-nums text-text">{fmt(vt24h.total)}</p>
+            <p className="text-caption text-muted mt-0.5">Total</p>
+          </div>
+          <div>
+            <p className="text-[18px] font-bold tabular-nums text-text">{vt24h.pctPrazo}%</p>
+            <p className="text-caption text-muted mt-0.5">% no prazo</p>
+          </div>
+        </div>
+      </section>
 
       <StatCard title="Taxa Manutenção" value={`${painel.taxaManutencaoPct}%`} tone="warning" size="sm" className="max-w-[200px]" />
     </div>
