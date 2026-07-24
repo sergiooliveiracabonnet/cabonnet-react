@@ -76,9 +76,9 @@ export function PainelTab({ data, vt24h }: PainelTabProps) {
         ))}
       </div>
 
-      <section className="rounded-xl border border-white/[0.08] bg-card p-4 space-y-3 max-w-md">
+      <section className="rounded-xl border border-white/[0.08] bg-card p-4 space-y-3 max-w-lg">
         <h3 className="text-label font-semibold text-text">VT24H</h3>
-        <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="grid grid-cols-4 gap-2 text-center">
           <div>
             <p className="text-[18px] font-bold tabular-nums" style={{ color: '#4ade80' }}>{fmt(vt24h.executouPrazo)}</p>
             <p className="text-caption text-muted mt-0.5">Executou no prazo</p>
@@ -86,6 +86,10 @@ export function PainelTab({ data, vt24h }: PainelTabProps) {
           <div>
             <p className="text-[18px] font-bold tabular-nums" style={{ color: '#f87171' }}>{fmt(vt24h.executouForaPrazo)}</p>
             <p className="text-caption text-muted mt-0.5">Fora do prazo</p>
+          </div>
+          <div>
+            <p className="text-[18px] font-bold tabular-nums text-text">{fmt(vt24h.total)}</p>
+            <p className="text-caption text-muted mt-0.5">Total</p>
           </div>
           <div>
             <p className="text-[18px] font-bold tabular-nums text-text">{vt24h.pctPrazo}%</p>

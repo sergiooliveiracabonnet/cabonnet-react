@@ -61,7 +61,10 @@ export default function BiGestaoTecnicaPage() {
     () => data ? filtrarBacklogRows(data, filtros) : undefined,
     [data, filtros]
   )
-  const vt24h = useMemo(() => buildVt24hStats(allRows, inicio, fim), [allRows, inicio, fim])
+  const vt24h = useMemo(
+    () => buildVt24hStats(allRows, inicio, fim, filtros),
+    [allRows, inicio, fim, filtros]
+  )
 
   return (
     <div className="space-y-4 max-w-[1600px]">
