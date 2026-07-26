@@ -53,6 +53,7 @@ _manut_vistos_data = None    # date do último reset
 # ── Estado do monitor de VT (Fila de Prioridade) ─────────────────────────────
 _vt_alertados      = {}   # { numos(str): {"estagio": "risco"|"violado", "last_sent": datetime} }
 _vt_alertados_data = None # date do último reset
+_sem_equipe_alertadas = set()  # OS sem equipe já notificadas enquanto a condição persistir
 
 # ── Juniper PPPoE ─────────────────────────────────────────────────────────────
 # Conjunto de user_name conhecidos na última coleta (por cluster).

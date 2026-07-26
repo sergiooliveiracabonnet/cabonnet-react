@@ -69,17 +69,17 @@ export function Navbar() {
 
   return (
     <>
-    <header className="fixed top-0 right-0 left-0 h-14 z-header navbar-premium flex items-center gap-3 px-4">
+    <header className="navbar-premium fixed left-0 right-0 top-0 z-header flex h-14 max-w-full items-center gap-1.5 px-2 sm:gap-3 sm:px-4">
       <button
         onClick={toggleSidebar}
-        className="w-8 h-8 rounded-lg flex items-center justify-center
+        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg sm:h-8 sm:w-8
                    text-muted hover:text-text hover:bg-surface
                    transition-all duration-fast flex-shrink-0"
-        aria-label="Toggle sidebar"
+        aria-label="Abrir ou fechar menu de navegação"
       >
-        <Menu size={15} />
+        <Menu size={17} />
       </button>
-      <div className="w-px h-5 bg-border flex-shrink-0" />
+      <div className="hidden h-5 w-px flex-shrink-0 bg-border sm:block" />
       <div className="flex-1 min-w-0">
         <h1 className="font-headline font-bold text-text text-title leading-none tracking-tight truncate">
           {title}
@@ -89,9 +89,10 @@ export function Navbar() {
       <button
         onClick={() => setSearchOpen(true)}
         title="Busca global (Ctrl+K)"
-        className="flex items-center gap-2 h-8 px-3 rounded-lg border border-white/[0.08]
+        className="flex h-11 w-11 flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-white/[0.08]
+                   px-0 sm:h-8 sm:w-auto sm:min-w-[160px] sm:justify-start sm:px-3
                    bg-surface text-muted hover:border-muted/30 hover:text-secondary
-                   transition-colors duration-150 flex-shrink-0 min-w-[160px]"
+                   transition-colors duration-150"
       >
         <Search size={12} className="flex-shrink-0" />
         <span className="text-caption flex-1 text-left hidden sm:block">Buscar OS ou página…</span>
@@ -99,10 +100,12 @@ export function Navbar() {
                         bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted">⌃K</kbd>
       </button>
 
-      <SlaCriticasBadge slaCriticas={slaCriticas} />
-      <AlertasEngineBadge alerts={alerts} />
+      <div className="hidden lg:contents">
+        <SlaCriticasBadge slaCriticas={slaCriticas} />
+        <AlertasEngineBadge alerts={alerts} />
+      </div>
 
-      <div className="relative flex-shrink-0">
+      <div className="relative hidden flex-shrink-0 md:block">
         <button
           onClick={() => setTelegramOpen(v => !v)}
           title="Alertas & Telegram"
@@ -124,19 +127,21 @@ export function Navbar() {
         )}
       </div>
 
-      <AuditLogBadge />
+      <div className="hidden xl:block">
+        <AuditLogBadge />
+      </div>
 
       <button
         onClick={() => setChatOpen(true)}
         title="Assistente IA (Ctrl+Shift+A)"
-        className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0
+        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md sm:h-8 sm:w-8
                    text-primary bg-primary/10 hover:bg-primary/20 transition-all duration-fast"
       >
         <MessageSquare size={14} />
       </button>
 
-      <AIStatusBadge />
-      <AnimatedThemeToggler />
+      <div className="hidden xl:block"><AIStatusBadge /></div>
+      <div className="hidden sm:block"><AnimatedThemeToggler /></div>
       <RefreshControl />
     </header>
 

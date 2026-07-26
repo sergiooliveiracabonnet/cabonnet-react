@@ -68,15 +68,14 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
 
   return (
     <div
-      className={`fixed z-[39] right-0 top-14 h-10
+      className={`fixed right-0 top-14 z-[39] flex h-14 max-w-full items-center gap-0.5 overflow-hidden
                   bg-elevated border-b border-white/[0.08]
-                  flex items-center gap-1.5 px-3
-                  transition-all duration-normal
-                  ${sidebarOpen ? 'left-[220px]' : 'left-[52px]'}`}
+                  left-0 px-1.5 transition-all duration-normal sm:gap-1.5 sm:px-3 md:h-10
+                  ${sidebarOpen ? 'md:left-[220px]' : 'md:left-[52px]'}`}
     >
-      <Calendar size={13} className="text-muted flex-shrink-0" />
+      <Calendar size={13} className="hidden flex-shrink-0 text-muted sm:block" />
 
-      <div className="flex items-center gap-1 flex-shrink-0">
+      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain">
         {PRESETS.map((p) => p.id === 'mensal' ? (
           <div key={p.id} className="flex items-center gap-0.5">
             {preset === 'mensal' && (
@@ -84,14 +83,15 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                 onClick={mensalPrevMonth}
                 title="Mês anterior"
                 aria-label="Mês anterior"
-                className="w-5 h-5 flex items-center justify-center rounded-full text-muted hover:text-secondary hover:bg-surface/60 transition-colors"
+                className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface/60 hover:text-secondary md:h-5 md:w-5"
               >
                 <ChevronLeft size={12} />
               </button>
             )}
             <button
               onClick={() => setPreset(p.id)}
-              className={`text-caption font-bold px-2.5 py-1 rounded-full border transition-all duration-fast whitespace-nowrap
+              className={`inline-flex min-h-11 flex-shrink-0 items-center rounded-full border px-3 py-1 font-bold text-caption
+                          whitespace-nowrap transition-all duration-fast md:min-h-0 md:px-2.5
                           ${preset === p.id
                             ? 'bg-primary/15 border-primary/40 text-primary'
                             : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
@@ -104,7 +104,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                 disabled={mensalAtual}
                 title={mensalAtual ? 'Mês atual' : 'Próximo mês'}
                 aria-label={mensalAtual ? 'Mês atual' : 'Próximo mês'}
-                className="w-5 h-5 flex items-center justify-center rounded-full text-muted hover:text-secondary hover:bg-surface/60 transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-muted"
+                className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface/60 hover:text-secondary disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-muted md:h-5 md:w-5"
               >
                 <ChevronRight size={12} />
               </button>
@@ -114,7 +114,8 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
           <button
             key={p.id}
             onClick={() => setPreset(p.id)}
-            className={`text-caption font-bold px-2.5 py-1 rounded-full border transition-all duration-fast whitespace-nowrap
+            className={`inline-flex min-h-11 flex-shrink-0 items-center rounded-full border px-3 py-1 font-bold text-caption
+                        whitespace-nowrap transition-all duration-fast md:min-h-0 md:px-2.5
                         ${preset === p.id
                           ? p.id === 'amanha'
                             ? 'bg-cyan/15 border-cyan/40 text-cyan'
@@ -128,7 +129,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
         ))}
       </div>
 
-      <span className="w-px h-4 bg-surface mx-0.5 flex-shrink-0" />
+      <span className="mx-0.5 hidden h-4 w-px flex-shrink-0 bg-surface md:block" />
 
       {preset === 'custom' && (
         <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -151,17 +152,17 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
       )}
 
       {preset !== 'custom' && (
-        <span className="text-caption text-muted font-mono whitespace-nowrap flex-shrink-0">
+        <span className="hidden flex-shrink-0 whitespace-nowrap font-mono text-caption text-muted 2xl:inline">
           {rangeLabel}
         </span>
       )}
 
-      <div className="flex-1" />
+      <div className="hidden flex-1 md:block" />
 
       <div className="relative flex-shrink-0">
         <button
           onClick={() => setShowCampo(v => !v)}
-          className="flex items-center gap-1 text-caption text-muted hover:text-secondary transition-colors"
+          className="flex h-11 items-center gap-1 whitespace-nowrap px-2 text-caption text-muted transition-colors hover:text-secondary md:h-6 md:px-0"
         >
           <span className="opacity-60">por</span>
           <span className="font-semibold">{campoLabel}</span>
@@ -171,7 +172,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
         {showCampo && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setShowCampo(false)} />
-            <div className="absolute right-0 top-6 z-50 bg-elevated border border-white/[0.08] rounded-lg shadow-accent overflow-hidden min-w-[140px]">
+            <div className="fixed right-[104px] top-[104px] z-50 min-w-[140px] overflow-hidden rounded-lg border border-white/[0.08] bg-elevated shadow-accent md:right-[84px] md:top-[80px]">
               {CAMPOS.map(c => (
                 <button
                   key={c.value}
@@ -187,12 +188,12 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
         )}
       </div>
 
-      <span className="w-px h-4 bg-surface mx-0.5 flex-shrink-0" />
+      <span className="mx-0.5 hidden h-4 w-px flex-shrink-0 bg-surface md:block" />
 
       <button
         onClick={toggleHideRede}
         title={hideRede ? 'Rede Interna oculta — clique para exibir' : 'Clique para ocultar OS de Rede Interna'}
-        className={`flex items-center gap-1.5 h-6 px-2.5 rounded-full border text-caption font-semibold
+        className={`flex h-11 flex-shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-caption font-semibold md:h-6
                     transition-all duration-fast flex-shrink-0
                     ${hideRede
                       ? 'border-orange/40 bg-orange/[0.07] text-orange'

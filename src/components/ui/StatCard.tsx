@@ -67,6 +67,7 @@ export interface StatCardProps {
   trend?:     StatTrend | null
   scope?:     StatScope
   size?:      StatSize
+  outlined?:  boolean
   onClick?:   () => void
   delay?:     number
   className?: string
@@ -77,7 +78,7 @@ const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visibl
 
 export function StatCard({
   title, value, sub, icon: Icon, tone = 'neutral', trend, scope,
-  size = 'md', onClick, delay = 0, className = '', sparkline,
+  size = 'md', outlined = false, onClick, delay = 0, className = '', sparkline,
 }: StatCardProps) {
   const statusColor = tone !== 'neutral' ? TONE_COLOR[tone] : undefined
   // ok mantém o valor neutro (padrão aprovado do dashboard): a borda já sinaliza.
@@ -108,8 +109,14 @@ export function StatCard({
     return (
       <div
         {...interactive}
-        style={{ animationDelay: `${delay}ms` }}
-        className={`bg-bg rounded-lg p-3 text-center animate-card-enter
+        style={{
+          animationDelay: `${delay}ms`,
+          borderLeft: outlined && statusColor ? `2px solid ${statusColor}` : undefined,
+        }}
+        className={`relative rounded-lg p-3 text-center animate-card-enter
+                    ${outlined
+                      ? 'border border-border bg-card shadow-[0_8px_24px_rgba(0,0,0,0.14)] transition-colors duration-200 hover:border-primary/30'
+                      : 'bg-bg'}
                     ${onClick ? `cursor-pointer ${FOCUS_RING}` : ''} ${className}`}
       >
         <p className="text-[22px] font-bold tabular-nums leading-none" style={{ color: valColor }}>{value ?? '—'}</p>

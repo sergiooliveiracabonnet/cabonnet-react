@@ -35,6 +35,9 @@ export default defineConfig({
     proxy: {
       '/api':         { target: 'http://localhost:5000', changeOrigin: true },
       '/query':       { target: 'http://localhost:5000', changeOrigin: true },
+      '/stats':       { target: 'http://localhost:5000', changeOrigin: true },
+      '/events':      { target: 'http://localhost:5000', changeOrigin: true },
+      '/revisitas':   { target: 'http://localhost:5000', changeOrigin: true },
       '/atendimento': {
         target: 'http://localhost:5000',
         changeOrigin: true,

@@ -1,7 +1,12 @@
-import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
-import { QualidadePeriodoCard } from './DashboardPaineis'
-import type { Pulso } from '../../lib/types'
+import { describe, it, expect, afterEach, vi } from 'vitest'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import {
+  FornecedoresPanel,
+  MetaMesCard,
+  QualidadePeriodoCard,
+  RitmoEquipesPanel,
+} from './DashboardPaineis'
+import type { CampoSemaforo, Pulso, PulsoMetaMes } from '../../lib/types'
 
 afterEach(cleanup)
 
@@ -33,5 +38,71 @@ describe('QualidadePeriodoCard', () => {
   it('mostra travessão quando taxaRevisitas não está disponível', () => {
     render(<QualidadePeriodoCard pulso={makePulso()} />)
     expect(screen.getByText('—')).toBeInTheDocument()
+  })
+})
+
+describe('semântica dos painéis analíticos', () => {
+  it.each([
+    {
+      concluidas: 18,
+      meta: 30,
+      pct: 60,
+      diasUteisRestantes: 5,
+      diasUteisTotal: 22,
+      projecaoFinal: 28,
+      status: 'abaixo',
+    },
+    {
+      concluidas: 18,
+      meta: 0,
+      pct: null,
+      diasUteisRestantes: 0,
+      diasUteisTotal: 22,
+      projecaoFinal: null,
+      status: 'neutro',
+    },
+  ] satisfies PulsoMetaMes[])('expõe Meta do Mês como h2 em todos os estados', meta => {
+    render(<MetaMesCard meta={meta} />)
+    expect(screen.getByRole('heading', { level: 2, name: 'Meta do Mês' })).toBeInTheDocument()
+  })
+})
+
+describe('drill-downs comparativos', () => {
+  it('abre as OS da equipe selecionada no painel de ritmo', () => {
+    const onOpen = vi.fn()
+    const semaforo: CampoSemaforo[] = [{
+      nome: 'F01',
+      fila: 8,
+      concl: 5,
+      taxa: 62,
+      slaExc: 1,
+      status: 'atencao',
+      diasAteSLA: 2,
+      ritmoHoje: { atual: 5, projetado: 9, baseline: 7, status: 'abaixo' },
+    }]
+
+    render(<RitmoEquipesPanel semaforo={semaforo} onOpen={onOpen} />)
+
+    expect(screen.getByText('Abrir OS')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Equipe F01.*Abrir OS/i }))
+    expect(onOpen).toHaveBeenCalledWith('F01')
+  })
+
+  it('abre as OS do fornecedor selecionado', () => {
+    const onOpen = vi.fn()
+    const fornecedores = [{
+      nome: 'WES',
+      total: 12,
+      concluidas: 9,
+      sla: 88,
+      conclPct: 75,
+      cor: '#3b82f6',
+    }]
+
+    render(<FornecedoresPanel fornecedores={fornecedores} onOpen={onOpen} />)
+
+    expect(screen.getByText('Abrir OS')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Fornecedor WES.*Abrir OS/i }))
+    expect(onOpen).toHaveBeenCalledWith('WES')
   })
 })

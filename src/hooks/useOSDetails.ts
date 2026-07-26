@@ -101,6 +101,8 @@ interface OSDetailsResult {
     historico:         HistoricoEntry[]
     obsTecnico:        string | null
     nomeTecnico:       string | null
+    observacoes?:       string | null
+    observacaoCritica?: string | null
     reagendada:        boolean
     equipeAgendada:    string | null
     equipeExecutou:    string | null
@@ -146,6 +148,8 @@ export function parseOSDetails(data: unknown): OSDetailsResult['details'] {
     historico,
     obsTecnico,
     nomeTecnico,
+    observacoes:       (osObj.observacoes as string) || null,
+    observacaoCritica: (osObj.observacaocritica as string) || null,
     reagendada:        raw.reagendada === true || raw.reagendada === 'true',
     equipeAgendada:    (osObj.nomedaequipe   as string) || null,
     equipeExecutou:    (osObj.equipeexecutou as string) || null,

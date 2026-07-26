@@ -4,7 +4,7 @@ import {
 } from 'lucide-react'
 import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } from '../../lib/types'
 import { TrendPill } from '../../components/ui/StatCard'
-import { SectionLabel } from './DashboardKpiPrimitives'
+import { DashboardPanelHeader, SectionLabel } from './DashboardKpiPrimitives'
 import type { ProjecaoRisco, ScoreTendencia, DashMover, DashFornCard } from './DashboardTypes'
 
 // Painel preditivo: OS que vão estourar o SLA nas próximas 24-48h (clicável → drill-down)
@@ -176,13 +176,19 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
-      <div className="flex items-baseline justify-between gap-2 flex-wrap">
-        <SectionLabel icon={Clock} color="#3b82f6">Fila Ativa — Prazo Consumido</SectionLabel>
-        <span className="text-caption text-muted tabular-nums">
-          {agingTotal} OS abertas
-          {backlogDias != null && <> · ≈ <span className="font-semibold text-text">{backlogDias.toLocaleString('pt-BR')} dias</span> de fila no ritmo atual</>}
-        </span>
-      </div>
+      <DashboardPanelHeader
+        icon={Clock}
+        color="#3b82f6"
+        actionLabel={onOpen && filaAtiva ? 'Abrir OS' : undefined}
+        meta={(
+          <span className="hidden tabular-nums sm:inline">
+          {agingTotal} abertas
+          {backlogDias != null && <> · ≈ <span className="font-semibold text-text">{backlogDias.toLocaleString('pt-BR')}d</span> de fila</>}
+          </span>
+        )}
+      >
+        Fila Ativa — Prazo Consumido
+      </DashboardPanelHeader>
 
       <div className="mt-4 flex items-end gap-2 h-[136px]">
         {agingEntries.map(e => {
@@ -191,6 +197,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
           return (
             <button key={e.key} type="button" onClick={() => abrirBucket(e)}
                     className="flex-1 h-full flex flex-col items-center justify-end gap-1.5 cursor-pointer group bg-transparent border-0 p-0"
+                    aria-label={`SLA ${e.label}: ${val} OS, ${pct}% da fila. Abrir OS`}
                     title={`${e.label}: ${val} OS (${pct}%) — % do prazo de SLA já consumido · clique para listar`}>
               <span className={`text-label font-bold tabular-nums ${e.hot ? 'text-red' : 'text-text'}`}>
                 {val}
@@ -244,14 +251,16 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
   const top    = grupos.slice(0, 6)
   const resto  = grupos.slice(6)
   const maxVal = top[0]?.rows.length ?? 1
-  const pctTop3 = Math.round(grupos.slice(0, 3).reduce((s, g) => s + g.rows.length, 0) / total * 100)
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
-      <div className="flex items-baseline justify-between gap-2 flex-wrap">
-        <SectionLabel icon={Layers} color="#3b82f6">Composição da Fila — Tipo de Serviço</SectionLabel>
-        <span className="text-caption text-muted tabular-nums">top 3 = {pctTop3}% da fila</span>
-      </div>
+      <DashboardPanelHeader
+        icon={Layers}
+        color="#3b82f6"
+        actionLabel="Abrir OS"
+      >
+        Composição da Fila — Tipo de Serviço
+      </DashboardPanelHeader>
 
       <div className="mt-2">
         {top.map(g => {
@@ -259,6 +268,7 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
           return (
             <button key={g.nome} type="button"
                     onClick={() => onOpen(`Fila — ${g.nome}`, g.rows)}
+                    aria-label={`${g.nome}: ${g.rows.length} OS, ${pct}% da fila. Abrir OS`}
                     className="w-full grid grid-cols-[minmax(0,1.1fr)_30px_1fr_34px] items-center gap-3 py-2
                                border-b border-border/60 last:border-b-0 bg-transparent border-x-0 border-t-0
                                cursor-pointer group text-left"
@@ -288,29 +298,36 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
 }
 
 // Fornecedores — SLA do período em linhas, mesmo padrão visual de Cidades/Pareto
-export function FornecedoresPanel({ fornecedores }: {
+export function FornecedoresPanel({ fornecedores, onOpen }: {
   fornecedores: (DashFornCard & { slaTrend?: KPI['trend'] })[]
+  onOpen: (fornecedor: string) => void
 }) {
   if (!fornecedores.length) return null
   const maxTotal = Math.max(...fornecedores.map(f => f.total), 1)
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
-      <div className="flex items-baseline justify-between gap-2 flex-wrap">
-        <SectionLabel icon={Package} color="#c4b5fd">Fornecedores — SLA do Período</SectionLabel>
-        <span className="text-caption text-muted">barra = volume · badge = % dentro do prazo</span>
-      </div>
+      <DashboardPanelHeader
+        icon={Package}
+        color="#c4b5fd"
+        actionLabel="Abrir OS"
+      >
+        Fornecedores — SLA do Período
+      </DashboardPanelHeader>
 
       <div className="mt-2">
         {fornecedores.map(f => {
           const tier = f.sla >= 85 ? 'text-green bg-green/10' : f.sla >= 65 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
           return (
-            <div key={f.nome}
-                 className="grid grid-cols-[minmax(0,1.1fr)_30px_1fr_auto] items-center gap-3 py-2 border-b border-border/60 last:border-b-0"
+            <button key={f.nome}
+                 type="button"
+                 onClick={() => onOpen(f.nome)}
+                 aria-label={`Fornecedor ${f.nome}: ${f.total} OS, SLA ${f.sla}%. Abrir OS`}
+                 className="group w-full grid grid-cols-[minmax(0,1.1fr)_30px_1fr_auto] items-center gap-3 py-2 border-b border-border/60 last:border-b-0 border-x-0 border-t-0 bg-transparent text-left cursor-pointer"
                  title={`${f.nome}: ${f.total} OS no período · SLA ${f.sla}% dentro do prazo · ${f.concluidas} concluídas (${f.conclPct ?? '—'}%)`}>
               <span className="flex items-center gap-2 min-w-0">
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: f.cor }} />
-                <span className="text-caption font-semibold text-secondary truncate">{f.nome}</span>
+                <span className="text-caption font-semibold text-secondary truncate transition-colors group-hover:text-text">{f.nome}</span>
               </span>
               <span className="text-label font-bold text-right tabular-nums">{f.total}</span>
               <div className="h-2 rounded-full bg-surface">
@@ -321,7 +338,7 @@ export function FornecedoresPanel({ fornecedores }: {
                 <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums ${tier}`}>{f.sla}%</span>
                 {f.slaTrend && <TrendPill trend={f.slaTrend} />}
               </span>
-            </div>
+            </button>
           )
         })}
       </div>
@@ -358,10 +375,13 @@ export function CidadesValePanel({ filaAtiva, onOpen }: {
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
-      <div className="flex items-baseline justify-between gap-2 flex-wrap">
-        <SectionLabel icon={MapPin} color="#3b82f6">Cidades do Vale — Fila e SLA</SectionLabel>
-        <span className="text-caption text-muted">parcela vermelha = OS críticas</span>
-      </div>
+      <DashboardPanelHeader
+        icon={MapPin}
+        color="#3b82f6"
+        actionLabel="Abrir OS"
+      >
+        Cidades do Vale — Fila e SLA
+      </DashboardPanelHeader>
 
       <div className="mt-2">
         {cidades.map(c => {
@@ -373,6 +393,7 @@ export function CidadesValePanel({ filaAtiva, onOpen }: {
           return (
             <button key={c.nome} type="button"
                     onClick={() => onOpen(`Fila — ${c.nome}`, c.rows)}
+                    aria-label={`${c.nome}: ${c.rows.length} OS, ${c.criticas} críticas, SLA ${c.sla}%. Abrir OS`}
                     className="w-full grid grid-cols-[minmax(0,1.1fr)_30px_1fr_44px] items-center gap-3 py-2
                                border-b border-border/60 last:border-b-0 bg-transparent border-x-0 border-t-0
                                cursor-pointer group text-left"
@@ -398,7 +419,10 @@ export function CidadesValePanel({ filaAtiva, onOpen }: {
   )
 }
 
-export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
+export function RitmoEquipesPanel({ semaforo, onOpen }: {
+  semaforo: CampoSemaforo[]
+  onOpen: (equipe: string) => void
+}) {
   const comRitmo = semaforo.filter(e => e.ritmoHoje != null)
 
   if (!comRitmo.length) {
@@ -424,20 +448,26 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
-      <div className="flex items-baseline justify-between gap-2 flex-wrap">
-        <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
-        <span className="text-caption text-muted">tracejado = baseline da equipe</span>
-      </div>
+      <DashboardPanelHeader
+        icon={Gauge}
+        color="#22d3ee"
+        actionLabel="Abrir OS"
+      >
+        Ritmo por Equipe — Hoje
+      </DashboardPanelHeader>
 
       <div className="mt-2">
         {equipes.map(e => {
           const r      = e.ritmoHoje!
           const abaixo = r.status === 'abaixo'
           return (
-            <div key={e.nome}
-                 className="grid grid-cols-[96px_1fr_58px] items-center gap-3 py-2 border-b border-border/60 last:border-b-0"
+            <button key={e.nome}
+                 type="button"
+                 onClick={() => onOpen(e.nome)}
+                 aria-label={`Equipe ${e.nome}: ${r.atual} hoje, baseline ${r.baseline}. Abrir OS`}
+                 className="group w-full grid grid-cols-[96px_1fr_58px] items-center gap-3 py-2 border-b border-border/60 last:border-b-0 border-x-0 border-t-0 bg-transparent text-left cursor-pointer"
                  title={`${e.nome}: ${r.atual} hoje · baseline ${r.baseline}`}>
-              <span className="text-caption font-semibold text-secondary truncate">{e.nome}</span>
+              <span className="text-caption font-semibold text-secondary truncate transition-colors group-hover:text-text">{e.nome}</span>
               <div className="relative h-2 rounded-full bg-surface">
                 <div className="absolute -top-[3px] -bottom-[3px] border-l-[1.5px] border-dashed border-muted/60"
                      style={{ left: `${Math.min(100, r.baseline / escala * 100)}%` }} />
@@ -450,7 +480,7 @@ export function RitmoEquipesPanel({ semaforo }: { semaforo: CampoSemaforo[] }) {
               <span className="text-label font-bold text-right tabular-nums">
                 {r.atual}<span className="text-muted font-medium">/{r.baseline}</span>
               </span>
-            </div>
+            </button>
           )
         })}
       </div>
@@ -463,10 +493,7 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
   if (meta.meta === 0) {
     return (
       <div className="h-full rounded-lg border border-border bg-card p-5">
-        <div className="flex items-center gap-2.5">
-          <Target size={14} className="text-muted" />
-          <span className="text-caption font-semibold uppercase tracking-[0.09em] text-secondary">Meta do Mês</span>
-        </div>
+        <SectionLabel icon={Target} color="#94a3b8">Meta do Mês</SectionLabel>
         <p className="text-label text-muted/60 mt-3">
           {meta.concluidas} concluídas até agora · sem histórico dos 3 meses anteriores para definir uma meta
         </p>
@@ -480,12 +507,10 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5" style={{ borderLeft: `2px solid ${cor}` }}>
-      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-        <div className="flex items-center gap-2.5">
-          <Target size={14} style={{ color: cor }} />
-          <span className="text-caption font-semibold uppercase tracking-[0.09em] text-secondary">Meta do Mês</span>
-        </div>
-        <span className="text-caption text-muted">{diasLabel}</span>
+      <div className="mb-3">
+        <DashboardPanelHeader icon={Target} color={cor} meta={diasLabel}>
+          Meta do Mês
+        </DashboardPanelHeader>
       </div>
 
       <div className="flex items-end gap-3 mb-2">

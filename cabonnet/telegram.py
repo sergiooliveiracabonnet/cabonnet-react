@@ -122,25 +122,12 @@ _TG_CAPS_TOKEN_RE = _re_global.compile(r'(<[^>]*>|&(?:amp|lt|gt);|/[A-Za-z]\w*)'
 
 
 def _tg_caps(text):
-    """Converte o texto da mensagem para caixa alta (padrão dos grupos).
+    """Mantém a capitalização definida pelo template.
 
-    Preserva tags HTML, entidades, comandos (/os viraria /OS e o bot não
-    reconheceria o clique) e conteúdo dentro de <code> (seriais, barras).
+    O nome histórico foi preservado para não quebrar os chamadores. Títulos já
+    chegam em caixa alta; o corpo permanece legível e nomes não são alterados.
     """
-    partes  = _TG_CAPS_TOKEN_RE.split(text or "")
-    in_code = 0
-    saida   = []
-    for p in partes:
-        if _TG_CAPS_TOKEN_RE.fullmatch(p):
-            saida.append(p)
-            low = p.lower()
-            if low.startswith("<code"):
-                in_code += 1
-            elif low.startswith("</code"):
-                in_code = max(0, in_code - 1)
-        else:
-            saida.append(p if in_code else p.upper())
-    return "".join(saida)
+    return text or ""
 
 
 def _tg_endereco(row, bairro_cidade=False):

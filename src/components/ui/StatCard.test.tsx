@@ -90,6 +90,17 @@ describe('StatCard', () => {
     expect(screen.getByText('99')).toBeInTheDocument()
   })
 
+  it('size sm outlined mantém superfície e borda visíveis', () => {
+    const { container } = render(<StatCard title="Fila Total" value={42} size="sm" outlined />)
+    expect(container.firstChild).toHaveClass(
+      'border',
+      'border-border',
+      'bg-card',
+      'transition-colors',
+      'hover:border-primary/30',
+    )
+  })
+
   it('aceita className adicional', () => {
     const { container } = render(<StatCard title="KPI" value={1} className="minha-classe" />)
     expect(container.firstChild).toHaveClass('minha-classe')

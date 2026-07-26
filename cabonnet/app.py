@@ -21,6 +21,7 @@ from pathlib import Path
 import requests as _requests
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from fastapi.responses import (
     FileResponse,
     JSONResponse,
@@ -72,6 +73,7 @@ from cabonnet.db import (
     _verify_password,
 )
 from cabonnet.postgres import pg_init, pg_is_available, pg_load_snapshot, pg_sync_grafana
+from cabonnet.query_payload import compact_query_parts
 from cabonnet.grafana import (
     SQL_AGENDADO,
     SQL_ATENDIMENTO,
@@ -241,6 +243,12 @@ def _refresh_cache_from_grafana(origem: str = "manual") -> bool:
         with state._query_cache_lock:
             state._query_cache.update({"pendente": csv_p or "", "agendado": csv_a or "",
                                        "futuro": csv_f or "", "ts": ts_now})
+        threading.Thread(
+            target=compact_query_parts,
+            args=(csv_p or "", csv_a or "", csv_f or ""),
+            kwargs={"cache_token": ts_now},
+            daemon=True,
+        ).start()
         for chave, csv_val in [("pendente", csv_p), ("agendado", csv_a), ("futuro", csv_f)]:
             if csv_val:
                 threading.Thread(target=_db_save_cache, args=(chave, csv_val, ts_now), daemon=True).start()
@@ -351,6 +359,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type", "X-Request-ID"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
 
 @app.middleware("http")
@@ -736,8 +745,43 @@ async def futuro():
 _CACHE_FRESH_SEC  = 240   # < 4 min → retorna cache imediatamente
 _CACHE_STALE_SEC  = 120   # > 2 min → agenda refresh em background mesmo devolvendo cache
 
+
+def _query_response(snapshot: dict, data_iso: str, compact: bool, **metadata):
+    pendente = snapshot.get('pendente', '') or ''
+    agendado = snapshot.get('agendado', '') or ''
+    futuro = snapshot.get('futuro', '') or ''
+    parts = (
+        compact_query_parts(
+            pendente,
+            agendado,
+            futuro,
+            cache_token=snapshot.get('ts', 0),
+        )
+        if compact
+        else {'pendente': pendente, 'agendado': agendado, 'futuro': futuro}
+    )
+
+    def count_rows(csv_text: str) -> int:
+        return len(csv_text.splitlines()) - 1 if csv_text else 0
+
+    return {
+        **parts,
+        'n_pendente': count_rows(pendente),
+        'n_agendado': count_rows(agendado),
+        'n_futuro': count_rows(futuro),
+        'date': data_iso,
+        'compact': compact,
+        **metadata,
+    }
+
+
 @router.get("/query")
-async def query(request: Request, date: str = "hoje", _role: str = Depends(_require_auth)):
+async def query(
+    request: Request,
+    date: str = "hoje",
+    compact: bool = False,
+    _role: str = Depends(_require_auth),
+):
     try:
         data_iso = parse_date_param(date)
     except ValueError as ex:
@@ -753,12 +797,14 @@ async def query(request: Request, date: str = "hoje", _role: str = Depends(_requ
         if cache_age > _CACHE_STALE_SEC:
             # Cache ainda válido mas envelhecendo — atualiza em background
             threading.Thread(target=_refresh_cache_from_grafana, args=("bg-stale",), daemon=True).start()
-        def _n(t): return len(t.splitlines()) - 1 if t else 0
         log.debug("[/query] Cache-hit — %ds atrás", int(cache_age))
-        return {"pendente": cached["pendente"], "agendado": cached["agendado"], "futuro": cached["futuro"],
-                "n_pendente": _n(cached["pendente"]), "n_agendado": _n(cached["agendado"]),
-                "n_futuro":   _n(cached["futuro"]),   "date": data_iso,
-                "cached": True, "cache_age_sec": int(cache_age)}
+        return _query_response(
+            cached,
+            data_iso,
+            compact,
+            cached=True,
+            cache_age_sec=int(cache_age),
+        )
 
     # ── Cache vazio ou muito velho → busca do Grafana de forma síncrona ──────
     # _refresh_cache_from_grafana nunca relança exceção — retorna False quando falha.
@@ -768,10 +814,7 @@ async def query(request: Request, date: str = "hoje", _role: str = Depends(_requ
     if ok:
         with state._query_cache_lock:
             cached = dict(state._query_cache)
-        def _n(t): return len(t.splitlines()) - 1 if t else 0
-        return {"pendente": cached["pendente"], "agendado": cached["agendado"], "futuro": cached["futuro"],
-                "n_pendente": _n(cached["pendente"]), "n_agendado": _n(cached["agendado"]),
-                "n_futuro":   _n(cached["futuro"]),   "date": data_iso}
+        return _query_response(cached, data_iso, compact)
 
     # Fallback 1: cache em memória (expirado mas disponível)
     with state._query_cache_lock:
@@ -780,12 +823,13 @@ async def query(request: Request, date: str = "hoje", _role: str = Depends(_requ
     if mem_copy:
         cache_age = int((_time_mod.time() - mem_ts) / 60)
         log.warning("[/query] Grafana indisponível — servindo cache de %d min atrás", cache_age)
-        def _n(t): return len(t.splitlines()) - 1 if t else 0
-        return {"pendente": mem_copy["pendente"], "agendado": mem_copy["agendado"],
-                "futuro":   mem_copy["futuro"],
-                "n_pendente": _n(mem_copy["pendente"]), "n_agendado": _n(mem_copy["agendado"]),
-                "n_futuro":   _n(mem_copy["futuro"]),
-                "date": data_iso, "cached": True, "cache_age_min": cache_age}
+        return _query_response(
+            mem_copy,
+            data_iso,
+            compact,
+            cached=True,
+            cache_age_min=cache_age,
+        )
 
     # Fallback 2: SQLite
     csv_a_db, ts_db = _db_load_cache("agendado")
@@ -794,11 +838,14 @@ async def query(request: Request, date: str = "hoje", _role: str = Depends(_requ
         csv_f_db, _ = _db_load_cache("futuro")
         cache_age   = int((_time_mod.time() - ts_db) / 60) if ts_db else -1
         log.warning("[/query] Servindo cache SQLite de %d min atrás", cache_age)
-        return {"pendente": csv_p_db or "", "agendado": csv_a_db, "futuro": csv_f_db or "",
-                "n_pendente": len(csv_p_db.splitlines()) - 1 if csv_p_db else 0,
-                "n_agendado": len(csv_a_db.splitlines()) - 1,
-                "n_futuro":   len(csv_f_db.splitlines()) - 1 if csv_f_db else 0,
-                "date": data_iso, "cached": True, "cached_source": "sqlite", "cache_age_min": cache_age}
+        return _query_response(
+            {'pendente': csv_p_db or '', 'agendado': csv_a_db, 'futuro': csv_f_db or '', 'ts': ts_db},
+            data_iso,
+            compact,
+            cached=True,
+            cached_source='sqlite',
+            cache_age_min=cache_age,
+        )
 
     # Fallback 3: PostgreSQL
     if pg_is_available():
@@ -808,12 +855,14 @@ async def query(request: Request, date: str = "hoje", _role: str = Depends(_requ
             csv_f_pg, _ = pg_load_snapshot("futuro")
             cache_age   = int((_time_mod.time() - ts_pg) / 60) if ts_pg else -1
             log.warning("[/query] Servindo snapshot PostgreSQL de %d min atrás", cache_age)
-            return {"pendente": csv_p_pg or "", "agendado": csv_a_pg, "futuro": csv_f_pg or "",
-                    "n_pendente": len(csv_p_pg.splitlines()) - 1 if csv_p_pg else 0,
-                    "n_agendado": len(csv_a_pg.splitlines()) - 1,
-                    "n_futuro":   len(csv_f_pg.splitlines()) - 1 if csv_f_pg else 0,
-                    "date": data_iso, "cached": True, "cached_source": "postgresql",
-                    "cache_age_min": cache_age}
+            return _query_response(
+                {'pendente': csv_p_pg or '', 'agendado': csv_a_pg, 'futuro': csv_f_pg or '', 'ts': ts_pg},
+                data_iso,
+                compact,
+                cached=True,
+                cached_source='postgresql',
+                cache_age_min=cache_age,
+            )
 
     raise HTTPException(502, "Grafana indisponível e sem cache persistido")
 
@@ -1568,30 +1617,33 @@ router.get("/grafana/zabbix/assinantes")(_zabbix_route(zabbix_get_assinantes))
 
 # ── SSE — Server-Sent Events ──────────────────────────────────────────────────
 
+async def _sse_stream(q):
+    """Entrega um frame imediato para que proxies liberem os headers SSE."""
+    loop = asyncio.get_event_loop()
+    try:
+        yield ": connected\n\n"
+        while True:
+            try:
+                msg = await loop.run_in_executor(None, q.get, True, 25)
+                yield msg.decode("utf-8") if isinstance(msg, bytes) else str(msg)
+            except _queue.Empty:
+                yield ": keepalive\n\n"
+    except (GeneratorExit, asyncio.CancelledError):
+        pass
+    finally:
+        with state._sse_clients_lock:
+            if q in state._sse_clients:
+                state._sse_clients.remove(q)
+
+
 @router.get("/events")
 async def events():
     q = _queue.Queue()
     with state._sse_clients_lock:
         state._sse_clients.append(q)
 
-    async def stream():
-        loop = asyncio.get_event_loop()
-        try:
-            while True:
-                try:
-                    msg = await loop.run_in_executor(None, q.get, True, 25)
-                    yield msg.decode("utf-8") if isinstance(msg, bytes) else str(msg)
-                except _queue.Empty:
-                    yield ": keepalive\n\n"
-        except (GeneratorExit, asyncio.CancelledError):
-            pass
-        finally:
-            with state._sse_clients_lock:
-                if q in state._sse_clients:
-                    state._sse_clients.remove(q)
-
     return StreamingResponse(
-        stream(),
+        _sse_stream(q),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "Connection": "keep-alive"},
     )

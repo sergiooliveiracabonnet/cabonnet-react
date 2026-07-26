@@ -194,6 +194,10 @@ def _fila_monitor_loop():
                 horas = (agora - datetime.combine(dt, datetime.min.time())).total_seconds() / 3600
                 if horas > 4: sem_eq.append((r, horas))
 
+            atuais_sem_eq = {str(r.get("numos", "")) for r, _ in sem_eq}
+            state._sem_equipe_alertadas.intersection_update(atuais_sem_eq)
+            sem_eq = [(r, h) for r, h in sem_eq
+                      if str(r.get("numos", "")) not in state._sem_equipe_alertadas]
             if sem_eq:
                 sem_eq.sort(key=lambda x: -x[1])
                 linhas = _tg_header("⚠️", "OS SEM EQUIPE HÁ +4H", None, f"{len(sem_eq)} OS")
@@ -604,26 +608,32 @@ def _resumo_scheduler_loop():
 # ── Monitor de VT (Fila de Prioridade) ────────────────────────────────────────
 
 _VT_RISK_WINDOW_H      = 4     # horas restantes para entrar em estágio de risco
-_VT_REPEAT_INTERVAL_S  = 1800  # segundos entre repetições do alerta de violação (30min)
 _VT_MIN_AGING_H        = 12    # não alerta VT aberta há menos de 12h (evita ruído em VT recém-abertas)
+_VT_OPERATION_START_H  = 7
+_VT_OPERATION_END_H    = 23
+_VT_FIRST_REPEAT_S     = 3600
+_VT_NEXT_REPEAT_S      = 10800
 
 
 def _classificar_vt_alerta(restante, registro, agora, aging_h=float("inf")):
     """Decide se uma OS deve disparar alerta neste ciclo. Não muta estado.
 
-    Estágios: None -> risco (uma vez) -> violado (uma vez) -> violado repetido (a cada 30min).
+    Estágios: None -> risco (uma vez) -> violado -> +1h -> a cada 3h.
     Retorna 'violado', 'risco', ou None (sem alerta neste ciclo).
 
     VT aberta há menos de _VT_MIN_AGING_H horas nunca alerta.
     """
     if aging_h < _VT_MIN_AGING_H:
         return None
+    if not (_VT_OPERATION_START_H <= agora.hour < _VT_OPERATION_END_H):
+        return None
     estagio_atual = registro["estagio"] if registro else None
     if restante <= 0:
         if estagio_atual != "violado":
             return "violado"
         last_sent = registro["last_sent"]
-        if (agora - last_sent).total_seconds() >= _VT_REPEAT_INTERVAL_S:
+        intervalo = _VT_FIRST_REPEAT_S if registro.get("repeat_count", 0) == 0 else _VT_NEXT_REPEAT_S
+        if (agora - last_sent).total_seconds() >= intervalo:
             return "violado"
         return None
     if restante <= _VT_RISK_WINDOW_H and estagio_atual is None:
@@ -649,29 +659,41 @@ def _enviar_alertas_vt(items, tipo):
         op = _operadora_da_os(r) or "ALERTAS"
         por_op.setdefault(op, []).append((r, restante, prazo_h))
 
-    for op, batch in por_op.items():
+    def _montar(batch, escopo=None):
         batch  = sorted(batch, key=lambda item: item[1])
-        chat   = _VT_CHAT_POR_OPERADORA.get(op, TELEGRAM_CHAT_ALERTAS)
         if tipo == "violado":
-            linhas = _tg_header("🔴", "VT VIOLADO", None, f"{len(batch)} OS")
+            linhas = _tg_header("🔴", "VT VIOLADO", escopo, f"{len(batch)} OS · prioridade crítica")
         else:
-            linhas = _tg_header("🟠", "VT EM RISCO", None, f"{len(batch)} OS")
+            linhas = _tg_header("🟠", "VT EM RISCO", escopo, f"{len(batch)} OS · ação preventiva")
         for r, restante, prazo_h in batch[:10]:
             numos = _tg_esc(r.get("numos", "?"))
             cli   = _tg_esc((r.get("nomecliente") or "?")[:28])
             eq    = _tg_esc(_abrev_equipe(r.get("nomedaequipe", "")) or "Sem equipe")
+            op_item = _operadora_da_os(r) or "Sem fornecedor"
             if restante <= 0:
-                linhas.append(f"🔴 <b>OS {numos}</b> · VT {prazo_h}h · violado há {round(abs(restante), 1)}h · {cli} · {eq}")
+                linhas.append(f"🔴 <b>OS {numos}</b> · {_tg_esc(op_item)} · VT {prazo_h}h · violado há {round(abs(restante), 1)}h · {cli} · {eq}")
             else:
-                linhas.append(f"🟠 <b>OS {numos}</b> · VT {prazo_h}h · faltam {round(restante, 1)}h · {cli} · {eq}")
+                linhas.append(f"🟠 <b>OS {numos}</b> · {_tg_esc(op_item)} · VT {prazo_h}h · faltam {round(restante, 1)}h · {cli} · {eq}")
             end = _tg_endereco(r, bairro_cidade=True)
             if end: linhas.append(f"   📍 {end}")
         if len(batch) > 10:
             linhas.append(f"<i>… +{len(batch) - 10} OS</i>")
-        texto = "\n".join(linhas)
-        _telegram_send(texto, chat_id_override=chat)
-        if chat != TELEGRAM_CHAT_ALERTAS:
-            _telegram_send(texto, chat_id_override=TELEGRAM_CHAT_ALERTAS)
+        linhas += _tg_footer("Toque em uma OS para abrir a ficha", "/sla", "/aging")
+        botoes = [[{"text": f"📋 OS {r.get('numos', '?')}", "callback_data": f"ficha:{r.get('numos', '')}"}]
+                  for r, _, _ in batch[:3] if str(r.get("numos", "")).isdigit()]
+        return "\n".join(linhas), ({"inline_keyboard": botoes} if botoes else None)
+
+    # Cada fornecedor continua vendo exclusivamente suas próprias OS.
+    for op, batch in por_op.items():
+        chat = _VT_CHAT_POR_OPERADORA.get(op)
+        if chat:
+            texto, markup = _montar(batch, op)
+            _telegram_send(texto, chat_id_override=chat, reply_markup=markup)
+
+    # Alertas recebe uma única visão global, sem fragmentação por fornecedor.
+    if TELEGRAM_CHAT_ALERTAS:
+        texto, markup = _montar(items, "VISÃO GLOBAL")
+        _telegram_send(texto, chat_id_override=TELEGRAM_CHAT_ALERTAS, reply_markup=markup)
 
     log.info("[VTMonitor] %s — %d OS notificadas", tipo, len(items))
 
@@ -697,6 +719,7 @@ def _vt_monitor_loop():
             novas_viol  = []
             novas_risco = []
 
+            vt_ativos = set()
             for r in ativos:
                 servico = (r.get("servico") or "").upper()
                 if "VT 08H" in servico:
@@ -709,6 +732,7 @@ def _vt_monitor_loop():
                     continue
 
                 numos = str(r.get("numos", ""))
+                vt_ativos.add(numos)
                 dt    = _parse_datetime_br(r.get("datacadastro", ""))
                 if not dt:
                     continue
@@ -719,13 +743,28 @@ def _vt_monitor_loop():
                 decisao  = _classificar_vt_alerta(restante, registro, agora, aging_h=aging_h)
                 if decisao == "violado":
                     novas_viol.append((r, restante, prazo_h))
-                    state._vt_alertados[numos] = {"estagio": "violado", "last_sent": agora}
+                    repeticoes = (registro or {}).get("repeat_count", -1) + 1
+                    state._vt_alertados[numos] = {"estagio": "violado", "last_sent": agora,
+                                                  "repeat_count": repeticoes, "row": r}
                 elif decisao == "risco":
                     novas_risco.append((r, restante, prazo_h))
-                    state._vt_alertados[numos] = {"estagio": "risco", "last_sent": agora}
+                    state._vt_alertados[numos] = {"estagio": "risco", "last_sent": agora,
+                                                  "repeat_count": 0, "row": r}
 
             _enviar_alertas_vt(novas_viol, "violado")
             _enviar_alertas_vt(novas_risco, "risco")
+
+            normalizadas = [(numos, reg) for numos, reg in list(state._vt_alertados.items())
+                            if numos not in vt_ativos and reg.get("row")]
+            if normalizadas:
+                linhas = _tg_header("✅", "VT NORMALIZADO", "VISÃO GLOBAL", f"{len(normalizadas)} OS")
+                for numos, reg in normalizadas[:20]:
+                    r = reg["row"]
+                    linhas.append(f"✅ <b>OS {_tg_esc(numos)}</b> · {_tg_esc(_operadora_da_os(r) or 'Sem fornecedor')} · saiu da fila ativa")
+                    state._vt_alertados.pop(numos, None)
+                linhas += _tg_footer("Situação normalizada desde o último alerta")
+                _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
+                state._sem_equipe_alertadas.update(str(r.get("numos", "")) for r, _ in sem_eq)
 
         except Exception as ex:
             log.warning("[VTMonitor] Erro: %s", str(ex)[:120])

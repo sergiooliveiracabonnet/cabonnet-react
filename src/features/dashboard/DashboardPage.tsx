@@ -10,14 +10,16 @@ import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import { Modal } from '../../components/ui/Modal'
 import OSDrawer from '../ordens/OSDrawer'
 import { PulsoHero } from './PulsoHero'
+import { DashboardCommandCenter } from './DashboardCommandCenter'
 import { FluxoOSPanel } from './FluxoOSPanel'
+import { filterRowsByEquipe, filterRowsByFornecedor } from './DashboardDrilldowns'
 import { AnomaliaSection } from './AnomaliaSection'
 import { StatCard, accentToTone } from '../../components/ui/StatCard'
 import { SectionLabel } from './DashboardKpiPrimitives'
 import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
   MetaMesCard, AlertaTopoBanner, ClustersBairroPanel, AgingPanel,
-  RitmoEquipesPanel, MudancasStrip, ProjecaoRiscoPanel,
+  RitmoEquipesPanel, MudancasStrip,
   ParetoServicoPanel, CidadesValePanel, FornecedoresPanel, QualidadePeriodoCard,
 } from './DashboardPaineis'
 import { KpiModalTable } from './DashboardKpiModal'
@@ -53,6 +55,20 @@ export default function DashboardPage() {
     const source   = ALLROWS_KPIS.has(kpi.id) ? allRows : rows
     const filtered = source.filter(filter)
     setModal({ title: kpi.title, rows: filtered, foco: kpi.id })
+  }
+
+  function openEquipe(equipe: string) {
+    setModal({
+      title: `Equipe ${equipe} — OS do período`,
+      rows: filterRowsByEquipe(rows, equipe),
+    })
+  }
+
+  function openFornecedor(fornecedor: string) {
+    setModal({
+      title: `Fornecedor ${fornecedor} — OS do período`,
+      rows: filterRowsByFornecedor(rows, fornecedor),
+    })
   }
 
   if (error && !rows.length) {
@@ -93,7 +109,7 @@ export default function DashboardPage() {
       return (
         <div className="space-y-4 max-w-[1600px]">
           <section>
-            <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
+            <SectionLabel icon={AlertCircle} color="#f87171">Prioridades agora</SectionLabel>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
               {riskStats.map((k, i) => (
                 <StatCard
@@ -111,11 +127,13 @@ export default function DashboardPage() {
             </div>
           </section>
           <section>
-            <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
+            <SectionLabel icon={BarChart3} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
+            <div className="grid grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
               {perfStats.map((k, i) => (
                 <StatCard
                   key={k.id}
+                  size="sm"
+                  outlined
                   title={k.title}
                   value={k.value}
                   sub={k.sub}
@@ -168,45 +186,36 @@ export default function DashboardPage() {
           onScrollAnomalias={() => anomaliasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
         />
 
-        <PulsoHero
-          pulso={pulso}
-          target={metaScore}
-          tendencia={scoreTendencia}
-          evolucao={graficos.evolucao}
-          aiData={aiData}
-          isLoadingAI={isLoadingAI}
-          onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
+        <DashboardCommandCenter
+          priorities={riskKpis}
+          projection={projecaoRisco}
+          criticalNow={pulso.criticasTotal ?? 0}
+          onPriority={openKpi}
+          onProjection={(riskRows) => setModal({ title: 'Risco de violação · próximas 48h', rows: riskRows })}
+          pulse={(
+            <PulsoHero
+              pulso={pulso}
+              target={metaScore}
+              tendencia={scoreTendencia}
+              evolucao={graficos.evolucao}
+              aiData={aiData}
+              isLoadingAI={isLoadingAI}
+              onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
+            />
+          )}
         />
 
         <MudancasStrip tendencia={scoreTendencia} mudancas={mudancas} />
 
-        {/* ═══ NÍVEL 2 — KPIs principais ═══ */}
+        {/* ═══ NÍVEL 2 — capacidade operacional ═══ */}
         <section>
-          <SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
-            {riskKpis.map((k, i) => (
-              <StatCard
-                key={k.id}
-                title={k.title}
-                value={k.value}
-                sub={k.sub}
-                tone={accentToTone(k.accent)}
-                trend={k.trend ?? undefined}
-                icon={KPI_ICONS[k.id]}
-                delay={i * 60}
-                onClick={KPI_FILTERS[k.id] ? () => openKpi(k) : undefined}
-                scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <SectionLabel icon={BarChart3} color="#3b82f6">Fila Ativa &amp; Performance</SectionLabel>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
+          <SectionLabel icon={BarChart3} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
+          <div className="grid grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
             {perfKpis.map((k, i) => (
               <StatCard
                 key={k.id}
+                size="sm"
+                outlined
                 title={k.title}
                 value={k.value}
                 sub={k.sub}
@@ -220,13 +229,6 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
-
-        {/* ═══ NÍVEL 3 — Alertas críticos ═══ */}
-        <ProjecaoRiscoPanel
-          proj={projecaoRisco}
-          criticasAgora={pulso.criticasTotal ?? 0}
-          onOpen={(rows) => setModal({ title: 'Risco de violação · próximas 48h', rows })}
-        />
 
         <div ref={clustersRef}>
           <ClustersBairroPanel clusters={clustersAtivos} />
@@ -264,7 +266,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-          <RitmoEquipesPanel semaforo={campo.semaforo} />
+          <RitmoEquipesPanel semaforo={campo.semaforo} onOpen={openEquipe} />
           <CidadesValePanel filaAtiva={filaAtiva}
                             onOpen={(title, rows) => setModal({ title, rows })} />
           <ParetoServicoPanel filaAtiva={filaAtiva}
@@ -274,7 +276,7 @@ export default function DashboardPage() {
         {/* ═══ NÍVEL 5 — Análises secundárias ═══ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
           <MetaMesCard meta={pulso.metaMes} />
-          <FornecedoresPanel fornecedores={fornecedores} />
+          <FornecedoresPanel fornecedores={fornecedores} onOpen={openFornecedor} />
           <QualidadePeriodoCard pulso={pulso} taxaRevisitas={taxaRevisitas} />
         </div>
 

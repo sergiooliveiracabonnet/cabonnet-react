@@ -28,7 +28,7 @@ export function useOSData() {
   const { data, isLoading, error, dataUpdatedAt } = useQuery({
     queryKey:  ['os-query'],
     queryFn:   async () => {
-      const result = await api.get(endpoints.query) as Record<string, string>
+      const result = await api.get(`${endpoints.query}?compact=1`) as Record<string, string>
       persistSave(result)
       broadcastData(result)
       return result

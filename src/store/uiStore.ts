@@ -83,9 +83,10 @@ interface UIState {
 
 const _savedTheme = localStorage.getItem('theme') === 'light' ? 'light' : 'dark'
 const initRange   = getPresetRange('hoje')
+const initialSidebarOpen = typeof window === 'undefined' || window.innerWidth >= 768
 
 export const useUIStore = create<UIState>((set) => ({
-  sidebarOpen:       true,
+  sidebarOpen:       initialSidebarOpen,
   hideRede:          true,
   theme:             _savedTheme,
   globalRefreshTick: 0,

@@ -58,10 +58,10 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   const isConcluida   = sit === 'Concluída'
   const isAtendimento = sit === 'Atendimento'
   const hasAgend      = !!os.dataagendamento?.trim()
-  const obsGeral = os.observacoes || os.obs || os.observacao || os.nota
+  const obsGeral = osDetails?.observacoes || os.observacoes || os.obs || os.observacao || os.nota
                || os.descricaoobs || os.descricao_obs || os.historico
                || os.informacoes || os.detalhes || os.descricao || null
-  const obsCrit = os.observacaocritica || os.obscritica || null
+  const obsCrit = osDetails?.observacaoCritica || os.observacaocritica || os.obscritica || null
   const fornLabel     = FORN_LABEL[os._fornecedor as Fornecedor] ?? os._fornecedor ?? null
   const hasAtend      = !!(os.dataatendimento as string | undefined)?.trim()
   const hasIni        = !!(os.datainicio as string | undefined)?.trim()

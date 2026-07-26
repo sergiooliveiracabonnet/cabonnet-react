@@ -32,11 +32,12 @@ interface NavItemProps {
   sidebarOpen: boolean
   groupKey:    string
   groupColor:  string
+  onNavigate:  () => void
 }
 
 interface Tip { top: number; left: number }
 
-function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor }: NavItemProps) {
+function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onNavigate }: NavItemProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [tip, setTip] = useState<Tip | null>(null)
 
@@ -54,15 +55,17 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor }: N
       <NavLink
         to={to}
         end={to === '/'}
+        onClick={onNavigate}
         className={({ isActive }) =>
-          `nav-link-${groupKey} flex items-center gap-3 pl-3 pr-2.5 py-[7px] rounded-lg
-           border-l-2 transition-colors duration-150 text-label font-medium
+          `nav-link-${groupKey} flex min-h-11 items-center gap-3 rounded-lg border-l-2 py-3 pl-3 pr-2.5
+           md:min-h-0 md:py-[7px]
+           transition-colors duration-150 text-label font-medium
            ${isActive ? 'active' : 'border-transparent text-muted hover:text-secondary'}`
         }
       >
         {({ isActive }) => (
           <>
-            <Icon size={13} style={isActive ? { color: groupColor } : {}} />
+            <Icon size={16} style={isActive ? { color: groupColor } : {}} />
             {sidebarOpen && (
               <span className="truncate flex-1 leading-none">{label}</span>
             )}
@@ -93,7 +96,7 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor }: N
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 export function Sidebar() {
-  const { sidebarOpen } = useUIStore()
+  const { sidebarOpen, setSidebar } = useUIStore()
   const setUnauthed = useAuthStore(s => s.setUnauthed)
   const role        = useAuthStore(s => s.role)
   const logAudit    = useAuditStore(s => s.log)
@@ -108,6 +111,19 @@ export function Sidebar() {
     const id = setInterval(() => setNowTs(Date.now()), 60_000)
     return () => clearInterval(id)
   }, [])
+
+  useEffect(() => {
+    if (!sidebarOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSidebar(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [sidebarOpen, setSidebar])
+
+  const closeAfterMobileNavigation = () => {
+    if (window.innerWidth < 768) setSidebar(false)
+  }
 
   const ageMs   = dataUpdatedAt > 0 ? nowTs - dataUpdatedAt : null
   const isError = !!error && !isLoading
@@ -128,9 +144,12 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-full z-sidebar flex flex-col
-                  sidebar-premium transition-all duration-200 overflow-hidden select-none
-                  ${sidebarOpen ? 'w-[224px]' : 'w-[52px]'}`}
+      aria-label="Navegação principal"
+      className={`sidebar-premium fixed left-0 top-0 z-[400] flex h-full w-[min(86vw,280px)]
+                  select-none flex-col overflow-hidden transition-[width,transform] duration-200 md:z-sidebar
+                  ${sidebarOpen
+                    ? 'translate-x-0 md:w-[224px]'
+                    : '-translate-x-full md:w-[52px] md:translate-x-0'}`}
     >
       {/* ── Logo / Branding ── */}
       <div className={`relative flex-shrink-0 flex items-center h-[56px]
@@ -192,6 +211,7 @@ export function Sidebar() {
                   sidebarOpen={sidebarOpen}
                   groupKey={group.key}
                   groupColor={group.color}
+                  onNavigate={closeAfterMobileNavigation}
                 />
               ))}
             </div>
@@ -229,7 +249,7 @@ export function Sidebar() {
             <button
               onClick={handleLogout}
               aria-label="Sair"
-              className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md md:h-6 md:w-6
                          opacity-0 group-hover:opacity-100 transition-all duration-150
                          text-muted hover:text-red hover:bg-red/10"
             >

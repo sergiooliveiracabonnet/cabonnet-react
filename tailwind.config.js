@@ -37,9 +37,9 @@ export default {
       },
 
       fontFamily: {
-        sans:     ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
-        headline: ['"Space Grotesk"', '"Inter"', 'system-ui', 'sans-serif'],
-        mono:     ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+        sans:     ['"Inter Variable"', '"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+        headline: ['"Inter Variable"', '"Inter"', 'system-ui', 'sans-serif'],
+        mono:     ['"Inter Variable"', '"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
       },
 
       // Escala tipográfica semantizada — 5 papéis, mínimo 11px (spec Onda 1)

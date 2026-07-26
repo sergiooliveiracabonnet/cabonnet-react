@@ -174,7 +174,7 @@ _AI_CACHE_TTL = 300   # 5 minutos
 _TG_DIV  = "─" * 24
 _TG_DIVS = "─" * 20
 
-_STATUS_CHANGE_BATCH_LIMIT = 8  # Acima disso envia resumo em vez de msgs individuais
+_STATUS_CHANGE_BATCH_LIMIT = 3  # Acima disso consolida para evitar rajadas no grupo
 
 _STATUS_EMOJI = {
     "Pendente":                "🟡",

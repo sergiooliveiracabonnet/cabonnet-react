@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { fireEvent, render, screen, cleanup, within } from '@testing-library/react'
 import { PulsoHero } from './PulsoHero'
 import type { Pulso } from '../../lib/types'
 
@@ -36,11 +36,15 @@ describe('PulsoHero', () => {
     render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false}
                        tendencia={{ atual: 82, anterior: 78, delta: 4 }} evolucao={evolucao} />)
     expect(screen.getByText('82')).toBeInTheDocument()
-    expect(screen.getByText(/vs anterior/)).toBeInTheDocument()
+    const anterior = screen.getByTestId('score-periodo-anterior')
+    expect(within(anterior).getByText('Anterior')).toBeInTheDocument()
+    expect(within(anterior).getByText('78')).toBeInTheDocument()
+    expect(within(anterior).getByText('↑ +4')).toBeInTheDocument()
+    expect(within(anterior).queryByText(/vs anterior/)).not.toBeInTheDocument()
     expect(screen.getByText('A fila recua pelo terceiro dia seguido.')).toBeInTheDocument()
   })
 
-  it('renderiza os 4 tiles de fluxo do dia, com sparkline em 3 deles', () => {
+  it('renderiza as 4 métricas de fluxo sem duplicar sparklines do painel detalhado', () => {
     const { container } = render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} evolucao={evolucao} />)
     expect(screen.getByText('Entradas hoje')).toBeInTheDocument()
     expect(screen.getByText('46')).toBeInTheDocument()
@@ -50,9 +54,7 @@ describe('PulsoHero', () => {
     expect(screen.getByText('fila encolhendo')).toBeInTheDocument()
     expect(screen.getByText('Projeção do mês')).toBeInTheDocument()
     expect(screen.getByText('1.310')).toBeInTheDocument()
-    // Entradas, Concluídas e Saldo têm sparkline — Projeção do mês não tem série diária.
-    // Exclui o ícone Activity (lucide-react também usa aria-hidden="true" + <path>).
-    expect(container.querySelectorAll('svg[aria-hidden="true"]:not([class*="lucide"]) path')).toHaveLength(3)
+    expect(container.querySelectorAll('svg[aria-hidden="true"]:not([class*="lucide"]) path')).toHaveLength(0)
   })
 
   it('breakdown do score fica em popover, mini-stats antigos não vivem mais aqui', () => {
@@ -62,9 +64,16 @@ describe('PulsoHero', () => {
     expect(screen.queryByText('Revisitas')).not.toBeInTheDocument()
   })
 
-  it('mostra CTA para analisar com IA quando não há aiData', () => {
+  it('prioriza a narrativa nativa e mantém o formulário de IA recolhido', () => {
     render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} onRequestAI={() => {}} evolucao={evolucao} />)
-    expect(screen.getByRole('button', { name: /Analisar com IA/ })).toBeInTheDocument()
+    expect(screen.getByText('A fila recua pelo terceiro dia seguido.')).toBeInTheDocument()
+    expect(screen.queryByPlaceholderText(/Contexto opcional para a IA/)).not.toBeInTheDocument()
+
+    const trigger = screen.getByRole('button', { name: /Enriquecer com IA/ })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByPlaceholderText(/Contexto opcional para a IA/)).toBeInTheDocument()
   })
 
   it('score breakdown popover tem nome acessivel e aria-describedby', () => {

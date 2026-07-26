@@ -106,7 +106,7 @@ def _telegram_poll_loop_inner():
         "/kpi", "/atualizar", "/listarede",
         "/sla", "/equipe", "/aging", "/ranking", "/reagendadas",
         "/cidade", "/turno", "/forecast", "/manutencoes",
-        "/semexec", "/comparativo", "/help",
+        "/semexec", "/comparativo", "/menu", "/help",
     }
     _CMDS_PRODUTIVIDADE = {
         "/os", "/agenda", "/executadas",
@@ -234,6 +234,18 @@ def _telegram_poll_loop_inner():
                     target=lambda r=is_rede, o=op: _telegram_send(_build_status_text(rede=r, operadora=o), chat_id_override=cid),
                     daemon=True,
                 ).start()
+
+            elif text.startswith("/menu") and grupo == "ALERTAS":
+                markup = {"keyboard": [
+                    [{"text": "/kpi"}, {"text": "/pulso"}, {"text": "/status"}],
+                    [{"text": "/sla"}, {"text": "/aging"}, {"text": "/forecast"}],
+                    [{"text": "/equipes"}, {"text": "/turno"}, {"text": "/ranking"}],
+                    [{"text": "/manutencoes"}, {"text": "/semexec"}, {"text": "/help"}],
+                ], "resize_keyboard": True, "one_time_keyboard": True}
+                _telegram_send(
+                    "📌 <b>Menu rápido — Alertas</b>\nEscolha uma consulta. Para buscar uma OS, envie o número diretamente.",
+                    chat_id_override=cid, reply_markup=markup,
+                )
 
             elif text.startswith("/pulso"):
                 threading.Thread(target=lambda o=operadora: _telegram_send(_build_pulso(o), chat_id_override=cid), daemon=True).start()
@@ -549,5 +561,6 @@ def _telegram_poll_loop_inner():
                         f"/notarede — Fechamento de Nota — Rede\n"
                         f"{_TG_DIV}\n"
                         f"/atualizar — Força atualização dos dados do Grafana agora\n"
+                        f"/menu — Abre o menu rápido com as consultas principais\n"
                         f"/help — Esta mensagem",
                         chat_id_override=cid)

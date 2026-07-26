@@ -42,7 +42,7 @@ describe('FluxoOSPanel', () => {
 
   it('renderiza o gráfico com legenda e janela de 14 dias', () => {
     render(<FluxoOSPanel evolucao={makeEvolucao(30)} />)
-    expect(screen.getByText('Fluxo de OS — 14 dias')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Fluxo de OS — 14 dias' })).toBeInTheDocument()
     // "Entradas"/"Concluídas" aparecem na legenda e no cabeçalho da tabela
     expect(screen.getAllByText('Entradas')).toHaveLength(2)
     expect(screen.getAllByText('Concluídas')).toHaveLength(2)

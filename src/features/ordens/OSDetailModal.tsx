@@ -65,6 +65,8 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
   const fotos              = details?.fotos              ?? []
   const checklist           = details?.checklist           ?? []
   const motivoInconclusivo  = details?.motivoInconclusivo  ?? null
+  const observacoes         = details?.observacoes || os.observacoes || os.obs || os.observacao || null
+  const observacaoCritica   = details?.observacaoCritica || os.observacaocritica || null
 
   return (
     <>
@@ -166,24 +168,24 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
         </div>
 
         {/* Observações */}
-        {(os.observacaocritica || os.observacoes || os.obs || os.observacao) && (
+        {(observacaoCritica || observacoes) && (
           <div>
             <SectionDivider>Observações</SectionDivider>
             <div className="space-y-3">
-              {os.observacaocritica && (
+              {observacaoCritica && (
                 <div className="bg-red/[0.07] border border-red/25 rounded-xl p-4">
                   <p className="font-headline text-caption font-bold uppercase tracking-[0.05em] text-red mb-1.5">
                     ⚠ Observação Crítica
                   </p>
                   <p className="text-body text-red/90 leading-relaxed font-sans whitespace-pre-wrap">
-                    {os.observacaocritica}
+                    {observacaoCritica}
                   </p>
                 </div>
               )}
-              {(os.observacoes || os.obs || os.observacao) && (
+              {observacoes && (
                 <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
                   <p className="text-body text-secondary leading-relaxed font-sans whitespace-pre-wrap">
-                    {os.observacoes || os.obs || os.observacao}
+                    {observacoes}
                   </p>
                 </div>
               )}

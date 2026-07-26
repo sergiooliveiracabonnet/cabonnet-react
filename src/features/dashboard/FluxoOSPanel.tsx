@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Activity } from 'lucide-react'
+import { DashboardPanelHeader } from './DashboardKpiPrimitives'
 
 // Painel "Fluxo de OS — 14 dias": entradas × concluídas por dia com crosshair.
 // Reusa a série diária já computada em buildGraficos (evolucao), sem builder novo.
@@ -81,10 +83,15 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
-      <div className="flex items-baseline justify-between gap-3 flex-wrap">
-        <div>
-          <p className="text-body font-semibold text-text">Fluxo de OS — {len} dias</p>
-          <p className="text-caption text-muted mt-0.5">entradas × concluídas por dia · passe o mouse para detalhar</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-[220px] flex-1">
+          <DashboardPanelHeader
+            icon={Activity}
+            color={BLUE}
+            meta="diário · hover detalha"
+          >
+            Fluxo de OS — {len} dias
+          </DashboardPanelHeader>
         </div>
         <div className="flex gap-4 text-caption text-secondary">
           <span className="flex items-center gap-1.5">

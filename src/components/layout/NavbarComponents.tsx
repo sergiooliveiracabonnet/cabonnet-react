@@ -106,15 +106,16 @@ export const RefreshControl = memo(function RefreshControl() {
         onClick={() => setShowMenu(v => !v)}
         aria-label={interval ? `Auto-refresh em ${fmtCountdown(countdown)}` : fmtAgeLabel(dataUpdatedAt as number | undefined)}
         title={fmtAgeLabel(dataUpdatedAt as number | undefined)}
-        className={`flex items-center gap-1.5 h-8 px-2.5 rounded-md border
+        className={`flex h-11 w-11 items-center justify-center gap-1.5 rounded-md border px-0
+                    sm:h-8 sm:w-auto sm:px-2.5
                     transition-all duration-fast
                     ${urgent
                       ? 'border-yellow/40 text-yellow bg-yellow/5 hover:bg-yellow/10'
                       : 'border-white/[0.08] text-secondary hover:border-muted/40 hover:text-text'}`}
       >
         <RefreshCw size={12} className={`flex-shrink-0 ${spinning ? 'animate-spin' : ''}`} />
-        <span className="text-caption font-mono tabular-nums w-[36px] text-center">{btnLabel}</span>
-        <ChevronDown size={10} className={`transition-transform ${showMenu ? 'rotate-180' : ''}`} />
+        <span className="hidden w-[36px] text-center font-mono text-caption tabular-nums sm:block">{btnLabel}</span>
+        <ChevronDown size={10} className={`hidden transition-transform sm:block ${showMenu ? 'rotate-180' : ''}`} />
       </button>
 
       {showMenu && (

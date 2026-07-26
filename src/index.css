@@ -1,5 +1,10 @@
-/* Google Fonts — Inter (principal) + Space Grotesk (headlines) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+}
 
 @tailwind base;
 @tailwind components;
@@ -86,14 +91,16 @@
 
 /* ── Reset mínimo ─────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { max-width: 100%; overflow-x: clip; scroll-behavior: smooth; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 body {
   margin: 0;
+  max-width: 100%;
+  overflow-x: clip;
   background-color: rgb(var(--c-bg));
   color: rgb(var(--c-text));
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
   font-optical-sizing: auto;
   font-feature-settings: "cv11" 1, "zero" 1, "ss01" 1;
   -webkit-font-smoothing: antialiased;
@@ -102,6 +109,13 @@ body {
   /* Dot grid — muito sutil, padrão Stripe/Linear */
   background-image: radial-gradient(rgb(var(--c-border) / 0.5) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+@media (max-width: 767px) {
+  .text-caption { font-size: 12px; }
+  .text-label   { font-size: 14px; }
+  .text-body    { font-size: 16px; }
+  .text-title   { font-size: 17px; }
 }
 
 /* ── Scrollbar ────────────────────────────────────────────────── */

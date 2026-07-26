@@ -66,22 +66,29 @@ function BuilderErrorBanner() {
 }
 
 export function AppLayout() {
-  const { sidebarOpen } = useUIStore()
+  const { sidebarOpen, setSidebar } = useUIStore()
 
   return (
     <OSDataProvider>
       <FilterURLSync />
       <BuilderErrorBanner />
       <PicoAlertaModal />
-      <div className="min-h-screen bg-bg text-text">
+      <div className="min-h-screen max-w-full overflow-x-clip bg-bg text-text">
         <Sidebar />
+        {sidebarOpen && (
+          <button
+            type="button"
+            aria-label="Fechar menu de navegação"
+            onClick={() => setSidebar(false)}
+            className="fixed inset-0 z-[350] bg-black/60 backdrop-blur-[1px] md:hidden"
+          />
+        )}
         <Navbar />
         <DateFilterBar sidebarOpen={sidebarOpen} />
 
-        {/* pt-14 (navbar) + pt-10 (date filter bar) = pt-24 */}
-        <main className={`pt-24 transition-all duration-200
-                          ${sidebarOpen ? 'pl-[224px]' : 'pl-[52px]'}`}>
-          <div className="p-6 animate-page-enter">
+        <main className={`min-w-0 max-w-full overflow-x-clip pt-28 transition-[padding] duration-200 md:pt-24
+                          ${sidebarOpen ? 'md:pl-[224px]' : 'md:pl-[52px]'}`}>
+          <div className="animate-page-enter p-3 sm:p-4 lg:p-6">
             <Suspense fallback={
               <div className="flex items-center justify-center py-20">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
