@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:24-slim
 ENV TZ=America/Sao_Paulo
 RUN apt-get update && apt-get install -y python3 python3-pip curl tzdata --no-install-recommends && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && rm -rf /var/lib/apt/lists/*
 WORKDIR /app

@@ -2,6 +2,9 @@
   "name": "cabonnet-app",
   "private": true,
   "version": "2026.8.0",
+  "engines": {
+    "node": ">=24"
+  },
   "type": "module",
   "scripts": {
     "dev": "node servidor.js --dev",
