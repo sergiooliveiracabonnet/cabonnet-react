@@ -9,17 +9,24 @@ import { useVisibleNavGroups } from '../../lib/navigation'
 import type { NavGroup, NavLinkDef } from '../../lib/navigation'
 import type { OSRow } from '../../lib/types'
 
+const digits = (value: unknown) => String(value ?? '').replace(/\D/g, '')
+
 function matchOS(r: OSRow, q: string): boolean {
+  const numericQuery = digits(q)
+  const cpf = r.cpfcliente ?? r.cpf ?? r.cnpj_cpf ?? r.cpfcnpj ?? r.cnpjcpf
   return !!(
     (r.numos as string | undefined)?.toLowerCase().startsWith(q)      ||
     (r.nomecliente as string | undefined)?.toLowerCase().includes(q)  ||
     (r.bairro as string | undefined)?.toLowerCase().includes(q)       ||
     (r.nomedacidade as string | undefined)?.toLowerCase().includes(q) ||
-    (r.nomedaequipe as string | undefined)?.toLowerCase().includes(q)
+    (r.nomedaequipe as string | undefined)?.toLowerCase().includes(q) ||
+    String(r.codigocontrato ?? r.numcontrato ?? '').toLowerCase().includes(q) ||
+    (numericQuery.length >= 3 && digits(cpf).includes(numericQuery))
   )
 }
 
-function searchRows(allRows: OSRow[], query: string): OSRow[] {
+// eslint-disable-next-line react-refresh/only-export-components
+export function searchRows(allRows: OSRow[], query: string): OSRow[] {
   if (!query || query.trim().length < 2) return []
   const q = query.toLowerCase().trim()
   return allRows
@@ -135,7 +142,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                 ref={inputRef}
                 value={query}
                 onChange={e => { setQuery(e.target.value); setActiveIdx(-1) }}
-                placeholder="Buscar OS ou página…"
+                placeholder="Buscar OS, cliente, contrato ou CPF…"
                 className="flex-1 bg-transparent text-body text-text placeholder-muted/60 outline-none"
               />
               {query && (
@@ -215,7 +222,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               {query.trim().length > 0 && results.pages.length === 0 && results.os.length === 0 && (
                 <div className="px-5 py-10 text-center">
                   <p className="text-body text-muted">Nenhum resultado para <span className="text-text font-semibold">"{query}"</span></p>
-                  <p className="text-caption text-muted/50 mt-1">Tente nº da OS, nome do cliente, cidade ou o nome de uma página</p>
+                  <p className="text-caption text-muted/50 mt-1">Tente nº da OS, cliente, contrato, CPF, cidade ou página</p>
                 </div>
               )}
 

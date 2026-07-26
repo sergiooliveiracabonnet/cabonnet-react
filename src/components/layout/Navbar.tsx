@@ -95,7 +95,7 @@ export function Navbar() {
                    transition-colors duration-150"
       >
         <Search size={12} className="flex-shrink-0" />
-        <span className="text-caption flex-1 text-left hidden sm:block">Buscar OS ou página…</span>
+        <span className="text-caption flex-1 text-left hidden sm:block">Buscar OS, contrato ou CPF…</span>
         <kbd className="hidden md:flex items-center text-caption font-mono
                         bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted">⌃K</kbd>
       </button>

@@ -26,6 +26,7 @@ with analitico as (
   select
   cart.descricao as empresa,
   coalesce(nullif(trim(cli.nome),''), o.nomecliente, '') as nomecliente,
+  coalesce(to_jsonb(cli)->>'cpf', to_jsonb(cli)->>'cnpj_cpf', to_jsonb(cli)->>'cpfcnpj', to_jsonb(cli)->>'cnpjcpf', '') as cpfcliente,
   o.numos,
   l.descricaodoserv_lanc as servico,
   ts.descricao as tiposervico,
@@ -111,6 +112,7 @@ with analitico as (
   select
   cart.descricao as empresa,
   coalesce(nullif(trim(cli.nome),''), o.nomecliente, '') as nomecliente,
+  coalesce(to_jsonb(cli)->>'cpf', to_jsonb(cli)->>'cnpj_cpf', to_jsonb(cli)->>'cpfcnpj', to_jsonb(cli)->>'cnpjcpf', '') as cpfcliente,
   o.numos,
   l.descricaodoserv_lanc as servico,
   ts.descricao as tiposervico,
@@ -196,6 +198,7 @@ with analitico as (
   select
   cart.descricao as empresa,
   coalesce(nullif(trim(cli.nome),''), o.nomecliente, '') as nomecliente,
+  coalesce(to_jsonb(cli)->>'cpf', to_jsonb(cli)->>'cnpj_cpf', to_jsonb(cli)->>'cpfcnpj', to_jsonb(cli)->>'cnpjcpf', '') as cpfcliente,
   o.numos,
   l.descricaodoserv_lanc as servico,
   ts.descricao as tiposervico,
@@ -280,6 +283,7 @@ with analitico as (
   select
   cart.descricao as empresa,
   coalesce(nullif(trim(cli.nome),''), o.nomecliente, '') as nomecliente,
+  coalesce(to_jsonb(cli)->>'cpf', to_jsonb(cli)->>'cnpj_cpf', to_jsonb(cli)->>'cpfcnpj', to_jsonb(cli)->>'cnpjcpf', '') as cpfcliente,
   o.numos,
   l.descricaodoserv_lanc as servico,
   ts.descricao as tiposervico,
@@ -344,6 +348,7 @@ SQL_DETALHES_TEMPLATE = """
 SELECT
   cart.descricao                                                     as empresa,
   coalesce(nullif(trim(cli.nome),''), o.nomecliente, '')             as nomecliente,
+  coalesce(to_jsonb(cli)->>'cpf', to_jsonb(cli)->>'cnpj_cpf', to_jsonb(cli)->>'cpfcnpj', to_jsonb(cli)->>'cnpjcpf', '') as cpfcliente,
   o.numos,
   o.codigocontrato,
   o.codigoassinante                                                  as codigocliente,
@@ -588,6 +593,7 @@ with analitico as (
   select
   cart.descricao as empresa,
   coalesce(nullif(trim(cli.nome),''), o.nomecliente, '') as nomecliente,
+  coalesce(to_jsonb(cli)->>'cpf', to_jsonb(cli)->>'cnpj_cpf', to_jsonb(cli)->>'cpfcnpj', to_jsonb(cli)->>'cnpjcpf', '') as cpfcliente,
   o.numos,
   l.descricaodoserv_lanc as servico,
   ts.descricao as tiposervico,
@@ -834,6 +840,7 @@ SQL_BACKLOG_TEMPLATE = """
 WITH base AS (
   SELECT
     coalesce(nullif(trim(cli.nome),''), o.nomecliente, '')        AS nomecliente,
+    coalesce(to_jsonb(cli)->>'cpf', to_jsonb(cli)->>'cnpj_cpf', to_jsonb(cli)->>'cpfcnpj', to_jsonb(cli)->>'cnpjcpf', '') AS cpfcliente,
     o.numos,
     o.codigoassinante                                             AS codigocliente,
     o.codigocontrato,
