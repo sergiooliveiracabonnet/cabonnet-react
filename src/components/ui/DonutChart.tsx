@@ -153,7 +153,7 @@ export function DonutChart({ data = [], colors = [], onClick, centerLabel = 'Tot
           return (
             <button
               key={i}
-              className="text-left w-full focus:outline-none cursor-pointer"
+              className="min-h-8 w-full cursor-pointer rounded-md px-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
               onClick={() => onClick?.(s)}

@@ -4,6 +4,8 @@ import type { OSRow } from '../../lib/types'
 import { useOSDerived }  from '../../contexts/OSDataContext'
 import { buildGraficos } from '../../lib/builders'
 import { TabBar }        from '../../components/ui/TabBar'
+import { useUIStore, PRESETS } from '../../store/uiStore'
+import OSDrawer from '../ordens/OSDrawer'
 import {
   FORN_PILLS, TABS,
   DrillModal, TabDistribuicao, TabTendencia, TabEstatistica, TabCohort,
@@ -14,6 +16,8 @@ export default function GraficosPage() {
   const [tab,        setTab]        = useState('distribuicao')
   const [fornecedor, setFornecedor] = useState('')
   const [drill,      setDrill]      = useState<DrillState | null>(null)
+  const [drawerOS,   setDrawerOS]   = useState<OSRow | null>(null)
+  const { dateFilter } = useUIStore()
 
   const { rows, derived: { graficos: graficosCtx } } = useOSDerived()
 
@@ -29,6 +33,10 @@ export default function GraficosPage() {
   const openDrill = useCallback((title: string, filteredRows: OSRow[]) => {
     setDrill({ title, rows: filteredRows })
   }, [])
+  const periodoLabel = PRESETS.find(p => p.id === dateFilter.preset)?.label ?? 'Período personalizado'
+  const campoLabel = dateFilter.campo === 'dataexecucao' ? 'execução'
+    : dateFilter.campo === 'dataagendamento' ? 'agendamento' : 'cadastro'
+  const openOS = useCallback((os: OSRow) => { setDrill(null); setDrawerOS(os) }, [])
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -57,6 +65,15 @@ export default function GraficosPage() {
 
       <TabBar tabs={TABS} active={tab} onChange={setTab} className="mb-2" />
 
+      {tab === 'distribuicao' && (
+        <div className="flex flex-wrap items-center gap-1.5 text-caption text-muted" aria-label="Escopo dos gráficos">
+          <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Período: {periodoLabel}</span>
+          <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Data de {campoLabel}</span>
+          <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Frente: {FORN_PILLS.find(f => f.value === fornecedor)?.label ?? 'Todos'}</span>
+          <span className="rounded-full border border-primary/20 bg-primary/[0.06] px-2 py-1 text-primary">{activeRows.length.toLocaleString('pt-BR')} OS</span>
+        </div>
+      )}
+
       {tab === 'distribuicao' && <TabDistribuicao d={d} rows={activeRows} onDrill={openDrill} />}
       {tab === 'tendencia'    && <TabTendencia    d={d} rows={activeRows} onDrill={openDrill}
                                                    totalAtivo={rows.filter(r => ['Pendente','Atendimento'].includes(r.descsituacao)).length}
@@ -64,7 +81,8 @@ export default function GraficosPage() {
       {tab === 'estatistica'  && <TabEstatistica  d={d} rows={activeRows} onDrill={openDrill} />}
       {tab === 'cohort'       && <TabCohort       d={d} rows={activeRows} onDrill={openDrill} />}
 
-      <DrillModal drill={drill} onClose={() => setDrill(null)} />
+      <DrillModal drill={drill} onClose={() => setDrill(null)} onOS={openOS} />
+      <OSDrawer os={drawerOS} onClose={() => setDrawerOS(null)} />
     </div>
   )
 }

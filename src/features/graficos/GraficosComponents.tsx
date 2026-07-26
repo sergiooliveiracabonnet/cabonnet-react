@@ -14,6 +14,7 @@ import { XAxis as LXAxis, YAxis as LYAxis, ChartTooltip as LTooltip, Grid as LGr
 import { useAIForecast } from '../../hooks/useAIForecast'
 import { shortEquipe }   from '../../lib/osFormat'
 import { isConcluida, isExecucaoReal } from '../../lib/transform'
+import { buildDistribuicaoSummary, sortDistribution, type DistributionItem } from '../../lib/builders/graficosDistribuicao'
 
 // ─── Tipos exportados ─────────────────────────────────────────────────────────
 
@@ -92,7 +93,7 @@ function drillSortValue(r: OSRow, key: string): string | number {
   return (r[key] ?? '').toString().toLowerCase()
 }
 
-export function DrillModal({ drill, onClose }: { drill: DrillState | null; onClose: () => void }) {
+export function DrillModal({ drill, onClose, onOS }: { drill: DrillState | null; onClose: () => void; onOS?: (os: OSRow) => void }) {
   const [search, setSearch] = useState('')
   const [sort,   setSort]   = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: '_aging', dir: 'desc' })
 
@@ -156,7 +157,13 @@ export function DrillModal({ drill, onClose }: { drill: DrillState | null; onClo
             <tbody className="divide-y divide-white/[0.03]">
               {sorted.slice(0, 250).map(r => (
                 <tr key={r.numos} className="hover:bg-surface/20 transition-colors">
-                  <td className="px-3 py-2 font-mono text-primary whitespace-nowrap">{r.numos}</td>
+                  <td className="px-1 py-1 font-mono whitespace-nowrap">
+                    <button type="button" onClick={() => onOS?.(r)}
+                            className="min-h-11 rounded-md px-2 text-primary transition-colors hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                            aria-label={`Abrir detalhes da OS ${r.numos}`}>
+                      {r.numos}
+                    </button>
+                  </td>
                   <td className="px-3 py-2 text-secondary max-w-[140px] truncate">{r.nomecliente || '—'}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <span className={`text-caption font-bold px-1.5 py-0.5 rounded-full ${
@@ -281,32 +288,64 @@ export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown
 
 // ─── TabDistribuicao ──────────────────────────────────────────────────────────
 
+function RankedDistribution({ data, color, onSelect }: {
+  data: DistributionItem[]
+  color: string
+  onSelect: (item: DistributionItem) => void
+}) {
+  const max = data[0]?.value || 1
+  if (!data.length) return <p className="px-4 py-10 text-center text-label text-muted">Sem dados neste recorte.</p>
+  return (
+    <div className="space-y-1 px-3 pb-3" role="list">
+      {data.map(item => (
+        <button key={item.name} type="button" onClick={() => onSelect(item)} role="listitem"
+                aria-label={`${item.name}: ${item.value} OS, ${item.pct}% da amostra`}
+                className="group relative min-h-11 w-full overflow-hidden rounded-lg border border-transparent px-3 py-2 text-left transition-colors hover:border-white/[0.08] hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+          <span className="absolute inset-y-1 left-1 rounded-md opacity-[0.12] transition-opacity group-hover:opacity-[0.18]"
+                style={{ width: `${Math.max(3, Math.round(item.value / max * 100))}%`, background: color }} />
+          <span className="relative flex items-center gap-3">
+            <span className="min-w-0 flex-1 truncate text-label font-semibold text-secondary">{item.name}</span>
+            <span className="font-mono text-body font-bold tabular-nums text-text">{item.value}</span>
+            <span className="w-10 text-right font-mono text-caption tabular-nums text-muted">{item.pct}%</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function TabDistribuicao({ d, rows, onDrill }: { d: Record<string,unknown>; rows: OSRow[]; onDrill: OnDrill }) {
   const gd = d as Record<string, ChartSeries>
-  const statusData  = toLV(gd.status)
-  const tipoData    = toLV(gd.tipo)
-  const cidadeData  = toLV(gd.cidade)
-  const equipesData = toLV(gd.equipes)
-  const agingData   = toLV(gd.aging)
-  const eficData    = toLV(gd.eficiencia)
-
-  const gev = gd.evolucao as { labels?: string[]; abertas?: number[]; concluidas?: number[] } | undefined
-  const evolucaoData = (gev?.labels ?? []).map((name: string, i: number) => ({
-    name,
-    Abertas:    gev?.abertas?.[i]    ?? 0,
-    Concluídas: gev?.concluidas?.[i] ?? 0,
-  }))
+  const statusData  = sortDistribution(gd.status)
+  const tipoData    = sortDistribution(gd.tipo)
+  const cidadeData  = sortDistribution(gd.cidade)
+  const equipesData = sortDistribution(gd.equipes)
+  const agingData   = sortDistribution(gd.aging)
+  const summary     = buildDistribuicaoSummary(rows.length, gd)
+  const cards = [
+    { label: 'OS na amostra', value: summary.total.toLocaleString('pt-BR'), sub: 'após período e frente' },
+    { label: 'Status predominante', value: summary.status?.name ?? '—', sub: summary.status ? `${summary.status.value} OS · ${summary.status.pct}%` : 'sem dados' },
+    { label: 'Categoria predominante', value: summary.categoria?.name ?? '—', sub: summary.categoria ? `${summary.categoria.value} OS · ${summary.categoria.pct}%` : 'sem dados' },
+    { label: 'Maior volume', value: summary.cidade?.name ?? '—', sub: summary.cidade ? `${summary.cidade.value} OS · ${summary.cidade.pct}%` : 'sem dados' },
+  ]
 
   return (
     <div className="space-y-4">
-      <SectionTitle icon={BarChart2}>Distribuição de OS</SectionTitle>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {cards.map(card => (
+          <div key={card.label} className="min-h-24 rounded-xl border border-white/[0.08] bg-card p-4">
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
+            <p className="mt-2 truncate font-mono text-xl font-bold text-text">{card.value}</p>
+            <p className="mt-1 text-caption text-muted">{card.sub}</p>
+          </div>
+        ))}
+      </div>
 
-        <ChartCard title="Status das OS" dot="#4ade80" height="h-56">
-          <DonutChart
-            data={statusData} colors={COLORS} centerLabel="OS"
-            onClick={(entry) => onDrill(`Status: ${entry.name}`, rows.filter(r => r.descsituacao === entry.name))}
-          />
+      <SectionTitle icon={BarChart2}>Composição da amostra</SectionTitle>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="Status das OS · quantidade e participação" dot="#4ade80" height="h-auto">
+          <RankedDistribution data={statusData} color="#4ade80"
+            onSelect={entry => onDrill(`Status: ${entry.name}`, rows.filter(r => r.descsituacao === entry.name))} />
         </ChartCard>
 
         <ChartCard title="Categoria de OS" dot="#22d3ee" height="h-56">
@@ -324,67 +363,24 @@ export function TabDistribuicao({ d, rows, onDrill }: { d: Record<string,unknown
             }}
           />
         </ChartCard>
-
-        <ChartCard title="OS por Cidade" dot="#facc15" height="h-56">
-          <BarChart data={cidadeData} layout="vertical">
-            <Bar dataKey="value" fill="#facc15"
-              onClick={(data: Record<string,unknown>) => onDrill(`Cidade: ${data.name}`, rows.filter(r => (r.nomedacidade || '').trim() === data.name))} />
-            <XAxis type="number" />
-            <YAxis dataKey="name" type="category" width={130} />
-            <Grid /><ChartTooltip />
-          </BarChart>
-        </ChartCard>
-
       </div>
 
-      <SectionTitle icon={BarChart2}>Desempenho Operacional</SectionTitle>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        <ChartCard title="Top 10 Equipes — Volume de OS" dot="#3b82f6" height="h-64" className="lg:col-span-2">
-          <BarChart data={equipesData}>
-            <Bar dataKey="value" fill="#3b82f6"
-              onClick={(data: Record<string,unknown>) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
-            <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip />
-          </BarChart>
+      <SectionTitle icon={BarChart2}>Distribuição operacional</SectionTitle>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="OS por Cidade" dot="#facc15" height="h-auto">
+          <RankedDistribution data={cidadeData} color="#facc15"
+            onSelect={entry => onDrill(`Cidade: ${entry.name}`, rows.filter(r => (r.nomedacidade || '').trim() === entry.name))} />
         </ChartCard>
 
-        <ChartCard title="SLA — Aging das OS" dot="#f97316" height="h-64">
-          <BarChart data={agingData}>
-            <Bar dataKey="value" fill="#f97316"
-              onClick={(data: {name: string}) => { const fn = (AGING_FILTER as Record<string, (r: OSRow) => boolean>)[data.name]; if (fn) onDrill(`Aging: ${data.name}`, rows.filter(fn)) }} />
-            <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip />
-          </BarChart>
+        <ChartCard title="Top 10 Equipes Designadas · volume de OS" dot="#3b82f6" height="h-auto">
+          <RankedDistribution data={equipesData} color="#3b82f6"
+            onSelect={entry => onDrill(`Equipe designada: ${entry.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === entry.name))} />
         </ChartCard>
-
       </div>
 
-      <SectionTitle icon={BarChart2}>Eficiência &amp; Tendência</SectionTitle>
-      <ChartCard title="Taxa de Conclusão por Equipe (%)" dot="#4ade80" height="h-96">
-        <BarChart data={eficData}>
-          <Bar dataKey="value" fill="#4ade80"
-            onClick={(data: Record<string,unknown>) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
-          <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip suffix="%" />
-        </BarChart>
-      </ChartCard>
-
-      <ChartCard title="Evolução Diária — Abertas vs Concluídas por Data de Fechamento" dot="#3b82f6" height="h-80">
-        <AreaChart
-          data={evolucaoData}
-          onClick={(cd: Record<string,unknown>) => {
-            type CDPayload = { activeLabel?: string; activePayload?: { name?: string }[] }
-            const cdp = cd as CDPayload
-            if (!cdp?.activeLabel || !cdp?.activePayload?.length) return
-            const label = cdp.activeLabel!
-            const ds    = cdp.activePayload![0].name
-            if (ds === 'Abertas')
-              onDrill(`Abertas em ${label}`, rows.filter(r => toISODate(r.datacadastro) === label))
-            else
-              onDrill(`Concluídas em ${label}`, rows.filter(r => isExecucaoReal(r.descsituacao) && closeISO(r) === label))
-          }}>
-          <Area dataKey="Abertas"    stroke="#3b82f6" fill="#3b82f6" name="Abertas"    />
-          <Area dataKey="Concluídas" stroke="#4ade80" fill="#4ade80" name="Concluídas" />
-          <LXAxis dataKey="name" /><LYAxis /><LGrid /><LTooltip /><LLegend />
-        </AreaChart>
+      <ChartCard title="Aging das OS · quantidade e participação" dot="#f97316" height="h-auto">
+        <RankedDistribution data={agingData} color="#f97316"
+          onSelect={entry => { const fn = (AGING_FILTER as Record<string, (r: OSRow) => boolean>)[entry.name]; if (fn) onDrill(`Aging: ${entry.name}`, rows.filter(fn)) }} />
       </ChartCard>
     </div>
   )
