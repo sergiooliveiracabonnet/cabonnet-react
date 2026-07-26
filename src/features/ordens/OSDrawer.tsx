@@ -109,6 +109,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
     dataagendamento: os.dataagendamento,
     equipeAgendada: eqAgendada,
     historico: agendamentoHistorico,
+    observacoesReagendamento: historico.filter(entry => entry.isReagend).map(entry => entry.texto),
   })
   const agendamentoSteps: StepItem[] = agendamentoSequence.map(item => ({
           icon: Calendar,
@@ -117,6 +118,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
           date: fmtDate(item.date),
           equipe: shortEquipe(item.equipe) || undefined,
           done: !item.isCurrent || isConcluida || isAtendimento,
+          obs: item.observacao,
           details: item.isCurrent ? {
             hora:          os.horaatendimento || null,
             periodo:       os.periodo         || null,

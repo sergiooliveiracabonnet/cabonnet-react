@@ -4,6 +4,7 @@ export interface AgendamentoSequenceItem {
   label: string
   date: string | null
   equipe: string | null
+  observacao: string | null
   isCurrent: boolean
 }
 
@@ -12,6 +13,7 @@ interface BuildAgendamentoSequenceInput {
   dataagendamento?: string | null
   equipeAgendada?: string | null
   historico: AgendamentoHistoricoEntry[]
+  observacoesReagendamento?: string[]
 }
 
 const datePart = (value?: string | null) => (value ?? '').trim().split(/[ T]/)[0]
@@ -27,21 +29,27 @@ export function buildAgendamentoSequence({
   dataagendamento,
   equipeAgendada,
   historico,
+  observacoesReagendamento = [],
 }: BuildAgendamentoSequenceInput): AgendamentoSequenceItem[] {
   const orderedHistory = [...historico].sort((a, b) => a.ts - b.ts)
-  const events: Array<Pick<AgendamentoSequenceItem, 'date' | 'equipe'>> = []
+  const events: Array<Pick<AgendamentoSequenceItem, 'date' | 'equipe' | 'observacao'>> = []
+  const firstPersistedTeam = orderedHistory[0]?.nomedaequipe || equipeAgendada || null
 
   if (dataatendimento?.trim()) {
-    events.push({ date: dataatendimento, equipe: equipeAgendada ?? null })
+    events.push({ date: dataatendimento, equipe: firstPersistedTeam, observacao: null })
   }
 
   for (const entry of orderedHistory) {
-    const event = { date: entry.dataagendamento, equipe: entry.nomedaequipe }
+    const event = {
+      date: entry.dataagendamento,
+      equipe: entry.nomedaequipe,
+      observacao: entry.observacoes || entry.observacaocritica || null,
+    }
     if (!events.some(existing => sameSchedule(existing, event))) events.push(event)
   }
 
   if (dataagendamento?.trim()) {
-    const current = { date: dataagendamento, equipe: equipeAgendada ?? null }
+    const current = { date: dataagendamento, equipe: equipeAgendada ?? null, observacao: null }
     if (!events.some(existing => sameSchedule(existing, current))) events.push(current)
   }
 
@@ -52,5 +60,6 @@ export function buildAgendamentoSequence({
       ? (index === 0 ? '1º Agendamento' : `Reagendamento ${index}`)
       : (index === 0 ? 'Agendamento' : `Reagendamento ${index}`),
     isCurrent: index === events.length - 1,
+    observacao: event.observacao || (index > 0 ? observacoesReagendamento[index - 1] ?? null : null),
   }))
 }

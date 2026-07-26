@@ -34,7 +34,7 @@ def reset_snapshots():
 
 
 def _csv(rows):
-    header = "numos,descsituacao,nomedaequipe,dataagendamento,nomedacidade,tiposervico,codigocliente"
+    header = "numos,descsituacao,nomedaequipe,equipeexecutou,dataagendamento,nomedacidade,tiposervico,codigocliente,observacoes,observacaocritica"
     linhas = [header] + [
         ",".join(str(r.get(k, "")) for k in header.split(",")) for r in rows
     ]
@@ -94,7 +94,7 @@ def test_equipe_change_without_status_change_is_detected(tmp_db):
     assert hist[1]["nomedaequipe"] == "F04"
 
 
-def test_first_load_does_not_flood_history(tmp_db):
+def test_first_load_seeds_initial_team_once(tmp_db):
     csv_v1 = _csv([{"numos": "2222222", "descsituacao": "Pendente", "nomedaequipe": "F01",
                      "dataagendamento": "01/07/2026", "nomedacidade": "Taubaté",
                      "tiposervico": "Instalação", "codigocliente": "C2"}])
@@ -107,10 +107,29 @@ def test_first_load_does_not_flood_history(tmp_db):
 
         hist = db._db_get_agendamento_history("2222222")
 
-    assert hist == []
+    assert len(hist) == 1
+    assert hist[0]["nomedaequipe"] == "F01"
 
 
-def test_no_change_produces_no_new_history_entry(tmp_db):
+def test_transition_preserves_observation_for_each_team(tmp_db):
+    first = _csv([{"numos": "4444444", "descsituacao": "Pendente", "nomedaequipe": "F08",
+                   "dataagendamento": "25/07/2026", "observacoes": "Cliente ausente"}])
+    second = _csv([{"numos": "4444444", "descsituacao": "Pendente", "nomedaequipe": "F11",
+                    "dataagendamento": "26/07/2026", "observacoes": "Motivo meteorológico"}])
+    with patch("cabonnet.db._DB_PATH", tmp_db):
+        cache._dados_cache_update(csv_pendente=first)
+        cache._dados_cache_update(csv_pendente=second)
+        import time
+        time.sleep(0.2)
+        hist = db._db_get_agendamento_history("4444444")
+
+    assert [(h["nomedaequipe"], h["observacoes"]) for h in hist] == [
+        ("F08", "Cliente ausente"),
+        ("F11", "Motivo meteorológico"),
+    ]
+
+
+def test_no_change_does_not_duplicate_initial_history_entry(tmp_db):
     csv_v1 = _csv([{"numos": "3333333", "descsituacao": "Pendente", "nomedaequipe": "F01",
                      "dataagendamento": "01/07/2026", "nomedacidade": "Taubaté",
                      "tiposervico": "Instalação", "codigocliente": "C3"}])
@@ -124,4 +143,5 @@ def test_no_change_produces_no_new_history_entry(tmp_db):
 
         hist = db._db_get_agendamento_history("3333333")
 
-    assert hist == []
+    assert len(hist) == 1
+    assert hist[0]["nomedaequipe"] == "F01"

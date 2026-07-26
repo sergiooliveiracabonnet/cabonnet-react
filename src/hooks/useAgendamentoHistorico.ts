@@ -6,6 +6,9 @@ export interface AgendamentoHistoricoEntry {
   nomedaequipe:    string | null
   dataagendamento: string | null
   descsituacao:    string | null
+  equipeexecutou?: string | null
+  observacoes?:    string | null
+  observacaocritica?: string | null
   ts:              number
 }
 

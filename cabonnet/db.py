@@ -87,6 +87,10 @@ def _db_init():
         """)
         con.execute("CREATE INDEX IF NOT EXISTS idx_ah_numos ON agendamento_history(numos)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_ah_ts    ON agendamento_history(ts)")
+        existing_ah_cols = {row[1] for row in con.execute("PRAGMA table_info(agendamento_history)")}
+        for col in ("equipeexecutou", "observacoes", "observacaocritica"):
+            if col not in existing_ah_cols:
+                con.execute(f"ALTER TABLE agendamento_history ADD COLUMN {col} TEXT DEFAULT ''")
         con.execute("""
             CREATE TABLE IF NOT EXISTS justificativas (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -365,8 +369,9 @@ def _db_save_agendamento_changes(rows):
         return
     ts = int(datetime.now().timestamp())
     data = [
-        (r.get("numos",""), r.get("nomedaequipe",""), r.get("dataagendamento",""),
-         r.get("descsituacao",""), r.get("nomedacidade",""), r.get("tiposervico",""), ts)
+        (r.get("numos",""), r.get("nomedaequipe",""), r.get("equipeexecutou",""),
+         r.get("dataagendamento",""), r.get("descsituacao",""), r.get("nomedacidade",""),
+         r.get("tiposervico",""), r.get("observacoes",""), r.get("observacaocritica",""), ts)
         for r in rows
     ]
     try:
@@ -374,14 +379,39 @@ def _db_save_agendamento_changes(rows):
             con = sqlite3.connect(_DB_PATH)
             con.executemany(
                 "INSERT INTO agendamento_history"
-                "(numos,nomedaequipe,dataagendamento,descsituacao,nomedacidade,tiposervico,ts) "
-                "VALUES(?,?,?,?,?,?,?)",
+                "(numos,nomedaequipe,equipeexecutou,dataagendamento,descsituacao,nomedacidade,tiposervico,observacoes,observacaocritica,ts) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?)",
                 data
             )
             con.commit()
             con.close()
     except Exception as ex:
         log_db.warning("Falha ao salvar agendamento_history: %s", ex)
+
+
+def _db_seed_agendamento_initial(rows):
+    """Grava o primeiro estado conhecido sem duplicar OS já persistidas."""
+    if not rows:
+        return
+    ts = int(datetime.now().timestamp())
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            for r in rows:
+                con.execute(
+                    "INSERT INTO agendamento_history"
+                    "(numos,nomedaequipe,equipeexecutou,dataagendamento,descsituacao,nomedacidade,tiposervico,observacoes,observacaocritica,ts) "
+                    "SELECT ?,?,?,?,?,?,?,?,?,? WHERE NOT EXISTS "
+                    "(SELECT 1 FROM agendamento_history WHERE numos=?)",
+                    (r.get("numos", ""), r.get("nomedaequipe", ""), r.get("equipeexecutou", ""),
+                     r.get("dataagendamento", ""), r.get("descsituacao", ""), r.get("nomedacidade", ""),
+                     r.get("tiposervico", ""), r.get("observacoes", ""), r.get("observacaocritica", ""),
+                     ts, r.get("numos", "")),
+                )
+            con.commit()
+            con.close()
+    except Exception as ex:
+        log_db.warning("Falha ao semear agendamento_history: %s", ex)
 
 
 def _db_get_agendamento_history(numos):
@@ -391,7 +421,8 @@ def _db_get_agendamento_history(numos):
             con = sqlite3.connect(_DB_PATH)
             con.row_factory = sqlite3.Row
             rows = con.execute(
-                "SELECT numos, nomedaequipe, dataagendamento, descsituacao, ts "
+                "SELECT numos, nomedaequipe, equipeexecutou, dataagendamento, descsituacao, "
+                "observacoes, observacaocritica, ts "
                 "FROM agendamento_history WHERE numos=? ORDER BY ts ASC",
                 (str(numos),)
             ).fetchall()

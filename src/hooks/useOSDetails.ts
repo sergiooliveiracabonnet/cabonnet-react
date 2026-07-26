@@ -56,6 +56,31 @@ function parseObs(raw: string): ParsedObs {
   }
 }
 
+function mapOcorrencias(raw: unknown): HistoricoEntry[] {
+  if (!Array.isArray(raw)) return []
+
+  return (raw as Record<string, unknown>[]).map(ocorrencia => {
+    const texto = String(
+      ocorrencia.descricao ?? ocorrencia.ocorrencia ?? ocorrencia.observacao ?? ocorrencia.texto ?? '',
+    ).trim()
+    const rawDate = String(
+      ocorrencia.data ?? ocorrencia.dataocorrencia ?? ocorrencia.d_data ?? ocorrencia.datacadastro ?? '',
+    ).trim()
+    const dateMatch = rawDate.match(/(\d{2}\/\d{2}(?:\/\d{4})?)(?:[ T]+(\d{2}:\d{2}))?/)
+    const autor = String(
+      ocorrencia.usuario ?? ocorrencia.nomeusuario ?? ocorrencia.autor ?? ocorrencia.atendente ?? '',
+    ).trim()
+
+    return {
+      texto,
+      autor: autor || null,
+      data: dateMatch?.[1] ?? null,
+      hora: dateMatch?.[2] ?? null,
+      isReagend: REAGEND_RE.test(texto),
+    }
+  }).filter(entry => entry.texto)
+}
+
 interface Material {
   nome:       string
   id:         string
@@ -128,7 +153,13 @@ export function parseOSDetails(data: unknown): OSDetailsResult['details'] {
   const rawOs = raw.os
   const osObj: Record<string, unknown> = (typeof rawOs === 'object' && rawOs !== null) ? rawOs as Record<string, unknown> : {}
 
-  const { historico, obsTecnico, nomeTecnico } = parseObs((osObj.observacoes as string) || '')
+  const parsedObs = parseObs((osObj.observacoes as string) || '')
+  const ocorrencias = mapOcorrencias(raw.ocorrencias)
+  const occurrenceTexts = new Set(ocorrencias.map(entry => entry.texto.trim().toLocaleUpperCase('pt-BR')))
+  const historico = [
+    ...ocorrencias,
+    ...parsedObs.historico.filter(entry => !occurrenceTexts.has(entry.texto.trim().toLocaleUpperCase('pt-BR'))),
+  ]
 
   const mapMaterial = (m: Record<string, unknown>): Material => ({
     nome:       String(m.material || m.nome || m.descricao || '').trim(),
@@ -146,8 +177,8 @@ export function parseOSDetails(data: unknown): OSDetailsResult['details'] {
 
   return {
     historico,
-    obsTecnico,
-    nomeTecnico,
+    obsTecnico:  parsedObs.obsTecnico,
+    nomeTecnico: parsedObs.nomeTecnico,
     observacoes:       (osObj.observacoes as string) || null,
     observacaoCritica: (osObj.observacaocritica as string) || null,
     reagendada:        raw.reagendada === true || raw.reagendada === 'true',

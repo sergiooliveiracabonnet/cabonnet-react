@@ -10,7 +10,10 @@ from datetime import date
 
 from cabonnet.config import _SLA_LIMITS, _REVISITA_TTL_DIAS, TELEGRAM_CHAT_ALERTAS
 from cabonnet import state
-from cabonnet.db import _db_save_agendamento_changes, _db_save_status_changes
+from cabonnet.db import (
+    _db_save_agendamento_changes, _db_seed_agendamento_initial,
+    _db_save_status_changes,
+)
 from cabonnet.utils import _parse_csv_rows, _parse_data_br, isConcluida_str
 from cabonnet.telegram import (
     _telegram_enabled, _tg_esc, _telegram_send, _telegram_send,
@@ -122,7 +125,7 @@ def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro="", detect_
     )
     row_map     = {r["numos"]: r for r in all_rows if r.get("numos")}
     new_snap    = {n: r.get("descsituacao", "")  for n, r in row_map.items()}
-    new_eq_snap = {n: (r.get("nomedaequipe", ""), r.get("dataagendamento", "")) for n, r in row_map.items()}
+    new_eq_snap = {n: dict(r) for n, r in row_map.items()}
 
     tid = threading.get_ident()
     log.info("[Cache][diag] _dados_cache_update início — origem=%s thread=%s", origem, tid)
@@ -145,16 +148,23 @@ def _dados_cache_update(csv_pendente="", csv_agendado="", csv_futuro="", detect_
     log.info("[Cache] Dados atualizados — %d linhas (origem=%s thread=%s)", len(rows_agendado), origem, tid)
 
     if first_load:
+        initial_rows = [r for r in row_map.values() if r.get("dataagendamento")]
+        if initial_rows:
+            # A primeira fotografia precisa estar gravada antes da proxima
+            # atualizacao; caso contrario uma troca muito rapida poderia ser
+            # inserida primeiro e esconder a equipe inicial.
+            _db_seed_agendamento_initial(initial_rows)
         log.info("[Status] Snapshot inicial — %d OS indexadas", len(new_snap))
         return
 
     # Troca de equipe e/ou reagendamento — independente de descsituacao mudar.
     # Cobre tanto OS que já existia e mudou de equipe/data quanto OS nova que
     # aparece já com um agendamento definido (primeiro registro do seu histórico).
-    eq_changes = [
-        row_map[n] for n, val in new_eq_snap.items()
-        if val[1] and (n not in old_eq_snap or old_eq_snap[n] != val)
-    ]
+    def _schedule_key(r):
+        return (r.get("nomedaequipe", ""), r.get("dataagendamento", ""))
+    eq_changes = [row_map[n] for n, val in new_eq_snap.items()
+                  if val.get("dataagendamento") and
+                  (n not in old_eq_snap or _schedule_key(old_eq_snap[n]) != _schedule_key(val))]
     if eq_changes:
         log.info("[Agendamento] %d troca(s) de equipe/agendamento detectada(s)", len(eq_changes))
         threading.Thread(target=_db_save_agendamento_changes, args=(eq_changes,), daemon=True).start()
