@@ -167,8 +167,8 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
     </div>
   )
 
-  const maxVal   = Math.max(...agingEntries.map(e => agingTotals[e.key] ?? 0), 1)
   const criticas = agingTotals['critico'] ?? 0
+  const riscoTotal = (agingTotals['estourado'] ?? 0) + criticas
   const abrirBucket = (e: typeof agingEntries[number]) => {
     if (!onOpen || !filaAtiva) return
     onOpen(`SLA ${e.label} — OS na fila`, filaAtiva.filter(r => r._aging != null && e.match(r)))
@@ -190,21 +190,56 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
         Fila Ativa — Prazo Consumido
       </DashboardPanelHeader>
 
-      <div className="mt-4 flex items-end gap-2 h-[136px]">
+      <div className="mt-4 flex items-center justify-between gap-3 text-caption">
+        <span className="text-muted">Distribuição da fila</span>
+        <span className={`font-semibold tabular-nums ${riscoTotal > 0 ? 'text-orange' : 'text-green'}`}>
+          {riscoTotal} em risco
+        </span>
+      </div>
+
+      <div
+        className="mt-2 flex h-3 overflow-hidden rounded-full bg-elevated ring-1 ring-inset ring-border"
+        role="img"
+        aria-label={`Distribuição de ${agingTotal} OS por consumo do SLA`}
+      >
+        {agingEntries.map(e => {
+          const val = agingTotals[e.key] ?? 0
+          const pct = agingTotal > 0 ? val / agingTotal * 100 : 0
+          return pct > 0 ? (
+            <span key={e.key} style={{ width: `${pct}%`, background: e.color }} aria-hidden="true" />
+          ) : null
+        })}
+      </div>
+
+      <div className="mt-3 space-y-1">
         {agingEntries.map(e => {
           const val = agingTotals[e.key] ?? 0
           const pct = agingTotal > 0 ? Math.round(val / agingTotal * 100) : 0
           return (
             <button key={e.key} type="button" onClick={() => abrirBucket(e)}
-                    className="flex-1 h-full flex flex-col items-center justify-end gap-1.5 cursor-pointer group bg-transparent border-0 p-0"
+                    className="group grid min-h-11 w-full cursor-pointer grid-cols-[88px_minmax(60px,1fr)_36px_34px]
+                               items-center gap-2 rounded-md border-0 bg-transparent px-1.5 text-left
+                               transition-colors duration-200 hover:bg-elevated focus-visible:outline-none focus-visible:ring-2
+                               focus-visible:ring-primary/60 motion-reduce:transition-none"
                     aria-label={`SLA ${e.label}: ${val} OS, ${pct}% da fila. Abrir OS`}
                     title={`${e.label}: ${val} OS (${pct}%) — % do prazo de SLA já consumido · clique para listar`}>
-              <span className={`text-label font-bold tabular-nums ${e.hot ? 'text-red' : 'text-text'}`}>
-                {val}
+              <span className={`flex items-center gap-2 text-caption font-semibold ${e.hot ? 'text-red' : 'text-secondary'}`}>
+                <span className="h-2 w-2 flex-shrink-0 rounded-sm" style={{ background: e.color }} aria-hidden="true" />
+                {e.label}
               </span>
-              <div className="w-full max-w-[56px] rounded-t transition-all duration-700 group-hover:brightness-125"
-                   style={{ height: `${Math.max(3, Math.round(val / maxVal * 96))}px`, background: e.color }} />
-              <span className={`text-caption ${e.hot ? 'text-red font-semibold' : 'text-muted group-hover:text-secondary'}`}>{e.label}</span>
+              <span className="h-2 overflow-hidden rounded-full bg-elevated ring-1 ring-inset ring-border">
+                <span
+                  className="block h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none"
+                  style={{ width: `${pct}%`, background: e.color }}
+                  role="progressbar"
+                  aria-label={`${e.label}: ${pct}% da fila`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={pct}
+                />
+              </span>
+              <span className={`text-right text-label font-bold tabular-nums ${e.hot ? 'text-red' : 'text-text'}`}>{val}</span>
+              <span className="text-right text-caption text-muted tabular-nums">{pct}%</span>
             </button>
           )
         })}

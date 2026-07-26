@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import {
   FornecedoresPanel,
+  AgingPanel,
   MetaMesCard,
   QualidadePeriodoCard,
   RitmoEquipesPanel,
@@ -68,6 +69,22 @@ describe('semântica dos painéis analíticos', () => {
 })
 
 describe('drill-downs comparativos', () => {
+  it('apresenta a distribuição do prazo consumido com quantidade e percentual', () => {
+    render(<AgingPanel pulso={makePulso({
+      agingDist: { ok: 40, limite: 30, estourado: 20, critico: 10 } as never,
+      backlogDias: 3.2,
+    })} />)
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Fila Ativa — Prazo Consumido' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /distribuição de 100 OS por consumo do SLA/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('progressbar')).toHaveLength(4)
+    expect(screen.getByText('30 em risco')).toBeInTheDocument()
+    expect(screen.getByText('40%')).toBeInTheDocument()
+    expect(screen.getByText('30%')).toBeInTheDocument()
+    expect(screen.getByText('20%')).toBeInTheDocument()
+    expect(screen.getByText('10%')).toBeInTheDocument()
+  })
+
   it('abre as OS da equipe selecionada no painel de ritmo', () => {
     const onOpen = vi.fn()
     const semaforo: CampoSemaforo[] = [{
