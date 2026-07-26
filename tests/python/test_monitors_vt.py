@@ -4,7 +4,7 @@
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from cabonnet.monitors import _classificar_vt_alerta, _enviar_alertas_vt
+from cabonnet.monitors import _classificar_vt_alerta, _enviar_alertas_vt, _vt_pode_enviar_normalizacao
 
 
 def test_enviar_alertas_vt_sem_items_nao_envia_nada():
@@ -48,6 +48,21 @@ def test_vt_violado_dispara_nos_slots_de_tres_em_tres_horas():
         agora = datetime(2026, 7, 26, hora, 1)
         assert _classificar_vt_alerta(-3, registro, agora, aging_h=27) == "violado"
         registro["last_sent"] = agora
+
+
+def test_vt_violado_nao_dispara_atrasado_no_slot_das_19h():
+    agora = datetime(2026, 7, 26, 19, 11)
+    assert _classificar_vt_alerta(-3, None, agora, aging_h=27) is None
+
+
+def test_vt_em_risco_nao_dispara_a_partir_das_19h():
+    agora = datetime(2026, 7, 26, 19, 0)
+    assert _classificar_vt_alerta(2, None, agora, aging_h=22) is None
+
+
+def test_vt_normalizado_nao_notifica_a_partir_das_19h():
+    assert _vt_pode_enviar_normalizacao(datetime(2026, 7, 26, 18, 59)) is True
+    assert _vt_pode_enviar_normalizacao(datetime(2026, 7, 26, 19, 0)) is False
 
 
 def test_vt_violado_nao_dispara_fora_dos_slots_programados():

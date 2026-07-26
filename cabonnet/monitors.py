@@ -611,8 +611,14 @@ def _resumo_scheduler_loop():
 _VT_RISK_WINDOW_H      = 4     # horas restantes para entrar em estágio de risco
 _VT_MIN_AGING_H        = 12    # não alerta VT aberta há menos de 12h (evita ruído em VT recém-abertas)
 _VT_OPERATION_START_H  = 7
-_VT_OPERATION_END_H    = 23
+_VT_OPERATION_END_H    = 19
 _VT_VIOLADO_HOURS      = (7, 10, 13, 16, 19)
+_VT_SLOT_GRACE_MIN     = 10
+
+
+def _vt_pode_enviar_normalizacao(agora):
+    """Normalizações seguem a janela operacional e nunca notificam após 19h."""
+    return _VT_OPERATION_START_H <= agora.hour < _VT_OPERATION_END_H
 
 
 def _classificar_vt_alerta(restante, registro, agora, aging_h=float("inf")):
@@ -629,7 +635,7 @@ def _classificar_vt_alerta(restante, registro, agora, aging_h=float("inf")):
         return None
     estagio_atual = registro["estagio"] if registro else None
     if restante <= 0:
-        if agora.hour not in _VT_VIOLADO_HOURS:
+        if agora.hour not in _VT_VIOLADO_HOURS or agora.minute >= _VT_SLOT_GRACE_MIN:
             return None
         if estagio_atual != "violado":
             return "violado"
@@ -766,8 +772,8 @@ def _vt_monitor_loop():
                     linhas.append(f"✅ <b>OS {_tg_esc(numos)}</b> · {_tg_esc(_operadora_da_os(r) or 'Sem fornecedor')} · saiu da fila ativa")
                     state._vt_alertados.pop(numos, None)
                 linhas += _tg_footer("Situação normalizada desde o último alerta")
-                _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
-                state._sem_equipe_alertadas.update(str(r.get("numos", "")) for r, _ in sem_eq)
+                if _vt_pode_enviar_normalizacao(agora):
+                    _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
 
         except Exception as ex:
             log.warning("[VTMonitor] Erro: %s", str(ex)[:120])
