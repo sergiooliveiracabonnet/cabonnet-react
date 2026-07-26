@@ -24,6 +24,7 @@ import { OSDetailModal } from './OSDetailModal'
 import { useOSDetails }  from '../../hooks/useOSDetails'
 import { useAgendamentoHistorico } from '../../hooks/useAgendamentoHistorico'
 import { ClassificarEncerramento } from './ClassificarEncerramento'
+import { buildAgendamentoSequence } from './osTimeline'
 
 export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; onClose: () => void }) {
   const [showModal, setShowModal] = useState(false)
@@ -57,13 +58,11 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   const sit           = os._situacaoEfetiva ?? os.descsituacao
   const isConcluida   = sit === 'Concluída'
   const isAtendimento = sit === 'Atendimento'
-  const hasAgend      = !!os.dataagendamento?.trim()
   const obsGeral = osDetails?.observacoes || os.observacoes || os.obs || os.observacao || os.nota
                || os.descricaoobs || os.descricao_obs || os.historico
                || os.informacoes || os.detalhes || os.descricao || null
   const obsCrit = osDetails?.observacaoCritica || os.observacaocritica || os.obscritica || null
   const fornLabel     = FORN_LABEL[os._fornecedor as Fornecedor] ?? os._fornecedor ?? null
-  const hasAtend      = !!(os.dataatendimento as string | undefined)?.trim()
   const hasIni        = !!(os.datainicio as string | undefined)?.trim()
   const hasExec       = !!os.dataexecucao?.trim()
   const hasBaixa      = !!os.databaixa?.trim()
@@ -105,17 +104,20 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   // Histórico real de equipe/data por agendamento (cache.py grava 1 linha a cada
   // troca detectada). Sem isso, o Grafana só devolve o estado atual da OS e
   // reagendamentos anteriores para outras equipes ficam invisíveis na timeline.
-  const agendamentoSteps: StepItem[] = !hasAgend ? [] : agendamentoHistorico.length > 1
-    ? agendamentoHistorico.map((h, idx) => {
-        const isLast = idx === agendamentoHistorico.length - 1
-        return {
+  const agendamentoSequence = buildAgendamentoSequence({
+    dataatendimento: os.dataatendimento as string | undefined,
+    dataagendamento: os.dataagendamento,
+    equipeAgendada: eqAgendada,
+    historico: agendamentoHistorico,
+  })
+  const agendamentoSteps: StepItem[] = agendamentoSequence.map(item => ({
           icon: Calendar,
-          color: isLast ? (isConcluida || isAtendimento ? 'green' : 'yellow') : 'cyan',
-          label: idx === 0 ? 'Agendamento' : `Reagendamento ${idx}`,
-          date: fmtDate(h.dataagendamento),
-          equipe: shortEquipe(h.nomedaequipe) || undefined,
-          done: !isLast || isConcluida || isAtendimento,
-          details: isLast ? {
+          color: item.isCurrent ? (isConcluida || isAtendimento ? 'green' : 'yellow') : 'cyan',
+          label: item.label,
+          date: fmtDate(item.date),
+          equipe: shortEquipe(item.equipe) || undefined,
+          done: !item.isCurrent || isConcluida || isAtendimento,
+          details: item.isCurrent ? {
             hora:          os.horaatendimento || null,
             periodo:       os.periodo         || null,
             servico:       os.servico         || null,
@@ -123,21 +125,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
             reagendada:    d?.reagendada      ?? null,
             historico:     loadingDetails ? null : historico,
           } : undefined,
-        }
-      })
-    : [{
-        icon: Calendar, color: isConcluida || isAtendimento ? 'green' : 'yellow',
-        label: 'Agendamento', date: fmtDate(os.dataagendamento),
-        equipe: eqAgendada, done: isConcluida || isAtendimento,
-        details: {
-          hora:          os.horaatendimento || null,
-          periodo:       os.periodo         || null,
-          servico:       os.servico         || null,
-          equipeReagend: d?.equipeReagend   || null,
-          reagendada:    d?.reagendada      ?? null,
-          historico:     loadingDetails ? null : historico,
-        },
-      }]
+        }))
 
   const steps = [
     {
@@ -149,16 +137,6 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
       },
     },
     ...agendamentoSteps,
-    hasAtend && {
-      icon: Calendar, color: 'cyan', label: '1º Agendamento',
-      date: fmtDate(os.dataatendimento as string), equipe: eqAgendada,
-      done: isConcluida || isAtendimento,
-      details: {
-        hora:      os.horaatendimento || null,
-        periodo:   os.periodo         || null,
-        historico: loadingDetails ? null : historico,
-      },
-    },
     hasIni && {
       icon: Wrench, color: 'cyan', label: 'Início da Execução',
       // Mostra quem executou — pode ser diferente de quem foi agendado
