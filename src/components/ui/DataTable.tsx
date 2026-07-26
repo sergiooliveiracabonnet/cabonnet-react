@@ -66,15 +66,25 @@ export function DataTable<T extends Record<string, unknown>>({
     : rows
 
   const wrapRef = useRef<HTMLDivElement>(null)
-  // Offset medido via effect (nunca lido de ref durante o render) — usado como scrollMargin
-  // para o virtualizador saber a posição real da tabela dentro do scroll da página.
-  // Sem array de dependências: um layout effect roda após TODO commit, então o offset
-  // se auto-corrige caso algo acima da tabela mude de altura após o mount (filtro
-  // expandindo/recolhendo, banner sumindo, resize) — sem precisar ler ref.current no render.
+  // Offset usado pelo virtualizador. ResizeObserver cobre mudanças de layout sem
+  // disparar uma atualização de estado após todo render da tabela.
   const [scrollMargin, setScrollMargin] = useState(0)
   useLayoutEffect(() => {
-    setScrollMargin(wrapRef.current?.offsetTop ?? 0)
-  })
+    const element = wrapRef.current
+    if (!element) return
+    const measure = () => {
+      const next = element.offsetTop
+      setScrollMargin(current => current === next ? current : next)
+    }
+    measure()
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    observer?.observe(element)
+    window.addEventListener('resize', measure)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [rows.length, density, stickyHeader])
 
   const virtual = sorted.length > VIRTUALIZE_MIN
   const virtualizer = useWindowVirtualizer({
@@ -132,10 +142,18 @@ export function DataTable<T extends Record<string, unknown>>({
               onClick={() => onRowClick?.(row)}
               onMouseEnter={(e) => onRowHover?.(row, e.currentTarget.getBoundingClientRect())}
               onMouseLeave={() => onRowLeave?.()}
+              role={onRowClick ? 'button' : undefined}
+              tabIndex={onRowClick ? 0 : undefined}
+              aria-label={onRowClick ? `Abrir detalhes da ordem ${String(row.numos ?? row.nome ?? '')}` : undefined}
+              onKeyDown={(event) => {
+                if (!onRowClick || (event.key !== 'Enter' && event.key !== ' ')) return
+                event.preventDefault()
+                onRowClick(row)
+              }}
               className={`border-b border-white/[0.04] ${textSize[density]}
                           transition-colors duration-fast text-secondary
                           hover:bg-primary/[0.07] hover:text-text
-                          ${onRowClick ? 'cursor-pointer' : ''}
+                          ${onRowClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50' : ''}
                           ${row._critical ? 'bg-red/[0.04]' : ''}`}
             >
               {columns.map((col) => (

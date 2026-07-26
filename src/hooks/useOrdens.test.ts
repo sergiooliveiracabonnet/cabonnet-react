@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { withCopeQuandoPendente, splitAgendaFutura, isAgendadaEm, dataBR } from './useOrdens'
+import { withCopeQuandoPendente, splitAgendaFutura, isAgendadaEm, dataBR, matchesOSSearch } from './useOrdens'
 import { enrichRows } from '../lib/transform'
 import type { OSRow } from '../lib/types'
 
@@ -214,5 +214,26 @@ describe('matchesAging — filtro de aging', () => {
   it('filtro vazio → todos passam', () => {
     expect(matchesAging(0,   '')).toBe(true)
     expect(matchesAging(100, '')).toBe(true)
+  })
+})
+
+describe('matchesOSSearch — pesquisa operacional normalizada', () => {
+  const row = makeOS({
+    nomecliente: 'JOÃO D’ÁVILA',
+    codigocontrato: 'CTR-90871',
+    cpf: '123.456.789-01',
+    bairro: 'JARDIM DAS FLORES',
+    logradouro: 'RUA DAS ACÁCIAS',
+    nomedaequipe: 'EQUIPE F08',
+    nometecnico: 'ÉLCIO SILVA',
+  })
+
+  it.each(['joao', 'davila', '90871', '12345678901', 'flores', 'acacias', 'f08', 'elcio'])(
+    'encontra a OS por "%s"',
+    query => expect(matchesOSSearch(row, query)).toBe(true),
+  )
+
+  it('não encontra um termo ausente', () => {
+    expect(matchesOSSearch(row, 'cliente inexistente')).toBe(false)
   })
 })

@@ -62,3 +62,16 @@ describe('DataTable — estado vazio', () => {
     expect(screen.queryByText('Nenhum resultado encontrado')).not.toBeInTheDocument()
   })
 })
+
+describe('DataTable — abertura acessível da linha', () => {
+  it('permite abrir uma linha clicável com Enter e Espaço', () => {
+    const opened: string[] = []
+    render(<DataTable columns={columns} rows={rows} onRowClick={row => opened.push(row.nome)} />)
+    const firstDataRow = screen.getAllByRole('button', { name: /abrir detalhes/i })[0]
+
+    fireEvent.keyDown(firstDataRow, { key: 'Enter' })
+    fireEvent.keyDown(firstDataRow, { key: ' ' })
+
+    expect(opened).toEqual(['Bravo', 'Bravo'])
+  })
+})

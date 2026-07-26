@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BarChart2, ChevronUp, AlertTriangle, Download, Send, CheckCircle, CalendarClock, FileText, Router, Wrench, HardHat, Copy, Users } from 'lucide-react'
+import { BarChart2, ChevronUp, AlertTriangle, Download, Send, CheckCircle, CalendarClock, FileText, Router, Wrench, HardHat, Copy, Users, SlidersHorizontal, RefreshCw } from 'lucide-react'
 import type { OSRow } from '../../lib/types'
 type ColRender = (value: unknown, row: OSRow) => React.ReactNode
 import { useOrdens } from '../../hooks/useOrdens'
@@ -130,6 +130,8 @@ export default function OrdensPage() {
   const [hoverRect,       setHoverRect]       = useState<DOMRect | null>(null)
   const [tgModal,         setTgModal]         = useState(false)
   const [copied,          setCopied]          = useState(false)
+  const [moreFilters,     setMoreFilters]     = useState(false)
+  const [actionError,     setActionError]     = useState('')
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tableRef   = useRef<HTMLDivElement>(null)
 
@@ -186,6 +188,7 @@ export default function OrdensPage() {
   }
 
   async function handleCopyImage() {
+    setActionError('')
     try {
       // ── Equipe selecionada: canvas puro (sem captura de DOM) ──────────────
       if (os.equipe) {
@@ -213,16 +216,19 @@ export default function OrdensPage() {
       setTimeout(() => setCopied(false), 2500)
     } catch (e) {
       console.error('Clipboard error:', e)
+      setActionError('Não foi possível copiar a imagem. Verifique a permissão da área de transferência.')
     }
   }
 
   function handleExport() {
+    setActionError('')
     const date = new Date().toISOString().slice(0, 10)
     logAudit('CSV exportado', `${os.filtered.length} OS · ordens_${date}.csv`, 'export')
     exportCSV(os.filtered, `ordens_${date}.csv`)
   }
 
   function handleExportPDF() {
+    setActionError('')
     const date = new Date().toISOString().slice(0, 10)
     logAudit('PDF exportado', `${os.filtered.length} OS · ordens_${date}.pdf`, 'export')
     exportOrdensPDF(os.filtered, `ordens_${date}.pdf`)
@@ -236,6 +242,11 @@ export default function OrdensPage() {
   const equipeOpts  = (opts.equipes  ?? []).map(e => ({ value: e, label: shortEquipe(e) }))
   const periodoOpts = (opts.periodos ?? []).map(p => ({ value: p, label: p }))
 
+  function clearAllFilters() {
+    os.clearFilters()
+    setGroupBy('none')
+  }
+
   return (
     <div className="space-y-4 animate-fade-in">
 
@@ -244,31 +255,21 @@ export default function OrdensPage() {
         title="Ordens de Serviço"
         actions={
           <>
+            <details className="relative group">
+              <summary className="list-none cursor-pointer min-h-9 inline-flex items-center gap-2 px-3 rounded-md border border-primary/30 text-primary text-label font-semibold hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+                <Download size={13} /> Exportar <span className="text-muted">({os.filtered.length})</span>
+              </summary>
+              <div className="absolute right-0 top-full mt-2 z-dropdown w-48 rounded-xl border border-white/[0.10] bg-card-high shadow-xl p-1.5">
+                <button onClick={handleCopyImage} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text">
+                  {copied ? <CheckCircle size={14} className="text-green" /> : <Copy size={14} />} {copied ? 'Imagem copiada' : 'Copiar imagem'}
+                </button>
+                <button onClick={handleExport} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text"><Download size={14} /> Baixar CSV</button>
+                <button onClick={handleExportPDF} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text"><FileText size={14} /> Baixar PDF</button>
+              </div>
+            </details>
             <Button
               variant="outline" size="sm"
-              className={`gap-1.5 transition-all duration-300
-                ${copied
-                  ? 'border-green-500/50 text-green bg-green-500/10'
-                  : 'border-green/30 text-green hover:bg-green/10'}`}
-              onClick={handleCopyImage}
-            >
-              {copied
-                ? <><CheckCircle size={11} /> Copiado!</>
-                : <><Copy size={11} /> Copiar Imagem</>}
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
-              <Download size={11} /> CSV ({os.filtered.length})
-            </Button>
-            <Button
-              variant="outline" size="sm"
-              className="gap-1.5 border-cyan/30 text-cyan hover:bg-cyan/10"
-              onClick={handleExportPDF}
-            >
-              <FileText size={11} /> PDF
-            </Button>
-            <Button
-              variant="outline" size="sm"
-              className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+              className="gap-1.5 min-h-9 border-primary/30 text-primary hover:bg-primary/10"
               onClick={() => setTgModal(true)}
             >
               <Send size={11} /> Telegram
@@ -277,13 +278,21 @@ export default function OrdensPage() {
         }
       />
 
+      {actionError && (
+        <div role="alert" className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red/25 bg-red/[0.07] text-label text-red">
+          <AlertTriangle size={15} /> {actionError}
+        </div>
+      )}
+
+      <p className="text-caption font-bold uppercase tracking-[0.08em] text-muted">Indicadores do resultado atual</p>
+
       {/* ── Opções de visualização ── */}
       <div className="flex items-center gap-3 flex-wrap">
         {/* KPI toggle */}
         <button
           onClick={() => setKpiVisible(v => !v)}
-          className="flex items-center gap-1.5 text-caption font-semibold text-secondary hover:text-text
-                     border border-white/[0.08] rounded-xl px-3 py-1.5 transition-all duration-fast"
+          className="flex items-center gap-1.5 min-h-9 text-caption font-semibold text-secondary hover:text-text
+                     border border-white/[0.08] rounded-xl px-3 transition-all duration-fast"
         >
           <BarChart2 size={12} /> KPIs
           <ChevronUp size={11} className={`transition-transform ${kpiVisible ? '' : 'rotate-180'}`} />
@@ -293,7 +302,7 @@ export default function OrdensPage() {
         <button
           onClick={() => setGroupBy(g => g === 'cliente' ? 'none' : 'cliente')}
           className={`flex items-center gap-1.5 text-caption font-semibold
-                     border rounded-xl px-3 py-1.5 transition-all duration-fast
+                     border rounded-xl px-3 min-h-9 transition-all duration-fast
                      ${groupBy === 'cliente'
                        ? 'bg-primary/15 border-primary/40 text-primary'
                        : 'border-white/[0.08] text-secondary hover:text-text'}`}
@@ -307,7 +316,7 @@ export default function OrdensPage() {
             <button
               key={d.value}
               onClick={() => os.setDensity(d.value)}
-              className={`px-2.5 py-1 rounded-lg text-caption font-semibold transition-all duration-fast
+              className={`px-2.5 min-h-8 rounded-lg text-caption font-semibold transition-all duration-fast
                           ${os.density === d.value
                             ? 'bg-primary/15 text-primary'
                             : 'text-muted hover:text-secondary'}`}
@@ -392,21 +401,29 @@ export default function OrdensPage() {
       </div>
 
       {/* ── Barra de filtros ── */}
-      <div className="bg-card border border-white/[0.08] rounded-xl p-3 flex flex-wrap gap-2 items-center">
+      <div className="bg-card border border-white/[0.08] rounded-xl p-3 space-y-2">
+        <div className="flex flex-wrap gap-2 items-center">
         <SearchBox
           value={os.search}
           onChange={os.setSearch}
-          placeholder="Buscar cliente, nº OS, cidade…"
-          className="w-64"
+          placeholder="Buscar OS, cliente, CPF, contrato, endereço…"
+          className="w-full sm:w-80"
         />
         <FilterSelect value={os.status}     onChange={os.setStatus}     options={statusOptions}     placeholder="Status"      className="w-44" />
+        <FilterSelect value={os.cidade}     onChange={os.setCidade}     options={cidadeOpts}        placeholder="Cidade"      className="w-36" />
+        <FilterSelect value={os.equipe}     onChange={os.setEquipe}     options={equipeOpts}        placeholder="Equipe"      className="w-36" />
+        <button onClick={() => setMoreFilters(v => !v)} className={`min-h-9 px-3 inline-flex items-center gap-2 rounded-lg border text-caption font-semibold ${moreFilters ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/[0.08] text-secondary hover:text-text'}`}>
+          <SlidersHorizontal size={13} /> Mais filtros <ChevronUp size={11} className={`transition-transform ${moreFilters ? '' : 'rotate-180'}`} />
+        </button>
+        {os.filtersActive && <Button variant="ghost" size="sm" className="min-h-9" onClick={clearAllFilters}>Limpar tudo</Button>}
+        </div>
+
+        {moreFilters && <div className="pt-2 border-t border-white/[0.06] flex flex-wrap gap-2 items-center animate-slide-down">
         {(os.status === 'Reagendamento' || os.reagendTipo) && (
           <FilterSelect value={os.reagendTipo} onChange={os.setReagendTipo} options={reagendTipoOptions} placeholder="Subtipo reag." className="w-40" />
         )}
         <FilterSelect value={os.tipo}       onChange={os.setTipo}       options={tipoOpts}          placeholder="Tipo"        className="w-36" />
-        <FilterSelect value={os.cidade}     onChange={os.setCidade}     options={cidadeOpts}        placeholder="Cidade"      className="w-36" />
         <FilterSelect value={os.bairro}     onChange={os.setBairro}     options={bairroOpts}        placeholder="Bairro"      className="w-32" />
-        <FilterSelect value={os.equipe}     onChange={os.setEquipe}     options={equipeOpts}        placeholder="Equipe"      className="w-36" />
         <FilterSelect value={os.aging}      onChange={os.setAging}      options={agingOptions}      placeholder="Aging"       className="w-32" />
         <FilterSelect value={os.fornecedor} onChange={os.setFornecedor} options={fornecedorOptions} placeholder="Fornecedor"  className="w-36" />
         <FilterSelect value={os.periodo}   onChange={os.setPeriodo}   options={periodoOpts}       placeholder="Período"     className="w-32" />
@@ -424,11 +441,11 @@ export default function OrdensPage() {
           Rede {os.hideRede ? 'OFF' : 'ON'}
         </button>
 
-        <Button variant="ghost" size="sm" onClick={os.clearFilters}>Limpar</Button>
+        </div>}
       </div>
 
       {/* Banner filtros ativos */}
-      {os.filtered.length !== os.ordens.length && (
+      {os.filtersActive && (
         <div className="flex items-center justify-between px-4 py-2.5 rounded-xl
                         bg-primary/[0.06] border border-primary/20 text-label text-secondary">
           <span className="flex items-center gap-2 flex-wrap">
@@ -442,7 +459,7 @@ export default function OrdensPage() {
             {os.hideRede     && <span className="rounded-full px-2 py-0.5 text-caption font-bold bg-red/10 text-red/80 border border-red/20">Rede oculta</span>}
             {os.periodo      && <span className="badge-purple  rounded-full px-2 py-0.5 text-caption font-bold">{os.periodo}</span>}
           </span>
-          <button onClick={os.clearFilters} className="text-muted hover:text-red transition-colors text-caption font-semibold">
+          <button onClick={clearAllFilters} className="text-muted hover:text-red transition-colors text-caption font-semibold">
             Limpar filtros
           </button>
         </div>
@@ -452,6 +469,13 @@ export default function OrdensPage() {
       <div ref={tableRef} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
         {os.isLoading ? (
           <div className="p-4"><TableSkeleton rows={8} cols={8} /></div>
+        ) : os.error ? (
+          <div role="alert" className="py-14 px-6 text-center">
+            <AlertTriangle size={28} className="mx-auto text-red mb-3" />
+            <p className="text-title font-semibold text-text">Não foi possível carregar as ordens</p>
+            <p className="text-label text-muted mt-1">Verifique a conexão com o servidor e tente novamente.</p>
+            <Button variant="outline" size="sm" className="mt-4 min-h-9" onClick={() => window.location.reload()}><RefreshCw size={12} /> Tentar novamente</Button>
+          </div>
         ) : os.equipe ? (
           /* ── Vista agrupada por período (quando equipe está selecionada) ── */
           <PeriodoGroupedTable
@@ -478,19 +502,29 @@ export default function OrdensPage() {
             onRowLeave={handleRowLeave}
             sort={os.tableSort}
             onSort={os.toggleTableSort}
+            stickyHeader
+            emptyTitle={os.filtersActive ? 'Nenhuma OS corresponde aos filtros' : 'Nenhuma OS no período selecionado'}
+            emptyDescription={os.filtersActive ? 'Remova ou ajuste os filtros para ampliar o resultado.' : 'Não há ordens disponíveis para a seleção atual.'}
           />
         )}
 
         {/* Paginação — apenas no modo flat */}
-        {!os.equipe && os.totalPages > 1 && (
+        {!os.equipe && groupBy === 'none' && os.filtered.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3
                           border-t border-white/[0.05] text-caption text-muted">
-            <span>
-              Página {os.page} de {os.totalPages} — {os.filtered.length} OS
-            </span>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-3">
+              <span>{(os.page - 1) * os.pageSize + 1}–{Math.min(os.page * os.pageSize, os.filtered.length)} de {os.filtered.length} OS</span>
+              <label className="flex items-center gap-1.5">Por página
+                <select value={os.pageSize} onChange={e => { os.setPageSize(Number(e.target.value)); os.setPage(1) }} className="bg-surface border border-white/[0.08] rounded-md px-2 py-1 text-text">
+                  {[25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </label>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" aria-label="Primeira página" onClick={() => os.setPage(1)} disabled={os.page === 1}>«</Button>
               <Button
                 variant="ghost" size="sm"
+                aria-label="Página anterior"
                 onClick={() => os.setPage(p => Math.max(1, p - 1))}
                 disabled={os.page === 1}
               >
@@ -498,11 +532,14 @@ export default function OrdensPage() {
               </Button>
               <Button
                 variant="ghost" size="sm"
+                aria-label="Próxima página"
                 onClick={() => os.setPage(p => Math.min(os.totalPages, p + 1))}
                 disabled={os.page === os.totalPages}
               >
                 ›
               </Button>
+              <Button variant="ghost" size="sm" aria-label="Última página" onClick={() => os.setPage(os.totalPages)} disabled={os.page === os.totalPages}>»</Button>
+              <span className="ml-2">Página {os.page} de {Math.max(1, os.totalPages)}</span>
             </div>
           </div>
         )}
@@ -517,7 +554,7 @@ export default function OrdensPage() {
       <TelegramOrdensModal
         open={tgModal}
         onClose={() => setTgModal(false)}
-        ordens={os.ordens}
+        ordens={os.filtered}
       />
     </div>
   )

@@ -122,8 +122,17 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                   <div
                     key={row.numos || i}
                     onClick={() => onRowClick?.(row)}
+                    role={onRowClick ? 'button' : undefined}
+                    tabIndex={onRowClick ? 0 : undefined}
+                    aria-label={onRowClick ? `Abrir detalhes da ordem ${row.numos}` : undefined}
+                    onKeyDown={(event) => {
+                      if (!onRowClick || (event.key !== 'Enter' && event.key !== ' ')) return
+                      event.preventDefault()
+                      onRowClick(row)
+                    }}
                     className={`flex items-center gap-3 px-4 ${rowPy} cursor-pointer
-                                hover:bg-surface/30 transition-all border-b border-white/[0.03]`}
+                                hover:bg-surface/30 transition-all border-b border-white/[0.03]
+                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50`}
                   >
                     <span className={`${C.aging} text-center`}>
                       <span className={`inline-block font-mono font-bold text-caption rounded-full px-2 py-0.5 ${agingColor} ${agingBg}`}>

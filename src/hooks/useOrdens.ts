@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useOSDerived } from '../contexts/OSDataContext'
 import { isReagend, getReagendTipo, isCOPE } from '../lib/transform'
 import type { OSRow, OrdensOptions } from '../lib/types'
@@ -32,6 +32,27 @@ export function dataBR(d: Date = new Date()): string {
 
 export function isAgendadaEm(r: OSRow, diaBR: string): boolean {
   return ((r.dataagendamento as string) || '').split(' ')[0] === diaBR
+}
+
+function normalizeSearch(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toLowerCase()
+}
+
+export function matchesOSSearch(row: OSRow, query: string): boolean {
+  const q = normalizeSearch(query)
+  if (!q) return true
+  const searchable = [
+    row.nomecliente, row.numos, row.nomedacidade, row.bairro,
+    row.logradouro, row.numero, row.nomedaequipe, row.tiposervico,
+    row.codigocontrato, row.numcontrato, row.cpf, row.cpfcliente,
+    row.cpf_cliente, row.nometecnico, row.nomeTecnico, row.tecnico,
+    row.codigocliente,
+  ]
+  return searchable.some(value => normalizeSearch(value).includes(q))
 }
 
 // Agenda futura = OS ATIVAS com agendamento de amanhã em diante. Sem o filtro
@@ -82,7 +103,7 @@ export function useOrdens() {
   const [tableSort,   setTableSort]   = useState<{ key: string | null; dir: 'asc' | 'desc' }>({ key: null, dir: 'asc' })
   const [density,     setDensity]     = useState('normal')
   const [page,        setPage]        = useState(1)
-  const PAGE_SIZE = 50
+  const [pageSize,    setPageSize]    = useState(50)
 
   const toggleTableSort = (key: string) => {
     setPage(1)
@@ -112,8 +133,7 @@ export function useOrdens() {
 
   const filtered = useMemo(() => {
     let r = baseOrdens
-    const q = search.toLowerCase()
-    if (q)          r = r.filter(x => ((x.nomecliente as string) ?? '').toLowerCase().includes(q) || ((x.numos as string) ?? '').includes(q) || ((x.nomedacidade as string) ?? '').toLowerCase().includes(q))
+    if (search)     r = r.filter(x => matchesOSSearch(x, search))
     if (status)     r = r.filter(x => x._situacaoEfetiva === status)
     if (reagendTipo) r = r.filter(x => getReagendTipo(x) === reagendTipo)
     if (tipo)       r = r.filter(x => x.tiposervico === tipo)
@@ -175,8 +195,17 @@ export function useOrdens() {
     return r
   }, [baseOrdens, search, status, reagendTipo, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, hideRede, sortBy, tableSort])
 
-  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize)
+  const totalPages = Math.ceil(filtered.length / pageSize)
+
+  useEffect(() => {
+    setPage(1)
+  }, [search, status, reagendTipo, tipo, cidade, bairro, equipe, aging, critico,
+      fornecedor, tipoOs, periodo, semEquipe, agendHoje, agendAmanha, agendFuturo, hideRede])
+
+  useEffect(() => {
+    setPage(current => Math.min(current, Math.max(1, totalPages)))
+  }, [totalPages])
 
   const kpis = useMemo(() => {
     const hojeBR = dataBR()
@@ -197,12 +226,18 @@ export function useOrdens() {
     setSearch(''); setStatus(''); setReagendTipo(''); setTipo(''); setCidade(''); setBairro('')
     setEquipe(''); setAging(''); setFornecedor(''); setTipoOs(''); setPeriodo('')
     setSemEquipe(false); setCritico(false); setAgendHoje(false); setAgendAmanha(false); setAgendFuturo(false)
+    setHideRede(false); setSortBy('agendamento'); setTableSort({ key: null, dir: 'asc' })
     setPage(1)
   }
 
+  const filtersActive = Boolean(
+    search || status || reagendTipo || tipo || cidade || bairro || equipe || aging || fornecedor ||
+    tipoOs || periodo || semEquipe || agendHoje || agendAmanha || agendFuturo || critico || hideRede || tableSort.key
+  )
+
   return {
     isLoading, error, ordens, filtered, paginated,
-    totalPages, page, setPage, density, setDensity, kpis,
+    totalPages, page, setPage, pageSize, setPageSize, density, setDensity, kpis,
     search, setSearch, status, setStatus, reagendTipo, setReagendTipo, tipo, setTipo,
     cidade, setCidade, bairro, setBairro, equipe, setEquipe,
     aging, setAging, critico, setCritico, fornecedor, setFornecedor, tipoOs, setTipoOs,
@@ -212,6 +247,6 @@ export function useOrdens() {
     hideRede, setHideRede,
     sortBy, setSortBy,
     tableSort, toggleTableSort,
-    clearFilters, options,
+    clearFilters, filtersActive, options,
   }
 }
