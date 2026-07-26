@@ -14,7 +14,7 @@ export interface AIJuniperResult {
   cached:    boolean
 }
 
-interface ClienteInativo {
+interface ConexaoAtiva {
   nome:   string
   cidade: string
 }
@@ -26,15 +26,15 @@ interface OSAtiva {
 }
 
 interface UseAIJuniperInput {
-  inativos: ClienteInativo[]
+  conexoes_ativas: ConexaoAtiva[]
   os_ativas: OSAtiva[]
 }
 
-export function useAIJuniper({ inativos, os_ativas, enabled = false }: UseAIJuniperInput & { enabled?: boolean }) {
-  const payload = { inativos, os_ativas }
+export function useAIJuniper({ conexoes_ativas, os_ativas, enabled = false }: UseAIJuniperInput & { enabled?: boolean }) {
+  const payload = { conexoes_ativas, os_ativas }
   return useAIQuery<AIJuniperResult>({
     key:     ['ai-juniper-correlacao', payload],
     fn:      () => ai.juniperCorrelacao(payload),
-    enabled: enabled && inativos.length > 0,
+    enabled: enabled && conexoes_ativas.length > 0,
   })
 }

@@ -56,13 +56,13 @@ export function relTime(ts: string | null | undefined): string {
 export function StatusPill({ nivel, txt }: { nivel: string; txt: string }) {
   const isOk   = nivel === 'ok'
   const isWarn = nivel === 'warn'
-  const dot    = isOk ? 'bg-green' : isWarn ? 'bg-yellow' : 'bg-muted'
-  const border = isOk ? 'border-green/20' : isWarn ? 'border-yellow/20' : 'border-white/[0.08]'
+  const dot    = isOk ? 'bg-green' : isWarn ? 'bg-yellow' : 'bg-red'
+  const border = isOk ? 'border-green/20' : isWarn ? 'border-yellow/20' : 'border-red/25'
   return (
     <div className={`inline-flex items-center gap-2 text-caption font-bold px-3 py-1.5 rounded-full
                     bg-card-high border ${border} text-secondary`}>
       <span className="relative flex h-2 w-2 flex-shrink-0">
-        {isOk && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-60" />}
+        {!isWarn && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-50 ${isOk ? 'bg-green' : 'bg-red'}`} />}
         <span className={`relative inline-flex rounded-full h-2 w-2 ${dot}`} />
       </span>
       {txt}
@@ -80,35 +80,35 @@ export function ClientCard({ c }: { c: JuniperClient }) {
     <div className={`relative overflow-hidden rounded-xl border transition-all duration-200
       hover:-translate-y-0.5 hover:shadow-2xl
       ${isOnline
-        ? 'bg-gradient-to-br from-[#0f1b2d] via-surface to-primary/[0.07] border-primary/[0.18] hover:border-primary/40 hover:shadow-primary/10'
-        : 'bg-gradient-to-br from-[#1a0f0f] via-surface to-red/[0.05] border-white/[0.08] hover:border-red/25'}`}>
+        ? 'bg-red/[0.035] border-red/[0.22] hover:border-red/45 hover:shadow-red/10'
+        : 'bg-card border-white/[0.08]'}`}>
 
       <div className={`absolute inset-x-0 top-0 h-[2px] ${isOnline
-        ? 'bg-gradient-to-r from-primary via-cyan-400/70 to-transparent'
-        : 'bg-gradient-to-r from-red/60 via-red/30 to-transparent'}`} />
+        ? 'bg-gradient-to-r from-red via-orange/70 to-transparent'
+        : 'bg-gradient-to-r from-muted/40 to-transparent'}`} />
 
       <div className="p-4 pt-5">
         <div className="flex items-start justify-between gap-2 mb-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0
-                ${isOnline ? 'bg-green shadow-[0_0_6px_rgba(74,222,128,0.8)] animate-pulse' : 'bg-red/60'}`} />
+                ${isOnline ? 'bg-red shadow-[0_0_6px_rgba(248,113,113,0.7)] animate-pulse' : 'bg-muted/60'}`} />
               <p className="text-body font-bold text-text truncate uppercase antialiased leading-tight">{c.usuario}</p>
             </div>
             <p className="text-caption text-muted/60 ml-3.5 uppercase tracking-[0.04em] font-mono truncate">{c.iface}</p>
           </div>
           <span className={`flex-shrink-0 text-caption font-bold px-2.5 py-1 rounded-full tracking-widest border
-            ${isOnline ? 'bg-green/[0.10] text-green border-green/25' : 'bg-red/[0.12] text-red border-red/25'}`}>
-            {isOnline ? '● ONLINE' : '● OFFLINE'}
+            ${isOnline ? 'bg-red/[0.10] text-red border-red/25' : 'bg-surface text-muted border-white/[0.08]'}`}>
+            {isOnline ? '● ATIVA' : '● INATIVA'}
           </span>
         </div>
 
         <div className={`rounded-xl px-3 py-2.5 mb-3 border ${isOnline
-          ? 'bg-primary/[0.08] border-primary/[0.15]'
+          ? 'bg-red/[0.06] border-red/[0.15]'
           : 'bg-surface/20 border-white/[0.05]'}`}>
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-1">Endereço IP</p>
           <p className={`text-title font-mono font-bold uppercase antialiased leading-none tracking-wide
-            ${isOnline ? 'text-primary' : 'text-secondary'}`}>{c.ip}</p>
+            ${isOnline ? 'text-red' : 'text-secondary'}`}>{c.ip}</p>
         </div>
 
         {c.mac !== '—' && (
@@ -147,16 +147,16 @@ export function InterfaceCard({ iface, maxIface }: { iface: IfaceRow; maxIface: 
       <div>
         <p className="text-caption font-bold text-text truncate mb-0.5">{iface.nome}</p>
         <div className="flex items-baseline gap-2">
-          <p className="font-mono font-bold text-2xl text-primary tabular-nums">{iface.total}</p>
-          <p className="text-caption text-muted">clientes</p>
+          <p className="font-mono font-bold text-2xl text-red tabular-nums">{iface.total}</p>
+          <p className="text-caption text-muted">ocorrências</p>
         </div>
         {iface.online > 0 && (
-          <p className="text-caption text-green mt-0.5 font-semibold">{iface.online} online</p>
+          <p className="text-caption text-red mt-0.5 font-semibold">{iface.online} ativas</p>
         )}
       </div>
       <div>
         <div className="h-1.5 bg-surface rounded-full overflow-hidden">
-          <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%`, transition: 'width 0.6s ease' }} />
+          <div className="h-full bg-red rounded-full" style={{ width: `${pct}%`, transition: 'width 0.6s ease' }} />
         </div>
         <p className="text-caption text-muted/50 mt-1 font-mono text-right">{pct}%</p>
       </div>
@@ -185,11 +185,11 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
           {relTxt && <p className="text-caption text-muted/50">{relTxt}</p>}
         </div>
         <span className="text-caption text-muted w-[80px] flex-shrink-0">{snap.data}</span>
-        <Badge variant="cyan">{snap.total} conectados</Badge>
-        <Badge variant="green">{snap.online} online</Badge>
+        <Badge variant={snap.total > 0 ? 'red' : 'green'}>{snap.total > 0 ? `${snap.total} ocorrências` : 'Saudável'}</Badge>
+        {snap.online > 0 && <Badge variant="red">{snap.online} ativas</Badge>}
         <div className="flex-1 max-w-[80px] hidden md:block">
           <div className="h-1 bg-surface rounded-full overflow-hidden">
-            <div className="h-full bg-green rounded-full" style={{ width: `${onlinePct}%` }} />
+            <div className={`h-full rounded-full ${snap.online > 0 ? 'bg-red' : 'bg-green'}`} style={{ width: `${onlinePct}%` }} />
           </div>
           <p className="text-caption text-muted/40 font-mono mt-0.5">{onlinePct}%</p>
         </div>

@@ -1475,7 +1475,7 @@ def _ai_justificativa_backlog(payload):
 
 
 def _ai_juniper_correlacao(payload):
-    """Correlaciona clientes inativos no Juniper com OS abertas, detectando quedas sem OS."""
+    """Correlaciona conexões ativas indevidas no Juniper com OS abertas."""
     data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
     now = _time_mod.time()
 
@@ -1487,13 +1487,13 @@ def _ai_juniper_correlacao(payload):
     if not ANTHROPIC_API_KEY:
         return None
 
-    inativos  = payload.get("inativos", [])
-    os_ativas = payload.get("os_ativas", [])
+    conexoes_ativas = payload.get("conexoes_ativas", payload.get("inativos", []))
+    os_ativas       = payload.get("os_ativas", [])
 
-    inativos_txt = "\n".join(
+    conexoes_txt = "\n".join(
         f"  - {c['nome']} ({c.get('cidade', '?')})"
-        for c in inativos[:30]
-    ) or "  nenhum inativo"
+        for c in conexoes_ativas[:30]
+    ) or "  nenhuma conexão ativa"
 
     os_txt = "\n".join(
         f"  - OS#{o.get('numos','?')}: {o.get('cidade','?')}, tipo={o.get('tipo','?')}"
@@ -1502,18 +1502,17 @@ def _ai_juniper_correlacao(payload):
 
     prompt = (
         "Você é um analista NOC de ISP regional. "
-        "Compare clientes inativos no Juniper (PPPoE offline) com OS abertas no sistema. "
-        "Identifique clientes inativos SEM OS correspondente — estes são possíveis incidentes "
-        "não reportados que precisam de abertura de OS proativa.\n\n"
-        "=== CLIENTES INATIVOS NO JUNIPER ===\n"
-        f"{inativos_txt}\n\n"
+        "Compare conexões PPPoE ativas indevidas no Juniper com OS abertas no sistema. "
+        "Identifique conexões ativas SEM OS possivelmente relacionada — elas exigem investigação operacional.\n\n"
+        "=== CONEXÕES ATIVAS NO JUNIPER ===\n"
+        f"{conexoes_txt}\n\n"
         "=== OS ATIVAS NO SISTEMA ===\n"
         f"{os_txt}\n\n"
-        "Um cliente inativo tem OS correspondente se houver OS da mesma cidade/bairro com tipo MANUTENCAO ou INSTALACAO. "
+        "Uma conexão pode ter OS relacionada se houver OS da mesma cidade/bairro com tipo MANUTENCAO ou INSTALACAO. "
         "Liste apenas os sem OS. O resumo deve ser 1 frase sobre a situação geral.\n\n"
         "Responda SOMENTE com JSON válido, sem markdown:\n"
         '{"sem_os": [{"nome": "CLI-001", "cidade": "Taubaté", '
-        '"alerta": "Cliente inativo sem OS — possível queda não reportada"}], '
+        '"alerta": "Conexão ativa sem OS relacionada — verificar sessão"}], '
         '"narrativa": "1 frase: resumo da situação de correlação"}'
     )
 

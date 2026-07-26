@@ -208,9 +208,17 @@ export function transformJuniper(serverData: unknown) {
   const offline   = total - online
   const uniqueIPs = [...new Set((clientes as JuniperClient[]).map((c: JuniperClient) => c.ip_address || c.ip).filter(Boolean))].length
 
-  const nivel       = alerta ? 'alert' : total === 0 ? 'warn' : 'ok'
-  const nivel_label = nivel === 'ok' ? 'Sessões PPPoE Ativas' : nivel === 'warn' ? 'Sem dados coletados' : 'Alerta — Sessões Problemáticas'
-  const statusTxt   = nivel === 'ok' ? `${online} online` : nivel === 'warn' ? 'Aguardando coleta' : 'Alerta ativo'
+  const hasData     = Boolean(ultima_coleta)
+  // A quantidade observada é a fonte de verdade. Isso mantém a tela segura
+  // durante uma implantação em que backend e frontend estejam em versões diferentes.
+  const hasAlert    = total > 0 || online > 0 || (alerta && hasData)
+  const nivel       = !hasData ? 'warn' : hasAlert ? 'alert' : 'ok'
+  const nivel_label = nivel === 'ok'
+    ? 'Nenhuma conexão ativa detectada'
+    : nivel === 'warn'
+      ? 'Aguardando dados da coleta'
+      : `${total} ${total === 1 ? 'conexão ativa exige' : 'conexões ativas exigem'} verificação`
+  const statusTxt   = nivel === 'ok' ? 'Operação normal' : nivel === 'warn' ? 'Sem confirmação' : 'Incidente ativo'
 
   const fmtTime = (iso: string) => {
     if (!iso) return '—'
@@ -233,7 +241,17 @@ export function transformJuniper(serverData: unknown) {
   const interfaces = [...ifaceMap.entries()].map(([nome, { total: t, online: o }]) => ({ nome, total: t, online: o }))
 
   return {
-    hero: { nivel, nivel_label, statusTxt, desc: `${online} online · ${offline} offline · cluster ${cluster}`, meta: ultima_coleta ? `Coleta: ${ultima_coleta}` : 'Nenhuma coleta realizada ainda' },
+    hero: {
+      nivel,
+      nivel_label,
+      statusTxt,
+      desc: nivel === 'ok'
+        ? `Coleta concluída no cluster ${cluster || '—'} sem ocorrências`
+        : nivel === 'warn'
+          ? 'Não foi possível confirmar o estado do cluster'
+          : `${online} sessões ativas · ${interfaces.length} interfaces afetadas · cluster ${cluster || '—'}`,
+      meta: ultima_coleta ? `Última coleta válida: ${ultima_coleta}` : 'Nenhuma coleta realizada ainda',
+    },
     kpis: { total, online, offline, interfaces: interfaces.length, ips: uniqueIPs, ultima: ultimaHora, proximo: proximaHora },
     interfaces,
     historico: { labels: [] as string[], values: [] as number[] },
@@ -249,8 +267,8 @@ export function transformJuniper(serverData: unknown) {
     log:       [] as unknown[],
     osCidades: [] as unknown[],
     isStale:   ultima_coleta ? (Date.now() - parseBRDate(ultima_coleta)) > 15 * 60 * 1000 : false,
-    hasAlert:  alerta,
+    hasAlert,
+    hasData,
   }
 }
-
 

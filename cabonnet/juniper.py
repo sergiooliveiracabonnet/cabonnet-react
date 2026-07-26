@@ -168,7 +168,9 @@ def juniper_fetch(cluster=None):
     log.info("[Juniper] OK — cluster=%s  clientes=%d", cluster, len(clientes))
     return {
         "total":         len(clientes),
-        "alerta":        len(clientes) == 0,
+        # Neste monitor, qualquer sessão retornada é uma anomalia. Uma coleta
+        # bem-sucedida com zero sessões representa o estado saudável.
+        "alerta":        len(clientes) > 0,
         "erro":          None,
         "clientes":      clientes,
         "cluster":       cluster,

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Zap, Monitor, Settings, RefreshCw, Users, Layers,
+  Zap, ShieldCheck, RefreshCw, Users, Layers,
   Clipboard, GitMerge, Trash2, Activity, Clock, AlertCircle, Sparkles,
 } from 'lucide-react'
 import type { OSRow } from '../../lib/types'
@@ -28,19 +28,18 @@ const HISTORY_KEY = 'juniper_historico'
 const MAX_SNAPS   = 500
 
 export default function JuniperPage() {
-  const [fonte,        setFonte]        = useState('local')
   const [searchTable,  setSearchTable]  = useState('')
   const [viewMode,     setViewMode]     = useState('card')
-  const [apiConfig,    setApiConfig]    = useState({ url: '', dsuid: '', user: '', pass: '', cluster: 'Vale' })
+  const cluster = 'Vale'
   const [expandedSnap, setExpandedSnap] = useState<string | null>(null)
   const [aiEnabled,    setAiEnabled]    = useState(false)
   const [historico,    setHistorico]    = useState<HistoricoSnap[]>(
     () => storage.getJSON<HistoricoSnap[]>(HISTORY_KEY, [])
   )
 
-  const { data: raw, isLoading, refetch } = useQuery({
-    queryKey: ['juniper', apiConfig.cluster],
-    queryFn:  () => api.get(`${endpoints.juniper}?cluster=${encodeURIComponent(apiConfig.cluster)}`),
+  const { data: raw, isLoading, isError, refetch } = useQuery({
+    queryKey: ['juniper', cluster],
+    queryFn:  () => api.get(`${endpoints.juniper}?cluster=${encodeURIComponent(cluster)}`),
     staleTime: 1000 * 60 * 5,
     refetchInterval: 1000 * 60 * 5,
     retry: false,
@@ -62,10 +61,10 @@ export default function JuniperPage() {
   const isStale    = data?.isStale  ?? false
   const hasAlert   = data?.hasAlert ?? false
 
-  // Clientes inativos = state 'inactive'
-  const inativosPayload = useMemo(() =>
+  // Neste monitor, as sessões ativas são as ocorrências que exigem análise.
+  const conexoesAtivasPayload = useMemo(() =>
     clientes
-      .filter((c: Record<string, string | undefined>) => c.state === 'inactive')
+      .filter((c: Record<string, string | undefined>) => c.state !== 'inactive')
       .map((c: Record<string, string | undefined>) => ({
         nome:   c.usuario ?? '',
         cidade: c.cidade  ?? '',
@@ -83,7 +82,7 @@ export default function JuniperPage() {
   , [allRows])
 
   const { data: aiJuniper, isLoading: aiLoading } = useAIJuniper({
-    inativos:  inativosPayload,
+    conexoes_ativas: conexoesAtivasPayload,
     os_ativas: osAtivasPayload,
     enabled:   aiEnabled,
   })
@@ -111,7 +110,7 @@ export default function JuniperPage() {
   }, [allRows])
 
   useEffect(() => {
-    if (!raw || !clientes.length) return
+    if (!raw) return
     const now   = new Date()
     const entry = {
       ts:       now.toISOString(),
@@ -198,10 +197,10 @@ export default function JuniperPage() {
           </span>
         }
         actions={
-          apiConfig.cluster && (
+          cluster && (
             <span className="text-caption font-bold uppercase tracking-[0.06em] px-2.5 py-0.5
                              rounded-full bg-primary/10 text-primary border border-primary/20">
-              {apiConfig.cluster}
+              {cluster}
             </span>
           )
         }
@@ -221,6 +220,18 @@ export default function JuniperPage() {
         </div>
       )}
 
+      {/* ── Falha de coleta: não confundir com zero conexões ── */}
+      {isError && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-yellow/[0.08] border border-yellow/30 rounded-xl">
+          <AlertCircle size={16} className="text-yellow flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-label font-semibold text-yellow">Não foi possível validar o estado do Juniper</p>
+            <p className="text-caption text-muted mt-0.5">A ausência de resposta não significa que não existam conexões ativas.</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()}><RefreshCw size={11} /> Tentar novamente</Button>
+        </div>
+      )}
+
       {/* ── Banner alerta crítico ── */}
       {hasAlert && (
         <div className="flex items-center gap-4 px-5 py-4 bg-red/[0.08] border-[1.5px] border-red/50 rounded-xl">
@@ -229,7 +240,7 @@ export default function JuniperPage() {
             <AlertCircle size={22} className="text-red relative" />
           </div>
           <div className="flex-1">
-            <p className="font-bold text-body text-red">ALERTA — Sessões PPPoE problemáticas detectadas!</p>
+            <p className="font-bold text-body text-red">ALERTA — {kpis.total ?? 0} {(kpis.total ?? 0) === 1 ? 'conexão ativa detectada' : 'conexões ativas detectadas'}</p>
             <p className="text-caption text-muted mt-0.5">Última verificação: {kpis.ultima ?? '—'}</p>
           </div>
           <Button variant="danger" size="sm" onClick={() => refetch()}>
@@ -238,78 +249,34 @@ export default function JuniperPage() {
         </div>
       )}
 
-      {/* ── Config API ── */}
+      {/* ── Origem segura da coleta ── */}
       <div className="bg-card border border-white/[0.08] border-l-[4px] border-l-primary rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between gap-4">
           <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
-            <Settings size={11} /> Fonte de Dados
+            <ShieldCheck size={13} /> Coleta protegida pelo servidor · Cluster {cluster}
           </p>
           <StatusPill nivel={hero.nivel ?? ''} txt={hero.statusTxt ?? 'Não verificado'} />
         </div>
-
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex bg-surface/30 border border-white/[0.08] rounded-lg p-0.5 gap-0.5">
-            {(['local', 'api'] as const).map((v, idx) => {
-              const Icon = [Monitor, Zap][idx]
-              const l   = ['Servidor Local', 'Grafana API'][idx]
-              return (
-                <button key={v} onClick={() => setFonte(v)}
-                  className={`flex items-center gap-1.5 text-label font-semibold px-4 py-1.5 rounded-md transition-all duration-fast
-                              ${fonte === v ? 'bg-primary text-white shadow-sm' : 'text-muted hover:text-secondary'}`}>
-                  <Icon size={13} /> {l}
-                </button>
-              )
-            })}
-          </div>
-          {fonte === 'local' && <span className="text-caption text-muted font-mono">localhost:5000</span>}
-        </div>
-
-        {fonte === 'api' && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 animate-slide-down">
-            {[
-              { label: 'URL do Grafana', key: 'url',     placeholder: 'https://monitoramento.cabonnet.com.br' },
-              { label: 'UID Datasource', key: 'dsuid',   placeholder: 'e5b84361-...' },
-              { label: 'Usuário',        key: 'user',    placeholder: 'admin' },
-              { label: 'Senha',          key: 'pass',    placeholder: '••••••••', type: 'password' },
-              { label: 'Cluster',        key: 'cluster', placeholder: 'Vale' },
-            ].map((f) => (
-              <div key={f.key}>
-                <label className="text-caption font-bold uppercase tracking-[0.04em] text-muted block mb-1">{f.label}</label>
-                <input
-                  type={f.type ?? 'text'}
-                  value={(apiConfig as Record<string, string>)[f.key]}
-                  placeholder={f.placeholder}
-                  onChange={(e) => setApiConfig(c => ({ ...c, [f.key]: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-caption rounded-lg bg-card-high border border-white/[0.08]
-                             text-text outline-none focus:border-primary/40 transition-colors"
-                />
-              </div>
-            ))}
-            <div className="flex items-end">
-              <Button variant="primary" size="sm">Salvar e Conectar</Button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Hero status ── */}
       <div className={`${heroStyle.bg} border-2 ${heroStyle.border} rounded-xl p-6 transition-colors duration-normal`}>
         <div className="flex items-center gap-5 flex-wrap">
           <div className={`relative flex-shrink-0 p-3 rounded-2xl ${heroStyle.icon}`}>
-            {hero.nivel === 'ok' && <span className="absolute inset-0 rounded-2xl animate-ping bg-green/20" />}
+            {hero.nivel === 'alert' && <span className="absolute inset-0 rounded-2xl animate-ping bg-red/20" />}
             <Zap size={40} className={`${heroStyle.text} relative`} />
           </div>
           <div className="flex-1 min-w-0">
             <p className={`font-headline font-bold text-[22px] ${heroStyle.text}`}>
-              {hero.nivel_label ?? 'Sem conexão ativa'}
+              {hero.nivel_label ?? 'Aguardando validação'}
             </p>
             <p className="text-label text-muted mt-1">{hero.desc ?? 'Configure a fonte acima para exibir clientes PPPoE'}</p>
             <p className="text-caption text-muted mt-1 font-mono">{hero.meta ?? 'Nenhuma coleta realizada ainda'}</p>
             {(onlineCount > 0 || offlineCount > 0) && (
               <div className="flex items-center gap-4 mt-3">
-                <span className="flex items-center gap-1.5 text-caption font-semibold text-green">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse inline-block" />
-                  {onlineCount} online
+                <span className="flex items-center gap-1.5 text-caption font-semibold text-red">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red animate-pulse inline-block" />
+                  {onlineCount} ativas
                 </span>
                 {offlineCount > 0 && (
                   <span className="flex items-center gap-1.5 text-caption font-semibold text-muted">
@@ -324,7 +291,7 @@ export default function JuniperPage() {
             <p className={`font-headline font-bold text-[52px] leading-none tabular-nums ${heroStyle.text}`}>
               {kpis.total ?? '—'}
             </p>
-            <p className="text-caption text-muted mt-1">clientes conectados</p>
+            <p className="text-caption text-muted mt-1">conexões indevidas</p>
           </div>
         </div>
       </div>
@@ -332,8 +299,8 @@ export default function JuniperPage() {
       {/* ── KPIs ── */}
       {isLoading ? <KPIGridSkeleton count={5} /> : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          <StatCard title="Total Conectados"   value={kpis.total}      sub="clientes PPPoE ativos"  delay={0}   />
-          <StatCard title="Interfaces Ativas"  value={kpis.interfaces} sub="portas / VLANs em uso"  delay={40}  />
+          <StatCard title="Conexões Indevidas" value={kpis.total}      sub={(kpis.total ?? 0) === 0 ? 'situação saudável' : 'exigem verificação'} delay={0} />
+          <StatCard title="Interfaces Afetadas" value={kpis.interfaces} sub="portas / VLANs com ocorrência" delay={40} />
           <StatCard title="IPs Únicos"         value={kpis.ips}        sub="endereços distintos"     delay={80}  />
           <StatCard title="Última Coleta"      value={kpis.ultima}     sub="horário da verificação"  delay={120} />
           <StatCard title="Próx. Atualização"  value={kpis.proximo}    sub="inicia após 1ª coleta"   delay={160} />
@@ -343,7 +310,7 @@ export default function JuniperPage() {
       {/* ── Distribuição por interface ── */}
       {interfaces.length > 0 && (
         <>
-          <SectionTitle icon={Layers}>Distribuição por Interface</SectionTitle>
+          <SectionTitle icon={Layers}>Origem das Conexões Ativas</SectionTitle>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {interfaces.map(iface => <InterfaceCard key={iface.nome} iface={iface} maxIface={maxIface} />)}
           </div>
@@ -351,9 +318,9 @@ export default function JuniperPage() {
       )}
 
       {/* ── Histórico gráfico ── */}
-      <ChartCard title="Histórico de Conexões" dot="#3b82f6" height="h-44">
+      <ChartCard title="Histórico de Ocorrências — meta: zero" dot="#f87171" height="h-44">
         <AreaChart data={hist.labels.map((name, i) => ({ name, value: hist.values[i] ?? 0 }))}>
-          <Area dataKey="value" stroke="#3b82f6" fill="rgba(59,130,246,.1)" strokeWidth={2} />
+          <Area dataKey="value" stroke="#f87171" fill="rgba(248,113,113,.14)" strokeWidth={2.5} />
           <XAxis dataKey="name" />
           <YAxis />
           <Grid />
@@ -366,7 +333,7 @@ export default function JuniperPage() {
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/[0.08] bg-surface/20 flex-wrap">
           <div className="flex items-center gap-2">
             <Users size={15} className="text-primary" />
-            <span className="text-body font-bold text-text">Clientes Conectados</span>
+            <span className="text-body font-bold text-text">Conexões Ativas Detectadas</span>
           </div>
           <div className="flex items-center gap-3 ml-1">
             {(() => {
@@ -374,9 +341,9 @@ export default function JuniperPage() {
               const offline = clientesFiltrados.length - online
               return (
                 <>
-                  <span className="flex items-center gap-1.5 text-caption font-semibold text-green">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse inline-block" />
-                    {online} online
+                  <span className="flex items-center gap-1.5 text-caption font-semibold text-red">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red animate-pulse inline-block" />
+                    {online} ativas
                   </span>
                   {offline > 0 && (
                     <span className="flex items-center gap-1.5 text-caption font-semibold text-muted">
@@ -406,8 +373,24 @@ export default function JuniperPage() {
         {clientesFiltrados.length === 0 ? (
           <div className="py-16 text-center text-muted">
             <Zap size={40} className="mx-auto mb-4 opacity-20" />
-            <p className="text-title font-semibold text-secondary mb-2">Nenhum dado disponível</p>
-            <p className="text-label">Configure a fonte de dados acima.</p>
+            <p className={`text-title font-semibold mb-2 ${isLoading || isError || (searchTable && clientes.length) ? 'text-secondary' : 'text-green'}`}>
+              {isLoading
+                ? 'Validando conexões…'
+                : isError
+                  ? 'Estado não confirmado'
+                  : searchTable && clientes.length
+                    ? 'Nenhuma conexão corresponde à pesquisa'
+                    : 'Nenhuma conexão ativa detectada'}
+            </p>
+            <p className="text-label">
+              {isLoading
+                ? 'Aguarde a conclusão da coleta.'
+                : isError
+                  ? 'Tente atualizar novamente para confirmar a situação.'
+                  : searchTable && clientes.length
+                    ? 'Revise os termos informados.'
+                    : 'A última coleta não encontrou ocorrências. Situação normal.'}
+            </p>
           </div>
         ) : viewMode === 'card' ? (
           <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -433,10 +416,10 @@ export default function JuniperPage() {
                     <tr key={i} className="text-secondary hover:bg-surface/20 transition-colors">
                       <td className="px-4 py-2.5">
                         <span className={`w-1.5 h-1.5 rounded-full inline-block
-                                         ${isOnline ? 'bg-green animate-pulse' : 'bg-red/50'}`} />
+                                         ${isOnline ? 'bg-red animate-pulse' : 'bg-muted/50'}`} />
                       </td>
                       <td className="px-4 py-2.5 font-bold text-text antialiased uppercase">{c.usuario}</td>
-                      <td className="px-4 py-2.5 font-mono font-semibold text-primary antialiased uppercase">{c.ip}</td>
+                      <td className="px-4 py-2.5 font-mono font-semibold text-red antialiased uppercase">{c.ip}</td>
                       <td className="px-4 py-2.5 font-mono text-label uppercase">{c.mac}</td>
                       <td className="px-4 py-2.5 uppercase">{c.iface}</td>
                       <td className="px-4 py-2.5 uppercase">{c.uptime}</td>
@@ -461,7 +444,7 @@ export default function JuniperPage() {
             <span className="text-caption text-muted/40">· máx {MAX_SNAPS}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-caption text-muted/60">Salvo localmente</span>
+            <span className="text-caption text-muted/60">Sincronizado com o servidor</span>
             {historico.length > 0 && (
               <button onClick={limparHistorico}
                 className="flex items-center gap-1 text-caption text-red/60 hover:text-red transition-colors"
@@ -506,12 +489,12 @@ export default function JuniperPage() {
 
       {/* ── Correlação IA — Inativos × OS ── */}
       <>
-        <SectionTitle icon={Sparkles}>Correlacao IA — Inativos sem OS</SectionTitle>
+        <SectionTitle icon={Sparkles}>Correlação IA — Conexões ativas × OS</SectionTitle>
         {!aiEnabled ? (
           <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles size={12} className="text-primary/40" />
-              <span className="text-caption font-bold text-muted uppercase tracking-wide">Correlação Inativos × OS · IA</span>
+              <span className="text-caption font-bold text-muted uppercase tracking-wide">Conexões ativas × OS · IA</span>
             </div>
             <button
               onClick={() => setAiEnabled(true)}
@@ -532,7 +515,7 @@ export default function JuniperPage() {
                   <p className="text-label text-secondary leading-relaxed">{aiJuniper.narrativa}</p>
                 )}
                 {aiJuniper.sem_os.length === 0 ? (
-                  <p className="text-label text-green font-semibold">Nenhum cliente inativo sem OS ativa identificado.</p>
+                  <p className="text-label text-green font-semibold">Nenhuma conexão ativa sem OS relacionada foi identificada.</p>
                 ) : (
                   <div className="space-y-1.5">
                     {aiJuniper.sem_os.map((item, i) => (
