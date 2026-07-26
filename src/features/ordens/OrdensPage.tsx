@@ -253,6 +253,7 @@ export default function OrdensPage() {
       {/* ── Header ── */}
       <PageHeader
         title="Ordens de Serviço"
+        className="items-center"
         actions={
           <>
             <details className="relative group">
@@ -284,10 +285,12 @@ export default function OrdensPage() {
         </div>
       )}
 
-      <p className="text-caption font-bold uppercase tracking-[0.08em] text-muted">Indicadores do resultado atual</p>
-
       {/* ── Opções de visualização ── */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap border-b border-white/[0.06] pb-2">
+        <p className="text-caption font-bold uppercase tracking-[0.08em] text-muted">
+          Indicadores do resultado atual
+        </p>
+        <div className="flex items-center justify-end gap-2 flex-wrap">
         {/* KPI toggle */}
         <button
           onClick={() => setKpiVisible(v => !v)}
@@ -324,6 +327,7 @@ export default function OrdensPage() {
               {d.label}
             </button>
           ))}
+        </div>
         </div>
       </div>
 
