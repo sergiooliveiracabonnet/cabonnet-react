@@ -62,8 +62,16 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
   const yStep   = maxY / 4
   const x = (i: number) => PAD_L + i * (IW / (len - 1))
   const y = (v: number) => PAD_T + IH - (v / maxY) * IH
-  const path = (vals: number[]) =>
-    vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')
+  const smoothPath = (vals: number[]) => {
+    const points = vals.map((v, i) => ({ x: x(i), y: y(v) }))
+    return points.slice(1).reduce((d, point, i) => {
+      const previous = points[i]
+      const middleX = (previous.x + point.x) / 2
+      return `${d} C${middleX.toFixed(1)} ${previous.y.toFixed(1)}, ${middleX.toFixed(1)} ${point.y.toFixed(1)}, ${point.x.toFixed(1)} ${point.y.toFixed(1)}`
+    }, `M${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`)
+  }
+  const areaPath = (vals: number[]) =>
+    `${smoothPath(vals)} L${x(len - 1).toFixed(1)} ${(PAD_T + IH).toFixed(1)} L${x(0).toFixed(1)} ${(PAD_T + IH).toFixed(1)} Z`
 
   const ultAbertas = serie.abertas[len - 1]
   const ultConcl   = serie.concl[len - 1]
@@ -131,6 +139,17 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
           onPointerMove={onMove}
           onPointerLeave={() => setHover(null)}
         >
+          <defs>
+            <linearGradient id="fluxo-entradas-area" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={BLUE} stopOpacity="0.28" />
+              <stop offset="100%" stopColor={BLUE} stopOpacity="0.02" />
+            </linearGradient>
+            <linearGradient id="fluxo-concluidas-area" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={PURPLE} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={PURPLE} stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+
           {/* grid + eixo Y */}
           {Array.from({ length: 5 }, (_, k) => k * yStep).map(v => (
             <g key={v}>
@@ -147,9 +166,13 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
             : null
           ))}
 
-          {/* séries — Concluídas tracejada para diferenciar sem depender só de cor */}
-          <path d={path(serie.abertas)} fill="none" stroke={BLUE} strokeWidth={2} strokeLinecap="round" />
-          <path d={path(serie.concl)}   fill="none" stroke={PURPLE} strokeWidth={2} strokeLinecap="round" strokeDasharray="6 4" />
+          {/* Áreas translúcidas dão leitura de volume sem competir com as curvas. */}
+          <path data-series="entradas-area" d={areaPath(serie.abertas)} fill="url(#fluxo-entradas-area)" pointerEvents="none" />
+          <path data-series="concluidas-area" d={areaPath(serie.concl)} fill="url(#fluxo-concluidas-area)" pointerEvents="none" />
+
+          {/* Concluídas permanece tracejada para diferenciar sem depender só de cor. */}
+          <path data-series="entradas-line" d={smoothPath(serie.abertas)} fill="none" stroke={BLUE} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+          <path data-series="concluidas-line" d={smoothPath(serie.concl)} fill="none" stroke={PURPLE} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="7 4" />
 
           {/* pontos finais + rótulo direto */}
           <circle cx={x(len - 1)} cy={y(ultAbertas)} r={3.5} fill={BLUE}

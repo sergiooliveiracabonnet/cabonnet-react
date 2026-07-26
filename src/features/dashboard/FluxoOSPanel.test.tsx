@@ -76,9 +76,24 @@ describe('FluxoOSPanel', () => {
   it('diferencia as linhas por traço, não só por cor', () => {
     render(<FluxoOSPanel evolucao={makeEvolucao(14)} />)
     const svg = screen.getByRole('img', { name: /entradas e conclusões diárias/i })
-    const paths = svg.querySelectorAll('path')
-    expect(paths).toHaveLength(2)
-    expect(paths[0]).not.toHaveAttribute('stroke-dasharray')  // Entradas — linha sólida
-    expect(paths[1]).toHaveAttribute('stroke-dasharray')      // Concluídas — linha tracejada
+    const entradas = svg.querySelector('[data-series="entradas-line"]')
+    const concluidas = svg.querySelector('[data-series="concluidas-line"]')
+    expect(entradas).not.toHaveAttribute('stroke-dasharray')  // Entradas — linha sólida
+    expect(concluidas).toHaveAttribute('stroke-dasharray')    // Concluídas — linha tracejada
+  })
+
+  it('usa curvas suaves e preenchimento nas duas séries', () => {
+    render(<FluxoOSPanel evolucao={makeEvolucao(3)} />)
+    const svg = screen.getByRole('img', { name: /entradas e conclusões diárias/i })
+    const linhas = svg.querySelectorAll('[data-series$="-line"]')
+    const areas = svg.querySelectorAll('[data-series$="-area"]')
+
+    expect(linhas).toHaveLength(2)
+    expect(areas).toHaveLength(2)
+    linhas.forEach(linha => expect(linha.getAttribute('d')).toContain('C'))
+    areas.forEach(area => {
+      expect(area.getAttribute('d')).toMatch(/Z$/)
+      expect(area).toHaveAttribute('pointer-events', 'none')
+    })
   })
 })
