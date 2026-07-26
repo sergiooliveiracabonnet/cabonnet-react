@@ -15,6 +15,15 @@ function makeRow(overrides: Partial<BacklogRow> = {}): BacklogRow {
 }
 
 describe('buildBiGestaoTecnicaPainel', () => {
+  it('calcula revisita de instalacao sobre as instalacoes de origem', () => {
+    const rows = [
+      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', revisita_inst: 1 }),
+      makeRow({ numos: '2', tiposervico: 'INSTALACAO', nomedaequipe: 'F11' }),
+      makeRow({ numos: '3', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01' }),
+    ]
+    expect(buildBiGestaoTecnicaPainel(rows).revisitaPct.instalacao).toBe(50)
+  })
+
   it('classifica e totaliza por tipo, excluindo REDE', () => {
     const rows = [
       makeRow({ numos: '1', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01' }),

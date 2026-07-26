@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   isRevisitaAtiva, filtrarRevisitasAtivas, filtrarRevisitaPorTipo, contarRevisitasPorTipo,
-  revisitaPorCidade, clientesCronicos,
+  revisitaPorCidade, clientesCronicos, contarTotalPorTipo,
 } from './revisitaPorTipo'
 import type { BacklogRow } from '../../hooks/useBacklog'
 
@@ -71,7 +71,9 @@ describe('revisitaPorCidade', () => {
   })
 
   it('usa "Sem cidade" quando nomedacidade está vazio', () => {
-    const result = revisitaPorCidade([makeRow({ nomedacidade: '', revisita_serv: 1 })], 'servico')
+    const result = revisitaPorCidade([
+      makeRow({ nomedacidade: '', tiposervico: 'SERVICOS', nomedaequipe: 'F09', revisita_serv: 1 }),
+    ], 'servico')
     expect(result[0].cidade).toBe('Sem cidade')
   })
 })
@@ -97,5 +99,19 @@ describe('clientesCronicos', () => {
     const result = clientesCronicos(rows)
     expect(result[0]).toEqual({ nome: 'B', count: 3 })
     expect(result[1]).toEqual({ nome: 'A', count: 2 })
+  })
+})
+
+describe('base das taxas por tipo', () => {
+  it('usa somente instalacoes como base da revisita de instalacao', () => {
+    const rows = [
+      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', revisita_inst: 1 }),
+      makeRow({ numos: '2', tiposervico: 'INSTALACAO', nomedaequipe: 'F11' }),
+      makeRow({ numos: '3', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01' }),
+    ]
+    expect(contarTotalPorTipo(rows, 'instalacao')).toBe(2)
+    expect(revisitaPorCidade(rows, 'instalacao')).toEqual([
+      { cidade: 'TAUBATE', rev: 1, total: 2, taxa: 50 },
+    ])
   })
 })

@@ -69,7 +69,7 @@ export interface BacklogData {
   fim:        string
 }
 
-const BACKLOG_SCHEMA_VERSION = 6   // incrementar quando o schema do backend mudar
+const BACKLOG_SCHEMA_VERSION = 7   // incrementar quando o schema do backend mudar
 
 export function useBacklog(inicio: string, fim: string) {
   return useQuery<BacklogData>({

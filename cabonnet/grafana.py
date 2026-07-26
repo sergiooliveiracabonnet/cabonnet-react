@@ -877,23 +877,23 @@ WITH base AS (
       COALESCE(o.d_dataexecucao::timestamp, NOW())
       - o.d_datacadastro::timestamp
     )) / 3600.0)::numeric, 1)                                     AS horas_resolucao,
-    -- revisita_inst: OS de manutenção onde o cliente também teve instalação executada no mesmo mês
+    -- revisita_inst: instalacao que originou chamado tecnico nos 30 dias seguintes
     CASE WHEN
-      (upper(ts.descricao) LIKE '%MANUTENC%'
-       OR upper(l.descricaodoserv_lanc) LIKE '%VT%'
-       OR upper(l.descricaodoserv_lanc) LIKE '%ASSISTENCIA%')
-      AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%REDE -%'
+      upper(ts.descricao) LIKE '%INSTALAC%'
       AND EXISTS (
         SELECT 1 FROM ordemservico o2
         JOIN lanceservicos l2  ON l2.codigodoserv_lanc = o2.codservsolicitado
         JOIN tiposervico   ts2 ON ts2.codigo = l2.codigotiposervico
         WHERE o2.codigoassinante = o.codigoassinante
           AND o2.cidade          = o.cidade
+          AND o2.codigocontrato  = o.codigocontrato
           AND o2.numos           != o.numos
-          AND o2.situacao        = 3
-          AND o2.d_dataexecucao  IS NOT NULL
-          AND upper(ts2.descricao) LIKE '%INSTALAC%'
-          AND date_trunc('month', o2.d_dataexecucao) = date_trunc('month', o.d_dataexecucao)
+          AND o2.d_datacadastro  > o.d_dataexecucao
+          AND o2.d_datacadastro <= o.d_dataexecucao + INTERVAL '30 days'
+          AND (upper(ts2.descricao) LIKE '%MANUTENC%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%VT%'
+               OR upper(l2.descricaodoserv_lanc) LIKE '%ASSISTENCIA%')
+          AND upper(coalesce(l2.descricaodoserv_lanc,'')) NOT LIKE '%REDE -%'
       )
     THEN 1 ELSE 0 END                                             AS revisita_inst,
     -- revisita_manut: OS de manutenção onde o cliente já teve outra manutenção no mesmo mês

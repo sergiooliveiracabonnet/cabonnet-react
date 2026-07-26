@@ -10,6 +10,7 @@ from cabonnet.grafana import (
     SQL_FUTURO,
     SQL_MOTIVO_INCONCLUSIVO_TEMPLATE,
     SQL_OS_EXECUCAO_GEO,
+    SQL_BACKLOG_TEMPLATE,
     SQL_PENDENTE,
 )
 
@@ -64,3 +65,13 @@ def test_sql_agendado_datacadastro_inclui_hora():
 
 def test_sql_futuro_datacadastro_inclui_hora():
     assert "to_char(o.d_datacadastro,    'DD/MM/YYYY HH24:MI') as datacadastro" in SQL_FUTURO
+
+
+def test_revisita_instalacao_usa_chamado_aberto_ate_30_dias_depois():
+    sql = " ".join(SQL_BACKLOG_TEMPLATE.lower().split())
+    bloco = sql.split("as revisita_inst", 1)[0]
+    assert "o2.d_datacadastro > o.d_dataexecucao" in bloco
+    assert "o2.d_datacadastro <= o.d_dataexecucao + interval '30 days'" in bloco
+    assert "o2.codigocontrato = o.codigocontrato" in bloco
+    assert "upper(ts.descricao) like '%instalac%'" in bloco
+    assert "date_trunc('month', o2.d_dataexecucao)" not in bloco

@@ -2,7 +2,7 @@ import { MapPin, AlertTriangle } from 'lucide-react'
 import type { BacklogData } from '../../../hooks/useBacklog'
 import {
   filtrarRevisitasAtivas, filtrarRevisitaPorTipo, revisitaPorCidade, clientesCronicos,
-  type RevisitaTipo,
+  contarTotalPorTipo, type RevisitaTipo,
 } from '../../../lib/builders/revisitaPorTipo'
 import { StatCard } from '../../../components/ui/StatCard'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
@@ -24,7 +24,7 @@ export function RevisitaTab({ data, tipo }: RevisitaTabProps) {
   if (!data) return null
 
   const rows            = data.rows
-  const totalPeriodo     = data.kpis.total
+  const totalPeriodo     = contarTotalPorTipo(rows, tipo)
   const ativas           = filtrarRevisitasAtivas(rows)
   const revisitasDoTipo  = filtrarRevisitaPorTipo(ativas, tipo)
   const taxa             = totalPeriodo > 0 ? Math.round((revisitasDoTipo.length / totalPeriodo) * 100) : 0

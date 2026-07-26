@@ -1,4 +1,5 @@
 import type { BacklogRow } from '../../hooks/useBacklog'
+import { getEquipeTipo } from '../transform'
 
 export type RevisitaTipo = 'instalacao' | 'manutencao' | 'servico'
 
@@ -29,12 +30,23 @@ export function contarRevisitasPorTipo(rows: BacklogRow[]): Record<RevisitaTipo,
   }
 }
 
+function rowMatchesTipo(r: BacklogRow, tipo: RevisitaTipo): boolean {
+  const classificado = getEquipeTipo(r.nomedaequipe, r.tiposervico)
+  if (tipo === 'instalacao') return classificado === 'INSTALACAO'
+  if (tipo === 'manutencao') return classificado === 'MANUTENCAO'
+  return classificado !== 'INSTALACAO' && classificado !== 'MANUTENCAO' && classificado !== 'REDE'
+}
+
+export function contarTotalPorTipo(rows: BacklogRow[], tipo: RevisitaTipo): number {
+  return rows.filter(r => rowMatchesTipo(r, tipo)).length
+}
+
 export interface RevisitaCidadeRow { cidade: string; rev: number; total: number; taxa: number }
 
 export function revisitaPorCidade(allRows: BacklogRow[], tipo: RevisitaTipo): RevisitaCidadeRow[] {
   const flag = FLAG_KEY[tipo]
   const m: Record<string, { rev: number; total: number }> = {}
-  for (const r of allRows) {
+  for (const r of allRows.filter(row => rowMatchesTipo(row, tipo))) {
     const c = r.nomedacidade || 'Sem cidade'
     if (!m[c]) m[c] = { rev: 0, total: 0 }
     m[c].total++
