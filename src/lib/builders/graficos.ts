@@ -93,7 +93,7 @@ export function buildGraficos(rows: OSRow[]) {
       const closeDate = parseDate(r.databaixa) || parseDate(r.dataexecucao)
       if (closeDate) {
         const days = Math.floor((closeDate.getTime() - openDate.getTime()) / 86400000)
-        if (days >= 0 && days <= 90) co.mttrArr.push(days)
+        if (days >= 0) co.mttrArr.push(days)
         if (closeDate.toISOString().slice(0, 7) === mKey) co.mesmoMes++
       }
     }

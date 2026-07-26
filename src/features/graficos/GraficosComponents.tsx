@@ -17,6 +17,7 @@ import { isConcluida, isExecucaoReal } from '../../lib/transform'
 import { buildDistribuicaoSummary, sortDistribution, type DistributionItem } from '../../lib/builders/graficosDistribuicao'
 import { buildTendenciaSummary } from '../../lib/builders/graficosTendencia'
 import { buildAgingStatistics } from '../../lib/builders/graficosEstatistica'
+import { buildCohortView } from '../../lib/builders/graficosCohort'
 
 // ─── Tipos exportados ─────────────────────────────────────────────────────────
 
@@ -561,72 +562,72 @@ export function TabEstatistica({ d, rows, onDrill }: { d: Record<string,unknown>
 // ─── TabCohort ────────────────────────────────────────────────────────────────
 
 export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; rows: OSRow[]; onDrill: OnDrill }) {
-  const gd = d as Record<string, { labels?: string[]; total?: number[]; concluidas?: number[]; mesmoMes?: number[]; taxaResolucao?: number[]; mttr?: number[] }>
-  type CohortObj = { labels: string[]; total: number[]; concluidas: number[]; mesmoMes: number[]; taxaResolucao: number[]; mttr: number[] }
-  const rawC = gd.cohort
-  const c: CohortObj = rawC?.labels
-    ? { labels: rawC.labels, total: rawC.total ?? [], concluidas: rawC.concluidas ?? [], mesmoMes: rawC.mesmoMes ?? [], taxaResolucao: rawC.taxaResolucao ?? [], mttr: rawC.mttr ?? [] }
-    : { labels: [], total: [], concluidas: [], mesmoMes: [], taxaResolucao: [], mttr: [] }
-
-  const cohortBarData = c.labels.map((name, i) => ({
-    name,
-    Abertas:    c.total[i]      ?? 0,
-    Concluídas: c.concluidas[i] ?? 0,
-    'Mesmo Mês': c.mesmoMes[i]  ?? 0,
-  }))
-  const taxaData = c.labels.map((name, i) => ({ name, value: c.taxaResolucao[i] ?? 0 }))
-  const mttrData = c.labels.map((name, i) => ({
-    name, value: c.mttr[i] ?? 0,
-    fill: (c.mttr[i] ?? 0) <= 2 ? '#4ade80' : (c.mttr[i] ?? 0) <= 5 ? '#facc15' : '#f87171',
-  }))
+  const raw = (d as Record<string, import('../../lib/builders/graficosCohort').CohortSeries>).cohort
+  const cohort = buildCohortView(raw)
+  const { summary } = cohort
+  const volumeData = cohort.rows.map(item => ({ name: item.name, Encerradas: item.encerradas, Abertas: item.abertas }))
+  const taxaData = cohort.rows.map(item => ({ name: item.name, 'Encerramento total': item.taxa, 'No mesmo mês': item.mesmoMesPct }))
+  const cards = [
+    { label: 'Coortes', value: summary.coortes, sub: 'meses de abertura', tone: 'text-text' },
+    { label: 'OS acompanhadas', value: summary.total, sub: 'total das coortes', tone: 'text-blue-400' },
+    { label: 'Encerradas', value: summary.encerradas, sub: `${summary.taxa}% do total`, tone: 'text-green' },
+    { label: 'Ainda abertas', value: summary.abertas, sub: `${100 - summary.taxa}% do total`, tone: summary.abertas ? 'text-orange' : 'text-green' },
+    { label: 'No mesmo mês', value: `${summary.mesmoMesPct}%`, sub: 'sobre todas as OS', tone: 'text-purple-400' },
+  ]
 
   return (
     <div className="space-y-4">
-      <SectionTitle icon={ZoomIn}>Cohort de Resolução por Mês de Abertura</SectionTitle>
-      <p className="text-caption text-muted -mt-2">
-        Cada coluna representa as OS abertas naquele mês e como evoluíram (últimos 12 meses)
-      </p>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {cards.map(card => (
+          <div key={card.label} className="min-h-24 rounded-xl border border-white/[0.08] bg-card p-4">
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
+            <p className={`mt-2 font-mono text-xl font-bold tabular-nums ${card.tone}`}>{card.value}</p>
+            <p className="mt-1 text-caption text-muted">{card.sub}</p>
+          </div>
+        ))}
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="Abertas vs. Concluídas por Mês de Abertura" dot="#3b82f6" height="h-64">
-          <BarChart data={cohortBarData}>
-            <Bar dataKey="Abertas"    fill="#3b82f6" name="Abertas"
-              onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — todas as OS`, rows.filter(r => toISOMonth(r.datacadastro) === data.name))} />
-            <Bar dataKey="Concluídas" fill="#4ade80" name="Concluídas"
-              onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — Concluídas`, rows.filter(r => isConcluida(r.descsituacao) && toISOMonth(r.datacadastro) === data.name))} />
-            <Bar dataKey="Mesmo Mês"  fill="#c4b5fd" name="Mesmo Mês"
-              onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — Mesmo Mês`, rows.filter(r => isConcluida(r.descsituacao) && toISOMonth(r.datacadastro) === data.name && closeISOMonth(r) === data.name))} />
+      <SectionTitle icon={ZoomIn}>Evolução das coortes por mês de abertura</SectionTitle>
+      <p className="-mt-2 text-caption text-muted">Cada barra contém todas as OS cadastradas no mês, separadas entre encerradas e ainda abertas.</p>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="Destino das OS da coorte" dot="#3b82f6" height="h-72">
+          <BarChart data={volumeData}>
+            <Bar dataKey="Encerradas" stackId="cohort" fill="#4ade80" name="Encerradas"
+              onClick={(data: Record<string,unknown>) => onDrill(`Coorte ${data.name} · encerradas`, rows.filter(r => isConcluida(r.descsituacao) && toISOMonth(r.datacadastro) === data.name))} />
+            <Bar dataKey="Abertas" stackId="cohort" fill="#f97316" name="Ainda abertas"
+              onClick={(data: Record<string,unknown>) => onDrill(`Coorte ${data.name} · ainda abertas`, rows.filter(r => !isConcluida(r.descsituacao) && toISOMonth(r.datacadastro) === data.name))} />
             <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip /><Legend />
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="Taxa de Resolução por Cohort (%)" dot="#4ade80" height="h-64">
-          <AreaChart
-            data={taxaData}
-            onClick={(cd: Record<string,unknown>) => { if (cd?.activeLabel) onDrill(`Cohort ${cd.activeLabel} — Concluídas`, rows.filter(r => isConcluida(r.descsituacao) && toISOMonth(r.datacadastro) === cd.activeLabel)) }}
-            style={{ cursor: 'pointer' }}>
-            <Area dataKey="value" stroke="#4ade80" fill="rgba(74,222,128,0.08)" name="Taxa Resolução" />
-            <LXAxis dataKey="name" /><LYAxis domain={[0, 100]} /><LGrid /><LTooltip suffix="%" />
+        <ChartCard title="Taxas de encerramento da coorte" dot="#4ade80" height="h-72">
+          <AreaChart data={taxaData} onClick={(cd: Record<string,unknown>) => {
+            if (cd?.activeLabel) onDrill(`Coorte ${cd.activeLabel} · encerradas`, rows.filter(r => isConcluida(r.descsituacao) && toISOMonth(r.datacadastro) === cd.activeLabel))
+          }} style={{ cursor: 'pointer' }}>
+            <Area dataKey="Encerramento total" stroke="#4ade80" fill="#4ade80" name="Encerramento total" />
+            <Area dataKey="No mesmo mês" stroke="#c4b5fd" fill="#c4b5fd" name="No mesmo mês" />
+            <LXAxis dataKey="name" /><LYAxis domain={[0, 100]} /><LGrid /><LTooltip suffix="%" /><LLegend />
           </AreaChart>
         </ChartCard>
       </div>
 
-      <ChartCard title="MTTR Médio por Mês de Abertura (dias)" dot="#f97316" height="h-56">
-        <BarChart data={mttrData}>
+      <ChartCard title="Tempo médio até o encerramento formal · dias" dot="#f97316" height="h-56">
+        <BarChart data={cohort.rows.map(item => ({ name: item.name, value: item.mttr }))}>
           <Bar dataKey="value" name="MTTR (dias)"
-            onClick={(data: Record<string,unknown>) => onDrill(`Cohort ${data.name} — todas as OS`, rows.filter(r => toISOMonth(r.datacadastro) === data.name))}>
-            {mttrData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+            onClick={(data: Record<string,unknown>) => onDrill(`Coorte ${data.name} · encerradas`, rows.filter(r => isConcluida(r.descsituacao) && toISOMonth(r.datacadastro) === data.name))}>
+            {cohort.rows.map((entry, i) => <Cell key={i} fill={entry.mttr <= 2 ? '#4ade80' : entry.mttr <= 5 ? '#facc15' : '#f87171'} />)}
           </Bar>
           <XAxis dataKey="name" /><YAxis /><Grid />
           <ChartTooltip suffix=" dias" formatter={(v: number) => `MTTR: ${v} dias`} />
         </BarChart>
       </ChartCard>
 
-      {c.labels.length > 0 && (
+      {cohort.rows.length > 0 && (
         <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-white/[0.08]">
             <p className="text-caption font-bold uppercase tracking-wide text-muted">
-              Tabela Cohort Detalhada
+              Tabela detalhada das coortes
               <span className="ml-2 font-normal normal-case tracking-normal text-muted/50">
                 — clique em uma linha para ver as OS
               </span>
@@ -636,35 +637,27 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
             <table className="w-full text-caption">
               <thead>
                 <tr className="border-b border-white/[0.08] bg-surface">
-                  {['Mês','Abertas','Concluídas','Mesmo Mês','Taxa Res.','MTTR Méd.'].map(h => (
+                  {['Mês de abertura','Total','Encerradas','Ainda abertas','Mesmo mês','Taxa total','MTTR'].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {c.labels.map((label, i) => {
-                  const taxa  = c.taxaResolucao[i] ?? 0
-                  const mttrV = c.mttr[i] ?? 0
-                  return (
-                    <tr key={label} className="hover:bg-surface/30 cursor-pointer transition-colors"
-                        onClick={() => onDrill(`Cohort ${label}`, rows.filter(r => toISOMonth(r.datacadastro) === label))}>
-                      <td className="px-4 py-2.5 font-mono text-primary">{label}</td>
-                      <td className="px-4 py-2.5 font-mono">{c.total[i] ?? 0}</td>
-                      <td className="px-4 py-2.5 font-mono text-green">{c.concluidas[i] ?? 0}</td>
-                      <td className="px-4 py-2.5 font-mono text-purple-400">{c.mesmoMes[i] ?? 0}</td>
-                      <td className="px-4 py-2.5">
-                        <span className={`font-mono text-caption font-semibold ${taxa >= 80 ? 'text-green' : taxa >= 50 ? 'text-yellow' : 'text-red'}`}>
-                          {taxa}%
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <span className={`font-mono text-caption ${mttrV <= 2 ? 'text-green' : mttrV <= 5 ? 'text-yellow' : 'text-red'}`}>
-                          {mttrV}d
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
+                {cohort.rows.map(item => (
+                  <tr key={item.name} tabIndex={0} role="button"
+                      aria-label={`Abrir coorte ${item.name}, ${item.total} OS`}
+                      className="cursor-pointer transition-colors hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50"
+                      onClick={() => onDrill(`Coorte ${item.name}`, rows.filter(r => toISOMonth(r.datacadastro) === item.name))}
+                      onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onDrill(`Coorte ${item.name}`, rows.filter(r => toISOMonth(r.datacadastro) === item.name)) } }}>
+                    <td className="px-4 py-2.5 font-mono text-primary">{item.name}{item.emFormacao && <span className="ml-2 rounded-full border border-orange/25 bg-orange/10 px-1.5 py-0.5 font-sans text-caption text-orange">em formação</span>}</td>
+                    <td className="px-4 py-2.5 font-mono">{item.total}</td>
+                    <td className="px-4 py-2.5 font-mono text-green">{item.encerradas}</td>
+                    <td className="px-4 py-2.5 font-mono text-orange">{item.abertas}</td>
+                    <td className="px-4 py-2.5 font-mono text-purple-400">{item.mesmoMes} <span className="text-muted">({item.mesmoMesPct}%)</span></td>
+                    <td className="px-4 py-2.5 font-mono font-semibold text-text">{item.taxa}%</td>
+                    <td className="px-4 py-2.5 font-mono text-muted">{item.mttr}d</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
