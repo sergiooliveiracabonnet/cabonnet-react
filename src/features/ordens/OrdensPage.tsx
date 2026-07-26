@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BarChart2, ChevronUp, AlertTriangle, Download, Send, CheckCircle, CalendarClock, FileText, Router, Wrench, HardHat, Copy, Users, SlidersHorizontal, RefreshCw } from 'lucide-react'
+import { BarChart2, ChevronUp, Download, Send, CheckCircle, FileText, Router, Wrench, HardHat, Copy, Users, SlidersHorizontal, RefreshCw } from 'lucide-react'
 import type { OSRow } from '../../lib/types'
 type ColRender = (value: unknown, row: OSRow) => React.ReactNode
 import { useOrdens } from '../../hooks/useOrdens'
@@ -23,6 +23,7 @@ import { OSHoverCard } from './OSHoverCard'
 import { TelegramOrdensModal } from './TelegramOrdensModal'
 import { PeriodoGroupedTable } from './PeriodoGroupedTable'
 import { ClienteGroupedTable } from './ClienteGroupedTable'
+import { ORDENS_CARD_ICONS } from './ordensCardIcons'
 
 
 const statusOptions = [
@@ -335,32 +336,32 @@ export default function OrdensPage() {
       {kpiVisible && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard
-            title="Total OS" value={os.kpis.total}
+            title="Total OS" value={os.kpis.total} icon={ORDENS_CARD_ICONS.total}
             sub="ver todas" delay={0}
             onClick={() => { os.clearFilters(); scrollToTable() }}
           />
           <StatCard
-            title="Críticas" value={os.kpis.criticas} tone="critical"
+            title="Críticas" value={os.kpis.criticas} tone="critical" icon={ORDENS_CARD_ICONS.criticas}
             sub="SLA 2× excedido" delay={40}
             onClick={() => { os.clearFilters(); os.setCritico(true); scrollToTable() }}
           />
           <StatCard
-            title="Sem equipe" value={os.kpis.semEquipe} tone="warning" icon={AlertTriangle}
+            title="Sem equipe" value={os.kpis.semEquipe} tone="warning" icon={ORDENS_CARD_ICONS.semEquipe}
             sub="sem alocação" delay={80}
             onClick={() => { os.clearFilters(); os.setSemEquipe(true); scrollToTable() }}
           />
           <StatCard
-            title="Agend. hoje" value={os.kpis.agendHoje} tone="ok"
+            title="Agend. hoje" value={os.kpis.agendHoje} tone="ok" icon={ORDENS_CARD_ICONS.agendHoje}
             sub="para hoje" delay={120}
             onClick={() => { os.clearFilters(); os.setAgendHoje(true); scrollToTable() }}
           />
           <StatCard
-            title="Amanhã" value={os.kpis.agendAmanha} icon={CalendarClock}
+            title="Amanhã" value={os.kpis.agendAmanha} icon={ORDENS_CARD_ICONS.agendAmanha}
             sub="ativas p/ amanhã · geral" delay={160}
             onClick={() => { os.clearFilters(); os.setAgendAmanha(true); scrollToTable() }}
           />
           <StatCard
-            title="Agend. Futuro" value={os.kpis.agendFuturo} tone="warning" icon={CalendarClock}
+            title="Agend. Futuro" value={os.kpis.agendFuturo} tone="warning" icon={ORDENS_CARD_ICONS.agendFuturo}
             sub="ativas, amanhã em diante · geral" delay={200}
             onClick={() => { os.clearFilters(); os.setAgendFuturo(true); scrollToTable() }}
           />
