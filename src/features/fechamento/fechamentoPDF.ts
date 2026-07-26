@@ -199,27 +199,26 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
 
   // ── 1 · RANKING DE EQUIPES ──────────────────────────────────────────────────
   _section('1. RANKING DE EQUIPES — PRODUTIVIDADE')
-  const ECOLS = [0, 7, 60, 76, 92, 108, 130]
+  const ECOLS = [0, 8, 68, 88, 110, 136]
   _ri = 0
   _tHead([
     { v: '#', align: 'center' }, 'EQUIPE',
-    { v: 'EXEC.',  align: 'center' }, { v: 'S/EX.', align: 'center' },
-    { v: 'PEND.',  align: 'center' }, { v: 'SLA V.', align: 'center' },
+    { v: 'EXEC.',  align: 'center' }, { v: 'PEND.', align: 'center' },
+    { v: 'SLA V.', align: 'center' },
     { v: 'TAXA %', align: 'center' },
   ], ECOLS)
   Object.entries(stats.byEquipe)
-    .map(([eq, d]) => { const tot = d.exec + d.semExec + d.pend; return { eq, ...d, taxa: tot > 0 ? Math.round(d.exec / tot * 100) : 0 } })
+    .map(([eq, d]) => { const tot = d.exec + d.pend; return { eq, ...d, taxa: tot > 0 ? Math.round(d.exec / tot * 100) : 0 } })
     .sort((a, b) => b.exec - a.exec).slice(0, 30)
     .forEach((e, i) => {
       const tc = e.taxa >= SLA_MIN ? C.green : e.taxa >= SLA_MIN - 15 ? C.yellow : C.red
       _tRow([
         String(i + 1), e.eq.slice(0, 26),
         { v: String(e.exec),                            align: 'center' },
-        { v: String(e.semExec),                         align: 'center' },
         { v: String(e.pend),                            align: 'center' },
         { v: e.slaVenc > 0 ? String(e.slaVenc) : '—',  align: 'center' },
         { v: e.taxa + '%',                              align: 'center' },
-      ], ECOLS, { 0: C.muted, 2: C.green, 3: C.orange, 4: C.yellow, 5: e.slaVenc > 0 ? C.red : C.muted, 6: tc })
+      ], ECOLS, { 0: C.muted, 2: C.green, 3: C.yellow, 4: e.slaVenc > 0 ? C.red : C.muted, 5: tc })
     })
 
   // ── 2 · PRODUTIVIDADE POR CIDADE ────────────────────────────────────────────
@@ -387,22 +386,21 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
     y += rkH + 10
 
     _section('EQUIPES DE REDE — PRODUTIVIDADE', C.teal)
-    const RECOLS = [0, 7, 60, 74, 88, 103, 117, 138]
+    const RECOLS = [0, 8, 68, 88, 110, 136]
     _ri = 0
-    _tHead(['#', 'EQUIPE', 'EXEC.', 'S/EX.', 'PEND.', 'SLA V.', 'TAXA %'], RECOLS)
+    _tHead(['#', 'EQUIPE', 'EXEC.', 'PEND.', 'SLA V.', 'TAXA %'], RECOLS)
     Object.entries(statsRede.byEquipe)
-      .map(([eq, d]) => { const tot = d.exec + d.semExec + d.pend; return { eq, ...d, taxa: tot > 0 ? Math.round(d.exec / tot * 100) : 0 } })
+      .map(([eq, d]) => { const tot = d.exec + d.pend; return { eq, ...d, taxa: tot > 0 ? Math.round(d.exec / tot * 100) : 0 } })
       .sort((a, b) => b.exec - a.exec)
       .forEach((e, i) => {
         const tc = e.taxa >= SLA_MIN ? C.green : e.taxa >= SLA_MIN - 15 ? C.yellow : C.red
         _tRow([
           String(i + 1), e.eq.slice(0, 26),
           { v: String(e.exec),    align: 'center' },
-          { v: String(e.semExec), align: 'center' },
           { v: String(e.pend),    align: 'center' },
           { v: e.slaVenc > 0 ? String(e.slaVenc) : '—', align: 'center' },
           { v: e.taxa + '%', align: 'center' },
-        ], RECOLS, { 0: C.muted, 2: C.green, 3: C.orange, 4: C.yellow, 5: e.slaVenc > 0 ? C.red : C.muted, 6: tc })
+        ], RECOLS, { 0: C.muted, 2: C.green, 3: C.yellow, 4: e.slaVenc > 0 ? C.red : C.muted, 5: tc })
       })
     y += 4
 

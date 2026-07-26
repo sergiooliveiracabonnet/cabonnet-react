@@ -6,6 +6,7 @@ COPY package*.json ./
 RUN npm ci
 COPY requirements.txt ./
 RUN pip3 install -r requirements.txt --break-system-packages
+RUN python3 -m playwright install --with-deps chromium
 COPY . .
 RUN npm run build
 EXPOSE 3000

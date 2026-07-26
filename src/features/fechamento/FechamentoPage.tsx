@@ -267,7 +267,7 @@ function Section({ title, children, borderColor }: { title: string; children: Re
 function EquipesTable({ byEquipe }: { byEquipe: Record<string, TeamStats> }) {
   const equipes = Object.entries(byEquipe)
     .map(([eq, d]) => {
-      const totalOp = d.exec + d.semExec + d.pend
+      const totalOp = d.exec + d.pend
       const taxa = totalOp > 0 ? Math.round(d.exec / totalOp * 100) : 0
       return { eq, ...d, totalOp, taxa }
     })
@@ -287,7 +287,6 @@ function EquipesTable({ byEquipe }: { byEquipe: Record<string, TeamStats> }) {
             <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase w-8">#</th>
             <th className="px-2 py-2 text-left   text-caption font-bold text-muted uppercase">Equipe</th>
             <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">Exec.</th>
-            <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">S/Exec</th>
             <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">Pend.</th>
             <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">SLA Venc.</th>
             <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">Taxa</th>
@@ -299,7 +298,6 @@ function EquipesTable({ byEquipe }: { byEquipe: Record<string, TeamStats> }) {
               <td className="px-2 py-2 text-center text-caption">{i < 3 ? medals[i] : i + 1}</td>
               <td className="px-2 py-2 font-semibold text-text">{e.eq}</td>
               <td className="px-2 py-2 text-center font-bold text-green">{e.exec}</td>
-              <td className="px-2 py-2 text-center text-orange">{e.semExec || '—'}</td>
               <td className="px-2 py-2 text-center text-yellow">{e.pend || '—'}</td>
               <td className={`px-2 py-2 text-center font-semibold ${e.slaVenc > 0 ? 'text-red' : 'text-muted'}`}>
                 {e.slaVenc || '—'}

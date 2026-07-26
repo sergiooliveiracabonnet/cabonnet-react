@@ -8,6 +8,7 @@ python-multipart>=0.0.9   # form data support
 
 # HTTP client (Grafana, Zabbix, Telegram, Claude)
 requests>=2.31.0
+playwright>=1.52.0
 
 # Image generation (Telegram resumo/detalhado)
 Pillow>=10.0.0

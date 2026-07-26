@@ -1365,33 +1365,22 @@ def _gerar_pdf_relatorio_via_browser(aba="instacable", periodo="fechamento", cha
                 context.add_cookies([{"name": "cbn_session", "value": token, "url": url_base}])
                 page = context.new_page()
                 page.set_default_timeout(90000)
-                page.goto(f"{url_base}/fechamento", wait_until="networkidle")
+                page.goto(f"{url_base}/fechamento", wait_until="domcontentloaded")
                 page.wait_for_function("() => window.__cbnFechamentoReady === true", timeout=90000)
                 page.evaluate(f"window.relSetAba({aba!r})")
                 page.wait_for_timeout(400)
                 page.evaluate(f"window.relSetPeriodo({periodo!r})")
                 page.wait_for_function("() => window.__cbnFechamentoReady === true", timeout=30000)
                 page.wait_for_timeout(600)
-                import json as _json
-                _chat_id_js = _json.dumps(str(chat_id)) if chat_id else "null"
-                result = page.evaluate(f"""async () => {{
-                    return new Promise((resolve) => {{
-                        const orig = window.fetch;
-                        window.fetch = async (...args) => {{
-                            const resp = await orig(...args);
-                            const u = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url);
-                            if (u && u.includes('/notify/telegram/pdf')) {{
-                                resp.clone().json().then(d => resolve(d)).catch(e => resolve({{ok:false, error:String(e)}}));
-                            }}
-                            return resp;
-                        }};
-                        try {{ window.relatorioGerarPDF(true, {_chat_id_js}); }}
-                        catch (e) {{ resolve({{ok:false, error:String(e)}}); }}
-                        setTimeout(() => resolve({{ok:false, error:'timeout'}}), 75000);
-                    }});
-                }}""")
+                result = page.evaluate(
+                    "async ([chatId]) => window.relatorioGerarPDF(true, chatId)",
+                    [str(chat_id) if chat_id else None],
+                )
                 ok = bool(result and result.get("ok"))
-                log.info("[Playwright] PDF %s", "enviado" if ok else "falhou")
+                if ok:
+                    log.info("[Playwright] PDF enviado")
+                else:
+                    log.warning("[Playwright] PDF falhou: %s", (result or {}).get("error", "resposta inválida"))
                 return ok
             finally:
                 browser.close()

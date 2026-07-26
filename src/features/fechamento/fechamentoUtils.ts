@@ -149,11 +149,12 @@ export function calcStats(rows: OSRow[], aba: string): FechamentoStats {
   else if (aba === 'wes')   seedEqs(WES_EQS)
   else if (aba === 'thm')   seedEqs(THM_EQS)
   rows.forEach(r => {
+    // Baixa sem execução é ocorrência operacional, não produtividade da equipe técnica.
+    if (r.descsituacao === 'Concluída/Sem Execução') return
     const eq = shortEquipe(r.nomedaequipe) || '(sem equipe)'
     if (!byEquipe[eq]) byEquipe[eq] = { exec: 0, semExec: 0, pend: 0, slaVenc: 0 }
     const d = byEquipe[eq]
     if (r.descsituacao === 'Concluída')              d.exec++
-    if (r.descsituacao === 'Concluída/Sem Execução') d.semExec++
     if (r.descsituacao === 'Pendente' || r.descsituacao === 'Atendimento') {
       d.pend++
       if (r._slaExcedido || r._slaCritico) d.slaVenc++
@@ -205,10 +206,10 @@ export function exportRelatorioCSV(rows: OSRow[], rede: OSRow[], stats: Fechamen
                '_aging', '_slaExcedido', '_slaCritico'] as const
   const rowsOS = [OSH.join(';'), ...rows.map(r => OSH.map(h => csvCell(r[h])).join(';'))]
 
-  const rowsEq = [['equipe', 'exec', 'sem_exec', 'pendentes', 'sla_vencidas', 'taxa_pct'].join(';')]
+  const rowsEq = [['equipe', 'exec', 'pendentes', 'sla_vencidas', 'taxa_pct'].join(';')]
   Object.entries(stats.byEquipe).sort((a, b) => b[1].exec - a[1].exec).forEach(([eq, d]) => {
-    const tot = d.exec + d.semExec + d.pend
-    rowsEq.push([eq, d.exec, d.semExec, d.pend, d.slaVenc, (tot > 0 ? Math.round(d.exec / tot * 100) : 0) + '%'].join(';'))
+    const tot = d.exec + d.pend
+    rowsEq.push([eq, d.exec, d.pend, d.slaVenc, (tot > 0 ? Math.round(d.exec / tot * 100) : 0) + '%'].join(';'))
   })
 
   const rowsCid = [['cidade', 'exec', 'sem_exec', 'pendentes', 'sla_vencidas', 'aging_medio', 'taxa_pct'].join(';')]
@@ -227,10 +228,10 @@ export function exportRelatorioCSV(rows: OSRow[], rede: OSRow[], stats: Fechamen
 
   let csvRede = '(sem OS de Rede no período)'
   if (statsRede) {
-    const lines = ['=== REDE — RESUMO ===', ['equipe', 'exec', 'sem_exec', 'pendentes', 'sla_vencidas', 'taxa_pct'].join(';')]
+    const lines = ['=== REDE — RESUMO ===', ['equipe', 'exec', 'pendentes', 'sla_vencidas', 'taxa_pct'].join(';')]
     Object.entries(statsRede.byEquipe).sort((a, b) => b[1].exec - a[1].exec).forEach(([eq, d]) => {
-      const tot = d.exec + d.semExec + d.pend
-      lines.push([eq, d.exec, d.semExec, d.pend, d.slaVenc, (tot > 0 ? Math.round(d.exec / tot * 100) : 0) + '%'].join(';'))
+      const tot = d.exec + d.pend
+      lines.push([eq, d.exec, d.pend, d.slaVenc, (tot > 0 ? Math.round(d.exec / tot * 100) : 0) + '%'].join(';'))
     })
     lines.push('', '=== REDE — CLIENTES ATENDIDOS ===', ['cidade', 'numos', 'nomecliente', 'servico', 'equipe'].join(';'))
     rede.filter(r => r.descsituacao === 'Concluída').forEach(r => {
