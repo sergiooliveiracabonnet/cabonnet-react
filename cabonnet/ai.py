@@ -11,7 +11,7 @@ from datetime import date
 
 import requests
 
-from cabonnet.config import ANTHROPIC_API_KEY, _AI_CACHE_TTL
+from cabonnet.config import ANTHROPIC_API_KEY, _AI_CACHE_TTL, _OPERADORA_GRUPOS
 from cabonnet import state
 
 log = logging.getLogger("CaboNetServer")
@@ -1594,15 +1594,19 @@ _CHAT_TOOLS = [
     },
 ]
 
+_OPERADORAS_CHAT_CONTEXT = "\n".join(
+    f"- {operadora}: frentes {', '.join(frentes)}"
+    for operadora, frentes in _OPERADORA_GRUPOS.items()
+)
+
+
 _CHAT_SYSTEM = (
     "Você é o assistente de operações Cabonnet — sistema de gestão de OS para ISP no Vale do Paraíba (SP).\n\n"
     "CONTEXTO:\n"
     "- 5 cidades: São José dos Campos (SJC), Caçapava, Taubaté, Tremembé, Pindamonhangaba\n"
     "- OS = Ordem de Serviço | Data atual: {today}\n\n"
     "OPERADORAS:\n"
-    "- INSTACABLE: frentes F01, F04, F05, F07, F20, F27, F45, F48, F49, F50\n"
-    "- WES: frentes F08, F11, F36, F39, F44\n"
-    "- THM: frentes F12 a F19\n\n"
+    f"{_OPERADORAS_CHAT_CONTEXT}\n\n"
     "CAMPOS: numos (7 dígitos), nomecliente, nomedacidade, nomedaequipe, descsituacao, "
     "servico, datacadastro (DD/MM/YYYY), aging_dias (calculado).\n\n"
     "Use sempre as ferramentas para buscar dados atualizados antes de responder. "

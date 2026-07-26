@@ -507,7 +507,7 @@ def _telegram_poll_loop_inner():
                     _telegram_send(
                         f"ℹ️ <b>Cabonnet — Operacional THM</b>\n"
                         f"{_TG_DIV}\n"
-                        f"/status — Status das OS THM (frentes F12–F19)\n"
+                        f"/status — Status das OS THM (frentes F12, F13 e F14)\n"
                         f"/pulso — Snapshot rápido: executadas, fila, taxa, SLA crítico\n"
                         f"/equipes — Produção por equipe hoje (exec vs fila)\n"
                         f"/executadas — OS executadas hoje por cidade\n"
