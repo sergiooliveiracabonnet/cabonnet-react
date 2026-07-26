@@ -134,7 +134,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                 className="mt-0.5 w-full border-t border-white/[0.07] pt-1 text-center tabular-nums"
                 title={`Score do período anterior: ${tendencia.anterior}`}
               >
-                <dt className="text-[9px] font-semibold uppercase leading-none tracking-[0.06em] text-muted">
+                <dt className="text-caption font-semibold uppercase leading-none tracking-[0.06em] text-muted">
                   Anterior
                 </dt>
                 <dd className="mt-1 flex items-baseline justify-center gap-1 whitespace-nowrap leading-none">

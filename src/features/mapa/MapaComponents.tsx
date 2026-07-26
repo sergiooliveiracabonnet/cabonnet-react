@@ -396,7 +396,7 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
 
   const sorted = useMemo(() => {
     return [...bairroRows].sort((a, b) => {
-      let av: number | string = 0, bv: number | string = 0
+      let av: number | string, bv: number | string
       if (sortKey === '_aging')       { av = a._aging ?? -1; bv = b._aging ?? -1 }
       else if (sortKey === 'numos')   { av = parseInt(a.numos) || 0; bv = parseInt(b.numos) || 0 }
       else                            { av = a.descsituacao ?? ''; bv = b.descsituacao ?? '' }

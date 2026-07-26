@@ -27,7 +27,7 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
     if (err instanceof Error && err.name === 'AbortError') {
       const msg = `Timeout (${path}): servidor não respondeu em 35s`
       console.error('[api]', msg)
-      throw new Error('Timeout: o servidor não respondeu em 35 segundos')
+      throw new Error('Timeout: o servidor não respondeu em 35 segundos', { cause: err })
     }
     console.error('[api] Erro de rede:', path, err)
     throw err
