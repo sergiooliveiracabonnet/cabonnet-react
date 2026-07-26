@@ -83,6 +83,14 @@ describe('drill-downs comparativos', () => {
     expect(screen.getByText('30%')).toBeInTheDocument()
     expect(screen.getByText('20%')).toBeInTheDocument()
     expect(screen.getByText('10%')).toBeInTheDocument()
+
+    const segmentos = screen.getByRole('img', { name: /distribuição de 100 OS/i })
+      .querySelectorAll('[data-sla-segment]')
+    expect(segmentos).toHaveLength(4)
+    expect(segmentos[0]).toHaveStyle({ background: 'rgb(34, 197, 94)' })
+    expect(segmentos[1]).toHaveStyle({ background: 'rgb(59, 130, 246)' })
+    expect(segmentos[2]).toHaveStyle({ background: 'rgb(251, 146, 60)' })
+    expect(segmentos[3]).toHaveStyle({ background: 'rgb(248, 113, 113)' })
   })
 
   it('abre as OS da equipe selecionada no painel de ritmo', () => {

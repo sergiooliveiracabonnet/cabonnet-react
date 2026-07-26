@@ -12,6 +12,7 @@ Transformar o painel em uma leitura operacional clara da distribuição da fila 
 - Destacar o total em risco, composto por Estourado e 2× SLA.
 - Manter o drill-down de cada faixa e descrição textual acessível.
 - Usar transições curtas e respeitar `prefers-reduced-motion`.
+- Usar escala semântica distinta: verde (< 50%), azul (50–100%), laranja (estourado) e vermelho (2× SLA).
 
 ## Critérios de aceite
 

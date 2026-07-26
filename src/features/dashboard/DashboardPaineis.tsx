@@ -155,8 +155,8 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
   // buildDashboard para os cliques baterem com os números. Vermelho = 2× SLA.
   const ratioDe = (r: OSRow) => (r._slaLimite > 0 ? (r._aging ?? 0) / r._slaLimite : (r._aging ?? 0))
   const agingEntries: { key: string; label: string; color: string; hot?: boolean; match: (r: OSRow) => boolean }[] = [
-    { key: 'ok',        label: '< 50% SLA', color: 'rgba(59,130,246,.30)', match: r => ratioDe(r) < 0.5 },
-    { key: 'limite',    label: '50–100%',   color: 'rgba(59,130,246,.55)', match: r => ratioDe(r) >= 0.5 && ratioDe(r) <= 1 },
+    { key: 'ok',        label: '< 50% SLA', color: 'rgb(34,197,94)',       match: r => ratioDe(r) < 0.5 },
+    { key: 'limite',    label: '50–100%',   color: 'rgb(59,130,246)',      match: r => ratioDe(r) >= 0.5 && ratioDe(r) <= 1 },
     { key: 'estourado', label: 'Estourado', color: 'rgb(251,146,60)',      match: r => ratioDe(r) > 1 && ratioDe(r) <= 2 },
     { key: 'critico',   label: '2× SLA',    color: 'rgb(248,113,113)', hot: true, match: r => ratioDe(r) > 2 },
   ]
@@ -206,7 +206,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
           const val = agingTotals[e.key] ?? 0
           const pct = agingTotal > 0 ? val / agingTotal * 100 : 0
           return pct > 0 ? (
-            <span key={e.key} style={{ width: `${pct}%`, background: e.color }} aria-hidden="true" />
+            <span key={e.key} data-sla-segment={e.key} style={{ width: `${pct}%`, background: e.color }} aria-hidden="true" />
           ) : null
         })}
       </div>
