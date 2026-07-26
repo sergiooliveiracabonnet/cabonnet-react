@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Marker, Circle as MapCircle, Tooltip } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Marker, Circle as MapCircle, Tooltip, ZoomControl, ScaleControl } from 'react-leaflet'
 import {
   Map as MapIcon, Flame, Circle, X, LayoutGrid, Layers, Search, Loader2, AlertTriangle, Wrench,
+  SlidersHorizontal, RotateCcw,
 } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
@@ -18,6 +19,7 @@ import {
   RankingPanel, BairroRankingPanel, BairroPanel,
   PROXIMIDADE_KM, searchPinIcon, execucaoIcon,
   osPointColor, EquipeGeocodeStatus,
+  ApproximateLocationNotice, MapLegend,
   type CidadeAgg, type ProximidadeInfo, type BairroProx,
 } from './MapaComponents'
 
@@ -27,7 +29,8 @@ export default function MapaPage() {
   const { data: execucaoGeo = [] } = useOSExecucaoGeo()
   const [showExecucao, setShowExecucao] = useState(false)
 
-  const [view,        setView]        = useState('ambos')    // 'calor' | 'bolhas' | 'ambos'
+  const [view,        setView]        = useState<'calor' | 'bolhas'>('bolhas')
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [granularity, setGranularity] = useState<'cidade' | 'bairro'>('cidade')
   const [filterTipo,   setFilterTipo]   = useState('')
   const [filterStatus, setFilterStatus] = useState('')
@@ -74,6 +77,7 @@ export default function MapaPage() {
   // Reset seleção ao trocar granularidade
   const handleGranularity = (g: 'cidade' | 'bairro') => {
     setGranularity(g)
+    if (g === 'bairro') setView('bolhas')
     setSelectedCidade(null)
     setSelectedBairro(null)
   }
@@ -182,32 +186,44 @@ export default function MapaPage() {
     { value: '11+',  label: '11+ dias'       },
   ]
 
+  const activeFilterCount = [filterStatus, filterTipo, filterEquipe, filterAging].filter(Boolean).length
+  const clearFilters = () => {
+    setFilterStatus('')
+    setFilterTipo('')
+    setFilterEquipe('')
+    setFilterAging('')
+    setSelectedCidade(null)
+    setSelectedBairro(null)
+  }
+
   return (
-    <div className="-mx-6 -my-6 flex flex-col" style={{ height: 'calc(100vh - 96px)' }}>
+    <div className="-mx-6 -my-6 flex h-[calc(100dvh-96px)] min-h-[560px] flex-col overflow-hidden">
 
       {/* ── Barra superior ────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2.5
-                      bg-elevated/80 backdrop-blur border-b border-white/[0.08] flex-wrap">
+      <header className="flex-shrink-0 border-b border-white/[0.08] bg-elevated/95 px-3 py-2.5 sm:px-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
 
         {/* Ícone + título */}
         <div className="flex items-center gap-2">
           <MapIcon size={15} className="text-primary" />
-          <span className="text-body font-bold text-text">Mapa de Calor</span>
+          <div>
+            <h1 className="text-body font-bold text-text">Mapa Operacional</h1>
+            <p className="text-caption text-muted">Distribuição e risco da fila em campo</p>
+          </div>
         </div>
 
-        <div className="w-px h-5 bg-surface" />
-
         {/* Busca de endereço */}
-        <div className="flex items-center gap-1.5">
-          <div className="relative flex items-center">
+        <div className="order-3 flex w-full min-w-0 items-center gap-2 lg:order-none lg:w-auto lg:flex-1">
+          <div className="relative flex min-w-0 flex-1 lg:max-w-md">
             <Search size={11} className="absolute left-2.5 text-muted pointer-events-none" />
             <input
+              aria-label="Buscar endereço no mapa"
               type="text"
               value={addressQuery}
               onChange={e => setAddressQuery(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleSearchAddress() }}
               placeholder="Buscar endereço (ex: Rua X, bairro, cidade)"
-              className="w-64 pl-7 pr-2 py-1.5 text-label rounded-lg
+              className="h-11 w-full pl-8 pr-3 text-base sm:text-label rounded-lg
                          bg-bg border border-white/[0.08] text-text placeholder:text-muted
                          outline-none focus:border-primary/40 transition-colors duration-fast"
             />
@@ -215,7 +231,7 @@ export default function MapaPage() {
           <button
             onClick={handleSearchAddress}
             disabled={searching || !addressQuery.trim()}
-            className="flex items-center gap-1.5 h-[30px] px-3 rounded-lg text-caption font-semibold
+            className="flex min-h-11 items-center gap-1.5 px-3 rounded-lg text-caption font-semibold
                        bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25
                        disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-fast"
           >
@@ -226,7 +242,8 @@ export default function MapaPage() {
             <button
               onClick={handleClearSearch}
               title="Limpar busca"
-              className="w-[30px] h-[30px] flex items-center justify-center rounded-lg
+              aria-label="Limpar busca de endereço"
+              className="flex h-11 w-11 items-center justify-center rounded-lg
                          text-muted hover:text-text border border-white/[0.08] hover:bg-surface transition-all"
             >
               <X size={12} />
@@ -234,102 +251,95 @@ export default function MapaPage() {
           )}
         </div>
         {searchError && (
-          <span className="text-caption text-yellow flex items-center gap-1">
+          <span role="alert" className="order-4 w-full text-caption text-yellow flex items-center gap-1">
             <AlertTriangle size={10} /> {searchError}
           </span>
         )}
 
-        <div className="w-px h-5 bg-surface" />
-
-        {/* KPIs inline */}
-        <StatCard size="inline" title={filterStatus === '' ? 'OS Ativas' : 'OS'} value={rows.length} />
-        <StatCard size="inline" title="Críticas"  value={totalCriticos}  tone="critical" />
-        <StatCard size="inline" title="Excedidas" value={totalExcedidos} tone="warning" />
-        <StatCard size="inline" title="Aging med" value={`${avgAging}d`} />
-        {granularity === 'cidade'
-          ? <StatCard size="inline" title="Cidades" value={cidades.length} />
-          : <StatCard size="inline" title="Bairros" value={bairros.length} />
-        }
-
         <div className="flex-1" />
-
-        {/* Filtros */}
-        <FilterSelect value={filterStatus} onChange={setFilterStatus} options={statusOpts} placeholder="Status" />
-        <FilterSelect value={filterTipo}   onChange={setFilterTipo}   options={tipoOpts}   placeholder="Tipo" />
-        <FilterSelect value={filterEquipe} onChange={setFilterEquipe} options={equipeOpts} placeholder="Equipe" />
-        <FilterSelect value={filterAging}  onChange={setFilterAging}  options={agingOpts}  placeholder="Aging" />
-
-        <div className="w-px h-5 bg-surface" />
-
-        {/* Toggle de granularidade */}
-        <div className="flex bg-bg border border-white/[0.08] rounded-xl p-0.5">
-          {([
-            { val: 'cidade', icon: LayoutGrid, label: 'Cidade' },
-            { val: 'bairro', icon: Layers,     label: 'Bairro' },
-          ] as { val: 'cidade' | 'bairro'; icon: typeof LayoutGrid; label: string }[]).map(({ val, icon: Icon, label }) => (
-            <button
-              key={val}
-              onClick={() => handleGranularity(val)}
-              title={`Agrupar por ${label}`}
-              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-caption font-semibold
-                          transition-all duration-fast
-                          ${granularity === val
-                            ? 'bg-primary/20 text-primary border border-primary/30'
-                            : 'text-muted hover:text-text'}`}
-            >
-              <Icon size={11} />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="w-px h-5 bg-surface" />
-
-        {/* Toggle de visualização */}
-        <div className="flex bg-bg border border-white/[0.08] rounded-xl p-0.5">
-          {[
-            { val: 'calor',  icon: Flame,  label: 'Calor'  },
-            { val: 'bolhas', icon: Circle, label: 'Bolhas' },
-            { val: 'ambos',  icon: MapIcon, label: 'Ambos'  },
-          ].map(({ val, icon: Icon, label }) => (
-            <button
-              key={val}
-              onClick={() => setView(val)}
-              title={label}
-              className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-caption font-semibold
-                          transition-all duration-fast
-                          ${view === val
-                            ? 'bg-primary/20 text-primary border border-primary/30'
-                            : 'text-muted hover:text-text'}`}
-            >
-              <Icon size={11} />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="w-px h-5 bg-surface" />
-
-        {/* Toggle de execução em campo */}
         <button
-          onClick={() => setShowExecucao(v => !v)}
-          title="OS em atendimento agora (ponto de início da execução)"
-          className={`flex items-center gap-1.5 px-3 h-7 rounded-lg text-caption font-semibold
-                      transition-all duration-fast border
-                      ${showExecucao
-                        ? 'bg-yellow/20 text-yellow border-yellow/30'
-                        : 'text-muted border-white/[0.08] hover:text-text'}`}
+          type="button"
+          onClick={() => setFiltersOpen(v => !v)}
+          aria-expanded={filtersOpen}
+          aria-controls="mapa-filtros"
+          className={`flex min-h-11 items-center gap-2 rounded-lg border px-3 text-caption font-semibold transition-colors
+                      ${filtersOpen || activeFilterCount > 0 ? 'border-primary/30 bg-primary/15 text-primary' : 'border-white/[0.08] text-secondary hover:bg-surface'}`}
         >
-          <Wrench size={11} />
-          Em atendimento agora{execucaoGeo.length > 0 ? ` (${execucaoGeo.length})` : ''}
+          <SlidersHorizontal size={14} />
+          Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
         </button>
-        {showExecucao && execucaoGeo.length === 0 && (
-          <span className="text-[10.5px] text-muted italic">Nenhuma OS em campo agora</span>
+        </div>
+
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5" aria-label="Resumo do mapa">
+          <StatCard size="inline" title={filterStatus === '' ? 'OS Ativas' : 'OS'} value={rows.length} />
+          <StatCard size="inline" title="Críticas" value={totalCriticos} tone="critical" />
+          <StatCard size="inline" title="Excedidas" value={totalExcedidos} tone="warning" />
+          <StatCard size="inline" title="Aging med" value={`${avgAging}d`} />
+          <StatCard size="inline" title={granularity === 'cidade' ? 'Cidades' : 'Bairros'} value={granularity === 'cidade' ? cidades.length : bairros.length} />
+        </div>
+
+        {filtersOpen && (
+          <div id="mapa-filtros" className="mt-2 grid grid-cols-2 gap-2 border-t border-white/[0.08] pt-2 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(130px,1fr))_auto]">
+            <FilterSelect ariaLabel="Filtrar por status" value={filterStatus} onChange={setFilterStatus} options={statusOpts} />
+            <FilterSelect ariaLabel="Filtrar por tipo" value={filterTipo} onChange={setFilterTipo} options={tipoOpts} />
+            <FilterSelect ariaLabel="Filtrar por equipe" value={filterEquipe} onChange={setFilterEquipe} options={equipeOpts} />
+            <FilterSelect ariaLabel="Filtrar por aging" value={filterAging} onChange={setFilterAging} options={agingOpts} />
+            <button type="button" onClick={clearFilters} disabled={activeFilterCount === 0}
+                    className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/[0.08] px-3 text-caption font-semibold text-secondary hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 sm:col-span-1">
+              <RotateCcw size={13} /> Limpar filtros
+            </button>
+          </div>
         )}
-      </div>
+        {granularity === 'bairro' && <ApproximateLocationNotice />}
+      </header>
 
       {/* ── Área do mapa ──────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden" style={{ flex: '1 1 0', minHeight: 0 }}>
+      <div className="relative overflow-hidden overscroll-contain" style={{ flex: '1 1 0', minHeight: 0 }}
+           role="region" aria-label="Mapa operacional das ordens de serviço">
+        <div className="absolute left-2 top-2 z-[500] flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-2 sm:left-4 sm:top-4">
+          <div className="flex rounded-xl border border-white/[0.10] bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Agrupamento geográfico">
+            {([
+              { val: 'cidade', icon: LayoutGrid, label: 'Cidade' },
+              { val: 'bairro', icon: Layers, label: 'Bairro' },
+            ] as const).map(({ val, icon: Icon, label }) => (
+              <button key={val} type="button" onClick={() => handleGranularity(val)} aria-pressed={granularity === val}
+                      className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-caption font-semibold transition-colors
+                                  ${granularity === val ? 'bg-primary/20 text-primary' : 'text-muted hover:bg-surface hover:text-text'}`}>
+                <Icon size={13} aria-hidden="true" /> {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex rounded-xl border border-white/[0.10] bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Camada de visualização">
+            {([
+              { val: 'bolhas', icon: Circle, label: 'Bolhas' },
+              { val: 'calor', icon: Flame, label: 'Concentração' },
+            ] as const).map(({ val, icon: Icon, label }) => (
+              <button key={val} type="button" onClick={() => setView(val)} aria-pressed={view === val}
+                      disabled={val === 'calor' && granularity === 'bairro'}
+                      title={val === 'calor' ? 'Concentração agregada por cidade' : 'Quantidade e risco por localidade'}
+                      className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-caption font-semibold transition-colors
+                                  ${view === val ? 'bg-primary/20 text-primary' : 'text-muted hover:bg-surface hover:text-text'}
+                                  disabled:cursor-not-allowed disabled:opacity-40`}>
+                <Icon size={13} aria-hidden="true" /> {label}
+              </button>
+            ))}
+          </div>
+
+          <button type="button" onClick={() => setShowExecucao(v => !v)} aria-pressed={showExecucao}
+                  className={`flex min-h-11 items-center gap-1.5 rounded-xl border bg-elevated/95 px-3 text-caption font-semibold shadow-lg backdrop-blur transition-colors
+                              ${showExecucao ? 'border-yellow/30 text-yellow' : 'border-white/[0.10] text-muted hover:bg-surface hover:text-text'}`}>
+            <Wrench size={13} aria-hidden="true" />
+            Em campo{execucaoGeo.length > 0 ? ` (${execucaoGeo.length})` : ''}
+          </button>
+        </div>
+
+        {showExecucao && execucaoGeo.length === 0 && (
+          <div role="status" className="absolute left-2 top-36 z-[500] rounded-lg border border-white/[0.08] bg-elevated/95 px-3 py-2 text-caption text-muted sm:left-4 sm:top-32">
+            Nenhuma OS em campo agora
+          </div>
+        )}
+
         <MapContainer
           center={[-23.07, -45.72]}
           zoom={10}
@@ -338,6 +348,8 @@ export default function MapaPage() {
         >
           <MapResizer />
           <FlyTo point={searchResult} />
+          <ZoomControl position="bottomleft" />
+          <ScaleControl position="bottomleft" imperial={false} />
 
           {/* ESRI World Dark Gray Base — dark nativo, sem filtro CSS, sem API key */}
           <TileLayer
@@ -347,12 +359,12 @@ export default function MapaPage() {
           />
 
           {/* Heatmap layer */}
-          {!filterEquipe && (view === 'calor' || view === 'ambos') && heatPoints.length > 0 && (
+          {!filterEquipe && view === 'calor' && granularity === 'cidade' && heatPoints.length > 0 && (
             <HeatLayer points={heatPoints as [number, number, number][]} />
           )}
 
           {/* Bubble markers */}
-          {!filterEquipe && (view === 'bolhas' || view === 'ambos') && markers.map(g => {
+          {!filterEquipe && view === 'bolhas' && markers.map(g => {
             const isCidade = granularity === 'cidade'
             const gc = g as CidadeAgg
             const gb = g as BairroAgg
@@ -394,7 +406,7 @@ export default function MapaPage() {
                   <span className="font-semibold">{label}</span>
                   {' '}
                   <span className="font-mono">{g.count}</span>
-                  {criticos > 0 && <span className="text-red ml-1">⚠{criticos}</span>}
+                  {criticos > 0 && <span className="text-red ml-1">Críticas: {criticos}</span>}
                 </Tooltip>
               </CircleMarker>
             )
@@ -484,29 +496,14 @@ export default function MapaPage() {
           />
         )}
 
-        {/* Legenda */}
-        <div className="absolute bottom-4 right-4 z-[500]">
-          <div className="bg-elevated/85 backdrop-blur border border-white/[0.08] rounded-xl px-3 py-2.5 space-y-1.5">
-            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Criticidade</p>
-            {[
-              { color: '#f87171', label: 'SLA Crítico'   },
-              { color: '#f97316', label: 'SLA Excedido'  },
-              { color: '#3b82f6', label: 'Pendente/Atend.' },
-              { color: '#4ade80', label: 'Concluída/OK'  },
-            ].map(({ color, label }) => (
-              <div key={label} className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
-                <span className="text-caption text-secondary">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {!searchResult && !selectedCidade && !selectedBairro && <MapLegend />}
 
         {/* Ranking lateral */}
-        {granularity === 'cidade'
-          ? <RankingPanel cidades={cidades} onSelect={setSelectedCidade} selected={selectedCidade} />
-          : <BairroRankingPanel bairros={bairros} onSelect={setSelectedBairro} selected={selectedBairro} />
-        }
+        {!searchResult && !selectedCidade && !selectedBairro && (
+          granularity === 'cidade'
+            ? <RankingPanel cidades={cidades} onSelect={setSelectedCidade} selected={selectedCidade} />
+            : <BairroRankingPanel bairros={bairros} onSelect={setSelectedBairro} selected={selectedBairro} />
+        )}
 
         {/* Painel de detalhe */}
         {granularity === 'cidade'

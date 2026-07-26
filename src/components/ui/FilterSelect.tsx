@@ -11,13 +11,15 @@ interface FilterSelectProps {
   options:      Option[]
   placeholder?: string
   className?:   string
+  ariaLabel?:   string
 }
 
-export function FilterSelect({ value, onChange, options, placeholder, className = '' }: FilterSelectProps) {
+export function FilterSelect({ value, onChange, options, placeholder, className = '', ariaLabel }: FilterSelectProps) {
   return (
     <div className={`relative ${className}`}>
       <select
         value={value}
+        aria-label={ariaLabel ?? placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full appearance-none pl-3 pr-7 py-1.5 text-label rounded-md
                    bg-surface border border-white/[0.08] text-text rounded-lg

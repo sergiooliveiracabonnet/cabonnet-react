@@ -60,6 +60,13 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+export function prioritizeGeocodeRows(rows: OSRow[]): OSRow[] {
+  return [...rows].sort((a, b) => {
+    const priority = (row: OSRow) => row._slaCritico ? 2 : row._slaExcedido ? 1 : 0
+    return priority(b) - priority(a) || (b._aging ?? -1) - (a._aging ?? -1)
+  })
+}
+
 function fallbackPoint(os: OSRow): GeocodedOSPoint | null {
   const coords = getBairroCoords(os.nomedacidade, os.bairro)
   if (!coords) return null
@@ -99,7 +106,7 @@ export function useGeocodedEquipeOS(
   options?: { delayMs?: number },
 ): UseGeocodedEquipeOSResult {
   const delayMs = options?.delayMs ?? GEOCODE_DELAY_MS
-  const limited = active ? rows.slice(0, MAX_GEOCODE_OS) : []
+  const limited = active ? prioritizeGeocodeRows(rows).slice(0, MAX_GEOCODE_OS) : []
   const total = limited.length
   const capped = active && rows.length > MAX_GEOCODE_OS
   const signature = limited.map(r => r.numos).join(',')

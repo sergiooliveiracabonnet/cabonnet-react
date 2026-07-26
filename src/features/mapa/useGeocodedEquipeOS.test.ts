@@ -9,6 +9,7 @@ import { geocodeAddress } from './searchAddress'
 import {
   useGeocodedEquipeOS, buildOSAddress, normalizeAddressKey,
   loadGeocodeCache, saveGeocodeCache, MAX_GEOCODE_OS,
+  prioritizeGeocodeRows,
 } from './useGeocodedEquipeOS'
 import { getBairroCoords } from './geo'
 
@@ -141,5 +142,21 @@ describe('useGeocodedEquipeOS', () => {
     expect(result.current.total).toBe(MAX_GEOCODE_OS)
     expect(result.current.capped).toBe(true)
     expect(geocodeAddress).toHaveBeenCalledTimes(MAX_GEOCODE_OS)
+  })
+})
+
+describe('prioritizeGeocodeRows', () => {
+  it('prioriza SLA crítico, excedido e maior aging antes de aplicar o limite', () => {
+    const rows = [
+      makeOS({ numos: 'NORMAL', _aging: 9 }),
+      makeOS({ numos: 'EXCEDIDO', _slaExcedido: true, _aging: 2 }),
+      makeOS({ numos: 'CRITICO-NOVO', _slaCritico: true, _aging: 3 }),
+      makeOS({ numos: 'CRITICO-ANTIGO', _slaCritico: true, _aging: 12 }),
+    ]
+
+    expect(prioritizeGeocodeRows(rows).map(r => r.numos)).toEqual([
+      'CRITICO-ANTIGO', 'CRITICO-NOVO', 'EXCEDIDO', 'NORMAL',
+    ])
+    expect(rows.map(r => r.numos)).toEqual(['NORMAL', 'EXCEDIDO', 'CRITICO-NOVO', 'CRITICO-ANTIGO'])
   })
 })

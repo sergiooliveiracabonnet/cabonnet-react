@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import {
-  TrendingUp, X, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, MapPin as PinIcon, Loader2,
+  TrendingUp, X, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, MapPin as PinIcon, Loader2, Info, Wrench,
 } from 'lucide-react'
 import L from 'leaflet'
 import type { BairroAgg } from './geo'
@@ -60,7 +60,10 @@ export function MapResizer() {
 export function FlyTo({ point }: { point: { lat: number; lng: number } | null }) {
   const map = useMap()
   useEffect(() => {
-    if (point) map.flyTo([point.lat, point.lng], 14, { duration: 0.8 })
+    if (point) {
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      map.flyTo([point.lat, point.lng], 14, { duration: reduceMotion ? 0 : 0.8 })
+    }
   }, [map, point])
   return null
 }
@@ -111,6 +114,52 @@ export function osPointColor(os: OSRow): { fill: string; stroke: string } {
   return { fill: '#4ade80', stroke: '#86efac' }
 }
 
+export function ApproximateLocationNotice() {
+  return (
+    <div role="status" className="mt-2 flex items-start gap-2 rounded-lg border border-yellow/30 bg-yellow/[0.06]
+                                  px-3 py-2 text-caption text-secondary">
+      <Info size={14} className="mt-0.5 flex-shrink-0 text-yellow" aria-hidden="true" />
+      <span><strong className="text-yellow">Posições aproximadas:</strong> os bairros são distribuídos ao redor do centro da cidade e não representam o endereço exato.</span>
+    </div>
+  )
+}
+
+export function MapLegend() {
+  const items = [
+    { color: '#f87171', label: 'SLA crítico' },
+    { color: '#f97316', label: 'SLA excedido' },
+    { color: '#3b82f6', label: 'Pendente ou atendimento' },
+    { color: '#4ade80', label: 'Concluída ou sem risco' },
+  ]
+  return (
+    <section aria-label="Legenda do mapa" className="absolute bottom-2 right-2 z-[500] max-w-[calc(100%-1rem)] sm:bottom-4 sm:right-4">
+      <details className="group rounded-xl border border-white/[0.10] bg-elevated/95 shadow-xl backdrop-blur sm:open:min-w-56" open>
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-caption font-bold uppercase tracking-[0.05em] text-secondary">
+          Legenda
+          <ChevronDown size={13} className="transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+        </summary>
+        <div className="space-y-2 border-t border-white/[0.08] px-3 pb-3 pt-2">
+          {items.map(item => (
+            <div key={item.label} className="flex items-center gap-2 text-caption text-secondary">
+              <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: item.color }} aria-hidden="true" />
+              {item.label}
+            </div>
+          ))}
+          <div className="border-t border-white/[0.08] pt-2 text-caption text-muted">Maior círculo = mais OS</div>
+          <div className="flex items-center gap-2 text-caption text-muted">
+            <span className="h-2.5 w-2.5 rounded-full border border-dashed border-secondary" aria-hidden="true" />
+            Contorno tracejado = posição aproximada
+          </div>
+          <div className="flex items-center gap-2 text-caption text-muted">
+            <Wrench size={12} className="text-yellow" aria-hidden="true" />
+            Execução em campo
+          </div>
+        </div>
+      </details>
+    </section>
+  )
+}
+
 // ── Radius proporcional à raiz quadrada do count ──────────────────────────────
 export const bubbleRadius = (count: number): number => Math.max(10, Math.min(42, 6 + Math.sqrt(count) * 3.2))
 
@@ -119,7 +168,7 @@ export function CidadePanel({ cidade, onClose }: { cidade: CidadeAgg | null; onC
   if (!cidade) return null
   const { fill } = bubbleColor(cidade)
   return (
-    <div className="absolute bottom-4 left-4 z-[500] w-72 animate-fade-in">
+    <div className="absolute bottom-2 left-2 right-2 z-[500] animate-fade-in sm:bottom-4 sm:left-4 sm:right-auto sm:w-72">
       <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
@@ -131,7 +180,8 @@ export function CidadePanel({ cidade, onClose }: { cidade: CidadeAgg | null; onC
           </div>
           <button
             onClick={onClose}
-            className="w-6 h-6 rounded-lg flex items-center justify-center
+            aria-label={`Fechar detalhes de ${cidade.cidade}`}
+            className="w-11 h-11 rounded-lg flex items-center justify-center
                        text-muted hover:text-text hover:bg-surface transition-all"
           >
             <X size={12} />
@@ -201,7 +251,7 @@ export function AddressSearchPanel({ result, info, onClose }: {
 }) {
   const { temEquipesProximas, equipes, proximos, maisProximo } = info
   return (
-    <div className="absolute top-4 left-4 z-[500] w-80 animate-fade-in">
+    <div className="absolute bottom-2 left-2 right-2 z-[500] animate-fade-in sm:bottom-auto sm:left-4 sm:right-auto sm:top-4 sm:w-80">
       <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="flex items-start justify-between gap-2 px-4 py-3 border-b border-white/[0.08]">
@@ -211,7 +261,8 @@ export function AddressSearchPanel({ result, info, onClose }: {
           </div>
           <button
             onClick={onClose}
-            className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0
+            aria-label="Fechar resultado da busca"
+            className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0
                        text-muted hover:text-text hover:bg-surface transition-all"
           >
             <X size={12} />
@@ -265,16 +316,17 @@ export function AddressSearchPanel({ result, info, onClose }: {
         {/* Bairros próximos */}
         {proximos.length > 0 && (
           <div className="px-4 py-3 max-h-48 overflow-y-auto">
-            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Bairros próximos</p>
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-1">Bairros próximos</p>
+            <p className="mb-2 text-caption text-yellow">Distâncias estimadas a partir de posições aproximadas.</p>
             <div className="space-y-1.5">
               {proximos.map(b => (
                 <div key={`${b.cidade}::${b.bairro}`} className="flex items-center gap-2 text-caption">
                   <span className="flex-1 min-w-0 truncate text-secondary capitalize">
                     {b.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                   </span>
-                  <span className="text-muted font-mono flex-shrink-0">{b.distKm.toFixed(1)}km</span>
+                  <span className="text-muted font-mono flex-shrink-0">~{b.distKm.toFixed(1)}km</span>
                   <span className="font-mono font-semibold text-text flex-shrink-0 w-6 text-right">{b.count}</span>
-                  {b.criticos > 0 && <span className="text-caption font-bold text-red flex-shrink-0">⚠{b.criticos}</span>}
+                  {b.criticos > 0 && <span className="inline-flex items-center gap-0.5 text-caption font-bold text-red flex-shrink-0"><AlertTriangle size={10} aria-hidden="true" />{b.criticos}</span>}
                 </div>
               ))}
             </div>
@@ -304,8 +356,8 @@ export function EquipeGeocodeStatus({ resolved, total, capped, totalEquipe }: {
   if (total === 0) return null
   const done = resolved >= total
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500]">
-      <div className="flex items-center gap-2 bg-elevated/90 backdrop-blur-md border border-white/[0.08]
+    <div className="absolute left-1/2 top-40 z-[500] max-w-[calc(100%-1rem)] -translate-x-1/2 sm:top-20">
+      <div className="flex items-center gap-2 bg-elevated/95 backdrop-blur-md border border-white/[0.08]
                        rounded-full px-3.5 py-1.5 shadow-2xl">
         {!done && <Loader2 size={11} className="animate-spin text-primary" />}
         <span className="text-caption font-semibold text-secondary">
@@ -328,7 +380,7 @@ export function RankingPanel({ cidades, onSelect, selected }: {
   selected: CidadeAgg | null
 }) {
   return (
-    <div className="absolute top-4 right-4 z-[500] w-60">
+    <div className="absolute right-2 top-40 z-[500] w-[min(15rem,calc(100%-1rem))] sm:right-4 sm:top-4 sm:w-60">
       <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.08]">
           <TrendingUp size={12} className="text-primary" />
@@ -342,7 +394,9 @@ export function RankingPanel({ cidades, onSelect, selected }: {
               <button
                 key={g.cidade}
                 onClick={() => onSelect(isSelected ? null : g)}
-                className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-left transition-all
+                aria-pressed={isSelected}
+                aria-label={`${g.cidade}: ${g.count} OS${g.criticos > 0 ? `, ${g.criticos} críticas` : ''}`}
+                className={`w-full min-h-11 flex items-center gap-2.5 px-3.5 py-2 text-left transition-all
                             ${isSelected ? 'bg-primary/10' : 'hover:bg-surface/30'}`}
               >
                 <span className="text-caption font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
@@ -352,7 +406,7 @@ export function RankingPanel({ cidades, onSelect, selected }: {
                 </span>
                 <span className="text-caption font-mono font-semibold text-text flex-shrink-0">{g.count}</span>
                 {g.criticos > 0 && (
-                  <span className="text-caption font-bold text-red flex-shrink-0">{g.criticos}⚠</span>
+                  <span className="inline-flex items-center gap-0.5 text-caption font-bold text-red flex-shrink-0"><AlertTriangle size={10} aria-hidden="true" />{g.criticos}</span>
                 )}
               </button>
             )
@@ -416,7 +470,7 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
   const bairroFmt = bairro.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
 
   return (
-    <div className="absolute bottom-4 left-4 z-[500] w-80 animate-fade-in">
+    <div className="absolute bottom-2 left-2 right-2 z-[500] animate-fade-in sm:bottom-4 sm:left-4 sm:right-auto sm:w-80">
       <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[70vh]">
 
         {/* Header */}
@@ -428,7 +482,7 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
               <p className="text-caption text-muted">{cidadeFmt}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-6 h-6 rounded-lg flex items-center justify-center text-muted hover:text-text hover:bg-surface transition-all flex-shrink-0">
+          <button onClick={onClose} aria-label={`Fechar detalhes de ${bairroFmt}`} className="w-11 h-11 rounded-lg flex items-center justify-center text-muted hover:text-text hover:bg-surface transition-all flex-shrink-0">
             <X size={12} />
           </button>
         </div>
@@ -474,7 +528,7 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
                   <button
                     key={os.numos}
                     onClick={() => onOS(os)}
-                    className="w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-primary/[0.05] transition-colors"
+                    className="w-full min-h-11 flex items-start gap-2 px-3 py-2 text-left hover:bg-primary/[0.05] transition-colors"
                   >
                     <span className="text-caption font-mono font-bold text-primary flex-shrink-0 w-14 pt-0.5">{os.numos}</span>
                     <div className="flex-1 min-w-0">
@@ -505,7 +559,7 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
   selected: BairroAgg | null
 }) {
   return (
-    <div className="absolute top-4 right-4 z-[500] w-64">
+    <div className="absolute right-2 top-40 z-[500] w-[min(16rem,calc(100%-1rem))] sm:right-4 sm:top-4 sm:w-64">
       <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.08]">
           <TrendingUp size={12} className="text-primary" />
@@ -519,7 +573,9 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
               <button
                 key={`${b.cidade}::${b.bairro}`}
                 onClick={() => onSelect(isSelected ? null : b)}
-                className={`w-full flex items-center gap-2 px-3.5 py-2 text-left transition-all
+                aria-pressed={isSelected}
+                aria-label={`${b.bairro}, ${b.cidade}: ${b.count} OS${b.criticos > 0 ? `, ${b.criticos} críticas` : ''}. Posição aproximada`}
+                className={`w-full min-h-11 flex items-center gap-2 px-3.5 py-2 text-left transition-all
                             ${isSelected ? 'bg-primary/10' : 'hover:bg-surface/30'}`}
               >
                 <span className="text-caption font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
@@ -533,7 +589,7 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
                   </p>
                 </div>
                 <span className="text-caption font-mono font-semibold text-text flex-shrink-0">{b.count}</span>
-                {b.criticos > 0 && <span className="text-caption font-bold text-red flex-shrink-0">{b.criticos}⚠</span>}
+                {b.criticos > 0 && <span className="inline-flex items-center gap-0.5 text-caption font-bold text-red flex-shrink-0"><AlertTriangle size={10} aria-hidden="true" />{b.criticos}</span>}
               </button>
             )
           })}
