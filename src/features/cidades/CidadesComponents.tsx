@@ -112,9 +112,11 @@ export function cityOSSortValue(r: OSRow, key: string): string | number {
 // subdimensionada de equipe?" (backlog em dias) e "qual está afundando?"
 // (share da fila > share das execuções).
 
-export function SaudeCidadeTable({ saude, revisitasPorCidade }: {
+export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSelectCity }: {
   saude: CidadeSaude[]
   revisitasPorCidade?: { cidade: string; taxa: number }[]
+  selectedCity?: string
+  onSelectCity?: (cidade: string) => void
 }) {
   const reincDe = useMemo(() => {
     const m = new Map<string, number>()
@@ -126,7 +128,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade }: {
   const comFila = saude.filter(c => c.fila > 0)
 
   return (
-    <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+    <div id="city-health" className="bg-card border border-white/[0.08] rounded-xl overflow-hidden scroll-mt-4">
       <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/[0.08] flex-wrap">
         <Activity size={13} className="text-primary flex-shrink-0" />
         <span className="font-bold text-body text-text">Saúde por Cidade</span>
@@ -163,8 +165,14 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade }: {
               const deltaCls = c.deltaShare >= 5 ? 'text-orange' : c.deltaShare <= -5 ? 'text-green' : 'text-muted'
               const reinc = reincDe.get(c.cidade.toUpperCase())
               return (
-                <tr key={c.cidade} className="text-secondary hover:bg-primary/[0.04] transition-colors">
-                  <td className="px-4 py-2.5 font-semibold text-text whitespace-nowrap">{c.cidade}</td>
+                <tr key={c.cidade} className={`text-secondary transition-colors hover:bg-primary/[0.04] ${selectedCity === c.cidade ? 'bg-primary/[0.07]' : ''}`}>
+                  <td className="sticky left-0 z-[1] whitespace-nowrap bg-card px-2 py-1.5">
+                    <button type="button" onClick={() => onSelectCity?.(c.cidade)}
+                            aria-pressed={selectedCity === c.cidade}
+                            className="min-h-11 w-full rounded-md px-2 text-left font-semibold text-text transition-colors hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+                      {c.cidade}
+                    </button>
+                  </td>
                   <td className="px-4 py-2.5 text-right font-mono font-bold text-text tabular-nums">{c.fila}</td>
                   <td className="px-4 py-2.5 text-center">
                     {c.criticas > 0
@@ -220,7 +228,9 @@ export function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, gro
 
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-5 py-4 hover:bg-surface/20 transition-colors text-left"
+        aria-expanded={open}
+        aria-controls={`panel-content-${id}`}
+        className="w-full min-h-11 flex items-center gap-3 px-5 py-4 hover:bg-surface/20 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50"
       >
         <Icon size={14} className={`text-${color} flex-shrink-0`} />
         <div className="flex-1 min-w-0">
@@ -237,7 +247,7 @@ export function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, gro
       </button>
 
       {open && (
-        <div className="border-t border-white/[0.08]">
+        <div id={`panel-content-${id}`} className="border-t border-white/[0.08]">
           {isLoading || isEmpty ? (
             <p className="text-center text-muted text-label py-8">Nenhuma OS nesta categoria.</p>
           ) : groups ? (
@@ -370,17 +380,14 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
   return (
     <>
       <tr className="border-b border-white/[0.04] transition-colors">
-        <td
-          onClick={onToggle}
-          className="px-4 py-2.5 min-w-[160px] cursor-pointer hover:bg-primary/[0.04]"
-        >
-          <p className="font-semibold text-text">{c.cidade}</p>
-          <div className="mt-1.5 h-0.5 rounded-full bg-surface/40 overflow-hidden w-full">
-            <div
-              className={`h-full bg-${color}/50 rounded-full transition-all`}
-              style={{ width: barPct }}
-            />
-          </div>
+        <td className="min-w-[160px] p-1">
+          <button type="button" onClick={onToggle} aria-expanded={expanded}
+                  className="min-h-11 w-full rounded-md px-3 py-1.5 text-left transition-colors hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+            <span className="font-semibold text-text">{c.cidade}</span>
+            <span className="mt-1.5 block h-0.5 w-full overflow-hidden rounded-full bg-surface/40">
+              <span className={`block h-full bg-${color}/50 rounded-full transition-all`} style={{ width: barPct }} />
+            </span>
+          </button>
         </td>
         {tipos.map(t => {
           const count = c.tipos[t]
@@ -388,15 +395,16 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
           return (
             <td key={t} className="px-4 py-2.5 text-center">
               {count
-                ? <span
+                ? <button type="button"
                     onClick={e => { e.stopPropagation(); onTipoClick(t) }}
                     title={`Ver apenas ${TIPO_LABEL[t]}`}
-                    className={`font-mono font-semibold cursor-pointer px-1.5 py-0.5 rounded transition-colors
+                    aria-pressed={isActive}
+                    className={`min-h-8 font-mono font-semibold cursor-pointer px-2 py-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
                       ${TIPO_COLOR[t]}
                       ${isActive ? 'bg-surface underline underline-offset-2' : 'hover:bg-surface'}`}
                   >
                     {count}
-                  </span>
+                  </button>
                 : <span className="text-white/20">—</span>}
             </td>
           )
@@ -412,12 +420,12 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
             {c.slaPct}%
           </span>
         </td>
-        <td
-          onClick={onToggle}
-          className={`px-4 py-2.5 text-right font-mono font-bold cursor-pointer hover:bg-primary/[0.04]
-            ${expanded && !tipoFilter ? 'text-primary' : 'text-text'}`}
-        >
-          {c.total}
+        <td className="p-1 text-right">
+          <button type="button" onClick={onToggle} aria-expanded={expanded}
+                  className={`min-h-11 rounded-md px-3 font-mono font-bold hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
+                    ${expanded && !tipoFilter ? 'text-primary' : 'text-text'}`}>
+            {c.total}
+          </button>
         </td>
       </tr>
 
