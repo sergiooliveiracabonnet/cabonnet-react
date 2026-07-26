@@ -65,7 +65,7 @@ export default function GraficosPage() {
 
       <TabBar tabs={TABS} active={tab} onChange={setTab} className="mb-2" />
 
-      {(tab === 'distribuicao' || tab === 'tendencia') && (
+      {(['distribuicao', 'tendencia', 'estatistica'].includes(tab)) && (
         <div className="flex flex-wrap items-center gap-1.5 text-caption text-muted" aria-label="Escopo dos gráficos">
           <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Período: {periodoLabel}</span>
           <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Data de {campoLabel}</span>

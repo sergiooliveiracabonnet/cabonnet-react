@@ -16,6 +16,7 @@ import { shortEquipe }   from '../../lib/osFormat'
 import { isConcluida, isExecucaoReal } from '../../lib/transform'
 import { buildDistribuicaoSummary, sortDistribution, type DistributionItem } from '../../lib/builders/graficosDistribuicao'
 import { buildTendenciaSummary } from '../../lib/builders/graficosTendencia'
+import { buildAgingStatistics } from '../../lib/builders/graficosEstatistica'
 
 // ─── Tipos exportados ─────────────────────────────────────────────────────────
 
@@ -503,41 +504,55 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
 // ─── TabEstatistica ───────────────────────────────────────────────────────────
 
 export function TabEstatistica({ d, rows, onDrill }: { d: Record<string,unknown>; rows: OSRow[]; onDrill: OnDrill }) {
-  const gd = d as Record<string, ChartSeries>
-  const agingData  = toLV(gd.aging)
-  const cidadeData = toLV(gd.cidade)
-  const eficData   = toLV(gd.eficiencia)
+  void d
+  const stats = buildAgingStatistics(rows)
+  const { summary } = stats
+  const cards = [
+    { label: 'OS ativas analisadas', value: summary.total, sub: 'com aging válido', tone: 'text-text' },
+    { label: 'Aging médio', value: `${summary.media}d`, sub: 'média da amostra', tone: 'text-blue-400' },
+    { label: 'Mediana', value: `${summary.mediana}d`, sub: '50% estão abaixo', tone: 'text-cyan-400' },
+    { label: 'Percentil 75', value: `${summary.p75}d`, sub: '75% estão abaixo', tone: 'text-orange' },
+    { label: 'SLA excedido', value: summary.slaExcedido, sub: `${summary.slaPct}% das OS ativas`, tone: 'text-red' },
+    { label: 'Maior aging', value: `${summary.maximo}d`, sub: 'máximo observado', tone: 'text-red' },
+  ]
 
   return (
     <div className="space-y-4">
-      <SectionTitle icon={Sliders}>Estatísticas de Aging</SectionTitle>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+        {cards.map(card => (
+          <div key={card.label} className="min-h-24 rounded-xl border border-white/[0.08] bg-card p-4">
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
+            <p className={`mt-2 font-mono text-xl font-bold tabular-nums ${card.tone}`}>{card.value}</p>
+            <p className="mt-1 text-caption text-muted">{card.sub}</p>
+          </div>
+        ))}
+      </div>
 
-      <ChartCard title="Distribuição de Aging das OS Ativas" dot="#f97316" height="h-64">
-        <BarChart data={agingData}>
-          <Bar dataKey="value" fill="#f97316"
-            onClick={(data: {name: string}) => { const fn = (AGING_FILTER as Record<string, (r: OSRow) => boolean>)[data.name]; if (fn) onDrill(`Aging: ${data.name}`, rows.filter(fn)) }} />
-          <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip />
-        </BarChart>
+      <SectionTitle icon={Sliders}>Distribuição do aging ativo</SectionTitle>
+      <ChartCard title="Faixas de aging · quantidade e participação" dot="#f97316" height="h-auto">
+        <RankedDistribution data={stats.buckets} color="#f97316"
+          onSelect={entry => { const fn = (AGING_FILTER as Record<string, (r: OSRow) => boolean>)[entry.name]; if (fn) onDrill(`Aging: ${entry.name}`, rows.filter(fn)) }} />
       </ChartCard>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="OS por Cidade" dot="#facc15" height="h-64">
-          <BarChart data={cidadeData} layout="vertical">
-            <Bar dataKey="value" fill="#facc15"
-              onClick={(data: Record<string,unknown>) => onDrill(`Cidade: ${data.name}`, rows.filter(r => (r.nomedacidade || '').trim() === data.name))} />
-            <XAxis type="number" />
-            <YAxis dataKey="name" type="category" width={130} />
-            <Grid /><ChartTooltip />
-          </BarChart>
-        </ChartCard>
-
-        <ChartCard title="Taxa por Equipe (%)" dot="#4ade80" height="h-64">
-          <BarChart data={eficData}>
-            <Bar dataKey="value" fill="#4ade80"
-              onClick={(data: Record<string,unknown>) => onDrill(`Equipe: ${data.name}`, rows.filter(r => shortEquipe(r.nomedaequipe || '') === data.name))} />
-            <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip suffix="%" />
-          </BarChart>
-        </ChartCard>
+      <SectionTitle icon={Sliders}>Comparação por cidade</SectionTitle>
+      <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-card">
+        <div className="grid grid-cols-[minmax(0,1fr)_72px_88px_88px] gap-2 border-b border-white/[0.08] px-4 py-2 text-caption font-bold uppercase tracking-wide text-muted">
+          <span>Cidade</span><span className="text-right">Amostra</span><span className="text-right">Média</span><span className="text-right">Mediana</span>
+        </div>
+        <div role="list">
+          {stats.cidades.map(city => (
+            <button key={city.name} type="button" role="listitem"
+              onClick={() => onDrill(`OS ativas em ${city.name}`, rows.filter(r => ['Pendente', 'Atendimento'].includes(r.descsituacao) && (r.nomedacidade || '').trim() === city.name && r._aging != null))}
+              aria-label={`${city.name}: ${city.total} OS, aging médio ${city.media} dias, mediana ${city.mediana} dias`}
+              className="grid min-h-11 w-full cursor-pointer grid-cols-[minmax(0,1fr)_72px_88px_88px] gap-2 border-b border-white/[0.05] px-4 py-2 text-left transition-colors last:border-0 hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50">
+              <span className="truncate text-label font-semibold text-secondary">{city.name}</span>
+              <span className="text-right font-mono text-label tabular-nums text-text">{city.total}</span>
+              <span className="text-right font-mono text-label font-bold tabular-nums text-orange">{city.media}d</span>
+              <span className="text-right font-mono text-label tabular-nums text-muted">{city.mediana}d</span>
+            </button>
+          ))}
+          {!stats.cidades.length && <p className="p-8 text-center text-label text-muted">Sem OS ativas com aging válido neste recorte.</p>}
+        </div>
       </div>
     </div>
   )
