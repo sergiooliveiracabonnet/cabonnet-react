@@ -51,7 +51,7 @@ export function buildGraficos(rows: OSRow[]) {
       if (dt) {
         const dKey = dt.toISOString().slice(0, 10)
         diaCnt.set(dKey, (diaCnt.get(dKey) ?? 0) + 1)
-        if (isConcluida(st))   diaConclCnt.set(dKey, (diaConclCnt.get(dKey) ?? 0) + 1)
+        if (isExecucaoReal(st)) diaConclCnt.set(dKey, (diaConclCnt.get(dKey) ?? 0) + 1)
         if (st === 'Pendente')    diaPendCnt.set(dKey,  (diaPendCnt.get(dKey)  ?? 0) + 1)
         if (st === 'Atendimento') diaAtendCnt.set(dKey, (diaAtendCnt.get(dKey) ?? 0) + 1)
 
@@ -114,8 +114,9 @@ export function buildGraficos(rows: OSRow[]) {
   const topCidades  = topN(cidadeCnt, 10)
   const topEquipes  = topN(eqCnt, 10)
   const eqEfic      = topEquipes.map(([eq]) => [eq, Math.round((eqConclCnt.get(eq) ?? 0) / (eqCnt.get(eq) || 1) * 100)] as [string, number])
-  const diasSorted  = [...diaCnt.keys()].sort().slice(-30)
-  const mesesSorted = [...mesCnt.keys()].sort()
+  const diasAberturaSorted = [...diaCnt.keys()].sort().slice(-30)
+  const diasSorted  = [...new Set([...diaCnt.keys(), ...diaConclFechaCnt.keys()])].sort().slice(-30)
+  const mesesSorted = [...new Set([...mesCnt.keys(), ...mesConclFechaCnt.keys()])].sort()
   const metaMes     = Math.round(rows.length / Math.max(1, mesesSorted.length))
 
   return {
@@ -129,7 +130,7 @@ export function buildGraficos(rows: OSRow[]) {
     evolucao:   { labels: diasSorted, abertas: diasSorted.map(d => diaCnt.get(d) ?? 0), concluidas: diasSorted.map(d => diaConclFechaCnt.get(d) ?? 0) },
     mensal:     { labels: mesesSorted, abertas: mesesSorted.map(m => mesCnt.get(m) ?? 0), concluidas: mesesSorted.map(m => mesConclFechaCnt.get(m) ?? 0), slaExcedido: mesesSorted.map(m => mesSlaExcCnt.get(m) ?? 0) },
     comparativo: { labels: diasSorted, pendente: diasSorted.map(d => diaPendCnt.get(d) ?? 0), atendimento: diasSorted.map(d => diaAtendCnt.get(d) ?? 0), concluida: diasSorted.map(d => diaConclFechaCnt.get(d) ?? 0) },
-    taxaDia:    { labels: diasSorted, values: diasSorted.map(d => { const t = diaCnt.get(d) || 0; const c = diaConclCnt.get(d) || 0; return t > 0 ? Math.round(c / t * 100) : 0 }) },
+    taxaDia:    { labels: diasAberturaSorted, values: diasAberturaSorted.map(d => { const t = diaCnt.get(d) || 0; const c = diaConclCnt.get(d) || 0; return t > 0 ? Math.round(c / t * 100) : 0 }) },
     burndown:   { labels: mesesSorted, realizado: mesesSorted.map(m => mesConclFechaCnt.get(m) ?? 0), meta: mesesSorted.map(() => metaMes) },
   }
 }
@@ -137,5 +138,3 @@ export function buildGraficos(rows: OSRow[]) {
 // buildAnomalias → migrada para ./builders/anomalias.ts
 // buildAuditoria → migrada para ./builders/auditoria.ts
 // ─── Cidades ──────────────────────────────────────────────────────────────────
-
-

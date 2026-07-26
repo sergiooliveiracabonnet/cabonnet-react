@@ -15,6 +15,7 @@ import { useAIForecast } from '../../hooks/useAIForecast'
 import { shortEquipe }   from '../../lib/osFormat'
 import { isConcluida, isExecucaoReal } from '../../lib/transform'
 import { buildDistribuicaoSummary, sortDistribution, type DistributionItem } from '../../lib/builders/graficosDistribuicao'
+import { buildTendenciaSummary } from '../../lib/builders/graficosTendencia'
 
 // ─── Tipos exportados ─────────────────────────────────────────────────────────
 
@@ -400,15 +401,55 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
     'SLA Excedido': mensal?.slaExcedido?.[i] ?? 0,
   }))
 
-  const comparativoData = toMulti(d.comparativo as ChartSeries | undefined)
+  type EvolucaoType = { labels?: string[]; abertas?: number[]; concluidas?: number[] }
+  const evolucao = d.evolucao as EvolucaoType | undefined
+  const evolucaoData = (evolucao?.labels ?? []).map((name, i) => ({
+    name,
+    Abertas: evolucao?.abertas?.[i] ?? 0,
+    Concluídas: evolucao?.concluidas?.[i] ?? 0,
+  }))
   const taxaDiaData     = toLV(d.taxaDia as ChartSeries | undefined)
-  const burndownData    = toMulti(d.burndown as ChartSeries | undefined)
+  const summary = buildTendenciaSummary(evolucao as import('../../lib/types').EvolucaoData | undefined)
+  const cards = [
+    { label: `Abertas · ${summary.dias} dias`, value: summary.abertas, sub: `média ${summary.mediaAbertas.toLocaleString('pt-BR')} por dia`, tone: 'text-blue-400' },
+    { label: 'Concluídas reais', value: summary.concluidas, sub: 'pela data de baixa/execução', tone: 'text-green' },
+    { label: 'Saldo operacional', value: summary.saldo > 0 ? `+${summary.saldo}` : summary.saldo, sub: summary.saldo >= 0 ? 'conclusões acima das aberturas' : 'aberturas acima das conclusões', tone: summary.saldo >= 0 ? 'text-green' : 'text-red' },
+    { label: 'Pico de abertura', value: summary.pico?.valor ?? 0, sub: summary.pico?.data ?? 'sem dados', tone: 'text-orange' },
+  ]
 
   return (
     <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {cards.map(card => (
+          <div key={card.label} className="min-h-24 rounded-xl border border-white/[0.08] bg-card p-4">
+            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
+            <p className={`mt-2 font-mono text-xl font-bold tabular-nums ${card.tone}`}>{card.value.toLocaleString('pt-BR')}</p>
+            <p className="mt-1 text-caption text-muted">{card.sub}</p>
+          </div>
+        ))}
+      </div>
+
       <ForecastCard evolucao={d.evolucao} totalAtivo={totalAtivo} fila={fila} />
 
-      <SectionTitle icon={TrendingUp}>Visão Mensal — Abertura vs Conclusão</SectionTitle>
+      <SectionTitle icon={TrendingUp}>Fluxo operacional</SectionTitle>
+
+      <ChartCard title="Abertas por cadastro × Concluídas por execução · últimos 30 dias" dot="#3b82f6" height="h-80">
+        <AreaChart data={evolucaoData} onClick={(cd: Record<string,unknown>) => {
+          type CDPayload = { activeLabel?: string; activePayload?: { name?: string }[] }
+          const point = cd as CDPayload
+          if (!point.activeLabel || !point.activePayload?.length) return
+          const serie = point.activePayload[0].name
+          onDrill(`${serie} em ${point.activeLabel}`, serie === 'Concluídas'
+            ? rows.filter(r => isExecucaoReal(r.descsituacao) && closeISO(r) === point.activeLabel)
+            : rows.filter(r => toISODate(r.datacadastro) === point.activeLabel))
+        }}>
+          <Area dataKey="Abertas" stroke="#3b82f6" fill="#3b82f6" name="Abertas" />
+          <Area dataKey="Concluídas" stroke="#4ade80" fill="#4ade80" name="Concluídas" />
+          <LXAxis dataKey="name" /><LYAxis /><LGrid /><LTooltip /><LLegend />
+        </AreaChart>
+      </ChartCard>
+
+      <SectionTitle icon={TrendingUp}>Visão mensal</SectionTitle>
 
       <ChartCard title="Abertura × Conclusão × SLA Excedido — Mês a Mês" dot="#3b82f6" height="h-80">
         <AreaChart
@@ -433,31 +474,8 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
         </AreaChart>
       </ChartCard>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="OS por Dia — Comparativo de Status" dot="#3b82f6" height="h-64">
-          <BarChart
-            data={comparativoData}
-            onClick={(cd: Record<string,unknown>) => {
-              type CDPayload = { activeLabel?: string; activePayload?: { name?: string }[] }
-              const cdp = cd as CDPayload
-              if (!cdp?.activeLabel || !cdp?.activePayload?.length) return
-              const label = cdp.activeLabel!
-              const ds    = cdp.activePayload![0].name
-              if (ds === 'concluida')
-                onDrill(`Concluídas em ${label}`, rows.filter(r => isExecucaoReal(r.descsituacao) && closeISO(r) === label))
-              else if (ds === 'pendente')
-                onDrill(`Pendentes abertos em ${label}`, rows.filter(r => r.descsituacao === 'Pendente' && toISODate(r.datacadastro) === label))
-              else
-                onDrill(`Em Atendimento abertos em ${label}`, rows.filter(r => r.descsituacao === 'Atendimento' && toISODate(r.datacadastro) === label))
-            }}>
-            {comparativoData[0] && Object.keys(comparativoData[0]).filter(k => k !== 'name').map((k, i) => (
-              <Bar key={k} dataKey={k} fill={COLORS[i] ?? '#64748b'} name={k} />
-            ))}
-            <XAxis dataKey="name" /><YAxis /><Grid /><ChartTooltip /><Legend />
-          </BarChart>
-        </ChartCard>
-
-        <ChartCard title="Taxa de Conclusão por Dia (%) — cohort por abertura" dot="#4ade80" height="h-64">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="Conclusão da coorte diária (%)" dot="#4ade80" height="h-64">
           <AreaChart
             data={taxaDiaData}
             onClick={(cd: Record<string,unknown>) => {
@@ -466,29 +484,18 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
             <Area dataKey="value" stroke="#4ade80" fill="#4ade80" name="Taxa %" />
             <LXAxis dataKey="name" /><LYAxis /><LGrid /><LTooltip suffix="%" />
           </AreaChart>
+          <p className="px-3 pb-3 text-caption text-muted">Percentual das OS abertas em cada dia que atualmente possuem execução real.</p>
         </ChartCard>
+        <div className="rounded-xl border border-white/[0.08] bg-card p-5">
+          <p className="text-body font-bold text-text">Como interpretar</p>
+          <div className="mt-4 space-y-3 text-label leading-relaxed text-secondary">
+            <p><span className="font-bold text-blue-400">Abertas</span> seguem a data de cadastro da OS.</p>
+            <p><span className="font-bold text-green">Concluídas</span> consideram somente execução real e seguem a data de baixa ou execução.</p>
+            <p><span className="font-bold text-red">SLA excedido</span> é associado ao mês de abertura da OS.</p>
+            <p className="border-t border-white/[0.08] pt-3 text-muted">Os valores representam o recorte selecionado no cabeçalho e não reconstituem mudanças históricas de status.</p>
+          </div>
+        </div>
       </div>
-
-      <ChartCard title="Meta vs Realizado — Concluídas por Mês de Fechamento" dot="#22d3ee" height="h-64">
-        <AreaChart
-          data={burndownData}
-          onClick={(cd: Record<string,unknown>) => {
-            type CDPayload = { activeLabel?: string; activePayload?: { name?: string }[] }
-            const cdp = cd as CDPayload
-            if (!cdp?.activeLabel || !cdp?.activePayload?.length) return
-            const label = cdp.activeLabel!
-            const ds    = cdp.activePayload![0].name
-            if (ds === 'realizado')
-              onDrill(`Concluídas em ${label}`, rows.filter(r => isExecucaoReal(r.descsituacao) && closeISOMonth(r) === label))
-            else
-              onDrill(`Abertas em ${label}`, rows.filter(r => toISOMonth(r.datacadastro) === label))
-          }}>
-          {burndownData[0] && Object.keys(burndownData[0]).filter(k => k !== 'name').map((k, i) => (
-            <Area key={k} dataKey={k} stroke={COLORS[i] ?? '#64748b'} fill={COLORS[i] ?? '#64748b'} name={k} />
-          ))}
-          <LXAxis dataKey="name" /><LYAxis /><LGrid /><LTooltip /><LLegend />
-        </AreaChart>
-      </ChartCard>
     </div>
   )
 }
