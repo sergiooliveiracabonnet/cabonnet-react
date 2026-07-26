@@ -27,17 +27,12 @@ export function printRelatoriosPDF(
   tipoFilter:   string,
   extraFilters: string[] = [],
 ): void {
-  const isDark = theme === 'dark'
-  const c = isDark ? {
-    bg: '#06060a', surface: '#0e0f16', card: '#12131a',
-    border: 'rgba(255,255,255,0.08)', border2: 'rgba(255,255,255,0.04)',
-    text: '#e8ecf5', secondary: '#a8b2cc', muted: '#768296',
-    primary: '#3b82f6', green: '#4ade80', red: '#f87171', orange: '#fb923c', yellow: '#fbbf24',
-  } : {
-    bg: '#f0f4f8', surface: '#ffffff', card: '#f8fafc',
-    border: 'rgba(0,0,0,0.09)', border2: 'rgba(0,0,0,0.05)',
-    text: '#0f1722', secondary: '#334155', muted: '#507282',
-    primary: '#0284c7', green: '#16a34a', red: '#dc2626', orange: '#c2410c', yellow: '#a16207',
+  void theme
+  const c = {
+    bg: '#ffffff', surface: '#ffffff', card: '#ffffff',
+    border: '#d1d5db', border2: '#e5e7eb',
+    text: '#111827', secondary: '#374151', muted: '#6b7280',
+    primary: '#111827', green: '#166534', red: '#991b1b', orange: '#9a3412', yellow: '#854d0e',
   }
 
   const now         = new Date()
@@ -77,14 +72,13 @@ export function printRelatoriosPDF(
   }).join('')
 
   const producaoSection = totals.execTotal > 0 ? `
-  <div style="margin-bottom:16px;background:${c.surface};border:1px solid ${c.border};border-radius:12px;overflow:hidden">
+  <div style="margin-bottom:16px;background:#fff;border:1px solid ${c.border};overflow:hidden">
     <div style="padding:12px 16px 10px;border-bottom:1px solid ${c.border}">
       <div style="font-size:13px;font-weight:700;color:${c.text}">Produção Consolidada do Período</div>
       <div style="font-size:10px;color:${c.muted};margin-top:2px">Total de OS executadas (concluídas) por tipo de serviço</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px 16px">
-      <div style="background:${c.card};border:1px solid ${c.border};border-radius:10px;padding:12px 14px;position:relative;overflow:hidden">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:rgba(255,255,255,0.2)"></div>
+      <div style="background:#fff;border:1px solid ${c.border};padding:12px 14px;position:relative;overflow:hidden">
         <div style="font-size:9px;color:${c.muted};text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Total Executado</div>
         <div class="mono" style="font-size:34px;font-weight:900;color:${c.text};line-height:1">${totals.execTotal}</div>
         <div style="font-size:9px;color:${c.muted};margin-top:6px">${ranking.length} equipes</div>
@@ -95,12 +89,11 @@ export function printRelatoriosPDF(
         { label: 'Serviços',    value: totals.execServico, pct: totals.pctServico, color: '#34d399' },
         { label: 'Rede',        value: totals.execRede,    pct: totals.pctRede,    color: '#c4b5fd' },
       ].map(s => `
-        <div style="background:${c.card};border:1px solid ${s.color}30;border-radius:10px;padding:12px 14px;position:relative;overflow:hidden">
-          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${s.color}"></div>
+        <div style="background:#fff;border:1px solid ${c.border};padding:12px 14px;position:relative;overflow:hidden">
           <div style="font-size:9px;color:${c.muted};text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">${s.label}</div>
           <div class="mono" style="font-size:30px;font-weight:900;color:${s.color};line-height:1">${s.value}</div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-            <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-right:8px">
+            <div style="flex:1;height:4px;background:#e5e7eb;overflow:hidden;margin-right:8px">
               <div style="height:100%;width:${s.pct}%;background:${s.color};border-radius:2px"></div>
             </div>
             <span style="font-size:10px;font-weight:700;color:${s.color}">${s.pct}%</span>
@@ -123,36 +116,30 @@ export function printRelatoriosPDF(
 <head>
 <meta charset="UTF-8">
 <title>Ranking de Equipes — Cabonnet</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:${c.bg};color:${c.text};font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:12px;font-optical-sizing:auto;font-feature-settings:"cv11" 1,"zero" 1,"ss01" 1;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:geometricPrecision;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#fff;color:${c.text};font-family:Arial,Helvetica,sans-serif;font-size:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   @page{size:A4 landscape;margin:12mm 10mm}
   .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"zero" 1,"ss01" 1;letter-spacing:-0.025em}
   .wrap{max-width:1060px;margin:0 auto;padding:20px 24px}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
-  .logo{font-size:22px;font-weight:900;letter-spacing:-0.5px;color:${c.primary};font-feature-settings:"cv11" 1}
-  .logo-sub{font-size:10px;color:${c.muted};margin-top:3px;letter-spacing:1.2px;text-transform:uppercase}
-  .hdr-right{text-align:right}
-  .hdr-title{font-size:17px;font-weight:700;color:${c.text};letter-spacing:-0.02em}
-  .hdr-sub{font-size:10px;color:${c.muted};margin-top:4px}
-  .divider{height:2px;background:linear-gradient(90deg,${c.primary},${c.primary}55,transparent);border-radius:1px;margin-bottom:18px}
+  .pdf-header{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #111827;padding:0 0 12px;margin-bottom:18px;background:#fff}
+  .pdf-header img{width:180px;height:auto;display:block}
+  .pdf-meta{display:flex;flex-direction:column;gap:4px;text-align:right;color:#111827}
+  .pdf-meta strong{font-size:14px}.pdf-meta span{font-size:11px;color:#4b5563}.pdf-meta b{font-size:11px;text-transform:uppercase;letter-spacing:.6px}
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-  .kpi{background:${c.surface};border:1px solid ${c.border};border-radius:10px;padding:12px 14px;position:relative;overflow:hidden}
-  .kpi-bar{position:absolute;top:0;left:0;right:0;height:2px}
+  .kpi{background:#fff;border:1px solid ${c.border};border-radius:0;padding:12px 14px;position:relative;overflow:hidden}
+  .kpi-bar{display:none}
   .kpi-lbl{font-size:9px;color:${c.muted};text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:600}
   .kpi-val{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"zero" 1,"ss01" 1;letter-spacing:-0.04em;line-height:1}
   .chips{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
   .chip-lbl{font-size:10px;color:${c.muted}}
-  .chip{font-size:10px;border:1px solid ${c.border};border-radius:20px;padding:2px 10px;color:${c.secondary};background:${c.card}}
-  .tbl-wrap{background:${c.surface};border:1px solid ${c.border};border-radius:12px;overflow:hidden}
+  .chip{font-size:10px;border:1px solid ${c.border};border-radius:0;padding:2px 10px;color:${c.secondary};background:#fff}
+  .tbl-wrap{background:#fff;border:1px solid ${c.border};border-radius:0;overflow:hidden}
   .tbl-hdr{padding:12px 16px 10px;border-bottom:1px solid ${c.border}}
   .tbl-hdr-title{font-size:13px;font-weight:700;color:${c.text};letter-spacing:-0.01em}
   .tbl-hdr-sub{font-size:10px;color:${c.muted};margin-top:2px}
   table{width:100%;border-collapse:collapse}
-  thead tr{background:${c.card}}
+  thead tr{background:#fff}
   th{text-align:left;padding:9px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:${c.muted};border-bottom:1px solid ${c.border}}
   td{padding:9px 14px;border-bottom:1px solid ${c.border2};vertical-align:middle}
   tr:last-child td{border-bottom:none}
@@ -161,17 +148,7 @@ export function printRelatoriosPDF(
 </head>
 <body>
 <div class="wrap">
-  <div class="header">
-    <div>
-      <div class="logo">Cabonnet</div>
-      <div class="logo-sub">ISP Operations · Vale do Paraíba</div>
-    </div>
-    <div class="hdr-right">
-      <div class="hdr-title">Ranking de Equipes</div>
-      <div class="hdr-sub">Desempenho consolidado · ${dateStr} às ${timeStr}</div>
-    </div>
-  </div>
-  <div class="divider"></div>
+  ${buildPDFHTMLHeader('Relatório Operacional · Ranking de Equipes', now)}
   <div class="kpis">
     <div class="kpi"><div class="kpi-bar" style="background:${c.primary}"></div><div class="kpi-lbl">Total de OS</div><div class="kpi-val" style="color:${c.primary}">${kpis.total}</div></div>
     <div class="kpi"><div class="kpi-bar" style="background:${c.red}"></div><div class="kpi-lbl">SLA Vencido</div><div class="kpi-val" style="color:${c.red}">${kpis.criticas}</div></div>
@@ -208,7 +185,7 @@ export function printRelatoriosPDF(
       </thead>
       <tbody>${tableRows}</tbody>
       <tfoot>
-        <tr style="border-top:2px solid ${c.border};background:${isDark ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.03)'}">
+        <tr style="border-top:2px solid ${c.border};background:#fff">
           <td colspan="2" style="padding:10px 14px;font-size:11px;font-weight:700;color:${c.text};text-transform:uppercase;letter-spacing:.5px">
             Total Geral <span style="font-weight:400;color:${c.muted};font-size:10px">· ${ranking.length} equipes</span>
           </td>
@@ -227,7 +204,7 @@ export function printRelatoriosPDF(
   </div>
   <div class="footer">
     <span>Cabonnet ISP Dashboard — SJC · Caçapava · Taubaté · Tremembé · Pindamonhangaba</span>
-    <span>Exportado em ${dateStr} às ${timeStr} · Tema ${isDark ? 'Escuro' : 'Claro'}</span>
+    <span>Exportado em ${dateStr} às ${timeStr}</span>
   </div>
 </div>
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400))</script>
@@ -240,3 +217,4 @@ export function printRelatoriosPDF(
   win.document.write(html)
   win.document.close()
 }
+import { buildPDFHTMLHeader } from '../../../lib/pdfBrand'

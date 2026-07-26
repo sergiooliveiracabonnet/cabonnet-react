@@ -2,25 +2,24 @@ import jsPDF from 'jspdf'
 import { shortEquipe } from './osFormat'
 import { isConcluida } from './transform'
 import type { OSRow } from './types'
+import { drawPDFHeader } from './pdfBrand'
 
 type RGB = readonly [number, number, number]
 
 // ── Palette ───────────────────────────────────────────────────────────────
-const DARK:   RGB = [8,   15,  30]
-const NAVY:   RGB = [12,  20,  38]
-const CARD:   RGB = [18,  28,  50]
-const CARD2:  RGB = [22,  34,  58]
-const BORDER: RGB = [32,  45,  72]
-const ACCENT: RGB = [14,  165, 233]
+const DARK:   RGB = [255, 255, 255]
+const CARD:   RGB = [255, 255, 255]
+const CARD2:  RGB = [255, 255, 255]
+const BORDER: RGB = [209, 213, 219]
+const ACCENT: RGB = [17,  24,  39]
 const GREEN:  RGB = [34,  197, 94]
 const YELLOW: RGB = [234, 179, 8]
 const ORANGE: RGB = [249, 115, 22]
 const RED:    RGB = [239, 68,  68]
 const CYAN:   RGB = [6,   182, 212]
-const WHITE:  RGB = [255, 255, 255]
-const TEXT:   RGB = [226, 232, 240]
-const SUB:    RGB = [148, 163, 184]
-const MUTED:  RGB = [100, 116, 139]
+const TEXT:   RGB = [17,  24,  39]
+const SUB:    RGB = [55, 65, 81]
+const MUTED:  RGB = [107, 114, 128]
 
 // ── Page geometry ─────────────────────────────────────────────────────────
 const PW   = 297   // landscape A4 width
@@ -50,6 +49,7 @@ const COLS = [
 
 let _doc!: jsPDF
 let _y!: number
+let _generatedAt!: Date
 
 // ── Page helpers ──────────────────────────────────────────────────────────
 
@@ -66,29 +66,24 @@ function _checkY(need = ROW_H) {
 
 // Thin accent bar + dark header strip on each table page
 function _pageStrip() {
-  _doc.setFillColor(...NAVY)
-  _doc.rect(0, 0, PW, 11, 'F')
-  _doc.setFillColor(...ACCENT)
-  _doc.rect(0, 11, PW, 1.2, 'F')
-  _doc.setFont('helvetica', 'bold')
-  _doc.setFontSize(5.8)
-  _doc.setTextColor(...MUTED)
-  _doc.text('CABONNET ISP  ·  ORDENS DE SERVIÇO', ML, 7.5)
-  _y = 14
+  _y = drawPDFHeader(_doc, {
+    reportType: 'Relatório de Ordens de Serviço',
+    pageWidth: PW,
+    margin: ML,
+    generatedAt: _generatedAt,
+  })
 }
 
 function _tableHeader() {
   // Navy band
-  _doc.setFillColor(...NAVY)
-  _doc.rect(ML, _y, CW, HDR_H, 'F')
-  // Left accent stripe
-  _doc.setFillColor(...ACCENT)
-  _doc.rect(ML, _y, 2.5, HDR_H, 'F')
+  _doc.setDrawColor(...BORDER)
+  _doc.setLineWidth(0.25)
+  _doc.rect(ML, _y, CW, HDR_H, 'S')
   // Column labels
   _doc.setFont('helvetica', 'bold')
   _doc.setFontSize(6.5)
   _doc.setTextColor(...ACCENT)
-  COLS.forEach(c => _doc.text(c.h, c.x + (c === COLS[0] ? 4.5 : 2), _y + 5.4))
+  COLS.forEach(c => _doc.text(c.h, c.x + 2, _y + 5.4))
   _y += HDR_H
 }
 
@@ -140,10 +135,11 @@ function _pill(label: string, color: RGB, col: ColEntry): void {
   _doc.setFontSize(5.8)
   const tw     = _doc.getTextWidth(label)
   const pillW  = Math.min(tw + 5, col.w - 3)
-  _doc.setFillColor(color[0], color[1], color[2])
-  _doc.rect(col.x + 1.5, pillY, pillW, pillH, 'F')
+  _doc.setDrawColor(color[0], color[1], color[2])
+  _doc.setLineWidth(0.2)
+  _doc.rect(col.x + 1.5, pillY, pillW, pillH, 'S')
   _doc.setFont('helvetica', 'bold')
-  _doc.setTextColor(WHITE[0], WHITE[1], WHITE[2])
+  _doc.setTextColor(color[0], color[1], color[2])
   _doc.text(label, col.x + 1.5 + pillW / 2, pillY + 2.95, { align: 'center' })
   _doc.setFontSize(prevSz)
 }
@@ -151,10 +147,9 @@ function _pill(label: string, color: RGB, col: ColEntry): void {
 // ── Cover KPI tile ────────────────────────────────────────────────────────
 
 function _kpiTile(x: number, y: number, w: number, h: number, label: string, value: number, color: RGB): void {
-  _doc.setFillColor(CARD[0], CARD[1], CARD[2])
-  _doc.rect(x, y, w, h, 'F')
-  _doc.setFillColor(color[0], color[1], color[2])
-  _doc.rect(x, y, w, 2.5, 'F')
+  _doc.setDrawColor(...BORDER)
+  _doc.setLineWidth(0.25)
+  _doc.rect(x, y, w, h, 'S')
   _doc.setFont('helvetica', 'bold')
   _doc.setFontSize(22)
   _doc.setTextColor(color[0], color[1], color[2])
@@ -171,6 +166,7 @@ export function exportOrdensPDF(rows: OSRow[], filename: string): void {
   _doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
   const now      = new Date()
+  _generatedAt = now
   const dateStr  = now.toLocaleDateString('pt-BR')
   const timeStr  = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   const today    = now.toISOString().slice(0, 10)
@@ -186,44 +182,31 @@ export function exportOrdensPDF(rows: OSRow[], filename: string): void {
   // ── COVER PAGE ─────────────────────────────────────────────────────────
   _doc.setFillColor(...DARK)
   _doc.rect(0, 0, PW, PH, 'F')
-
-  // Top accent bar (4mm)
-  _doc.setFillColor(...ACCENT)
-  _doc.rect(0, 0, PW, 4, 'F')
-
-  // Left vertical accent stripe (3mm)
-  _doc.setFillColor(...ACCENT)
-  _doc.rect(0, 4, 3, PH - 4, 'F')
-
-  // ── Brand / title block ──
-  _doc.setFont('helvetica', 'bold')
-  _doc.setFontSize(8.5)
-  _doc.setTextColor(...ACCENT)
-  _doc.text('CABONNET ISP', 22, 26)
+  drawPDFHeader(_doc, { reportType: 'Relatório de Ordens de Serviço', pageWidth: PW, margin: ML, generatedAt: now })
 
   _doc.setFont('helvetica', 'bold')
   _doc.setFontSize(30)
-  _doc.setTextColor(...WHITE)
-  _doc.text('ORDENS DE SERVIÇO', 22, 45)
+  _doc.setTextColor(...TEXT)
+  _doc.text('ORDENS DE SERVIÇO', 22, 52)
 
   _doc.setFont('helvetica', 'normal')
   _doc.setFontSize(9.5)
   _doc.setTextColor(...SUB)
-  _doc.text('Relatório de Exportação', 22, 54)
+  _doc.text('Relatório de Exportação', 22, 61)
 
   // Divider
   _doc.setFillColor(...BORDER)
-  _doc.rect(22, 59, 110, 0.4, 'F')
+  _doc.rect(22, 66, 110, 0.4, 'F')
 
   // Meta info
   _doc.setFont('helvetica', 'normal')
   _doc.setFontSize(8)
   _doc.setTextColor(...MUTED)
-  _doc.text(`Gerado em ${dateStr} às ${timeStr}`, 22, 66)
+  _doc.text(`Gerado em ${dateStr} às ${timeStr}`, 22, 74)
   _doc.setTextColor(...SUB)
   _doc.setFont('helvetica', 'bold')
   _doc.setFontSize(8.5)
-  _doc.text(`${total} ordens de serviço`, 22, 74)
+  _doc.text(`${total} ordens de serviço`, 22, 82)
 
   // Secondary stats (right of divider area)
   _doc.setFont('helvetica', 'normal')
@@ -234,10 +217,10 @@ export function exportOrdensPDF(rows: OSRow[], filename: string): void {
     `Concluídas: ${concluidas}`,
     `Sem equipe: ${semEquipe}`,
   ]
-  stats.forEach((s, si) => _doc.text(s, 155, 66 + si * 8))
+  stats.forEach((s, si) => _doc.text(s, 155, 74 + si * 8))
 
   // ── KPI tiles (4 tiles, centered) ──
-  const tileW = 52, tileH = 38, tileGap = 6, tileY = 88
+  const tileW = 52, tileH = 38, tileGap = 6, tileY = 108
   const tileX = (PW - (4 * tileW + 3 * tileGap)) / 2
   _kpiTile(tileX,                         tileY, tileW, tileH, 'Total OS',     total,     ACCENT)
   _kpiTile(tileX + (tileW + tileGap),     tileY, tileW, tileH, 'Críticas ≥6d', criticas,  RED)
@@ -245,10 +228,8 @@ export function exportOrdensPDF(rows: OSRow[], filename: string): void {
   _kpiTile(tileX + 3 * (tileW + tileGap), tileY, tileW, tileH, 'Concluídas',   concluidas,CYAN)
 
   // Bottom bar
-  _doc.setFillColor(...NAVY)
-  _doc.rect(0, PH - 14, PW, 14, 'F')
-  _doc.setFillColor(...ACCENT)
-  _doc.rect(0, PH - 14, PW, 1.2, 'F')
+  _doc.setDrawColor(...BORDER)
+  _doc.line(ML, PH - 14, PW - MR, PH - 14)
   _doc.setFont('helvetica', 'bold')
   _doc.setFontSize(7)
   _doc.setTextColor(...MUTED)

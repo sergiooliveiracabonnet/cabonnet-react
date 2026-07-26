@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf'
 import { shortEquipe } from '../../lib/osFormat'
 import type { OSRow } from '../../lib/types'
 import type { FechamentoStats } from './fechamentoUtils'
+import { drawPDFHeader } from '../../lib/pdfBrand'
 
 type RGB = readonly [number, number, number]
 type CellAlign = 'left' | 'right' | 'center' | 'justify'
@@ -19,7 +20,7 @@ const C: Record<string, RGB> = {
   purple: [139, 92, 246],
   muted:  [100,116, 139],
   border: [226,232, 240],
-  bg:     [248,250, 252],
+  bg:     [255,255,255],
   white:  [255,255, 255],
   teal:   [8,  145, 178],
 }
@@ -84,6 +85,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
 }): jsPDF {
   const doc  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const W    = 210, M = 16, CW = W - M * 2
+  const generatedAt = new Date()
   let   y    = M, page = 1, _ri = 0
 
   // ── Drawing helpers ─────────────────────────────────────────────────────────
@@ -101,7 +103,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
     _n(6.5); _t(C.muted); doc.text('Cabonnet  ·  Gestão de Ordens de Serviço', M, 287)
     _b(6.5); _t(C.navy);  doc.text('Página ' + page, W - M, 287, { align: 'right' })
   }
-  const _newPage = () => { _footer(); doc.addPage(); page++; y = M }
+  const _newPage = () => { _footer(); doc.addPage(); page++; y = drawPDFHeader(doc, { reportType: 'Relatório de Fechamento Operacional', pageWidth: W, margin: M, generatedAt }) + 2 }
   const _checkY  = (n: number) => { if (y + n > 278) _newPage() }
 
   const _section = (title: string, color?: RGB) => {
@@ -161,15 +163,9 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
   }
 
   // ── CAPA ────────────────────────────────────────────────────────────────────
-  _f(C.navy); doc.rect(0, 0, W, 22, 'F')
-  _b(11); _t(C.white); doc.text('CABONNET', M, 10)
-  _n(7.5); _t([180, 210, 230] as const); doc.text('Gestão de Ordens de Serviço', M, 16.5)
-  _b(7);  _t(C.white); doc.text('RELATÓRIO DE FECHAMENTO OPERACIONAL', W - M, 10, { align: 'right' })
-  _n(6.5); _t([160, 195, 215] as const); doc.text(periodoLabel, W - M, 16.5, { align: 'right' })
-  _f(C.accent); doc.rect(0, 22, W, 1.8, 'F')
-  y = 34
+  y = drawPDFHeader(doc, { reportType: 'Relatório de Fechamento Operacional', pageWidth: W, margin: M, generatedAt }) + 2
 
-  _n(7); _t(C.muted); doc.text('Gerado em ' + new Date().toLocaleString('pt-BR') + '  ·  ' + periodoLabel, M, y)
+  _n(7); _t(C.muted); doc.text('Período: ' + periodoLabel, M, y)
   y += 10
 
   const kpis = [
@@ -199,7 +195,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
     _n(7.5); _t(C.navy); doc.text(s, M + col * (CW / 2), y + row * 6.5)
   })
   y += mid * 6.5 + 4
-  _footer(); doc.addPage(); page++; y = M
+  _footer(); doc.addPage(); page++; y = drawPDFHeader(doc, { reportType: 'Relatório de Fechamento Operacional', pageWidth: W, margin: M, generatedAt }) + 2
 
   // ── 1 · RANKING DE EQUIPES ──────────────────────────────────────────────────
   _section('1. RANKING DE EQUIPES — PRODUTIVIDADE')
@@ -343,9 +339,9 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
       const totalEq = eqTotais[eq]
 
       _checkY(52)
-      _f(C.navy); doc.rect(M, y - 10, CW, 13, 'F')
-      _b(9); _t(C.white); doc.text(eqAbrev.toUpperCase(), M + 5, y)
-      _n(7); _t([180, 200, 220] as const)
+      _d(C.border); doc.setLineWidth(0.25); doc.rect(M, y - 10, CW, 13, 'S')
+      _b(9); _t(C.navy); doc.text(eqAbrev.toUpperCase(), M + 5, y)
+      _n(7); _t(C.muted)
       const eqFull = eq.length > eqAbrev.length ? eq : ''
       if (eqFull) doc.text(eqFull.slice(0, 60), M + 5 + doc.getTextWidth(eqAbrev.toUpperCase()) + 6, y)
       doc.text(String(totalEq) + ' OS concluídas', W - M, y, { align: 'right' })
@@ -373,12 +369,11 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
 
   // ── REDE — Bloco independente ───────────────────────────────────────────────
   if (statsRede && rede.length) {
-    _footer(); doc.addPage(); page++; y = 0
-    _f(C.teal); doc.rect(0, 0, W, 18, 'F')
-    _f(C.accent); doc.rect(0, 18, W, 1.5, 'F')
-    _b(10); _t(C.white); doc.text('REDE — BLOCO INDEPENDENTE', M, 11)
-    _n(7); _t([200, 240, 248] as unknown as RGB); doc.text(periodoLabel, W - M, 11, { align: 'right' })
-    y = 28
+    _footer(); doc.addPage(); page++
+    y = drawPDFHeader(doc, { reportType: 'Relatório de Fechamento · Rede', pageWidth: W, margin: M, generatedAt }) + 2
+    _b(10); _t(C.navy); doc.text('REDE — BLOCO INDEPENDENTE', M, y)
+    _n(7); _t(C.muted); doc.text(periodoLabel, W - M, y, { align: 'right' })
+    y += 10
 
     const kpisR = [
       { v: statsRede.total,      l: 'Total OS',   c: C.accent },
