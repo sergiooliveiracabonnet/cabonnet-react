@@ -208,7 +208,7 @@ def _operadora_for_chat(chat_id):
 
 
 def _filter_by_operadora(rows, operadora):
-    """Filtra linhas pela operadora. None/ausente = sem filtro (global)."""
+    """Filtra linhas pela operadora; fornecedores nunca recebem REDE ou MANUT."""
     if not operadora:
         return rows
     if operadora == "REDE":
@@ -217,6 +217,8 @@ def _filter_by_operadora(rows, operadora):
     if not frentes:
         return rows
     def _match(r):
+        if _is_rede_ou_manut(r):
+            return False
         raw = _re_global.sub(r'([A-Z])\s+(\d)', r'\1\2', (r.get("nomedaequipe") or "").upper())
         return any(f in raw for f in frentes)
     return [r for r in rows if _match(r)]
@@ -282,10 +284,25 @@ def _tg_fmt_status_summary(changes):
     return "\n".join(lines)
 
 
+def _is_rede_ou_manut(row):
+    """Identifica REDE/MANUT por equipe, tipo ou serviço, sem depender da sigla."""
+    values = (row.get("nomedaequipe"), row.get("tiposervico"), row.get("servico"))
+    normalized = " ".join(str(value or "").strip().upper() for value in values)
+    return "MANUT" in normalized or any(
+        str(value or "").strip().upper().startswith("REDE") for value in values
+    )
+
+
 def _is_equipe_rede_ou_manut(row):
-    """True se o nome da equipe começa com REDE ou MANUT — notifica só no Alertas."""
-    name = (row.get("nomedaequipe") or "").strip().upper()
-    return name.startswith("REDE") or name.startswith("MANUT")
+    """Compatibilidade para os fluxos existentes de roteamento."""
+    return _is_rede_ou_manut(row)
+
+
+def _row_allowed_for_operadora(row, operadora):
+    """Autoriza uma OS globalmente ou para um fornecedor específico."""
+    if not operadora:
+        return True
+    return bool(_filter_by_operadora([row], operadora))
 
 
 def _tg_broadcast_status_changes(changes):
@@ -314,9 +331,8 @@ def _tg_broadcast_status_changes(changes):
     # Alertas — recebe TODAS as mudanças
     _send_batch(changes, TELEGRAM_CHAT_ALERTAS, "ALERTAS")
 
-    # Operacional (Produtividade) — somente instalações
-    inst_ch_op = [(r, o, n) for r, o, n in changes if "INSTALAC" in (r.get("tiposervico", "") or "").upper()]
-    _send_batch(inst_ch_op, TELEGRAM_CHAT_ID, "OPERACIONAL")
+    # Produtividade — visão completa: instalação, serviço e manutenção.
+    _send_batch(changes, TELEGRAM_CHAT_ID, "PRODUTIVIDADE")
 
     # Grupos restritos — apenas OS da própria operadora
     _send_batch(wes_ch,  TELEGRAM_CHAT_WES, "WES")

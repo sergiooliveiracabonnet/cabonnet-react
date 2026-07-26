@@ -585,7 +585,8 @@ def _resumo_scheduler_loop():
             enviados.add(chave_pppoe)
             threading.Thread(target=_build_pppoe_resumo_diario, daemon=True).start()
 
-        if agora.hour != 8 and agora.minute < 2 and 7 <= agora.hour <= 23 and chave_h not in enviados:
+        # Relatórios acumulados em quatro marcos úteis; o fechamento permanece às 18h30.
+        if agora.hour in (10, 13, 16, 19) and agora.minute < 2 and chave_h not in enviados:
             enviados.add(chave_h)
             def _enviar_executadas(hora=agora.hour):
                 try:
@@ -611,30 +612,32 @@ _VT_RISK_WINDOW_H      = 4     # horas restantes para entrar em estágio de risc
 _VT_MIN_AGING_H        = 12    # não alerta VT aberta há menos de 12h (evita ruído em VT recém-abertas)
 _VT_OPERATION_START_H  = 7
 _VT_OPERATION_END_H    = 23
-_VT_FIRST_REPEAT_S     = 3600
-_VT_NEXT_REPEAT_S      = 10800
+_VT_VIOLADO_HOURS      = (7, 10, 13, 16, 19)
 
 
 def _classificar_vt_alerta(restante, registro, agora, aging_h=float("inf")):
     """Decide se uma OS deve disparar alerta neste ciclo. Não muta estado.
 
-    Estágios: None -> risco (uma vez) -> violado -> +1h -> a cada 3h.
+    VT violado é consolidado nos slots 07h, 10h, 13h, 16h e 19h,
+    no máximo uma vez por slot. O estágio de risco continua sendo enviado
+    uma única vez durante a janela operacional.
     Retorna 'violado', 'risco', ou None (sem alerta neste ciclo).
 
     VT aberta há menos de _VT_MIN_AGING_H horas nunca alerta.
     """
     if aging_h < _VT_MIN_AGING_H:
         return None
-    if not (_VT_OPERATION_START_H <= agora.hour < _VT_OPERATION_END_H):
-        return None
     estagio_atual = registro["estagio"] if registro else None
     if restante <= 0:
+        if agora.hour not in _VT_VIOLADO_HOURS:
+            return None
         if estagio_atual != "violado":
             return "violado"
-        last_sent = registro["last_sent"]
-        intervalo = _VT_FIRST_REPEAT_S if registro.get("repeat_count", 0) == 0 else _VT_NEXT_REPEAT_S
-        if (agora - last_sent).total_seconds() >= intervalo:
-            return "violado"
+        last_sent = registro.get("last_sent")
+        if last_sent and last_sent.date() == agora.date() and last_sent.hour == agora.hour:
+            return None
+        return "violado"
+    if not (_VT_OPERATION_START_H <= agora.hour < _VT_OPERATION_END_H):
         return None
     if restante <= _VT_RISK_WINDOW_H and estagio_atual is None:
         return "risco"

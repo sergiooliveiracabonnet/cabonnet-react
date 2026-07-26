@@ -42,16 +42,24 @@ def test_vt_nao_repete_fora_da_janela_operacional():
     assert _classificar_vt_alerta(-5, registro, agora, aging_h=29) is None
 
 
-def test_vt_repete_primeiro_em_uma_hora_e_depois_em_tres_horas():
-    agora = datetime(2026, 7, 26, 10, 0)
-    primeiro = {"estagio": "violado", "last_sent": agora - timedelta(minutes=59), "repeat_count": 0}
-    assert _classificar_vt_alerta(-1, primeiro, agora, aging_h=25) is None
-    primeiro["last_sent"] = agora - timedelta(hours=1)
-    assert _classificar_vt_alerta(-1, primeiro, agora, aging_h=25) == "violado"
-    reincidente = {"estagio": "violado", "last_sent": agora - timedelta(hours=2), "repeat_count": 1}
-    assert _classificar_vt_alerta(-3, reincidente, agora, aging_h=27) is None
-    reincidente["last_sent"] = agora - timedelta(hours=3)
-    assert _classificar_vt_alerta(-3, reincidente, agora, aging_h=27) == "violado"
+def test_vt_violado_dispara_nos_slots_de_tres_em_tres_horas():
+    registro = {"estagio": "violado", "last_sent": datetime(2026, 7, 26, 7, 2), "repeat_count": 1}
+    for hora in (10, 13, 16, 19):
+        agora = datetime(2026, 7, 26, hora, 1)
+        assert _classificar_vt_alerta(-3, registro, agora, aging_h=27) == "violado"
+        registro["last_sent"] = agora
+
+
+def test_vt_violado_nao_dispara_fora_dos_slots_programados():
+    for hora in (6, 8, 9, 11, 12, 14, 15, 17, 18, 20, 23):
+        agora = datetime(2026, 7, 26, hora, 0)
+        assert _classificar_vt_alerta(-1, None, agora, aging_h=25) is None
+
+
+def test_vt_violado_nao_repete_no_mesmo_slot():
+    agora = datetime(2026, 7, 26, 10, 20)
+    registro = {"estagio": "violado", "last_sent": datetime(2026, 7, 26, 10, 1), "repeat_count": 1}
+    assert _classificar_vt_alerta(-3, registro, agora, aging_h=27) is None
 
 
 def test_alertas_recebe_um_consolidado_global_e_fornecedores_seus_lotes():
@@ -86,7 +94,7 @@ def test_classificar_ja_em_risco_nao_dispara_de_novo():
 
 
 def test_classificar_sem_registro_e_ja_violado_dispara_violado():
-    agora = datetime(2026, 6, 22, 12, 0)
+    agora = datetime(2026, 6, 22, 13, 0)
     assert _classificar_vt_alerta(restante=-1, registro=None, agora=agora) == "violado"
 
 
@@ -103,7 +111,7 @@ def test_classificar_violado_nao_repete_antes_de_30_minutos():
 
 
 def test_classificar_risco_que_vira_violado_dispara():
-    agora = datetime(2026, 6, 22, 12, 0)
+    agora = datetime(2026, 6, 22, 13, 0)
     registro = {"estagio": "risco", "last_sent": agora - timedelta(hours=1)}
     assert _classificar_vt_alerta(restante=-0.5, registro=registro, agora=agora) == "violado"
 
@@ -120,5 +128,5 @@ def test_classificar_vt_recem_aberta_nao_alerta_em_risco():
 
 
 def test_classificar_vt_apos_12h_volta_a_alertar():
-    agora = datetime(2026, 6, 22, 12, 0)
+    agora = datetime(2026, 6, 22, 13, 0)
     assert _classificar_vt_alerta(restante=-1, registro=None, agora=agora, aging_h=12) == "violado"

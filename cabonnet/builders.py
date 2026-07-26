@@ -21,7 +21,8 @@ from cabonnet.cache import _sla_limite, _calc_sla_exc, _dados_cache_update
 from cabonnet.utils import _parse_data_br
 from cabonnet.telegram import (
     _telegram_send, _tg_esc, _abrev_equipe, _is_campo,
-    _filter_by_operadora, _TG_DIV, _tg_header, _tg_footer,
+    _filter_by_operadora, _row_allowed_for_operadora,
+    _TG_DIV, _tg_header, _tg_footer,
 )
 from cabonnet.grafana import (
     grafana_post, frames_to_csv, frames_to_dict_list,
@@ -108,7 +109,7 @@ def _build_status_text(rede=False, operadora=None):
         lines.append(f"⚠️ Sem Execução: <b>{len(sem_exec)}</b>")
     if sla_exc:
         lines.append(f"🔴 SLA vencido na fila: <b>{sla_exc}</b>")
-    lines.append(f"{taxa_em} Taxa de execução: <b>{taxa}%</b>")
+    lines.append(f"{taxa_em} Progresso sobre fila + executadas: <b>{taxa}%</b>")
     if top_eq:
         lines.append("")
         lines.append(f"👥 <b>Fila por equipe:</b>")
@@ -138,7 +139,8 @@ def _build_executadas_hoje(operadora=None):
 
     if not exec_hoje:
         return "\n".join(_tg_header("📋", "EXECUTADAS HOJE", operadora)
-                         + ["Nenhuma OS executada em campo hoje."])
+                         + ["Nenhuma OS executada em campo hoje."]
+                         + _tg_footer(f"Atualizado às {datetime.now().strftime('%H:%M')}"))
 
     by_cidade = {}
     for r in exec_hoje:
@@ -172,6 +174,7 @@ def _build_executadas_hoje(operadora=None):
     if tS: linhas.append(f"Serviços: {tS}")
     if sem_exec:
         linhas += ["", f"⚠️ Encerradas sem execução: <b>{len(sem_exec)}</b> OS"]
+    linhas += _tg_footer(f"Atualizado às {datetime.now().strftime('%H:%M')}")
     return "\n".join(linhas)
 
 
@@ -338,8 +341,9 @@ def _build_pulso(operadora=None):
     lines = _tg_header("⚡", "PULSO", operadora) + [
              f"✅ Executadas hoje: <b>{len(exec_h)}</b>",
              f"📋 Fila atual: <b>{len(fila)}</b>",
-             f"{taxa_em} Taxa: <b>{taxa}%</b>  <code>{bar}</code>",
+             f"{taxa_em} Progresso da operação: <b>{taxa}%</b>  <code>{bar}</code>",
              sla_line, paradas_line]
+    lines += _tg_footer(f"Atualizado às {datetime.now().strftime('%H:%M')}")
     return "\n".join(lines)
 
 
@@ -359,20 +363,20 @@ def _build_equipes(operadora=None):
         if eq not in eq_data: eq_data[eq] = {"exec": 0, "fila": 0}
         if r.get("descsituacao") == "Concluída" and is_hoje(r): eq_data[eq]["exec"] += 1
         if r.get("descsituacao") in ("Pendente", "Atendimento"): eq_data[eq]["fila"] += 1
-    ativas  = {eq: d for eq, d in eq_data.items() if d["exec"] > 0 or d["fila"] > 0}
+    produtivas = {eq: d for eq, d in eq_data.items() if d["exec"] > 0}
     paradas = {eq: d for eq, d in eq_data.items() if d["exec"] == 0 and d["fila"] >= 1}
     lines = _tg_header("👥", "EQUIPES HOJE", operadora)
-    if ativas:
-        lines.append("<b>Em atividade:</b>")
-        for eq, d in sorted(ativas.items(), key=lambda x: -x[1]["exec"]):
-            status = "✅" if d["exec"] > 0 else "⏳"
-            lines.append(f"{status} <b>{_tg_esc(eq)}</b> — {d['exec']} exec · {d['fila']} fila")
+    if produtivas:
+        lines.append("<b>Com produção hoje:</b>")
+        for eq, d in sorted(produtivas.items(), key=lambda x: -x[1]["exec"]):
+            lines.append(f"✅ <b>{_tg_esc(eq)}</b> — {d['exec']} exec · {d['fila']} fila")
     if paradas:
         lines.append(""); lines.append(f"⛔ <b>Sem execução hoje ({len(paradas)}):</b>")
         for eq, d in sorted(paradas.items(), key=lambda x: -x[1]["fila"]):
             lines.append(f"  • {_tg_esc(eq)} — {d['fila']} OS na fila")
-    if not ativas and not paradas:
+    if not produtivas and not paradas:
         lines.append("<i>Nenhuma equipe com OS hoje.</i>")
+    lines += _tg_footer(f"Atualizado às {datetime.now().strftime('%H:%M')}")
     return "\n".join(lines)
 
 
@@ -817,7 +821,7 @@ def _build_listarede():
     return "\n".join(linhas)
 
 
-def _build_producao_equipe(query):
+def _build_producao_equipe(query, operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
     if not rows:
@@ -830,6 +834,7 @@ def _build_producao_equipe(query):
             log.warning("[producao] Erro ao buscar dados: %s", str(ex)[:120])
     if not rows:
         return "⏳ Sem dados disponíveis. Verifique a conexão com o Grafana."
+    rows = _filter_by_operadora(rows, operadora)
     import re as _re
     hoje     = date.today()
     query_u  = query.strip().upper()
@@ -903,9 +908,10 @@ def _build_producao_equipe(query):
     return "\n".join(lines)
 
 
-def _build_os_busca(termo, chat_id_override=None, callback_prefix="os"):
+def _build_os_busca(termo, chat_id_override=None, callback_prefix="os", operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows       = _filter_by_operadora(rows, operadora)
     termo      = termo.strip()
     termo_norm = _normalizar_busca(termo)
     if termo_norm.startswith("C") and termo[1:].isdigit():
@@ -924,9 +930,9 @@ def _build_os_busca(termo, chat_id_override=None, callback_prefix="os"):
     if len(resultados) == 1:
         numos_unico = str(resultados[0].get("numos"))
         if callback_prefix == "ficha":
-            txt, mkp = _build_os_ficha_rapida(numos_unico)
+            txt, mkp = _build_os_ficha_rapida(numos_unico, operadora=operadora)
             return txt, (mkp or {}).get("inline_keyboard")
-        return _build_os_detalhes(numos_unico), None
+        return _build_os_detalhes(numos_unico, operadora=operadora), None
     sit_icon = lambda s: ("✅" if "Concluída" in s and "Sem" not in s else "🔵" if "Atendimento" in s else "⚠️" if "Sem Execução" in s else "🟡")
     linhas   = [f"🔍 <b>{len(resultados)} OS encontradas</b> para {modo}:", _TG_DIV]
     botoes   = []
@@ -943,7 +949,7 @@ def _build_os_busca(termo, chat_id_override=None, callback_prefix="os"):
     return "\n".join(linhas), botoes
 
 
-def _build_os_detalhes(numos_str):
+def _build_os_detalhes(numos_str, operadora=None):
     try:
         numos_int = int(numos_str)
     except ValueError:
@@ -955,6 +961,8 @@ def _build_os_detalhes(numos_str):
     if not rows:
         return f"❌ OS <b>{numos_str}</b> não encontrada."
     r = rows[0]
+    if not _row_allowed_for_operadora(r, operadora):
+        return "🔒 Esta OS não está disponível neste grupo operacional."
     ocorrencias = []
     try:
         ocorrencias = frames_to_dict_list(grafana_post(sql_ocorrencias(numos_int)))
@@ -1044,7 +1052,7 @@ def _build_os_detalhes(numos_str):
     return "\n".join(linhas)
 
 
-def _build_os_ficha_rapida(numos_str):
+def _build_os_ficha_rapida(numos_str, operadora=None):
     try:
         numos_int = int(numos_str)
     except ValueError:
@@ -1060,6 +1068,8 @@ def _build_os_ficha_rapida(numos_str):
             return f"❌ Erro ao buscar OS {numos_str}: {_tg_esc(str(ex)[:100])}", None
     if r is None:
         return f"❌ OS <b>{numos_str}</b> não encontrada.", None
+    if not _row_allowed_for_operadora(r, operadora):
+        return "🔒 Esta OS não está disponível neste grupo operacional.", None
     def v(campo, fb="—"):
         return _tg_esc(str(r.get(campo) or "").strip() or fb)
     situacao    = r.get("descsituacao") or ""

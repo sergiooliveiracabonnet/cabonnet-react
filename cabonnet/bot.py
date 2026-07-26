@@ -86,17 +86,17 @@ def _telegram_poll_loop_inner():
     _CMDS_INSTACABLE = {
         "/status", "/pulso", "/equipes", "/executadas",
         "/listatendimento", "/resumo", "/detalhado",
-        "/meta", "/producao", "/os", "/notainstacable", "/help",
+        "/meta", "/producao", "/os", "/notainstacable", "/menu", "/help",
     }
     _CMDS_WES = {
         "/status", "/pulso", "/equipes", "/executadas",
         "/listatendimento", "/resumo", "/detalhado",
-        "/producao", "/os", "/help",
+        "/producao", "/os", "/notawes", "/menu", "/help",
     }
     _CMDS_THM = {
         "/status", "/pulso", "/equipes", "/executadas",
         "/listatendimento", "/resumo", "/detalhado",
-        "/producao", "/os", "/help",
+        "/producao", "/os", "/notathm", "/menu", "/help",
     }
     _CMDS_ALERTAS = {
         "/status", "/pulso", "/equipes", "/executadas", "/listatendimento",
@@ -109,8 +109,9 @@ def _telegram_poll_loop_inner():
         "/semexec", "/comparativo", "/menu", "/help",
     }
     _CMDS_PRODUTIVIDADE = {
-        "/os", "/agenda", "/executadas",
-        "/listatendimento", "/producao", "/pendentes", "/semana", "/help",
+        "/status", "/pulso", "/equipes", "/ranking", "/meta", "/menu",
+        "/os", "/agenda", "/executadas", "/listatendimento",
+        "/producao", "/pendentes", "/semana", "/help",
     }
 
     def _grupo_cmds(chat_id):
@@ -146,12 +147,13 @@ def _telegram_poll_loop_inner():
                 except Exception:
                     pass
                 grp, _ = _grupo_cmds(cq_chat)
+                cq_operadora = _operadora_for_chat(cq_chat)
                 if cq_data.startswith("ficha:") and grp:
                     numos = cq_data[6:]
                     if numos.isdigit():
                         n = numos; cc = cq_chat
-                        def _cb_ficha(n=n, cc=cc):
-                            txt, mkp = _build_os_ficha_rapida(n)
+                        def _cb_ficha(n=n, cc=cc, op=cq_operadora):
+                            txt, mkp = _build_os_ficha_rapida(n, operadora=op)
                             _telegram_send(txt, chat_id_override=cc, reply_markup=mkp)
                         threading.Thread(target=_cb_ficha, daemon=True).start()
                 elif cq_data.startswith("os:") and grp:
@@ -159,7 +161,9 @@ def _telegram_poll_loop_inner():
                     if numos.isdigit():
                         n = numos; cc = cq_chat
                         threading.Thread(
-                            target=lambda n=n, cc=cc: _telegram_send(_build_os_detalhes(n), chat_id_override=cc),
+                            target=lambda n=n, cc=cc, op=cq_operadora: _telegram_send(
+                                _build_os_detalhes(n, operadora=op), chat_id_override=cc
+                            ),
                             daemon=True,
                         ).start()
                 elif cq_data.startswith("revisita_"):
@@ -203,12 +207,13 @@ def _telegram_poll_loop_inner():
             if cmd_base and cmd_base not in cmds_ok and not (
                 text.startswith("/os") or (text.startswith("/") and text[1:].split("@")[0].isdigit())
             ):
+                _telegram_send(
+                    "ℹ️ Este comando não está disponível neste grupo. Use /help para ver as opções.",
+                    chat_id_override=chat_id,
+                )
                 continue
 
             cid = chat_id
-            if text.startswith("/"):
-                _telegram_send("🔍 Buscando informações solicitadas...", chat_id_override=cid)
-
             if grupo in ("PRODUTIVIDADE", "ALERTAS") and not text.startswith("/"):
                 termo_livre = text.strip()
                 if termo_livre.isdigit() and len(termo_livre) >= 5:
@@ -235,15 +240,30 @@ def _telegram_poll_loop_inner():
                     daemon=True,
                 ).start()
 
-            elif text.startswith("/menu") and grupo == "ALERTAS":
-                markup = {"keyboard": [
-                    [{"text": "/kpi"}, {"text": "/pulso"}, {"text": "/status"}],
-                    [{"text": "/sla"}, {"text": "/aging"}, {"text": "/forecast"}],
-                    [{"text": "/equipes"}, {"text": "/turno"}, {"text": "/ranking"}],
-                    [{"text": "/manutencoes"}, {"text": "/semexec"}, {"text": "/help"}],
-                ], "resize_keyboard": True, "one_time_keyboard": True}
+            elif text.startswith("/menu"):
+                if grupo == "ALERTAS":
+                    keyboard = [
+                        [{"text": "/kpi"}, {"text": "/pulso"}, {"text": "/status"}],
+                        [{"text": "/sla"}, {"text": "/aging"}, {"text": "/forecast"}],
+                        [{"text": "/equipes"}, {"text": "/turno"}, {"text": "/ranking"}],
+                        [{"text": "/manutencoes"}, {"text": "/semexec"}, {"text": "/help"}],
+                    ]
+                elif grupo == "PRODUTIVIDADE":
+                    keyboard = [
+                        [{"text": "/status"}, {"text": "/pulso"}, {"text": "/equipes"}],
+                        [{"text": "/executadas"}, {"text": "/agenda"}, {"text": "/ranking"}],
+                        [{"text": "/pendentes"}, {"text": "/semana"}, {"text": "/help"}],
+                    ]
+                else:
+                    keyboard = [
+                        [{"text": "/status"}, {"text": "/pulso"}, {"text": "/equipes"}],
+                        [{"text": "/executadas"}, {"text": "/listatendimento"}],
+                        ([{"text": "/meta"}, {"text": "/help"}]
+                         if grupo == "INSTACABLE" else [{"text": "/help"}]),
+                    ]
+                markup = {"keyboard": keyboard, "resize_keyboard": True, "one_time_keyboard": True}
                 _telegram_send(
-                    "📌 <b>Menu rápido — Alertas</b>\nEscolha uma consulta. Para buscar uma OS, envie o número diretamente.",
+                    f"📌 <b>Menu rápido — {grupo.title()}</b>\nEscolha uma consulta ou use /os &lt;número&gt;.",
                     chat_id_override=cid, reply_markup=markup,
                 )
 
@@ -274,7 +294,7 @@ def _telegram_poll_loop_inner():
                         elif not _PIL_OK:
                             _telegram_send("⚠️ Pillow não instalado no servidor.", chat_id_override=c)
                         else:
-                            _telegram_send("⏳ Sem dados. Abra o dashboard para carregar as OS.", chat_id_override=c)
+                            _telegram_send("⏳ Dados temporariamente indisponíveis. Tente novamente em instantes.", chat_id_override=c)
                     except Exception as ex:
                         log.exception("[/resumo] Erro ao gerar imagem")
                         _telegram_send(f"❌ Erro ao gerar relatório: {str(ex)[:80]}", chat_id_override=c)
@@ -292,7 +312,7 @@ def _telegram_poll_loop_inner():
                         elif not _PIL_OK:
                             _telegram_send("⚠️ Pillow não instalado no servidor.", chat_id_override=c)
                         else:
-                            _telegram_send("⏳ Sem dados. Abra o dashboard para carregar as OS.", chat_id_override=c)
+                            _telegram_send("⏳ Dados temporariamente indisponíveis. Tente novamente em instantes.", chat_id_override=c)
                     except Exception as ex:
                         log.exception("[/detalhado] Erro ao gerar imagem")
                         _telegram_send(f"❌ Erro ao gerar relatório: {str(ex)[:80]}", chat_id_override=c)
@@ -307,13 +327,13 @@ def _telegram_poll_loop_inner():
                 query = parts[1].strip() if len(parts) > 1 else ""
                 if not query:
                     ex_inst = "  /producao INST F01\n  /producao F04" if grupo in ("INSTACABLE", "ALERTAS") else ""
-                    ex_wes  = "  /producao WES\n  /producao MANUT F08" if grupo in ("WES", "ALERTAS") else ""
+                    ex_wes  = "  /producao WES\n  /producao F08" if grupo in ("WES", "ALERTAS") else ""
                     exemplos = "\n".join(filter(None, [ex_inst, ex_wes]))
                     _telegram_send(f"❌ Informe a equipe.\nUso: <code>/producao &lt;sigla&gt;</code>\n\n{exemplos}", chat_id_override=cid)
                 else:
                     q = query
-                    def _enviar_producao(q=q, cid=cid):
-                        try: _telegram_send(_build_producao_equipe(q), chat_id_override=cid)
+                    def _enviar_producao(q=q, cid=cid, op=operadora):
+                        try: _telegram_send(_build_producao_equipe(q, operadora=op), chat_id_override=cid)
                         except Exception: log.exception("[/producao] Falha query=%r", q); _telegram_send("⚠️ Erro interno.", chat_id_override=cid)
                     threading.Thread(target=_enviar_producao, daemon=True).start()
 
@@ -339,11 +359,11 @@ def _telegram_poll_loop_inner():
                     _telegram_send("ℹ️ Uso:\n  /os <b>número</b>\n  /os <b>nome</b>\n  /os <b>c12345</b>\n  /os <b>a67890</b>", chat_id_override=cid)
                 elif raw.isdigit():
                     n = raw
-                    threading.Thread(target=lambda n=n: _telegram_send_long(_build_os_detalhes(n), chat_id_override=cid), daemon=True).start()
+                    threading.Thread(target=lambda n=n, op=operadora: _telegram_send_long(_build_os_detalhes(n, operadora=op), chat_id_override=cid), daemon=True).start()
                 else:
                     t = raw; pfx = "os"
-                    def _busca_os(t=t, cid=cid, pfx=pfx):
-                        msg_txt, botoes = _build_os_busca(t, callback_prefix=pfx)
+                    def _busca_os(t=t, cid=cid, pfx=pfx, op=operadora):
+                        msg_txt, botoes = _build_os_busca(t, callback_prefix=pfx, operadora=op)
                         markup = {"inline_keyboard": botoes} if botoes else None
                         _telegram_send(msg_txt, chat_id_override=cid, reply_markup=markup)
                     threading.Thread(target=_busca_os, daemon=True).start()
@@ -399,7 +419,7 @@ def _telegram_poll_loop_inner():
             elif text.startswith("/aging") and grupo == "ALERTAS":
                 threading.Thread(target=lambda: _telegram_send(_build_aging(), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/ranking") and grupo == "ALERTAS":
+            elif text.startswith("/ranking") and grupo in ("ALERTAS", "PRODUTIVIDADE"):
                 threading.Thread(target=lambda: _telegram_send(_build_ranking(), chat_id_override=cid), daemon=True).start()
 
             elif text.startswith("/reagendadas") and grupo == "ALERTAS":
@@ -462,6 +482,7 @@ def _telegram_poll_loop_inner():
                         f"  Ex: /producao INST F01  ·  /producao F04\n"
                         f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
                         f"/notainstacable — Gera Fechamento de Nota em PDF\n"
+                        f"/menu — Abre o menu rápido\n"
                         f"/help — Esta mensagem",
                         chat_id_override=cid)
                 elif grupo == "WES":
@@ -476,7 +497,9 @@ def _telegram_poll_loop_inner():
                         f"/resumo — Imagem: OS ativas por equipe (menor → maior)\n"
                         f"/detalhado — Imagem: todas as OS listadas por equipe\n"
                         f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
-                        f"  Ex: /producao WES  ·  /producao MANUT F08\n"
+                        f"  Ex: /producao WES  ·  /producao F08\n"
+                        f"/notawes — Gera Fechamento de Nota em PDF\n"
+                        f"/menu — Abre o menu rápido\n"
                         f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
                         f"/help — Esta mensagem",
                         chat_id_override=cid)
@@ -493,6 +516,8 @@ def _telegram_poll_loop_inner():
                         f"/detalhado — Imagem: todas as OS listadas por equipe\n"
                         f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
                         f"  Ex: /producao THM  ·  /producao INST F12\n"
+                        f"/notathm — Gera Fechamento de Nota em PDF\n"
+                        f"/menu — Abre o menu rápido\n"
                         f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
                         f"/help — Esta mensagem",
                         chat_id_override=cid)
@@ -511,6 +536,11 @@ def _telegram_poll_loop_inner():
                         f"/agenda 25/04 — OS agendadas para uma data específica\n"
                         f"{_TG_DIV}\n"
                         f"<b>Acompanhamento</b>\n"
+                        f"/status — Panorama completo de instalação, serviço e manutenção\n"
+                        f"/pulso — Resumo rápido da operação completa\n"
+                        f"/equipes — Produção e fila por equipe\n"
+                        f"/ranking — Ranking geral de produtividade\n"
+                        f"/meta — Meta global de instalações\n"
                         f"/executadas — OS executadas hoje por cidade\n"
                         f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
                         f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
@@ -518,6 +548,7 @@ def _telegram_poll_loop_inner():
                         f"<b>Gestão Comercial</b>\n"
                         f"/pendentes — OS na fila sem equipe atribuída\n"
                         f"/semana — Resumo semanal por dia (executadas vs agendadas)\n"
+                        f"/menu — Abre o menu rápido\n"
                         f"/help — Esta mensagem",
                         chat_id_override=cid)
                 elif grupo == "ALERTAS":
