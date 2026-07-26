@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Send, Bell, BellOff, Trash2, CheckCheck, Settings, AlertTriangle, Clock, TrendingUp, MapPin, Sparkles } from 'lucide-react'
+import { Send, Bell, BellOff, Trash2, CheckCheck, Settings, AlertTriangle, Clock, TrendingUp, MapPin, Sparkles, Users } from 'lucide-react'
 import { useTelegramStore } from '../../store/telegramStore'
 import { telegram, ai } from '../../lib/api'
 import { Badge } from '../../components/ui/Badge'
@@ -12,6 +12,7 @@ const ICON_MAP = {
   'clock':          Clock,
   'trending-up':    TrendingUp,
   'map-pin':        MapPin,
+  'users':          Users,
 }
 
 const NIVEL_COR = { critico: 'red', atencao: 'yellow', info: 'cyan' }
@@ -92,7 +93,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
   const naoLidos = store.history.filter((a: any) => !a.lido).length
 
   return (
-    <div className="bg-card border border-white/[0.08] rounded-xl shadow-2xl w-[480px] max-h-[90vh] flex flex-col overflow-hidden">
+    <div role="region" aria-label="Alertas e configurações do Telegram" className="bg-card border border-white/[0.08] rounded-xl shadow-2xl w-[min(480px,calc(100vw-24px))] max-h-[90vh] flex flex-col overflow-hidden">
 
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.08]">
@@ -109,13 +110,13 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
         >
           {store.ativo ? <><Bell size={11} /> Ativo</> : <><BellOff size={11} /> Inativo</>}
         </button>
-        <button onClick={onClose} className="text-muted hover:text-text text-lg leading-none">×</button>
+        <button onClick={onClose} aria-label="Fechar Alertas e Telegram" className="w-10 h-10 rounded-lg text-muted hover:text-text hover:bg-surface text-lg leading-none">×</button>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-white/[0.08]">
+      <div className="flex border-b border-white/[0.08]" role="tablist" aria-label="Seções do Telegram">
         {[['alertas', `Histórico${naoLidos ? ` (${naoLidos})` : ''}`], ['config', 'Configurações']].map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id)}
+          <button key={id} onClick={() => setTab(id)} role="tab" aria-selected={tab === id}
             className={`flex-1 py-2.5 text-caption font-bold transition-colors
               ${tab === id ? 'text-primary border-b-2 border-primary' : 'text-muted hover:text-secondary'}`}
           >{label}</button>
@@ -134,7 +135,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
                 </button>
               )}
               {store.history.length > 0 && (
-                <button onClick={store.clearHistory} className="flex items-center gap-1 text-caption text-red/70 hover:text-red transition-colors">
+                <button onClick={() => { if (window.confirm('Limpar todo o histórico local de alertas?')) store.clearHistory() }} className="min-h-8 flex items-center gap-1 text-caption text-red/70 hover:text-red transition-colors">
                   <Trash2 size={10} /> Limpar
                 </button>
               )}
@@ -192,7 +193,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
               <Settings size={9} className="inline mr-1" /> Nível de Alertas Telegram
             </label>
             <div className="flex flex-col gap-1.5">
-              {[['critico','🔴 Apenas críticos'],['atencao','🟡 Críticos + Atenção'],['todos','🔵 Todos']].map(([v, l]) => (
+              {[['critico','Apenas críticos'],['atencao','Críticos + Atenção'],['todos','Todos']].map(([v, l]) => (
                 <button key={v} onClick={() => store.setNivel(v)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-caption transition-all
                     ${store.nivel === v ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/[0.08] text-muted hover:text-secondary'}`}
@@ -209,10 +210,10 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
                 <p className="text-caption font-semibold text-text">OS com SLA vencido</p>
                 <p className="text-caption text-muted">Até 3 OS por ciclo de verificação</p>
               </div>
-              <button onClick={() => store.setAlertaAging(!store.alertaAging)}
-                className={`w-9 h-5 rounded-full transition-all relative ${store.alertaAging ? 'bg-primary' : 'bg-muted/25'}`}
+              <button onClick={() => store.setAlertaAging(!store.alertaAging)} role="switch" aria-checked={store.alertaAging} aria-label="Enviar alertas individuais de OS com SLA vencido"
+                className={`w-11 h-7 rounded-full transition-all relative focus-visible:ring-2 focus-visible:ring-primary/50 ${store.alertaAging ? 'bg-primary' : 'bg-muted/25'}`}
               >
-                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${store.alertaAging ? 'left-4' : 'left-0.5'}`} />
+                <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${store.alertaAging ? 'left-5' : 'left-1'}`} />
               </button>
             </div>
           </div>
@@ -220,15 +221,15 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
           {/* Thresholds */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-caption font-bold uppercase tracking-wide text-muted block mb-1.5">Fila Alta (OS)</label>
-              <input type="number" min={5} max={500} value={store.filaThreshold}
+              <label htmlFor="telegram-fila-threshold" className="text-caption font-bold uppercase tracking-wide text-muted block mb-1.5">Fila Alta (OS)</label>
+              <input id="telegram-fila-threshold" type="number" min={5} max={500} value={store.filaThreshold}
                 onChange={e => store.setFilaThreshold(Number(e.target.value))}
                 className="w-full px-3 py-1.5 text-label bg-surface border border-white/[0.08] rounded-lg text-text outline-none focus:border-primary/40"
               />
             </div>
             <div>
-              <label className="text-caption font-bold uppercase tracking-wide text-muted block mb-1.5">Intervalo (min)</label>
-              <input type="number" min={1} max={60} value={store.pollMin}
+              <label htmlFor="telegram-poll-min" className="text-caption font-bold uppercase tracking-wide text-muted block mb-1.5">Intervalo (min)</label>
+              <input id="telegram-poll-min" type="number" min={1} max={60} value={store.pollMin}
                 onChange={e => store.setPollMin(Number(e.target.value))}
                 className="w-full px-3 py-1.5 text-label bg-surface border border-white/[0.08] rounded-lg text-text outline-none focus:border-primary/40"
               />
@@ -264,7 +265,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
 
           {/* Feedback */}
           {statusMsg && (
-            <div className={`px-3 py-2 rounded-lg text-caption font-semibold ${statusMsg.ok ? 'bg-green/10 text-green border border-green/25' : 'bg-red/10 text-red border border-red/25'}`}>
+            <div role={statusMsg.ok ? 'status' : 'alert'} className={`px-3 py-2 rounded-lg text-caption font-semibold ${statusMsg.ok ? 'bg-green/10 text-green border border-green/25' : 'bg-red/10 text-red border border-red/25'}`}>
               {statusMsg.txt}
             </div>
           )}

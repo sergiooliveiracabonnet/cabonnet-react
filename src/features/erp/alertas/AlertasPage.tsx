@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import {
   AlertTriangle, ShieldAlert, ShieldCheck, Info,
-  Activity, RefreshCw, Settings, BarChart3, Sparkles,
+  Activity, RefreshCw, Settings, BarChart3, Sparkles, Search, CheckCircle2,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../../../components/ui/PageHeader'
 import { useERPRows }    from '../useERPRows'
 import { useERPStore }   from '../../../store/erpStore'
@@ -16,12 +17,19 @@ import {
   type GrafanaCidade,
 } from './AlertasComponents'
 import { useAIAlertas } from '../../../hooks/useAIAlertas'
+import { buildAlertMetrics, operationalActiveRows, summarizeAlerts } from '../../../lib/alertEngine'
+import { useAlertStore } from '../../../store/alertStore'
 
 export default function AlertasPage() {
   const { rows, allRows, isLoading, derived } = useERPRows()
   const { alertSettings, setAlertSettings }   = useERPStore()
   const [showSettings, setShowSettings]       = useState(false)
   const [aiEnabled,    setAiEnabled]           = useState(false)
+  const [search, setSearch] = useState('')
+  const [severityFilter, setSeverityFilter] = useState('TODOS')
+  const [statusFilter, setStatusFilter] = useState('ATIVOS')
+  const navigate = useNavigate()
+  const { acknowledged, toggleAcknowledged } = useAlertStore()
   const grafOS = useGrafanaOS()
 
   const semaforo = useMemo(() => derived?.sla?.semaforo ?? [], [derived])
@@ -37,7 +45,7 @@ export default function AlertasPage() {
 
   const metricsByCode = useMemo(() => {
     const map: Record<string, { queue: number; criticas: number }> = {}
-    rows.forEach(row => {
+    allRows.forEach(row => {
       if (!row.nomedaequipe) return
       if (!isFilaAtiva(row._situacaoEfetiva)) return
       const code = shortEquipe(row.nomedaequipe).split(' - ')[0].trim()
@@ -46,13 +54,14 @@ export default function AlertasPage() {
       if (row._slaCritico) map[code].criticas++
     })
     return map
-  }, [rows])
+  }, [allRows])
 
   const alerts     = useMemo(
-    () => isLoading ? [] : buildAlerts(rows, alertSettings, metricsByCode, slaByCode),
-    [rows, alertSettings, metricsByCode, slaByCode, isLoading]
+    () => isLoading ? [] : buildAlerts(operationalActiveRows(allRows), alertSettings, metricsByCode, slaByCode),
+    [allRows, alertSettings, metricsByCode, slaByCode, isLoading]
   )
   const ruleAlerts = useAlerts(rows, allRows)
+  const ruleMetrics = useMemo(() => buildAlertMetrics(allRows, rows), [allRows, rows])
 
   const counts = useMemo(() => ({
     CRITICO: alerts.filter(a => a.severity === 'CRITICO').reduce((s, a) => s + a.count, 0),
@@ -60,30 +69,61 @@ export default function AlertasPage() {
     MEDIO:   alerts.filter(a => a.severity === 'MEDIO').reduce((s, a)   => s + a.count, 0),
   }), [alerts])
 
-  const totalAlerts = alerts.length + ruleAlerts.length
+  const acknowledgedIds = useMemo(() => {
+    const activeIds = new Set([
+      ...alerts.map(alert => `operational:${alert.id}`),
+      ...ruleAlerts.map(alert => `rule:${alert.id}`),
+    ])
+    return new Set(Object.keys(acknowledged).filter(id => activeIds.has(id)))
+  }, [acknowledged, alerts, ruleAlerts])
+  const summary = useMemo(() => summarizeAlerts(alerts, ruleAlerts, acknowledgedIds), [alerts, ruleAlerts, acknowledgedIds])
+  const totalAlerts = summary.rulesTriggered
+  const unresolvedAlerts = Math.max(0, totalAlerts - summary.acknowledged)
   const pulso       = derived?.dashboard?.pulso
   const totalFila   = useMemo(
-    () => rows.filter(r => isFilaAtiva(r._situacaoEfetiva)).length,
-    [rows]
+    () => operationalActiveRows(allRows).length,
+    [allRows]
   )
-  const hasAny = totalAlerts > 0
+  const hasAny = unresolvedAlerts > 0
 
   // ── AI Alertas ──────────────────────────────────────────────────────────────
   const aiAlertasInput = useMemo(() => ({
-    alertas: alerts.map(a => ({
+    alertas: [...alerts.map(a => ({
       tipo:   a.id,
       ref:    a.title,
       nivel:  a.severity,
       titulo: a.title,
       msg:    a.desc,
-    })),
+    })), ...ruleAlerts.map(a => ({ tipo: a.id, ref: a.label, nivel: a.severity, titulo: a.label, msg: a.desc }))],
     contexto: {
       total:     totalFila,
       criticas:  counts.CRITICO,
-      semEquipe: (pulso as { semAgendamento?: number } | undefined)?.semAgendamento ?? 0,
+      semEquipe: ruleMetrics.semEquipe,
       aging:     (pulso as { agingMed?: number } | undefined)?.agingMed ?? 0,
     },
-  }), [alerts, totalFila, counts.CRITICO, pulso])
+  }), [alerts, ruleAlerts, totalFila, counts.CRITICO, pulso, ruleMetrics.semEquipe])
+
+  const normalizedSearch = search.trim().toLocaleLowerCase('pt-BR')
+  const visibleAlerts = useMemo(() => alerts.filter(alert => {
+    const id = `operational:${alert.id}`
+    const isAcknowledged = acknowledgedIds.has(id)
+    if (severityFilter !== 'TODOS' && alert.severity !== severityFilter) return false
+    if (statusFilter === 'ATIVOS' && isAcknowledged) return false
+    if (statusFilter === 'RECONHECIDOS' && !isAcknowledged) return false
+    return !normalizedSearch || `${alert.title} ${alert.desc} ${alert.items.map(item => `${item.label} ${item.sub}`).join(' ')}`.toLocaleLowerCase('pt-BR').includes(normalizedSearch)
+  }), [alerts, acknowledgedIds, severityFilter, statusFilter, normalizedSearch])
+
+  const visibleRuleAlerts = useMemo(() => ruleAlerts.filter(alert => {
+    const id = `rule:${alert.id}`
+    const isAcknowledged = acknowledgedIds.has(id)
+    if (severityFilter !== 'TODOS') {
+      const severity = alert.severity === 'critical' ? 'CRITICO' : alert.severity === 'warning' ? 'ALTO' : 'MEDIO'
+      if (severity !== severityFilter) return false
+    }
+    if (statusFilter === 'ATIVOS' && isAcknowledged) return false
+    if (statusFilter === 'RECONHECIDOS' && !isAcknowledged) return false
+    return !normalizedSearch || `${alert.label} ${alert.desc}`.toLocaleLowerCase('pt-BR').includes(normalizedSearch)
+  }), [ruleAlerts, acknowledgedIds, severityFilter, statusFilter, normalizedSearch])
 
   const { data: aiAlertas, isLoading: aiLoading } = useAIAlertas({ ...aiAlertasInput, enabled: aiEnabled })
 
@@ -97,12 +137,12 @@ export default function AlertasPage() {
           hasAny ? (
             <span className="inline-flex items-center gap-1.5 text-caption font-bold px-2 py-0.5 rounded-full border"
                   style={{ background: 'rgba(248,113,113,0.12)', borderColor: 'rgba(248,113,113,0.35)', color: '#f87171' }}>
-              {totalAlerts} ativo{totalAlerts > 1 ? 's' : ''}
+              {unresolvedAlerts} pendente{unresolvedAlerts !== 1 ? 's' : ''} · {summary.occurrences} ocorrências
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-caption font-bold px-2 py-0.5 rounded-full border"
                   style={{ background: 'rgba(74,222,128,0.10)', borderColor: 'rgba(74,222,128,0.30)', color: '#4ade80' }}>
-              OK
+              {totalAlerts > 0 ? 'Todos reconhecidos' : 'OK'}
             </span>
           )
         }
@@ -114,7 +154,7 @@ export default function AlertasPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green" />
               </span>
-              Ao vivo
+              Atualizado com a fila operacional
             </span>
           )
         }
@@ -289,8 +329,8 @@ export default function AlertasPage() {
                   {grafOS.lastSync.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
-              <button onClick={grafOS.refresh} title="Atualizar"
-                className="w-6 h-6 flex items-center justify-center text-muted hover:text-text
+              <button onClick={grafOS.refresh} title="Atualizar" aria-label="Atualizar dados por cidade"
+                className="w-9 h-9 flex items-center justify-center text-muted hover:text-text
                            transition-colors rounded-md hover:bg-surface">
                 <RefreshCw size={11} className={grafOS.loading ? 'animate-spin' : ''} />
               </button>
@@ -304,6 +344,38 @@ export default function AlertasPage() {
       )}
 
       {/* ── Alert List ────────────────────────────────────────────────────── */}
+      {grafOS.error && grafOS.cidades.length === 0 && !grafOS.loading && (
+        <div role="status" className="rounded-xl border border-yellow/25 bg-yellow/[0.06] px-4 py-3 text-label text-secondary">
+          iManager indisponível. Os alertas continuam usando os dados operacionais do ERP.
+        </div>
+      )}
+
+      <section aria-label="Filtros de alertas" className="rounded-xl border border-white/[0.08] bg-card p-3">
+        <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
+          <label className="relative flex-1 min-w-0">
+            <span className="sr-only">Pesquisar alertas</span>
+            <Search size={14} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <input value={search} onChange={event => setSearch(event.target.value)}
+              placeholder="Pesquisar OS, cliente, equipe, cidade ou regra"
+              className="w-full h-10 rounded-lg border border-white/[0.08] bg-surface pl-9 pr-3 text-label text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50" />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <label className="sr-only" htmlFor="alert-severity-filter">Severidade</label>
+            <select id="alert-severity-filter" value={severityFilter} onChange={event => setSeverityFilter(event.target.value)}
+              className="h-10 rounded-lg border border-white/[0.08] bg-surface px-3 text-label text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+              <option value="TODOS">Todas as severidades</option><option value="CRITICO">Críticos</option>
+              <option value="ALTO">Altos</option><option value="MEDIO">Médios</option>
+            </select>
+            <label className="sr-only" htmlFor="alert-status-filter">Situação</label>
+            <select id="alert-status-filter" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}
+              className="h-10 rounded-lg border border-white/[0.08] bg-surface px-3 text-label text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+              <option value="ATIVOS">Não reconhecidos</option><option value="RECONHECIDOS">Reconhecidos ({summary.acknowledged})</option>
+              <option value="TODOS">Todos</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -323,10 +395,19 @@ export default function AlertasPage() {
             <p className="text-label text-muted">Nenhum alerta ativo com os thresholds configurados</p>
           </div>
         </div>
+      ) : visibleAlerts.length === 0 && visibleRuleAlerts.length === 0 ? (
+        <div className="rounded-xl border border-white/[0.08] bg-card px-5 py-12 text-center">
+          <CheckCircle2 size={24} className="mx-auto mb-3 text-muted" />
+          <p className="text-label font-semibold text-text">Nenhum alerta corresponde aos filtros</p>
+          <button onClick={() => { setSearch(''); setSeverityFilter('TODOS'); setStatusFilter('TODOS') }}
+            className="mt-3 min-h-10 px-3 text-label text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary/50 rounded-md">
+            Limpar filtros
+          </button>
+        </div>
       ) : (
         <div className="space-y-4">
           {['CRITICO', 'ALTO', 'MEDIO'].map(sev => {
-            const group = alerts.filter(a => a.severity === sev)
+            const group = visibleAlerts.filter(a => a.severity === sev)
             if (!group.length) return null
             const s = SEV_CFG[sev as keyof typeof SEV_CFG]
             return (
@@ -334,17 +415,28 @@ export default function AlertasPage() {
                 <SectionLabel icon={AlertTriangle} color={s.color}>
                   {s.label} · {group.reduce((n, a) => n + a.count, 0)} ocorrências
                 </SectionLabel>
-                {group.map((alert, i) => <AlertCard key={alert.id} alert={alert} delay={i * 80} />)}
+                {group.map((alert, i) => {
+                  const incidentId = `operational:${alert.id}`
+                  return <AlertCard key={alert.id} alert={alert} delay={i * 80}
+                    acknowledged={acknowledgedIds.has(incidentId)}
+                    onToggleAcknowledged={() => toggleAcknowledged(incidentId)}
+                    onView={() => navigate('/ordens')} />
+                })}
               </section>
             )
           })}
 
-          {ruleAlerts.length > 0 && (
+          {visibleRuleAlerts.length > 0 && (
             <section className="space-y-2">
               <SectionLabel icon={BarChart3} color="#3b82f6">
-                Regras de Negócio · {ruleAlerts.length} disparo{ruleAlerts.length > 1 ? 's' : ''}
+                Regras de Negócio · {visibleRuleAlerts.length} disparo{visibleRuleAlerts.length > 1 ? 's' : ''}
               </SectionLabel>
-              {ruleAlerts.map((rule, i) => <RuleCard key={rule.id} rule={rule} delay={i * 60} />)}
+              {visibleRuleAlerts.map((rule, i) => {
+                const incidentId = `rule:${rule.id}`
+                return <RuleCard key={rule.id} rule={rule} delay={i * 60}
+                  acknowledged={acknowledgedIds.has(incidentId)}
+                  onToggleAcknowledged={() => toggleAcknowledged(incidentId)} />
+              })}
             </section>
           )}
         </div>

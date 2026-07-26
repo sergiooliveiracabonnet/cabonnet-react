@@ -9,8 +9,8 @@ import {
   tgExecutadas, tgEquipeInativa, tgFilaResidual,
 } from '../lib/tgTemplates'
 
-const EXP_INICIO = 8
-const EXP_FIM    = 18
+const EXP_INICIO = 7
+const EXP_FIM    = 20
 
 function hojeStr(): string {
   const n = new Date()
@@ -42,6 +42,8 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
   const store = useTelegramStore()
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
+  const rowsRef = useRef(allRows)
+  useEffect(() => { rowsRef.current = allRows }, [allRows])
 
   function clearAllTimers() {
     timers.current.forEach(id => clearTimeout(id))
@@ -54,12 +56,18 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
     try { await telegram.send(texto, 'alertas') } catch { /* best-effort */ }
   }
 
+  function mensagemDoAlerta(alerta: { nivel: string; titulo: string; msg: string }) {
+    const marker = alerta.nivel === 'critico' ? '🔴' : alerta.nivel === 'atencao' ? '🟡' : '🔵'
+    return `${marker} <b>${alerta.titulo}</b>\n${alerta.msg}\n\n<i>Cabonnet · Central de Alertas</i>`
+  }
+
   function verificar() {
-    if (!allRows?.length) return
+    const currentRows = rowsRef.current
+    if (!currentRows?.length) return
     const hora = new Date().getHours()
     if (hora < EXP_INICIO || hora >= EXP_FIM) return
 
-    const base  = allRows.filter(r => !isCOPE(r) && !isReagend(r) && r._tipo !== 'REDE')
+    const base  = currentRows.filter(r => !isCOPE(r) && !isReagend(r) && r._tipo !== 'REDE')
     const novos: { tipo: string; ref: string; nivel: string; titulo: string; msg: string; icon: string }[] = []
 
     // Alerta 1: Equipe sem execução com fila ≥ 3
@@ -79,14 +87,14 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
     // Alerta 2: OS em crise de SLA
     const ativas   = base.filter(r => ['Atendimento','Pendente'].includes(r.descsituacao as string))
     const criticas = ativas.filter(r => r._slaCritico || r._slaExcedido)
-    if (criticas.length > 0 && !store.jaEmitido('sla_crise', String(criticas.length))) {
-      novos.push({ tipo: 'sla_crise', ref: String(criticas.length), nivel: 'critico', titulo: `${criticas.length} OS com SLA vencido`, msg: criticas.slice(0,3).map(r => r.numos).join(', ') + (criticas.length > 3 ? ` +${criticas.length-3}` : ''), icon: 'alert-circle' })
+    if (criticas.length > 0 && !store.jaEmitido('sla_crise', 'global')) {
+      novos.push({ tipo: 'sla_crise', ref: 'global', nivel: 'critico', titulo: `${criticas.length} OS com SLA vencido`, msg: criticas.slice(0,3).map(r => r.numos).join(', ') + (criticas.length > 3 ? ` +${criticas.length-3}` : ''), icon: 'alert-circle' })
     }
 
     // Alerta 3: Fila acima do threshold
     const filaTotal = ativas.length
-    if (filaTotal > store.filaThreshold && !store.jaEmitido('fila_alta', String(filaTotal))) {
-      novos.push({ tipo: 'fila_alta', ref: String(filaTotal), nivel: 'atencao', titulo: `Fila alta: ${filaTotal} OS`, msg: `Acima do limite de ${store.filaThreshold} OS configurado`, icon: 'trending-up' })
+    if (filaTotal > store.filaThreshold && !store.jaEmitido('fila_alta', 'global')) {
+      novos.push({ tipo: 'fila_alta', ref: 'global', nivel: 'atencao', titulo: `Fila alta: ${filaTotal} OS`, msg: `Acima do limite de ${store.filaThreshold} OS configurado`, icon: 'trending-up' })
     }
 
     // Alerta 4: Cluster de manutenções por cidade
@@ -105,10 +113,10 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
       r._agingHoras != null &&
       (r._agingHoras as number) > 4
     )
-    if (semEquipe4h.length > 0 && !store.jaEmitido('sem_equipe_4h', String(semEquipe4h.length))) {
+    if (semEquipe4h.length > 0 && !store.jaEmitido('sem_equipe_4h', 'global')) {
       novos.push({
         tipo:   'sem_equipe_4h',
-        ref:    String(semEquipe4h.length),
+        ref:    'global',
         nivel:  'critico',
         titulo: `${semEquipe4h.length} OS sem equipe há mais de 4h`,
         msg:    semEquipe4h.slice(0, 3).map((r: OSRow) =>
@@ -141,22 +149,18 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
         try { new Notification(`Cabonnet — ${a.titulo}`, { body: a.msg, tag: a.tipo + '_' + a.ref }) } catch { /* permission denied */ }
       }
       if (store.enabled && store.deveEnviarTelegram(a.nivel)) {
-        const txt = a.tipo === 'sla_crise'     ? tgCriticas(base)
-                  : a.tipo === 'equipe_parada' ? tgEquipes(base)
-                  : a.tipo === 'fila_alta'     ? tgSLA(base)
-                  : a.tipo === 'falha_cidade'  ? tgEquipes(base)
-                  : tgCriticas(base)
-        enviarTelegram(txt)
+        enviarTelegram(mensagemDoAlerta(a))
       }
     })
   }
 
-  const semRede = allRows?.filter(r => r._tipo !== 'REDE') ?? []
+  const getSemRede = () => rowsRef.current?.filter(r => r._tipo !== 'REDE') ?? []
 
   function agendarExecutadas() {
     const ms = msProximaHora()
     addTimer(setTimeout(() => {
       const h = new Date().getHours()
+      const semRede = getSemRede()
       if (h >= EXP_INICIO && h < EXP_FIM && store.enabled && semRede.length) {
         enviarTelegram(tgExecutadas(semRede))
       }
@@ -167,11 +171,13 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
   function agendarPulso() {
     addTimer(setTimeout(() => {
       const h = new Date().getHours()
+      const semRede = getSemRede()
       if (h >= EXP_INICIO && h < EXP_FIM && store.enabled && semRede.length) {
         enviarTelegram(tgPulso(semRede))
       }
       addTimer(setInterval(() => {
         const h2 = new Date().getHours()
+        const semRede = getSemRede()
         if (h2 >= EXP_INICIO && h2 < EXP_FIM && store.enabled && semRede.length) {
           enviarTelegram(tgPulso(semRede))
         }
@@ -182,6 +188,7 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
   function agendarEquipeInativa() {
     addTimer(setInterval(() => {
       const h = new Date().getHours()
+      const semRede = getSemRede()
       if (h >= EXP_INICIO && h < EXP_FIM && store.enabled && semRede.length) {
         enviarTelegram(tgEquipeInativa(semRede))
       }
@@ -190,6 +197,7 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
 
   function agendarFilaResidual() {
     addTimer(setTimeout(() => {
+      const semRede = getSemRede()
       if (store.enabled && semRede.length) enviarTelegram(tgFilaResidual(semRede))
     }, msAte(16, 30)))
   }
@@ -217,14 +225,14 @@ export function useAlertasEngine(allRows: OSRow[] | null | undefined, _rows: OSR
       clearInterval(poll)
       clearAllTimers()
     }
-  }, [store.ativo, allRows]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [store.ativo, store.pollMin]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     verificarAgora:   verificar,
-    enviarSLA:        () => semRede.length && enviarTelegram(tgSLA(semRede)),
-    enviarEquipes:    () => semRede.length && enviarTelegram(tgEquipes(semRede)),
-    enviarCriticas:   () => semRede.length && enviarTelegram(tgCriticas(semRede)),
-    enviarPulso:      () => semRede.length && enviarTelegram(tgPulso(semRede)),
-    enviarExecutadas: () => semRede.length && enviarTelegram(tgExecutadas(semRede)),
+    enviarSLA:        () => { const rows = getSemRede(); return rows.length && enviarTelegram(tgSLA(rows)) },
+    enviarEquipes:    () => { const rows = getSemRede(); return rows.length && enviarTelegram(tgEquipes(rows)) },
+    enviarCriticas:   () => { const rows = getSemRede(); return rows.length && enviarTelegram(tgCriticas(rows)) },
+    enviarPulso:      () => { const rows = getSemRede(); return rows.length && enviarTelegram(tgPulso(rows)) },
+    enviarExecutadas: () => { const rows = getSemRede(); return rows.length && enviarTelegram(tgExecutadas(rows)) },
   }
 }

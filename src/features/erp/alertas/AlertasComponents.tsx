@@ -1,12 +1,12 @@
-import { useState, type ComponentType } from 'react'
+import { useEffect, useRef, useState, type ComponentType } from 'react'
 import {
   Clock, Users, TrendingDown,
   CalendarX, ChevronDown, X,
-  ShieldAlert, BarChart2, Bell, MapPin, BarChart3,
+  ShieldAlert, BarChart2, Bell, MapPin, BarChart3, CheckCircle2, ExternalLink,
 } from 'lucide-react'
 import type { FiredAlert } from '../../../hooks/useAlerts'
 import type { OSRow } from '../../../lib/types'
-import { useAlertStore }  from '../../../store/alertStore'
+import { DEFAULT_RULES, DEFAULT_SLA_LIMITS, useAlertStore }  from '../../../store/alertStore'
 import { useIsGestor }   from '../../../hooks/useRole'
 import { shortEquipe }   from '../../../lib/osFormat'
 
@@ -131,7 +131,10 @@ export function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; 
 
 const PREVIEW = 5
 
-export function AlertCard({ alert, delay = 0 }: { alert: AlertEntry; delay?: number }) {
+export function AlertCard({ alert, delay = 0, acknowledged = false, onToggleAcknowledged, onView }: {
+  alert: AlertEntry; delay?: number; acknowledged?: boolean
+  onToggleAcknowledged?: () => void; onView?: () => void
+}) {
   const [open, setOpen] = useState(false)
   const sev       = SEV_CFG_MAP[alert.severity]
   const AlertIcon = alert.Icon
@@ -190,6 +193,16 @@ export function AlertCard({ alert, delay = 0 }: { alert: AlertEntry; delay?: num
               +{extra} item{extra > 1 ? 's' : ''} adicionais
             </p>
           )}
+          <div className="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-white/[0.06]">
+            <button onClick={onToggleAcknowledged}
+              className="min-h-10 inline-flex items-center gap-2 rounded-lg border border-white/[0.08] px-3 text-label text-secondary hover:text-text hover:bg-surface focus-visible:ring-2 focus-visible:ring-primary/50">
+              <CheckCircle2 size={14} /> {acknowledged ? 'Marcar como pendente' : 'Reconhecer alerta'}
+            </button>
+            <button onClick={onView}
+              className="min-h-10 inline-flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/[0.08] px-3 text-label font-semibold text-primary hover:bg-primary/[0.14] focus-visible:ring-2 focus-visible:ring-primary/50">
+              <ExternalLink size={14} /> Ver ocorrências em Ordens
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -198,7 +211,9 @@ export function AlertCard({ alert, delay = 0 }: { alert: AlertEntry; delay?: num
 
 // ─── RuleCard ─────────────────────────────────────────────────────────────────
 
-export function RuleCard({ rule, delay = 0 }: { rule: FiredAlert; delay?: number }) {
+export function RuleCard({ rule, delay = 0, acknowledged = false, onToggleAcknowledged }: {
+  rule: FiredAlert; delay?: number; acknowledged?: boolean; onToggleAcknowledged?: () => void
+}) {
   const sevKey = RULE_SEV_MAP[rule.severity] ?? 'MEDIO'
   const sev    = SEV_CFG_MAP[sevKey]
   const RIcon  = RULE_ICONS[rule.metric] ?? Bell
@@ -223,6 +238,11 @@ export function RuleCard({ rule, delay = 0 }: { rule: FiredAlert; delay?: number
           </p>
           <p className="text-caption text-muted mt-0.5">{rule.operator} {rule.threshold}</p>
         </div>
+        <button onClick={onToggleAcknowledged} aria-label={acknowledged ? `Marcar ${rule.label} como pendente` : `Reconhecer ${rule.label}`}
+          title={acknowledged ? 'Alerta reconhecido' : 'Reconhecer alerta'}
+          className={`min-w-10 min-h-10 rounded-lg border flex items-center justify-center hover:text-green hover:border-green/30 focus-visible:ring-2 focus-visible:ring-primary/50 ${acknowledged ? 'border-green/30 bg-green/10 text-green' : 'border-white/[0.08] text-muted'}`}>
+          <CheckCircle2 size={16} />
+        </button>
       </div>
     </div>
   )
@@ -285,9 +305,31 @@ export function SettingsPanel({ settings, onSave, onClose }: {
   settings: AlertSettings; onSave: (s: AlertSettings) => void; onClose: () => void
 }) {
   const [draft, setDraft] = useState(settings)
-  const { slaLimits, updateSlaLimit, resetSlaLimits } = useAlertStore()
+  const { slaLimits, updateSlaLimit, rules, updateRule } = useAlertStore()
   const [slaD, setSlaD]   = useState({ ...slaLimits })
+  const [rulesD, setRulesD] = useState(rules.map(rule => ({ ...rule })))
   const isGestor          = useIsGestor()
+  const panelRef          = useRef<HTMLDivElement>(null)
+  const onCloseRef        = useRef(onClose)
+  useEffect(() => { onCloseRef.current = onClose }, [onClose])
+
+  useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    panelRef.current?.querySelector<HTMLElement>('button, input')?.focus()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { onCloseRef.current(); return }
+      if (event.key !== 'Tab') return
+      const focusable = Array.from(panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? [])
+      if (!focusable.length) return
+      const first = focusable[0], last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => { document.removeEventListener('keydown', onKeyDown); document.body.style.overflow = previousOverflow; previousFocus?.focus() }
+  }, [])
 
   const alertFields = [
     { key: 'agingCriticoDias', label: 'Aging crítico',        suffix: 'd', min: 7,  max: 60,  step: 1 },
@@ -311,21 +353,22 @@ export function SettingsPanel({ settings, onSave, onClose }: {
       f.key as 'INSTALACAO' | 'MANUTENCAO' | 'SERVICO' | 'VT24H' | 'VT48H' | 'VT08H',
       (slaD as Record<string, number>)[f.key],
     ))
+    rulesD.forEach(rule => updateRule(rule.id, rule))
     onClose()
   }
 
   return (
     <div className="fixed inset-0 z-[300] flex items-stretch justify-end">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-xs bg-elevated border-l border-white/[0.08]
+      <div aria-hidden="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="alert-settings-title" className="relative w-full max-w-md bg-elevated border-l border-white/[0.08]
                       flex flex-col shadow-2xl animate-in slide-in-from-right-4 duration-200">
 
         <div className="flex items-center justify-between p-5 border-b border-white/[0.08]">
           <div>
-            <h2 className="text-title font-bold text-text">Configurar Alertas</h2>
+            <h2 id="alert-settings-title" className="text-title font-bold text-text">Configurar Alertas</h2>
             <p className="text-caption text-muted mt-0.5">Thresholds e limites de SLA</p>
           </div>
-          <button onClick={onClose}
+          <button onClick={onClose} aria-label="Fechar configurações de alertas"
             className="w-8 h-8 rounded-lg flex items-center justify-center
                        text-muted hover:text-text hover:bg-surface transition-colors">
             <X size={16} />
@@ -341,12 +384,13 @@ export function SettingsPanel({ settings, onSave, onClose }: {
               {alertFields.map(f => (
                 <div key={f.key} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-label text-secondary font-medium">{f.label}</label>
+                    <label htmlFor={`alert-setting-${f.key}`} className="text-label text-secondary font-medium">{f.label}</label>
                     <span className="text-[16px] font-bold text-primary tabular-nums font-mono">
                       {(draft as unknown as Record<string, number>)[f.key]}{f.suffix}
                     </span>
                   </div>
                   <input
+                    id={`alert-setting-${f.key}`}
                     type="range" min={f.min} max={f.max} step={f.step}
                     value={(draft as unknown as Record<string, number>)[f.key]}
                     onChange={e => setDraft(d => ({ ...d, [f.key]: +e.target.value }))}
@@ -362,11 +406,44 @@ export function SettingsPanel({ settings, onSave, onClose }: {
 
           <div className="pt-2 border-t border-white/[0.08]">
             <div className="flex items-center justify-between mb-4">
+              <p className="text-caption font-bold uppercase tracking-widest text-muted">Regras de negócio</p>
+              <button onClick={() => setRulesD(DEFAULT_RULES.map(rule => ({ ...rule })))}
+                className="min-h-8 text-caption text-muted hover:text-secondary underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-primary/50 rounded">
+                Restaurar padrões
+              </button>
+            </div>
+            <div className="space-y-3">
+              {rulesD.map(rule => (
+                <div key={rule.id} className="rounded-lg border border-white/[0.08] bg-surface/30 p-3">
+                  <div className="flex items-center gap-3">
+                    <button type="button" role="switch" aria-checked={rule.enabled} aria-label={`${rule.enabled ? 'Desativar' : 'Ativar'} ${rule.label}`}
+                      onClick={() => setRulesD(current => current.map(item => item.id === rule.id ? { ...item, enabled: !item.enabled } : item))}
+                      className={`relative w-11 h-7 rounded-full flex-shrink-0 focus-visible:ring-2 focus-visible:ring-primary/50 ${rule.enabled ? 'bg-primary' : 'bg-muted/25'}`}>
+                      <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${rule.enabled ? 'translate-x-5' : 'translate-x-1'}`} />
+                    </button>
+                    <label htmlFor={`rule-threshold-${rule.id}`} className="flex-1 min-w-0">
+                      <span className="block text-label font-semibold text-text">{rule.label}</span>
+                      <span className="block text-caption text-muted leading-snug">{rule.desc}</span>
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-caption font-mono text-muted">{rule.operator}</span>
+                      <input id={`rule-threshold-${rule.id}`} type="number" value={rule.threshold}
+                        onChange={event => setRulesD(current => current.map(item => item.id === rule.id ? { ...item, threshold: Number(event.target.value) } : item))}
+                        className="w-16 h-9 rounded-md border border-white/[0.08] bg-card px-2 text-center text-label font-mono text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-white/[0.08]">
+            <div className="flex items-center justify-between mb-4">
               <p className="text-caption font-bold uppercase tracking-widest text-muted">
                 Limites de SLA por Tipo (dias)
               </p>
               <button
-                onClick={() => { resetSlaLimits(); setSlaD({ INSTALACAO: 2, MANUTENCAO: 1, SERVICO: 2, VT24H: 1, VT48H: 2, VT08H: 1 }) }}
+                onClick={() => setSlaD({ ...DEFAULT_SLA_LIMITS })}
                 className="text-caption text-muted hover:text-secondary transition-colors underline underline-offset-2">
                 Restaurar padrões
               </button>
@@ -374,9 +451,10 @@ export function SettingsPanel({ settings, onSave, onClose }: {
             <div className="space-y-3">
               {slaFields.map(f => (
                 <div key={f.key} className="flex items-center justify-between gap-3">
-                  <label className="text-label text-secondary flex-1">{f.label}</label>
+                  <label htmlFor={`sla-setting-${f.key}`} className="text-label text-secondary flex-1">{f.label}</label>
                   <div className="flex items-center gap-1.5">
                     <input
+                      id={`sla-setting-${f.key}`}
                       type="number" min={1} max={30} value={(slaD as Record<string, number>)[f.key] ?? 2}
                       onChange={e => setSlaD(d => ({ ...d, [f.key]: Number(e.target.value) }))}
                       className="w-14 bg-surface border border-white/[0.08] rounded-md px-2 py-1

@@ -43,12 +43,14 @@ interface AlertState {
   rules:      AlertRule[]
   slaLimits:  SlaLimits
   metaScore:  Record<string, number>
+  acknowledged: Record<string, number>
   updateRule:       (id: string, patch: Partial<AlertRule>) => void
   resetRules:       () => void
   updateSlaLimit:   (tipo: keyof SlaLimits, dias: number) => void
   resetSlaLimits:   () => void
   updateMetaScore:  (operadora: string, valor: number) => void
   resetMetaScore:   () => void
+  toggleAcknowledged: (id: string) => void
 }
 
 export const useAlertStore = create<AlertState>()(
@@ -57,6 +59,7 @@ export const useAlertStore = create<AlertState>()(
       rules:     DEFAULT_RULES,
       slaLimits: DEFAULT_SLA_LIMITS,
       metaScore: DEFAULT_META_SCORE,
+      acknowledged: {},
 
       updateRule: (id, patch) =>
         set((s) => ({ rules: s.rules.map((r) => (r.id === id ? { ...r, ...patch } : r)) })),
@@ -72,15 +75,25 @@ export const useAlertStore = create<AlertState>()(
         set((s) => ({ metaScore: { ...s.metaScore, [operadora]: Number(valor) } })),
 
       resetMetaScore: () => set({ metaScore: DEFAULT_META_SCORE }),
+      toggleAcknowledged: (id) => set((s) => {
+        const acknowledged = { ...s.acknowledged }
+        if (acknowledged[id]) delete acknowledged[id]
+        else acknowledged[id] = Date.now()
+        return { acknowledged }
+      }),
     }),
     {
       name:    'cabonnet-alert-store',
-      version: 1,
+      version: 2,
       migrate: (persisted, version) => {
-        if (version < 1) {
-          return { ...(persisted as object), slaLimits: DEFAULT_SLA_LIMITS, metaScore: DEFAULT_META_SCORE, rules: DEFAULT_RULES }
-        }
-        return persisted as AlertState
+        const current = persisted as Partial<AlertState>
+        return {
+          ...current,
+          slaLimits: current.slaLimits ?? DEFAULT_SLA_LIMITS,
+          metaScore: current.metaScore ?? DEFAULT_META_SCORE,
+          rules: current.rules ?? DEFAULT_RULES,
+          acknowledged: version < 2 ? {} : current.acknowledged ?? {},
+        } as AlertState
       },
     }
   )

@@ -3,6 +3,7 @@ import { shortEquipe } from './osFormat'
 import { isConcluida } from './transform'
 import type { OSRow } from './types'
 import { drawPDFHeader } from './pdfBrand'
+import { truncateTextToWidth } from './pdfTableLayout'
 
 type RGB = readonly [number, number, number]
 
@@ -34,17 +35,17 @@ const FOOT_H = 10
 // ── Columns: { x, w, h } ─────────────────────────────────────────────────
 // x positions (ML=12 → last col ends at 285 = 297-12) ✓
 const COLS = [
-  { x: 12,  w: 18, h: 'Nº OS'    },   // → 30
-  { x: 30,  w: 9,  h: 'Dias'     },   // → 39
-  { x: 39,  w: 20, h: 'Risco'    },   // → 59
-  { x: 59,  w: 44, h: 'Cliente'  },   // → 103
-  { x: 103, w: 26, h: 'Cidade'   },   // → 129
-  { x: 129, w: 22, h: 'Bairro'   },   // → 151
-  { x: 151, w: 42, h: 'Endereço' },   // → 193
-  { x: 193, w: 26, h: 'Tipo'     },   // → 219
-  { x: 219, w: 26, h: 'Equipe'   },   // → 245
-  { x: 245, w: 30, h: 'Situação' },   // → 275
-  { x: 275, w: 10, h: 'Agd.'     },   // → 285
+  { x: 12,  w: 18, h: 'Nº OS' },
+  { x: 30,  w: 10, h: 'Dias', align: 'center' as const },
+  { x: 40,  w: 18, h: 'Risco', align: 'center' as const },
+  { x: 58,  w: 42, h: 'Cliente' },
+  { x: 100, w: 25, h: 'Cidade' },
+  { x: 125, w: 21, h: 'Bairro' },
+  { x: 146, w: 39, h: 'Endereço' },
+  { x: 185, w: 25, h: 'Tipo' },
+  { x: 210, w: 25, h: 'Equipe' },
+  { x: 235, w: 32, h: 'Situação', align: 'center' as const },
+  { x: 267, w: 18, h: 'Agd.', align: 'center' as const },
 ]
 
 let _doc!: jsPDF
@@ -83,7 +84,10 @@ function _tableHeader() {
   _doc.setFont('helvetica', 'bold')
   _doc.setFontSize(6.5)
   _doc.setTextColor(...ACCENT)
-  COLS.forEach(c => _doc.text(c.h, c.x + 2, _y + 5.4))
+  COLS.forEach(c => {
+    const x = c.align === 'center' ? c.x + c.w / 2 : c.x + 2
+    _doc.text(c.h, x, _y + 5.4, c.align === 'center' ? { align: 'center' } : undefined)
+  })
   _y += HDR_H
 }
 
@@ -93,6 +97,11 @@ function _t(val: unknown, max: number): string {
   if (val == null || val === '') return '—'
   const s = String(val)
   return s.length > max ? s.slice(0, max - 1) + '…' : s
+}
+
+function _fit(val: unknown, col: ColEntry, padding = 4): string {
+  const fallback = val == null || val === '' ? '—' : val
+  return truncateTextToWidth(fallback, col.w - padding, value => _doc.getTextWidth(value))
 }
 
 function _agingColor(v: number): RGB {
@@ -259,43 +268,43 @@ export function exportOrdensPDF(rows: OSRow[], filename: string): void {
     _doc.setFont('helvetica', 'bold')
     _doc.setFontSize(6.5)
     _doc.setTextColor(...ACCENT)
-    _doc.text(_t(row.numos, 10), COLS[0].x + 4, yT)
+    _doc.text(_fit(row.numos, COLS[0], 6), COLS[0].x + 4, yT)
 
     // Aging — color-coded, bold
     _doc.setTextColor(..._agingColor(aging))
     _doc.setFontSize(6)
-    _doc.text(`${aging}d`, COLS[1].x + 2, yT)
+    _doc.text(_fit(`${aging}d`, COLS[1]), COLS[1].x + COLS[1].w / 2, yT, { align: 'center' })
 
     // Risco — muted normal
     _doc.setFont('helvetica', 'normal')
     _doc.setFontSize(6.5)
     _doc.setTextColor(...SUB)
     const _risco = row._riskScore != null ? String(row._riskScore) : ''
-    _doc.text(_t(_risco, 13), COLS[2].x + 2, yT)
+    _doc.text(_fit(_risco, COLS[2]), COLS[2].x + COLS[2].w / 2, yT, { align: 'center' })
 
     // Cliente — white bold
     _doc.setFont('helvetica', 'bold')
     _doc.setTextColor(...TEXT)
-    _doc.text(_t(row.nomecliente, 27), COLS[3].x + 2, yT)
+    _doc.text(_fit(row.nomecliente, COLS[3]), COLS[3].x + 2, yT)
 
     // Cidade
     _doc.setFont('helvetica', 'normal')
     _doc.setTextColor(...SUB)
-    _doc.text(_t(row.nomedacidade, 17), COLS[4].x + 2, yT)
+    _doc.text(_fit(row.nomedacidade, COLS[4]), COLS[4].x + 2, yT)
 
     // Bairro
-    _doc.text(_t(row.bairro, 14), COLS[5].x + 2, yT)
+    _doc.text(_fit(row.bairro, COLS[5]), COLS[5].x + 2, yT)
 
     // Endereço
-    _doc.text(_t(row.logradouro, 26), COLS[6].x + 2, yT)
+    _doc.text(_fit(row.logradouro, COLS[6]), COLS[6].x + 2, yT)
 
     // Tipo
-    _doc.text(_t(row.tiposervico, 15), COLS[7].x + 2, yT)
+    _doc.text(_fit(row.tiposervico, COLS[7]), COLS[7].x + 2, yT)
 
     // Equipe — slightly brighter
     _doc.setFont('helvetica', 'bold')
     _doc.setTextColor(...TEXT)
-    _doc.text(_t(shortEquipe(row.nomedaequipe ?? ''), 13), COLS[8].x + 2, yT)
+    _doc.text(_fit(shortEquipe(row.nomedaequipe ?? ''), COLS[8]), COLS[8].x + 2, yT)
 
     // Situação — filled color pill
     const sit = row._situacaoEfetiva ?? ''
@@ -306,7 +315,7 @@ export function exportOrdensPDF(rows: OSRow[], filename: string): void {
     _doc.setFontSize(5.8)
     _doc.setTextColor(...MUTED)
     const agend = (row.dataagendamento ?? '').slice(0, 10) || '—'
-    _doc.text(agend, COLS[10].x + 1, yT)
+    _doc.text(_fit(agend, COLS[10]), COLS[10].x + COLS[10].w / 2, yT, { align: 'center' })
 
     // Row bottom separator
     _doc.setFillColor(...BORDER)

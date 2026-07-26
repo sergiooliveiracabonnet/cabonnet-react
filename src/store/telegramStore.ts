@@ -39,7 +39,9 @@ interface TelegramState {
 const HISTORY_KEY = 'cabonet_alertas_history'
 const AGING_KEY   = 'cabonet_tg_aging_sent'
 const AGING_DATE  = 'cabonet_tg_aging_date'
-const MAX_HISTORY = 50
+const EMISSION_KEY = 'cabonet_alertas_emissions'
+const MAX_HISTORY = 200
+const DEDUP_WINDOW_MS = 60 * 60 * 1000
 
 function loadHistory(): TelegramAlert[] {
   return storage.getJSON<TelegramAlert[]>(HISTORY_KEY, [])
@@ -51,11 +53,11 @@ export const useTelegramStore = create<TelegramState>((set, get) => ({
   alertaAging:   storage.getString('cfg_telegram_aging', '1') === '1',
   filaThreshold: storage.getInt('cfg_alerta_fila', 30),
   pollMin:       storage.getInt('cfg_alerta_poll_min', 5),
-  ativo:         false,
+  ativo:         storage.getString('cfg_alerta_ativo', '0') === '1',
   history:       loadHistory(),
 
   setEnabled:    (v) => set({ enabled: v }),
-  setAtivo:      (v) => set({ ativo: v }),
+  setAtivo:      (v) => { storage.set('cfg_alerta_ativo', v ? '1' : '0'); set({ ativo: v }) },
 
   setNivel: (v) => {
     storage.set('cfg_telegram_nivel', v)
@@ -78,6 +80,11 @@ export const useTelegramStore = create<TelegramState>((set, get) => ({
     const entry = { ...alerta, ts: Date.now(), lido: false }
     const novo  = [entry, ...get().history].slice(0, MAX_HISTORY)
     storage.setJSON(HISTORY_KEY, novo)
+    if (alerta.tipo && alerta.ref) {
+      const emissions = storage.getJSON<Record<string, number>>(EMISSION_KEY, {})
+      emissions[`${alerta.tipo}:${alerta.ref}`] = entry.ts
+      storage.setJSON(EMISSION_KEY, emissions)
+    }
     set({ history: novo })
   },
 
@@ -94,9 +101,11 @@ export const useTelegramStore = create<TelegramState>((set, get) => ({
 
   // Verifica se já foi emitido nas últimas 1h (deduplicação)
   jaEmitido: (tipo, ref) => {
-    const agora  = Date.now()
-    const janela = 60 * 60 * 1000
-    return get().history.some(a => a.tipo === tipo && a.ref === ref && (agora - a.ts) < janela)
+    const agora = Date.now()
+    const emissions = storage.getJSON<Record<string, number>>(EMISSION_KEY, {})
+    const recentes = Object.fromEntries(Object.entries(emissions).filter(([, ts]) => agora - ts < DEDUP_WINDOW_MS))
+    if (Object.keys(recentes).length !== Object.keys(emissions).length) storage.setJSON(EMISSION_KEY, recentes)
+    return agora - (recentes[`${tipo}:${ref}`] ?? 0) < DEDUP_WINDOW_MS
   },
 
   // Controle diário de aging OS individuais

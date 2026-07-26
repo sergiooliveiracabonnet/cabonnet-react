@@ -120,10 +120,10 @@ export function printRelatoriosPDF(
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:#fff;color:${c.text};font-family:Arial,Helvetica,sans-serif;font-size:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   @page{size:A4 landscape;margin:12mm 10mm}
-  .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"zero" 1,"ss01" 1;letter-spacing:-0.025em}
-  .wrap{max-width:1060px;margin:0 auto;padding:20px 24px}
+  .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"zero" 1,"ss01" 1;letter-spacing:-0.025em;text-align:center}
+  .wrap{width:100%;max-width:1060px;margin:0 auto;padding:20px 24px}
   .pdf-header{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #111827;padding:0 0 12px;margin-bottom:18px;background:#fff}
-  .pdf-header img{width:180px;height:auto;display:block}
+  .pdf-header img{width:162px;height:auto;display:block}
   .pdf-meta{display:flex;flex-direction:column;gap:4px;text-align:right;color:#111827}
   .pdf-meta strong{font-size:14px}.pdf-meta span{font-size:11px;color:#4b5563}.pdf-meta b{font-size:11px;text-transform:uppercase;letter-spacing:.6px}
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
@@ -138,12 +138,20 @@ export function printRelatoriosPDF(
   .tbl-hdr{padding:12px 16px 10px;border-bottom:1px solid ${c.border}}
   .tbl-hdr-title{font-size:13px;font-weight:700;color:${c.text};letter-spacing:-0.01em}
   .tbl-hdr-sub{font-size:10px;color:${c.muted};margin-top:2px}
-  table{width:100%;border-collapse:collapse}
+  table{width:100%;border-collapse:collapse;table-layout:fixed}
   thead tr{background:#fff}
-  th{text-align:left;padding:9px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:${c.muted};border-bottom:1px solid ${c.border}}
-  td{padding:9px 14px;border-bottom:1px solid ${c.border2};vertical-align:middle}
+  thead{display:table-header-group}
+  tfoot{display:table-row-group}
+  th{text-align:left;padding:8px 6px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.45px;color:${c.muted};border-bottom:1px solid ${c.border};overflow-wrap:anywhere}
+  thead tr:last-child th:not(:nth-child(2)){text-align:center}
+  td{padding:8px 6px;border-bottom:1px solid ${c.border2};vertical-align:middle;overflow:hidden;overflow-wrap:anywhere}
+  tr{break-inside:avoid;page-break-inside:avoid}
   tr:last-child td{border-bottom:none}
   .footer{margin-top:14px;display:flex;justify-content:space-between;font-size:9px;color:${c.muted}}
+  @media print{
+    .wrap{max-width:none;padding:0}
+    .tbl-wrap{overflow:visible}
+  }
 </style>
 </head>
 <body>
@@ -169,6 +177,10 @@ export function printRelatoriosPDF(
       <div class="tbl-hdr-sub">Ordenado por volume de OS na fila (maior → menor)</div>
     </div>
     <table>
+      <colgroup>
+        <col style="width:4%"><col style="width:20%"><col style="width:8%"><col style="width:9%"><col style="width:8%"><col style="width:7%">
+        <col style="width:7%"><col style="width:9%"><col style="width:8%"><col style="width:9%"><col style="width:11%">
+      </colgroup>
       <thead>
         <tr>
           <th colspan="2"></th>

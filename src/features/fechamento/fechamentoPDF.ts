@@ -3,6 +3,7 @@ import { shortEquipe } from '../../lib/osFormat'
 import type { OSRow } from '../../lib/types'
 import type { FechamentoStats } from './fechamentoUtils'
 import { drawPDFHeader } from '../../lib/pdfBrand'
+import { columnWidth, truncateTextToWidth, validateColumnGrid } from '../../lib/pdfTableLayout'
 
 type RGB = readonly [number, number, number]
 type CellAlign = 'left' | 'right' | 'center' | 'justify'
@@ -87,6 +88,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
   const W    = 210, M = 16, CW = W - M * 2
   const generatedAt = new Date()
   let   y    = M, page = 1, _ri = 0
+  let repeatTableHeader: (() => void) | null = null
 
   // ── Drawing helpers ─────────────────────────────────────────────────────────
   const _f = (c: RGB) => doc.setFillColor(...c)
@@ -103,50 +105,67 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
     _n(6.5); _t(C.muted); doc.text('Cabonnet  ·  Gestão de Ordens de Serviço', M, 287)
     _b(6.5); _t(C.navy);  doc.text('Página ' + page, W - M, 287, { align: 'right' })
   }
-  const _newPage = () => { _footer(); doc.addPage(); page++; y = drawPDFHeader(doc, { reportType: 'Relatório de Fechamento Operacional', pageWidth: W, margin: M, generatedAt }) + 2 }
+  const _newPage = () => {
+    _footer(); doc.addPage(); page++
+    y = drawPDFHeader(doc, { reportType: 'Relatório de Fechamento Operacional', pageWidth: W, margin: M, generatedAt }) + 2
+    repeatTableHeader?.()
+  }
   const _checkY  = (n: number) => { if (y + n > 278) _newPage() }
 
   const _section = (title: string, color?: RGB) => {
-    _checkY(14)
+    repeatTableHeader = null
+    _checkY(24)
     _line(M, y, W - M, y, 0.2, C.border); y += 5
     _b(8.5); _t(color || C.navy); doc.text(title, M, y); y += 8
   }
 
   const _renderCells = (cells: PDFCell[], cols: number[]) => {
+    validateColumnGrid(cols, cells.length, CW)
     cells.forEach((cell, i) => {
-      const colW  = i < cols.length - 1 ? cols[i + 1] - cols[i] : CW - cols[i]
+      const colW  = columnWidth(cols, i, CW)
       const align = typeof cell === 'object' && cell.align ? cell.align : 'left'
-      const txt   = typeof cell === 'object' ? String(cell.v) : String(cell)
+      const raw   = typeof cell === 'object' ? String(cell.v) : String(cell)
+      const txt   = truncateTextToWidth(raw, colW - 3, value => doc.getTextWidth(value))
       const x     = M + cols[i]
       if      (align === 'right')  doc.text(txt, x + colW - 1.5, y, { align: 'right' })
       else if (align === 'center') doc.text(txt, x + colW / 2,   y, { align: 'center' })
-      else                         doc.text(txt.slice(0, Math.floor(colW / 2.1)), x, y)
+      else                         doc.text(txt, x + 1.5, y)
     })
   }
 
-  const _tHead = (cells: PDFCell[], cols: number[]) => {
-    _checkY(11)
+  const _drawTableHeader = (cells: PDFCell[], cols: number[]) => {
     _f(C.bg); doc.rect(M, y - 7, CW, 9.5, 'F')
     _line(M, y - 7,   W - M, y - 7,   0.15, C.border)
     _line(M, y + 2.5, W - M, y + 2.5, 0.3,  C.navy)
     _b(6.5); _t(C.navy); _renderCells(cells, cols); y += 5.5
   }
 
+  const _tHead = (cells: PDFCell[], cols: number[]) => {
+    validateColumnGrid(cols, cells.length, CW)
+    _checkY(11)
+    _drawTableHeader(cells, cols)
+    repeatTableHeader = () => _drawTableHeader(cells, cols)
+  }
+
+  const _endTable = () => { repeatTableHeader = null }
+
   const _tRow = (cells: PDFCell[], cols: number[], colorMap?: ColorMap) => {
+    validateColumnGrid(cols, cells.length, CW)
     _checkY(8); _ri++
     if (_ri % 2 === 0) { _f(C.bg); doc.rect(M, y - 5.5, CW, 7.5, 'F') }
     _line(M, y + 2, W - M, y + 2, 0.1, C.border)
     _n(7.5)
     cells.forEach((cell, i) => {
-      const colW  = i < cols.length - 1 ? cols[i + 1] - cols[i] : CW - cols[i]
+      const colW  = columnWidth(cols, i, CW)
       const align = typeof cell === 'object' && cell.align ? cell.align : 'left'
-      const txt   = typeof cell === 'object' ? String(cell.v) : String(cell)
+      const raw   = typeof cell === 'object' ? String(cell.v) : String(cell)
+      const txt   = truncateTextToWidth(raw, colW - 3, value => doc.getTextWidth(value))
       const clr   = colorMap?.[i] ?? C.navy
       _t(clr)
       const x     = M + cols[i]
       if      (align === 'right')  doc.text(txt, x + colW - 1.5, y, { align: 'right' })
       else if (align === 'center') doc.text(txt, x + colW / 2,   y, { align: 'center' })
-      else                         doc.text(txt.slice(0, Math.floor(colW / 2.2)), x, y)
+      else                         doc.text(txt, x + 1.5, y)
     })
     y += 7.5
   }
@@ -313,6 +332,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
     const ACOLS = [0, 18, 68, 112, 148]
 
     const _catBlock = (catLabel: string, lista: OSRow[], cor: RGB) => {
+      _endTable()
       _checkY(30)
       _f(C.bg);           doc.rect(M + 4, y - 6, CW - 4, 8, 'F')
       _f(cor || C.muted); doc.rect(M + 4, y - 6, 2, 8, 'F')
@@ -329,6 +349,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
           { v: fmtDataAt(r), align: 'center' },
         ], ACOLS, { 0: C.accent, 3: C.muted, 4: C.muted })
       })
+      _endTable()
       y += 4
     }
 
@@ -337,7 +358,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
       const eqAbrev = shortEquipe(eq) || eq
       const totalEq = eqTotais[eq]
 
-      _checkY(52)
+      _endTable(); _checkY(52)
       _d(C.border); doc.setLineWidth(0.25); doc.rect(M, y - 10, CW, 13, 'S')
       _b(9); _t(C.navy); doc.text(eqAbrev.toUpperCase(), M + 5, y)
       _n(7); _t(C.muted)
@@ -368,6 +389,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
 
   // ── REDE — Bloco independente ───────────────────────────────────────────────
   if (statsRede && rede.length) {
+    _endTable()
     _footer(); doc.addPage(); page++
     y = drawPDFHeader(doc, { reportType: 'Relatório de Fechamento · Rede', pageWidth: W, margin: M, generatedAt }) + 2
     _b(10); _t(C.navy); doc.text('REDE — BLOCO INDEPENDENTE', M, y)
@@ -405,7 +427,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
     y += 4
 
     _section('PRODUTIVIDADE POR CIDADE — REDE', C.teal)
-    const RCCOLS = [0, 52, 66, 80, 94, 110, 126]
+    const RCCOLS = [0, 62, 84, 106, 128, 150]
     _ri = 0
     _tHead(['CIDADE', 'EXEC.', 'S/EX.', 'PEND.', 'SLA V.', 'TAXA %'], RCCOLS)
     Object.entries(statsRede.byCidade)
@@ -439,6 +461,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
       rConcl.forEach(r => {
         const cidade = (r.nomedacidade || '(sem cidade)').trim()
         if (cidade !== lastCid) {
+          _endTable()
           _checkY(22)
           _f(C.bg); doc.rect(M, y, CW, 9, 'F')
           _line(M, y, W - M, y, 0.15, C.border)
@@ -458,6 +481,7 @@ export function generateFechamentoPDF({ rows, rede, stats, statsRede, periodoLab
           (shortEquipe(r.nomedaequipe) || '—').slice(0, 18),
         ], RACOLS, { 0: C.teal })
       })
+      _endTable()
     }
   }
 

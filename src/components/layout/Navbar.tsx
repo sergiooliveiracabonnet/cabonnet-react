@@ -109,6 +109,8 @@ export function Navbar() {
         <button
           onClick={() => setTelegramOpen(v => !v)}
           title="Alertas & Telegram"
+          aria-label="Abrir Alertas e Telegram"
+          aria-expanded={telegramOpen}
           className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all duration-fast
             ${tg.enabled ? 'text-green hover:bg-green/10' : 'text-muted hover:text-secondary hover:bg-surface'}`}
         >

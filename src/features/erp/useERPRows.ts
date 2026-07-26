@@ -13,17 +13,25 @@ export function useERPRows() {
   const result = useOSDerived()
   const { dispatchedAssignments } = useERPStore()
 
-  const rows = useMemo(() => {
-    const keys = Object.keys(dispatchedAssignments)
-    if (!keys.length) return result.rows
-    return result.rows.map((row: OSRow) => {
-      const teamCode = dispatchedAssignments[row.numos as string]
-      if (!teamCode) return row
-      const team = TEAMS.find(t => t.code === teamCode)
-      if (!team) return row
-      return { ...row, nomedaequipe: `${team.code} - ${team.leader}` }
-    })
-  }, [result.rows, dispatchedAssignments])
+  const rows = useMemo(
+    () => applyDispatchAssignments(result.rows, dispatchedAssignments),
+    [result.rows, dispatchedAssignments],
+  )
+  const allRows = useMemo(
+    () => applyDispatchAssignments(result.allRows, dispatchedAssignments),
+    [result.allRows, dispatchedAssignments],
+  )
 
-  return { ...result, rows }
+  return { ...result, rows, allRows }
+}
+
+export function applyDispatchAssignments(rows: OSRow[], dispatchedAssignments: Record<string, string>): OSRow[] {
+  if (!Object.keys(dispatchedAssignments).length) return rows
+  return rows.map((row: OSRow) => {
+    const teamCode = dispatchedAssignments[row.numos as string]
+    if (!teamCode) return row
+    const team = TEAMS.find(t => t.code === teamCode)
+    if (!team) return row
+    return { ...row, nomedaequipe: `${team.code} - ${team.leader}` }
+  })
 }
