@@ -1,6 +1,6 @@
 export interface PDFRankEntry {
   code: string; leader: string; tipo: string
-  queue: number; execInst: number; execManut: number; execServico: number
+  queue: number; execInst: number; execManut: number; execServico: number; execRede: number
   criticas: number; avgAging: number; sla: number
 }
 
@@ -9,9 +9,13 @@ export interface PDFKpis {
 }
 
 export interface PDFTotals {
-  execInst: number; execManut: number; execServico: number; execTotal: number
+  execInst: number; execManut: number; execServico: number; execRede: number; execTotal: number
   queue: number; slaVenc: number; avgSla: number; avgAging: number
-  pctInst: number; pctManut: number; pctServico: number
+  pctInst: number; pctManut: number; pctServico: number; pctRede: number
+}
+
+function escapeHTML(value: unknown): string {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char)
 }
 
 export function printRelatoriosPDF(
@@ -21,6 +25,7 @@ export function printRelatoriosPDF(
   kpis:         PDFKpis,
   periodoFilter: string,
   tipoFilter:   string,
+  extraFilters: string[] = [],
 ): void {
   const isDark = theme === 'dark'
   const c = isDark ? {
@@ -38,29 +43,32 @@ export function printRelatoriosPDF(
   const now         = new Date()
   const dateStr     = now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
   const timeStr     = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  const periodLabel = periodoFilter === 'all' ? 'Todo o período' : periodoFilter === 'month' ? 'Últimos 30 dias' : 'Últimos 7 dias'
-  const tipoLabel   = tipoFilter === '' ? 'Todos os tipos' : tipoFilter === 'INSTALACAO' ? 'Instalação' : tipoFilter === 'MANUTENCAO' ? 'Manutenção' : 'Rede'
+  const periodLabel = periodoFilter === 'all' ? 'Período global' : periodoFilter === 'month' ? 'Últimos 30 dias' : 'Últimos 7 dias'
+  const tipoLabel   = tipoFilter === '' ? 'Todos os tipos' : tipoFilter === 'INSTALACAO' ? 'Instalação' : tipoFilter === 'MANUTENCAO' ? 'Manutenção' : tipoFilter === 'REDE' ? 'Rede' : 'Serviço'
 
   const tableRows = ranking.map((r, i) => {
     const slaColor    = r.sla >= 90 ? c.green : r.sla >= 75 ? c.orange : r.sla > 0 ? c.red : c.muted
     const criticasClr = r.criticas > 0 ? c.red : c.muted
     const agingColor  = r.avgAging >= 6 ? c.red : r.avgAging >= 3 ? c.orange : c.muted
-    const leaderFmt   = r.leader ? r.leader.charAt(0) + r.leader.slice(1).toLowerCase() : '—'
+    const leaderFmt   = escapeHTML(r.leader ? r.leader.charAt(0) + r.leader.slice(1).toLowerCase() : '—')
+    const codeFmt     = escapeHTML(r.code)
     const instClr     = r.execInst   > 0 ? '#60a5fa' : c.muted
     const manutClr    = r.execManut  > 0 ? '#fb923c' : c.muted
     const servicoClr  = r.execServico > 0 ? '#34d399' : c.muted
+    const redeClr     = r.execRede > 0 ? '#c4b5fd' : c.muted
     const sepStyle    = `border-left:1px solid ${c.border}`
     return `
       <tr>
         <td class="mono" style="color:${c.muted};font-size:11px">${i + 1}</td>
         <td>
-          <div style="font-weight:700;color:${c.text};font-size:12px;letter-spacing:-0.01em">${r.code}</div>
+          <div style="font-weight:700;color:${c.text};font-size:12px;letter-spacing:-0.01em">${codeFmt}</div>
           <div style="font-size:10px;color:${c.muted};margin-top:2px">${leaderFmt}</div>
         </td>
         <td class="mono" style="font-weight:${r.execInst   > 0 ? '800' : '400'};color:${instClr};font-size:13px;${sepStyle}">${r.execInst   > 0 ? r.execInst   : '—'}</td>
         <td class="mono" style="font-weight:${r.execManut  > 0 ? '800' : '400'};color:${manutClr};font-size:13px">${r.execManut  > 0 ? r.execManut  : '—'}</td>
         <td class="mono" style="font-weight:${r.execServico > 0 ? '800' : '400'};color:${servicoClr};font-size:13px">${r.execServico > 0 ? r.execServico : '—'}</td>
-        <td class="mono" style="font-weight:800;color:${c.text};font-size:13px">${r.execInst + r.execManut + r.execServico || '—'}</td>
+        <td class="mono" style="font-weight:${r.execRede > 0 ? '800' : '400'};color:${redeClr};font-size:13px">${r.execRede > 0 ? r.execRede : '—'}</td>
+        <td class="mono" style="font-weight:800;color:${c.text};font-size:13px">${r.execInst + r.execManut + r.execServico + r.execRede || '—'}</td>
         <td class="mono" style="font-weight:700;color:${c.text};font-size:13px">${r.queue}</td>
         <td class="mono" style="font-weight:700;color:${slaColor};font-size:13px">${r.sla > 0 ? r.sla.toFixed(0) + '%' : '—'}</td>
         <td class="mono" style="font-weight:${r.criticas > 0 ? '700' : '400'};color:${criticasClr};font-size:13px">${r.criticas}</td>
@@ -74,7 +82,7 @@ export function printRelatoriosPDF(
       <div style="font-size:13px;font-weight:700;color:${c.text}">Produção Consolidada do Período</div>
       <div style="font-size:10px;color:${c.muted};margin-top:2px">Total de OS executadas (concluídas) por tipo de serviço</div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 16px">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px 16px">
       <div style="background:${c.card};border:1px solid ${c.border};border-radius:10px;padding:12px 14px;position:relative;overflow:hidden">
         <div style="position:absolute;top:0;left:0;right:0;height:2px;background:rgba(255,255,255,0.2)"></div>
         <div style="font-size:9px;color:${c.muted};text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Total Executado</div>
@@ -85,6 +93,7 @@ export function printRelatoriosPDF(
         { label: 'Instalações', value: totals.execInst,    pct: totals.pctInst,    color: '#60a5fa' },
         { label: 'Manutenções', value: totals.execManut,   pct: totals.pctManut,   color: '#fb923c' },
         { label: 'Serviços',    value: totals.execServico, pct: totals.pctServico, color: '#34d399' },
+        { label: 'Rede',        value: totals.execRede,    pct: totals.pctRede,    color: '#c4b5fd' },
       ].map(s => `
         <div style="background:${c.card};border:1px solid ${s.color}30;border-radius:10px;padding:12px 14px;position:relative;overflow:hidden">
           <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${s.color}"></div>
@@ -104,6 +113,7 @@ export function printRelatoriosPDF(
         ${totals.pctInst    > 0 ? `<div style="width:${totals.pctInst}%;background:#60a5fa"></div>` : ''}
         ${totals.pctManut   > 0 ? `<div style="width:${totals.pctManut}%;background:#fb923c"></div>` : ''}
         ${totals.pctServico > 0 ? `<div style="width:${totals.pctServico}%;background:#34d399"></div>` : ''}
+        ${totals.pctRede    > 0 ? `<div style="width:${totals.pctRede}%;background:#c4b5fd"></div>` : ''}
       </div>
     </div>
   </div>` : ''
@@ -172,6 +182,7 @@ export function printRelatoriosPDF(
     <span class="chip-lbl">Filtros:</span>
     <span class="chip">${periodLabel}</span>
     <span class="chip">${tipoLabel}</span>
+    ${extraFilters.map(filter => `<span class="chip">${escapeHTML(filter)}</span>`).join('')}
     <span class="chip">${ranking.length} equipe${ranking.length !== 1 ? 's' : ''}</span>
   </div>
   ${producaoSection}
@@ -184,13 +195,14 @@ export function printRelatoriosPDF(
       <thead>
         <tr>
           <th colspan="2"></th>
-          <th colspan="4" style="text-align:center;color:${c.primary};font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:6px 14px 4px;border-left:1px solid ${c.border}">Executadas no período</th>
+          <th colspan="5" style="text-align:center;color:${c.primary};font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:6px 14px 4px;border-left:1px solid ${c.border}">Executadas no período</th>
           <th colspan="4"></th>
         </tr>
         <tr>
           <th>#</th><th>Equipe / Líder</th>
           <th style="color:#60a5fa;border-left:1px solid ${c.border}">Instalação</th>
           <th style="color:#fb923c">Manutenção</th><th style="color:#34d399">Serviço</th>
+          <th style="color:#c4b5fd">Rede</th>
           <th style="color:${c.text}">Total</th><th>OS na Fila</th><th>SLA</th><th>SLA Venc.</th><th>Aging Médio</th>
         </tr>
       </thead>
@@ -203,6 +215,7 @@ export function printRelatoriosPDF(
           <td class="mono" style="padding:10px 14px;font-weight:900;font-size:15px;color:#60a5fa;border-left:1px solid ${c.border}">${totals.execInst}</td>
           <td class="mono" style="padding:10px 14px;font-weight:900;font-size:15px;color:#fb923c">${totals.execManut}</td>
           <td class="mono" style="padding:10px 14px;font-weight:900;font-size:15px;color:#34d399">${totals.execServico}</td>
+          <td class="mono" style="padding:10px 14px;font-weight:900;font-size:15px;color:#c4b5fd">${totals.execRede}</td>
           <td class="mono" style="padding:10px 14px;font-weight:900;font-size:15px;color:${c.text}">${totals.execTotal}</td>
           <td class="mono" style="padding:10px 14px;font-weight:700;font-size:13px;color:${c.text}">${totals.queue}</td>
           <td class="mono" style="padding:10px 14px;font-weight:700;font-size:13px;color:${totals.avgSla >= 90 ? '#34d399' : totals.avgSla >= 75 ? '#fb923c' : '#f87171'}">${totals.avgSla > 0 ? totals.avgSla.toFixed(0) + '%' : '—'}</td>

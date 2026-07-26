@@ -5,8 +5,8 @@ import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
 import type { OSRow } from '../../../lib/types'
 
 
-export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color = '#3b82f6' }: {
-  open: boolean; onClose: () => void; title: string; rows?: OSRow[]; color?: string
+export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color = '#3b82f6', onOS }: {
+  open: boolean; onClose: () => void; title: string; rows?: OSRow[]; color?: string; onOS?: (row: OSRow) => void
 }) {
   if (!open) return null
   return (
@@ -35,7 +35,9 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
                          className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3
                                     px-5 py-2.5 items-center hover:bg-surface/20 transition-colors">
                       <div className="flex flex-col gap-0.5">
-                        <span className="font-mono font-bold text-caption" style={{ color }}>{r.numos}</span>
+                        <button type="button" onClick={() => onOS?.(r)}
+                          className="min-h-11 cursor-pointer rounded px-1 text-left font-mono font-bold text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                          style={{ color }} aria-label={`Abrir detalhes da OS ${r.numos}`}>{r.numos}</button>
                         <Badge variant={situacaoVariant(r.descsituacao)} className="text-caption px-1.5 py-px w-fit">
                           {(r.descsituacao || '—').replace('Concluída/Sem Execução', 'S/Exec')}
                         </Badge>
