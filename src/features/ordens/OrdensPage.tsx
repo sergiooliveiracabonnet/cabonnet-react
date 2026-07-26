@@ -506,7 +506,6 @@ export default function OrdensPage() {
             onRowLeave={handleRowLeave}
             sort={os.tableSort}
             onSort={os.toggleTableSort}
-            stickyHeader
             emptyTitle={os.filtersActive ? 'Nenhuma OS corresponde aos filtros' : 'Nenhuma OS no período selecionado'}
             emptyDescription={os.filtersActive ? 'Remova ou ajuste os filtros para ampliar o resultado.' : 'Não há ordens disponíveis para a seleção atual.'}
           />
