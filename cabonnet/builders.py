@@ -1365,7 +1365,7 @@ def _gerar_pdf_relatorio_via_browser(aba="instacable", periodo="fechamento", cha
                 context.add_cookies([{"name": "cbn_session", "value": token, "url": url_base}])
                 page = context.new_page()
                 page.set_default_timeout(90000)
-                page.goto(f"{url_base}/fechamento", wait_until="domcontentloaded")
+                page.goto(f"{url_base}/fechamento?automation=pdf", wait_until="domcontentloaded")
                 page.wait_for_function("() => window.__cbnFechamentoReady === true", timeout=90000)
                 page.evaluate(f"window.relSetAba({aba!r})")
                 page.wait_for_timeout(400)

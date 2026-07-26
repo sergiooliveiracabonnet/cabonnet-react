@@ -27,7 +27,6 @@ export function useFechamentoAutomation(
 
   // Registra as funções de automação na montagem e limpa na desmontagem.
   useEffect(() => {
-    window.__cbnFechamentoReady = false
     window.relSetAba     = setAba
     window.relSetPeriodo = setPeriodo
     window.relatorioGerarPDF = async (sendToTelegram, chatId) => {

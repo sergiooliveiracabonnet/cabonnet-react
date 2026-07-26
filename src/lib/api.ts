@@ -1,6 +1,13 @@
 /// <reference types="vite/client" />
 
-const BASE       = (import.meta.env['VITE_API_URL'] as string | undefined) ?? ''
+export function resolveApiBase(configured: string | undefined, search: string): string {
+  return new URLSearchParams(search).get('automation') === 'pdf' ? '' : (configured ?? '')
+}
+
+const BASE = resolveApiBase(
+  import.meta.env['VITE_API_URL'] as string | undefined,
+  typeof window === 'undefined' ? '' : window.location.search,
+)
 const TIMEOUT_MS = 35_000
 
 function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
