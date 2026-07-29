@@ -89,15 +89,14 @@ export default function DashboardPage() {
     const f = stats?.fila
     if (f) {
       const slaAccent: AccentColor = f.sla_pct >= 90 ? 'green' : f.sla_pct >= 75 ? 'yellow' : 'red'
-      const reagendTotal = (f.reagend_inviab ?? 0) + (f.reagend_mobile ?? 0) + (f.reagend_futura ?? 0)
-      // 5 + 5 — mesmas colunas nas duas linhas para os cartões alinharem
       const riskStats: KPI[] = [
         { id: 'criticas', title: 'OS Críticas',   value: f.criticas,        sub: 'SLA 2× excedido',  accent: 'red'     },
         { id: 'semEq',    title: 'Sem Equipe',     value: f.sem_equipe,      sub: 'sem atribuição',   accent: 'orange'  },
         { id: 'pend',     title: 'Pendentes',      value: f.pendente,        sub: 'aguardando',       accent: 'yellow'  },
         { id: 'copeAguardando', title: 'Aguard. Roteirização', value: f.cope_aguardando ?? 0, sub: 'parado no COPE', accent: 'orange' },
-        { id: 'reagend',  title: 'Reagendadas',    value: reagendTotal,
-          sub: `inviab. ${f.reagend_inviab ?? 0} · mobile ${f.reagend_mobile ?? 0} · futura ${f.reagend_futura ?? 0}`, accent: 'orange' },
+        { id: 'reagendInviab', title: 'Reag. Inviab.', value: f.reagend_inviab ?? 0, sub: 'reagend. por inviabilidade', accent: 'orange' },
+        { id: 'reagendMobile', title: 'Reag. Mobile',  value: f.reagend_mobile ?? 0, sub: 'reagend. via OS mobile',     accent: 'orange' },
+        { id: 'reagendFutura', title: 'Reag. Futura',  value: f.reagend_futura ?? 0, sub: 'reagend. p/ data futura',    accent: 'orange' },
       ]
       const perfStats: KPI[] = [
         { id: 'atend',    title: 'Em Atendimento', value: f.atendimento,     sub: 'em campo',         accent: 'cyan'    },
@@ -152,18 +151,9 @@ export default function DashboardPage() {
     return <KPIGridSkeleton count={8} />
   }
 
-  // Reagrupamento 5 + 5: os 3 cartões de reagendamento viram um só (com breakdown
-  // no subtítulo e drill-down unificado) e "Em Atendimento" vai para performance.
   const kpiById = new Map(kpis.map(k => [k.id, k]))
   const pick    = (ids: string[]) => ids.map(id => kpiById.get(id)).filter((k): k is KPI => k != null)
-  const rInv = Number(kpiById.get('reagendInviab')?.value ?? 0)
-  const rMob = Number(kpiById.get('reagendMobile')?.value ?? 0)
-  const rFut = Number(kpiById.get('reagendFutura')?.value ?? 0)
-  const reagendKpi: KPI = {
-    id: 'reagend', title: 'Reagendadas', value: rInv + rMob + rFut,
-    sub: `inviab. ${rInv} · mobile ${rMob} · futura ${rFut}`, accent: 'orange',
-  }
-  const riskKpis = [...pick(['criticas', 'semEq', 'pend', 'copeAguardando']), reagendKpi]
+  const riskKpis = pick(['criticas', 'semEq', 'pend', 'copeAguardando', 'reagendInviab', 'reagendMobile', 'reagendFutura'])
   const perfKpis = pick(['atend', 'total', 'rede', 'concl', 'taxa'])
 
   return (
