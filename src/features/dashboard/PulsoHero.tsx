@@ -59,14 +59,20 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
   } = pulso
 
   // Sinais vitais: as três componentes que antes viravam um score 0–100 único.
-  // Cada uma na própria unidade, com o Δ real contra o período anterior.
-  const deltaDe = (id: string) => mudancas.find(m => m.id === id) ?? null
+  //
+  // deltaId é explícito de propósito. "SLA da Fila" é ESTOQUE (foto da fila
+  // agora, vinda de allRows) e não tem versão "do período anterior" — o Δ que
+  // buildMudancas calcula para 'sla' é de outra métrica, o SLA do PERÍODO
+  // (fluxo, sobre `rows`). Casar os dois exibiria a variação de um número ao
+  // lado do valor de outro. O Δ do SLA do período aparece no MudancasStrip,
+  // com o rótulo correto.
+  const deltaDe = (id: string | null) => (id ? mudancas.find(m => m.id === id) ?? null : null)
   const vitais = [
-    { id: 'sla',  label: 'SLA da Fila',    valor: `${slaFila}%`,
+    { id: 'sla',  deltaId: null,   label: 'SLA da Fila',    nota: 'agora', valor: `${slaFila}%`,
       cor: slaFila >= 90 ? '#4ade80' : slaFila >= 75 ? '#facc15' : '#f87171' },
-    { id: 'taxa', label: 'Taxa Conclusão', valor: `${taxa}%`,
+    { id: 'taxa', deltaId: 'taxa', label: 'Taxa Conclusão', nota: null,    valor: `${taxa}%`,
       cor: taxa >= 80 ? '#4ade80' : taxa >= 60 ? '#facc15' : '#f87171' },
-    { id: 'mttr', label: 'MTTR',           valor: mttr > 0 ? `${mttr.toLocaleString('pt-BR')}d` : '—',
+    { id: 'mttr', deltaId: 'mttr', label: 'MTTR',           nota: null,    valor: mttr > 0 ? `${mttr.toLocaleString('pt-BR')}d` : '—',
       cor: mttr === 0 ? '#94a3b8' : mttr <= 2 ? '#4ade80' : mttr <= 5 ? '#facc15' : '#f87171' },
   ]
   const pior = [...vitais].find(v => v.cor === '#f87171') ?? null
@@ -107,16 +113,18 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
             que misturava estoque com fluxo e não indicava ação) */}
         <dl data-testid="pulso-vitais" className="grid grid-cols-3 gap-2">
           {vitais.map(v => {
-            const m = deltaDe(v.id)
+            const m = deltaDe(v.deltaId)
             return (
               <div key={v.id} className="min-w-0 rounded-md border border-white/[0.06] bg-bg/35 px-3 py-2.5">
-                <dt className="truncate text-caption font-semibold text-muted">{v.label}</dt>
+                <dt className="truncate text-caption font-semibold text-muted">
+                  {v.label}{v.nota && <span className="ml-1 font-normal text-muted/60">· {v.nota}</span>}
+                </dt>
                 <dd className="mt-1 flex items-baseline gap-1.5">
                   <span className="text-title font-black tabular-nums" style={{ color: v.cor }}>{v.valor}</span>
                   {m && (
                     <span className={`text-caption font-bold tabular-nums ${m.melhorou ? 'text-green' : 'text-red'}`}
                           title={`Período anterior: ${m.anterior}${m.unidade}`}>
-                      {m.delta > 0 ? '↑ +' : '↓ '}{m.delta}{m.unidade}
+                      {m.delta > 0 ? '↑' : '↓'} {Math.abs(m.delta)}{m.unidade}
                     </span>
                   )}
                 </dd>

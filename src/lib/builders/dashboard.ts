@@ -331,10 +331,11 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     .filter(e => e.frentes.size > 0)
     .map(e => e.concl / e.frentes.size)
     .sort((a, b) => a - b)
-  const prodFrenteDia = prodDiaria.length > 0
-    ? Math.round(prodDiaria[Math.floor(prodDiaria.length / 2)] * 10) / 10
-    : 0
-  const metaMesAtual = Math.round(frentesAtivas.size * prodFrenteDia * diasUteisTotal)
+  // Arredonda só para exibir: multiplicar o valor já arredondado por frentes ×
+  // dias amplifica o erro (4,66→4,7 vira ~12 OS de diferença no mês).
+  const prodExata     = prodDiaria.length > 0 ? prodDiaria[Math.floor(prodDiaria.length / 2)] : 0
+  const prodFrenteDia = Math.round(prodExata * 10) / 10
+  const metaMesAtual  = Math.round(frentesAtivas.size * prodExata * diasUteisTotal)
 
   const pctMetaMes      = metaMesAtual > 0 ? Math.round(concluidasMesAtual / metaMesAtual * 100) : null
   const projecaoMesFinal = diasUteisDecorr >= 0.25

@@ -34,10 +34,28 @@ describe('PulsoHero', () => {
     expect(within(vitais).getByText('76%')).toBeInTheDocument()
     expect(within(vitais).getByText('MTTR')).toBeInTheDocument()
     expect(within(vitais).getByText('2,1d')).toBeInTheDocument()
-    // Δ por componente, cada um na própria unidade
-    expect(within(vitais).getByText('↑ +5%')).toBeInTheDocument()
-    expect(within(vitais).getByText('↑ +0.3d')).toBeInTheDocument()
+    // MTTR é métrica de fluxo e tem Δ comparável
+    expect(within(vitais).getByText('↑ 0.3d')).toBeInTheDocument()
     expect(screen.getByText('A fila recua pelo terceiro dia seguido.')).toBeInTheDocument()
+  })
+
+  // SLA da Fila é estoque (foto de agora) e o Δ de 'sla' em mudancas é do SLA do
+  // PERÍODO — outra métrica. Casar os dois mostraria a variação de um número ao
+  // lado do valor de outro.
+  it('não cola o Δ do SLA do período no vital SLA da Fila, que é estoque', () => {
+    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} mudancas={MUDANCAS} />)
+    const vitais = screen.getByTestId('pulso-vitais')
+    expect(within(vitais).getByText('SLA da Fila')).toBeInTheDocument()
+    expect(within(vitais).getByText('agora', { exact: false })).toBeInTheDocument()
+    expect(within(vitais).queryByText(/5%/)).not.toBeInTheDocument()
+  })
+
+  it('mostra o Δ negativo sem sinal duplicado', () => {
+    const queda = [{ id: 'mttr', label: 'MTTR', atual: 1.8, anterior: 2.1, delta: -0.3, unidade: 'd', melhorou: true, variacao: 14.3 }]
+    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} mudancas={queda} />)
+    const vitais = screen.getByTestId('pulso-vitais')
+    expect(within(vitais).getByText('↓ 0.3d')).toBeInTheDocument()
+    expect(within(vitais).queryByText(/-0\.3/)).not.toBeInTheDocument()
   })
 
   it('não expõe mais score sintético nem gauge', () => {
