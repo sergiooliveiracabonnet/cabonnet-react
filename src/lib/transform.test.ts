@@ -597,6 +597,24 @@ describe('buildDashboard', () => {
     expect(kpis.find(k => k.id === 'atend')!.value).toBe(4)
   })
 
+  it('meta do mês sai da capacidade instalada (frentes × produtividade × dias úteis)', () => {
+    // 2 frentes, 3 OS cada, no mesmo dia útil → mediana 3 OS/frente/dia
+    const dia = daysAgo(2)
+    const exec = (numos: string, equipe: string) => makeOS({
+      numos, descsituacao: 'Concluída', tiposervico: 'MANUTENCAO', nomedaequipe: equipe,
+      datacadastro: daysAgo(3), dataexecucao: dia, databaixa: dia,
+    })
+    const capRows = enrichRows([
+      exec('K1', 'MANUTENCAO F01'), exec('K2', 'MANUTENCAO F01'), exec('K3', 'MANUTENCAO F01'),
+      exec('K4', 'MANUTENCAO F02'), exec('K5', 'MANUTENCAO F02'), exec('K6', 'MANUTENCAO F02'),
+    ])
+    const { pulso } = buildDashboard(capRows)
+    const meta = (pulso as { metaMes: { frentes: number; prodFrenteDia: number; meta: number; diasUteisTotal: number } }).metaMes
+    expect(meta.frentes).toBe(2)
+    expect(meta.prodFrenteDia).toBe(3)
+    expect(meta.meta).toBe(2 * 3 * meta.diasUteisTotal)
+  })
+
   it('taxa de conclusão ignora coortes imaturas (OS que ainda não venceu o SLA)', () => {
     const coorte = enrichRows([
       // Manutenção tem limite de 1d — aberta há 5d já venceu, aberta hoje não.

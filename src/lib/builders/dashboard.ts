@@ -252,7 +252,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     alerta: fracTarde >= 0.35 && manhaHoje >= 5 && tardeHoje < esperadoTarde * 0.5,
   }
 
-  // ─── Meta do mês: concluídas no mês atual vs média dos 3 meses anteriores ─
+  // ─── Concluídas do mês corrente ──────────────────────────────────────────
   const monthKey   = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   const curMonthKey = monthKey(now)
   const concluPorMes = new Map<string, number>()
@@ -265,9 +265,6 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     concluPorMes.set(k, (concluPorMes.get(k) ?? 0) + 1)
   }
   const concluidasMesAtual = concluPorMes.get(curMonthKey) ?? 0
-  const baselineMeses = [1, 2, 3].map(i => monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)))
-  const baselineVals  = baselineMeses.map(k => concluPorMes.get(k) ?? 0).filter(v => v > 0)
-  const metaMesAtual  = baselineVals.length > 0 ? Math.round(baselineVals.reduce((a, b) => a + b, 0) / baselineVals.length) : 0
 
   // Operação Cabonnet: equipes atuam sábado normalmente; domingo é só plantão
   // (2–4 técnicos) — dia útil = seg–sáb, domingo fora da meta e da projeção.
@@ -289,6 +286,51 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const diasUteisInteiros = diasUteisAte(now.getFullYear(), now.getMonth(), now.getDate()) - (hojeEhUtil ? 1 : 0)
   const diasUteisDecorr   = diasUteisInteiros + (hojeEhUtil ? fracaoHoje : 0)
   const diasUteisRestantes = Math.max(0, diasUteisTotal - Math.ceil(diasUteisDecorr))
+
+  // ─── Meta por capacidade ──────────────────────────────────────────────────
+  // meta = frentes ativas × produtividade mediana por frente/dia × dias úteis.
+  // Ancorada no que a operação CONSEGUE entregar. O modelo anterior (média dos
+  // 3 meses) perseguia o resultado: 3 meses ruins baixavam a meta e a operação
+  // seguia aparecendo "no ritmo". Aqui, perder uma frente baixa a meta; render
+  // menos por frente, não — isso vira desvio visível contra a meta.
+  const REF_PROD_DIAS = 60, REF_FRENTES_DIAS = 7
+  const diaChave = (r: OSRow) => (r.dataexecucao || r.databaixa || '').split(' ')[0]
+  const corteDe = (dias: number) => {
+    const d = new Date(now)
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() - dias)
+    return d
+  }
+  const corteProd = corteDe(REF_PROD_DIAS), corteFrentes = corteDe(REF_FRENTES_DIAS)
+  const porDiaEquipe = new Map<string, { concl: number; frentes: Set<string> }>()
+  const frentesAtivas = new Set<string>()
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r) || isRede(r)) continue
+    if (!isExecucaoReal(r.descsituacao)) continue
+    const equipe = (r.nomedaequipe || '').trim()
+    if (!equipe) continue
+    const day = diaChave(r)
+    const dt  = day ? parseDate(day) : null
+    if (!dt) continue
+    if (dt >= corteFrentes) frentesAtivas.add(equipe)
+    // Domingo é plantão de 2–4 técnicos: não representa capacidade real.
+    // Hoje fica fora porque o dia ainda está em curso.
+    if (day === hojeStr || dt.getDay() === 0 || dt < corteProd) continue
+    let e = porDiaEquipe.get(day)
+    if (!e) { e = { concl: 0, frentes: new Set() }; porDiaEquipe.set(day, e) }
+    e.concl++
+    e.frentes.add(equipe)
+  }
+  // Mediana, não média: um dia de mutirão não deve inflar a meta do mês inteiro.
+  const prodDiaria = [...porDiaEquipe.values()]
+    .filter(e => e.frentes.size > 0)
+    .map(e => e.concl / e.frentes.size)
+    .sort((a, b) => a - b)
+  const prodFrenteDia = prodDiaria.length > 0
+    ? Math.round(prodDiaria[Math.floor(prodDiaria.length / 2)] * 10) / 10
+    : 0
+  const metaMesAtual = Math.round(frentesAtivas.size * prodFrenteDia * diasUteisTotal)
+
   const pctMetaMes      = metaMesAtual > 0 ? Math.round(concluidasMesAtual / metaMesAtual * 100) : null
   const projecaoMesFinal = diasUteisDecorr >= 0.25
     ? Math.round(concluidasMesAtual / diasUteisDecorr * diasUteisTotal)
@@ -300,6 +342,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     concluidas: concluidasMesAtual, meta: metaMesAtual, pct: pctMetaMes,
     diasUteisRestantes, diasUteisTotal, projecaoFinal: projecaoMesFinal,
     status: metaMesStatus,
+    frentes: frentesAtivas.size, prodFrenteDia,
   }
 
   let concl = 0, totalPeriodo = 0, totalMaduro = 0, conclNoPrazo = 0

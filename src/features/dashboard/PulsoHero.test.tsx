@@ -19,7 +19,7 @@ function makePulso(overrides: Partial<Pulso> = {}): Pulso {
     semAgendamento: 4, mttr: 2.1, mttrP90: 4.5, backlogDias: null,
     topCidadesCriticas: [], clustersAtivos: [], criticasTotal: 7,
     entradasHoje: 46, saidasHoje: 51, fluxoHoje: -5, entradaMediaDia: 44,
-    metaMes: { concluidas: 900, meta: 1240, pct: 72, diasUteisRestantes: 5, diasUteisTotal: 22, projecaoFinal: 1310, status: 'acima' },
+    metaMes: { concluidas: 900, meta: 1240, pct: 72, diasUteisRestantes: 5, diasUteisTotal: 22, projecaoFinal: 1310, status: 'acima', frentes: 12, prodFrenteDia: 4.7 },
     ritmoIntradiario: {} as never,
     ...overrides,
   }

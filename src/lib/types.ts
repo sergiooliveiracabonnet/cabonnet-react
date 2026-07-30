@@ -127,6 +127,8 @@ export interface PulsoMetaMes {
   diasUteisTotal:    number
   projecaoFinal:     number | null
   status:            'acima' | 'abaixo' | 'neutro'
+  frentes:           number   // equipes que executaram OS nos últimos 7 dias
+  prodFrenteDia:     number   // mediana de OS/frente/dia útil nos últimos 60 dias
 }
 
 export interface PulsoRitmoIntradiario {

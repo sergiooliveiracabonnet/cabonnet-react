@@ -18,7 +18,7 @@ function makePulso(overrides: Partial<Pulso> = {}): Pulso {
     semAgendamento: 4, mttr: 2.1, mttrP90: 4.5, backlogDias: null,
     topCidadesCriticas: [], clustersAtivos: [], criticasTotal: 0,
     entradasHoje: 0, saidasHoje: 0, fluxoHoje: 0, entradaMediaDia: 0,
-    metaMes: { concluidas: 0, meta: 0, pct: null, diasUteisRestantes: 0, diasUteisTotal: 0, projecaoFinal: null, status: 'neutro' },
+    metaMes: { concluidas: 0, meta: 0, pct: null, diasUteisRestantes: 0, diasUteisTotal: 0, projecaoFinal: null, status: 'neutro', frentes: 0, prodFrenteDia: 0 },
     ritmoIntradiario: {} as never,
     ...overrides,
   }
@@ -52,6 +52,8 @@ describe('semântica dos painéis analíticos', () => {
       diasUteisTotal: 22,
       projecaoFinal: 28,
       status: 'abaixo',
+      frentes: 8,
+      prodFrenteDia: 4.2,
     },
     {
       concluidas: 18,
@@ -61,6 +63,8 @@ describe('semântica dos painéis analíticos', () => {
       diasUteisTotal: 22,
       projecaoFinal: null,
       status: 'neutro',
+      frentes: 0,
+      prodFrenteDia: 0,
     },
   ] satisfies PulsoMetaMes[])('expõe Meta do Mês como h2 em todos os estados', meta => {
     render(<MetaMesCard meta={meta} />)

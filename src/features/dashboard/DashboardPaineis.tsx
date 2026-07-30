@@ -502,7 +502,7 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
       <div className="h-full rounded-lg border border-border bg-card p-5">
         <SectionLabel icon={Target} color="#94a3b8">Meta do Mês</SectionLabel>
         <p className="text-label text-muted/60 mt-3">
-          {meta.concluidas} concluídas até agora · sem histórico dos 3 meses anteriores para definir uma meta
+          {meta.concluidas} concluídas até agora · sem execuções suficientes para dimensionar a capacidade
         </p>
       </div>
     )
@@ -525,7 +525,7 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
           {meta.pct}%
         </span>
         <span className="text-label text-muted mb-1">
-          {meta.concluidas} concluídas · meta ~{meta.meta} (média 3 meses)
+          {meta.concluidas} concluídas · meta {meta.meta}
         </span>
       </div>
 
@@ -533,6 +533,14 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
         <div className="h-full rounded-full transition-all duration-700"
              style={{ width: `${pct}%`, background: cor }} />
       </div>
+
+      {/* Meta sem lastro vira número de enfeite: mostra de onde ela sai */}
+      {meta.frentes > 0 && (
+        <p className="mt-2 text-caption text-muted/70 tabular-nums"
+           title="Capacidade instalada: frentes que executaram OS nos últimos 7 dias × mediana de OS por frente/dia (60 dias) × dias úteis do mês">
+          {meta.frentes} frentes × {meta.prodFrenteDia.toLocaleString('pt-BR')} OS/frente/dia × {meta.diasUteisTotal} dias úteis
+        </p>
+      )}
 
       {meta.projecaoFinal != null && (
         <p className="mt-2.5 text-caption" style={{ color: cor }}>
