@@ -557,9 +557,17 @@ describe('buildDashboard', () => {
     makeOS({ numos: 'D3', descsituacao: 'Concluída',   datacadastro: daysAgo(1), nomedaequipe: 'MANUTENCAO M01', tiposervico: 'MANUTENCAO' }),
   ])
 
-  it('retorna 15 KPIs', () => {
+  // Contagem crua quebra a cada KPI novo sem apontar nada. O que importa é que
+  // todo id consumido pela DashboardPage continue existindo e ser único.
+  it('expõe todos os KPIs consumidos pelo Dashboard, sem ids duplicados', () => {
     const { kpis } = buildDashboard(rows)
-    expect(kpis).toHaveLength(15)
+    const ids = kpis.map(k => k.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids).toEqual(expect.arrayContaining([
+      'criticas', 'criticasDesassist', 'semEq', 'pend', 'copeAguardando',
+      'reagendInviab', 'reagendMobile', 'reagendFutura',
+      'atendHoje', 'atendAmanha', 'atendFutura', 'total', 'rede', 'concl', 'taxa',
+    ]))
   })
 
   it('total conta apenas Pendente + Atendimento', () => {
@@ -587,6 +595,24 @@ describe('buildDashboard', () => {
     // futura agrupa agendamentos além de amanhã e OS sem dataagendamento
     expect(kpis.find(k => k.id === 'atendFutura')!.value).toBe(2)
     expect(kpis.find(k => k.id === 'atend')!.value).toBe(4)
+  })
+
+  it('expõe críticas sem agenda ou com agendamento vencido, que não cabem no card de hoje', () => {
+    const critRows = enrichRows([
+      // 2× SLA de manutenção (limite 1d) → _slaCritico
+      makeOS({ numos: 'CD1', descsituacao: 'Pendente', tiposervico: 'MANUTENCAO', nomedaequipe: 'MANUTENCAO M01',
+               datacadastro: daysAgo(20), dataagendamento: '' }),                 // sem agenda
+      makeOS({ numos: 'CD2', descsituacao: 'Pendente', tiposervico: 'MANUTENCAO', nomedaequipe: 'MANUTENCAO M02',
+               datacadastro: daysAgo(20), dataagendamento: daysAgo(3) }),         // agenda vencida
+      makeOS({ numos: 'CD3', descsituacao: 'Pendente', tiposervico: 'MANUTENCAO', nomedaequipe: 'MANUTENCAO M03',
+               datacadastro: daysAgo(20), dataagendamento: daysAgo(0) }),         // agendada hoje
+      makeOS({ numos: 'CD4', descsituacao: 'Pendente', tiposervico: 'MANUTENCAO', nomedaequipe: 'MANUTENCAO M04',
+               datacadastro: daysAgo(20), dataagendamento: daysAgo(-5) }),        // agendada p/ o futuro
+    ])
+    const { kpis, pulso } = buildDashboard(critRows)
+    expect((pulso as { criticasTotal: number }).criticasTotal).toBe(4)
+    expect(kpis.find(k => k.id === 'criticas')!.value).toBe(1)            // só a de hoje
+    expect(kpis.find(k => k.id === 'criticasDesassist')!.value).toBe(2)   // sem agenda + vencida
   })
 
   it('diferencia os três subtipos de reagendamento', () => {

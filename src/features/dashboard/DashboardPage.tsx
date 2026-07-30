@@ -152,7 +152,7 @@ export default function DashboardPage() {
 
   const kpiById = new Map(kpis.map(k => [k.id, k]))
   const pick    = (ids: string[]) => ids.map(id => kpiById.get(id)).filter((k): k is KPI => k != null)
-  const riskKpis = pick(['criticas', 'semEq', 'pend', 'copeAguardando', 'reagendInviab', 'reagendMobile', 'reagendFutura'])
+  const riskKpis = pick(['criticas', 'criticasDesassist', 'semEq', 'pend', 'copeAguardando', 'reagendInviab', 'reagendMobile', 'reagendFutura'])
   const perfKpis = pick(['atendHoje', 'atendAmanha', 'atendFutura', 'total', 'rede', 'concl', 'taxa'])
 
   return (

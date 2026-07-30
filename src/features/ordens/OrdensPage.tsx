@@ -150,6 +150,7 @@ export default function OrdensPage() {
     if (foco) {
       os.clearFilters()
       if      (foco === 'criticas') os.setCritico(true)
+      else if (foco === 'criticasDesassist') os.setCritico(true)
       else if (foco === 'semEq')    os.setSemEquipe(true)
       else if (foco === 'pend')     os.setStatus('Pendente')
       else if (foco === 'copeAguardando') os.setStatus('Pendente')

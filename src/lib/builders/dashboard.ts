@@ -1,4 +1,7 @@
-import { isExecucaoReal, isCOPE, isReagend, getReagendTipo, getAtendimentoBucket, parseDate } from '../transform'
+import {
+  isExecucaoReal, isCOPE, isReagend, getReagendTipo, getAtendimentoBucket,
+  isAgendamentoDesassistido, parseDate,
+} from '../transform'
 import type { OSRow, KPI } from '../types'
 import {
   avg, calcMTTR, mttrStats, estourouSLA, scoreComposto, mttrToScore, SCORE_PESOS,
@@ -121,7 +124,8 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const _hojeStr = `${String(_now.getDate()).padStart(2, '0')}/${String(_now.getMonth() + 1).padStart(2, '0')}/${_now.getFullYear()}`
   const isAgendadaHoje = (r: OSRow) => (r.dataagendamento || '').split(' ')[0] === _hojeStr
 
-  let pend = 0, atend = 0, atendHoje = 0, atendAmanha = 0, atendFutura = 0, redeCount = 0, criticas = 0, criticasHoje = 0, semEquipe = 0
+  let pend = 0, atend = 0, atendHoje = 0, atendAmanha = 0, atendFutura = 0, redeCount = 0
+  let criticas = 0, criticasHoje = 0, criticasDesassist = 0, semEquipe = 0
   let reagendInviab = 0, reagendMobile = 0, reagendFutura = 0
   let copeAguardando = 0
   let slaExcFila = 0, semAgendamento = 0
@@ -157,6 +161,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     if (r._slaCritico) {
       criticas++
       if (isAgendadaHoje(r)) criticasHoje++
+      else if (isAgendamentoDesassistido(r)) criticasDesassist++
       const c = (r.nomedacidade || '').trim()
       if (c) cidCritMap.set(c, (cidCritMap.get(c) ?? 0) + 1)
     }
@@ -404,6 +409,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
 
   const kpis: KPI[] = [
     { id: 'criticas', title: 'OS Críticas',      value: criticasHoje, sub: 'SLA 2× · agend. hoje',          accent: 'red'    },
+    { id: 'criticasDesassist', title: 'Críticas s/ Agenda', value: criticasDesassist, sub: 'SLA 2× · sem agenda ou vencida', accent: 'red' },
     { id: 'semEq',    title: 'Sem Equipe',        value: semEquipe,  sub: 'pendente atribuição',            accent: 'orange' },
     { id: 'pend',     title: 'Pendentes',         value: pend,       sub: 'aguardando campo',               accent: 'yellow' },
     { id: 'atend',    title: 'Em Atendimento',    value: atend,      sub: 'em campo + agend. futuro',       accent: 'cyan'   },

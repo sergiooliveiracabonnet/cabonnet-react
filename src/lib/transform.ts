@@ -259,6 +259,19 @@ export function getAtendimentoBucket(r: Pick<OSRow, 'dataagendamento'>, now: Dat
   return 'futura'
 }
 
+// True quando ninguém vai atender a OS sem uma ação humana: agenda vazia ou
+// data de agendamento já vencida. Uma OS crítica nesse estado é a mais esquecida
+// da fila — sem isto ela não aparece em nenhum card de prioridade.
+export function isAgendamentoDesassistido(r: Pick<OSRow, 'dataagendamento'>, now: Date = new Date()): boolean {
+  const dia = (r.dataagendamento || '').split(' ')[0]
+  if (!dia) return true
+  const dt = parseDate(dia)
+  if (!dt) return true
+  const hoje = new Date(now)
+  hoje.setHours(0, 0, 0, 0)
+  return dt < hoje
+}
+
 const WES_CODES  = new Set(['F08', 'F11', 'F23', 'F36', 'F44'])
 const INST_CODES = new Set(['F01', 'F04', 'F05', 'F07', 'F20', 'F45', 'F46', 'F47', 'F48', 'F49', 'F50'])
 const THM_CODES  = new Set(['F12', 'F13', 'F14'])
