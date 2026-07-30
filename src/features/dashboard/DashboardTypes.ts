@@ -75,11 +75,10 @@ export const KPI_ICONS: Partial<Record<string, IconComp>> = {
 }
 
 export interface DashFornCard { nome: string; total: number; concluidas: number; sla: number; conclPct?: number; cor: string }
-export interface ScoreTendencia { atual: number; anterior: number | null; delta: number | null }
-export interface DashMover { id: string; label: string; atual: number; anterior: number; delta: number; unidade: string; melhorou: boolean; impacto: number }
+export interface DashMover { id: string; label: string; atual: number; anterior: number; delta: number; unidade: string; melhorou: boolean; variacao: number }
 export interface TypedDashboard {
   kpis: KPI[]; fornecedores: DashFornCard[]; pulso: Pulso
-  scoreTendencia: ScoreTendencia; mudancas: DashMover[]; metaScore: number; projecaoRisco: ProjecaoRisco
+  mudancas: DashMover[]; projecaoRisco: ProjecaoRisco
 }
 
 export interface CampoProjecaoReal {

@@ -4,20 +4,23 @@ import {
 } from '../transform'
 import type { OSRow, KPI } from '../types'
 import {
-  avg, calcMTTR, mttrStats, estourouSLA, scoreComposto, mttrToScore, SCORE_PESOS,
+  avg, calcMTTR, mttrStats, estourouSLA,
   type FornCard, FORN_CFG,
 } from './_helpers'
 
 // ─── Saúde do período (comparável entre janelas) ──────────────────────────────
 // Diferente do slaFila "ao vivo" (fila atual), mede a saúde das OS do PERÍODO,
-// permitindo comparar período atual vs anterior. Pesos únicos: SCORE_PESOS (_helpers).
+// permitindo comparar período atual vs anterior.
+//
+// Não há score composto aqui de propósito: um número sintético (SLA×0,45 +
+// taxa×0,35 + MTTR×0,20) misturava estoque com fluxo e ninguém agia sobre ele.
+// As três componentes são reportadas diretamente, cada uma com sua unidade.
 
 export interface PeriodHealth {
   total:  number
   slaPct: number
   taxa:   number
   mttr:   number
-  score:  number
 }
 
 export function periodHealth(set: OSRow[]): PeriodHealth {
@@ -33,8 +36,7 @@ export function periodHealth(set: OSRow[]): PeriodHealth {
   const slaPct = total > 0 ? Math.round((total - breach) / total * 100) : 100
   const taxa   = maduro > 0 ? Math.round(concl / maduro * 100) : 0
   const mttr   = calcMTTR(set)
-  const score  = total > 0 ? scoreComposto(slaPct, taxa, mttr) : 0
-  return { total, slaPct, taxa, mttr, score }
+  return { total, slaPct, taxa, mttr }
 }
 
 // ─── Projeção de risco (preditivo) ────────────────────────────────────────────
@@ -93,28 +95,31 @@ export interface DashboardMover {
   delta:    number
   unidade:  string
   melhorou: boolean
-  impacto:  number   // impacto assinado no score (positivo = melhorou)
+  variacao: number   // |Δ| relativo ao valor anterior, em % — ordena o que mais mexeu
 }
 
+// Ordena por variação relativa, não por impacto num score sintético: 2 pontos de
+// MTTR e 2 pontos de SLA não são comparáveis em valor absoluto, mas a variação
+// percentual de cada um contra si mesmo é.
 export function buildMudancas(cur: PeriodHealth, prev: PeriodHealth): DashboardMover[] {
   const defs = [
-    { id: 'sla',  label: 'SLA do período',    atual: cur.slaPct, anterior: prev.slaPct, unidade: '%', w: SCORE_PESOS.sla,  mttr: false },
-    { id: 'taxa', label: 'Taxa de conclusão', atual: cur.taxa,   anterior: prev.taxa,   unidade: '%', w: SCORE_PESOS.taxa, mttr: false },
-    { id: 'mttr', label: 'MTTR',              atual: cur.mttr,   anterior: prev.mttr,   unidade: 'd', w: SCORE_PESOS.mttr, mttr: true  },
+    { id: 'sla',  label: 'SLA do período',    atual: cur.slaPct, anterior: prev.slaPct, unidade: '%', maiorEhMelhor: true  },
+    { id: 'taxa', label: 'Taxa de conclusão', atual: cur.taxa,   anterior: prev.taxa,   unidade: '%', maiorEhMelhor: true  },
+    { id: 'mttr', label: 'MTTR',              atual: cur.mttr,   anterior: prev.mttr,   unidade: 'd', maiorEhMelhor: false },
   ]
   return defs
     .map(d => {
-      const delta = Math.round((d.atual - d.anterior) * 10) / 10
-      const impacto = d.mttr
-        ? (mttrToScore(cur.mttr) - mttrToScore(prev.mttr)) * d.w
-        : delta * d.w
+      const delta    = Math.round((d.atual - d.anterior) * 10) / 10
+      const variacao = d.anterior !== 0 ? Math.abs(delta / d.anterior) * 100 : 100
       return {
         id: d.id, label: d.label, atual: d.atual, anterior: d.anterior, delta,
-        unidade: d.unidade, melhorou: impacto > 0, impacto: Math.round(impacto * 10) / 10,
+        unidade: d.unidade,
+        melhorou: d.maiorEhMelhor ? delta > 0 : delta < 0,
+        variacao: Math.round(variacao * 10) / 10,
       }
     })
     .filter(m => m.delta !== 0)
-    .sort((a, b) => Math.abs(b.impacto) - Math.abs(a.impacto))
+    .sort((a, b) => b.variacao - a.variacao)
 }
 
 // Uma OS entra na taxa de conclusão só quando seu desfecho já é conhecível:
@@ -392,16 +397,8 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   // Mesma régua do período atual — senão a tendência compara denominadores diferentes
   const prevTaxa = prevMaduro > 0 ? Math.round(prevConcl / prevMaduro * 100) : 0
 
-  const mttrS      = mttrStats(rows)
-  const mttr       = mttrS.p50
-  const scorePulso = total > 0 ? scoreComposto(slaFila, taxa, mttr) : 0
-  const scorePulsoLabel = scorePulso >= 85 ? 'Excelente' : scorePulso >= 70 ? 'Bom' : scorePulso >= 50 ? 'Regular' : 'Crítico'
-
-  const scoreBreakdown = [
-    { id: 'sla',  label: 'SLA da Fila',     value: slaFila,           weight: SCORE_PESOS.sla  },
-    { id: 'taxa', label: 'Taxa Conclusão',  value: taxa,              weight: SCORE_PESOS.taxa },
-    { id: 'mttr', label: 'MTTR',            value: mttrToScore(mttr), weight: SCORE_PESOS.mttr },
-  ]
+  const mttrS = mttrStats(rows)
+  const mttr  = mttrS.p50
 
   type InsightLevel = 'red' | 'orange' | 'yellow' | 'green'
   const quickInsights: { level: InsightLevel; text: string }[] = []
@@ -429,7 +426,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     `${criticas} crítica${criticas !== 1 ? 's' : ''}`,
     `SLA ${slaFila}%`,
     mttr > 0 ? `MTTR ${mttr}d` : null,
-    `${taxa}% concluídas no período`,
+    `${taxa}% de conclusão`,
   ].filter(Boolean).join(' · ')
 
   // Instalação e Serviço em massa no mesmo bairro são prática comercial normal (arrastão do
@@ -452,9 +449,8 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     .sort((a, b) => b.total - a.total)
 
   const pulso = {
-    score: scorePulso, scoreLabel: scorePulsoLabel, scoreBreakdown,
     narrativa: narrativaPulso, quickInsights,
-    agingMed, agingDist, slaFila, slaAtingimento, semAgendamento,
+    agingMed, agingDist, slaFila, taxa, slaAtingimento, semAgendamento,
     mttr, mttrP90: mttrS.p90, backlogDias,
     topCidadesCriticas, clustersAtivos, criticasTotal: criticas,
     entradasHoje, saidasHoje, fluxoHoje, entradaMediaDia: entradaMediaDia(allRows), metaMes, ritmoIntradiario,
@@ -486,17 +482,9 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     { id: 'taxa',     title: 'Taxa Conclusão',    value: `${taxa}%`, sub: 'das OS já vencidas ou fechadas',  accent: 'green', trend: mkTrend(taxa, prevTaxa, true) },
   ]
 
-  // ─── Trajetória: saúde do período atual vs anterior ──────────────────────
-  const hAtual  = periodHealth(rows)
-  const hPrev   = periodHealth(prevRows)
-  const temPrev = prevRows.length > 0
-  const scoreTendencia = {
-    atual:    hAtual.score,
-    anterior: temPrev ? hPrev.score : null,
-    delta:    temPrev ? hAtual.score - hPrev.score : null,
-  }
-  const mudancas  = temPrev ? buildMudancas(hAtual, hPrev) : []
-  const metaScore = 85   // alvo de referência no gauge (limiar "Excelente"); configurável numa fase futura
+  // ─── Trajetória: cada componente vs período anterior, sem score sintético ──
+  const temPrev   = prevRows.length > 0
+  const mudancas  = temPrev ? buildMudancas(periodHealth(rows), periodHealth(prevRows)) : []
   const projecaoRisco = buildProjecaoRisco(allRows)
 
   const fornecedores: FornCard[] = [...fornMap.entries()]
@@ -516,7 +504,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     .filter(f => f.total > 0)
     .sort((a, b) => b.total - a.total)
 
-  return { kpis, fornecedores, pulso, scoreTendencia, mudancas, metaScore, projecaoRisco }
+  return { kpis, fornecedores, pulso, mudancas, projecaoRisco }
 }
 
 // ─── SLA ──────────────────────────────────────────────────────────────────────

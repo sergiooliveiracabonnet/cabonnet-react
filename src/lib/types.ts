@@ -112,13 +112,6 @@ export interface ClusterAtivo {
   total:  number
 }
 
-export interface PulsoScoreItem {
-  id:     string
-  label:  string
-  value:  number
-  weight: number
-}
-
 export interface PulsoMetaMes {
   concluidas:        number
   meta:              number
@@ -142,14 +135,12 @@ export interface PulsoRitmoIntradiario {
 }
 
 export interface Pulso {
-  score:             number
-  scoreLabel:        string
-  scoreBreakdown:    PulsoScoreItem[]
   narrativa:         string
   quickInsights:     QuickInsight[]
   agingMed:          number
   agingDist:         AgingDist
   slaFila:           number
+  taxa:              number          // % de conclusão sobre coortes maduras
   slaAtingimento:    number | null   // % das concluídas do período entregues dentro do SLA (fluxo); null sem concluídas
   semAgendamento:    number
   mttr:              number          // mediana (P50) em dias fracionários

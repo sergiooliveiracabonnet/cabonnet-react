@@ -5,30 +5,28 @@ import {
 import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } from '../../lib/types'
 import { TrendPill } from '../../components/ui/StatCard'
 import { DashboardPanelHeader, SectionLabel } from './DashboardKpiPrimitives'
-import type { ScoreTendencia, DashMover, DashFornCard } from './DashboardTypes'
+import type { DashMover, DashFornCard } from './DashboardTypes'
 
-// Faixa de trajetória: Δ do score do período + os fatores que mais mexeram nele
-export function MudancasStrip({ tendencia, mudancas }: { tendencia: ScoreTendencia; mudancas: DashMover[] }) {
-  if (tendencia.delta == null || mudancas.length === 0) return null
-  const up   = tendencia.delta > 0
-  const flat = tendencia.delta === 0
-  const cor  = flat ? '#94a3b8' : up ? '#4ade80' : '#f87171'
+// Faixa de trajetória: o que mudou vs período anterior, ordenado por variação
+// relativa. Sem score sintético — cada componente responde por si.
+export function MudancasStrip({ mudancas }: { mudancas: DashMover[] }) {
+  if (mudancas.length === 0) return null
+  const destaque = mudancas[0]
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-card border border-border px-4 py-2.5">
       <div className="flex items-center gap-2">
-        <span className="text-caption font-bold uppercase tracking-[0.07em] text-muted">Tendência</span>
-        <span className="text-label font-semibold tabular-nums" style={{ color: cor }}>
-          {flat ? '— estável' : `${up ? '↑' : '↓'} ${up ? '+' : ''}${tendencia.delta} pts`}
+        <span className="text-caption font-bold uppercase tracking-[0.07em] text-muted">O que mais mudou</span>
+        <span className={`text-label font-semibold tabular-nums ${destaque.melhorou ? 'text-green' : 'text-red'}`}>
+          {destaque.label} {destaque.melhorou ? '↑' : '↓'} {Math.abs(destaque.delta)}{destaque.unidade}
         </span>
-        <span className="text-caption text-muted">vs período anterior · score do período {tendencia.atual}</span>
+        <span className="text-caption text-muted">vs período anterior</span>
       </div>
       <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-        <span className="text-caption text-muted">O que mudou:</span>
         {mudancas.map(m => (
           <span key={m.id}
             className={`inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border tabular-nums
                         ${m.melhorou ? 'text-green bg-green/10 border-green/20' : 'text-red bg-red/10 border-red/20'}`}
-            title={`${m.label}: ${m.anterior}${m.unidade} → ${m.atual}${m.unidade}`}>
+            title={`${m.label}: ${m.anterior}${m.unidade} → ${m.atual}${m.unidade} (${m.variacao}% de variação)`}>
             {m.melhorou ? '↑' : '↓'} {m.label} {m.atual}{m.unidade}
           </span>
         ))}

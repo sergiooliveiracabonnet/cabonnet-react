@@ -13,8 +13,8 @@ afterEach(cleanup)
 
 function makePulso(overrides: Partial<Pulso> = {}): Pulso {
   return {
-    score: 0, scoreLabel: '', scoreBreakdown: [], narrativa: '', quickInsights: [],
-    agingMed: 3.4, agingDist: {} as never, slaFila: 87, slaAtingimento: 91,
+    narrativa: '', quickInsights: [],
+    agingMed: 3.4, agingDist: {} as never, slaFila: 87, taxa: 76, slaAtingimento: 91,
     semAgendamento: 4, mttr: 2.1, mttrP90: 4.5, backlogDias: null,
     topCidadesCriticas: [], clustersAtivos: [], criticasTotal: 0,
     entradasHoje: 0, saidasHoje: 0, fluxoHoje: 0, entradaMediaDia: 0,

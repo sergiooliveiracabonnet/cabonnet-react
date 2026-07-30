@@ -213,9 +213,9 @@ export default function AlertasPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[
             { label: 'OS na Fila',    value: totalFila, color: '#3b82f6', sub: 'registros ativos' },
-            { label: 'Score Saúde',   value: `${pulso.score ?? 0}%`,
-              color: (pulso.score ?? 0) >= 80 ? '#4ade80' : (pulso.score ?? 0) >= 60 ? '#facc15' : '#f87171',
-              sub: (pulso.score ?? 0) >= 80 ? 'Operacional saudável' : 'Atenção necessária' },
+            { label: 'SLA da Fila',   value: `${pulso.slaFila ?? 0}%`,
+              color: (pulso.slaFila ?? 0) >= 90 ? '#4ade80' : (pulso.slaFila ?? 0) >= 75 ? '#facc15' : '#f87171',
+              sub: (pulso.slaFila ?? 0) >= 90 ? 'dentro do prazo' : 'atenção necessária' },
             { label: 'Aging Médio',   value: `${(pulso.agingMed ?? 0).toFixed(1)}d`,
               color: (pulso.agingMed ?? 0) > 7 ? '#f97316' : '#3b82f6', sub: 'dias na fila ativa' },
           ].map((k, i) => (

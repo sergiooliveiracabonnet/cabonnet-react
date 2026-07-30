@@ -30,7 +30,7 @@ import {
 
 export default function DashboardPage() {
   const { derived: { dashboard, anomalias, campo, graficos, revisitas }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
-  const { kpis, fornecedores, pulso, scoreTendencia, mudancas, metaScore, projecaoRisco } = dashboard as unknown as TypedDashboard
+  const { kpis, fornecedores, pulso, mudancas, projecaoRisco } = dashboard as unknown as TypedDashboard
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
   const taxaRevisitas = (revisitas as { taxa?: { geral?: number } } | null)?.taxa?.geral ?? null
   const { clustersAtivos = [] } = pulso
@@ -184,8 +184,7 @@ export default function DashboardPage() {
           pulse={(
             <PulsoHero
               pulso={pulso}
-              target={metaScore}
-              tendencia={scoreTendencia}
+              mudancas={mudancas}
               aiData={aiData}
               isLoadingAI={isLoadingAI}
               onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
@@ -193,7 +192,7 @@ export default function DashboardPage() {
           )}
         />
 
-        <MudancasStrip tendencia={scoreTendencia} mudancas={mudancas} />
+        <MudancasStrip mudancas={mudancas} />
 
         {/* ═══ NÍVEL 2 — capacidade operacional ═══ */}
         <section>

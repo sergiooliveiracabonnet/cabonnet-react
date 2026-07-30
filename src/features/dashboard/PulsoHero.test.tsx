@@ -5,17 +5,16 @@ import type { Pulso } from '../../lib/types'
 
 afterEach(cleanup)
 
+const MUDANCAS = [
+  { id: 'sla',  label: 'SLA do período',    atual: 87, anterior: 82,  delta: 5,    unidade: '%', melhorou: true,  variacao: 6.1 },
+  { id: 'mttr', label: 'MTTR',              atual: 2.1, anterior: 1.8, delta: 0.3,  unidade: 'd', melhorou: false, variacao: 16.7 },
+]
+
 function makePulso(overrides: Partial<Pulso> = {}): Pulso {
   return {
-    score: 82, scoreLabel: 'saudável',
-    scoreBreakdown: [
-      { id: 'sla', label: 'SLA', value: 88, weight: 45 },
-      { id: 'taxa', label: 'Taxa', value: 76, weight: 35 },
-      { id: 'mttr', label: 'MTTR', value: 90, weight: 20 },
-    ],
     narrativa: 'A fila recua pelo terceiro dia seguido.',
     quickInsights: [],
-    agingMed: 3.4, agingDist: {} as never, slaFila: 87, slaAtingimento: 91,
+    agingMed: 3.4, agingDist: {} as never, slaFila: 87, taxa: 76, slaAtingimento: 91,
     semAgendamento: 4, mttr: 2.1, mttrP90: 4.5, backlogDias: null,
     topCidadesCriticas: [], clustersAtivos: [], criticasTotal: 7,
     entradasHoje: 46, saidasHoje: 51, fluxoHoje: -5, entradaMediaDia: 44,
@@ -26,16 +25,26 @@ function makePulso(overrides: Partial<Pulso> = {}): Pulso {
 }
 
 describe('PulsoHero', () => {
-  it('renderiza score, tendência e narrativa', () => {
-    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false}
-                       tendencia={{ atual: 82, anterior: 78, delta: 4 }} />)
-    expect(screen.getByText('82')).toBeInTheDocument()
-    const anterior = screen.getByTestId('score-periodo-anterior')
-    expect(within(anterior).getByText('Anterior')).toBeInTheDocument()
-    expect(within(anterior).getByText('78')).toBeInTheDocument()
-    expect(within(anterior).getByText('↑ +4')).toBeInTheDocument()
-    expect(within(anterior).queryByText(/vs anterior/)).not.toBeInTheDocument()
+  it('renderiza os três sinais vitais com o Δ do período anterior, e a narrativa', () => {
+    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} mudancas={MUDANCAS} />)
+    const vitais = screen.getByTestId('pulso-vitais')
+    expect(within(vitais).getByText('SLA da Fila')).toBeInTheDocument()
+    expect(within(vitais).getByText('87%')).toBeInTheDocument()
+    expect(within(vitais).getByText('Taxa Conclusão')).toBeInTheDocument()
+    expect(within(vitais).getByText('76%')).toBeInTheDocument()
+    expect(within(vitais).getByText('MTTR')).toBeInTheDocument()
+    expect(within(vitais).getByText('2,1d')).toBeInTheDocument()
+    // Δ por componente, cada um na própria unidade
+    expect(within(vitais).getByText('↑ +5%')).toBeInTheDocument()
+    expect(within(vitais).getByText('↑ +0.3d')).toBeInTheDocument()
     expect(screen.getByText('A fila recua pelo terceiro dia seguido.')).toBeInTheDocument()
+  })
+
+  it('não expõe mais score sintético nem gauge', () => {
+    const { container } = render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} mudancas={MUDANCAS} />)
+    expect(screen.queryByTestId('score-periodo-anterior')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Peso: SLA/)).not.toBeInTheDocument()
+    expect(container.querySelector('#score-breakdown-popover')).not.toBeInTheDocument()
   })
 
   it('renderiza as 4 métricas de fluxo sem duplicar sparklines do painel detalhado', () => {
@@ -53,9 +62,8 @@ describe('PulsoHero', () => {
     expect(container.querySelectorAll('svg[aria-hidden="true"]:not([class*="lucide"]) path')).toHaveLength(0)
   })
 
-  it('breakdown do score fica em popover, mini-stats antigos não vivem mais aqui', () => {
+  it('mini-stats de qualidade continuam fora daqui (vivem no QualidadePeriodoCard)', () => {
     render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} />)
-    expect(screen.getByText('Peso: SLA 45% · Taxa 35% · MTTR 20%')).toBeInTheDocument()
     expect(screen.queryByText('Sem Agend.')).not.toBeInTheDocument()
     expect(screen.queryByText('Revisitas')).not.toBeInTheDocument()
   })
@@ -72,30 +80,10 @@ describe('PulsoHero', () => {
     expect(screen.getByPlaceholderText(/Contexto opcional para a IA/)).toBeInTheDocument()
   })
 
-  it('score breakdown popover tem nome acessivel e aria-describedby', () => {
-    const { container } = render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} />)
-
-    // Localizar o trigger (div com role="button")
-    const trigger = container.querySelector('[role="button"][aria-label="Detalhar composição do score"]')
-    expect(trigger).toBeInTheDocument()
-    expect(trigger).toHaveAttribute('aria-describedby', 'score-breakdown-popover')
-
-    // Localizar o popover panel
-    const popover = container.querySelector('#score-breakdown-popover')
-    expect(popover).toBeInTheDocument()
-    expect(popover).toHaveAttribute('role', 'tooltip')
-  })
-
-  it('score breakdown não renderiza quando scoreBreakdown está vazio', () => {
-    const { container } = render(<PulsoHero pulso={makePulso({ scoreBreakdown: [] })} aiData={null} isLoadingAI={false} />)
-
-    // Trigger não deve ter aria-describedby quando não há breakdown
-    const trigger = container.querySelector('[role="button"][aria-label="Detalhar composição do score"]')
-    expect(trigger).toBeInTheDocument()
-    expect(trigger).not.toHaveAttribute('aria-describedby')
-
-    // Popover não deve ser renderizado
-    const popover = container.querySelector('#score-breakdown-popover')
-    expect(popover).not.toBeInTheDocument()
+  it('omite o Δ de um vital quando não há período anterior para comparar', () => {
+    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} mudancas={[]} />)
+    const vitais = screen.getByTestId('pulso-vitais')
+    expect(within(vitais).getByText('87%')).toBeInTheDocument()
+    expect(within(vitais).queryByText(/↑|↓/)).not.toBeInTheDocument()
   })
 })

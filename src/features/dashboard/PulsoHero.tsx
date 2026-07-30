@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Activity, Sparkles, Zap } from 'lucide-react'
-import { GaugeChart } from '../../components/ui/GaugeChart'
 import type { Pulso } from '../../lib/types'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
-import type { ScoreTendencia } from './DashboardTypes'
+import type { DashMover } from './DashboardTypes'
 
 export interface AnomaliaContextType {
   total: number
@@ -35,24 +34,23 @@ function FlowMetric({ title, mobileTitle, value, sub, tone = 'neutral' }: FlowMe
   )
 }
 
-export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, tendencia }: {
+export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = [] }: {
   pulso: Pulso
   aiData: AINarrativeResult | null | undefined
   isLoadingAI: boolean
   onRequestAI?: (obs: string) => void
-  target?: number
-  tendencia?: ScoreTendencia
+  mudancas?: DashMover[]
 }) {
   const [draftObs, setDraftObs] = useState('')
   const [showAIComposer, setShowAIComposer] = useState(false)
   const [showReanalysis, setShowReanalysis] = useState(false)
 
   const {
-    score = 0,
-    scoreLabel = '—',
-    scoreBreakdown = [],
     narrativa = '',
     quickInsights = [],
+    slaFila = 0,
+    taxa = 0,
+    mttr = 0,
     entradasHoje = 0,
     saidasHoje = 0,
     fluxoHoje = 0,
@@ -60,10 +58,18 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
     backlogDias = null,
   } = pulso
 
-  const scoreColor = score >= 85 ? '#4ade80' : score >= 65 ? '#facc15' : '#f87171'
-  const weakestId = scoreBreakdown.length > 0
-    ? [...scoreBreakdown].sort((a, b) => a.value - b.value)[0].id
-    : null
+  // Sinais vitais: as três componentes que antes viravam um score 0–100 único.
+  // Cada uma na própria unidade, com o Δ real contra o período anterior.
+  const deltaDe = (id: string) => mudancas.find(m => m.id === id) ?? null
+  const vitais = [
+    { id: 'sla',  label: 'SLA da Fila',    valor: `${slaFila}%`,
+      cor: slaFila >= 90 ? '#4ade80' : slaFila >= 75 ? '#facc15' : '#f87171' },
+    { id: 'taxa', label: 'Taxa Conclusão', valor: `${taxa}%`,
+      cor: taxa >= 80 ? '#4ade80' : taxa >= 60 ? '#facc15' : '#f87171' },
+    { id: 'mttr', label: 'MTTR',           valor: mttr > 0 ? `${mttr.toLocaleString('pt-BR')}d` : '—',
+      cor: mttr === 0 ? '#94a3b8' : mttr <= 2 ? '#4ade80' : mttr <= 5 ? '#facc15' : '#f87171' },
+  ]
+  const pior = [...vitais].find(v => v.cor === '#f87171') ?? null
 
   type DisplayInsight = { level: string; text: string; ai?: boolean }
   const displayInsights: DisplayInsight[] = aiData?.insights?.length
@@ -82,7 +88,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
     <section
       aria-labelledby="dashboard-pulse-title"
       className="h-full rounded-lg border border-border bg-card"
-      style={{ borderLeft: `2px solid ${scoreColor}` }}
+      style={{ borderLeft: `2px solid ${pior?.cor ?? '#4ade80'}` }}
     >
       <header className="flex min-h-12 items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2.5">
@@ -94,81 +100,32 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
             <p className="text-caption text-muted">Leitura consolidada do período</p>
           </div>
         </div>
-        <span
-          className="rounded-full border px-2.5 py-1 text-caption font-bold tabular-nums"
-          style={{ color: scoreColor, borderColor: `${scoreColor}33`, background: `${scoreColor}0d` }}
-        >
-          {scoreLabel}
-        </span>
       </header>
 
       <div className="space-y-3 p-3 sm:p-4">
-        <div className="grid grid-cols-[84px_minmax(0,1fr)] items-start gap-3 sm:gap-4">
-          <div className="group relative flex flex-col items-center gap-1">
-            <div
-              role="button"
-              tabIndex={scoreBreakdown.length > 0 ? 0 : undefined}
-              aria-label="Detalhar composição do score"
-              aria-describedby={scoreBreakdown.length > 0 ? 'score-breakdown-popover' : undefined}
-              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              <GaugeChart value={score} target={target} color={scoreColor} label={scoreLabel} size={84} />
-            </div>
-            {tendencia?.delta != null && tendencia.delta !== 0 && (
-              <dl
-                data-testid="score-periodo-anterior"
-                className="mt-0.5 w-full border-t border-white/[0.07] pt-1 text-center tabular-nums"
-                title={`Score do período anterior: ${tendencia.anterior}`}
-              >
-                <dt className="text-caption font-semibold uppercase leading-none tracking-[0.06em] text-muted">
-                  Anterior
-                </dt>
-                <dd className="mt-1 flex items-baseline justify-center gap-1 whitespace-nowrap leading-none">
-                  <span className="font-mono text-label font-bold text-secondary">
-                    {tendencia.anterior ?? '—'}
-                  </span>
-                  <span className={`text-caption font-bold ${
-                    tendencia.delta > 0 ? 'text-green' : 'text-red'
-                  }`}>
-                    {tendencia.delta > 0 ? '↑' : '↓'} {tendencia.delta > 0 ? '+' : ''}{tendencia.delta}
-                  </span>
+        {/* Sinais vitais — substituem o score 0–100 (média ponderada arbitrária
+            que misturava estoque com fluxo e não indicava ação) */}
+        <dl data-testid="pulso-vitais" className="grid grid-cols-3 gap-2">
+          {vitais.map(v => {
+            const m = deltaDe(v.id)
+            return (
+              <div key={v.id} className="min-w-0 rounded-md border border-white/[0.06] bg-bg/35 px-3 py-2.5">
+                <dt className="truncate text-caption font-semibold text-muted">{v.label}</dt>
+                <dd className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-title font-black tabular-nums" style={{ color: v.cor }}>{v.valor}</span>
+                  {m && (
+                    <span className={`text-caption font-bold tabular-nums ${m.melhorou ? 'text-green' : 'text-red'}`}
+                          title={`Período anterior: ${m.anterior}${m.unidade}`}>
+                      {m.delta > 0 ? '↑ +' : '↓ '}{m.delta}{m.unidade}
+                    </span>
+                  )}
                 </dd>
-              </dl>
-            )}
-
-            {scoreBreakdown.length > 0 && (
-              <div
-                id="score-breakdown-popover"
-                role="tooltip"
-                className="absolute left-1/2 top-full z-20 mt-2 hidden w-[160px] -translate-x-1/2 flex-col gap-2 rounded-lg border border-border bg-elevated p-3 shadow-xl group-hover:flex group-focus-within:flex"
-              >
-                {scoreBreakdown.map(item => {
-                  const isWeakest = item.id === weakestId
-                  const color = item.value >= 85 ? '#4ade80' : item.value >= 65 ? '#facc15' : '#f87171'
-
-                  return (
-                    <div key={item.id}>
-                      <div className="mb-1 flex items-center justify-between">
-                        <span className={`text-caption ${isWeakest ? 'font-bold text-text' : 'text-muted'}`}>
-                          {item.label}{isWeakest ? ' · menor' : ''}
-                        </span>
-                        <span className="text-caption font-mono font-semibold" style={{ color }}>{item.value}</span>
-                      </div>
-                      <div className="h-1 overflow-hidden rounded-full bg-surface/40">
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{ width: `${Math.min(100, Math.max(0, item.value))}%`, background: color }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
-                <span className="text-caption leading-tight text-muted/70">Peso: SLA 45% · Taxa 35% · MTTR 20%</span>
               </div>
-            )}
-          </div>
+            )
+          })}
+        </dl>
 
-          <div className="min-w-0">
+        <div className="min-w-0">
             <div className="mb-2 flex items-center gap-2">
               <span className="text-caption font-bold uppercase tracking-[0.07em] text-muted">Leitura operacional</span>
               {aiData && (
@@ -267,7 +224,6 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
                 )}
               </div>
             )}
-          </div>
         </div>
 
         <div className="grid grid-cols-4 gap-2">

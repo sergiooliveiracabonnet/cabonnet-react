@@ -34,15 +34,14 @@ function makeOS(overrides: Record<string, unknown> = {}): OSRow {
 }
 
 describe('periodHealth', () => {
-  it('retorna score 0 / sla 100 / taxa 0 para período vazio', () => {
+  it('retorna sla 100 / taxa 0 para período vazio', () => {
     const h = periodHealth([])
     expect(h.total ?? 0).toBe(0)
     expect(h.slaPct).toBe(100)
     expect(h.taxa).toBe(0)
-    expect(h.score).toBe(0)
   })
 
-  it('período 100% concluído dentro do SLA tem score alto', () => {
+  it('período 100% concluído dentro do SLA tem taxa e slaPct em 100', () => {
     const rows = enrichRows([
       makeOS({ numos: 'A' }),
       makeOS({ numos: 'B' }),
@@ -50,7 +49,6 @@ describe('periodHealth', () => {
     const h = periodHealth(rows)
     expect(h.taxa).toBe(100)
     expect(h.slaPct).toBe(100)
-    expect(h.score).toBeGreaterThan(80)
   })
 
   it('OS que demorou para fechar (aging desde a abertura) derruba o slaPct', () => {
@@ -209,7 +207,7 @@ describe('slaAtingimento (fluxo) e agingDist relativo ao SLA', () => {
 })
 
 describe('buildMudancas', () => {
-  const base: PeriodHealth = { slaPct: 80, taxa: 70, mttr: 3, score: 0, total: 100 }
+  const base: PeriodHealth = { slaPct: 80, taxa: 70, mttr: 3, total: 100 }
 
   it('marca melhorou=true quando taxa sobe e false quando MTTR sobe', () => {
     const cur:  PeriodHealth = { ...base, taxa: 80, mttr: 4 }   // taxa +10 (bom), mttr +1 (ruim)
@@ -220,7 +218,7 @@ describe('buildMudancas', () => {
     expect(mttr?.melhorou).toBe(false)
   })
 
-  it('ordena por impacto no score (maior primeiro) e descarta deltas zero', () => {
+  it('ordena por variacao relativa (maior primeiro) e descarta deltas zero', () => {
     const cur: PeriodHealth = { ...base, slaPct: 60, taxa: 70, mttr: 3 } // só SLA mudou (−20)
     const movers = buildMudancas(cur, base)
     expect(movers).toHaveLength(1)
