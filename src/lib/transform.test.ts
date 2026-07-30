@@ -597,6 +597,21 @@ describe('buildDashboard', () => {
     expect(kpis.find(k => k.id === 'atend')!.value).toBe(4)
   })
 
+  it('taxa de conclusão ignora coortes imaturas (OS que ainda não venceu o SLA)', () => {
+    const coorte = enrichRows([
+      // Manutenção tem limite de 1d — aberta há 5d já venceu, aberta hoje não.
+      makeOS({ numos: 'CM1', descsituacao: 'Concluída', tiposervico: 'MANUTENCAO', nomedaequipe: 'MANUTENCAO M01',
+               datacadastro: daysAgo(5), databaixa: daysAgo(4) }),
+      makeOS({ numos: 'CM2', descsituacao: 'Pendente',  tiposervico: 'MANUTENCAO', nomedaequipe: 'MANUTENCAO M02',
+               datacadastro: daysAgo(5) }),
+      makeOS({ numos: 'CM3', descsituacao: 'Pendente',  tiposervico: 'MANUTENCAO', nomedaequipe: 'MANUTENCAO M03',
+               datacadastro: daysAgo(0) }),   // imatura — não teve chance de fechar
+    ])
+    const { kpis } = buildDashboard(coorte)
+    // 1 concluída ÷ 2 maduras = 50%. Contando a imatura daria 33% por artefato.
+    expect(kpis.find(k => k.id === 'taxa')!.value).toBe('50%')
+  })
+
   it('expõe críticas sem agenda ou com agendamento vencido, que não cabem no card de hoje', () => {
     const critRows = enrichRows([
       // 2× SLA de manutenção (limite 1d) → _slaCritico

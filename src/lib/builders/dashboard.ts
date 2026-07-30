@@ -21,15 +21,17 @@ export interface PeriodHealth {
 }
 
 export function periodHealth(set: OSRow[]): PeriodHealth {
-  let total = 0, concl = 0, breach = 0
+  let total = 0, concl = 0, breach = 0, maduro = 0
   for (const r of set) {
     if (isCOPE(r) || isReagend(r) || r._tipo === 'REDE') continue
     total++
-    if (isExecucaoReal(r.descsituacao)) concl++
+    const concluida = isExecucaoReal(r.descsituacao)
+    if (concluida) concl++
+    if (isCoorteMadura(r, concluida)) maduro++
     if (estourouSLA(r)) breach++
   }
   const slaPct = total > 0 ? Math.round((total - breach) / total * 100) : 100
-  const taxa   = total > 0 ? Math.round(concl / total * 100) : 0
+  const taxa   = maduro > 0 ? Math.round(concl / maduro * 100) : 0
   const mttr   = calcMTTR(set)
   const score  = total > 0 ? scoreComposto(slaPct, taxa, mttr) : 0
   return { total, slaPct, taxa, mttr, score }
@@ -113,6 +115,15 @@ export function buildMudancas(cur: PeriodHealth, prev: PeriodHealth): DashboardM
     })
     .filter(m => m.delta !== 0)
     .sort((a, b) => Math.abs(b.impacto) - Math.abs(a.impacto))
+}
+
+// Uma OS entra na taxa de conclusão só quando seu desfecho já é conhecível:
+// ou ela foi concluída, ou já esgotou a janela de SLA sem fechar. Uma OS aberta
+// há 2h ainda não teve chance de fechar — contá-la como "não concluída" mede
+// imaturidade da coorte, não desempenho.
+export function isCoorteMadura(r: OSRow, concluida: boolean): boolean {
+  if (concluida) return true
+  return r._aging != null && r._aging >= r._slaLimite
 }
 
 export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows: OSRow[] = []) {
@@ -291,7 +302,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     status: metaMesStatus,
   }
 
-  let concl = 0, totalPeriodo = 0, conclNoPrazo = 0
+  let concl = 0, totalPeriodo = 0, totalMaduro = 0, conclNoPrazo = 0
   const fornMap = new Map<string, { total: number; concluidas: number; noPrazo: number }>()
   for (const r of rows) {
     if (isCOPE(r) || isReagend(r)) continue
@@ -305,18 +316,22 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     }
     if (isRede(r)) continue
     totalPeriodo++
-    if (isExecucaoReal(r.descsituacao)) {
+    const concluida = isExecucaoReal(r.descsituacao)
+    if (concluida) {
       concl++
       // Atingimento: entregue dentro do SLA (aging congelado na baixa)
       if (r._agingAbertura != null && r._agingAbertura <= r._slaLimite) conclNoPrazo++
     }
+    if (isCoorteMadura(r, concluida)) totalMaduro++
   }
-  const taxa = totalPeriodo > 0 ? Math.round(concl / totalPeriodo * 100) : 0
+  // Denominador = só coortes maduras. Incluir OS aberta há 2h faz a taxa
+  // despencar em filtros curtos por imaturidade da coorte, não por piora real.
+  const taxa = totalMaduro > 0 ? Math.round(concl / totalMaduro * 100) : 0
   // SLA de atingimento (fluxo): % das CONCLUÍDAS do período entregues no prazo.
   // Complementa o slaFila (estoque), que só enxerga o que ainda está na fila.
   const slaAtingimento = concl > 0 ? Math.round(conclNoPrazo / concl * 100) : null
 
-  let prevConcl = 0, prevTotalPeriodo = 0
+  let prevConcl = 0, prevMaduro = 0
   const prevFornMap = new Map<string, { total: number; noPrazo: number }>()
   for (const r of prevRows) {
     const k = r._fornecedor === 'OUTRO' ? null : r._fornecedor
@@ -327,10 +342,12 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
       if (!estourouSLA(r)) f.noPrazo++
     }
     if (isCOPE(r) || isReagend(r) || isRede(r)) continue
-    prevTotalPeriodo++
-    if (isExecucaoReal(r.descsituacao)) prevConcl++
+    const prevConcluida = isExecucaoReal(r.descsituacao)
+    if (prevConcluida) prevConcl++
+    if (isCoorteMadura(r, prevConcluida)) prevMaduro++
   }
-  const prevTaxa = prevTotalPeriodo > 0 ? Math.round(prevConcl / prevTotalPeriodo * 100) : 0
+  // Mesma régua do período atual — senão a tendência compara denominadores diferentes
+  const prevTaxa = prevMaduro > 0 ? Math.round(prevConcl / prevMaduro * 100) : 0
 
   const mttrS      = mttrStats(rows)
   const mttr       = mttrS.p50
@@ -423,7 +440,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     { id: 'total',    title: 'Total OS',          value: total,      sub: 'fila ativa (pend. + atend.)',    accent: 'primary'},
     { id: 'rede',     title: 'OS Rede',           value: rede,       sub: 'fila ativa de rede',             accent: 'purple' },
     { id: 'concl',    title: 'Concluídas',        value: concl,      sub: `${taxa}% de conclusão`,          accent: 'green', trend: mkTrend(concl, prevConcl, true) },
-    { id: 'taxa',     title: 'Taxa Conclusão',    value: `${taxa}%`, sub: 'do total do período',            accent: 'green', trend: mkTrend(taxa, prevTaxa, true) },
+    { id: 'taxa',     title: 'Taxa Conclusão',    value: `${taxa}%`, sub: 'das OS já vencidas ou fechadas',  accent: 'green', trend: mkTrend(taxa, prevTaxa, true) },
   ]
 
   // ─── Trajetória: saúde do período atual vs anterior ──────────────────────
