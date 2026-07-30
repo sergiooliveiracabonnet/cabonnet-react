@@ -63,6 +63,33 @@ describe('buildCoorte', () => {
     expect(safra!.pct[3]).toBe(50)   // D+7
   })
 
+  // D+n é a leitura do cliente; "no prazo" é a contratual. Manutenção vence em
+  // 1 dia e instalação em 2, então a mesma coluna D+2 significa coisas opostas.
+  it('mede "no prazo" contra o SLA da própria OS, não contra dias absolutos', () => {
+    const abertura = diasAtras(20)
+    const rows = enrichRows([
+      // manutenção (limite 1d) resolvida em 2 dias → FORA do prazo dela
+      makeOS({ numos: 'M1', descsituacao: 'Concluída', tiposervico: 'MANUTENCAO',
+               nomedaequipe: 'MANUTENCAO M01', datacadastro: abertura, databaixa: diasAtras(18) }),
+      // instalação (limite 2d) resolvida em 2 dias → DENTRO do prazo dela
+      makeOS({ numos: 'I1', descsituacao: 'Concluída', tiposervico: 'INSTALACAO',
+               nomedaequipe: 'INSTALACAO F01', datacadastro: abertura, databaixa: diasAtras(18) }),
+    ])
+    const safra = buildCoorte(rows, 8, HOJE).linhas.find(l => l.total === 2)!
+    // Ambas caem no mesmo bucket D+2 (dias absolutos)…
+    expect(safra.pct[1]).toBe(100)
+    // …mas só uma cumpriu o próprio SLA
+    expect(safra.pctNoPrazo).toBe(50)
+  })
+
+  it('não fecha "no prazo" antes da safra vencer o maior SLA dela', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'P1', descsituacao: 'Concluída', tiposervico: 'INSTALACAO',
+               nomedaequipe: 'INSTALACAO F01', datacadastro: diasAtras(1), databaixa: diasAtras(1) }),
+    ])
+    expect(buildCoorte(rows, 8, HOJE).linhas[0].pctNoPrazo).toBeNull()
+  })
+
   it('devolve null no bucket que a safra ainda não tem idade para responder', () => {
     // Safra desta semana: o último dia dela ainda nem chegou, nenhum bucket fecha
     const rows = enrichRows([

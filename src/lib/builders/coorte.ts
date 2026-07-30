@@ -23,6 +23,13 @@ export interface CoorteLinha {
   resolvidas: number            // quantas já foram concluídas (em qualquer prazo)
   /** % resolvidas até D+bucket. null = a safra ainda não tem idade para responder. */
   pct:        (number | null)[]
+  /**
+   * % resolvidas dentro do SLA da PRÓPRIA OS. As colunas D+n usam dias absolutos
+   * e são a leitura do cliente ("esperei 3 dias"); esta é a leitura contratual —
+   * manutenção tem 1 dia de limite e instalação 2, então a mesma coluna D+2
+   * significa "no prazo" para uma e "atrasado" para a outra.
+   */
+  pctNoPrazo: number | null
 }
 
 export interface Coorte {
@@ -45,7 +52,10 @@ export function buildCoorte(allRows: OSRow[], semanas = 8, now: Date = new Date(
   const limite = new Date(hoje)
   limite.setDate(limite.getDate() - semanas * 7)
 
-  const grupos = new Map<number, { inicio: Date; total: number; dias: number[] }>()
+  const grupos = new Map<number, {
+    inicio: Date; total: number; dias: number[]
+    noPrazo: number; slaMax: number
+  }>()
 
   for (const r of allRows) {
     if (isCOPE(r) || isReagend(r) || r._tipo === 'REDE') continue
@@ -56,10 +66,13 @@ export function buildCoorte(allRows: OSRow[], semanas = 8, now: Date = new Date(
     const chave  = inicio.getTime()
     let g = grupos.get(chave)
     if (!g) {
-      g = { inicio, total: 0, dias: [] }
+      g = { inicio, total: 0, dias: [], noPrazo: 0, slaMax: 0 }
       grupos.set(chave, g)
     }
     g.total++
+    // Guarda o maior limite da safra: a coluna "no prazo" só fecha quando até a
+    // OS de SLA mais folgado já teve chance de vencer.
+    if (r._slaLimite > g.slaMax) g.slaMax = r._slaLimite
 
     if (!isExecucaoReal(r.descsituacao)) continue
     const baixa = parseDate(r.databaixa) || parseDate(r.dataexecucao)
@@ -67,6 +80,7 @@ export function buildCoorte(allRows: OSRow[], semanas = 8, now: Date = new Date(
     const dias = Math.floor((baixa.getTime() - abertura.getTime()) / DIA_MS)
     if (dias < 0 || dias > MAX_DIAS_RESOLUCAO) continue
     g.dias.push(dias)
+    if (dias <= r._slaLimite) g.noPrazo++
   }
 
   const linhas: CoorteLinha[] = [...grupos.values()]
@@ -79,6 +93,9 @@ export function buildCoorte(allRows: OSRow[], semanas = 8, now: Date = new Date(
         if (idadeDoFim < d || g.total === 0) return null
         return Math.round(g.dias.filter(x => x <= d).length / g.total * 100)
       })
+      const pctNoPrazo = (idadeDoFim < g.slaMax || g.total === 0)
+        ? null
+        : Math.round(g.noPrazo / g.total * 100)
       const dd = String(g.inicio.getDate()).padStart(2, '0')
       const mm = String(g.inicio.getMonth() + 1).padStart(2, '0')
       return {
@@ -87,6 +104,7 @@ export function buildCoorte(allRows: OSRow[], semanas = 8, now: Date = new Date(
         total: g.total,
         resolvidas: g.dias.length,
         pct,
+        pctNoPrazo,
       }
     })
     .sort((a, b) => b.chave - a.chave)

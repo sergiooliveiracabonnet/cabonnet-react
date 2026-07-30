@@ -7,6 +7,7 @@ export interface CoorteLinhaView {
   total:      number
   resolvidas: number
   pct:        (number | null)[]
+  pctNoPrazo: number | null
 }
 
 // Verde só a partir de 80%: resolver 60% das OS dentro do prazo não é "ok".
@@ -42,8 +43,9 @@ export function CoortePanel({ buckets, linhas }: { buckets: number[]; linhas: Co
       </DashboardPanelHeader>
 
       <p className="mt-1 mb-3 text-caption text-muted">
-        % das OS abertas na semana que foram resolvidas em até D+n. Célula vazia = a
-        safra ainda não tem idade para responder aquela janela.
+        % das OS abertas na semana resolvidas em até D+n (leitura do cliente) e
+        dentro do SLA de cada OS (leitura contratual). Célula vazia = a safra ainda
+        não tem idade para responder aquela janela.
       </p>
 
       <div className="overflow-x-auto">
@@ -61,6 +63,10 @@ export function CoortePanel({ buckets, linhas }: { buckets: number[]; linhas: Co
                   D+{d}
                 </th>
               ))}
+              <th className="text-center text-caption font-semibold uppercase tracking-[0.05em] text-muted pb-2 pl-3 border-l border-border"
+                  title="% resolvidas dentro do SLA da própria OS — manutenção vence em 1 dia, instalação em 2">
+                No prazo
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -84,6 +90,18 @@ export function CoortePanel({ buckets, linhas }: { buckets: number[]; linhas: Co
                     )}
                   </td>
                 ))}
+                <td className="py-1.5 pl-3 border-l border-border">
+                  {l.pctNoPrazo == null ? (
+                    <div className="h-6 rounded-sm border border-dashed border-border/70"
+                         title="Safra ainda não venceu o maior SLA dela" />
+                  ) : (
+                    <div className="flex h-6 items-center justify-center rounded-sm text-caption font-bold tabular-nums text-[#09090b]"
+                         style={{ background: corDoPct(l.pctNoPrazo) }}
+                         title={`${l.label}: ${l.pctNoPrazo}% das ${l.total} OS resolvidas dentro do SLA de cada uma`}>
+                      {l.pctNoPrazo}%
+                    </div>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

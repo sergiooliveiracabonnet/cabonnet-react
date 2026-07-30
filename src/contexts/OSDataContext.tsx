@@ -117,7 +117,7 @@ const EMPTY_DERIVED = {
   },
   coorte: {
     buckets: [] as number[],
-    linhas:  [] as { chave: number; label: string; total: number; resolvidas: number; pct: (number | null)[] }[],
+    linhas:  [] as { chave: number; label: string; total: number; resolvidas: number; pct: (number | null)[]; pctNoPrazo: number | null }[],
   },
   revisitas: {
     taxa:      { inst: 0, manut: 0, serv: 0, geral: 0 },
