@@ -557,9 +557,9 @@ describe('buildDashboard', () => {
     makeOS({ numos: 'D3', descsituacao: 'Concluída',   datacadastro: daysAgo(1), nomedaequipe: 'MANUTENCAO M01', tiposervico: 'MANUTENCAO' }),
   ])
 
-  it('retorna 12 KPIs', () => {
+  it('retorna 15 KPIs', () => {
     const { kpis } = buildDashboard(rows)
-    expect(kpis).toHaveLength(12)
+    expect(kpis).toHaveLength(15)
   })
 
   it('total conta apenas Pendente + Atendimento', () => {
@@ -572,6 +572,21 @@ describe('buildDashboard', () => {
     const { kpis } = buildDashboard(rows)
     const concl = kpis.find(k => k.id === 'concl')!
     expect(concl.value).toBe(1)
+  })
+
+  it('separa Em Atendimento em hoje / amanhã / futura pela dataagendamento', () => {
+    const atendRows = enrichRows([
+      makeOS({ numos: 'AT1', descsituacao: 'Atendimento', nomedaequipe: 'MANUTENCAO M01', tiposervico: 'MANUTENCAO', dataagendamento: daysAgo(0) }),
+      makeOS({ numos: 'AT2', descsituacao: 'Atendimento', nomedaequipe: 'MANUTENCAO M02', tiposervico: 'MANUTENCAO', dataagendamento: daysAgo(-1) }),
+      makeOS({ numos: 'AT3', descsituacao: 'Atendimento', nomedaequipe: 'MANUTENCAO M03', tiposervico: 'MANUTENCAO', dataagendamento: daysAgo(-10) }),
+      makeOS({ numos: 'AT4', descsituacao: 'Atendimento', nomedaequipe: 'MANUTENCAO M04', tiposervico: 'MANUTENCAO', dataagendamento: '' }),
+    ])
+    const { kpis } = buildDashboard(atendRows)
+    expect(kpis.find(k => k.id === 'atendHoje')!.value).toBe(1)
+    expect(kpis.find(k => k.id === 'atendAmanha')!.value).toBe(1)
+    // futura agrupa agendamentos além de amanhã e OS sem dataagendamento
+    expect(kpis.find(k => k.id === 'atendFutura')!.value).toBe(2)
+    expect(kpis.find(k => k.id === 'atend')!.value).toBe(4)
   })
 
   it('diferencia os três subtipos de reagendamento', () => {

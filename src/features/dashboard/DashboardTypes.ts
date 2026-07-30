@@ -1,9 +1,9 @@
 import type { ComponentType, CSSProperties } from 'react'
 import {
   AlertCircle, CheckCircle2, Target,
-  Clock, BarChart3, Radio, Activity, Users, RotateCcw, Send,
+  Clock, BarChart3, Radio, Activity, Users, RotateCcw, Send, CalendarClock, CalendarDays,
 } from 'lucide-react'
-import { isCOPE, isReagend, getReagendTipo } from '../../lib/transform'
+import { isCOPE, isReagend, getReagendTipo, getAtendimentoBucket } from '../../lib/transform'
 import type { OSRow, KPI, Pulso, AccentColor } from '../../lib/types'
 import type { ProjecaoRisco } from '../../lib/builders/dashboard'
 
@@ -13,7 +13,7 @@ export type { AINarrativeResult } from '../../hooks/useAINarrative'
 export interface ModalState { title: string; rows: OSRow[]; foco?: string }
 
 // KPIs de risco que têm filtro correspondente na OrdensPage (deep-link "Abrir na fila")
-export const FOCO_NAVEGAVEL = new Set(['criticas', 'semEq', 'pend', 'atend', 'copeAguardando', 'reagendInviab', 'reagendMobile', 'reagendFutura'])
+export const FOCO_NAVEGAVEL = new Set(['criticas', 'semEq', 'pend', 'atend', 'atendHoje', 'atendAmanha', 'atendFutura', 'copeAguardando', 'reagendInviab', 'reagendMobile', 'reagendFutura'])
 
 export type IconComp = ComponentType<{ size?: number; className?: string; style?: CSSProperties }>
 
@@ -40,6 +40,9 @@ export const KPI_FILTERS: Record<string, (r: OSRow) => boolean> = {
   concl:    r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Concluída',
   pend:     r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Pendente'    && !isRede(r),
   atend:    r => !isCOPE(r) && !isReagend(r) && r.descsituacao === 'Atendimento' && !isRede(r),
+  atendHoje:   r => r._situacaoEfetiva === 'Atendimento' && !isRede(r) && getAtendimentoBucket(r) === 'hoje',
+  atendAmanha: r => r._situacaoEfetiva === 'Atendimento' && !isRede(r) && getAtendimentoBucket(r) === 'amanha',
+  atendFutura: r => r._situacaoEfetiva === 'Atendimento' && !isRede(r) && getAtendimentoBucket(r) === 'futura',
   criticas: r => !isCOPE(r) && !isReagend(r) && r._slaCritico  && !isRede(r) && isAgendadaHoje(r),
   semEq:    r => !isCOPE(r) && !isReagend(r) && !r.nomedaequipe?.trim() && isAtivo(r) && !isRede(r),
   copeAguardando: r => isCOPE(r) && isAtivo(r),
@@ -48,7 +51,7 @@ export const KPI_FILTERS: Record<string, (r: OSRow) => boolean> = {
   reagendFutura: r => isReagend(r) && isAtivo(r) && getReagendTipo(r) === 'futura',
   reagend:       r => isReagend(r) && isAtivo(r),
 }
-export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticas','semEq','copeAguardando','reagendInviab','reagendMobile','reagendFutura','reagend'])
+export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','atendHoje','atendAmanha','atendFutura','criticas','semEq','copeAguardando','reagendInviab','reagendMobile','reagendFutura','reagend'])
 
 type AccentConfig = { solid: string; glow: string; bg: string }
 export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
@@ -63,6 +66,7 @@ export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
 
 export const KPI_ICONS: Partial<Record<string, IconComp>> = {
   criticas: AlertCircle, semEq: Users, pend: Clock, atend: Activity,
+  atendHoje: Activity, atendAmanha: CalendarClock, atendFutura: CalendarDays,
   copeAguardando: Send,
   reagendInviab: RotateCcw, reagendMobile: RotateCcw, reagendFutura: RotateCcw, reagend: RotateCcw,
   total: BarChart3, rede: Radio, concl: CheckCircle2, taxa: Target,

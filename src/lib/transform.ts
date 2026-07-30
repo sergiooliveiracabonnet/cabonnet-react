@@ -242,6 +242,23 @@ export function getReagendTipo(r: Pick<OSRow, 'nomedaequipe'>): ReagendTipo | nu
   return 'futura'
 }
 
+export type AtendimentoBucket = 'hoje' | 'amanha' | 'futura'
+
+// Classifica uma OS em atendimento pela data de agendamento: hoje (equipe em
+// campo agora), amanhã, ou futura (equipe já designada mas só sai depois de
+// amanhã — inclui também OS sem dataagendamento preenchida).
+export function getAtendimentoBucket(r: Pick<OSRow, 'dataagendamento'>, now: Date = new Date()): AtendimentoBucket {
+  const fmt = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+  const hojeStr = fmt(now)
+  const amanha = new Date(now)
+  amanha.setDate(amanha.getDate() + 1)
+  const amanhaStr = fmt(amanha)
+  const dataAgend = (r.dataagendamento || '').split(' ')[0]
+  if (dataAgend === hojeStr)   return 'hoje'
+  if (dataAgend === amanhaStr) return 'amanha'
+  return 'futura'
+}
+
 const WES_CODES  = new Set(['F08', 'F11', 'F23', 'F36', 'F44'])
 const INST_CODES = new Set(['F01', 'F04', 'F05', 'F07', 'F20', 'F45', 'F46', 'F47', 'F48', 'F49', 'F50'])
 const THM_CODES  = new Set(['F12', 'F13', 'F14'])

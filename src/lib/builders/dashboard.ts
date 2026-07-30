@@ -1,4 +1,4 @@
-import { isExecucaoReal, isCOPE, isReagend, getReagendTipo, parseDate } from '../transform'
+import { isExecucaoReal, isCOPE, isReagend, getReagendTipo, getAtendimentoBucket, parseDate } from '../transform'
 import type { OSRow, KPI } from '../types'
 import {
   avg, calcMTTR, mttrStats, estourouSLA, scoreComposto, mttrToScore, SCORE_PESOS,
@@ -121,7 +121,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const _hojeStr = `${String(_now.getDate()).padStart(2, '0')}/${String(_now.getMonth() + 1).padStart(2, '0')}/${_now.getFullYear()}`
   const isAgendadaHoje = (r: OSRow) => (r.dataagendamento || '').split(' ')[0] === _hojeStr
 
-  let pend = 0, atend = 0, redeCount = 0, criticas = 0, criticasHoje = 0, semEquipe = 0
+  let pend = 0, atend = 0, atendHoje = 0, atendAmanha = 0, atendFutura = 0, redeCount = 0, criticas = 0, criticasHoje = 0, semEquipe = 0
   let reagendInviab = 0, reagendMobile = 0, reagendFutura = 0
   let copeAguardando = 0
   let slaExcFila = 0, semAgendamento = 0
@@ -146,7 +146,13 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     if (!isAtivo(r)) continue
     if (isRede(r)) { redeCount++; continue }
     if (r._situacaoEfetiva === 'Pendente')    pend++
-    if (r._situacaoEfetiva === 'Atendimento') atend++
+    if (r._situacaoEfetiva === 'Atendimento') {
+      atend++
+      const bucket = getAtendimentoBucket(r)
+      if      (bucket === 'hoje')   atendHoje++
+      else if (bucket === 'amanha') atendAmanha++
+      else                          atendFutura++
+    }
     if (!r.nomedaequipe?.trim()) semEquipe++
     if (r._slaCritico) {
       criticas++
@@ -400,6 +406,9 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     { id: 'semEq',    title: 'Sem Equipe',        value: semEquipe,  sub: 'pendente atribuição',            accent: 'orange' },
     { id: 'pend',     title: 'Pendentes',         value: pend,       sub: 'aguardando campo',               accent: 'yellow' },
     { id: 'atend',    title: 'Em Atendimento',    value: atend,      sub: 'em campo + agend. futuro',       accent: 'cyan'   },
+    { id: 'atendHoje',   title: 'Em Campo (Hoje)',    value: atendHoje,   sub: 'agend. para hoje',           accent: 'cyan'    },
+    { id: 'atendAmanha', title: 'Em Campo (Amanhã)',  value: atendAmanha, sub: 'agend. para amanhã',         accent: 'primary' },
+    { id: 'atendFutura', title: 'Agendamento Futuro', value: atendFutura, sub: 'equipe já designada',        accent: 'purple'  },
     { id: 'copeAguardando', title: 'Aguard. Roteirização', value: copeAguardando, sub: 'parado no COPE',   accent: 'orange' },
     { id: 'reagendInviab', title: 'Reag. Inviab.', value: reagendInviab, sub: 'reagend. por inviabilidade',  accent: 'orange' },
     { id: 'reagendMobile', title: 'Reag. Mobile',  value: reagendMobile, sub: 'reagend. via OS mobile',      accent: 'orange' },
