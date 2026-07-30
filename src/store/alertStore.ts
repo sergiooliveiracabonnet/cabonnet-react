@@ -33,13 +33,11 @@ export const DEFAULT_SLA_LIMITS: SlaLimits = {
   VT08H:      1,
 }
 
-// Meta de SLA (% dentro do prazo) por operadora. Herda os valores que os
-// gestores tinham configurado como meta de score — mesma escala 0–100, mesma
-// semântica de alvo. Revise se 70% for baixo demais como meta contratual.
+// Meta de SLA (% das OS entregues dentro do prazo) por operadora.
 export const DEFAULT_META_SLA: Record<string, number> = {
-  WES:        70,
-  Instacable: 70,
-  THM:        70,
+  WES:        80,
+  Instacable: 80,
+  THM:        80,
 }
 
 interface AlertState {
@@ -54,6 +52,37 @@ interface AlertState {
   updateMetaSla:    (operadora: string, valor: number) => void
   resetMetaSla:     () => void
   toggleAcknowledged: (id: string) => void
+}
+
+export const ALERT_STORE_VERSION = 4
+
+type PersistedAlertState = Partial<AlertState> & {
+  /** Removido na v4: era a meta do score composto do fornecedor. */
+  metaScore?: Record<string, number>
+}
+
+/**
+ * Exportada para teste: a lógica de reset por versão é fácil de errar em
+ * silêncio, e o erro só aparece no navegador de quem já tinha dado salvo.
+ *
+ * v4 zera a meta por operadora de propósito. O valor salvo era alvo de um score
+ * composto (SLA 45% + conclusão 35% + MTTR 20%) que não existe mais; carregá-lo
+ * como meta de SLA manteria o número e trocaria o significado por baixo do
+ * gestor. Quem tinha meta customizada precisa reconfigurar — em compensação, o
+ * número que ele vê passa a medir o que o rótulo diz.
+ */
+export function migrateAlertStore(persisted: unknown, version: number): AlertState {
+  // metaScore sai do objeto: sem isso o spread abaixo carregaria a chave morta
+  // de volta para o localStorage a cada migração, acumulando lixo para sempre.
+  const { metaScore: _obsoleto, ...current } = (persisted ?? {}) as PersistedAlertState
+  void _obsoleto
+  return {
+    ...current,
+    slaLimits:    current.slaLimits ?? DEFAULT_SLA_LIMITS,
+    metaSla:      version < 4 ? DEFAULT_META_SLA : current.metaSla ?? DEFAULT_META_SLA,
+    rules:        current.rules ?? DEFAULT_RULES,
+    acknowledged: version < 2 ? {} : current.acknowledged ?? {},
+  } as AlertState
 }
 
 export const useAlertStore = create<AlertState>()(
@@ -87,20 +116,8 @@ export const useAlertStore = create<AlertState>()(
     }),
     {
       name:    'cabonnet-alert-store',
-      version: 3,
-      migrate: (persisted, version) => {
-        // v3 aposentou o score composto do fornecedor: a meta por operadora passa
-        // a ser de SLA. Carrega o valor que o gestor ja tinha salvo em metaScore
-        // em vez de reiniciar a configuracao dele.
-        const current = persisted as Partial<AlertState> & { metaScore?: Record<string, number> }
-        return {
-          ...current,
-          slaLimits: current.slaLimits ?? DEFAULT_SLA_LIMITS,
-          metaSla:   current.metaSla ?? current.metaScore ?? DEFAULT_META_SLA,
-          rules: current.rules ?? DEFAULT_RULES,
-          acknowledged: version < 2 ? {} : current.acknowledged ?? {},
-        } as AlertState
-      },
+      version: ALERT_STORE_VERSION,
+      migrate: migrateAlertStore,
     }
   )
 )
