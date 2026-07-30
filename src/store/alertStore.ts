@@ -33,7 +33,10 @@ export const DEFAULT_SLA_LIMITS: SlaLimits = {
   VT08H:      1,
 }
 
-export const DEFAULT_META_SCORE: Record<string, number> = {
+// Meta de SLA (% dentro do prazo) por operadora. Herda os valores que os
+// gestores tinham configurado como meta de score — mesma escala 0–100, mesma
+// semântica de alvo. Revise se 70% for baixo demais como meta contratual.
+export const DEFAULT_META_SLA: Record<string, number> = {
   WES:        70,
   Instacable: 70,
   THM:        70,
@@ -42,14 +45,14 @@ export const DEFAULT_META_SCORE: Record<string, number> = {
 interface AlertState {
   rules:      AlertRule[]
   slaLimits:  SlaLimits
-  metaScore:  Record<string, number>
+  metaSla:    Record<string, number>
   acknowledged: Record<string, number>
   updateRule:       (id: string, patch: Partial<AlertRule>) => void
   resetRules:       () => void
   updateSlaLimit:   (tipo: keyof SlaLimits, dias: number) => void
   resetSlaLimits:   () => void
-  updateMetaScore:  (operadora: string, valor: number) => void
-  resetMetaScore:   () => void
+  updateMetaSla:    (operadora: string, valor: number) => void
+  resetMetaSla:     () => void
   toggleAcknowledged: (id: string) => void
 }
 
@@ -58,7 +61,7 @@ export const useAlertStore = create<AlertState>()(
     (set) => ({
       rules:     DEFAULT_RULES,
       slaLimits: DEFAULT_SLA_LIMITS,
-      metaScore: DEFAULT_META_SCORE,
+      metaSla:   DEFAULT_META_SLA,
       acknowledged: {},
 
       updateRule: (id, patch) =>
@@ -71,10 +74,10 @@ export const useAlertStore = create<AlertState>()(
 
       resetSlaLimits: () => set({ slaLimits: DEFAULT_SLA_LIMITS }),
 
-      updateMetaScore: (operadora, valor) =>
-        set((s) => ({ metaScore: { ...s.metaScore, [operadora]: Number(valor) } })),
+      updateMetaSla: (operadora, valor) =>
+        set((s) => ({ metaSla: { ...s.metaSla, [operadora]: Number(valor) } })),
 
-      resetMetaScore: () => set({ metaScore: DEFAULT_META_SCORE }),
+      resetMetaSla: () => set({ metaSla: DEFAULT_META_SLA }),
       toggleAcknowledged: (id) => set((s) => {
         const acknowledged = { ...s.acknowledged }
         if (acknowledged[id]) delete acknowledged[id]
@@ -84,13 +87,16 @@ export const useAlertStore = create<AlertState>()(
     }),
     {
       name:    'cabonnet-alert-store',
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
-        const current = persisted as Partial<AlertState>
+        // v3 aposentou o score composto do fornecedor: a meta por operadora passa
+        // a ser de SLA. Carrega o valor que o gestor ja tinha salvo em metaScore
+        // em vez de reiniciar a configuracao dele.
+        const current = persisted as Partial<AlertState> & { metaScore?: Record<string, number> }
         return {
           ...current,
           slaLimits: current.slaLimits ?? DEFAULT_SLA_LIMITS,
-          metaScore: current.metaScore ?? DEFAULT_META_SCORE,
+          metaSla:   current.metaSla ?? current.metaScore ?? DEFAULT_META_SLA,
           rules: current.rules ?? DEFAULT_RULES,
           acknowledged: version < 2 ? {} : current.acknowledged ?? {},
         } as AlertState

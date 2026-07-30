@@ -1,6 +1,6 @@
 import { isExecucaoReal } from '../transform'
 import type { OSRow, Fornecedor } from '../types'
-import { avg, calcMTTR, scoreComposto, slaPeriodoPct, shortName } from './_helpers'
+import { avg, calcMTTR, slaPeriodoPct, shortName } from './_helpers'
 
 const FORN_DISPLAY: Partial<Record<Fornecedor, { label: string; cor: string }>> = {
   WES:        { label: 'WES (Instalação)', cor: '#c4b5fd' },
@@ -37,7 +37,6 @@ export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<
     // métrica duas vezes no score (65% do peso numa variável só)
     const sla        = slaPeriodoPct(gr)
     const mttr       = calcMTTR(gr)
-    const score      = scoreComposto(sla, conclPct, mttr)
 
     const eqMap = new Map<string, { rows: OSRow[]; concluidas: number; criticas: number; agingArr: number[]; mttrRows: OSRow[] }>()
     for (const r of gr) {
@@ -71,15 +70,22 @@ export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<
       nome:    FORN_DISPLAY[key as Fornecedor]?.label ?? key,
       cor:     FORN_DISPLAY[key as Fornecedor]?.cor   ?? '#64748b',
       fornKey: key,
-      kpis:    { total, concluidas, criticas, sla, mttr, score, custoMensal, custoPorOs },
+      kpis:    { total, concluidas, criticas, sla, conclPct, mttr, custoMensal, custoPorOs },
       equipes, chart,
     }
   })
 
+  // Ordena por SLA — o número contratual, que é do que se cobra um fornecedor.
+  // Antes era um score composto (SLA 45% + conclusão 35% + MTTR 20%): pesos sem
+  // base empírica que misturavam cumprimento de prazo com volume entregue, então
+  // um fornecedor podia subir no ranking entregando mais e cumprindo menos.
   const ranking = [...paineis]
     .filter(p => p.kpis.total > 0)
-    .sort((a, b) => b.kpis.score - a.kpis.score)
-    .map(p => ({ nome: p.nome, cor: p.cor, fornKey: p.fornKey, score: p.kpis.score, sla: p.kpis.sla, mttr: p.kpis.mttr, total: p.kpis.total }))
+    .sort((a, b) => b.kpis.sla - a.kpis.sla || a.kpis.mttr - b.kpis.mttr)
+    .map(p => ({
+      nome: p.nome, cor: p.cor, fornKey: p.fornKey,
+      sla: p.kpis.sla, conclPct: p.kpis.conclPct, mttr: p.kpis.mttr, total: p.kpis.total,
+    }))
 
   return { paineis, ranking }
 }

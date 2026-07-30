@@ -22,10 +22,12 @@ const FORNECEDORES = [
   { value: 'INTERNO',    label: 'Interno (COPE)',     color: '#94a3b8' },
 ]
 
-function scoreColor(s: number): { text: string; bg: string; border: string; label: string } {
-  if (s >= 80) return { text: 'text-green',   bg: 'bg-green/10',   border: 'border-green/20',   label: 'Excelente' }
-  if (s >= 60) return { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', label: 'Bom'       }
-  if (s >= 40) return { text: 'text-yellow',  bg: 'bg-yellow/10',  border: 'border-yellow/20',  label: 'Regular'   }
+// Faixas de SLA, não de score: 75% de cumprimento de prazo não é "Bom" para um
+// fornecedor sob contrato, é problema. Régua mais exigente que a do score antigo.
+function slaColor(s: number): { text: string; bg: string; border: string; label: string } {
+  if (s >= 90) return { text: 'text-green',   bg: 'bg-green/10',   border: 'border-green/20',   label: 'Excelente' }
+  if (s >= 80) return { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', label: 'Bom'       }
+  if (s >= 65) return { text: 'text-yellow',  bg: 'bg-yellow/10',  border: 'border-yellow/20',  label: 'Regular'   }
   return              { text: 'text-red',     bg: 'bg-red/10',     border: 'border-red/20',     label: 'Crítico'   }
 }
 
@@ -38,7 +40,7 @@ export default function FornecedorPage() {
   const [filtro,    setFiltro]    = useState('')
   const [aiEnabled, setAiEnabled] = useState(false)
   const { rows, isLoading }       = useOSDerived()
-  const { metaScore, updateMetaScore }         = useAlertStore()
+  const { metaSla, updateMetaSla }             = useAlertStore()
   const { custoFornecedor, setCustoFornecedor } = useERPStore()
   const isGestor = useIsGestor()
 
@@ -49,8 +51,8 @@ export default function FornecedorPage() {
 
   const aiFornecedoresInput = useMemo(() => ranking.map(f => ({
     nome:         f.nome,
-    score:        f.score,
     sla:          f.sla,
+    concl_pct:    f.conclPct,
     mttr:         f.mttr,
     total:        f.total,
     criticas:     paineis.find(p => p.nome === f.nome)?.kpis?.criticas ?? 0,
@@ -93,18 +95,18 @@ export default function FornecedorPage() {
 
       {isLoading ? <KPIGridSkeleton count={6} /> : (
         <>
-          {/* Ranking por Score Composto */}
+          {/* Ranking por SLA */}
           {ranking.length > 1 && (
             <div className="bg-card border border-white/[0.08] rounded-xl p-4">
-              <SectionTitle icon={Award} className="mb-3">Ranking por Score Composto</SectionTitle>
+              <SectionTitle icon={Award} className="mb-3">Ranking por SLA</SectionTitle>
               <p className="text-caption text-muted mb-4">
-                Score = SLA 45% + Conclusão 35% + MTTR 20% — quanto maior, melhor.
+                SLA = % das OS entregues dentro do prazo. Empate desconta pelo menor MTTR.
                 A linha vertical indica a meta configurada.
               </p>
               <div className="space-y-3">
                 {ranking.map((f, i) => {
-                  const sc   = scoreColor(f.score)
-                  const meta = metaScore[f.nome] ?? metaScore[f.fornKey] ?? null
+                  const sc   = slaColor(f.sla)
+                  const meta = metaSla[f.nome] ?? metaSla[f.fornKey] ?? null
                   return (
                     <div key={f.nome} className="flex items-center gap-3">
                       <span className="text-caption font-mono text-muted w-4 text-right flex-shrink-0">{i + 1}</span>
@@ -115,7 +117,7 @@ export default function FornecedorPage() {
                       <div className="flex-1 relative" style={{ height: 8 }}>
                         <div className="absolute inset-0 bg-surface rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all duration-slow"
-                            style={{ width: `${f.score}%`, background: f.cor }} />
+                            style={{ width: `${f.sla}%`, background: f.cor }} />
                         </div>
                         {meta != null && (
                           <div
@@ -126,7 +128,7 @@ export default function FornecedorPage() {
                         )}
                       </div>
 
-                      <span className={`text-label font-mono font-bold w-10 text-right flex-shrink-0 ${sc.text}`}>{f.score}</span>
+                      <span className={`text-label font-mono font-bold w-10 text-right flex-shrink-0 ${sc.text}`}>{f.sla}%</span>
                       <span className={`text-caption font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${sc.text} ${sc.bg} ${sc.border}`}>
                         {sc.label}
                       </span>
@@ -137,24 +139,24 @@ export default function FornecedorPage() {
                         <input
                           type="number" min={0} max={100}
                           value={meta ?? ''}
-                          onChange={e => isGestor && updateMetaScore(f.nome, Number(e.target.value))}
+                          onChange={e => isGestor && updateMetaSla(f.nome, Number(e.target.value))}
                           disabled={!isGestor}
                           placeholder="Meta"
                           className="w-14 bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 text-caption font-mono
                                      text-text text-center outline-none focus:border-primary/50 transition-colors disabled:opacity-40"
-                          title={isGestor ? "Meta de score para esta operadora" : "Apenas gestores podem editar"}
+                          title={isGestor ? "Meta de SLA para esta operadora" : "Apenas gestores podem editar"}
                         />
                       </div>
 
                       <span className="text-caption text-muted w-20 text-right hidden lg:block flex-shrink-0">
-                        SLA {f.sla}% · {f.mttr}d MTTR
+                        {f.conclPct}% concl. · {f.mttr}d MTTR
                       </span>
                     </div>
                   )
                 })}
               </div>
               <p className="text-caption text-muted/50 mt-3">
-                * Edite o campo "Meta" para definir a meta de score de cada operadora. O marcador vertical aparece na barra.
+                * Edite o campo "Meta" para definir a meta de SLA de cada operadora. O marcador vertical aparece na barra.
               </p>
             </div>
           )}
@@ -224,7 +226,7 @@ export default function FornecedorPage() {
               <FornecedorPanel key={p.nome} {...p}
                 custoMensal={custoFornecedor[p.fornKey] ?? 0}
                 onCustoChange={(v) => setCustoFornecedor(p.fornKey, v)}
-                meta={metaScore[p.nome] ?? null}
+                meta={metaSla[p.nome] ?? null}
                 isGestor={isGestor}
               />
             ))}
@@ -240,7 +242,7 @@ export default function FornecedorPage() {
   )
 }
 
-interface PanelKpis { total: number; concluidas: number; criticas: number; sla: number; mttr: number; score: number; custoMensal?: number; custoPorOs?: number | null }
+interface PanelKpis { total: number; concluidas: number; criticas: number; sla: number; conclPct: number; mttr: number; custoMensal?: number; custoPorOs?: number | null }
 interface PanelEquipe { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }
 interface PanelChart  { labels: unknown[]; total: unknown[]; concluidas: unknown[] }
 
@@ -255,8 +257,8 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
   isGestor: boolean
 }) {
   const [expanded, setExpanded] = useState(true)
-  const sc = scoreColor(kpis?.score ?? 0)
-  const acimaDoMeta = meta != null && kpis?.score != null && kpis.score >= meta
+  const sc = slaColor(kpis?.sla ?? 0)
+  const acimaDoMeta = meta != null && kpis?.sla != null && kpis.sla >= meta
 
   const FROM: Record<string, string> = { primary: 'from-primary/[0.07]', green: 'from-green/[0.07]', red: 'from-red/[0.07]', yellow: 'from-yellow/[0.07]', orange: 'from-orange/[0.07]' }
   const TEXT: Record<string, string> = { primary: 'text-primary', green: 'text-green', red: 'text-red', yellow: 'text-yellow', orange: 'text-orange' }
@@ -267,7 +269,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
     { label: 'Críticas',       value: kpis.criticas,   accent: 'red'     },
     { label: 'SLA',            value: `${kpis.sla}%`,  accent: kpis.sla >= 90 ? 'green' : 'yellow' },
     { label: 'MTTR (dias)',    value: `${kpis.mttr}d`, accent: kpis.mttr <= 2 ? 'green' : kpis.mttr <= 5 ? 'yellow' : 'red' },
-    { label: 'Score Composto', value: kpis.score,      accent: kpis.score >= 80 ? 'green' : kpis.score >= 60 ? 'primary' : kpis.score >= 40 ? 'yellow' : 'red' },
+    { label: 'Taxa Conclusão', value: `${kpis.conclPct}%`, accent: kpis.conclPct >= 80 ? 'green' : kpis.conclPct >= 60 ? 'primary' : 'yellow' },
     { label: 'Custo / OS',     value: fmtCusto(kpis.custoPorOs), accent: 'orange' },
   ] : []
 
@@ -279,14 +281,14 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
         <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: cor }} />
         <h3 className="font-headline font-bold text-title text-text flex-1">{nome}</h3>
         <div className="flex items-center gap-2 flex-wrap">
-          {kpis?.score != null && (
+          {kpis?.sla != null && (
             <span className={`text-caption font-mono font-bold px-2 py-0.5 rounded border ${sc.text} ${sc.bg} ${sc.border}`}>
-              Score {kpis.score}
+              SLA {kpis.sla}%
             </span>
           )}
           {meta != null && (
             <span className={`text-caption font-bold px-1.5 py-0.5 rounded border ${acimaDoMeta ? 'badge-green' : 'badge-red'}`}>
-              {acimaDoMeta ? '↑ Acima da meta' : '↓ Abaixo da meta'} ({meta})
+              {acimaDoMeta ? '↑ Acima da meta' : '↓ Abaixo da meta'} ({meta}%)
             </span>
           )}
           {kpis?.sla != null && <Badge variant={kpis.sla >= 90 ? 'green' : kpis.sla >= 75 ? 'yellow' : 'red'}>SLA {kpis.sla}%</Badge>}

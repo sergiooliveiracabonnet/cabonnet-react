@@ -949,7 +949,7 @@ def _ai_campo_previsao(payload):
 
 
 def _ai_fornecedor_rec(payload):
-    """Avalia portfolio de fornecedores (score, SLA, MTTR, custo) e recomenda realocação."""
+    """Avalia portfolio de fornecedores (SLA, conclusão, MTTR, custo) e recomenda realocação."""
     data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
     now = _time_mod.time()
 
@@ -962,7 +962,7 @@ def _ai_fornecedor_rec(payload):
         return None
 
     forn_txt = "\n".join(
-        f"  - {f['nome']}: score={f.get('score',0)}, SLA={f.get('sla',0)}%, "
+        f"  - {f['nome']}: SLA={f.get('sla',0)}%, conclusao={f.get('concl_pct',0)}%, "
         f"MTTR={f.get('mttr',0):.1f}d, total={f.get('total',0)} OS, "
         f"críticas={f.get('criticas',0)}, custo/OS=R${f.get('custo_por_os',0)}"
         for f in payload.get("fornecedores", [])
@@ -970,12 +970,12 @@ def _ai_fornecedor_rec(payload):
 
     prompt = (
         "Você é um analista de fornecedores de ISP regional. "
-        "Avalie o portfolio considerando score composto, SLA, MTTR e custo por OS. "
+        "Avalie o portfolio considerando SLA (% no prazo), taxa de conclusao, MTTR e custo por OS. "
         "Identifique o melhor, o pior e recomende onde aumentar ou reduzir alocação.\n\n"
         "=== FORNECEDORES ===\n"
         f"{forn_txt}\n\n"
-        "Tier A: alto score, baixo custo, SLA acima da meta. "
-        "Tier B: performance mediana. Tier C: baixo score ou custo elevado sem contrapartida.\n\n"
+        "Tier A: SLA acima da meta, baixo custo, MTTR curto. "
+        "Tier B: performance mediana. Tier C: SLA baixo ou custo elevado sem contrapartida.\n\n"
         "Responda SOMENTE com JSON válido, sem markdown:\n"
         '{"narrativa": "1-2 frases: diagnóstico do portfolio com dados", '
         '"ranking": [{"nome": "...", "tier": "A|B|C", '

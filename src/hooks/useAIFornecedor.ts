@@ -3,8 +3,8 @@ import { useAIQuery } from './useAIQuery'
 
 interface FornecedorRankItem {
   nome:         string
-  score:        number
   sla:          number
+  concl_pct:    number
   mttr:         number
   total:        number
   criticas:     number

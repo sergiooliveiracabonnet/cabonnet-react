@@ -8,21 +8,11 @@ export function avg(arr: number[]): number {
   return arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0
 }
 
-// ─── Score composto — FONTE ÚNICA de pesos ────────────────────────────────────
-// Todo score composto do sistema (dashboard, fornecedores, equipes) usa estes
-// pesos. O Hero anuncia "SLA 45 · Taxa 35 · MTTR 20" — mudou aqui, mudou em tudo.
-
-export const SCORE_PESOS = { sla: 0.45, taxa: 0.35, mttr: 0.20 } as const
-
-export function mttrToScore(mttr: number): number {
-  return Math.max(0, 100 - mttr * 8)
-}
-
-export function scoreComposto(sla: number, taxa: number, mttr: number): number {
-  return Math.min(100, Math.round(
-    sla * SCORE_PESOS.sla + taxa * SCORE_PESOS.taxa + mttrToScore(mttr) * SCORE_PESOS.mttr
-  ))
-}
+// O score composto (SLA 45% + taxa 35% + MTTR 20%, com MTTR convertido por
+// `100 - mttr*8`) foi removido. Nenhum dos pesos nem o fator 8 tinham base
+// empírica, e o número misturava estoque com fluxo: ninguém agia sobre "72".
+// Onde ele existia — Pulso, fornecedores, equipes — as componentes passaram a
+// ser reportadas direto, cada uma na própria unidade.
 
 // ─── SLA — predicado único de violação ────────────────────────────────────────
 // Sempre conta a partir da abertura da OS: aging (congelado na baixa para
