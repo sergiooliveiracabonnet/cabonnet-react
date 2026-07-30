@@ -24,13 +24,14 @@ import {
 } from './DashboardPaineis'
 import { KpiModalTable } from './DashboardKpiModal'
 import { CoortePanel } from './CoortePanel'
+import { CapacidadePanel } from './CapacidadePanel'
 import {
   KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS, FOCO_NAVEGAVEL,
   type ModalState, type TypedDashboard, type CampoProjecaoReal,
 } from './DashboardTypes'
 
 export default function DashboardPage() {
-  const { derived: { dashboard, anomalias, campo, graficos, revisitas, coorte }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
+  const { derived: { dashboard, anomalias, campo, graficos, revisitas, coorte, capacidade }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
   const { kpis, fornecedores, pulso, mudancas, projecaoRisco } = dashboard as unknown as TypedDashboard
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
   const taxaRevisitas = (revisitas as { taxa?: { geral?: number } } | null)?.taxa?.geral ?? null
@@ -253,6 +254,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+          <CapacidadePanel horizonte={capacidade.horizonte} cidades={capacidade.cidades} />
           <RitmoEquipesPanel semaforo={campo.semaforo} onOpen={openEquipe} />
           <CidadesValePanel filaAtiva={filaAtiva}
                             onOpen={(title, rows) => setModal({ title, rows })} />
