@@ -278,10 +278,12 @@ def _build_ordens_detalhado(operadora=None):
     if not rows:
         return "⏳ Sem dados disponíveis. Acesse o dashboard para carregar os dados."
     rows   = _filter_by_operadora(rows, operadora)
+    hoje_str = date.today().strftime("%d/%m/%Y")
     ativos = [r for r in rows if r.get("descsituacao") in ("Pendente", "Atendimento")
-              and not (r.get("servico") or "").upper().startswith("REDE")]
+              and not (r.get("servico") or "").upper().startswith("REDE")
+              and r.get("dataagendamento") == hoje_str]
     if not ativos:
-        return "✅ Nenhuma OS ativa no momento."
+        return "✅ Nenhuma OS ativa agendada para hoje."
     hoje = date.today()
 
     def _aging_r(r):

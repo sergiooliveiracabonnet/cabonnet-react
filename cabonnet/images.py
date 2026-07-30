@@ -279,9 +279,11 @@ def _build_img_detalhado(operadora=None):
         return None
 
     hoje  = date.today()
+    hoje_str = hoje.strftime("%d/%m/%Y")
     rows  = _filter_by_operadora(rows, operadora)
     ativos = [r for r in rows if r.get("descsituacao") in ("Pendente", "Atendimento")
-              and not (r.get("servico") or "").upper().startswith("REDE")]
+              and not (r.get("servico") or "").upper().startswith("REDE")
+              and r.get("dataagendamento") == hoje_str]
     if not ativos:
         return None
 
