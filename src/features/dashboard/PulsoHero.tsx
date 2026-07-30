@@ -73,7 +73,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
     { id: 'taxa', deltaId: 'taxa', label: 'Taxa Conclusão', nota: null,    valor: `${taxa}%`,
       cor: taxa >= 80 ? '#4ade80' : taxa >= 60 ? '#facc15' : '#f87171' },
     { id: 'mttr', deltaId: 'mttr', label: 'MTTR',           nota: null,    valor: mttr > 0 ? `${mttr.toLocaleString('pt-BR')}d` : '—',
-      cor: mttr === 0 ? '#94a3b8' : mttr <= 2 ? '#4ade80' : mttr <= 5 ? '#facc15' : '#f87171' },
+      cor: mttr === 0 ? '#71717a' : mttr <= 2 ? '#4ade80' : mttr <= 5 ? '#facc15' : '#f87171' },
   ]
   const pior = [...vitais].find(v => v.cor === '#f87171') ?? null
 

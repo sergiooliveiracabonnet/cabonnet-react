@@ -351,7 +351,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
     frentes: frentesAtivas.size, prodFrenteDia,
   }
 
-  let concl = 0, totalPeriodo = 0, totalMaduro = 0, conclNoPrazo = 0
+  let concl = 0, totalMaduro = 0, conclNoPrazo = 0
   const fornMap = new Map<string, { total: number; concluidas: number; noPrazo: number }>()
   for (const r of rows) {
     if (isCOPE(r) || isReagend(r)) continue
@@ -364,7 +364,6 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
       if (!estourouSLA(r)) f.noPrazo++
     }
     if (isRede(r)) continue
-    totalPeriodo++
     const concluida = isExecucaoReal(r.descsituacao)
     if (concluida) {
       concl++
