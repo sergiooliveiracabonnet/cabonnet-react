@@ -25,16 +25,10 @@ function makePulso(overrides: Partial<Pulso> = {}): Pulso {
   }
 }
 
-const evolucao = {
-  labels: Array.from({ length: 14 }, (_, i) => `2026-07-${String(i + 1).padStart(2, '0')}`),
-  abertas: Array.from({ length: 14 }, (_, i) => 40 + i),
-  concluidas: Array.from({ length: 14 }, (_, i) => 38 + i),
-}
-
 describe('PulsoHero', () => {
   it('renderiza score, tendência e narrativa', () => {
     render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false}
-                       tendencia={{ atual: 82, anterior: 78, delta: 4 }} evolucao={evolucao} />)
+                       tendencia={{ atual: 82, anterior: 78, delta: 4 }} />)
     expect(screen.getByText('82')).toBeInTheDocument()
     const anterior = screen.getByTestId('score-periodo-anterior')
     expect(within(anterior).getByText('Anterior')).toBeInTheDocument()
@@ -45,27 +39,29 @@ describe('PulsoHero', () => {
   })
 
   it('renderiza as 4 métricas de fluxo sem duplicar sparklines do painel detalhado', () => {
-    const { container } = render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} evolucao={evolucao} />)
+    const { container } = render(<PulsoHero pulso={makePulso({ backlogDias: 3.2 })} aiData={null} isLoadingAI={false} />)
     expect(screen.getByText('Entradas hoje')).toBeInTheDocument()
     expect(screen.getByText('46')).toBeInTheDocument()
     expect(screen.getByText('Concluídas hoje')).toBeInTheDocument()
     expect(screen.getByText('51')).toBeInTheDocument()
     expect(screen.getByText('Saldo do dia')).toBeInTheDocument()
     expect(screen.getByText('fila encolhendo')).toBeInTheDocument()
-    expect(screen.getByText('Projeção do mês')).toBeInTheDocument()
-    expect(screen.getByText('1.310')).toBeInTheDocument()
+    // Projeção do mês vive no MetaMesCard; aqui entra o backlog de capacidade
+    expect(screen.getByText('Backlog da fila')).toBeInTheDocument()
+    expect(screen.getByText('3,2d')).toBeInTheDocument()
+    expect(screen.queryByText('Projeção do mês')).not.toBeInTheDocument()
     expect(container.querySelectorAll('svg[aria-hidden="true"]:not([class*="lucide"]) path')).toHaveLength(0)
   })
 
   it('breakdown do score fica em popover, mini-stats antigos não vivem mais aqui', () => {
-    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} evolucao={evolucao} />)
+    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} />)
     expect(screen.getByText('Peso: SLA 45% · Taxa 35% · MTTR 20%')).toBeInTheDocument()
     expect(screen.queryByText('Sem Agend.')).not.toBeInTheDocument()
     expect(screen.queryByText('Revisitas')).not.toBeInTheDocument()
   })
 
   it('prioriza a narrativa nativa e mantém o formulário de IA recolhido', () => {
-    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} onRequestAI={() => {}} evolucao={evolucao} />)
+    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} onRequestAI={() => {}} />)
     expect(screen.getByText('A fila recua pelo terceiro dia seguido.')).toBeInTheDocument()
     expect(screen.queryByPlaceholderText(/Contexto opcional para a IA/)).not.toBeInTheDocument()
 
@@ -77,7 +73,7 @@ describe('PulsoHero', () => {
   })
 
   it('score breakdown popover tem nome acessivel e aria-describedby', () => {
-    const { container } = render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} evolucao={evolucao} />)
+    const { container } = render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} />)
 
     // Localizar o trigger (div com role="button")
     const trigger = container.querySelector('[role="button"][aria-label="Detalhar composição do score"]')
@@ -91,7 +87,7 @@ describe('PulsoHero', () => {
   })
 
   it('score breakdown não renderiza quando scoreBreakdown está vazio', () => {
-    const { container } = render(<PulsoHero pulso={makePulso({ scoreBreakdown: [] })} aiData={null} isLoadingAI={false} evolucao={evolucao} />)
+    const { container } = render(<PulsoHero pulso={makePulso({ scoreBreakdown: [] })} aiData={null} isLoadingAI={false} />)
 
     // Trigger não deve ter aria-describedby quando não há breakdown
     const trigger = container.querySelector('[role="button"][aria-label="Detalhar composição do score"]')

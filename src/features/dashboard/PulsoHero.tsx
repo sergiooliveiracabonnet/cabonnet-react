@@ -4,7 +4,6 @@ import { GaugeChart } from '../../components/ui/GaugeChart'
 import type { Pulso } from '../../lib/types'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
 import type { ScoreTendencia } from './DashboardTypes'
-import type { FluxoEvolucao } from './FluxoOSPanel'
 
 export interface AnomaliaContextType {
   total: number
@@ -36,21 +35,17 @@ function FlowMetric({ title, mobileTitle, value, sub, tone = 'neutral' }: FlowMe
   )
 }
 
-export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, tendencia, evolucao }: {
+export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, tendencia }: {
   pulso: Pulso
   aiData: AINarrativeResult | null | undefined
   isLoadingAI: boolean
   onRequestAI?: (obs: string) => void
   target?: number
   tendencia?: ScoreTendencia
-  evolucao: FluxoEvolucao
 }) {
   const [draftObs, setDraftObs] = useState('')
   const [showAIComposer, setShowAIComposer] = useState(false)
   const [showReanalysis, setShowReanalysis] = useState(false)
-
-  // A tendência completa vive em FluxoOSPanel. Aqui mostramos só o estado corrente.
-  void evolucao
 
   const {
     score = 0,
@@ -62,22 +57,13 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
     saidasHoje = 0,
     fluxoHoje = 0,
     entradaMediaDia = 0,
-    metaMes = {
-      concluidas: 0,
-      meta: 0,
-      pct: null,
-      diasUteisRestantes: 0,
-      diasUteisTotal: 0,
-      projecaoFinal: null,
-      status: 'neutro' as const,
-    },
+    backlogDias = null,
   } = pulso
 
   const scoreColor = score >= 85 ? '#4ade80' : score >= 65 ? '#facc15' : '#f87171'
   const weakestId = scoreBreakdown.length > 0
     ? [...scoreBreakdown].sort((a, b) => a.value - b.value)[0].id
     : null
-  const projecaoOk = metaMes.projecaoFinal != null && metaMes.meta > 0 && metaMes.projecaoFinal >= metaMes.meta
 
   type DisplayInsight = { level: string; text: string; ai?: boolean }
   const displayInsights: DisplayInsight[] = aiData?.insights?.length
@@ -294,12 +280,14 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, target, ten
             tone={fluxoHoje < 0 ? 'ok' : fluxoHoje > 0 ? 'warning' : 'neutral'}
             sub={fluxoHoje < 0 ? 'fila encolhendo' : fluxoHoje > 0 ? 'fila crescendo' : 'estável'}
           />
+          {/* Backlog em dias de capacidade: "120 na fila" não decide nada;
+              "3,2 dias no ritmo atual" decide se precisa de frente extra. */}
           <FlowMetric
-            title="Projeção do mês"
-            mobileTitle="Projeção"
-            value={metaMes.projecaoFinal != null ? metaMes.projecaoFinal.toLocaleString('pt-BR') : '—'}
-            tone={metaMes.projecaoFinal != null && metaMes.meta > 0 ? (projecaoOk ? 'ok' : 'warning') : 'neutral'}
-            sub={metaMes.meta > 0 ? `meta ${metaMes.meta}${projecaoOk ? ' · no ritmo' : ''}` : undefined}
+            title="Backlog da fila"
+            mobileTitle="Backlog"
+            value={backlogDias != null ? `${backlogDias.toLocaleString('pt-BR')}d` : '—'}
+            tone={backlogDias == null ? 'neutral' : backlogDias > 3 ? 'warning' : 'ok'}
+            sub={backlogDias != null ? 'no ritmo atual' : 'sem baixas p/ calcular'}
           />
         </div>
 

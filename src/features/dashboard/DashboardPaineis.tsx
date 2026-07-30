@@ -1,39 +1,11 @@
 import { useMemo } from 'react'
 import {
-  TrendingUp, ArrowUpRight, Zap, CheckCircle2, MapPin, Clock, Gauge, Target, AlertCircle, Layers, Package, Activity,
+  Zap, CheckCircle2, MapPin, Clock, Gauge, Target, AlertCircle, Layers, Package, Activity,
 } from 'lucide-react'
 import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } from '../../lib/types'
 import { TrendPill } from '../../components/ui/StatCard'
 import { DashboardPanelHeader, SectionLabel } from './DashboardKpiPrimitives'
-import type { ProjecaoRisco, ScoreTendencia, DashMover, DashFornCard } from './DashboardTypes'
-
-// Painel preditivo: OS que vão estourar o SLA nas próximas 24-48h (clicável → drill-down)
-export function ProjecaoRiscoPanel({ proj, criticasAgora, onOpen }: {
-  proj: ProjecaoRisco; criticasAgora: number; onOpen: (rows: OSRow[]) => void
-}) {
-  if (proj.proj24h === 0 && proj.proj48h === 0) return null
-  const totalProj = proj.proj24h + proj.proj48h
-  return (
-    <button
-      onClick={() => onOpen(proj.amostra)}
-      className="w-full flex flex-wrap items-center gap-x-5 gap-y-2 rounded-md bg-card border-l-2 border-l-orange border border-border
-                 px-4 py-2.5 text-left hover:border-muted/40 transition-colors duration-fast"
-    >
-      <div className="flex items-center gap-2">
-        <TrendingUp size={14} className="text-orange" />
-        <span className="text-caption font-bold uppercase tracking-[0.07em] text-muted">Projeção de risco</span>
-      </div>
-      <span className="text-label text-secondary">
-        <span className="font-semibold text-text tabular-nums">{criticasAgora}</span> críticas agora
-        {' · '}<span className="font-semibold text-orange tabular-nums">+{proj.proj24h}</span> em ≤24h
-        {' · '}<span className="font-semibold text-yellow tabular-nums">+{proj.proj48h}</span> em ≤48h
-      </span>
-      <span className="sm:ml-auto inline-flex items-center gap-1 text-caption font-semibold text-orange">
-        {totalProj} em risco — ver OS <ArrowUpRight size={12} />
-      </span>
-    </button>
-  )
-}
+import type { ScoreTendencia, DashMover, DashFornCard } from './DashboardTypes'
 
 // Faixa de trajetória: Δ do score do período + os fatores que mais mexeram nele
 export function MudancasStrip({ tendencia, mudancas }: { tendencia: ScoreTendencia; mudancas: DashMover[] }) {

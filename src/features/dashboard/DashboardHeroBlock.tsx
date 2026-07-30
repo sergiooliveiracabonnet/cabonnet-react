@@ -1,11 +1,10 @@
 import { useMemo } from 'react'
 import {
-  CheckCircle2, Package, Wrench, Radio, TrendingUp, TrendingDown, Gauge,
-  ArrowDownRight, ArrowUpRight, Minus, AlertCircle,
+  CheckCircle2, Package, Wrench, Radio, TrendingUp, TrendingDown, Gauge, AlertCircle,
 } from 'lucide-react'
 import type { OSRow, PulsoRitmoIntradiario } from '../../lib/types'
 import { SectionLabel } from './DashboardKpiPrimitives'
-import type { CatCfgItem, CampoProjecaoReal, FluxoHoje } from './DashboardTypes'
+import type { CatCfgItem, CampoProjecaoReal } from './DashboardTypes'
 
 // Categorias de negócio do provedor — usa _categoria (calculado em enrichRows)
 const CAT_CFG: CatCfgItem[] = [
@@ -25,32 +24,6 @@ function RitmoIndicator({ p }: { p: CampoProjecaoReal }) {
         {p.status === 'acima' ? 'No ritmo' : p.status === 'abaixo' ? 'Abaixo do ritmo' : 'Início do dia'}
       </span>
       <span className="text-muted">· {p.label}</span>
-    </div>
-  )
-}
-
-function FluxoIndicator({ f }: { f: FluxoHoje }) {
-  const crescendo = f.saldo > 0
-  const cor  = crescendo ? '#fb923c' : f.saldo < 0 ? '#4ade80' : '#94a3b8'
-  const Icon = crescendo ? ArrowUpRight : f.saldo < 0 ? ArrowDownRight : Minus
-  return (
-    <div className="flex items-center gap-1.5 text-caption">
-      <Icon size={11} style={{ color: cor }} />
-      <span className="font-semibold" style={{ color: cor }}>
-        Fila {crescendo ? `+${f.saldo}` : f.saldo} hoje
-      </span>
-      <span className="text-muted">· {f.entradas} entraram · {f.saidas} saíram</span>
-      {f.mediaEntrada != null && f.mediaEntrada > 0 && (() => {
-        const acima = f.entradas > f.mediaEntrada
-        const igual = f.entradas === f.mediaEntrada
-        return (
-          <span className={`flex items-center gap-0.5 font-semibold ${igual ? 'text-muted' : acima ? 'text-orange' : 'text-green'}`}
-                title={`Entradas hoje vs média diária do período (${f.mediaEntrada}/dia)`}>
-            {igual ? <Minus size={10} /> : acima ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-            média {f.mediaEntrada}/d
-          </span>
-        )
-      })()}
     </div>
   )
 }
@@ -93,10 +66,9 @@ function RitmoIntradiarioBar({ r }: { r: PulsoRitmoIntradiario }) {
   )
 }
 
-export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, onOpenModal }: {
+export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenModal }: {
   rows: OSRow[]
   projecao?: CampoProjecaoReal | null
-  fluxo?:    FluxoHoje | null
   ritmoIntradiario?: PulsoRitmoIntradiario | null
   onOpenModal: (title: string, rows: OSRow[]) => void
 }) {
@@ -130,10 +102,9 @@ export function ExecutadasHeroBlock({ rows, projecao, fluxo, ritmoIntradiario, o
           )}
         </div>
 
-        {(projecao || fluxo) && (
+        {projecao && (
           <div className="flex items-center gap-4 flex-wrap mb-4 pb-3 border-b border-white/[0.05]">
-            {projecao && <RitmoIndicator p={projecao} />}
-            {fluxo && <FluxoIndicator f={fluxo} />}
+            <RitmoIndicator p={projecao} />
           </div>
         )}
 

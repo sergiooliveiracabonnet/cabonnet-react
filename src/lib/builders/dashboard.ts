@@ -177,6 +177,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
   const rede     = redeCount
   const agingMed = avg(agingArr)
   const slaFila  = total > 0 ? Math.round((total - slaExcFila) / total * 100) : 100
+  // Não renderizado na tela — alimenta o payload da narrativa de IA (useAINarrative)
   const topCidadesCriticas = [...cidCritMap.entries()]
     .sort((a, b) => b[1] - a[1]).slice(0, 5)
     .map(([cidade, count]) => ({ cidade, count }))
