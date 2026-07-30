@@ -25,13 +25,14 @@ import {
 import { KpiModalTable } from './DashboardKpiModal'
 import { CoortePanel } from './CoortePanel'
 import { CapacidadePanel } from './CapacidadePanel'
+import { ChurnPanel } from './ChurnPanel'
 import {
   KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS, FOCO_NAVEGAVEL,
   type ModalState, type TypedDashboard, type CampoProjecaoReal,
 } from './DashboardTypes'
 
 export default function DashboardPage() {
-  const { derived: { dashboard, anomalias, campo, graficos, revisitas, coorte, capacidade }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
+  const { derived: { dashboard, anomalias, campo, graficos, revisitas, coorte, capacidade, churn }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
   const { kpis, fornecedores, pulso, mudancas, projecaoRisco } = dashboard as unknown as TypedDashboard
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
   const taxaRevisitas = (revisitas as { taxa?: { geral?: number } } | null)?.taxa?.geral ?? null
@@ -265,6 +266,14 @@ export default function DashboardPage() {
         {/* ═══ NÍVEL 5 — Análises secundárias ═══ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
           <CoortePanel buckets={coorte.buckets} linhas={coorte.linhas} />
+          <ChurnPanel
+            janelaDias={churn.janelaDias}
+            clientes={churn.clientes}
+            totalReincidentes={churn.totalReincidentes}
+            totalBase={churn.totalBase}
+            pctReincidencia={churn.pctReincidencia}
+            onOpen={(title, filtered) => setModal({ title, rows: filtered })}
+          />
           <MetaMesCard meta={pulso.metaMes} />
           <FornecedoresPanel fornecedores={fornecedores} onOpen={openFornecedor} />
           <QualidadePeriodoCard pulso={pulso} taxaRevisitas={taxaRevisitas} />

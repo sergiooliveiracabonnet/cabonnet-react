@@ -7,7 +7,7 @@ import { useUIStore } from '../store/uiStore'
 import { applyDateFilter } from '../lib/transform'
 import {
   buildDashboard, buildSla, buildGraficos, buildAuditoria,
-  buildCidades, buildCampo, buildCoorte, buildCapacidade, buildRevisitas, buildOrdens, buildAnomalias, buildFila,
+  buildCidades, buildCampo, buildCoorte, buildCapacidade, buildChurn, buildRevisitas, buildOrdens, buildAnomalias, buildFila,
 } from '../lib/builders'
 import type {
   OSRow, KPI, QuickInsight, ClusterAtivo,
@@ -108,6 +108,13 @@ const EMPTY_DERIVED = {
     horizonte: 7,
     cidades: [] as { cidade: string; fila: number; frentes: number; entradasDia: number; saidasDia: number; saldoDia: number; prodFrenteDia: number; frentesEstabilizar: number; frentesZerar: number | null; diasParaZerar: number | null; status: 'ok' | 'atencao' | 'nao_zera' }[],
   },
+  churn: {
+    janelaDias: 60,
+    clientes: [] as { chave: string; cliente: string; cidade: string; bairro: string; visitas: number; intervaloMedio: number; diasDesdeUltima: number; rows: OSRow[] }[],
+    totalReincidentes: 0,
+    totalBase: 0,
+    pctReincidencia: 0,
+  },
   coorte: {
     buckets: [] as number[],
     linhas:  [] as { chave: number; label: string; total: number; resolvidas: number; pct: (number | null)[] }[],
@@ -202,6 +209,7 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
   // Coorte usa allRows: safras de abertura são histórico, não podem depender do filtro de data
   const coorte     = useMemo(() => safe('coorte',     () => buildCoorte(activeAllRows),  EMPTY_DERIVED.coorte),     [activeAllRows])
   const capacidade = useMemo(() => safe('capacidade', () => buildCapacidade(activeAllRows), EMPTY_DERIVED.capacidade), [activeAllRows])
+  const churn      = useMemo(() => safe('churn',      () => buildChurn(activeAllRows),      EMPTY_DERIVED.churn),      [activeAllRows])
   const revisitas  = useMemo(() => safe('revisitas',  () => buildRevisitas(activeRevisitaRows, prevRevisitaRows), EMPTY_DERIVED.revisitas), [activeRevisitaRows, prevRevisitaRows])
   const ordens     = useMemo(() => safe('ordens',     () => buildOrdens(activeRows),     EMPTY_DERIVED.ordens),     [activeRows])
   const allRevisitaActive = useMemo(() => hideRede ? allRevisitaRows.filter(r => r._tipo !== 'REDE') : allRevisitaRows, [allRevisitaRows, hideRede])
@@ -218,10 +226,11 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     campo     === EMPTY_DERIVED.campo     && 'campo',
     coorte    === EMPTY_DERIVED.coorte    && 'coorte',
     capacidade === EMPTY_DERIVED.capacidade && 'capacidade',
+    churn     === EMPTY_DERIVED.churn     && 'churn',
     revisitas === EMPTY_DERIVED.revisitas && 'revisitas',
     ordens    === EMPTY_DERIVED.ordens    && 'ordens',
     fila      === EMPTY_DERIVED.fila      && 'fila',
-  ].filter(Boolean) as string[], [dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, revisitas, ordens, fila])
+  ].filter(Boolean) as string[], [dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, churn, revisitas, ordens, fila])
 
   const value = useMemo<OSDataContextValue>(() => ({
     rows:    activeRows,
@@ -230,9 +239,9 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     error,
     dataUpdatedAt,
     builderErrors,
-    derived: { dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, revisitas, ordens, fila },
+    derived: { dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, churn, revisitas, ordens, fila },
   }), [activeRows, activeAllRows, isLoading, error, dataUpdatedAt, builderErrors,
-       dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, revisitas, ordens, fila])
+       dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, churn, revisitas, ordens, fila])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
