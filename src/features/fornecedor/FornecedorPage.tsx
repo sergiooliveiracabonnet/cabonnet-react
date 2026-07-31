@@ -33,7 +33,8 @@ function fmtCusto(v: number | null | undefined): string {
 export default function FornecedorPage() {
   const [filtro,    setFiltro]    = useState('')
   const [aiEnabled, setAiEnabled] = useState(false)
-  const { rows, prevRows, isLoading } = useOSDerived()
+  const { rows, prevRows, derived, isLoading } = useOSDerived()
+  const porFornecedorRevisita = derived.revisitas.porFornecedor
   const isGestor = useIsGestor()
 
   const { from, to } = useUIStore(s => s.dateFilter)
@@ -265,6 +266,7 @@ export default function FornecedorPage() {
                 meta={metaSla[p.fornKey] ?? null}
                 isGestor={isGestor}
                 dias={dias}
+                revisitas={porFornecedorRevisita.find(f => f.fornecedor === p.fornKey)?.total ?? null}
               />
             ))}
             {paineis.length === 0 && (
@@ -283,7 +285,7 @@ interface PanelKpis { total: number; concluidas: number; criticas: number; sla: 
 interface PanelEquipe { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }
 interface PanelChart  { labels: unknown[]; total: unknown[]; concluidas: unknown[] }
 
-function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCustoChange, meta, isGestor, dias }: {
+function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCustoChange, meta, isGestor, dias, revisitas }: {
   nome: string; cor: string
   equipes: PanelEquipe[]
   kpis:    PanelKpis | null
@@ -293,10 +295,22 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
   meta:    number | null
   isGestor: boolean
   dias:    number
+  /** Nº de revisitas deste fornecedor no período, ou null quando não há dado —
+   *  ausência real (nenhuma revisita) e "sistema não consegue enxergar" (caso
+   *  da equipe de Rede, ver revisitas.ts) chegam aqui do mesmo jeito: null. Um
+   *  card ausente não mente; um card zerado mentiria por omissão. */
+  revisitas: number | null
 }) {
   const [expanded, setExpanded] = useState(true)
   const sc = slaEscala(kpis?.sla ?? 0)
   const acimaDoMeta = meta != null && kpis?.sla != null && kpis.sla >= meta
+
+  // Custo de revisita = 100% do retrabalho × custo real e vigente da operadora
+  // no período — nenhuma taxa de evitabilidade aplicada por cima (Opção A da
+  // spec de custo de revisita: "nenhum peso inventado").
+  const custoRevisita = revisitas != null && kpis?.custoPorOs != null
+    ? revisitas * kpis.custoPorOs
+    : null
 
   const FROM: Record<string, string> = { primary: 'from-primary/[0.07]', green: 'from-green/[0.07]', red: 'from-red/[0.07]', yellow: 'from-yellow/[0.07]', orange: 'from-orange/[0.07]' }
   const TEXT: Record<string, string> = { primary: 'text-primary', green: 'text-green', red: 'text-red', yellow: 'text-yellow', orange: 'text-orange' }
@@ -311,6 +325,14 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
     { label: 'MTTR P90',       value: `${kpis.mttrP90}d`, accent: kpis.mttrP90 <= 5 ? 'green' : kpis.mttrP90 <= 10 ? 'yellow' : 'red' },
     { label: 'Taxa Conclusão', value: `${kpis.conclPct}%`, accent: kpis.conclPct >= 80 ? 'green' : kpis.conclPct >= 60 ? 'primary' : 'yellow' },
     { label: 'Custo / OS',     value: fmtCusto(kpis.custoPorOs), accent: 'orange' },
+    // Só entra quando há revisita detectada E custo configurado — sem isso o
+    // card mostraria R$0 pra quem tem retrabalho invisível ao sistema (Rede
+    // hoje) ou pra quem não configurou custo, os dois lidos como "zero
+    // revisita" por quem só olha o número.
+    ...(custoRevisita != null ? [{
+      label: 'Custo Revisita', value: fmtCusto(custoRevisita), accent: 'red',
+      title: `${revisitas} revisita${revisitas === 1 ? '' : 's'} × ${fmtCusto(kpis!.custoPorOs)}/OS`,
+    }] : []),
   ] : []
 
   return (
@@ -369,7 +391,9 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
           {kpis && (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
               {kpiCards.map((k) => (
-                <div key={k.label} className={`bg-surface bg-gradient-to-br ${FROM[k.accent] ?? FROM.primary} to-transparent border border-white/[0.08] rounded-xl p-3`}>
+                <div key={k.label}
+                  title={'title' in k ? k.title : undefined}
+                  className={`bg-surface bg-gradient-to-br ${FROM[k.accent] ?? FROM.primary} to-transparent border border-white/[0.08] rounded-xl p-3`}>
                   <p className="text-caption font-bold uppercase tracking-wide text-muted mb-1">{k.label}</p>
                   <p className={`font-mono font-bold text-xl leading-none ${TEXT[k.accent] ?? TEXT.primary}`}>{k.value ?? '—'}</p>
                 </div>

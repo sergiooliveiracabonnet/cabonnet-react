@@ -216,6 +216,47 @@ describe('buildRevisitas — porEquipe e porCidade atribuem à equipe/cidade da 
   })
 })
 
+// ─── porFornecedor — base do custo de revisita por fornecedor ──────────────
+
+describe('buildRevisitas — porFornecedor', () => {
+  it('agrega por fornecedor, não por equipe bruta — duas equipes do mesmo fornecedor somam', () => {
+    const rows = enrichRows([
+      // F08 e F11 são códigos diferentes, mas ambos WES.
+      makeOS({ numos: '1', codigocliente: 'A', nomedaequipe: 'EQUIPE F08', tiposervico: 'INSTALACAO', dataexecucao: '02/03/2026' }),
+      makeOS({ numos: '2', codigocliente: 'A', nomedaequipe: 'EQUIPE F08', tiposervico: 'MANUTENCAO', dataexecucao: '09/03/2026' }),
+      makeOS({ numos: '3', codigocliente: 'B', nomedaequipe: 'EQUIPE F11', tiposervico: 'INSTALACAO', dataexecucao: '03/03/2026' }),
+      makeOS({ numos: '4', codigocliente: 'B', nomedaequipe: 'EQUIPE F11', tiposervico: 'MANUTENCAO', dataexecucao: '10/03/2026' }),
+    ])
+    const r = buildRevisitas(rows)
+    expect(r.porFornecedor.find(f => f.fornecedor === 'WES')?.total).toBe(2)
+    expect(r.porFornecedor.find(f => f.fornecedor === 'Instacable')).toBeUndefined()
+  })
+
+  it('fornecedor sem nenhuma revisita no período não aparece na lista — sem total:0 poluindo', () => {
+    const rows = enrichRows([
+      makeOS({ numos: '1', codigocliente: 'A', nomedaequipe: 'EQUIPE F08', tiposervico: 'INSTALACAO', dataexecucao: '02/03/2026' }),
+      makeOS({ numos: '2', codigocliente: 'A', nomedaequipe: 'EQUIPE F08', tiposervico: 'MANUTENCAO', dataexecucao: '09/03/2026' }),
+      // Instacable só tem uma instalação, sem manutenção depois — não gera revisita.
+      makeOS({ numos: '3', codigocliente: 'B', nomedaequipe: 'EQUIPE F01', tiposervico: 'INSTALACAO', dataexecucao: '03/03/2026' }),
+    ])
+    const r = buildRevisitas(rows)
+    expect(r.porFornecedor).toHaveLength(1)
+    expect(r.porFornecedor.find(f => f.fornecedor === 'Instacable')).toBeUndefined()
+  })
+
+  // Mesmo achado do bloco de domínio acima (_tipo trava em 'REDE'), mas
+  // verificado especificamente em porFornecedor — é o campo que a página de
+  // Fornecedor vai consumir para o card de custo de revisita.
+  it('a equipe de Rede nunca aparece em porFornecedor hoje — nenhum RevisitEvent chega a existir para ela', () => {
+    const rows = enrichRows([
+      makeOS({ numos: '1', nomedaequipe: '03-VAL - REDE FIBRA', tiposervico: 'INSTALACAO', dataexecucao: '02/03/2026' }),
+      makeOS({ numos: '2', nomedaequipe: '03-VAL - REDE FIBRA', tiposervico: 'MANUTENCAO', dataexecucao: '09/03/2026' }),
+    ])
+    const r = buildRevisitas(rows)
+    expect(r.porFornecedor.find(f => f.fornecedor === 'REDE')).toBeUndefined()
+  })
+})
+
 // ─── Clientes crônicos ──────────────────────────────────────────────────────
 
 describe('buildRevisitas — clientes crônicos', () => {
