@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { enrichRows } from '../transform'
-import { buildFornecedor, transformJuniper } from './extra'
+import { buildFornecedor, transformJuniper, diasNoPeriodo, MIN_OS_RANKING } from './extra'
 import type { OSRow } from '../types'
 
 describe('transformJuniper', () => {
@@ -105,5 +105,70 @@ describe('buildFornecedor', () => {
     const kpis = buildFornecedor(rows).paineis[0].kpis
     expect(kpis.conclPct).toBe(67)   // 2 de 3 entregues
     expect(kpis.sla).toBe(33)        // só 1 de 3 dentro do prazo
+  })
+})
+
+describe('diasNoPeriodo', () => {
+  it('conta os dois extremos — 01 a 31 são 31 dias, não 30', () => {
+    expect(diasNoPeriodo(new Date(2026, 0, 1), new Date(2026, 0, 31))).toBe(31)
+  })
+
+  it('um único dia conta 1', () => {
+    const d = new Date(2026, 0, 15)
+    expect(diasNoPeriodo(d, d)).toBe(1)
+  })
+
+  it('sem intervalo definido assume o mês de referência', () => {
+    expect(diasNoPeriodo(null, null)).toBe(30)
+    expect(diasNoPeriodo(new Date(2026, 0, 1), null)).toBe(30)
+  })
+})
+
+describe('buildFornecedor — custo por OS', () => {
+  // 10 OS concluídas dentro do prazo, custo mensal de R$ 30.000.
+  const rows = enrichRows(entregues('EQUIPE F08', 10, 1))
+  const custo = { WES: 30000 }
+
+  it('prorrateia o custo mensal pelo período analisado', () => {
+    // 7 dias de 30 => R$ 7.000 no período => R$ 700 por OS concluída.
+    const kpis = buildFornecedor(rows, '', custo, 7).paineis[0].kpis
+    expect(kpis.custoPorOs).toBe(700)
+  })
+
+  it('período de um mês inteiro devolve o custo cheio', () => {
+    const kpis = buildFornecedor(rows, '', custo, 30).paineis[0].kpis
+    expect(kpis.custoPorOs).toBe(3000)
+  })
+
+  it('período mais curto NÃO pode inflar o custo por OS', () => {
+    const semana = buildFornecedor(rows, '', custo, 7).paineis[0].kpis.custoPorOs!
+    const mes    = buildFornecedor(rows, '', custo, 30).paineis[0].kpis.custoPorOs!
+    expect(semana).toBeLessThan(mes)
+  })
+
+  it('sem custo configurado não inventa número', () => {
+    expect(buildFornecedor(rows, '', {}, 30).paineis[0].kpis.custoPorOs).toBeNull()
+  })
+})
+
+describe('buildFornecedor — piso de volume no ranking', () => {
+  it('marca amostra insuficiente abaixo do piso', () => {
+    const { ranking } = buildFornecedor(enrichRows(entregues('EQUIPE F08', 3, 1)))
+    expect(ranking[0].total).toBeLessThan(MIN_OS_RANKING)
+    expect(ranking[0].amostraInsuficiente).toBe(true)
+  })
+
+  // O caso que motivou a mudança: 100% em 3 OS liderava sobre 90%+ em volume real.
+  it('volume relevante vem antes de SLA alto com amostra pequena', () => {
+    const rows = enrichRows([
+      ...entregues('EQUIPE F08', 3, 1),                                  // Instacable-like: 100% em 3 OS
+      ...entregues('EQUIPE F01', MIN_OS_RANKING + 5, 1),                 // volume acima do piso
+      ...entregues('EQUIPE F01', 1, 9),                                  // com uma violação, SLA < 100
+    ])
+    const { ranking } = buildFornecedor(rows)
+    expect(ranking[0].amostraInsuficiente).toBe(false)
+    expect(ranking[0].total).toBeGreaterThanOrEqual(MIN_OS_RANKING)
+    expect(ranking[1].amostraInsuficiente).toBe(true)
+    expect(ranking[1].sla).toBeGreaterThan(ranking[0].sla)
   })
 })

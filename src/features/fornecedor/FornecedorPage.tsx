@@ -3,6 +3,8 @@ import { Home, Award, Clock, Target, DollarSign, Sparkles } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/bar-chart'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { buildFornecedor } from '../../lib/builders'
+import { diasNoPeriodo, MIN_OS_RANKING } from '../../lib/builders/extra'
+import { useUIStore } from '../../store/uiStore'
 import { SectionTitle } from '../../components/ui/SectionTitle'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Badge } from '../../components/ui/Badge'
@@ -44,9 +46,12 @@ export default function FornecedorPage() {
   const { custoFornecedor, setCustoFornecedor } = useERPStore()
   const isGestor = useIsGestor()
 
+  const { from, to } = useUIStore(s => s.dateFilter)
+  const dias = useMemo(() => diasNoPeriodo(from, to), [from, to])
+
   const { paineis, ranking } = useMemo(
-    () => buildFornecedor(rows, filtro, custoFornecedor),
-    [rows, filtro, custoFornecedor]
+    () => buildFornecedor(rows, filtro, custoFornecedor, dias),
+    [rows, filtro, custoFornecedor, dias]
   )
 
   const aiFornecedoresInput = useMemo(() => ranking.map(f => ({
@@ -101,7 +106,9 @@ export default function FornecedorPage() {
               <SectionTitle icon={Award} className="mb-3">Ranking por SLA</SectionTitle>
               <p className="text-caption text-muted mb-4">
                 SLA = % das OS entregues dentro do prazo. Empate desconta pelo menor MTTR.
-                A linha vertical indica a meta configurada.
+                A linha vertical indica a meta configurada. Fornecedores com menos de {MIN_OS_RANKING} OS
+                no período aparecem ao final, marcados — a proporção sobre poucas OS não distingue
+                competência de sorte na amostra.
               </p>
               <div className="space-y-3">
                 {ranking.map((f, i) => {
@@ -132,6 +139,15 @@ export default function FornecedorPage() {
                       <span className={`text-caption font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${sc.text} ${sc.bg} ${sc.border}`}>
                         {sc.label}
                       </span>
+                      {f.amostraInsuficiente && (
+                        <span
+                          className="text-caption font-bold px-1.5 py-0.5 rounded border flex-shrink-0
+                                     text-muted bg-surface border-white/[0.08]"
+                          title={`Só ${f.total} OS no período — abaixo do piso de ${MIN_OS_RANKING} para o ranking valer`}
+                        >
+                          n={f.total}
+                        </span>
+                      )}
 
                       {/* Meta editável inline */}
                       <div className="flex items-center gap-1 flex-shrink-0">
@@ -228,6 +244,7 @@ export default function FornecedorPage() {
                 onCustoChange={(v) => setCustoFornecedor(p.fornKey, v)}
                 meta={metaSla[p.nome] ?? null}
                 isGestor={isGestor}
+                dias={dias}
               />
             ))}
             {paineis.length === 0 && (
@@ -246,7 +263,7 @@ interface PanelKpis { total: number; concluidas: number; criticas: number; sla: 
 interface PanelEquipe { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }
 interface PanelChart  { labels: unknown[]; total: unknown[]; concluidas: unknown[] }
 
-function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCustoChange, meta, isGestor }: {
+function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCustoChange, meta, isGestor, dias }: {
   nome: string; cor: string
   equipes: PanelEquipe[]
   kpis:    PanelKpis | null
@@ -255,6 +272,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
   onCustoChange: (v: number) => void
   meta:    number | null
   isGestor: boolean
+  dias:    number
 }) {
   const [expanded, setExpanded] = useState(true)
   const sc = slaColor(kpis?.sla ?? 0)
@@ -321,6 +339,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
             {kpis?.custoPorOs != null && (
               <span className="text-caption text-muted">
                 → <span className="text-orange font-semibold">{fmtCusto(kpis.custoPorOs)} / OS concluída</span>
+                {' '}<span className="text-muted/60">(custo rateado para os {dias}d do período)</span>
               </span>
             )}
           </div>

@@ -11,7 +11,28 @@ const FORN_DISPLAY: Partial<Record<Fornecedor, { label: string; cor: string }>> 
   INTERNO:    { label: 'Interno (COPE)',   cor: '#94a3b8' },
 }
 
-export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<string, number> = {}) {
+// Custo é contratado por mês; o painel é lido em qualquer recorte de data. Sem
+// converter um no outro, "custo / OS" divide um mês inteiro de custo pelas OS de
+// uma semana e sai ~4x inflado — e esse número alimenta a recomendação de contrato.
+const DIAS_MES_REFERENCIA = 30
+
+/** Piso de OS para o ranking valer. Abaixo disso a proporção é ruído: 100% em 3
+ *  OS liderava sobre 96% em 500, e o desempate era MTTR, não volume. */
+export const MIN_OS_RANKING = 10
+
+/** Dias no intervalo, contando os dois extremos. Sem intervalo, assume o mês. */
+export function diasNoPeriodo(from: Date | null, to: Date | null): number {
+  if (!from || !to) return DIAS_MES_REFERENCIA
+  const dias = Math.round((to.getTime() - from.getTime()) / 86400000) + 1
+  return dias > 0 ? dias : DIAS_MES_REFERENCIA
+}
+
+export function buildFornecedor(
+  rows: OSRow[],
+  filtro = '',
+  custoConfig: Record<string, number> = {},
+  diasPeriodo: number = DIAS_MES_REFERENCIA
+) {
   const base = filtro
     ? rows.filter(r => {
         if (filtro === 'REDE')       return r._tipo === 'REDE'
@@ -63,8 +84,9 @@ export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<
       concluidas: topEq.map(e => e.concluidas),
     }
 
-    const custoMensal = custoConfig[key] ?? 0
-    const custoPorOs  = custoMensal > 0 && concluidas > 0 ? Math.round(custoMensal / concluidas) : null
+    const custoMensal  = custoConfig[key] ?? 0
+    const custoPeriodo = custoMensal * (diasPeriodo / DIAS_MES_REFERENCIA)
+    const custoPorOs   = custoMensal > 0 && concluidas > 0 ? Math.round(custoPeriodo / concluidas) : null
 
     return {
       nome:    FORN_DISPLAY[key as Fornecedor]?.label ?? key,
@@ -79,13 +101,21 @@ export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<
   // Antes era um score composto (SLA 45% + conclusão 35% + MTTR 20%): pesos sem
   // base empírica que misturavam cumprimento de prazo com volume entregue, então
   // um fornecedor podia subir no ranking entregando mais e cumprindo menos.
+  //
+  // Quem está abaixo do piso de volume não disputa as primeiras posições: a
+  // proporção sobre poucas OS não distingue competência de sorte na amostra.
   const ranking = [...paineis]
     .filter(p => p.kpis.total > 0)
-    .sort((a, b) => b.kpis.sla - a.kpis.sla || a.kpis.mttr - b.kpis.mttr)
     .map(p => ({
       nome: p.nome, cor: p.cor, fornKey: p.fornKey,
       sla: p.kpis.sla, conclPct: p.kpis.conclPct, mttr: p.kpis.mttr, total: p.kpis.total,
+      amostraInsuficiente: p.kpis.total < MIN_OS_RANKING,
     }))
+    .sort((a, b) =>
+      Number(a.amostraInsuficiente) - Number(b.amostraInsuficiente) ||
+      b.sla - a.sla ||
+      a.mttr - b.mttr
+    )
 
   return { paineis, ranking }
 }
