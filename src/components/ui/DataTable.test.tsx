@@ -29,6 +29,22 @@ describe('DataTable — sort acessível', () => {
   })
 })
 
+describe('DataTable — densidade padrão', () => {
+  // Compacto é o padrão do sistema: a operação lê listas longas de OS e cada
+  // linha a mais na tela evita um scroll. Quem quiser folga passa a prop.
+  it('sem a prop density as linhas saem compactas', () => {
+    render(<DataTable columns={columns} rows={rows} />)
+    const primeiraCelula = screen.getAllByRole('row')[1].querySelector('td')!
+    expect(primeiraCelula.className).toContain('h-7')
+  })
+
+  it('a prop density continua vencendo o padrão', () => {
+    render(<DataTable columns={columns} rows={rows} density="normal" />)
+    const primeiraCelula = screen.getAllByRole('row')[1].querySelector('td')!
+    expect(primeiraCelula.className).toContain('h-9')
+  })
+})
+
 describe('DataTable — virtualização', () => {
   const originalInnerHeight = window.innerHeight
   afterEach(() => {

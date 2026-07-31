@@ -39,7 +39,7 @@ const VIRTUALIZE_MIN = 100
 const ROW_PX: Record<Density, number> = { normal: 36, compact: 28, mini: 20 }
 
 export function DataTable<T extends Record<string, unknown>>({
-  columns, rows, onRowClick, onRowHover, onRowLeave, density = 'normal', className = '',
+  columns, rows, onRowClick, onRowHover, onRowLeave, density = 'compact', className = '',
   sort, onSort, emptyTitle, emptyDescription, stickyHeader = false,
 }: DataTableProps<T>) {
   const controlled = !!onSort

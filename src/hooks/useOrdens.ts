@@ -160,7 +160,7 @@ export function useOrdens() {
   const [agendAmanha, setAgendAmanha] = useState(false)
   const [agendFuturo, setAgendFuturo] = useState(false)
   const [tableSort,   setTableSort]   = useState<{ key: string | null; dir: 'asc' | 'desc' }>({ key: null, dir: 'asc' })
-  const [density,     setDensity]     = useState('normal')
+  const [density,     setDensity]     = useState('compact')
   const [page,        setPage]        = useState(1)
   const [pageSize,    setPageSize]    = useState(50)
 
