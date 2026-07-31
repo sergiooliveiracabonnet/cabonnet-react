@@ -7,12 +7,11 @@ import { diasNoPeriodo, MIN_OS_RANKING } from '../../lib/builders/extra'
 import { useUIStore } from '../../store/uiStore'
 import { slaEscala } from './slaEscala'
 import { indexarSlaAnterior, variacaoSla, rotuloVariacao } from './comparativo'
+import { useFornecedorConfig } from './useFornecedorConfig'
 import { SectionTitle } from '../../components/ui/SectionTitle'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Badge } from '../../components/ui/Badge'
 import { KPIGridSkeleton } from '../../components/ui/Skeleton'
-import { useAlertStore } from '../../store/alertStore'
-import { useERPStore } from '../../store/erpStore'
 import { useIsGestor } from '../../hooks/useRole'
 import { useAIFornecedor } from '../../hooks/useAIFornecedor'
 
@@ -35,12 +34,14 @@ export default function FornecedorPage() {
   const [filtro,    setFiltro]    = useState('')
   const [aiEnabled, setAiEnabled] = useState(false)
   const { rows, prevRows, isLoading } = useOSDerived()
-  const { metaSla, updateMetaSla }             = useAlertStore()
-  const { custoFornecedor, setCustoFornecedor } = useERPStore()
   const isGestor = useIsGestor()
 
   const { from, to } = useUIStore(s => s.dateFilter)
   const dias = useMemo(() => diasNoPeriodo(from, to), [from, to])
+
+  // Custo e meta vêm do servidor, com o custo VIGENTE no período analisado.
+  const { custo: custoFornecedor, meta: metaSla, erro: erroConfig, salvarCusto, salvarMeta } =
+    useFornecedorConfig(to)
 
   const { paineis, ranking } = useMemo(
     () => buildFornecedor(rows, filtro, custoFornecedor, dias),
@@ -98,6 +99,13 @@ export default function FornecedorPage() {
         ))}
       </div>
 
+      {erroConfig && (
+        <div className="rounded-xl border border-red/20 bg-red/[0.06] px-4 py-3 text-caption text-red/90">
+          Não foi possível carregar custo e meta do servidor: {erroConfig}. Os campos aparecem vazios —
+          o valor exibido <strong>não</strong> é "sem configuração", é "não foi possível ler".
+        </div>
+      )}
+
       {isLoading ? <KPIGridSkeleton count={6} /> : (
         <>
           {/* Ranking por SLA */}
@@ -114,7 +122,7 @@ export default function FornecedorPage() {
               <div className="space-y-3">
                 {ranking.map((f, i) => {
                   const sc    = slaEscala(f.sla)
-                  const meta  = metaSla[f.nome] ?? metaSla[f.fornKey] ?? null
+                  const meta  = metaSla[f.fornKey] ?? null
                   const delta = variacaoSla(f.sla, slaAnterior[f.fornKey])
                   const rot   = rotuloVariacao(delta)
                   return (
@@ -167,7 +175,7 @@ export default function FornecedorPage() {
                         <input
                           type="number" min={0} max={100}
                           value={meta ?? ''}
-                          onChange={e => isGestor && updateMetaSla(f.nome, Number(e.target.value))}
+                          onChange={e => isGestor && void salvarMeta(f.fornKey, Number(e.target.value))}
                           disabled={!isGestor}
                           placeholder="Meta"
                           className="w-14 bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 text-caption font-mono
@@ -253,8 +261,8 @@ export default function FornecedorPage() {
             {paineis.map((p) => (
               <FornecedorPanel key={p.nome} {...p}
                 custoMensal={custoFornecedor[p.fornKey] ?? 0}
-                onCustoChange={(v) => setCustoFornecedor(p.fornKey, v)}
-                meta={metaSla[p.nome] ?? null}
+                onCustoChange={(v) => void salvarCusto(p.fornKey, v)}
+                meta={metaSla[p.fornKey] ?? null}
                 isGestor={isGestor}
                 dias={dias}
               />
