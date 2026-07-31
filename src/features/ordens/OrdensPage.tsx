@@ -359,12 +359,12 @@ export default function OrdensPage() {
           />
           <StatCard
             title="Amanhã" value={os.kpis.agendAmanha} icon={ORDENS_CARD_ICONS.agendAmanha}
-            sub="ativas p/ amanhã · geral" delay={160}
+            sub="agendadas para amanhã" delay={160}
             onClick={() => { os.clearFilters(); os.setAgendAmanha(true); scrollToTable() }}
           />
           <StatCard
-            title="Agend. Futuro" value={os.kpis.agendFuturo} tone="warning" icon={ORDENS_CARD_ICONS.agendFuturo}
-            sub="ativas, amanhã em diante · geral" delay={200}
+            title="Após amanhã" value={os.kpis.agendFuturo} tone="warning" icon={ORDENS_CARD_ICONS.agendFuturo}
+            sub="de depois de amanhã em diante" delay={200}
             onClick={() => { os.clearFilters(); os.setAgendFuturo(true); scrollToTable() }}
           />
         </div>
@@ -449,7 +449,7 @@ export default function OrdensPage() {
             {os.semEquipe    && <span className="badge-yellow  rounded-full px-2 py-0.5 text-caption font-bold">Sem equipe</span>}
             {os.agendHoje    && <span className="badge-green   rounded-full px-2 py-0.5 text-caption font-bold">Agend. hoje</span>}
             {os.agendAmanha  && <span className="badge-cyan    rounded-full px-2 py-0.5 text-caption font-bold">Amanhã</span>}
-            {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-caption font-bold">Agend. Futuro</span>}
+            {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-caption font-bold">Após amanhã</span>}
             {os.periodo      && <span className="badge-purple  rounded-full px-2 py-0.5 text-caption font-bold">{os.periodo}</span>}
           </span>
           <button onClick={clearAllFilters} className="text-muted hover:text-red transition-colors text-caption font-semibold">

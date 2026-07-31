@@ -133,40 +133,68 @@ describe('isAgendadaEm / dataBR — comparação em formato BR', () => {
   })
 })
 
-describe('splitAgendaFutura — agenda de amanhã em diante', () => {
-  function amanhaBR(): string {
-    const d = new Date(); d.setDate(d.getDate() + 1)
+describe('splitAgendaFutura — amanhã e após amanhã, disjuntos', () => {
+  function emDias(n: number): string {
+    const d = new Date(); d.setDate(d.getDate() + n)
     return dataBR(d)
   }
 
   it('inclui Pendente e Atendimento agendadas para amanhã', () => {
     const rows = enrichRows([
-      makeOS({ numos: 'P1', descsituacao: 'Pendente',    dataagendamento: amanhaBR() }),
-      makeOS({ numos: 'A1', descsituacao: 'Atendimento', dataagendamento: amanhaBR() }),
+      makeOS({ numos: 'P1', descsituacao: 'Pendente',    dataagendamento: emDias(1) }),
+      makeOS({ numos: 'A1', descsituacao: 'Atendimento', dataagendamento: emDias(1) }),
     ])
-    const { amanhaOrdens, futuroOrdens } = splitAgendaFutura(rows)
+    const { amanhaOrdens, posAmanhaOrdens } = splitAgendaFutura(rows)
     expect(amanhaOrdens).toHaveLength(2)
-    expect(futuroOrdens).toHaveLength(2)
+    expect(posAmanhaOrdens).toHaveLength(0)
+  })
+
+  it('amanhã e após amanhã não se sobrepõem', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'A1', descsituacao: 'Pendente', dataagendamento: emDias(1) }),
+      makeOS({ numos: 'D2', descsituacao: 'Pendente', dataagendamento: emDias(2) }),
+      makeOS({ numos: 'D9', descsituacao: 'Pendente', dataagendamento: emDias(9) }),
+    ])
+    const { amanhaOrdens, posAmanhaOrdens } = splitAgendaFutura(rows)
+    expect(amanhaOrdens.map(r => r.numos)).toEqual(['A1'])
+    expect(posAmanhaOrdens.map(r => r.numos)).toEqual(['D2', 'D9'])
+    const intersecao = amanhaOrdens.filter(a => posAmanhaOrdens.some(p => p.numos === a.numos))
+    expect(intersecao).toHaveLength(0)
   })
 
   it('exclui COPE, reagendamento e concluídas com data futura', () => {
     const rows = enrichRows([
-      makeOS({ numos: 'C1', nomedaequipe: 'COPE VALE',          dataagendamento: amanhaBR() }),
-      makeOS({ numos: 'R1', nomedaequipe: 'REAGENDAMENTO F01',  dataagendamento: amanhaBR() }),
-      makeOS({ numos: 'X1', descsituacao: 'Concluída',          dataagendamento: amanhaBR() }),
-      makeOS({ numos: 'P1', descsituacao: 'Pendente',           dataagendamento: amanhaBR() }),
+      makeOS({ numos: 'C1', nomedaequipe: 'COPE VALE',         dataagendamento: emDias(1) }),
+      makeOS({ numos: 'R1', nomedaequipe: 'REAGENDAMENTO F01', dataagendamento: emDias(1) }),
+      makeOS({ numos: 'X1', descsituacao: 'Concluída',         dataagendamento: emDias(1) }),
+      makeOS({ numos: 'P1', descsituacao: 'Pendente',          dataagendamento: emDias(1) }),
     ])
     const { amanhaOrdens } = splitAgendaFutura(rows)
     expect(amanhaOrdens.map(r => r.numos)).toEqual(['P1'])
   })
 
-  it('agendamento de hoje ou passado não entra na agenda futura', () => {
+  it('agendamento de hoje ou passado não entra em nenhum dos dois', () => {
     const rows = enrichRows([
       makeOS({ numos: 'H1', descsituacao: 'Pendente', dataagendamento: dataBR() }),
       makeOS({ numos: 'V1', descsituacao: 'Pendente', dataagendamento: '01/01/2020' }),
     ])
-    const { futuroOrdens } = splitAgendaFutura(rows)
-    expect(futuroOrdens).toHaveLength(0)
+    const { amanhaOrdens, posAmanhaOrdens } = splitAgendaFutura(rows)
+    expect(amanhaOrdens).toHaveLength(0)
+    expect(posAmanhaOrdens).toHaveLength(0)
+  })
+
+  it('o recorte de agenda é filtrável por aplicarFiltros — base dos KPIs corrigidos', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'T1', descsituacao: 'Pendente', nomedacidade: 'TAUBATE',  dataagendamento: emDias(1) }),
+      makeOS({ numos: 'C1', descsituacao: 'Pendente', nomedacidade: 'CACAPAVA', dataagendamento: emDias(1) }),
+    ])
+    const { amanhaOrdens } = splitAgendaFutura(rows)
+    const soTaubate = aplicarFiltros(amanhaOrdens, {
+      search: '', status: '', reagendTipo: '', tipo: '', cidade: 'TAUBATE', bairro: '',
+      equipe: '', fornecedor: '', tipoOs: '', periodo: '', aging: '',
+      semEquipe: false, critico: false, agendHoje: false,
+    })
+    expect(soTaubate.map(r => r.numos)).toEqual(['T1'])
   })
 })
 

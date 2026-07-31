@@ -55,14 +55,18 @@ export function matchesOSSearch(row: OSRow, query: string): boolean {
   return searchable.some(value => normalizeSearch(value).includes(q))
 }
 
-// Agenda futura = OS ATIVAS com agendamento de amanhã em diante. Sem o filtro
-// de situação, COPE, reagendamentos e até concluídas adiantadas inflavam os
-// KPIs "Amanhã"/"Agend. Futuro" (mesma correção da aba Cidades).
-export function splitAgendaFutura(allRows: OSRow[]): { amanhaOrdens: OSRow[]; futuroOrdens: OSRow[] } {
-  const hoje  = new Date(); hoje.setHours(0, 0, 0, 0)
+// Agenda futura = OS ATIVAS com agendamento à frente de hoje. Sem o filtro de
+// situação, COPE, reagendamentos e até concluídas adiantadas inflavam os KPIs
+// (mesma correção da aba Cidades).
+//
+// Os dois baldes são DISJUNTOS: antes "futuro" significava "amanhã em diante" e
+// portanto continha "amanhã" — dois cards lado a lado onde um era subconjunto
+// do outro e cuja soma não fechava.
+export function splitAgendaFutura(allRows: OSRow[]): { amanhaOrdens: OSRow[]; posAmanhaOrdens: OSRow[] } {
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
   const amanha = new Date(hoje); amanha.setDate(hoje.getDate() + 1)
-  const amanhaBR = dataBR(amanha)
-  const amanhaOrdens: OSRow[] = [], futuroOrdens: OSRow[] = []
+  const posAmanha = new Date(hoje); posAmanha.setDate(hoje.getDate() + 2)
+  const amanhaOrdens: OSRow[] = [], posAmanhaOrdens: OSRow[] = []
   for (const r of allRows) {
     if (isCOPE(r) || isReagend(r)) continue
     if (!['Pendente', 'Atendimento'].includes(r.descsituacao)) continue
@@ -71,12 +75,13 @@ export function splitAgendaFutura(allRows: OSRow[]): { amanhaOrdens: OSRow[]; fu
     const parts = raw.split('/')
     if (parts.length !== 3) continue
     const d = new Date(+parts[2], +parts[1] - 1, +parts[0])
-    if (d >= amanha) {
-      futuroOrdens.push(r)
-      if (raw === amanhaBR) amanhaOrdens.push(r)
+    if (d >= posAmanha) {
+      posAmanhaOrdens.push(r)
+    } else if (d >= amanha) {
+      amanhaOrdens.push(r)
     }
   }
-  return { amanhaOrdens, futuroOrdens }
+  return { amanhaOrdens, posAmanhaOrdens }
 }
 
 export interface OrdensFiltros {
@@ -158,7 +163,7 @@ export function useOrdens() {
 
   const { ordens, options } = ordensData as { ordens: OSRow[]; options: OrdensOptions }
 
-  const { amanhaOrdens, futuroOrdens } = useMemo(() => splitAgendaFutura(allRows), [allRows])
+  const { amanhaOrdens, posAmanhaOrdens } = useMemo(() => splitAgendaFutura(allRows), [allRows])
 
   // Reagendamentos são excluídos do `ordens` base (buildOrdens), então o filtro de
   // Reagendamento usa a lista ao-vivo (allRows), espelhando os KPIs do Dashboard.
@@ -172,7 +177,7 @@ export function useOrdens() {
   const baseOrdens: OSRow[] = agendAmanha
     ? amanhaOrdens
     : agendFuturo
-      ? futuroOrdens
+      ? posAmanhaOrdens
       : verReagend
         ? reagendOrdens
         : ordensComCope
@@ -244,8 +249,22 @@ export function useOrdens() {
       else if (r._tipo === 'MANUTENCAO') manutencao++
       else if (r._tipo === 'OUTRO') servico++   // REDE não é serviço
     }
-    return { total: filtered.length, criticas, semEquipe: semEquipeCount, agendHoje: agendHojeCount, agendAmanha: amanhaOrdens.length, agendFuturo: futuroOrdens.length, instalacao, manutencao, servico }
-  }, [filtered, amanhaOrdens, futuroOrdens])
+
+    // Os cards de agenda contam o MESMO recorte de filtros que a tabela mostra.
+    // Os três toggles de agenda são zerados porque definem qual base está sendo
+    // olhada — deixá-los ligados faria o recorte filtrar a si mesmo e zerar.
+    const filtrosAgenda: OrdensFiltros = { ...filtros, agendHoje: false }
+
+    return {
+      total:       filtered.length,
+      criticas,
+      semEquipe:   semEquipeCount,
+      agendHoje:   agendHojeCount,
+      agendAmanha: aplicarFiltros(amanhaOrdens,    filtrosAgenda, hojeBR).length,
+      agendFuturo: aplicarFiltros(posAmanhaOrdens, filtrosAgenda, hojeBR).length,
+      instalacao, manutencao, servico,
+    }
+  }, [filtered, amanhaOrdens, posAmanhaOrdens, filtros])
 
   const clearFilters = () => {
     setSearch(''); setStatus(''); setReagendTipo(''); setTipo(''); setCidade(''); setBairro('')
