@@ -1,6 +1,6 @@
 import { isExecucaoReal } from '../transform'
 import type { OSRow, Fornecedor } from '../types'
-import { avg, calcMTTR, slaPeriodoPct, shortName } from './_helpers'
+import { avg, calcMTTR, mttrStats, slaPeriodoPct, shortName } from './_helpers'
 
 const FORN_DISPLAY: Partial<Record<Fornecedor, { label: string; cor: string }>> = {
   WES:        { label: 'WES (Instalação)', cor: '#c4b5fd' },
@@ -11,7 +11,28 @@ const FORN_DISPLAY: Partial<Record<Fornecedor, { label: string; cor: string }>> 
   INTERNO:    { label: 'Interno (COPE)',   cor: '#94a3b8' },
 }
 
-export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<string, number> = {}) {
+// Custo é contratado por mês; o painel é lido em qualquer recorte de data. Sem
+// converter um no outro, "custo / OS" divide um mês inteiro de custo pelas OS de
+// uma semana e sai ~4x inflado — e esse número alimenta a recomendação de contrato.
+const DIAS_MES_REFERENCIA = 30
+
+/** Piso de OS para o ranking valer. Abaixo disso a proporção é ruído: 100% em 3
+ *  OS liderava sobre 96% em 500, e o desempate era MTTR, não volume. */
+export const MIN_OS_RANKING = 10
+
+/** Dias no intervalo, contando os dois extremos. Sem intervalo, assume o mês. */
+export function diasNoPeriodo(from: Date | null, to: Date | null): number {
+  if (!from || !to) return DIAS_MES_REFERENCIA
+  const dias = Math.round((to.getTime() - from.getTime()) / 86400000) + 1
+  return dias > 0 ? dias : DIAS_MES_REFERENCIA
+}
+
+export function buildFornecedor(
+  rows: OSRow[],
+  filtro = '',
+  custoConfig: Record<string, number> = {},
+  diasPeriodo: number = DIAS_MES_REFERENCIA
+) {
   const base = filtro
     ? rows.filter(r => {
         if (filtro === 'REDE')       return r._tipo === 'REDE'
@@ -36,7 +57,12 @@ export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<
     // SLA de prazo real — antes era um alias de conclPct, o que contava a mesma
     // métrica duas vezes no score (65% do peso numa variável só)
     const sla        = slaPeriodoPct(gr)
-    const mttr       = calcMTTR(gr)
+    // P50 responde "quanto demora o caso típico"; P90 responde "quanto demora o
+    // caso ruim". É o P90 que vira reclamação de cliente e discussão de contrato,
+    // e a mediana o esconde por construção.
+    const mttrs      = mttrStats(gr)
+    const mttr       = mttrs.p50
+    const mttrP90    = mttrs.p90
 
     const eqMap = new Map<string, { rows: OSRow[]; concluidas: number; criticas: number; agingArr: number[]; mttrRows: OSRow[] }>()
     for (const r of gr) {
@@ -63,14 +89,15 @@ export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<
       concluidas: topEq.map(e => e.concluidas),
     }
 
-    const custoMensal = custoConfig[key] ?? 0
-    const custoPorOs  = custoMensal > 0 && concluidas > 0 ? Math.round(custoMensal / concluidas) : null
+    const custoMensal  = custoConfig[key] ?? 0
+    const custoPeriodo = custoMensal * (diasPeriodo / DIAS_MES_REFERENCIA)
+    const custoPorOs   = custoMensal > 0 && concluidas > 0 ? Math.round(custoPeriodo / concluidas) : null
 
     return {
       nome:    FORN_DISPLAY[key as Fornecedor]?.label ?? key,
       cor:     FORN_DISPLAY[key as Fornecedor]?.cor   ?? '#64748b',
       fornKey: key,
-      kpis:    { total, concluidas, criticas, sla, conclPct, mttr, custoMensal, custoPorOs },
+      kpis:    { total, concluidas, criticas, sla, conclPct, mttr, mttrP90, custoMensal, custoPorOs },
       equipes, chart,
     }
   })
@@ -79,13 +106,21 @@ export function buildFornecedor(rows: OSRow[], filtro = '', custoConfig: Record<
   // Antes era um score composto (SLA 45% + conclusão 35% + MTTR 20%): pesos sem
   // base empírica que misturavam cumprimento de prazo com volume entregue, então
   // um fornecedor podia subir no ranking entregando mais e cumprindo menos.
+  //
+  // Quem está abaixo do piso de volume não disputa as primeiras posições: a
+  // proporção sobre poucas OS não distingue competência de sorte na amostra.
   const ranking = [...paineis]
     .filter(p => p.kpis.total > 0)
-    .sort((a, b) => b.kpis.sla - a.kpis.sla || a.kpis.mttr - b.kpis.mttr)
     .map(p => ({
       nome: p.nome, cor: p.cor, fornKey: p.fornKey,
       sla: p.kpis.sla, conclPct: p.kpis.conclPct, mttr: p.kpis.mttr, total: p.kpis.total,
+      amostraInsuficiente: p.kpis.total < MIN_OS_RANKING,
     }))
+    .sort((a, b) =>
+      Number(a.amostraInsuficiente) - Number(b.amostraInsuficiente) ||
+      b.sla - a.sla ||
+      a.mttr - b.mttr
+    )
 
   return { paineis, ranking }
 }

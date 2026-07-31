@@ -163,6 +163,9 @@ function safe<T>(name: string, fn: () => unknown, fallback: T): T {
 interface OSDataContextValue {
   rows:          OSRow[]
   allRows:       OSRow[]
+  /** Mesmo recorte de `rows`, deslocado para o período anterior. Já era computado
+   *  para Dashboard e Revisitas; exposto para que qualquer página possa comparar. */
+  prevRows:      OSRow[]
   isLoading:     boolean
   error:         unknown
   dataUpdatedAt: number
@@ -233,14 +236,15 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
   ].filter(Boolean) as string[], [dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, churn, revisitas, ordens, fila])
 
   const value = useMemo<OSDataContextValue>(() => ({
-    rows:    activeRows,
-    allRows: activeAllRows,
+    rows:     activeRows,
+    allRows:  activeAllRows,
+    prevRows: activePrev,
     isLoading,
     error,
     dataUpdatedAt,
     builderErrors,
     derived: { dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, churn, revisitas, ordens, fila },
-  }), [activeRows, activeAllRows, isLoading, error, dataUpdatedAt, builderErrors,
+  }), [activeRows, activeAllRows, activePrev, isLoading, error, dataUpdatedAt, builderErrors,
        dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, churn, revisitas, ordens, fila])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
@@ -250,7 +254,7 @@ export function useOSDerived(): OSDataContextValue {
   const ctx = useContext(Ctx)
   if (!ctx) {
     console.warn('[useOSDerived] usado fora do OSDataProvider — retornando defaults')
-    return { rows: [], allRows: [], isLoading: true, error: null, dataUpdatedAt: 0, builderErrors: [], derived: EMPTY_DERIVED }
+    return { rows: [], allRows: [], prevRows: [], isLoading: true, error: null, dataUpdatedAt: 0, builderErrors: [], derived: EMPTY_DERIVED }
   }
   return ctx
 }

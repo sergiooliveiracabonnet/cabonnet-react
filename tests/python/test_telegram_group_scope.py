@@ -83,8 +83,14 @@ def test_os_details_blocks_other_supplier_before_loading_sensitive_sections(monk
 
 
 def test_os_search_hides_manut_and_other_supplier(monkeypatch):
+    # Duas OS de WES (F08 e F11, ambas em _OPERADORA_GRUPOS["WES"]) para que
+    # sobrem 2 resultados após o filtro de operadora — se sobrasse só 1,
+    # _build_os_busca tomaria o atalho de "resultado único" e delegaria para
+    # _build_os_detalhes, que busca a ficha completa direto no Grafana real em
+    # vez de usar o cache que este teste alimenta.
     rows = [
         {**_row(team="INST F08", numos="1"), "nomecliente": "Maria"},
+        {**_row(team="INST F11", numos="5"), "nomecliente": "Maria"},
         {**_row(team="INST F04", numos="2"), "nomecliente": "Maria"},
         {**_row(team="INST F08", tipo="MANUTENCAO", numos="3"), "nomecliente": "Maria"},
     ]
@@ -93,6 +99,8 @@ def test_os_search_hides_manut_and_other_supplier(monkeypatch):
     text, buttons = builders._build_os_busca("Maria", operadora="WES")
 
     assert "OS 1" in text
+    assert "OS 5" in text
     assert "OS 2" not in text
     assert "OS 3" not in text
-    assert buttons is None
+    assert buttons is not None
+    assert len(buttons) == 2

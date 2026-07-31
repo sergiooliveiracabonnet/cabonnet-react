@@ -109,6 +109,39 @@ export const tecnicos = {
   remove: (codigo: string) => request<{ ok: boolean }>(`/api/tecnicos/${encodeURIComponent(codigo)}`, { method: 'DELETE' }),
 }
 
+export interface FornecedorConfig {
+  ok:    boolean
+  /** Custo mensal VIGENTE na data consultada, por operadora. */
+  custo: Record<string, number>
+  meta:  Record<string, number>
+}
+
+export interface FornecedorCustoVigencia {
+  custo_mensal:   number
+  vigente_de:     string
+  vigente_ate:    string | null
+  atualizado_em:  string
+  atualizado_por: string
+}
+
+export const fornecedorConfig = {
+  /** `dataRef` em YYYY-MM-DD. Custo por OS de um período passado precisa do
+   *  custo daquela época, não do vigente hoje. */
+  get: (dataRef?: string) =>
+    request<FornecedorConfig>(`/api/fornecedor/config${dataRef ? `?data_ref=${dataRef}` : ''}`),
+
+  setCusto: (body: { forn_key: string; custo_mensal: number; vigente_de?: string }) =>
+    request<{ ok: boolean }>('/api/fornecedor/custo', { method: 'POST', body: JSON.stringify(body) }),
+
+  setMeta: (body: { forn_key: string; meta_sla: number | null }) =>
+    request<{ ok: boolean }>('/api/fornecedor/meta', { method: 'POST', body: JSON.stringify(body) }),
+
+  historico: (fornKey: string) =>
+    request<{ ok: boolean; items: FornecedorCustoVigencia[] }>(
+      `/api/fornecedor/custo/historico?forn_key=${encodeURIComponent(fornKey)}`
+    ),
+}
+
 export type UserRole = 'gestor' | 'operador' | 'viewer'
 
 export interface UsuarioItem {

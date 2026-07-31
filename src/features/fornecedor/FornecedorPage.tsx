@@ -3,12 +3,15 @@ import { Home, Award, Clock, Target, DollarSign, Sparkles } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/bar-chart'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { buildFornecedor } from '../../lib/builders'
+import { diasNoPeriodo, MIN_OS_RANKING } from '../../lib/builders/extra'
+import { useUIStore } from '../../store/uiStore'
+import { slaEscala } from './slaEscala'
+import { indexarSlaAnterior, variacaoSla, rotuloVariacao } from './comparativo'
+import { useFornecedorConfig } from './useFornecedorConfig'
 import { SectionTitle } from '../../components/ui/SectionTitle'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Badge } from '../../components/ui/Badge'
 import { KPIGridSkeleton } from '../../components/ui/Skeleton'
-import { useAlertStore } from '../../store/alertStore'
-import { useERPStore } from '../../store/erpStore'
 import { useIsGestor } from '../../hooks/useRole'
 import { useAIFornecedor } from '../../hooks/useAIFornecedor'
 
@@ -22,15 +25,6 @@ const FORNECEDORES = [
   { value: 'INTERNO',    label: 'Interno (COPE)',     color: '#94a3b8' },
 ]
 
-// Faixas de SLA, não de score: 75% de cumprimento de prazo não é "Bom" para um
-// fornecedor sob contrato, é problema. Régua mais exigente que a do score antigo.
-function slaColor(s: number): { text: string; bg: string; border: string; label: string } {
-  if (s >= 90) return { text: 'text-green',   bg: 'bg-green/10',   border: 'border-green/20',   label: 'Excelente' }
-  if (s >= 80) return { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', label: 'Bom'       }
-  if (s >= 65) return { text: 'text-yellow',  bg: 'bg-yellow/10',  border: 'border-yellow/20',  label: 'Regular'   }
-  return              { text: 'text-red',     bg: 'bg-red/10',     border: 'border-red/20',     label: 'Crítico'   }
-}
-
 function fmtCusto(v: number | null | undefined): string {
   if (!v || v <= 0) return '—'
   return `R$ ${v.toLocaleString('pt-BR')}`
@@ -39,14 +33,26 @@ function fmtCusto(v: number | null | undefined): string {
 export default function FornecedorPage() {
   const [filtro,    setFiltro]    = useState('')
   const [aiEnabled, setAiEnabled] = useState(false)
-  const { rows, isLoading }       = useOSDerived()
-  const { metaSla, updateMetaSla }             = useAlertStore()
-  const { custoFornecedor, setCustoFornecedor } = useERPStore()
+  const { rows, prevRows, isLoading } = useOSDerived()
   const isGestor = useIsGestor()
 
+  const { from, to } = useUIStore(s => s.dateFilter)
+  const dias = useMemo(() => diasNoPeriodo(from, to), [from, to])
+
+  // Custo e meta vêm do servidor, com o custo VIGENTE no período analisado.
+  const { custo: custoFornecedor, meta: metaSla, erro: erroConfig, salvarCusto, salvarMeta } =
+    useFornecedorConfig(to)
+
   const { paineis, ranking } = useMemo(
-    () => buildFornecedor(rows, filtro, custoFornecedor),
-    [rows, filtro, custoFornecedor]
+    () => buildFornecedor(rows, filtro, custoFornecedor, dias),
+    [rows, filtro, custoFornecedor, dias]
+  )
+
+  // "SLA 87%" não diz nada sozinho; "87%, era 79%" diz. O período anterior já era
+  // computado no contexto para Dashboard e Revisitas — aqui só passou a ser lido.
+  const slaAnterior = useMemo(
+    () => indexarSlaAnterior(buildFornecedor(prevRows, filtro, custoFornecedor, dias).ranking),
+    [prevRows, filtro, custoFornecedor, dias]
   )
 
   const aiFornecedoresInput = useMemo(() => ranking.map(f => ({
@@ -93,6 +99,13 @@ export default function FornecedorPage() {
         ))}
       </div>
 
+      {erroConfig && (
+        <div className="rounded-xl border border-red/20 bg-red/[0.06] px-4 py-3 text-caption text-red/90">
+          Não foi possível carregar custo e meta do servidor: {erroConfig}. Os campos aparecem vazios —
+          o valor exibido <strong>não</strong> é "sem configuração", é "não foi possível ler".
+        </div>
+      )}
+
       {isLoading ? <KPIGridSkeleton count={6} /> : (
         <>
           {/* Ranking por SLA */}
@@ -101,12 +114,17 @@ export default function FornecedorPage() {
               <SectionTitle icon={Award} className="mb-3">Ranking por SLA</SectionTitle>
               <p className="text-caption text-muted mb-4">
                 SLA = % das OS entregues dentro do prazo. Empate desconta pelo menor MTTR.
-                A linha vertical indica a meta configurada.
+                A linha vertical indica a meta configurada. A coluna ao lado do percentual traz a
+                variação em pontos contra o período anterior. Fornecedores com menos de {MIN_OS_RANKING} OS
+                no período aparecem ao final, marcados — a proporção sobre poucas OS não distingue
+                competência de sorte na amostra.
               </p>
               <div className="space-y-3">
                 {ranking.map((f, i) => {
-                  const sc   = slaColor(f.sla)
-                  const meta = metaSla[f.nome] ?? metaSla[f.fornKey] ?? null
+                  const sc    = slaEscala(f.sla)
+                  const meta  = metaSla[f.fornKey] ?? null
+                  const delta = variacaoSla(f.sla, slaAnterior[f.fornKey])
+                  const rot   = rotuloVariacao(delta)
                   return (
                     <div key={f.nome} className="flex items-center gap-3">
                       <span className="text-caption font-mono text-muted w-4 text-right flex-shrink-0">{i + 1}</span>
@@ -129,9 +147,27 @@ export default function FornecedorPage() {
                       </div>
 
                       <span className={`text-label font-mono font-bold w-10 text-right flex-shrink-0 ${sc.text}`}>{f.sla}%</span>
+                      <span
+                        className={`text-caption font-mono font-bold w-9 text-right flex-shrink-0
+                                    ${delta == null ? 'text-muted/40' : delta > 0 ? 'text-green' : delta < 0 ? 'text-red' : 'text-muted'}`}
+                        title={delta == null
+                          ? 'Sem dados do período anterior para comparar'
+                          : `Período anterior: ${slaAnterior[f.fornKey]}%`}
+                      >
+                        {rot ?? '—'}
+                      </span>
                       <span className={`text-caption font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${sc.text} ${sc.bg} ${sc.border}`}>
                         {sc.label}
                       </span>
+                      {f.amostraInsuficiente && (
+                        <span
+                          className="text-caption font-bold px-1.5 py-0.5 rounded border flex-shrink-0
+                                     text-muted bg-surface border-white/[0.08]"
+                          title={`Só ${f.total} OS no período — abaixo do piso de ${MIN_OS_RANKING} para o ranking valer`}
+                        >
+                          n={f.total}
+                        </span>
+                      )}
 
                       {/* Meta editável inline */}
                       <div className="flex items-center gap-1 flex-shrink-0">
@@ -139,7 +175,7 @@ export default function FornecedorPage() {
                         <input
                           type="number" min={0} max={100}
                           value={meta ?? ''}
-                          onChange={e => isGestor && updateMetaSla(f.nome, Number(e.target.value))}
+                          onChange={e => isGestor && void salvarMeta(f.fornKey, Number(e.target.value))}
                           disabled={!isGestor}
                           placeholder="Meta"
                           className="w-14 bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 text-caption font-mono
@@ -225,9 +261,10 @@ export default function FornecedorPage() {
             {paineis.map((p) => (
               <FornecedorPanel key={p.nome} {...p}
                 custoMensal={custoFornecedor[p.fornKey] ?? 0}
-                onCustoChange={(v) => setCustoFornecedor(p.fornKey, v)}
-                meta={metaSla[p.nome] ?? null}
+                onCustoChange={(v) => void salvarCusto(p.fornKey, v)}
+                meta={metaSla[p.fornKey] ?? null}
                 isGestor={isGestor}
+                dias={dias}
               />
             ))}
             {paineis.length === 0 && (
@@ -242,11 +279,11 @@ export default function FornecedorPage() {
   )
 }
 
-interface PanelKpis { total: number; concluidas: number; criticas: number; sla: number; conclPct: number; mttr: number; custoMensal?: number; custoPorOs?: number | null }
+interface PanelKpis { total: number; concluidas: number; criticas: number; sla: number; conclPct: number; mttr: number; mttrP90: number; custoMensal?: number; custoPorOs?: number | null }
 interface PanelEquipe { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }
 interface PanelChart  { labels: unknown[]; total: unknown[]; concluidas: unknown[] }
 
-function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCustoChange, meta, isGestor }: {
+function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCustoChange, meta, isGestor, dias }: {
   nome: string; cor: string
   equipes: PanelEquipe[]
   kpis:    PanelKpis | null
@@ -255,9 +292,10 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
   onCustoChange: (v: number) => void
   meta:    number | null
   isGestor: boolean
+  dias:    number
 }) {
   const [expanded, setExpanded] = useState(true)
-  const sc = slaColor(kpis?.sla ?? 0)
+  const sc = slaEscala(kpis?.sla ?? 0)
   const acimaDoMeta = meta != null && kpis?.sla != null && kpis.sla >= meta
 
   const FROM: Record<string, string> = { primary: 'from-primary/[0.07]', green: 'from-green/[0.07]', red: 'from-red/[0.07]', yellow: 'from-yellow/[0.07]', orange: 'from-orange/[0.07]' }
@@ -267,8 +305,10 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
     { label: 'Total OS',       value: kpis.total,      accent: 'primary' },
     { label: 'Concluídas',     value: kpis.concluidas, accent: 'green'   },
     { label: 'Críticas',       value: kpis.criticas,   accent: 'red'     },
-    { label: 'SLA',            value: `${kpis.sla}%`,  accent: kpis.sla >= 90 ? 'green' : 'yellow' },
-    { label: 'MTTR (dias)',    value: `${kpis.mttr}d`, accent: kpis.mttr <= 2 ? 'green' : kpis.mttr <= 5 ? 'yellow' : 'red' },
+    { label: 'SLA',            value: `${kpis.sla}%`,  accent: slaEscala(kpis.sla).accent },
+    { label: 'MTTR P50',       value: `${kpis.mttr}d`, accent: kpis.mttr <= 2 ? 'green' : kpis.mttr <= 5 ? 'yellow' : 'red' },
+    // O caso ruim, não o típico: é dele que vem reclamação de cliente e multa.
+    { label: 'MTTR P90',       value: `${kpis.mttrP90}d`, accent: kpis.mttrP90 <= 5 ? 'green' : kpis.mttrP90 <= 10 ? 'yellow' : 'red' },
     { label: 'Taxa Conclusão', value: `${kpis.conclPct}%`, accent: kpis.conclPct >= 80 ? 'green' : kpis.conclPct >= 60 ? 'primary' : 'yellow' },
     { label: 'Custo / OS',     value: fmtCusto(kpis.custoPorOs), accent: 'orange' },
   ] : []
@@ -291,10 +331,9 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
               {acimaDoMeta ? '↑ Acima da meta' : '↓ Abaixo da meta'} ({meta}%)
             </span>
           )}
-          {kpis?.sla != null && <Badge variant={kpis.sla >= 90 ? 'green' : kpis.sla >= 75 ? 'yellow' : 'red'}>SLA {kpis.sla}%</Badge>}
           {kpis?.mttr != null && (
             <span className="flex items-center gap-1 text-caption text-muted border border-white/[0.08] rounded px-2 py-0.5">
-              <Clock size={9} /> {kpis.mttr}d MTTR
+              <Clock size={9} /> {kpis.mttr}d P50 · {kpis.mttrP90}d P90
             </span>
           )}
           <Badge variant="cyan">{kpis?.total ?? 0} OS</Badge>
@@ -321,13 +360,14 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
             {kpis?.custoPorOs != null && (
               <span className="text-caption text-muted">
                 → <span className="text-orange font-semibold">{fmtCusto(kpis.custoPorOs)} / OS concluída</span>
+                {' '}<span className="text-muted/60">(custo rateado para os {dias}d do período)</span>
               </span>
             )}
           </div>
 
           {/* KPI Cards */}
           {kpis && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
               {kpiCards.map((k) => (
                 <div key={k.label} className={`bg-surface bg-gradient-to-br ${FROM[k.accent] ?? FROM.primary} to-transparent border border-white/[0.08] rounded-xl p-3`}>
                   <p className="text-caption font-bold uppercase tracking-wide text-muted mb-1">{k.label}</p>
@@ -356,7 +396,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                       <td className="px-3 py-2 font-mono text-green">{eq.concluidas}</td>
                       <td className="px-3 py-2 font-mono text-red">{eq.criticas}</td>
                       <td className="px-3 py-2">
-                        <Badge variant={eq.sla >= 90 ? 'green' : eq.sla >= 75 ? 'yellow' : 'red'}>{eq.sla}%</Badge>
+                        <Badge variant={slaEscala(eq.sla).badge}>{eq.sla}%</Badge>
                       </td>
                       <td className="px-3 py-2">
                         <span className={`font-mono text-caption ${eq.mttr <= 2 ? 'text-green' : eq.mttr <= 5 ? 'text-yellow' : 'text-red'}`}>
