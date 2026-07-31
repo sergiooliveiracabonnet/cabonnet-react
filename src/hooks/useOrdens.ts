@@ -251,8 +251,9 @@ export function useOrdens() {
     }
 
     // Os cards de agenda contam o MESMO recorte de filtros que a tabela mostra.
-    // Os três toggles de agenda são zerados porque definem qual base está sendo
-    // olhada — deixá-los ligados faria o recorte filtrar a si mesmo e zerar.
+    // Só agendHoje é zerado: os dois baldes contêm exclusivamente datas futuras,
+    // então o toggle jamais casaria e o card ficaria preso em 0. agendAmanha e
+    // agendFuturo não passam por aqui — eles escolhem baseOrdens, não filtram.
     const filtrosAgenda: OrdensFiltros = { ...filtros, agendHoje: false }
 
     return {

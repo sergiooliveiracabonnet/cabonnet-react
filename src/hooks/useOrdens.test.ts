@@ -196,6 +196,27 @@ describe('splitAgendaFutura — amanhã e após amanhã, disjuntos', () => {
     })
     expect(soTaubate.map(r => r.numos)).toEqual(['T1'])
   })
+
+  it('zerar agendHoje evita que o balde de amanhã se autofiltre, sem desligar os demais filtros', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'T1', descsituacao: 'Pendente', nomedacidade: 'TAUBATE', dataagendamento: emDias(1) }),
+    ])
+    const { amanhaOrdens } = splitAgendaFutura(rows)
+    const comCidadeEAgendHoje: OrdensFiltros = {
+      search: '', status: '', reagendTipo: '', tipo: '', cidade: 'TAUBATE', bairro: '',
+      equipe: '', fornecedor: '', tipoOs: '', periodo: '', aging: '',
+      semEquipe: false, critico: false, agendHoje: true,
+    }
+    // Nenhuma OS do balde "amanhã" tem dataagendamento = hoje, então com
+    // agendHoje ligado o próprio recorte se anula — é o bug que a Task 4 corrigiu.
+    expect(aplicarFiltros(amanhaOrdens, comCidadeEAgendHoje).map(r => r.numos)).toEqual([])
+
+    // filtrosAgenda faz exatamente isto: zera só agendHoje. A OS volta a
+    // aparecer e o filtro de cidade (dimensional, não relacionado à agenda)
+    // continua valendo — prova que os demais filtros não foram desligados junto.
+    const filtrosAgenda: OrdensFiltros = { ...comCidadeEAgendHoje, agendHoje: false }
+    expect(aplicarFiltros(amanhaOrdens, filtrosAgenda).map(r => r.numos)).toEqual(['T1'])
+  })
 })
 
 describe('matchesAging — filtro de aging', () => {
