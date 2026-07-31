@@ -1,7 +1,7 @@
 # Design: Custo de revisita por fornecedor
 
 **Data:** 2026-07-31
-**Status:** Aguardando decisão — ver "A decisão central" abaixo
+**Status:** Opção A decidida. Testes de regressão de `buildRevisitas` escritos (35 casos, `src/lib/builders/revisitas.test.ts`, commit `c6c3a4c`). Dois achados novos abrem duas perguntas que bloqueiam a implementação — ver "Achados durante os testes" e "Perguntas abertas".
 
 ## Contexto
 
@@ -56,13 +56,11 @@ Reaproveita `EVIT_INST_RATE_ESTIMADO`/`EVIT_MANUT_RATE_ESTIMADO`, que já existe
 
 **O problema:** aplicar uma taxa não calibrada (70%/50%, "chute" segundo o próprio comentário do código) ao custo real e vigente de cada fornecedor produz um número que *parece* preciso — porque metade dele é real — mas continua sendo, na outra metade, uma suposição. É exatamente o padrão de risco do defeito original do PR #15: um número plausível demais para alguém desconfiar, indo direto para conversa de contrato.
 
-### Recomendação
+### Decisão: Opção A
 
-**Opção A como métrica principal.** Mostra "Custo de revisita" (não "evitável"), sem multiplicador de taxa. É consistente com o padrão já estabelecido nesta base de código — o comentário em `RankingTecnicosPage.tsx:13` já registra o princípio: *"nenhum score novo, nenhum peso inventado"*.
+Confirmada pelo dono do produto em 2026-07-31. O card mostra "Custo de revisita" (não "evitável"), sem multiplicador de taxa — consistente com o princípio já registrado em `RankingTecnicosPage.tsx:13`: *"nenhum score novo, nenhum peso inventado"*.
 
-**Opção B como overlay opcional, rotulado sem ambiguidade.** Se o produto quiser manter a leitura "evitável" para efeito de conversa qualitativa (não contratual), ela pode aparecer como um segundo número, menor, com `title="Estimativa não calibrada — ver metodologia"`, exatamente como a IA já é instruída a tratá-lo hoje. Nunca como o número principal do card.
-
-Isso é uma escolha de produto, não técnica — registro como pergunta aberta.
+A Opção B (overlay com a taxa estimada, rotulado sem ambiguidade) fica descartada para esta entrega. Se o produto quiser essa leitura qualitativa no futuro, é uma adição incremental, não uma mudança na métrica principal.
 
 ## Arquitetura
 
@@ -141,20 +139,53 @@ Se a Opção B for aprovada, um segundo valor menor abaixo, com o disclaimer.
 - Revisita de fornecedor sem nenhuma OS no período não aparece na lista (sem `total: 0` poluindo).
 - Fornecedor com revisitas mas sem custo configurado — `custoRevisita` deve ser `null`, não `0` nem `NaN` (mesma regra de `custoPorOs` no PR #15: ausência de configuração não é custo zero).
 
+## Correção de domínio (2026-07-31)
+
+A caracterização original deste documento — "MANUTENCAO é um tipo de OS tratado como pseudo-fornecedor" — estava **incompleta**. Segundo o dono do produto:
+
+- WES, Instacable e THM são equipes que fazem instalação, manutenção **e** serviço com o mesmo código de frente — não trocam de fornecedor entre um tipo de OS e outro. Confirmado por teste (`transform.test.ts`, "mesma equipe permanece no mesmo fornecedor independente do tipo de serviço").
+- A equipe de Rede faz serviços de rede, instalação e manutenção quando necessário.
+- **MANUT 02, MANUT 04 e MANUT 77 são uma equipe de qualidade real e distinta** — fazem qualquer tipo de OS e ainda auditam a execução de THM, WES e Instacable. Não é um "tipo de OS" mal rotulado como fornecedor; é um fornecedor de verdade, só que com um nome que colide com a palavra usada para classificar o *tipo* de serviço em outras partes do sistema.
+
+Isso não elimina a ambiguidade estrutural — ela só muda de natureza. Ver os dois achados abaixo.
+
+## Achados durante os testes
+
+Escrever os testes de regressão (pedido explícito do usuário, antes de qualquer mudança em `buildRevisitas`) expôs dois problemas reais, nenhum deles hipotético — ambos reproduzidos e travados em teste:
+
+### 1. `getFornecedor` exige a substring ASCII "MANUTENC", sem acento
+
+`transform.test.ts`, bloco `getFornecedor`: `getFornecedor('MANUT 02')` → `'OUTRO'`. `getFornecedor('EQUIPE MANUTENÇÃO 02')` → `'OUTRO'` (cedilha/til não normalizam para ASCII em `.toUpperCase()`). Só `'MANUTENCAO'` por extenso, sem acento, casa.
+
+`buildFornecedor` descarta `'OUTRO'` explicitamente (`if (k === 'OUTRO') continue`). **Se o nome real de `nomedaequipe` no Grafana para as equipes de qualidade for literalmente "MANUT 02"/"MANUT 04"/"MANUT 77"** (como o usuário escreveu, sem o sufixo "ENCAO"), essas OS somem de **todos** os painéis de Fornecedor hoje — sem erro, sem aviso, silenciosamente. Isso afeta o custo/OS que já está em produção desde o PR #15, não só esta entrega.
+
+**Ação necessária antes de prosseguir:** verificar o valor real de `nomedaequipe` no banco para essas três equipes. Não é algo que dá para confirmar só lendo o código.
+
+### 2. O detector de revisita é cego para a equipe de Rede
+
+`getEquipeTipo` testa `/\bREDE\b/` no **nome da equipe** antes de olhar `tiposervico` — então qualquer OS da equipe de Rede recebe `_tipo = 'REDE'`, mesmo quando é uma instalação ou manutenção de verdade (confirmado em teste: `getEquipeTipo('03-VAL - REDE FIBRA', 'MANUTENCAO')` retorna `'REDE'`, não `'MANUTENCAO'`).
+
+`buildRevisitas` só bucketiza `_tipo` em `'INSTALACAO' | 'MANUTENCAO' | 'OUTRO'` no loop que monta os pares — `'REDE'` não cai em nenhum dos três e é descartado silenciosamente. Resultado: a equipe de Rede faz instalação e manutenção "quando é preciso", exatamente como o usuário descreveu, mas **nenhuma revisita dela jamais aparece** em taxa, `porEquipe`, `custoEstimado` ou, com esta entrega, `porFornecedor`/custo de revisita.
+
+Travado em teste: `revisitas.test.ts`, "DOCUMENTA o achado: revisita da equipe de Rede não é detectada, porque `_tipo` trava em REDE".
+
+**Consequência para esta entrega:** o card de "Custo de revisita" da Rede mostraria sempre R$0 / 0 revisitas — não porque a Rede não tem retrabalho, mas porque o sistema não consegue enxergá-lo. Um card assim é pior que nenhum card: ele afirma implicitamente "Rede não tem revisita", o que não é verdade.
+
 ## Fora de escopo
 
-- **A ambiguidade REDE/MANUTENCAO como pseudo-fornecedores** (já registrada na avaliação original, item "Descartável"). `getFornecedor()` bucketiza qualquer equipe com "MANUTENC" no nome sob o fornecedor `MANUTENCAO`, mesmo que seja o time de manutenção da própria WES — significa que uma revisita feita pela equipe de manutenção da WES é atribuída ao painel "Manutenção", não ao painel "WES". Este comportamento **já existe** para o custo/OS de hoje; esta entrega herda a mesma ambiguidade, não a introduz nem a resolve. Corrigir isso é separar `_fornecedor` (quem) de `_tipo` (o quê) de verdade — mudança maior, fora desta spec.
+- **Corrigir os dois achados acima.** Exigem decisão de produto (a Rede ganha pareamento próprio de revisita? `_tipo` e `_fornecedor` precisam ser desacoplados de vez?), não são ajuste mecânico. Ficam para uma entrega própria — mas o achado #2 é um bloqueador de fato para o card de Rede nesta spec, ver "Perguntas abertas".
 - Classificação de causa raiz por IA (`ai.revisitasCausa`) como fonte de evitabilidade por OS. Já existe, mas é sob demanda, limitada a 25 pares por clique, sem persistência e sem um booleano de evitabilidade — é ferramenta qualitativa de investigação, não fonte de dado para agregação estatística confiável.
-- Calibrar as taxas de evitabilidade com dado real (ex.: usar o resultado acumulado da classificação por IA para medir, com o tempo, se 70%/50% batem com a realidade). Interessante, mas depende de volume de uso da ferramenta de causa raiz que ainda não existe.
+- Calibrar as taxas de evitabilidade com dado real (ex.: usar o resultado acumulado da classificação por IA para medir, com o tempo, se 70%/50% batem com a realidade). Interessante, mas depende de volume de uso da ferramenta de causa raiz que ainda não existe — e ficou ainda menos prioritário depois da decisão pela Opção A, que não usa taxa nenhuma.
 
-## Risco: `buildRevisitas` não tem nenhum teste hoje
+## Risco coberto: `buildRevisitas` agora tem 35 testes de regressão
 
-`grep` por `buildRevisitas` em todo `src/**/*.test.{ts,tsx}` não retorna nada — nem direto, nem indireto via componente. É uma função de 241 linhas, com cruzamento cliente×mês, ordenação por data de execução e três tipos de par (inst→manut, manut→manut, serv→manut), rodando sem rede de segurança.
+`buildRevisitas` nunca teve teste (`grep` por ela em `src/**/*.test.{ts,tsx}` não retornava nada). `src/lib/builders/revisitas.test.ts` (commit `c6c3a4c`) cobre a função inteira: os três tipos de par, isolamento por cliente-mês, `porEquipe`/`porCidade`, clientes crônicos, `evitaveis`/`custoEstimado` na fórmula atual, distribuição por dias, tendência, narrativa, e o cenário de domínio WES/Instacable/THM/Rede fazendo os três tipos de OS. Os dois achados acima também viraram teste, não só comentário.
 
-Isso não é motivo para não mexer — é motivo para não mexer **sem** escrever testes de regressão do comportamento atual antes de tocar na função, não só dos casos novos de `fornecedor`/`porFornecedor`. Sem isso, um erro de refatoração na lógica existente (por exemplo, na hora de plugar a captura de `_fornecedor` no loop) passa despercebido.
+Com essa rede de segurança, a implementação de `porFornecedor` (seção Frontend acima) pode prosseguir com confiança de não quebrar o que já funciona.
 
 ## Perguntas abertas
 
-1. **Opção A ou B?** — bloqueia a implementação do card.
-2. Se B: o disclaimer aparece sempre visível ou só no hover/tooltip? A mesma pergunta vale para o card agregado de Revisitas que já existe hoje e nunca foi resolvida.
-3. O card de custo de revisita entra em todos os painéis de fornecedor, ou só nos que têm custo configurado (evitando `—` repetido para quem ainda não cadastrou)?
+1. ~~Opção A ou B?~~ — **Resolvida: Opção A.**
+2. **O achado #1 é real?** Alguém com acesso ao Grafana precisa confirmar o valor literal de `nomedaequipe` para MANUT 02/04/77. Se for "MANUT 02" sem o sufixo, o card de Manutenção — e o custo/OS já em produção — está incorretamente vazio hoje, e essa correção deveria furar a fila à frente desta spec.
+3. **O achado #2 bloqueia o card de Rede?** Três caminhos: (a) shippar sem o card de Rede, com nota explicando por quê; (b) shippar com o card, aceitando que mostra sempre zero, mas com tooltip explicando a limitação; (c) resolver o achado #2 primeiro, como pré-requisito. Recomendo (a) — um card ausente não mente, um card zerado mente por omissão.
+4. O card de custo de revisita entra em todos os painéis de fornecedor, ou só nos que têm custo configurado (evitando `—` repetido para quem ainda não cadastrou)?
