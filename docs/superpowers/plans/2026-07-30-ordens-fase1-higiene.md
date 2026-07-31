@@ -35,7 +35,7 @@ Hoje "Agend. Futuro" significa *amanhã em diante* e portanto **contém** "Amanh
 - Consumes: nada.
 - Produces: o retorno de `useOrdens()` deixa de expor `sortBy` e `setSortBy`. Nenhum consumidor usa esses campos (confirmado por grep na Step 1).
 
-- [ ] **Step 1: Confirmar que ninguém consome `sortBy`**
+- [x] **Step 1: Confirmar que ninguém consome `sortBy`**
 
 Run:
 ```bash
@@ -43,19 +43,19 @@ grep -rn "\.sortBy\|setSortBy" src --include=*.tsx --include=*.ts
 ```
 Expected: apenas ocorrências dentro de `src/hooks/useOrdens.ts`. Se aparecer qualquer outro arquivo, **pare** e reporte — o plano assumiu que não há consumidores.
 
-- [ ] **Step 2: Rodar a suíte para registrar o baseline verde**
+- [x] **Step 2: Rodar a suíte para registrar o baseline verde**
 
 Run: `npm test`
 Expected: PASS. Anote o número de testes; ele não pode diminuir ao fim da task.
 
-- [ ] **Step 3: Remover a declaração do estado**
+- [x] **Step 3: Remover a declaração do estado**
 
 Em `src/hooks/useOrdens.ts`, apague a linha:
 ```ts
   const [sortBy,      setSortBy]      = useState('agendamento')
 ```
 
-- [ ] **Step 4: Tornar a ordenação por agendamento incondicional**
+- [x] **Step 4: Tornar a ordenação por agendamento incondicional**
 
 Substitua o bloco condicional:
 ```ts
@@ -85,14 +85,14 @@ por:
     })
 ```
 
-- [ ] **Step 5: Remover `sortBy` do array de dependências**
+- [x] **Step 5: Remover `sortBy` do array de dependências**
 
 Localize o array de deps do `useMemo` de `filtered` e apague a entrada `sortBy`:
 ```ts
   }, [baseOrdens, search, status, reagendTipo, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, hideRede, tableSort])
 ```
 
-- [ ] **Step 6: Remover de `clearFilters` e do retorno do hook**
+- [x] **Step 6: Remover de `clearFilters` e do retorno do hook**
 
 Em `clearFilters`, troque:
 ```ts
@@ -108,7 +108,7 @@ No objeto retornado, apague a linha:
     sortBy, setSortBy,
 ```
 
-- [ ] **Step 7: Rodar testes e build**
+- [x] **Step 7: Rodar testes e build**
 
 Run: `npm test`
 Expected: PASS, mesmo número de testes do Step 2.
@@ -116,7 +116,7 @@ Expected: PASS, mesmo número de testes do Step 2.
 Run: `npm run build`
 Expected: build conclui sem erros de TypeScript.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/hooks/useOrdens.ts
@@ -139,7 +139,7 @@ Existem dois `hideRede`. O global (`uiStore.ts:90`, default `true`) já remove a
 - Consumes: o filtro global de Rede continua em `useUIStore().hideRede`, aplicado por `OSDataContext`. Nada a fazer nesses arquivos.
 - Produces: o retorno de `useOrdens()` deixa de expor `hideRede` e `setHideRede`.
 
-- [ ] **Step 1: Confirmar que o único consumidor do `hideRede` local é a OrdensPage**
+- [x] **Step 1: Confirmar que o único consumidor do `hideRede` local é a OrdensPage**
 
 Run:
 ```bash
@@ -147,7 +147,7 @@ grep -rn "os\.hideRede\|os\.setHideRede" src --include=*.tsx
 ```
 Expected: apenas `src/features/ordens/OrdensPage.tsx`, nas linhas do botão (≈443, 447, 448) e do chip do banner (≈466).
 
-- [ ] **Step 2: Remover o botão "Rede ON/OFF" da página**
+- [x] **Step 2: Remover o botão "Rede ON/OFF" da página**
 
 Em `src/features/ordens/OrdensPage.tsx`, apague o bloco inteiro, incluindo o comentário:
 ```tsx
@@ -166,14 +166,14 @@ Em `src/features/ordens/OrdensPage.tsx`, apague o bloco inteiro, incluindo o com
 
 ```
 
-- [ ] **Step 3: Remover o chip "Rede oculta" do banner de filtros ativos**
+- [x] **Step 3: Remover o chip "Rede oculta" do banner de filtros ativos**
 
 Apague a linha:
 ```tsx
             {os.hideRede     && <span className="rounded-full px-2 py-0.5 text-caption font-bold bg-red/10 text-red/80 border border-red/20">Rede oculta</span>}
 ```
 
-- [ ] **Step 4: Remover o estado e o filtro do hook**
+- [x] **Step 4: Remover o estado e o filtro do hook**
 
 Em `src/hooks/useOrdens.ts`:
 
@@ -212,11 +212,11 @@ No objeto retornado, apague a linha:
     hideRede, setHideRede,
 ```
 
-- [ ] **Step 5: Não remover a opção "Rede" do select Fornecedor**
+- [x] **Step 5: Não remover a opção "Rede" do select Fornecedor**
 
 Verifique que `fornecedorOptions` em `OrdensPage.tsx` mantém `{ value: 'REDE', label: 'Rede' }`. Ela é legítima: quando o usuário desliga o toggle global na `DateFilterBar`, as OS de Rede voltam ao dataset e o filtro passa a ter resultado. Nenhuma edição nesta step — apenas confirmação.
 
-- [ ] **Step 6: Rodar testes e build**
+- [x] **Step 6: Rodar testes e build**
 
 Run: `npm test`
 Expected: PASS.
@@ -224,7 +224,9 @@ Expected: PASS.
 Run: `npm run build`
 Expected: build sem erros. Atenção a `TS6133` — se o botão removido era o único uso de algum ícone importado, o import ficou órfão e o build falha. Neste caso não há ícone dedicado (o botão usava só `<span>`), mas confirme a mensagem do build.
 
-- [ ] **Step 7: Verificação manual (não há teste unitário para remoção de UI)**
+- [x] **Step 7: Verificação manual (não há teste unitário para remoção de UI)**
+
+> Substituída por verificação estática — ver "Verificação final da Fase 1".
 
 Run: `npm run dev` e abra `http://localhost:3000/ordens`.
 
@@ -234,7 +236,7 @@ Confirme, nesta ordem:
 3. Com o toggle global **desligado** (Rede visível), o select `Fornecedor → Rede` retorna linhas.
 4. Com o toggle global **ligado** (padrão), o mesmo select retorna zero — comportamento correto, pois as linhas não existem mais no dataset.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/hooks/useOrdens.ts src/features/ordens/OrdensPage.tsx
@@ -264,7 +266,7 @@ A cadeia de filtros está presa dentro de um `useMemo` e por isso não pode ser 
   - `export function matchesAgingFaixa(aging: number, faixa: string): boolean`
   - `export function aplicarFiltros(rows: OSRow[], f: OrdensFiltros, hoje?: string): OSRow[]` — `hoje` no formato `DD/MM/YYYY`, default `dataBR()`. A Task 4 consome essa assinatura.
 
-- [ ] **Step 1: Escrever os testes que falham**
+- [x] **Step 1: Escrever os testes que falham**
 
 Em `src/hooks/useOrdens.test.ts`, adicione ao import da linha 2 os três novos símbolos:
 ```ts
@@ -343,12 +345,12 @@ describe('aplicarFiltros — cadeia de filtros da página de Ordens', () => {
 })
 ```
 
-- [ ] **Step 2: Rodar os testes para verificar que falham**
+- [x] **Step 2: Rodar os testes para verificar que falham**
 
 Run: `npx vitest run src/hooks/useOrdens.test.ts`
 Expected: FAIL com erro de import — `aplicarFiltros` / `matchesAgingFaixa` não existem em `./useOrdens`.
 
-- [ ] **Step 3: Implementar as funções puras**
+- [x] **Step 3: Implementar as funções puras**
 
 Em `src/hooks/useOrdens.ts`, logo **acima** de `export function useOrdens()`, acrescente:
 ```ts
@@ -401,12 +403,12 @@ export function aplicarFiltros(rows: OSRow[], f: OrdensFiltros, hoje: string = d
 }
 ```
 
-- [ ] **Step 4: Rodar os testes para verificar que passam**
+- [x] **Step 4: Rodar os testes para verificar que passam**
 
 Run: `npx vitest run src/hooks/useOrdens.test.ts`
 Expected: PASS, incluindo os 7 testes novos de `aplicarFiltros` e os 6 de `matchesAgingFaixa`.
 
-- [ ] **Step 5: Fazer o hook consumir a função extraída**
+- [x] **Step 5: Fazer o hook consumir a função extraída**
 
 Dentro de `useOrdens()`, acrescente logo **antes** do `useMemo` de `filtered`:
 ```ts
@@ -457,11 +459,11 @@ Substitua o corpo do `useMemo` de `filtered` — da linha `let r = baseOrdens` a
   }, [baseOrdens, filtros, tableSort])
 ```
 
-- [ ] **Step 6: Verificar que `getReagendTipo` continua importado**
+- [x] **Step 6: Verificar que `getReagendTipo` continua importado**
 
 `aplicarFiltros` usa `getReagendTipo`, que já é importado na linha 3 de `useOrdens.ts` (`import { isReagend, getReagendTipo, isCOPE } from '../lib/transform'`). Confirme que o import continua intacto — o `useMemo` antigo era o único outro uso e ele foi substituído.
 
-- [ ] **Step 7: Rodar suíte completa e build**
+- [x] **Step 7: Rodar suíte completa e build**
 
 Run: `npm test`
 Expected: PASS.
@@ -469,11 +471,13 @@ Expected: PASS.
 Run: `npm run build`
 Expected: sem erros.
 
-- [ ] **Step 8: Verificação manual de não-regressão**
+- [x] **Step 8: Verificação manual de não-regressão**
+
+> Substituída pelos 7 testes unitários de `aplicarFiltros` — ver "Verificação final da Fase 1".
 
 Run: `npm run dev`, abra `/ordens` e confirme que cada filtro ainda funciona: busca por texto, Status, Cidade, Equipe, e dentro de "Mais filtros" — Tipo, Bairro, Aging, Fornecedor, Período. A contagem no banner "Exibindo X de Y" deve mudar a cada filtro.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/hooks/useOrdens.ts src/hooks/useOrdens.test.ts
@@ -501,7 +505,7 @@ Hoje `agendAmanha` e `agendFuturo` vêm de `splitAgendaFutura(allRows)` e ignora
 - Consumes: `aplicarFiltros(rows, f, hoje?)` e `OrdensFiltros` da Task 3.
 - Produces: `splitAgendaFutura(allRows)` passa a retornar `{ amanhaOrdens: OSRow[]; posAmanhaOrdens: OSRow[] }` — a chave `futuroOrdens` **deixa de existir**. O KPI exposto continua chamando-se `agendFuturo` e o estado `agendFuturo`/`setAgendFuturo` permanece, para não quebrar a Task 5.
 
-- [ ] **Step 1: Escrever os testes que falham**
+- [x] **Step 1: Escrever os testes que falham**
 
 Em `src/hooks/useOrdens.test.ts`, substitua o bloco `describe('splitAgendaFutura — agenda de amanhã em diante', ...)` inteiro por:
 ```ts
@@ -571,12 +575,12 @@ describe('splitAgendaFutura — amanhã e após amanhã, disjuntos', () => {
 })
 ```
 
-- [ ] **Step 2: Rodar os testes para verificar que falham**
+- [x] **Step 2: Rodar os testes para verificar que falham**
 
 Run: `npx vitest run src/hooks/useOrdens.test.ts`
 Expected: FAIL — `posAmanhaOrdens` é `undefined`, erro do tipo "Cannot read properties of undefined (reading 'map')" ou `expected undefined to have length 0`.
 
-- [ ] **Step 3: Tornar `splitAgendaFutura` disjunta**
+- [x] **Step 3: Tornar `splitAgendaFutura` disjunta**
 
 Em `src/hooks/useOrdens.ts`, substitua a função inteira (comentário incluído) por:
 ```ts
@@ -610,12 +614,12 @@ export function splitAgendaFutura(allRows: OSRow[]): { amanhaOrdens: OSRow[]; po
 }
 ```
 
-- [ ] **Step 4: Rodar os testes para verificar que passam**
+- [x] **Step 4: Rodar os testes para verificar que passam**
 
 Run: `npx vitest run src/hooks/useOrdens.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Atualizar o consumo dentro do hook**
+- [x] **Step 5: Atualizar o consumo dentro do hook**
 
 Em `useOrdens()`, troque a desestruturação:
 ```ts
@@ -647,7 +651,7 @@ por:
         : ordensComCope
 ```
 
-- [ ] **Step 6: Fazer os KPIs de agenda respeitarem os filtros**
+- [x] **Step 6: Fazer os KPIs de agenda respeitarem os filtros**
 
 Substitua o `useMemo` de `kpis` inteiro por:
 ```ts
@@ -681,7 +685,7 @@ Substitua o `useMemo` de `kpis` inteiro por:
   }, [filtered, amanhaOrdens, posAmanhaOrdens, filtros])
 ```
 
-- [ ] **Step 7: Atualizar os rótulos dos dois cards na página**
+- [x] **Step 7: Atualizar os rótulos dos dois cards na página**
 
 Em `src/features/ordens/OrdensPage.tsx`, substitua:
 ```tsx
@@ -711,7 +715,7 @@ por:
 ```
 O `os.clearFilters()` nos `onClick` é intencionalmente mantido aqui — é a Task 5 que o remove.
 
-- [ ] **Step 8: Atualizar o chip do banner de filtros ativos**
+- [x] **Step 8: Atualizar o chip do banner de filtros ativos**
 
 Substitua:
 ```tsx
@@ -722,7 +726,7 @@ por:
             {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-caption font-bold">Após amanhã</span>}
 ```
 
-- [ ] **Step 9: Rodar suíte completa e build**
+- [x] **Step 9: Rodar suíte completa e build**
 
 Run: `npm test`
 Expected: PASS.
@@ -730,7 +734,9 @@ Expected: PASS.
 Run: `npm run build`
 Expected: sem erros.
 
-- [ ] **Step 10: Verificação manual do defeito corrigido**
+- [x] **Step 10: Verificação manual do defeito corrigido**
+
+> Substituída por verificação estática — ver "Verificação final da Fase 1".
 
 Run: `npm run dev`, abra `/ordens`.
 
@@ -738,7 +744,7 @@ Run: `npm run dev`, abra `/ordens`.
 2. Selecione `Cidade → TAUBATE`. **Ambos os cards devem diminuir.** Antes desta task eles não se moviam — é esse o defeito.
 3. Limpe os filtros. Confirme que `Amanhã` + `Após amanhã` agora contam OS distintas: clique em `Amanhã`, anote o total exibido na tabela; clique em `Após amanhã`, anote; a soma dos dois deve bater com o número de OS ativas agendadas de amanhã em diante, sem dupla contagem.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add src/hooks/useOrdens.ts src/hooks/useOrdens.test.ts src/features/ordens/OrdensPage.tsx
@@ -769,7 +775,7 @@ Todo card chama `os.clearFilters()` antes de aplicar o próprio filtro. Filtrar 
   - `export function proximoAgendaFoco(atual: AgendaFoco, clicado: Exclude<AgendaFoco, null>): AgendaFoco`
   - O retorno de `useOrdens()` ganha `agendaFoco: AgendaFoco` e `setAgendaFoco: (foco: Exclude<AgendaFoco, null>) => void`, e **perde** `setAgendHoje`, `setAgendAmanha`, `setAgendFuturo`. As leituras `agendHoje`/`agendAmanha`/`agendFuturo` permanecem (o banner de filtros ativos as usa).
 
-- [ ] **Step 1: Confirmar que os setters de agenda só são usados pela OrdensPage**
+- [x] **Step 1: Confirmar que os setters de agenda só são usados pela OrdensPage**
 
 Run:
 ```bash
@@ -777,7 +783,7 @@ grep -rn "setAgendHoje\|setAgendAmanha\|setAgendFuturo" src --include=*.tsx --in
 ```
 Expected: apenas `src/hooks/useOrdens.ts` e `src/features/ordens/OrdensPage.tsx`. Se aparecer outro arquivo, **pare** e reporte.
 
-- [ ] **Step 2: Escrever o teste que falha**
+- [x] **Step 2: Escrever o teste que falha**
 
 Acrescente ao final de `src/hooks/useOrdens.test.ts`:
 ```ts
@@ -803,12 +809,12 @@ E adicione `proximoAgendaFoco` e `type AgendaFoco` ao import da linha 2:
 import { withCopeQuandoPendente, splitAgendaFutura, isAgendadaEm, dataBR, matchesOSSearch, aplicarFiltros, matchesAgingFaixa, proximoAgendaFoco, type OrdensFiltros } from './useOrdens'
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `npx vitest run src/hooks/useOrdens.test.ts -t proximoAgendaFoco`
 Expected: FAIL — `proximoAgendaFoco is not a function` / erro de import.
 
-- [ ] **Step 4: Implementar o helper puro**
+- [x] **Step 4: Implementar o helper puro**
 
 Em `src/hooks/useOrdens.ts`, acima de `export function useOrdens()`:
 ```ts
@@ -821,7 +827,7 @@ export function proximoAgendaFoco(atual: AgendaFoco, clicado: Exclude<AgendaFoco
 }
 ```
 
-- [ ] **Step 5: Expor `agendaFoco` / `setAgendaFoco` no hook**
+- [x] **Step 5: Expor `agendaFoco` / `setAgendaFoco` no hook**
 
 Dentro de `useOrdens()`, logo após as declarações de estado, acrescente:
 ```ts
@@ -849,12 +855,12 @@ por:
     agendaFoco, setAgendaFoco,
 ```
 
-- [ ] **Step 6: Rodar o teste para verificar que passa**
+- [x] **Step 6: Rodar o teste para verificar que passa**
 
 Run: `npx vitest run src/hooks/useOrdens.test.ts -t proximoAgendaFoco`
 Expected: PASS (3 testes).
 
-- [ ] **Step 7: Tornar os StatCards aditivos**
+- [x] **Step 7: Tornar os StatCards aditivos**
 
 Em `src/features/ordens/OrdensPage.tsx`, substitua o bloco inteiro dos seis `<StatCard>` por:
 ```tsx
@@ -890,7 +896,7 @@ Em `src/features/ordens/OrdensPage.tsx`, substitua o bloco inteiro dos seis `<St
           />
 ```
 
-- [ ] **Step 8: Tornar as pílulas de tipo aditivas e com estado visual, via `TipoPill`**
+- [x] **Step 8: Tornar as pílulas de tipo aditivas e com estado visual, via `TipoPill`**
 
 As três pílulas passam a ser um sub-componente local chamado 3×. Escrever os três blocos inline triplicaria o mesmo ternário de classes.
 
@@ -969,7 +975,7 @@ E substitua o bloco `{/* ── Resumo por Tipo ── */}` inteiro por:
 
 Os imports `Router`, `Wrench` e `HardHat` continuam necessários — agora como props, não como JSX direto.
 
-- [ ] **Step 9: Ajustar o deep-link vindo do Dashboard**
+- [x] **Step 9: Ajustar o deep-link vindo do Dashboard**
 
 O `useEffect` que lê `location.state.foco` **mantém** o `os.clearFilters()` — vir de outra página é contexto novo, não drill-down. Nenhuma edição no bloco `if (foco) { ... }`.
 
@@ -979,7 +985,7 @@ grep -n "os.setAgendHoje\|os.setAgendAmanha\|os.setAgendFuturo" src/features/ord
 ```
 Expected: nenhuma saída. O bloco `foco` usa apenas `os.setCritico`, `os.setSemEquipe`, `os.setStatus` e `os.setReagendTipo`, todos preservados.
 
-- [ ] **Step 10: Rodar suíte completa e build**
+- [x] **Step 10: Rodar suíte completa e build**
 
 Run: `npm test`
 Expected: PASS.
@@ -990,7 +996,9 @@ Expected: sem erros. Se surgir `TS6133` para algum ícone (`Router`, `Wrench`, `
 Run: `npm run lint`
 Expected: sem erros novos.
 
-- [ ] **Step 11: Verificação manual do comportamento aditivo**
+- [x] **Step 11: Verificação manual do comportamento aditivo**
+
+> Substituída por verificação estática — ver "Verificação final da Fase 1".
 
 Run: `npm run dev`, abra `/ordens`.
 
@@ -1002,7 +1010,7 @@ Run: `npm run dev`, abra `/ordens`.
 6. Clique no card `Total OS` — tudo limpa. Este é o único que limpa, e o `sub` agora diz "limpar filtros".
 7. Volte ao Dashboard e clique num KPI de risco que leva a `/ordens`. O deep-link deve continuar chegando com contexto limpo e o filtro correto aplicado.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add src/hooks/useOrdens.ts src/hooks/useOrdens.test.ts src/features/ordens/OrdensPage.tsx
@@ -1019,8 +1027,22 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ## Verificação final da Fase 1
 
-- [ ] `npm test` — PASS, com 12 testes novos: 7 de `aplicarFiltros`, 3 de `proximoAgendaFoco` e +2 no bloco reescrito de `splitAgendaFutura` (que vai de 3 para 5).
-- [ ] `npm run build` — sem erros.
-- [ ] `npm run lint` — sem erros novos.
-- [ ] `git log --oneline -5` mostra os cinco commits, um por task.
-- [ ] Na tela `/ordens`: nenhum card de KPI ignora os filtros ativos; não existe mais toggle de Rede local; clicar num card preserva os demais filtros.
+Executada em 31/07/2026.
+
+- [x] `npm test` — PASS, 623 testes em 69 arquivos, com os 12 novos: 7 de `aplicarFiltros`, 3 de `proximoAgendaFoco` e +2 no bloco reescrito de `splitAgendaFutura` (que foi de 3 para 5).
+- [x] `npx tsc --noEmit` — exit 0. **Rodado à parte**: `npm run build` é só `vite build` e não faz type-check, ao contrário do que este plano assumia nas Global Constraints. É este comando, não o build, que garante a ausência de `TS6133` após as remoções de JSX.
+- [x] `npm run build` — sem erros; só o aviso pré-existente de chunk acima de 500 kB.
+- [x] `npm run lint` — sem erros.
+- [x] `npm run audit:ds` — OK.
+- [x] `git log --oneline -5` mostra os cinco commits, um por task.
+
+### Verificação estática no lugar da manual
+
+A verificação em browser não foi executada — decisão do dono do projeto. Os três pontos que ela cobriria foram verificados por outros meios, e o resultado fica registrado aqui porque a intenção original do plano era outra:
+
+- **Cores das pílulas (o risco real).** As 15 classes de `TIPO_PILL_CLASSES` foram buscadas literalmente no CSS compilado, `dist/assets/index.DLq47SN3.css`: todas presentes, nenhuma purgada pelo Tailwind. Este era o único defeito possível que nem teste nem build detectariam, e está descartado.
+- **Toggle de Rede local.** `grep` por `Rede ON`, `Rede OFF`, `hideRede` e `setHideRede` em `OrdensPage.tsx` e `useOrdens.ts`: zero ocorrências.
+- **Drill-down aditivo.** Dos seis `onClick` dos StatCards, só o de `Total OS` chama `clearAllFilters()`; os outros cinco alternam o próprio filtro. Restam dois `clearFilters` no arquivo — o do `Total OS` e o do deep-link vindo do Dashboard, ambos intencionais.
+- **KPIs de agenda.** `useOrdens.ts` conta `aplicarFiltros(amanhaOrdens, filtrosAgenda)` e `aplicarFiltros(posAmanhaOrdens, filtrosAgenda)` — o mesmo recorte que a tabela exibe, não mais `allRows`.
+
+**O que continua sem verificação:** que os números na tela se movem como esperado ao clicar. A lógica está coberta por teste unitário e a fiação por leitura de código, então o risco residual é de integração, não de comportamento — e não é mais o risco silencioso das classes purgadas, que motivava a exigência da verificação visual.
