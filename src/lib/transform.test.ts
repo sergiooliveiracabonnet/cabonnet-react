@@ -76,16 +76,27 @@ describe('getFornecedor', () => {
     expect(getFornecedor('EQUIPE MANUTENCAO 02')).toBe('MANUTENCAO')
   })
 
-  // Risco de nomenclatura encontrado ao investigar: o regex exige a substring
-  // ASCII "MANUTENC", sem acento. "MANUT 02" (sem os órfãos "ENC") e
-  // "MANUTENÇÃO 02" (com cedilha/til, que .toUpperCase() NÃO normaliza para
-  // ASCII) não casam — e caem em 'OUTRO', que buildFornecedor descarta
-  // explicitamente (`if (k === 'OUTRO') continue`). Se os nomes reais das
-  // equipes de qualidade no Grafana forem "MANUT 02/04/77" (como descrito pelo
-  // usuário) em vez de "MANUTENCAO 02" por extenso, essas OS desaparecem de
-  // TODOS os painéis de Fornecedor hoje, sem erro nem aviso. Verificar o valor
-  // real de nomedaequipe no banco antes de confiar neste bucket.
-  it('DOCUMENTA o risco: "MANUT 02" sem o sufixo "ENC" não casa e vira OUTRO', () => {
+  // Nome real confirmado no Grafana pelo usuário em 31/07/2026: "03- VAL -
+  // MANUTENCAO F02" (e o mesmo padrão para F04/F77). Por extenso, sem acento —
+  // bate com o regex, então a equipe de qualidade NÃO desaparece de
+  // buildFornecedor. Fecha a dúvida que a spec de custo de revisita tinha
+  // deixado aberta: o achado #1 daquele documento não se concretiza em
+  // produção. O código "F02" embutido no nome não interfere: /MANUTENC/ é
+  // testado antes da extração de código de frente, então nunca chega a
+  // comparar F02 contra WES_CODES/INST_CODES/THM_CODES.
+  it('o nome real das equipes de qualidade no Grafana (MANUTENCAO F02/F04/F77) casa corretamente', () => {
+    expect(getFornecedor('03- VAL - MANUTENCAO F02')).toBe('MANUTENCAO')
+    expect(getFornecedor('03- VAL - MANUTENCAO F04')).toBe('MANUTENCAO')
+    expect(getFornecedor('03- VAL - MANUTENCAO F77')).toBe('MANUTENCAO')
+  })
+
+  // O regex ainda exige a substring ASCII "MANUTENC", sem acento — continua
+  // valendo como guarda-corpo geral (nomes hipotéticos futuros, não a equipe
+  // de qualidade atual, que já foi confirmada acima). "MANUT 02" sem os
+  // caracteres "ENC" e "MANUTENÇÃO" com cedilha/til (que .toUpperCase() NÃO
+  // normaliza para ASCII) não casam, e caem em 'OUTRO' — descartado
+  // explicitamente por buildFornecedor (`if (k === 'OUTRO') continue`).
+  it('nomes fora do padrão confirmado (sem "MANUTENC" ASCII) ainda cairiam em OUTRO', () => {
     expect(getFornecedor('MANUT 02')).toBe('OUTRO')
     expect(getFornecedor('EQUIPE MANUTENÇÃO 02')).toBe('OUTRO')   // cedilha/til não normalizam
   })

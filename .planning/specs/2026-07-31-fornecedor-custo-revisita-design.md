@@ -1,7 +1,7 @@
 # Design: Custo de revisita por fornecedor
 
 **Data:** 2026-07-31
-**Status:** Opção A decidida. Testes de regressão de `buildRevisitas` escritos (35 casos, `src/lib/builders/revisitas.test.ts`, commit `c6c3a4c`). Dois achados novos abrem duas perguntas que bloqueiam a implementação — ver "Achados durante os testes" e "Perguntas abertas".
+**Status:** Implementado e mergeado (PR #16, commit `2b7954f` em `main`). Opção A decidida, `buildRevisitas` com 38 testes de regressão, `porFornecedor` + card "Custo Revisita" na `FornecedorPage`. Achado #1 (nomenclatura MANUTENCAO) verificado e **resolvido** — não era um bug real. Achado #2 (equipe de Rede) confirmado e **permanece sem correção**, por decisão de escopo.
 
 ## Contexto
 
@@ -151,17 +151,17 @@ Isso não elimina a ambiguidade estrutural — ela só muda de natureza. Ver os 
 
 ## Achados durante os testes
 
-Escrever os testes de regressão (pedido explícito do usuário, antes de qualquer mudança em `buildRevisitas`) expôs dois problemas reais, nenhum deles hipotético — ambos reproduzidos e travados em teste:
+Escrever os testes de regressão (pedido explícito do usuário, antes de qualquer mudança em `buildRevisitas`) expôs dois riscos concretos. Um se confirmou como falso alarme; o outro é real e permanece sem correção.
 
-### 1. `getFornecedor` exige a substring ASCII "MANUTENC", sem acento
+### 1. `getFornecedor` exige a substring ASCII "MANUTENC", sem acento — VERIFICADO, NÃO É BUG
 
-`transform.test.ts`, bloco `getFornecedor`: `getFornecedor('MANUT 02')` → `'OUTRO'`. `getFornecedor('EQUIPE MANUTENÇÃO 02')` → `'OUTRO'` (cedilha/til não normalizam para ASCII em `.toUpperCase()`). Só `'MANUTENCAO'` por extenso, sem acento, casa.
+`transform.test.ts`, bloco `getFornecedor`: `getFornecedor('MANUT 02')` → `'OUTRO'`. `getFornecedor('EQUIPE MANUTENÇÃO 02')` → `'OUTRO'` (cedilha/til não normalizam para ASCII em `.toUpperCase()`). Isso levantou a hipótese de que as equipes de qualidade (MANUT 02/04/77) pudessem estar invisíveis em todos os painéis de Fornecedor, já em produção desde o PR #15.
 
-`buildFornecedor` descarta `'OUTRO'` explicitamente (`if (k === 'OUTRO') continue`). **Se o nome real de `nomedaequipe` no Grafana para as equipes de qualidade for literalmente "MANUT 02"/"MANUT 04"/"MANUT 77"** (como o usuário escreveu, sem o sufixo "ENCAO"), essas OS somem de **todos** os painéis de Fornecedor hoje — sem erro, sem aviso, silenciosamente. Isso afeta o custo/OS que já está em produção desde o PR #15, não só esta entrega.
+**O usuário confirmou o nome real em 2026-07-31: `"03- VAL - MANUTENCAO F02"`** (mesmo padrão para F04/F77) — por extenso, sem acento. `getFornecedor('03- VAL - MANUTENCAO F02')` → `'MANUTENCAO'`, confirmado em teste. **O risco não se concretiza: nada estava quebrado.** O código "F02" embutido no nome também não interfere — `/MANUTENC/` é testado antes da extração de código de frente, então a comparação com `WES_CODES`/`INST_CODES`/`THM_CODES` nunca chega a rodar para essas linhas.
 
-**Ação necessária antes de prosseguir:** verificar o valor real de `nomedaequipe` no banco para essas três equipes. Não é algo que dá para confirmar só lendo o código.
+O regex continua frágil para nomes hipotéticos futuros fora desse padrão (mantido como teste de guarda-corpo), mas isso deixou de ser uma ação pendente.
 
-### 2. O detector de revisita é cego para a equipe de Rede
+### 2. O detector de revisita é cego para a equipe de Rede — CONFIRMADO, SEM CORREÇÃO
 
 `getEquipeTipo` testa `/\bREDE\b/` no **nome da equipe** antes de olhar `tiposervico` — então qualquer OS da equipe de Rede recebe `_tipo = 'REDE'`, mesmo quando é uma instalação ou manutenção de verdade (confirmado em teste: `getEquipeTipo('03-VAL - REDE FIBRA', 'MANUTENCAO')` retorna `'REDE'`, não `'MANUTENCAO'`).
 
@@ -169,23 +169,21 @@ Escrever os testes de regressão (pedido explícito do usuário, antes de qualqu
 
 Travado em teste: `revisitas.test.ts`, "DOCUMENTA o achado: revisita da equipe de Rede não é detectada, porque `_tipo` trava em REDE".
 
-**Consequência para esta entrega:** o card de "Custo de revisita" da Rede mostraria sempre R$0 / 0 revisitas — não porque a Rede não tem retrabalho, mas porque o sistema não consegue enxergá-lo. Um card assim é pior que nenhum card: ele afirma implicitamente "Rede não tem revisita", o que não é verdade.
+**Consequência, já implementada:** o card de "Custo de revisita" da Rede não aparece — ver "Card ausente, não card mentindo" no PR #16. Não porque a Rede não tem retrabalho, mas porque o sistema não consegue enxergá-lo hoje. Um card mostrando R$0 seria pior que nenhum card: afirmaria implicitamente "Rede não tem revisita", o que não é verdade.
 
 ## Fora de escopo
 
-- **Corrigir os dois achados acima.** Exigem decisão de produto (a Rede ganha pareamento próprio de revisita? `_tipo` e `_fornecedor` precisam ser desacoplados de vez?), não são ajuste mecânico. Ficam para uma entrega própria — mas o achado #2 é um bloqueador de fato para o card de Rede nesta spec, ver "Perguntas abertas".
+- **Corrigir o achado #2.** Exige decisão de produto (a Rede ganha pareamento próprio de revisita? `_tipo` e `_fornecedor` precisam ser desacoplados de vez?), não é ajuste mecânico. Fica para uma entrega própria.
 - Classificação de causa raiz por IA (`ai.revisitasCausa`) como fonte de evitabilidade por OS. Já existe, mas é sob demanda, limitada a 25 pares por clique, sem persistência e sem um booleano de evitabilidade — é ferramenta qualitativa de investigação, não fonte de dado para agregação estatística confiável.
 - Calibrar as taxas de evitabilidade com dado real (ex.: usar o resultado acumulado da classificação por IA para medir, com o tempo, se 70%/50% batem com a realidade). Interessante, mas depende de volume de uso da ferramenta de causa raiz que ainda não existe — e ficou ainda menos prioritário depois da decisão pela Opção A, que não usa taxa nenhuma.
 
-## Risco coberto: `buildRevisitas` agora tem 35 testes de regressão
+## Risco coberto: `buildRevisitas` tinha zero testes, agora tem 38
 
-`buildRevisitas` nunca teve teste (`grep` por ela em `src/**/*.test.{ts,tsx}` não retornava nada). `src/lib/builders/revisitas.test.ts` (commit `c6c3a4c`) cobre a função inteira: os três tipos de par, isolamento por cliente-mês, `porEquipe`/`porCidade`, clientes crônicos, `evitaveis`/`custoEstimado` na fórmula atual, distribuição por dias, tendência, narrativa, e o cenário de domínio WES/Instacable/THM/Rede fazendo os três tipos de OS. Os dois achados acima também viraram teste, não só comentário.
+`buildRevisitas` nunca teve teste (`grep` por ela em `src/**/*.test.{ts,tsx}` não retornava nada). `src/lib/builders/revisitas.test.ts` cobre a função inteira: os três tipos de par, isolamento por cliente-mês, `porEquipe`/`porCidade`/`porFornecedor`, clientes crônicos, `evitaveis`/`custoEstimado` na fórmula legada, distribuição por dias, tendência, narrativa, e o cenário de domínio WES/Instacable/THM/Rede fazendo os três tipos de OS. Os dois achados também viraram teste, não só comentário — incluindo o teste com o nome real confirmado das equipes de qualidade, em `transform.test.ts`.
 
-Com essa rede de segurança, a implementação de `porFornecedor` (seção Frontend acima) pode prosseguir com confiança de não quebrar o que já funciona.
+## Perguntas abertas — todas resolvidas
 
-## Perguntas abertas
-
-1. ~~Opção A ou B?~~ — **Resolvida: Opção A.**
-2. **O achado #1 é real?** Alguém com acesso ao Grafana precisa confirmar o valor literal de `nomedaequipe` para MANUT 02/04/77. Se for "MANUT 02" sem o sufixo, o card de Manutenção — e o custo/OS já em produção — está incorretamente vazio hoje, e essa correção deveria furar a fila à frente desta spec.
-3. **O achado #2 bloqueia o card de Rede?** Três caminhos: (a) shippar sem o card de Rede, com nota explicando por quê; (b) shippar com o card, aceitando que mostra sempre zero, mas com tooltip explicando a limitação; (c) resolver o achado #2 primeiro, como pré-requisito. Recomendo (a) — um card ausente não mente, um card zerado mente por omissão.
-4. O card de custo de revisita entra em todos os painéis de fornecedor, ou só nos que têm custo configurado (evitando `—` repetido para quem ainda não cadastrou)?
+1. ~~Opção A ou B?~~ — **Opção A.**
+2. ~~O achado #1 é real?~~ — **Não.** Nome real confirmado (`"03- VAL - MANUTENCAO F02"`), casa corretamente com `getFornecedor`. Nenhuma correção necessária.
+3. ~~O achado #2 bloqueia o card de Rede?~~ — **Sim, e foi tratado com o caminho (a):** o card não aparece para Rede. Implementado de forma genérica — não é um `if (fornKey === 'REDE')` hardcoded, é a regra "card só existe quando há revisita detectada e custo configurado" se aplicando ao caso em que a Rede nunca tem revisita detectada.
+4. ~~O card entra em todos os painéis ou só nos com custo configurado?~~ — **Só nos que têm as duas condições:** revisita detectada e custo configurado. Mesma resposta da pergunta 3, mesmo mecanismo.
