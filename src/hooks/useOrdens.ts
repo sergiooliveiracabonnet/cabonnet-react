@@ -79,6 +79,54 @@ export function splitAgendaFutura(allRows: OSRow[]): { amanhaOrdens: OSRow[]; fu
   return { amanhaOrdens, futuroOrdens }
 }
 
+export interface OrdensFiltros {
+  search:      string
+  status:      string
+  reagendTipo: string
+  tipo:        string
+  cidade:      string
+  bairro:      string
+  equipe:      string
+  fornecedor:  string
+  tipoOs:      string
+  periodo:     string
+  aging:       string
+  semEquipe:   boolean
+  critico:     boolean
+  agendHoje:   boolean
+}
+
+export function matchesAgingFaixa(aging: number, faixa: string): boolean {
+  if (faixa === '1')  return aging <= 1
+  if (faixa === '2')  return aging <= 2
+  if (faixa === '3')  return aging >= 3 && aging <= 5
+  if (faixa === '6')  return aging >= 6
+  if (faixa === '11') return aging >= 11
+  return true
+}
+
+// Função pura para que os KPIs possam contar exatamente o mesmo recorte que a
+// tabela mostra. Enquanto esta cadeia viveu dentro do useMemo, os cards de
+// agenda foram escritos sobre allRows e passaram a ignorar todos os filtros.
+export function aplicarFiltros(rows: OSRow[], f: OrdensFiltros, hoje: string = dataBR()): OSRow[] {
+  let r = rows
+  if (f.search)      r = r.filter(x => matchesOSSearch(x, f.search))
+  if (f.status)      r = r.filter(x => x._situacaoEfetiva === f.status)
+  if (f.reagendTipo) r = r.filter(x => getReagendTipo(x) === f.reagendTipo)
+  if (f.tipo)        r = r.filter(x => x.tiposervico === f.tipo)
+  if (f.cidade)      r = r.filter(x => x.nomedacidade === f.cidade)
+  if (f.bairro)      r = r.filter(x => x.bairro === f.bairro)
+  if (f.equipe)      r = r.filter(x => x.nomedaequipe === f.equipe)
+  if (f.fornecedor)  r = r.filter(x => x._fornecedor === f.fornecedor)
+  if (f.tipoOs)      r = r.filter(x => x._tipo === f.tipoOs)
+  if (f.periodo)     r = r.filter(x => ((x.periodo as string) || '').trim().toLowerCase() === f.periodo.toLowerCase())
+  if (f.semEquipe)   r = r.filter(x => !x.nomedaequipe)
+  if (f.critico)     r = r.filter(x => x._slaCritico)
+  if (f.agendHoje)   r = r.filter(x => isAgendadaEm(x, hoje))
+  if (f.aging)       r = r.filter(x => matchesAgingFaixa(x._aging ?? x._agingAbertura ?? 0, f.aging))
+  return r
+}
+
 export function useOrdens() {
   const { derived: { ordens: ordensData }, allRows, isLoading, error } = useOSDerived()
 
@@ -129,35 +177,14 @@ export function useOrdens() {
         ? reagendOrdens
         : ordensComCope
 
+  const filtros: OrdensFiltros = useMemo(() => ({
+    search, status, reagendTipo, tipo, cidade, bairro, equipe,
+    fornecedor, tipoOs, periodo, aging, semEquipe, critico, agendHoje,
+  }), [search, status, reagendTipo, tipo, cidade, bairro, equipe,
+       fornecedor, tipoOs, periodo, aging, semEquipe, critico, agendHoje])
+
   const filtered = useMemo(() => {
-    let r = baseOrdens
-    if (search)     r = r.filter(x => matchesOSSearch(x, search))
-    if (status)     r = r.filter(x => x._situacaoEfetiva === status)
-    if (reagendTipo) r = r.filter(x => getReagendTipo(x) === reagendTipo)
-    if (tipo)       r = r.filter(x => x.tiposervico === tipo)
-    if (cidade)     r = r.filter(x => x.nomedacidade === cidade)
-    if (bairro)     r = r.filter(x => x.bairro === bairro)
-    if (equipe)     r = r.filter(x => x.nomedaequipe === equipe)
-    if (fornecedor) r = r.filter(x => x._fornecedor === fornecedor)
-    if (tipoOs)     r = r.filter(x => x._tipo === tipoOs)
-    if (periodo)    r = r.filter(x => ((x.periodo as string) || '').trim().toLowerCase() === periodo.toLowerCase())
-    if (semEquipe)  r = r.filter(x => !x.nomedaequipe)
-    if (critico)    r = r.filter(x => x._slaCritico)
-    if (agendHoje) {
-      const hojeBR = dataBR()
-      r = r.filter(x => isAgendadaEm(x, hojeBR))
-    }
-    if (aging) {
-      r = r.filter(x => {
-        const a = x._aging ?? x._agingAbertura ?? 0
-        if (aging === '1')  return a <= 1
-        if (aging === '2')  return a <= 2
-        if (aging === '3')  return a >= 3 && a <= 5
-        if (aging === '6')  return a >= 6
-        if (aging === '11') return a >= 11
-        return true
-      })
-    }
+    let r = aplicarFiltros(baseOrdens, filtros)
 
     // Ordem base sempre por agendamento. O sort por coluna abaixo aplica em
     // cima disto e, como Array.sort é estável, o agendamento continua sendo o
@@ -191,7 +218,7 @@ export function useOrdens() {
     }
 
     return r
-  }, [baseOrdens, search, status, reagendTipo, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, tableSort])
+  }, [baseOrdens, filtros, tableSort])
 
   const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize)
   const totalPages = Math.ceil(filtered.length / pageSize)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { withCopeQuandoPendente, splitAgendaFutura, isAgendadaEm, dataBR, matchesOSSearch } from './useOrdens'
+import { withCopeQuandoPendente, splitAgendaFutura, isAgendadaEm, dataBR, matchesOSSearch, aplicarFiltros, matchesAgingFaixa, type OrdensFiltros } from './useOrdens'
 import { enrichRows } from '../lib/transform'
 import type { OSRow } from '../lib/types'
 
@@ -43,16 +43,6 @@ function parseAgend(str: string | null | undefined): Date | null {
   }
   const dt = new Date(s)
   return isNaN(dt.getTime()) ? null : dt
-}
-
-// Utilitário para filtro de aging (idêntico ao do hook)
-function matchesAging(aging: number, filter: string): boolean {
-  if (filter === '1')  return aging <= 1
-  if (filter === '2')  return aging <= 2
-  if (filter === '3')  return aging >= 3 && aging <= 5
-  if (filter === '6')  return aging >= 6
-  if (filter === '11') return aging >= 11
-  return true
 }
 
 describe('parseAgend', () => {
@@ -182,38 +172,38 @@ describe('splitAgendaFutura — agenda de amanhã em diante', () => {
 
 describe('matchesAging — filtro de aging', () => {
   it('filtro "1" → apenas aging ≤ 1', () => {
-    expect(matchesAging(0, '1')).toBe(true)
-    expect(matchesAging(1, '1')).toBe(true)
-    expect(matchesAging(2, '1')).toBe(false)
+    expect(matchesAgingFaixa(0, '1')).toBe(true)
+    expect(matchesAgingFaixa(1, '1')).toBe(true)
+    expect(matchesAgingFaixa(2, '1')).toBe(false)
   })
 
   it('filtro "2" → apenas aging ≤ 2', () => {
-    expect(matchesAging(2, '2')).toBe(true)
-    expect(matchesAging(3, '2')).toBe(false)
+    expect(matchesAgingFaixa(2, '2')).toBe(true)
+    expect(matchesAgingFaixa(3, '2')).toBe(false)
   })
 
   it('filtro "3" → aging entre 3 e 5', () => {
-    expect(matchesAging(3, '3')).toBe(true)
-    expect(matchesAging(5, '3')).toBe(true)
-    expect(matchesAging(6, '3')).toBe(false)
-    expect(matchesAging(2, '3')).toBe(false)
+    expect(matchesAgingFaixa(3, '3')).toBe(true)
+    expect(matchesAgingFaixa(5, '3')).toBe(true)
+    expect(matchesAgingFaixa(6, '3')).toBe(false)
+    expect(matchesAgingFaixa(2, '3')).toBe(false)
   })
 
   it('filtro "6" → aging ≥ 6', () => {
-    expect(matchesAging(6, '6')).toBe(true)
-    expect(matchesAging(10, '6')).toBe(true)
-    expect(matchesAging(5, '6')).toBe(false)
+    expect(matchesAgingFaixa(6, '6')).toBe(true)
+    expect(matchesAgingFaixa(10, '6')).toBe(true)
+    expect(matchesAgingFaixa(5, '6')).toBe(false)
   })
 
   it('filtro "11" → aging ≥ 11', () => {
-    expect(matchesAging(11, '11')).toBe(true)
-    expect(matchesAging(100, '11')).toBe(true)
-    expect(matchesAging(10, '11')).toBe(false)
+    expect(matchesAgingFaixa(11, '11')).toBe(true)
+    expect(matchesAgingFaixa(100, '11')).toBe(true)
+    expect(matchesAgingFaixa(10, '11')).toBe(false)
   })
 
   it('filtro vazio → todos passam', () => {
-    expect(matchesAging(0,   '')).toBe(true)
-    expect(matchesAging(100, '')).toBe(true)
+    expect(matchesAgingFaixa(0,   '')).toBe(true)
+    expect(matchesAgingFaixa(100, '')).toBe(true)
   })
 })
 
@@ -235,5 +225,59 @@ describe('matchesOSSearch — pesquisa operacional normalizada', () => {
 
   it('não encontra um termo ausente', () => {
     expect(matchesOSSearch(row, 'cliente inexistente')).toBe(false)
+  })
+})
+
+describe('aplicarFiltros — cadeia de filtros da página de Ordens', () => {
+  const VAZIO: OrdensFiltros = {
+    search: '', status: '', reagendTipo: '', tipo: '', cidade: '', bairro: '',
+    equipe: '', fornecedor: '', tipoOs: '', periodo: '', aging: '',
+    semEquipe: false, critico: false, agendHoje: false,
+  }
+
+  const rows = enrichRows([
+    makeOS({ numos: '0000001', nomedacidade: 'TAUBATE',  nomedaequipe: 'EQUIPE F01' }),
+    makeOS({ numos: '0000002', nomedacidade: 'CACAPAVA', nomedaequipe: 'EQUIPE F08' }),
+    makeOS({ numos: '0000003', nomedacidade: 'TAUBATE',  nomedaequipe: '' }),
+  ])
+
+  it('sem nenhum filtro devolve a lista intacta', () => {
+    expect(aplicarFiltros(rows, VAZIO)).toHaveLength(3)
+  })
+
+  it('filtra por cidade', () => {
+    const r = aplicarFiltros(rows, { ...VAZIO, cidade: 'TAUBATE' })
+    expect(r.map(x => x.numos)).toEqual(['0000001', '0000003'])
+  })
+
+  it('filtra por equipe', () => {
+    const r = aplicarFiltros(rows, { ...VAZIO, equipe: 'EQUIPE F08' })
+    expect(r.map(x => x.numos)).toEqual(['0000002'])
+  })
+
+  it('semEquipe pega apenas OS sem alocação', () => {
+    const r = aplicarFiltros(rows, { ...VAZIO, semEquipe: true })
+    expect(r.map(x => x.numos)).toEqual(['0000003'])
+  })
+
+  it('filtros combinam por interseção, não por substituição', () => {
+    const r = aplicarFiltros(rows, { ...VAZIO, cidade: 'TAUBATE', semEquipe: true })
+    expect(r.map(x => x.numos)).toEqual(['0000003'])
+  })
+
+  it('agendHoje usa a data BR injetada, não o relógio do sistema', () => {
+    const hoje = dataBR()
+    const comHoje = enrichRows([
+      makeOS({ numos: '0000004', dataagendamento: `${hoje} 08:00` }),
+      makeOS({ numos: '0000005', dataagendamento: '01/01/2020' }),
+    ])
+    const r = aplicarFiltros(comHoje, { ...VAZIO, agendHoje: true }, hoje)
+    expect(r.map(x => x.numos)).toEqual(['0000004'])
+  })
+
+  it('não muta o array de entrada', () => {
+    const antes = rows.map(r => r.numos)
+    aplicarFiltros(rows, { ...VAZIO, cidade: 'TAUBATE' })
+    expect(rows.map(r => r.numos)).toEqual(antes)
   })
 })
