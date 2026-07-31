@@ -339,72 +339,54 @@ export default function OrdensPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard
             title="Total OS" value={os.kpis.total} icon={ORDENS_CARD_ICONS.total}
-            sub="ver todas" delay={0}
-            onClick={() => { os.clearFilters(); scrollToTable() }}
+            sub="limpar filtros" delay={0}
+            onClick={() => { clearAllFilters(); scrollToTable() }}
           />
           <StatCard
             title="Críticas" value={os.kpis.criticas} tone="critical" icon={ORDENS_CARD_ICONS.criticas}
             sub="SLA 2× excedido" delay={40}
-            onClick={() => { os.clearFilters(); os.setCritico(true); scrollToTable() }}
+            onClick={() => { os.setCritico(!os.critico); scrollToTable() }}
           />
           <StatCard
             title="Sem equipe" value={os.kpis.semEquipe} tone="warning" icon={ORDENS_CARD_ICONS.semEquipe}
             sub="sem alocação" delay={80}
-            onClick={() => { os.clearFilters(); os.setSemEquipe(true); scrollToTable() }}
+            onClick={() => { os.setSemEquipe(!os.semEquipe); scrollToTable() }}
           />
           <StatCard
             title="Agend. hoje" value={os.kpis.agendHoje} tone="ok" icon={ORDENS_CARD_ICONS.agendHoje}
             sub="para hoje" delay={120}
-            onClick={() => { os.clearFilters(); os.setAgendHoje(true); scrollToTable() }}
+            onClick={() => { os.setAgendaFoco('hoje'); scrollToTable() }}
           />
           <StatCard
             title="Amanhã" value={os.kpis.agendAmanha} icon={ORDENS_CARD_ICONS.agendAmanha}
-            sub="ativas p/ amanhã · geral" delay={160}
-            onClick={() => { os.clearFilters(); os.setAgendAmanha(true); scrollToTable() }}
+            sub="agendadas para amanhã" delay={160}
+            onClick={() => { os.setAgendaFoco('amanha'); scrollToTable() }}
           />
           <StatCard
-            title="Agend. Futuro" value={os.kpis.agendFuturo} tone="warning" icon={ORDENS_CARD_ICONS.agendFuturo}
-            sub="ativas, amanhã em diante · geral" delay={200}
-            onClick={() => { os.clearFilters(); os.setAgendFuturo(true); scrollToTable() }}
+            title="Após amanhã" value={os.kpis.agendFuturo} tone="warning" icon={ORDENS_CARD_ICONS.agendFuturo}
+            sub="de depois de amanhã em diante" delay={200}
+            onClick={() => { os.setAgendaFoco('posAmanha'); scrollToTable() }}
           />
         </div>
       )}
 
       {/* ── Resumo por Tipo ── */}
       <div className="flex items-center justify-center gap-2 flex-wrap">
-        <button
-          onClick={() => { os.clearFilters(); os.setTipoOs('INSTALACAO'); scrollToTable() }}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full
-                     bg-cyan/10 border border-cyan/20 text-cyan
-                     text-label font-semibold hover:bg-cyan/20 transition-all duration-fast"
-        >
-          <Router size={12} /> Instalação
-          <span className="bg-cyan/20 text-cyan rounded-full px-1.5 py-0 text-caption font-bold tabular-nums">
-            {os.kpis.instalacao}
-          </span>
-        </button>
-        <button
-          onClick={() => { os.clearFilters(); os.setTipoOs('MANUTENCAO'); scrollToTable() }}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full
-                     bg-orange/10 border border-orange/20 text-orange
-                     text-label font-semibold hover:bg-orange/20 transition-all duration-fast"
-        >
-          <Wrench size={12} /> Manutenção
-          <span className="bg-orange/20 text-orange rounded-full px-1.5 py-0 text-caption font-bold tabular-nums">
-            {os.kpis.manutencao}
-          </span>
-        </button>
-        <button
-          onClick={() => { os.clearFilters(); os.setTipoOs('OUTRO'); scrollToTable() }}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full
-                     bg-purple/10 border border-purple/20 text-purple
-                     text-label font-semibold hover:bg-purple/20 transition-all duration-fast"
-        >
-          <HardHat size={12} /> Serviço
-          <span className="bg-purple/20 text-purple rounded-full px-1.5 py-0 text-caption font-bold tabular-nums">
-            {os.kpis.servico}
-          </span>
-        </button>
+        <TipoPill
+          label="Instalação" icone={Router} cor="cyan" total={os.kpis.instalacao}
+          ativo={os.tipoOs === 'INSTALACAO'}
+          onClick={() => { os.setTipoOs(os.tipoOs === 'INSTALACAO' ? '' : 'INSTALACAO'); scrollToTable() }}
+        />
+        <TipoPill
+          label="Manutenção" icone={Wrench} cor="orange" total={os.kpis.manutencao}
+          ativo={os.tipoOs === 'MANUTENCAO'}
+          onClick={() => { os.setTipoOs(os.tipoOs === 'MANUTENCAO' ? '' : 'MANUTENCAO'); scrollToTable() }}
+        />
+        <TipoPill
+          label="Serviço" icone={HardHat} cor="purple" total={os.kpis.servico}
+          ativo={os.tipoOs === 'OUTRO'}
+          onClick={() => { os.setTipoOs(os.tipoOs === 'OUTRO' ? '' : 'OUTRO'); scrollToTable() }}
+        />
       </div>
 
       {/* ── Barra de filtros ── */}
@@ -435,19 +417,6 @@ export default function OrdensPage() {
         <FilterSelect value={os.fornecedor} onChange={os.setFornecedor} options={fornecedorOptions} placeholder="Fornecedor"  className="w-36" />
         <FilterSelect value={os.periodo}   onChange={os.setPeriodo}   options={periodoOpts}       placeholder="Período"     className="w-32" />
 
-        {/* Toggle Rede */}
-        <button
-          onClick={() => os.setHideRede(v => !v)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-semibold
-                      border transition-all duration-fast flex-shrink-0
-                      ${os.hideRede
-                        ? 'bg-red/[0.08] border-red/20 text-red/80 hover:bg-red/[0.14]'
-                        : 'bg-green/[0.08] border-green/20 text-green hover:bg-green/[0.14]'}`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${os.hideRede ? 'bg-red/70' : 'bg-green'}`} />
-          Rede {os.hideRede ? 'OFF' : 'ON'}
-        </button>
-
         </div>}
       </div>
 
@@ -462,8 +431,7 @@ export default function OrdensPage() {
             {os.semEquipe    && <span className="badge-yellow  rounded-full px-2 py-0.5 text-caption font-bold">Sem equipe</span>}
             {os.agendHoje    && <span className="badge-green   rounded-full px-2 py-0.5 text-caption font-bold">Agend. hoje</span>}
             {os.agendAmanha  && <span className="badge-cyan    rounded-full px-2 py-0.5 text-caption font-bold">Amanhã</span>}
-            {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-caption font-bold">Agend. Futuro</span>}
-            {os.hideRede     && <span className="rounded-full px-2 py-0.5 text-caption font-bold bg-red/10 text-red/80 border border-red/20">Rede oculta</span>}
+            {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-caption font-bold">Após amanhã</span>}
             {os.periodo      && <span className="badge-purple  rounded-full px-2 py-0.5 text-caption font-bold">{os.periodo}</span>}
           </span>
           <button onClick={clearAllFilters} className="text-muted hover:text-red transition-colors text-caption font-semibold">
@@ -563,5 +531,51 @@ export default function OrdensPage() {
         ordens={os.filtered}
       />
     </div>
+  )
+}
+
+// Classes literais por cor — o Tailwind faz varredura estática do código-fonte,
+// então `bg-${cor}/25` seria purgado do CSS e a pílula sairia sem cor.
+const TIPO_PILL_CLASSES = {
+  cyan: {
+    ativo: 'bg-cyan/25 border-cyan/50 text-cyan',
+    idle:  'bg-cyan/10 border-cyan/20 text-cyan hover:bg-cyan/20',
+    badge: 'bg-cyan/20 text-cyan',
+  },
+  orange: {
+    ativo: 'bg-orange/25 border-orange/50 text-orange',
+    idle:  'bg-orange/10 border-orange/20 text-orange hover:bg-orange/20',
+    badge: 'bg-orange/20 text-orange',
+  },
+  purple: {
+    ativo: 'bg-purple/25 border-purple/50 text-purple',
+    idle:  'bg-purple/10 border-purple/20 text-purple hover:bg-purple/20',
+    badge: 'bg-purple/20 text-purple',
+  },
+} as const
+
+function TipoPill({ label, icone: Icone, cor, total, ativo, onClick }: {
+  label:   string
+  icone:   React.ComponentType<{ size?: number }>
+  cor:     keyof typeof TIPO_PILL_CLASSES
+  total:   number
+  ativo:   boolean
+  onClick: () => void
+}) {
+  const c = TIPO_PILL_CLASSES[cor]
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={ativo}
+      className={`flex items-center gap-1.5 px-3 py-1 rounded-full border
+                  text-label font-semibold transition-all duration-fast
+                  ${ativo ? c.ativo : c.idle}`}
+    >
+      <Icone size={12} /> {label}
+      <span className={`${c.badge} rounded-full px-1.5 py-0 text-caption font-bold tabular-nums`}>
+        {total}
+      </span>
+    </button>
   )
 }

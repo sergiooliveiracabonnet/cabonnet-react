@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { withCopeQuandoPendente, splitAgendaFutura, isAgendadaEm, dataBR, matchesOSSearch } from './useOrdens'
+import { withCopeQuandoPendente, splitAgendaFutura, isAgendadaEm, dataBR, matchesOSSearch, aplicarFiltros, matchesAgingFaixa, proximoAgendaFoco, type OrdensFiltros } from './useOrdens'
 import { enrichRows } from '../lib/transform'
 import type { OSRow } from '../lib/types'
 
@@ -43,16 +43,6 @@ function parseAgend(str: string | null | undefined): Date | null {
   }
   const dt = new Date(s)
   return isNaN(dt.getTime()) ? null : dt
-}
-
-// Utilitário para filtro de aging (idêntico ao do hook)
-function matchesAging(aging: number, filter: string): boolean {
-  if (filter === '1')  return aging <= 1
-  if (filter === '2')  return aging <= 2
-  if (filter === '3')  return aging >= 3 && aging <= 5
-  if (filter === '6')  return aging >= 6
-  if (filter === '11') return aging >= 11
-  return true
 }
 
 describe('parseAgend', () => {
@@ -143,77 +133,126 @@ describe('isAgendadaEm / dataBR — comparação em formato BR', () => {
   })
 })
 
-describe('splitAgendaFutura — agenda de amanhã em diante', () => {
-  function amanhaBR(): string {
-    const d = new Date(); d.setDate(d.getDate() + 1)
+describe('splitAgendaFutura — amanhã e após amanhã, disjuntos', () => {
+  function emDias(n: number): string {
+    const d = new Date(); d.setDate(d.getDate() + n)
     return dataBR(d)
   }
 
   it('inclui Pendente e Atendimento agendadas para amanhã', () => {
     const rows = enrichRows([
-      makeOS({ numos: 'P1', descsituacao: 'Pendente',    dataagendamento: amanhaBR() }),
-      makeOS({ numos: 'A1', descsituacao: 'Atendimento', dataagendamento: amanhaBR() }),
+      makeOS({ numos: 'P1', descsituacao: 'Pendente',    dataagendamento: emDias(1) }),
+      makeOS({ numos: 'A1', descsituacao: 'Atendimento', dataagendamento: emDias(1) }),
     ])
-    const { amanhaOrdens, futuroOrdens } = splitAgendaFutura(rows)
+    const { amanhaOrdens, posAmanhaOrdens } = splitAgendaFutura(rows)
     expect(amanhaOrdens).toHaveLength(2)
-    expect(futuroOrdens).toHaveLength(2)
+    expect(posAmanhaOrdens).toHaveLength(0)
+  })
+
+  it('amanhã e após amanhã não se sobrepõem', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'A1', descsituacao: 'Pendente', dataagendamento: emDias(1) }),
+      makeOS({ numos: 'D2', descsituacao: 'Pendente', dataagendamento: emDias(2) }),
+      makeOS({ numos: 'D9', descsituacao: 'Pendente', dataagendamento: emDias(9) }),
+    ])
+    const { amanhaOrdens, posAmanhaOrdens } = splitAgendaFutura(rows)
+    expect(amanhaOrdens.map(r => r.numos)).toEqual(['A1'])
+    expect(posAmanhaOrdens.map(r => r.numos)).toEqual(['D2', 'D9'])
+    const intersecao = amanhaOrdens.filter(a => posAmanhaOrdens.some(p => p.numos === a.numos))
+    expect(intersecao).toHaveLength(0)
   })
 
   it('exclui COPE, reagendamento e concluídas com data futura', () => {
     const rows = enrichRows([
-      makeOS({ numos: 'C1', nomedaequipe: 'COPE VALE',          dataagendamento: amanhaBR() }),
-      makeOS({ numos: 'R1', nomedaequipe: 'REAGENDAMENTO F01',  dataagendamento: amanhaBR() }),
-      makeOS({ numos: 'X1', descsituacao: 'Concluída',          dataagendamento: amanhaBR() }),
-      makeOS({ numos: 'P1', descsituacao: 'Pendente',           dataagendamento: amanhaBR() }),
+      makeOS({ numos: 'C1', nomedaequipe: 'COPE VALE',         dataagendamento: emDias(1) }),
+      makeOS({ numos: 'R1', nomedaequipe: 'REAGENDAMENTO F01', dataagendamento: emDias(1) }),
+      makeOS({ numos: 'X1', descsituacao: 'Concluída',         dataagendamento: emDias(1) }),
+      makeOS({ numos: 'P1', descsituacao: 'Pendente',          dataagendamento: emDias(1) }),
     ])
     const { amanhaOrdens } = splitAgendaFutura(rows)
     expect(amanhaOrdens.map(r => r.numos)).toEqual(['P1'])
   })
 
-  it('agendamento de hoje ou passado não entra na agenda futura', () => {
+  it('agendamento de hoje ou passado não entra em nenhum dos dois', () => {
     const rows = enrichRows([
       makeOS({ numos: 'H1', descsituacao: 'Pendente', dataagendamento: dataBR() }),
       makeOS({ numos: 'V1', descsituacao: 'Pendente', dataagendamento: '01/01/2020' }),
     ])
-    const { futuroOrdens } = splitAgendaFutura(rows)
-    expect(futuroOrdens).toHaveLength(0)
+    const { amanhaOrdens, posAmanhaOrdens } = splitAgendaFutura(rows)
+    expect(amanhaOrdens).toHaveLength(0)
+    expect(posAmanhaOrdens).toHaveLength(0)
+  })
+
+  it('o recorte de agenda é filtrável por aplicarFiltros — base dos KPIs corrigidos', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'T1', descsituacao: 'Pendente', nomedacidade: 'TAUBATE',  dataagendamento: emDias(1) }),
+      makeOS({ numos: 'C1', descsituacao: 'Pendente', nomedacidade: 'CACAPAVA', dataagendamento: emDias(1) }),
+    ])
+    const { amanhaOrdens } = splitAgendaFutura(rows)
+    const soTaubate = aplicarFiltros(amanhaOrdens, {
+      search: '', status: '', reagendTipo: '', tipo: '', cidade: 'TAUBATE', bairro: '',
+      equipe: '', fornecedor: '', tipoOs: '', periodo: '', aging: '',
+      semEquipe: false, critico: false, agendHoje: false,
+    })
+    expect(soTaubate.map(r => r.numos)).toEqual(['T1'])
+  })
+
+  it('zerar agendHoje evita que o balde de amanhã se autofiltre, sem desligar os demais filtros', () => {
+    const rows = enrichRows([
+      makeOS({ numos: 'T1', descsituacao: 'Pendente', nomedacidade: 'TAUBATE', dataagendamento: emDias(1) }),
+    ])
+    const { amanhaOrdens } = splitAgendaFutura(rows)
+    const comCidadeEAgendHoje: OrdensFiltros = {
+      search: '', status: '', reagendTipo: '', tipo: '', cidade: 'TAUBATE', bairro: '',
+      equipe: '', fornecedor: '', tipoOs: '', periodo: '', aging: '',
+      semEquipe: false, critico: false, agendHoje: true,
+    }
+    // Nenhuma OS do balde "amanhã" tem dataagendamento = hoje, então com
+    // agendHoje ligado o próprio recorte se anula — é o bug que a Task 4 corrigiu.
+    expect(aplicarFiltros(amanhaOrdens, comCidadeEAgendHoje).map(r => r.numos)).toEqual([])
+
+    // filtrosAgenda faz exatamente isto: zera só agendHoje. A OS volta a
+    // aparecer e o filtro de cidade (dimensional, não relacionado à agenda)
+    // continua valendo — prova que os demais filtros não foram desligados junto.
+    const filtrosAgenda: OrdensFiltros = { ...comCidadeEAgendHoje, agendHoje: false }
+    expect(aplicarFiltros(amanhaOrdens, filtrosAgenda).map(r => r.numos)).toEqual(['T1'])
   })
 })
 
 describe('matchesAging — filtro de aging', () => {
   it('filtro "1" → apenas aging ≤ 1', () => {
-    expect(matchesAging(0, '1')).toBe(true)
-    expect(matchesAging(1, '1')).toBe(true)
-    expect(matchesAging(2, '1')).toBe(false)
+    expect(matchesAgingFaixa(0, '1')).toBe(true)
+    expect(matchesAgingFaixa(1, '1')).toBe(true)
+    expect(matchesAgingFaixa(2, '1')).toBe(false)
   })
 
   it('filtro "2" → apenas aging ≤ 2', () => {
-    expect(matchesAging(2, '2')).toBe(true)
-    expect(matchesAging(3, '2')).toBe(false)
+    expect(matchesAgingFaixa(2, '2')).toBe(true)
+    expect(matchesAgingFaixa(3, '2')).toBe(false)
   })
 
   it('filtro "3" → aging entre 3 e 5', () => {
-    expect(matchesAging(3, '3')).toBe(true)
-    expect(matchesAging(5, '3')).toBe(true)
-    expect(matchesAging(6, '3')).toBe(false)
-    expect(matchesAging(2, '3')).toBe(false)
+    expect(matchesAgingFaixa(3, '3')).toBe(true)
+    expect(matchesAgingFaixa(5, '3')).toBe(true)
+    expect(matchesAgingFaixa(6, '3')).toBe(false)
+    expect(matchesAgingFaixa(2, '3')).toBe(false)
   })
 
   it('filtro "6" → aging ≥ 6', () => {
-    expect(matchesAging(6, '6')).toBe(true)
-    expect(matchesAging(10, '6')).toBe(true)
-    expect(matchesAging(5, '6')).toBe(false)
+    expect(matchesAgingFaixa(6, '6')).toBe(true)
+    expect(matchesAgingFaixa(10, '6')).toBe(true)
+    expect(matchesAgingFaixa(5, '6')).toBe(false)
   })
 
   it('filtro "11" → aging ≥ 11', () => {
-    expect(matchesAging(11, '11')).toBe(true)
-    expect(matchesAging(100, '11')).toBe(true)
-    expect(matchesAging(10, '11')).toBe(false)
+    expect(matchesAgingFaixa(11, '11')).toBe(true)
+    expect(matchesAgingFaixa(100, '11')).toBe(true)
+    expect(matchesAgingFaixa(10, '11')).toBe(false)
   })
 
   it('filtro vazio → todos passam', () => {
-    expect(matchesAging(0,   '')).toBe(true)
-    expect(matchesAging(100, '')).toBe(true)
+    expect(matchesAgingFaixa(0,   '')).toBe(true)
+    expect(matchesAgingFaixa(100, '')).toBe(true)
   })
 })
 
@@ -235,5 +274,75 @@ describe('matchesOSSearch — pesquisa operacional normalizada', () => {
 
   it('não encontra um termo ausente', () => {
     expect(matchesOSSearch(row, 'cliente inexistente')).toBe(false)
+  })
+})
+
+describe('aplicarFiltros — cadeia de filtros da página de Ordens', () => {
+  const VAZIO: OrdensFiltros = {
+    search: '', status: '', reagendTipo: '', tipo: '', cidade: '', bairro: '',
+    equipe: '', fornecedor: '', tipoOs: '', periodo: '', aging: '',
+    semEquipe: false, critico: false, agendHoje: false,
+  }
+
+  const rows = enrichRows([
+    makeOS({ numos: '0000001', nomedacidade: 'TAUBATE',  nomedaequipe: 'EQUIPE F01' }),
+    makeOS({ numos: '0000002', nomedacidade: 'CACAPAVA', nomedaequipe: 'EQUIPE F08' }),
+    makeOS({ numos: '0000003', nomedacidade: 'TAUBATE',  nomedaequipe: '' }),
+  ])
+
+  it('sem nenhum filtro devolve a lista intacta', () => {
+    expect(aplicarFiltros(rows, VAZIO)).toHaveLength(3)
+  })
+
+  it('filtra por cidade', () => {
+    const r = aplicarFiltros(rows, { ...VAZIO, cidade: 'TAUBATE' })
+    expect(r.map(x => x.numos)).toEqual(['0000001', '0000003'])
+  })
+
+  it('filtra por equipe', () => {
+    const r = aplicarFiltros(rows, { ...VAZIO, equipe: 'EQUIPE F08' })
+    expect(r.map(x => x.numos)).toEqual(['0000002'])
+  })
+
+  it('semEquipe pega apenas OS sem alocação', () => {
+    const r = aplicarFiltros(rows, { ...VAZIO, semEquipe: true })
+    expect(r.map(x => x.numos)).toEqual(['0000003'])
+  })
+
+  it('filtros combinam por interseção, não por substituição', () => {
+    const r = aplicarFiltros(rows, { ...VAZIO, cidade: 'TAUBATE', semEquipe: true })
+    expect(r.map(x => x.numos)).toEqual(['0000003'])
+  })
+
+  it('agendHoje usa a data BR injetada, não o relógio do sistema', () => {
+    const hoje = dataBR()
+    const comHoje = enrichRows([
+      makeOS({ numos: '0000004', dataagendamento: `${hoje} 08:00` }),
+      makeOS({ numos: '0000005', dataagendamento: '01/01/2020' }),
+    ])
+    const r = aplicarFiltros(comHoje, { ...VAZIO, agendHoje: true }, hoje)
+    expect(r.map(x => x.numos)).toEqual(['0000004'])
+  })
+
+  it('não muta o array de entrada', () => {
+    const antes = rows.map(r => r.numos)
+    aplicarFiltros(rows, { ...VAZIO, cidade: 'TAUBATE' })
+    expect(rows.map(r => r.numos)).toEqual(antes)
+  })
+})
+
+describe('proximoAgendaFoco — recortes de agenda mutuamente exclusivos', () => {
+  it('clicar num foco inativo o ativa', () => {
+    expect(proximoAgendaFoco(null, 'hoje')).toBe('hoje')
+  })
+
+  it('clicar no foco já ativo o desliga', () => {
+    expect(proximoAgendaFoco('hoje', 'hoje')).toBeNull()
+  })
+
+  it('clicar em outro foco troca, nunca acumula', () => {
+    expect(proximoAgendaFoco('hoje', 'amanha')).toBe('amanha')
+    expect(proximoAgendaFoco('amanha', 'posAmanha')).toBe('posAmanha')
+    expect(proximoAgendaFoco('posAmanha', 'hoje')).toBe('hoje')
   })
 })
