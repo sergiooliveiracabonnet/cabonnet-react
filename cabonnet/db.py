@@ -168,6 +168,37 @@ def _db_init():
                 PRIMARY KEY (role, modulo)
             )
         """)
+        # Custo mensal contratado por operadora, COM VIGÊNCIA. Contrato de
+        # fornecedor muda por aditivo, com data: sem vigência, analisar março com
+        # o custo de julho dá custo/OS errado e silencioso. vigente_ate NULL = em
+        # vigor. Datas em YYYY-MM-DD, que ordena lexicograficamente no SQLite.
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS fornecedor_custo (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                forn_key       TEXT    NOT NULL,
+                custo_mensal   REAL    NOT NULL DEFAULT 0,
+                vigente_de     TEXT    NOT NULL,
+                vigente_ate    TEXT,
+                atualizado_em  TEXT    NOT NULL,
+                atualizado_por TEXT    NOT NULL DEFAULT ''
+            )
+        """)
+        con.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_forn_custo_vigencia
+                ON fornecedor_custo(forn_key, vigente_de)
+        """)
+        # Meta de SLA fica FORA da tabela de custo de propósito: é decisão
+        # interna, não contrato. Guardá-la na linha de vigência criaria uma
+        # vigência de custo nova a cada ajuste de meta, poluindo o histórico
+        # financeiro com linhas em que o custo não mudou.
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS fornecedor_meta (
+                forn_key       TEXT PRIMARY KEY,
+                meta_sla       INTEGER,
+                atualizado_em  TEXT NOT NULL,
+                atualizado_por TEXT NOT NULL DEFAULT ''
+            )
+        """)
         con.commit()
         con.close()
 
@@ -558,6 +589,130 @@ def _db_list_tecnicos():
     except Exception as ex:
         log_db.warning("Falha ao listar tecnicos: %s", ex)
         return []
+
+
+def _db_get_fornecedor_custo(data_ref):
+    """Custo mensal vigente na data de referência (YYYY-MM-DD), por operadora."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            rows = con.execute(
+                """SELECT forn_key, custo_mensal FROM fornecedor_custo
+                   WHERE vigente_de <= ? AND (vigente_ate IS NULL OR vigente_ate >= ?)""",
+                (data_ref, data_ref)
+            ).fetchall()
+            con.close()
+        return {r[0]: float(r[1]) for r in rows}
+    except Exception as ex:
+        log_db.warning("Falha ao ler custo de fornecedor: %s", ex)
+        return {}
+
+
+def _db_list_fornecedor_custo_historico(forn_key):
+    """Todas as vigências de uma operadora, da mais antiga para a mais recente."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            rows = con.execute(
+                """SELECT custo_mensal, vigente_de, vigente_ate, atualizado_em, atualizado_por
+                   FROM fornecedor_custo WHERE forn_key = ? ORDER BY vigente_de""",
+                (forn_key,)
+            ).fetchall()
+            con.close()
+        return [
+            {"custo_mensal": float(r[0]), "vigente_de": r[1], "vigente_ate": r[2],
+             "atualizado_em": r[3], "atualizado_por": r[4]}
+            for r in rows
+        ]
+    except Exception as ex:
+        log_db.warning("Falha ao listar historico de custo de %s: %s", forn_key, ex)
+        return []
+
+
+def _db_set_fornecedor_custo(forn_key, custo_mensal, vigente_de, usuario=""):
+    """Abre uma vigência de custo a partir de `vigente_de` (YYYY-MM-DD).
+
+    Regravar a MESMA data corrige o valor no lugar, em vez de criar uma vigência
+    de duração zero — o caso comum é conserto de digitação logo após salvar.
+    Caso contrário, fecha a vigência aberta na véspera da nova e insere a nova,
+    de modo que não sobra lacuna nem sobreposição entre elas.
+
+    Correção retroativa de uma vigência antiga já fechada está fora de escopo:
+    exigiria reabrir e reencadear o histórico inteiro."""
+    atualizado_em = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    vespera = (datetime.strptime(vigente_de, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            existente = con.execute(
+                "SELECT id FROM fornecedor_custo WHERE forn_key = ? AND vigente_de = ?",
+                (forn_key, vigente_de)
+            ).fetchone()
+
+            if existente:
+                con.execute(
+                    """UPDATE fornecedor_custo
+                       SET custo_mensal = ?, atualizado_em = ?, atualizado_por = ?
+                       WHERE id = ?""",
+                    (float(custo_mensal), atualizado_em, usuario, existente[0])
+                )
+            else:
+                con.execute(
+                    """UPDATE fornecedor_custo SET vigente_ate = ?, atualizado_em = ?
+                       WHERE forn_key = ? AND vigente_ate IS NULL""",
+                    (vespera, atualizado_em, forn_key)
+                )
+                con.execute(
+                    """INSERT INTO fornecedor_custo
+                       (forn_key, custo_mensal, vigente_de, vigente_ate, atualizado_em, atualizado_por)
+                       VALUES (?,?,?,NULL,?,?)""",
+                    (forn_key, float(custo_mensal), vigente_de, atualizado_em, usuario)
+                )
+            con.commit()
+            con.close()
+        return True
+    except Exception as ex:
+        log_db.warning("Falha ao salvar custo de %s: %s", forn_key, ex)
+        return False
+
+
+def _db_get_fornecedor_meta():
+    """Meta de SLA por operadora. Operadora sem meta definida não aparece."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            rows = con.execute(
+                "SELECT forn_key, meta_sla FROM fornecedor_meta WHERE meta_sla IS NOT NULL"
+            ).fetchall()
+            con.close()
+        return {r[0]: int(r[1]) for r in rows}
+    except Exception as ex:
+        log_db.warning("Falha ao ler meta de fornecedor: %s", ex)
+        return {}
+
+
+def _db_set_fornecedor_meta(forn_key, meta_sla, usuario=""):
+    """Define a meta de SLA. `None` limpa a meta em vez de gravar zero — zero é
+    uma meta legítima de 0%, ausência é outra coisa."""
+    atualizado_em = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            con.execute(
+                """INSERT INTO fornecedor_meta (forn_key, meta_sla, atualizado_em, atualizado_por)
+                   VALUES (?,?,?,?)
+                   ON CONFLICT(forn_key) DO UPDATE SET
+                     meta_sla=excluded.meta_sla,
+                     atualizado_em=excluded.atualizado_em,
+                     atualizado_por=excluded.atualizado_por""",
+                (forn_key, None if meta_sla is None else int(meta_sla), atualizado_em, usuario)
+            )
+            con.commit()
+            con.close()
+        return True
+    except Exception as ex:
+        log_db.warning("Falha ao salvar meta de %s: %s", forn_key, ex)
+        return False
 
 
 def _db_upsert_tecnico(codigo, nome_real="", contato="", ativo=True):

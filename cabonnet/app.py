@@ -1282,6 +1282,90 @@ async def delete_tecnico(codigo: str, _role: str = Depends(_require_modulo("erp_
     return {"ok": True}
 
 
+# Chaves aceitas — espelham FORN_DISPLAY em src/lib/builders/extra.ts. Sem esta
+# lista, um erro de digitação no frontend cria silenciosamente uma operadora
+# fantasma que nunca aparece em tela nenhuma.
+_FORN_KEYS = {"WES", "Instacable", "THM", "REDE", "MANUTENCAO", "INTERNO"}
+
+
+def _valida_forn_key(body):
+    forn_key = str(body.get("forn_key", "")).strip()
+    if forn_key not in _FORN_KEYS:
+        raise HTTPException(400, f"forn_key inválido: {forn_key or '(vazio)'}")
+    return forn_key
+
+
+@router.get("/api/fornecedor/config")
+async def get_fornecedor_config(
+    data_ref: str | None = None,
+    _role: str = Depends(_require_modulo("fornecedor")),
+):
+    """Custo vigente na data de referência + metas de SLA. Sem `data_ref`, usa
+    hoje — o custo por OS de um período passado precisa do custo daquela época."""
+    from cabonnet.db import _db_get_fornecedor_custo, _db_get_fornecedor_meta
+    ref = data_ref or datetime.now().strftime("%Y-%m-%d")
+    return {"ok": True, "custo": _db_get_fornecedor_custo(ref), "meta": _db_get_fornecedor_meta()}
+
+
+@router.post("/api/fornecedor/custo")
+async def set_fornecedor_custo(request: Request, sess: dict = Depends(_require_session)):
+    from cabonnet.db import _db_set_fornecedor_custo
+    if sess.get("role") != "gestor":
+        raise HTTPException(403, "Permissão negada — requer role gestor")
+    body = await request.json()
+    forn_key = _valida_forn_key(body)
+    try:
+        custo = float(body.get("custo_mensal", 0))
+    except (TypeError, ValueError):
+        raise HTTPException(400, "custo_mensal deve ser numérico")
+    if custo < 0:
+        raise HTTPException(400, "custo_mensal não pode ser negativo")
+
+    # Contrato vira no dia 1º; sem data explícita a vigência abre no mês corrente.
+    vigente_de = str(body.get("vigente_de") or datetime.now().strftime("%Y-%m-01"))
+    try:
+        datetime.strptime(vigente_de, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(400, "vigente_de deve estar em YYYY-MM-DD")
+
+    if not _db_set_fornecedor_custo(forn_key, custo, vigente_de, sess.get("username") or ""):
+        raise HTTPException(500, "Falha ao salvar custo")
+    return {"ok": True}
+
+
+@router.post("/api/fornecedor/meta")
+async def set_fornecedor_meta(request: Request, sess: dict = Depends(_require_session)):
+    from cabonnet.db import _db_set_fornecedor_meta
+    if sess.get("role") != "gestor":
+        raise HTTPException(403, "Permissão negada — requer role gestor")
+    body = await request.json()
+    forn_key = _valida_forn_key(body)
+
+    meta = body.get("meta_sla")
+    if meta is not None:
+        try:
+            meta = int(meta)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "meta_sla deve ser inteiro ou nulo")
+        if not 0 <= meta <= 100:
+            raise HTTPException(400, "meta_sla deve estar entre 0 e 100")
+
+    if not _db_set_fornecedor_meta(forn_key, meta, sess.get("username") or ""):
+        raise HTTPException(500, "Falha ao salvar meta")
+    return {"ok": True}
+
+
+@router.get("/api/fornecedor/custo/historico")
+async def get_fornecedor_custo_historico(
+    forn_key: str,
+    _role: str = Depends(_require_modulo("fornecedor")),
+):
+    from cabonnet.db import _db_list_fornecedor_custo_historico
+    if forn_key not in _FORN_KEYS:
+        raise HTTPException(400, f"forn_key inválido: {forn_key}")
+    return {"ok": True, "items": _db_list_fornecedor_custo_historico(forn_key)}
+
+
 @router.get("/api/justificativas")
 async def list_justificativas(limit: int = 100, _role: str = Depends(_require_auth)):
     from cabonnet.db import _db_list_justificativas
