@@ -20,11 +20,22 @@ npm run dev              # node servidor.js --dev  →  port 3000
 npm run build            # vite build
 node servidor.js         # prod mode  →  port 3000
 
-# Tests
+# Tests — frontend
 npm test                 # vitest run (all tests)
 npm run test:watch       # vitest watch mode
 npx vitest run src/lib/osFormat.test.js   # single test file
+
+# Tests — backend
+python -m pytest tests/python -q          # all Python tests
+python -m pytest tests/python/test_db_fornecedor.py -q   # single file
+
+# Checks that must pass before committing
+npx tsc --noEmit         # type-check — `npm run build` does NOT do this
+npm run lint             # eslint
+npm run audit:ds         # design-system audit (runs in CI)
 ```
+
+**`npm run build` is `vite build` only — it does not type-check.** Run `npx tsc --noEmit` separately; it is what catches `TS6133` (orphan imports/variables) after removing JSX.
 
 **Dev server is always port 3000, strictPort: true.** Never use 3001.
 
@@ -59,11 +70,27 @@ Feature pages  (read from context via useOSDerived())
 
 Grafana routes starting with `/grafana/` are handled directly in Node by `servidor.js` (no round-trip to Python for `/grafana/os-totais`, `/grafana/os-cidades`, `/grafana/incidentes`, `/grafana/zabbix/*`).
 
-### Python Server (`cabonnet_server.py`)
+### Python Server (`cabonnet_server.py` + `cabonnet/`)
 
-Single-file, ~6600 lines. Runs two HTTP servers:
-- Port 5000 (`Handler`) — main API (Grafana proxy, OS queries, Telegram notifier, auth)
-- Port 5001 (`BackupHandler`) — snapshot/backup browser
+`cabonnet_server.py` is an **89-line entry point only** — it starts the two HTTP servers and the background threads. All business logic lives in the `cabonnet/` package (~22 modules). Do not go looking for handlers or queries in the entry point.
+
+- Port 5000 — main API (Grafana proxy, OS queries, Telegram notifier, auth)
+- Port 5001 — snapshot/backup browser
+
+Where things actually are:
+
+| Module | Responsibility |
+|---|---|
+| `cabonnet/app.py` | FastAPI routes. Authorization via `Depends(_require_modulo("<key>"))`, `_require_gestor`, `_require_session` |
+| `cabonnet/db.py` | SQLite (`_DB_PATH`). Tables created with `CREATE TABLE IF NOT EXISTS` in `_db_init()`. Permission modules listed in `ALL_MODULOS` |
+| `cabonnet/grafana.py` | Grafana datasource queries |
+| `cabonnet/bot.py`, `telegram.py` | Telegram bot and notifier |
+| `cabonnet/builders.py` | Message/payload builders shared by bot and API |
+| `cabonnet/auth.py`, `config.py`, `state.py`, `cache.py` | Session, config, shared in-memory state |
+| `cabonnet/juniper.py`, `monitors.py`, `zabbix.py` | Polling and monitoring |
+| `cabonnet/backup_app.py` | Port 5001 app |
+
+Python tests are in `tests/python/` (pytest, `pytest.ini` at the root). Run with `python -m pytest tests/python -q`. The `client` fixture in `conftest.py` mocks Grafana and disables auth; DB tests use a `tmp_db` fixture that patches `cabonnet.db._DB_PATH`.
 
 Key mechanisms:
 - **Lockfile** (`cabonnet_server.lock`): prevents duplicate instances. Safe to delete if the process was force-killed.
@@ -110,7 +137,7 @@ The bot isolates notifications by operator using team codes matched against `nom
 
 Each operator group receives only its own OS status changes. The Alertas group receives all changes from all operators plus THM's "Executadas Hoje" scheduled report.
 
-The `_operadora_da_os(row)` function in `cabonnet_server.py` drives all operator filtering. Adding a new operator means updating `_OPERADORA_GRUPOS`, `_operadora_for_chat`, `_label_operadora`, `_tg_broadcast_status_changes`, `_enviar_executadas`, `_grupo_cmds`, and the `_CHAT_MAP` in notify endpoints.
+`_operadora_da_os(row)` in `cabonnet/telegram.py` drives all operator filtering; the group map `_OPERADORA_GRUPOS` lives in `cabonnet/config.py`. Adding a new operator means updating `_OPERADORA_GRUPOS`, `_operadora_for_chat`, `_label_operadora`, `_tg_broadcast_status_changes`, `_enviar_executadas`, `_grupo_cmds`, and the `_CHAT_MAP` in notify endpoints.
 
 ### Feature Pages
 
