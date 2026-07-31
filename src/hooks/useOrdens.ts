@@ -132,6 +132,14 @@ export function aplicarFiltros(rows: OSRow[], f: OrdensFiltros, hoje: string = d
   return r
 }
 
+export type AgendaFoco = 'hoje' | 'amanha' | 'posAmanha' | null
+
+// Os três recortes de agenda definem qual base temporal está sendo olhada, então
+// são mutuamente exclusivos entre si. Clicar no que já está ativo desliga.
+export function proximoAgendaFoco(atual: AgendaFoco, clicado: Exclude<AgendaFoco, null>): AgendaFoco {
+  return clicado === atual ? null : clicado
+}
+
 export function useOrdens() {
   const { derived: { ordens: ordensData }, allRows, isLoading, error } = useOSDerived()
 
@@ -155,6 +163,17 @@ export function useOrdens() {
   const [density,     setDensity]     = useState('normal')
   const [page,        setPage]        = useState(1)
   const [pageSize,    setPageSize]    = useState(50)
+
+  const agendaFoco: AgendaFoco = agendHoje ? 'hoje' : agendAmanha ? 'amanha' : agendFuturo ? 'posAmanha' : null
+
+  // Troca o recorte temporal sem tocar nos filtros dimensionais: clicar em
+  // "Amanhã" com Taubaté selecionado deve mostrar "amanhã EM Taubaté".
+  const setAgendaFoco = (clicado: Exclude<AgendaFoco, null>) => {
+    const alvo = proximoAgendaFoco(agendaFoco, clicado)
+    setAgendHoje(alvo === 'hoje')
+    setAgendAmanha(alvo === 'amanha')
+    setAgendFuturo(alvo === 'posAmanha')
+  }
 
   const toggleTableSort = (key: string) => {
     setPage(1)
@@ -287,8 +306,9 @@ export function useOrdens() {
     cidade, setCidade, bairro, setBairro, equipe, setEquipe,
     aging, setAging, critico, setCritico, fornecedor, setFornecedor, tipoOs, setTipoOs,
     periodo, setPeriodo,
-    semEquipe, setSemEquipe, agendHoje, setAgendHoje,
-    agendAmanha, setAgendAmanha, agendFuturo, setAgendFuturo,
+    semEquipe, setSemEquipe,
+    agendHoje, agendAmanha, agendFuturo,
+    agendaFoco, setAgendaFoco,
     tableSort, toggleTableSort,
     clearFilters, filtersActive, options,
   }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { withCopeQuandoPendente, splitAgendaFutura, isAgendadaEm, dataBR, matchesOSSearch, aplicarFiltros, matchesAgingFaixa, type OrdensFiltros } from './useOrdens'
+import { withCopeQuandoPendente, splitAgendaFutura, isAgendadaEm, dataBR, matchesOSSearch, aplicarFiltros, matchesAgingFaixa, proximoAgendaFoco, type OrdensFiltros } from './useOrdens'
 import { enrichRows } from '../lib/transform'
 import type { OSRow } from '../lib/types'
 
@@ -328,5 +328,21 @@ describe('aplicarFiltros — cadeia de filtros da página de Ordens', () => {
     const antes = rows.map(r => r.numos)
     aplicarFiltros(rows, { ...VAZIO, cidade: 'TAUBATE' })
     expect(rows.map(r => r.numos)).toEqual(antes)
+  })
+})
+
+describe('proximoAgendaFoco — recortes de agenda mutuamente exclusivos', () => {
+  it('clicar num foco inativo o ativa', () => {
+    expect(proximoAgendaFoco(null, 'hoje')).toBe('hoje')
+  })
+
+  it('clicar no foco já ativo o desliga', () => {
+    expect(proximoAgendaFoco('hoje', 'hoje')).toBeNull()
+  })
+
+  it('clicar em outro foco troca, nunca acumula', () => {
+    expect(proximoAgendaFoco('hoje', 'amanha')).toBe('amanha')
+    expect(proximoAgendaFoco('amanha', 'posAmanha')).toBe('posAmanha')
+    expect(proximoAgendaFoco('posAmanha', 'hoje')).toBe('hoje')
   })
 })

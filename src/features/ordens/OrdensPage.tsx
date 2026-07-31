@@ -339,72 +339,54 @@ export default function OrdensPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard
             title="Total OS" value={os.kpis.total} icon={ORDENS_CARD_ICONS.total}
-            sub="ver todas" delay={0}
-            onClick={() => { os.clearFilters(); scrollToTable() }}
+            sub="limpar filtros" delay={0}
+            onClick={() => { clearAllFilters(); scrollToTable() }}
           />
           <StatCard
             title="Críticas" value={os.kpis.criticas} tone="critical" icon={ORDENS_CARD_ICONS.criticas}
             sub="SLA 2× excedido" delay={40}
-            onClick={() => { os.clearFilters(); os.setCritico(true); scrollToTable() }}
+            onClick={() => { os.setCritico(!os.critico); scrollToTable() }}
           />
           <StatCard
             title="Sem equipe" value={os.kpis.semEquipe} tone="warning" icon={ORDENS_CARD_ICONS.semEquipe}
             sub="sem alocação" delay={80}
-            onClick={() => { os.clearFilters(); os.setSemEquipe(true); scrollToTable() }}
+            onClick={() => { os.setSemEquipe(!os.semEquipe); scrollToTable() }}
           />
           <StatCard
             title="Agend. hoje" value={os.kpis.agendHoje} tone="ok" icon={ORDENS_CARD_ICONS.agendHoje}
             sub="para hoje" delay={120}
-            onClick={() => { os.clearFilters(); os.setAgendHoje(true); scrollToTable() }}
+            onClick={() => { os.setAgendaFoco('hoje'); scrollToTable() }}
           />
           <StatCard
             title="Amanhã" value={os.kpis.agendAmanha} icon={ORDENS_CARD_ICONS.agendAmanha}
             sub="agendadas para amanhã" delay={160}
-            onClick={() => { os.clearFilters(); os.setAgendAmanha(true); scrollToTable() }}
+            onClick={() => { os.setAgendaFoco('amanha'); scrollToTable() }}
           />
           <StatCard
             title="Após amanhã" value={os.kpis.agendFuturo} tone="warning" icon={ORDENS_CARD_ICONS.agendFuturo}
             sub="de depois de amanhã em diante" delay={200}
-            onClick={() => { os.clearFilters(); os.setAgendFuturo(true); scrollToTable() }}
+            onClick={() => { os.setAgendaFoco('posAmanha'); scrollToTable() }}
           />
         </div>
       )}
 
       {/* ── Resumo por Tipo ── */}
       <div className="flex items-center justify-center gap-2 flex-wrap">
-        <button
-          onClick={() => { os.clearFilters(); os.setTipoOs('INSTALACAO'); scrollToTable() }}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full
-                     bg-cyan/10 border border-cyan/20 text-cyan
-                     text-label font-semibold hover:bg-cyan/20 transition-all duration-fast"
-        >
-          <Router size={12} /> Instalação
-          <span className="bg-cyan/20 text-cyan rounded-full px-1.5 py-0 text-caption font-bold tabular-nums">
-            {os.kpis.instalacao}
-          </span>
-        </button>
-        <button
-          onClick={() => { os.clearFilters(); os.setTipoOs('MANUTENCAO'); scrollToTable() }}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full
-                     bg-orange/10 border border-orange/20 text-orange
-                     text-label font-semibold hover:bg-orange/20 transition-all duration-fast"
-        >
-          <Wrench size={12} /> Manutenção
-          <span className="bg-orange/20 text-orange rounded-full px-1.5 py-0 text-caption font-bold tabular-nums">
-            {os.kpis.manutencao}
-          </span>
-        </button>
-        <button
-          onClick={() => { os.clearFilters(); os.setTipoOs('OUTRO'); scrollToTable() }}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full
-                     bg-purple/10 border border-purple/20 text-purple
-                     text-label font-semibold hover:bg-purple/20 transition-all duration-fast"
-        >
-          <HardHat size={12} /> Serviço
-          <span className="bg-purple/20 text-purple rounded-full px-1.5 py-0 text-caption font-bold tabular-nums">
-            {os.kpis.servico}
-          </span>
-        </button>
+        <TipoPill
+          label="Instalação" icone={Router} cor="cyan" total={os.kpis.instalacao}
+          ativo={os.tipoOs === 'INSTALACAO'}
+          onClick={() => { os.setTipoOs(os.tipoOs === 'INSTALACAO' ? '' : 'INSTALACAO'); scrollToTable() }}
+        />
+        <TipoPill
+          label="Manutenção" icone={Wrench} cor="orange" total={os.kpis.manutencao}
+          ativo={os.tipoOs === 'MANUTENCAO'}
+          onClick={() => { os.setTipoOs(os.tipoOs === 'MANUTENCAO' ? '' : 'MANUTENCAO'); scrollToTable() }}
+        />
+        <TipoPill
+          label="Serviço" icone={HardHat} cor="purple" total={os.kpis.servico}
+          ativo={os.tipoOs === 'OUTRO'}
+          onClick={() => { os.setTipoOs(os.tipoOs === 'OUTRO' ? '' : 'OUTRO'); scrollToTable() }}
+        />
       </div>
 
       {/* ── Barra de filtros ── */}
@@ -549,5 +531,51 @@ export default function OrdensPage() {
         ordens={os.filtered}
       />
     </div>
+  )
+}
+
+// Classes literais por cor — o Tailwind faz varredura estática do código-fonte,
+// então `bg-${cor}/25` seria purgado do CSS e a pílula sairia sem cor.
+const TIPO_PILL_CLASSES = {
+  cyan: {
+    ativo: 'bg-cyan/25 border-cyan/50 text-cyan',
+    idle:  'bg-cyan/10 border-cyan/20 text-cyan hover:bg-cyan/20',
+    badge: 'bg-cyan/20 text-cyan',
+  },
+  orange: {
+    ativo: 'bg-orange/25 border-orange/50 text-orange',
+    idle:  'bg-orange/10 border-orange/20 text-orange hover:bg-orange/20',
+    badge: 'bg-orange/20 text-orange',
+  },
+  purple: {
+    ativo: 'bg-purple/25 border-purple/50 text-purple',
+    idle:  'bg-purple/10 border-purple/20 text-purple hover:bg-purple/20',
+    badge: 'bg-purple/20 text-purple',
+  },
+} as const
+
+function TipoPill({ label, icone: Icone, cor, total, ativo, onClick }: {
+  label:   string
+  icone:   React.ComponentType<{ size?: number }>
+  cor:     keyof typeof TIPO_PILL_CLASSES
+  total:   number
+  ativo:   boolean
+  onClick: () => void
+}) {
+  const c = TIPO_PILL_CLASSES[cor]
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={ativo}
+      className={`flex items-center gap-1.5 px-3 py-1 rounded-full border
+                  text-label font-semibold transition-all duration-fast
+                  ${ativo ? c.ativo : c.idle}`}
+    >
+      <Icone size={12} /> {label}
+      <span className={`${c.badge} rounded-full px-1.5 py-0 text-caption font-bold tabular-nums`}>
+        {total}
+      </span>
+    </button>
   )
 }
