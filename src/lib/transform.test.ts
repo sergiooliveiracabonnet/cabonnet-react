@@ -59,6 +59,37 @@ describe('getFornecedor', () => {
     expect(getFornecedor('EQUIPE F01')).toBe('Instacable')
   })
 
+  it('identifica THM pelo código F12', () => {
+    expect(getFornecedor('EQUIPE F12')).toBe('THM')
+  })
+
+  // WES, Instacable e THM fazem instalação, manutenção e serviço com a MESMA
+  // equipe/código — getFornecedor olha só o código de frente (nomedaequipe), não
+  // o tipo de serviço da OS. É por isso que _fornecedor não muda entre uma
+  // instalação e uma manutenção da mesma equipe, mesmo que _tipo mude.
+  it('mesma equipe permanece no mesmo fornecedor independente do tipo de serviço', () => {
+    expect(getFornecedor('EQUIPE F08')).toBe('WES')       // F08 fazendo instalação
+    expect(getFornecedor('EQUIPE F08 MANUT')).toBe('WES') // F08 fazendo manutenção — mesmo código, mesmo fornecedor
+  })
+
+  it('identifica a equipe de qualidade como MANUTENCAO quando o nome contém "MANUTENC"', () => {
+    expect(getFornecedor('EQUIPE MANUTENCAO 02')).toBe('MANUTENCAO')
+  })
+
+  // Risco de nomenclatura encontrado ao investigar: o regex exige a substring
+  // ASCII "MANUTENC", sem acento. "MANUT 02" (sem os órfãos "ENC") e
+  // "MANUTENÇÃO 02" (com cedilha/til, que .toUpperCase() NÃO normaliza para
+  // ASCII) não casam — e caem em 'OUTRO', que buildFornecedor descarta
+  // explicitamente (`if (k === 'OUTRO') continue`). Se os nomes reais das
+  // equipes de qualidade no Grafana forem "MANUT 02/04/77" (como descrito pelo
+  // usuário) em vez de "MANUTENCAO 02" por extenso, essas OS desaparecem de
+  // TODOS os painéis de Fornecedor hoje, sem erro nem aviso. Verificar o valor
+  // real de nomedaequipe no banco antes de confiar neste bucket.
+  it('DOCUMENTA o risco: "MANUT 02" sem o sufixo "ENC" não casa e vira OUTRO', () => {
+    expect(getFornecedor('MANUT 02')).toBe('OUTRO')
+    expect(getFornecedor('EQUIPE MANUTENÇÃO 02')).toBe('OUTRO')   // cedilha/til não normalizam
+  })
+
   it('retorna OUTRO para equipes desconhecidas', () => {
     expect(getFornecedor('EQUIPE DESCONHECIDA')).toBe('OUTRO')
   })
