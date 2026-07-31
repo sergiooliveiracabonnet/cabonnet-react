@@ -11,11 +11,18 @@ import type { OSRow } from '../../lib/types'
 
 const digits = (value: unknown) => String(value ?? '').replace(/\D/g, '')
 
+// Trecho no meio de um número só vale a partir de 3 dígitos: com 2, "00" casaria
+// com quase toda a base e afogaria os resultados por nome.
+const MIN_DIGITOS_TRECHO = 3
+
 function matchOS(r: OSRow, q: string): boolean {
   const numericQuery = digits(q)
   const cpf = r.cpfcliente ?? r.cpf ?? r.cnpj_cpf ?? r.cpfcnpj ?? r.cnpjcpf
   return !!(
     (r.numos as string | undefined)?.toLowerCase().startsWith(q)      ||
+    // A operação costuma anotar só os dígitos finais da OS, e o número chega
+    // colado com prefixo ou pontuação ("OS 9000001", "9.000.001").
+    (numericQuery.length >= MIN_DIGITOS_TRECHO && digits(r.numos).includes(numericQuery)) ||
     (r.nomecliente as string | undefined)?.toLowerCase().includes(q)  ||
     (r.bairro as string | undefined)?.toLowerCase().includes(q)       ||
     (r.nomedacidade as string | undefined)?.toLowerCase().includes(q) ||
@@ -32,8 +39,13 @@ export function searchRows(allRows: OSRow[], query: string): OSRow[] {
   return allRows
     .filter(r => matchOS(r, q))
     .sort((a, b) => {
-      if ((a.numos as string | undefined)?.toLowerCase() === q) return -1
-      if ((b.numos as string | undefined)?.toLowerCase() === q) return 1
+      // Compara por dígitos para que "OS 9000001" e "9.000.001" também sejam
+      // reconhecidos como o número exato e subam ao topo.
+      const alvo = digits(query)
+      if (alvo) {
+        if (digits(a.numos) === alvo) return -1
+        if (digits(b.numos) === alvo) return 1
+      }
       return ((b._aging as number) ?? (b._agingAbertura as number) ?? -1) -
              ((a._aging as number) ?? (a._agingAbertura as number) ?? -1)
     })
