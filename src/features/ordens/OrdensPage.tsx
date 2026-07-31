@@ -435,19 +435,6 @@ export default function OrdensPage() {
         <FilterSelect value={os.fornecedor} onChange={os.setFornecedor} options={fornecedorOptions} placeholder="Fornecedor"  className="w-36" />
         <FilterSelect value={os.periodo}   onChange={os.setPeriodo}   options={periodoOpts}       placeholder="Período"     className="w-32" />
 
-        {/* Toggle Rede */}
-        <button
-          onClick={() => os.setHideRede(v => !v)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-semibold
-                      border transition-all duration-fast flex-shrink-0
-                      ${os.hideRede
-                        ? 'bg-red/[0.08] border-red/20 text-red/80 hover:bg-red/[0.14]'
-                        : 'bg-green/[0.08] border-green/20 text-green hover:bg-green/[0.14]'}`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${os.hideRede ? 'bg-red/70' : 'bg-green'}`} />
-          Rede {os.hideRede ? 'OFF' : 'ON'}
-        </button>
-
         </div>}
       </div>
 
@@ -463,7 +450,6 @@ export default function OrdensPage() {
             {os.agendHoje    && <span className="badge-green   rounded-full px-2 py-0.5 text-caption font-bold">Agend. hoje</span>}
             {os.agendAmanha  && <span className="badge-cyan    rounded-full px-2 py-0.5 text-caption font-bold">Amanhã</span>}
             {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-caption font-bold">Agend. Futuro</span>}
-            {os.hideRede     && <span className="rounded-full px-2 py-0.5 text-caption font-bold bg-red/10 text-red/80 border border-red/20">Rede oculta</span>}
             {os.periodo      && <span className="badge-purple  rounded-full px-2 py-0.5 text-caption font-bold">{os.periodo}</span>}
           </span>
           <button onClick={clearAllFilters} className="text-muted hover:text-red transition-colors text-caption font-semibold">

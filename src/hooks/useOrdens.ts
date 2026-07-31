@@ -98,7 +98,6 @@ export function useOrdens() {
   const [agendHoje,   setAgendHoje]   = useState(false)
   const [agendAmanha, setAgendAmanha] = useState(false)
   const [agendFuturo, setAgendFuturo] = useState(false)
-  const [hideRede,    setHideRede]    = useState(false)
   const [tableSort,   setTableSort]   = useState<{ key: string | null; dir: 'asc' | 'desc' }>({ key: null, dir: 'asc' })
   const [density,     setDensity]     = useState('normal')
   const [page,        setPage]        = useState(1)
@@ -144,7 +143,6 @@ export function useOrdens() {
     if (periodo)    r = r.filter(x => ((x.periodo as string) || '').trim().toLowerCase() === periodo.toLowerCase())
     if (semEquipe)  r = r.filter(x => !x.nomedaequipe)
     if (critico)    r = r.filter(x => x._slaCritico)
-    if (hideRede)   r = r.filter(x => x._fornecedor !== 'REDE')
     if (agendHoje) {
       const hojeBR = dataBR()
       r = r.filter(x => isAgendadaEm(x, hojeBR))
@@ -193,7 +191,7 @@ export function useOrdens() {
     }
 
     return r
-  }, [baseOrdens, search, status, reagendTipo, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, hideRede, tableSort])
+  }, [baseOrdens, search, status, reagendTipo, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, tableSort])
 
   const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize)
   const totalPages = Math.ceil(filtered.length / pageSize)
@@ -201,7 +199,7 @@ export function useOrdens() {
   useEffect(() => {
     setPage(1)
   }, [search, status, reagendTipo, tipo, cidade, bairro, equipe, aging, critico,
-      fornecedor, tipoOs, periodo, semEquipe, agendHoje, agendAmanha, agendFuturo, hideRede])
+      fornecedor, tipoOs, periodo, semEquipe, agendHoje, agendAmanha, agendFuturo])
 
   useEffect(() => {
     setPage(current => Math.min(current, Math.max(1, totalPages)))
@@ -226,13 +224,13 @@ export function useOrdens() {
     setSearch(''); setStatus(''); setReagendTipo(''); setTipo(''); setCidade(''); setBairro('')
     setEquipe(''); setAging(''); setFornecedor(''); setTipoOs(''); setPeriodo('')
     setSemEquipe(false); setCritico(false); setAgendHoje(false); setAgendAmanha(false); setAgendFuturo(false)
-    setHideRede(false); setTableSort({ key: null, dir: 'asc' })
+    setTableSort({ key: null, dir: 'asc' })
     setPage(1)
   }
 
   const filtersActive = Boolean(
     search || status || reagendTipo || tipo || cidade || bairro || equipe || aging || fornecedor ||
-    tipoOs || periodo || semEquipe || agendHoje || agendAmanha || agendFuturo || critico || hideRede || tableSort.key
+    tipoOs || periodo || semEquipe || agendHoje || agendAmanha || agendFuturo || critico || tableSort.key
   )
 
   return {
@@ -244,7 +242,6 @@ export function useOrdens() {
     periodo, setPeriodo,
     semEquipe, setSemEquipe, agendHoje, setAgendHoje,
     agendAmanha, setAgendAmanha, agendFuturo, setAgendFuturo,
-    hideRede, setHideRede,
     tableSort, toggleTableSort,
     clearFilters, filtersActive, options,
   }
