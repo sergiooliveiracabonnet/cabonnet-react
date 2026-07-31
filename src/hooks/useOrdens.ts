@@ -99,7 +99,6 @@ export function useOrdens() {
   const [agendAmanha, setAgendAmanha] = useState(false)
   const [agendFuturo, setAgendFuturo] = useState(false)
   const [hideRede,    setHideRede]    = useState(false)
-  const [sortBy,      setSortBy]      = useState('agendamento')
   const [tableSort,   setTableSort]   = useState<{ key: string | null; dir: 'asc' | 'desc' }>({ key: null, dir: 'asc' })
   const [density,     setDensity]     = useState('normal')
   const [page,        setPage]        = useState(1)
@@ -162,16 +161,17 @@ export function useOrdens() {
       })
     }
 
-    if (sortBy === 'agendamento') {
-      r = [...r].sort((a, b) => {
-        const da = parseAgend(a.dataagendamento as string)
-        const db = parseAgend(b.dataagendamento as string)
-        if (!da && !db) return 0
-        if (!da) return 1
-        if (!db) return -1
-        return da.getTime() - db.getTime()
-      })
-    }
+    // Ordem base sempre por agendamento. O sort por coluna abaixo aplica em
+    // cima disto e, como Array.sort é estável, o agendamento continua sendo o
+    // critério de desempate dentro de valores iguais.
+    r = [...r].sort((a, b) => {
+      const da = parseAgend(a.dataagendamento as string)
+      const db = parseAgend(b.dataagendamento as string)
+      if (!da && !db) return 0
+      if (!da) return 1
+      if (!db) return -1
+      return da.getTime() - db.getTime()
+    })
 
     // Sort por coluna sobre o CONJUNTO filtrado — dentro do DataTable ordenaria
     // só a página de 50: "ordenar por Risco" não traria as piores do conjunto.
@@ -193,7 +193,7 @@ export function useOrdens() {
     }
 
     return r
-  }, [baseOrdens, search, status, reagendTipo, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, hideRede, sortBy, tableSort])
+  }, [baseOrdens, search, status, reagendTipo, tipo, cidade, bairro, equipe, fornecedor, tipoOs, periodo, semEquipe, agendHoje, aging, critico, hideRede, tableSort])
 
   const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize)
   const totalPages = Math.ceil(filtered.length / pageSize)
@@ -226,7 +226,7 @@ export function useOrdens() {
     setSearch(''); setStatus(''); setReagendTipo(''); setTipo(''); setCidade(''); setBairro('')
     setEquipe(''); setAging(''); setFornecedor(''); setTipoOs(''); setPeriodo('')
     setSemEquipe(false); setCritico(false); setAgendHoje(false); setAgendAmanha(false); setAgendFuturo(false)
-    setHideRede(false); setSortBy('agendamento'); setTableSort({ key: null, dir: 'asc' })
+    setHideRede(false); setTableSort({ key: null, dir: 'asc' })
     setPage(1)
   }
 
@@ -245,7 +245,6 @@ export function useOrdens() {
     semEquipe, setSemEquipe, agendHoje, setAgendHoje,
     agendAmanha, setAgendAmanha, agendFuturo, setAgendFuturo,
     hideRede, setHideRede,
-    sortBy, setSortBy,
     tableSort, toggleTableSort,
     clearFilters, filtersActive, options,
   }
