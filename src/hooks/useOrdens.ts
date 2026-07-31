@@ -101,7 +101,7 @@ export function useOrdens() {
   const [hideRede,    setHideRede]    = useState(false)
   const [sortBy,      setSortBy]      = useState('agendamento')
   const [tableSort,   setTableSort]   = useState<{ key: string | null; dir: 'asc' | 'desc' }>({ key: null, dir: 'asc' })
-  const [density,     setDensity]     = useState('normal')
+  const [density,     setDensity]     = useState('compact')
   const [page,        setPage]        = useState(1)
   const [pageSize,    setPageSize]    = useState(50)
 
