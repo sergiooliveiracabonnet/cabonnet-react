@@ -1,5 +1,5 @@
 import { isCOPE, isReagend, parseDate } from '../transform'
-import type { OSRow } from '../types'
+import type { OSRow, Fornecedor } from '../types'
 
 // ─── Revisitas — helpers internos ───────────────────────────────────────────
 
@@ -42,13 +42,19 @@ function _buildRevisitaTaxa(rows: OSRow[]): number {
 }
 
 interface RevisitEvent {
-  tipo:   'inst' | 'manut' | 'serv'
-  equipe: string
-  cidade: string
-  dias:   number
-  cliente: string
-  mes:    string
-  data:   string
+  tipo:       'inst' | 'manut' | 'serv'
+  equipe:     string
+  cidade:     string
+  // Fornecedor da OS DE RETORNO (mesma linha que já dá equipe/cidade acima),
+  // não da origem — quem gerou o custo do retorno. WES/Instacable/THM mantêm o
+  // fornecedor entre instalação/manutenção/serviço (mesmo código de frente); a
+  // equipe de Rede nunca aparece aqui hoje porque _tipo trava em 'REDE' antes
+  // deste evento existir — ver achado #2 na spec de custo de revisita.
+  fornecedor: Fornecedor
+  dias:       number
+  cliente:    string
+  mes:        string
+  data:       string
 }
 
 export function buildRevisitas(rows: OSRow[], prevRows: OSRow[] = []) {
@@ -104,7 +110,7 @@ export function buildRevisitas(rows: OSRow[], prevRows: OSRow[] = []) {
       for (const m of manutSorted) {
         const dtManut = parseDate(m.dataexecucao || m.databaixa)
         const dias = dtInst && dtManut ? Math.max(0, Math.floor((dtManut.getTime() - dtInst.getTime()) / 86400000)) : 0
-        revisitEvents.push({ tipo: 'inst', equipe: (m.nomedaequipe || 'Sem equipe').trim() || 'Sem equipe', cidade: (m.nomedacidade || 'N/A').trim() || 'N/A', dias, cliente, mes, data: m.dataexecucao || m.databaixa || '' })
+        revisitEvents.push({ tipo: 'inst', equipe: (m.nomedaequipe || 'Sem equipe').trim() || 'Sem equipe', cidade: (m.nomedacidade || 'N/A').trim() || 'N/A', fornecedor: m._fornecedor, dias, cliente, mes, data: m.dataexecucao || m.databaixa || '' })
       }
     }
 
@@ -114,7 +120,7 @@ export function buildRevisitas(rows: OSRow[], prevRows: OSRow[] = []) {
         const dtPrev = parseDate(prev.dataexecucao || prev.databaixa)
         const dtCurr = parseDate(curr.dataexecucao || curr.databaixa)
         const dias = dtPrev && dtCurr ? Math.max(0, Math.floor((dtCurr.getTime() - dtPrev.getTime()) / 86400000)) : 0
-        revisitEvents.push({ tipo: 'manut', equipe: (curr.nomedaequipe || 'Sem equipe').trim() || 'Sem equipe', cidade: (curr.nomedacidade || 'N/A').trim() || 'N/A', dias, cliente, mes, data: curr.dataexecucao || curr.databaixa || '' })
+        revisitEvents.push({ tipo: 'manut', equipe: (curr.nomedaequipe || 'Sem equipe').trim() || 'Sem equipe', cidade: (curr.nomedacidade || 'N/A').trim() || 'N/A', fornecedor: curr._fornecedor, dias, cliente, mes, data: curr.dataexecucao || curr.databaixa || '' })
       }
     }
 
@@ -124,7 +130,7 @@ export function buildRevisitas(rows: OSRow[], prevRows: OSRow[] = []) {
       for (const m of manutSorted) {
         const dtManut = parseDate(m.dataexecucao || m.databaixa)
         const dias = dtServ && dtManut ? Math.max(0, Math.floor((dtManut.getTime() - dtServ.getTime()) / 86400000)) : 0
-        revisitEvents.push({ tipo: 'serv', equipe: (m.nomedaequipe || 'Sem equipe').trim() || 'Sem equipe', cidade: (m.nomedacidade || 'N/A').trim() || 'N/A', dias, cliente, mes, data: m.dataexecucao || m.databaixa || '' })
+        revisitEvents.push({ tipo: 'serv', equipe: (m.nomedaequipe || 'Sem equipe').trim() || 'Sem equipe', cidade: (m.nomedacidade || 'N/A').trim() || 'N/A', fornecedor: m._fornecedor, dias, cliente, mes, data: m.dataexecucao || m.databaixa || '' })
       }
     }
   }
@@ -183,6 +189,16 @@ export function buildRevisitas(rows: OSRow[], prevRows: OSRow[] = []) {
     })
     .sort((a, b) => b.revisitas - a.revisitas).slice(0, 8)
 
+  // Base para o custo de revisita por fornecedor (FornecedorPage cruza `total`
+  // com o custo/OS real e vigente de cada operadora). A equipe de Rede não
+  // aparece aqui hoje: _tipo trava em 'REDE' antes do evento existir, então
+  // nenhum RevisitEvent chega a ser criado pra ela — ver achado #2 na spec.
+  const fornecedorRevMap = new Map<Fornecedor, number>()
+  for (const ev of revisitEvents) fornecedorRevMap.set(ev.fornecedor, (fornecedorRevMap.get(ev.fornecedor) || 0) + 1)
+  const porFornecedor = [...fornecedorRevMap.entries()]
+    .map(([fornecedor, total]) => ({ fornecedor, total }))
+    .sort((a, b) => b.total - a.total)
+
   const diasArr        = revisitEvents.map(e => e.dias).filter(d => d >= 0)
   const tempoMedio     = diasArr.length > 0 ? Math.round(diasArr.reduce((a, b) => a + b, 0) / diasArr.length) : 0
   const evitaveisCount = Math.round(revInst * EVIT_INST_RATE_ESTIMADO + revManut * EVIT_MANUT_RATE_ESTIMADO)
@@ -230,7 +246,7 @@ export function buildRevisitas(rows: OSRow[], prevRows: OSRow[] = []) {
   return {
     taxa, narrativa, hipoteses, cronicos, chart,
     totalRevisitas, revInst, revManut, revServ,
-    porEquipe, porCidade,
+    porEquipe, porCidade, porFornecedor,
     evitaveis:  { count: evitaveisCount, pct: evitaveisPct },
     tempoMedio, custoEstimado, diasDist,
     base:       { total: base.length, inst: instPairs, manut: manutPairs, serv: servPairs },

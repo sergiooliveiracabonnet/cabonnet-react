@@ -16,6 +16,7 @@ import type {
   SlaHipotese, SlaResumoItem, SlaRankingItem, SlaSemaforo, SlaCluster,
   CidadeSaude,
   RevisitaHipotese,
+  Fornecedor,
 } from '../lib/types'
 
 // Tipos locais não exportados de types.ts — espelham retorno real dos builders.
@@ -128,6 +129,7 @@ const EMPTY_DERIVED = {
     totalRevisitas: 0, revInst: 0, revManut: 0, revServ: 0,
     porEquipe: [] as { equipe: string; total: number; taxa: number }[],
     porCidade: [] as { cidade: string; total: number; taxa: number }[],
+    porFornecedor: [] as { fornecedor: Fornecedor; total: number }[],
     evitaveis:    { count: 0, pct: 0 },
     tempoMedio:   0,
     custoEstimado: 0,

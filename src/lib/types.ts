@@ -457,6 +457,7 @@ export interface RevisitasData {
   revServ:       number
   porEquipe:     { equipe: string; total: number; taxa: number }[]
   porCidade:     { cidade: string; total: number; taxa: number }[]
+  porFornecedor: { fornecedor: Fornecedor; total: number }[]
   evitaveis:     { count: number; pct: number }
   tempoMedio:    number
   custoEstimado: number
