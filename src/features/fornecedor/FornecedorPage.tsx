@@ -251,7 +251,7 @@ export default function FornecedorPage() {
   )
 }
 
-interface PanelKpis { total: number; concluidas: number; criticas: number; sla: number; conclPct: number; mttr: number; custoMensal?: number; custoPorOs?: number | null }
+interface PanelKpis { total: number; concluidas: number; criticas: number; sla: number; conclPct: number; mttr: number; mttrP90: number; custoMensal?: number; custoPorOs?: number | null }
 interface PanelEquipe { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }
 interface PanelChart  { labels: unknown[]; total: unknown[]; concluidas: unknown[] }
 
@@ -278,7 +278,9 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
     { label: 'Concluídas',     value: kpis.concluidas, accent: 'green'   },
     { label: 'Críticas',       value: kpis.criticas,   accent: 'red'     },
     { label: 'SLA',            value: `${kpis.sla}%`,  accent: slaEscala(kpis.sla).accent },
-    { label: 'MTTR (dias)',    value: `${kpis.mttr}d`, accent: kpis.mttr <= 2 ? 'green' : kpis.mttr <= 5 ? 'yellow' : 'red' },
+    { label: 'MTTR P50',       value: `${kpis.mttr}d`, accent: kpis.mttr <= 2 ? 'green' : kpis.mttr <= 5 ? 'yellow' : 'red' },
+    // O caso ruim, não o típico: é dele que vem reclamação de cliente e multa.
+    { label: 'MTTR P90',       value: `${kpis.mttrP90}d`, accent: kpis.mttrP90 <= 5 ? 'green' : kpis.mttrP90 <= 10 ? 'yellow' : 'red' },
     { label: 'Taxa Conclusão', value: `${kpis.conclPct}%`, accent: kpis.conclPct >= 80 ? 'green' : kpis.conclPct >= 60 ? 'primary' : 'yellow' },
     { label: 'Custo / OS',     value: fmtCusto(kpis.custoPorOs), accent: 'orange' },
   ] : []
@@ -303,7 +305,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
           )}
           {kpis?.mttr != null && (
             <span className="flex items-center gap-1 text-caption text-muted border border-white/[0.08] rounded px-2 py-0.5">
-              <Clock size={9} /> {kpis.mttr}d MTTR
+              <Clock size={9} /> {kpis.mttr}d P50 · {kpis.mttrP90}d P90
             </span>
           )}
           <Badge variant="cyan">{kpis?.total ?? 0} OS</Badge>
@@ -337,7 +339,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
 
           {/* KPI Cards */}
           {kpis && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
               {kpiCards.map((k) => (
                 <div key={k.label} className={`bg-surface bg-gradient-to-br ${FROM[k.accent] ?? FROM.primary} to-transparent border border-white/[0.08] rounded-xl p-3`}>
                   <p className="text-caption font-bold uppercase tracking-wide text-muted mb-1">{k.label}</p>

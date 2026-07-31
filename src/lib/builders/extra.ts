@@ -1,6 +1,6 @@
 import { isExecucaoReal } from '../transform'
 import type { OSRow, Fornecedor } from '../types'
-import { avg, calcMTTR, slaPeriodoPct, shortName } from './_helpers'
+import { avg, calcMTTR, mttrStats, slaPeriodoPct, shortName } from './_helpers'
 
 const FORN_DISPLAY: Partial<Record<Fornecedor, { label: string; cor: string }>> = {
   WES:        { label: 'WES (Instalação)', cor: '#c4b5fd' },
@@ -57,7 +57,12 @@ export function buildFornecedor(
     // SLA de prazo real — antes era um alias de conclPct, o que contava a mesma
     // métrica duas vezes no score (65% do peso numa variável só)
     const sla        = slaPeriodoPct(gr)
-    const mttr       = calcMTTR(gr)
+    // P50 responde "quanto demora o caso típico"; P90 responde "quanto demora o
+    // caso ruim". É o P90 que vira reclamação de cliente e discussão de contrato,
+    // e a mediana o esconde por construção.
+    const mttrs      = mttrStats(gr)
+    const mttr       = mttrs.p50
+    const mttrP90    = mttrs.p90
 
     const eqMap = new Map<string, { rows: OSRow[]; concluidas: number; criticas: number; agingArr: number[]; mttrRows: OSRow[] }>()
     for (const r of gr) {
@@ -92,7 +97,7 @@ export function buildFornecedor(
       nome:    FORN_DISPLAY[key as Fornecedor]?.label ?? key,
       cor:     FORN_DISPLAY[key as Fornecedor]?.cor   ?? '#64748b',
       fornKey: key,
-      kpis:    { total, concluidas, criticas, sla, conclPct, mttr, custoMensal, custoPorOs },
+      kpis:    { total, concluidas, criticas, sla, conclPct, mttr, mttrP90, custoMensal, custoPorOs },
       equipes, chart,
     }
   })

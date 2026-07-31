@@ -151,6 +151,26 @@ describe('buildFornecedor — custo por OS', () => {
   })
 })
 
+describe('buildFornecedor — P90 do MTTR', () => {
+  it('expõe o P90 junto do P50', () => {
+    const kpis = buildFornecedor(enrichRows(entregues('EQUIPE F08', 10, 1))).paineis[0].kpis
+    expect(kpis.mttrP90).toBeGreaterThanOrEqual(kpis.mttr)
+  })
+
+  // A mediana esconde a cauda, e é a cauda que gera reclamação de cliente.
+  // 9 OS em 1 dia + 1 OS em 20 dias: mediana continua 1, P90 dispara.
+  it('a cauda longa move o P90 sem mover a mediana', () => {
+    const semCauda = buildFornecedor(enrichRows(entregues('EQUIPE F08', 10, 1))).paineis[0].kpis
+    const comCauda = buildFornecedor(enrichRows([
+      ...entregues('EQUIPE F08', 9, 1),
+      ...entregues('EQUIPE F08', 1, 20),
+    ])).paineis[0].kpis
+
+    expect(comCauda.mttr).toBe(semCauda.mttr)
+    expect(comCauda.mttrP90).toBeGreaterThan(semCauda.mttrP90)
+  })
+})
+
 describe('buildFornecedor — piso de volume no ranking', () => {
   it('marca amostra insuficiente abaixo do piso', () => {
     const { ranking } = buildFornecedor(enrichRows(entregues('EQUIPE F08', 3, 1)))
