@@ -6,6 +6,7 @@ import { buildFornecedor } from '../../lib/builders'
 import { diasNoPeriodo, MIN_OS_RANKING } from '../../lib/builders/extra'
 import { useUIStore } from '../../store/uiStore'
 import { slaEscala } from './slaEscala'
+import { indexarSlaAnterior, variacaoSla, rotuloVariacao } from './comparativo'
 import { SectionTitle } from '../../components/ui/SectionTitle'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Badge } from '../../components/ui/Badge'
@@ -33,7 +34,7 @@ function fmtCusto(v: number | null | undefined): string {
 export default function FornecedorPage() {
   const [filtro,    setFiltro]    = useState('')
   const [aiEnabled, setAiEnabled] = useState(false)
-  const { rows, isLoading }       = useOSDerived()
+  const { rows, prevRows, isLoading } = useOSDerived()
   const { metaSla, updateMetaSla }             = useAlertStore()
   const { custoFornecedor, setCustoFornecedor } = useERPStore()
   const isGestor = useIsGestor()
@@ -44,6 +45,13 @@ export default function FornecedorPage() {
   const { paineis, ranking } = useMemo(
     () => buildFornecedor(rows, filtro, custoFornecedor, dias),
     [rows, filtro, custoFornecedor, dias]
+  )
+
+  // "SLA 87%" não diz nada sozinho; "87%, era 79%" diz. O período anterior já era
+  // computado no contexto para Dashboard e Revisitas — aqui só passou a ser lido.
+  const slaAnterior = useMemo(
+    () => indexarSlaAnterior(buildFornecedor(prevRows, filtro, custoFornecedor, dias).ranking),
+    [prevRows, filtro, custoFornecedor, dias]
   )
 
   const aiFornecedoresInput = useMemo(() => ranking.map(f => ({
@@ -98,14 +106,17 @@ export default function FornecedorPage() {
               <SectionTitle icon={Award} className="mb-3">Ranking por SLA</SectionTitle>
               <p className="text-caption text-muted mb-4">
                 SLA = % das OS entregues dentro do prazo. Empate desconta pelo menor MTTR.
-                A linha vertical indica a meta configurada. Fornecedores com menos de {MIN_OS_RANKING} OS
+                A linha vertical indica a meta configurada. A coluna ao lado do percentual traz a
+                variação em pontos contra o período anterior. Fornecedores com menos de {MIN_OS_RANKING} OS
                 no período aparecem ao final, marcados — a proporção sobre poucas OS não distingue
                 competência de sorte na amostra.
               </p>
               <div className="space-y-3">
                 {ranking.map((f, i) => {
-                  const sc   = slaEscala(f.sla)
-                  const meta = metaSla[f.nome] ?? metaSla[f.fornKey] ?? null
+                  const sc    = slaEscala(f.sla)
+                  const meta  = metaSla[f.nome] ?? metaSla[f.fornKey] ?? null
+                  const delta = variacaoSla(f.sla, slaAnterior[f.fornKey])
+                  const rot   = rotuloVariacao(delta)
                   return (
                     <div key={f.nome} className="flex items-center gap-3">
                       <span className="text-caption font-mono text-muted w-4 text-right flex-shrink-0">{i + 1}</span>
@@ -128,6 +139,15 @@ export default function FornecedorPage() {
                       </div>
 
                       <span className={`text-label font-mono font-bold w-10 text-right flex-shrink-0 ${sc.text}`}>{f.sla}%</span>
+                      <span
+                        className={`text-caption font-mono font-bold w-9 text-right flex-shrink-0
+                                    ${delta == null ? 'text-muted/40' : delta > 0 ? 'text-green' : delta < 0 ? 'text-red' : 'text-muted'}`}
+                        title={delta == null
+                          ? 'Sem dados do período anterior para comparar'
+                          : `Período anterior: ${slaAnterior[f.fornKey]}%`}
+                      >
+                        {rot ?? '—'}
+                      </span>
                       <span className={`text-caption font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${sc.text} ${sc.bg} ${sc.border}`}>
                         {sc.label}
                       </span>
