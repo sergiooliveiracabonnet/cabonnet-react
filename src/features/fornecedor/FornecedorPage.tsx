@@ -5,6 +5,7 @@ import { useOSDerived } from '../../contexts/OSDataContext'
 import { buildFornecedor } from '../../lib/builders'
 import { diasNoPeriodo, MIN_OS_RANKING } from '../../lib/builders/extra'
 import { useUIStore } from '../../store/uiStore'
+import { slaEscala } from './slaEscala'
 import { SectionTitle } from '../../components/ui/SectionTitle'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Badge } from '../../components/ui/Badge'
@@ -23,15 +24,6 @@ const FORNECEDORES = [
   { value: 'MANUTENCAO', label: 'Manutenção',         color: '#f97316' },
   { value: 'INTERNO',    label: 'Interno (COPE)',     color: '#94a3b8' },
 ]
-
-// Faixas de SLA, não de score: 75% de cumprimento de prazo não é "Bom" para um
-// fornecedor sob contrato, é problema. Régua mais exigente que a do score antigo.
-function slaColor(s: number): { text: string; bg: string; border: string; label: string } {
-  if (s >= 90) return { text: 'text-green',   bg: 'bg-green/10',   border: 'border-green/20',   label: 'Excelente' }
-  if (s >= 80) return { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', label: 'Bom'       }
-  if (s >= 65) return { text: 'text-yellow',  bg: 'bg-yellow/10',  border: 'border-yellow/20',  label: 'Regular'   }
-  return              { text: 'text-red',     bg: 'bg-red/10',     border: 'border-red/20',     label: 'Crítico'   }
-}
 
 function fmtCusto(v: number | null | undefined): string {
   if (!v || v <= 0) return '—'
@@ -112,7 +104,7 @@ export default function FornecedorPage() {
               </p>
               <div className="space-y-3">
                 {ranking.map((f, i) => {
-                  const sc   = slaColor(f.sla)
+                  const sc   = slaEscala(f.sla)
                   const meta = metaSla[f.nome] ?? metaSla[f.fornKey] ?? null
                   return (
                     <div key={f.nome} className="flex items-center gap-3">
@@ -275,7 +267,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
   dias:    number
 }) {
   const [expanded, setExpanded] = useState(true)
-  const sc = slaColor(kpis?.sla ?? 0)
+  const sc = slaEscala(kpis?.sla ?? 0)
   const acimaDoMeta = meta != null && kpis?.sla != null && kpis.sla >= meta
 
   const FROM: Record<string, string> = { primary: 'from-primary/[0.07]', green: 'from-green/[0.07]', red: 'from-red/[0.07]', yellow: 'from-yellow/[0.07]', orange: 'from-orange/[0.07]' }
@@ -285,7 +277,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
     { label: 'Total OS',       value: kpis.total,      accent: 'primary' },
     { label: 'Concluídas',     value: kpis.concluidas, accent: 'green'   },
     { label: 'Críticas',       value: kpis.criticas,   accent: 'red'     },
-    { label: 'SLA',            value: `${kpis.sla}%`,  accent: kpis.sla >= 90 ? 'green' : 'yellow' },
+    { label: 'SLA',            value: `${kpis.sla}%`,  accent: slaEscala(kpis.sla).accent },
     { label: 'MTTR (dias)',    value: `${kpis.mttr}d`, accent: kpis.mttr <= 2 ? 'green' : kpis.mttr <= 5 ? 'yellow' : 'red' },
     { label: 'Taxa Conclusão', value: `${kpis.conclPct}%`, accent: kpis.conclPct >= 80 ? 'green' : kpis.conclPct >= 60 ? 'primary' : 'yellow' },
     { label: 'Custo / OS',     value: fmtCusto(kpis.custoPorOs), accent: 'orange' },
@@ -309,7 +301,6 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
               {acimaDoMeta ? '↑ Acima da meta' : '↓ Abaixo da meta'} ({meta}%)
             </span>
           )}
-          {kpis?.sla != null && <Badge variant={kpis.sla >= 90 ? 'green' : kpis.sla >= 75 ? 'yellow' : 'red'}>SLA {kpis.sla}%</Badge>}
           {kpis?.mttr != null && (
             <span className="flex items-center gap-1 text-caption text-muted border border-white/[0.08] rounded px-2 py-0.5">
               <Clock size={9} /> {kpis.mttr}d MTTR
@@ -375,7 +366,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                       <td className="px-3 py-2 font-mono text-green">{eq.concluidas}</td>
                       <td className="px-3 py-2 font-mono text-red">{eq.criticas}</td>
                       <td className="px-3 py-2">
-                        <Badge variant={eq.sla >= 90 ? 'green' : eq.sla >= 75 ? 'yellow' : 'red'}>{eq.sla}%</Badge>
+                        <Badge variant={slaEscala(eq.sla).badge}>{eq.sla}%</Badge>
                       </td>
                       <td className="px-3 py-2">
                         <span className={`font-mono text-caption ${eq.mttr <= 2 ? 'text-green' : eq.mttr <= 5 ? 'text-yellow' : 'text-red'}`}>
