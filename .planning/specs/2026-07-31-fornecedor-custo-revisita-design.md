@@ -1,7 +1,7 @@
 # Design: Custo de revisita por fornecedor
 
 **Data:** 2026-07-31
-**Status:** Implementado e mergeado (PR #16, commit `2b7954f` em `main`). Opção A decidida, `buildRevisitas` com 38 testes de regressão, `porFornecedor` + card "Custo Revisita" na `FornecedorPage`. Achado #1 (nomenclatura MANUTENCAO) verificado e **resolvido** — não era um bug real. Achado #2 (equipe de Rede) confirmado e **permanece sem correção**, por decisão de escopo.
+**Status:** Concluído. Implementado e mergeado (PR #16, commit `2b7954f` em `main`). Opção A decidida, `buildRevisitas` com 38 testes de regressão, `porFornecedor` + card "Custo Revisita" na `FornecedorPage`. Achado #1 (nomenclatura MANUTENCAO) verificado e **resolvido** — não era um bug real. Achado #2 (equipe de Rede) confirmado e **aceito como comportamento definitivo**, por decisão do usuário — não é débito técnico pendente.
 
 ## Contexto
 
@@ -161,7 +161,9 @@ Escrever os testes de regressão (pedido explícito do usuário, antes de qualqu
 
 O regex continua frágil para nomes hipotéticos futuros fora desse padrão (mantido como teste de guarda-corpo), mas isso deixou de ser uma ação pendente.
 
-### 2. O detector de revisita é cego para a equipe de Rede — CONFIRMADO, SEM CORREÇÃO
+### 2. O detector de revisita é cego para a equipe de Rede — CONFIRMADO, ACEITO COMO ESTÁ
+
+**Decisão do usuário em 2026-07-31:** a Rede não tem revisita relevante na prática, então o comportamento atual (nenhum dado, nenhum card) é aceitável e não será corrigido — não é mais um débito técnico pendente, é o comportamento definitivo esperado. Registrado abaixo com o achado técnico, para quem futuramente mexer em `getEquipeTipo`/`buildRevisitas` entender por que a Rede nunca aparece e não tratar isso como bug.
 
 `getEquipeTipo` testa `/\bREDE\b/` no **nome da equipe** antes de olhar `tiposervico` — então qualquer OS da equipe de Rede recebe `_tipo = 'REDE'`, mesmo quando é uma instalação ou manutenção de verdade (confirmado em teste: `getEquipeTipo('03-VAL - REDE FIBRA', 'MANUTENCAO')` retorna `'REDE'`, não `'MANUTENCAO'`).
 
@@ -173,7 +175,7 @@ Travado em teste: `revisitas.test.ts`, "DOCUMENTA o achado: revisita da equipe d
 
 ## Fora de escopo
 
-- **Corrigir o achado #2.** Exige decisão de produto (a Rede ganha pareamento próprio de revisita? `_tipo` e `_fornecedor` precisam ser desacoplados de vez?), não é ajuste mecânico. Fica para uma entrega própria.
+- **Corrigir o achado #2.** Descartado — o usuário confirmou que a Rede não tem revisita relevante na prática, então o comportamento atual (sem dado, sem card) é o esperado, não um débito a resolver depois.
 - Classificação de causa raiz por IA (`ai.revisitasCausa`) como fonte de evitabilidade por OS. Já existe, mas é sob demanda, limitada a 25 pares por clique, sem persistência e sem um booleano de evitabilidade — é ferramenta qualitativa de investigação, não fonte de dado para agregação estatística confiável.
 - Calibrar as taxas de evitabilidade com dado real (ex.: usar o resultado acumulado da classificação por IA para medir, com o tempo, se 70%/50% batem com a realidade). Interessante, mas depende de volume de uso da ferramenta de causa raiz que ainda não existe — e ficou ainda menos prioritário depois da decisão pela Opção A, que não usa taxa nenhuma.
 
