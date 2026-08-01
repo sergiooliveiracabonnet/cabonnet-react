@@ -951,35 +951,59 @@ def _build_os_busca(termo, chat_id_override=None, callback_prefix="os", operador
     return "\n".join(linhas), botoes
 
 
+def _os_cache_lookup(numos_str):
+    """Procura a OS no cache local de agendados. Retorna (linha|None, ts)."""
+    with state._dados_cache_lock:
+        hits = [r for r in state._dados_cache["agendado"] if str(r.get("numos")) == numos_str]
+        ts   = state._dados_cache["ts"]
+    return (hits[0] if hits else None), ts
+
+
+def _msg_consulta_indisponivel(numos_str):
+    """O campo não tem o que fazer com um traceback — só com o que houve e o que fazer."""
+    return (f"⚠️ Não foi possível consultar a OS <b>{_tg_esc(numos_str)}</b> agora.\n"
+            "O sistema de consulta está temporariamente indisponível — "
+            "tente de novo em alguns minutos.")
+
+
 def _build_os_detalhes(numos_str, operadora=None):
     try:
         numos_int = int(numos_str)
     except ValueError:
         return f"❌ Número inválido: <code>{_tg_esc(numos_str)}</code>"
+    cache_ts = None
     try:
         rows = frames_to_dict_list(grafana_post(sql_detalhes(numos_int)))
+        r    = rows[0] if rows else None
     except Exception as ex:
-        return f"❌ Erro ao buscar OS {numos_str}: {_tg_esc(str(ex)[:100])}"
-    if not rows:
+        # Grafana fora: o cache de agendados vem da mesma SQL_AGENDADO e cobre
+        # todos os campos abaixo — só ocorrências e materiais ficam de fora.
+        log.warning("[OS %s] Consulta ao Grafana falhou, tentando cache: %s", numos_str, ex)
+        r, cache_ts = _os_cache_lookup(numos_str)
+        if r is None:
+            return _msg_consulta_indisponivel(numos_str)
+    if r is None:
         return f"❌ OS <b>{numos_str}</b> não encontrada."
-    r = rows[0]
     if not _row_allowed_for_operadora(r, operadora):
         return "🔒 Esta OS não está disponível neste grupo operacional."
     ocorrencias = []
-    try:
-        ocorrencias = frames_to_dict_list(grafana_post(sql_ocorrencias(numos_int)))
-    except Exception as ex:
-        log.warning("[OS %s] Falha ao buscar ocorrências: %s", numos_str, str(ex)[:120])
     materiais = []
     materiais_retirados = []
-    try:
-        materiais = frames_to_dict_list(grafana_post(sql_materiais_utilizados(numos_int)))
-    except Exception as ex:
-        log.warning("[OS %s] Falha ao buscar materiais utilizados: %s", numos_str, str(ex)[:120])
-    try:
-        materiais_retirados = frames_to_dict_list(grafana_post(sql_materiais_retirados(numos_int)))
-    except Exception as ex:
-        log.warning("[OS %s] Falha ao buscar materiais retirados: %s", numos_str, str(ex)[:120])
+    # Já sabemos que o Grafana está fora — repetir 3 queries só faria o bot
+    # pendurar até 3× o timeout antes de responder.
+    if cache_ts is None:
+        try:
+            ocorrencias = frames_to_dict_list(grafana_post(sql_ocorrencias(numos_int)))
+        except Exception as ex:
+            log.warning("[OS %s] Falha ao buscar ocorrências: %s", numos_str, str(ex)[:120])
+        try:
+            materiais = frames_to_dict_list(grafana_post(sql_materiais_utilizados(numos_int)))
+        except Exception as ex:
+            log.warning("[OS %s] Falha ao buscar materiais utilizados: %s", numos_str, str(ex)[:120])
+        try:
+            materiais_retirados = frames_to_dict_list(grafana_post(sql_materiais_retirados(numos_int)))
+        except Exception as ex:
+            log.warning("[OS %s] Falha ao buscar materiais retirados: %s", numos_str, str(ex)[:120])
     def v(campo, fb="—"):
         return _tg_esc(str(r.get(campo) or "").strip() or fb)
     situacao = r.get("descsituacao") or ""
@@ -1051,6 +1075,9 @@ def _build_os_detalhes(numos_str, operadora=None):
         linhas += _fmt_materiais(materiais, "Equipamentos/Materiais utilizados", "📦")
     if materiais_retirados:
         linhas += _fmt_materiais(materiais_retirados, "Equipamentos retirados", "📤")
+    if cache_ts is not None:
+        hora = datetime.fromtimestamp(cache_ts).strftime("%H:%M") if cache_ts else "?"
+        linhas += _tg_footer(f"⚠️ Consulta indisponível — dados do cache de {hora}")
     return "\n".join(linhas)
 
 
@@ -1059,15 +1086,14 @@ def _build_os_ficha_rapida(numos_str, operadora=None):
         numos_int = int(numos_str)
     except ValueError:
         return f"❌ Número inválido: <code>{_tg_esc(numos_str)}</code>", None
-    with state._dados_cache_lock:
-        cache_hits = [r for r in state._dados_cache["agendado"] if str(r.get("numos")) == numos_str]
-    r = cache_hits[0] if cache_hits else None
+    r, _ = _os_cache_lookup(numos_str)
     if r is None:
         try:
             rows = frames_to_dict_list(grafana_post(sql_detalhes(numos_int)))
             r    = rows[0] if rows else None
         except Exception as ex:
-            return f"❌ Erro ao buscar OS {numos_str}: {_tg_esc(str(ex)[:100])}", None
+            log.warning("[OS %s] Consulta ao Grafana falhou (ficha rápida): %s", numos_str, ex)
+            return _msg_consulta_indisponivel(numos_str), None
     if r is None:
         return f"❌ OS <b>{numos_str}</b> não encontrada.", None
     if not _row_allowed_for_operadora(r, operadora):
