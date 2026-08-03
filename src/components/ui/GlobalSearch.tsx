@@ -4,7 +4,7 @@ import { Search, X } from 'lucide-react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import OSDrawer from '../../features/ordens/OSDrawer'
 import { Badge } from './Badge'
-import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
+import { osDataRelevante, shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { useVisibleNavGroups } from '../../lib/navigation'
 import type { NavGroup, NavLinkDef } from '../../lib/navigation'
 import type { OSRow } from '../../lib/types'
@@ -277,6 +277,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                     {results.os.map(os => {
                       const aging = (os._aging as number | undefined) ?? (os._agingAbertura as number | undefined)
                       const agCls = (aging ?? 0) >= 6 ? 'text-red' : (aging ?? 0) >= 3 ? 'text-yellow' : 'text-muted'
+                      const data = osDataRelevante(os)
                       const globalIdx = navigableItems.findIndex(it => it.type === 'os' && it.data.numos === os.numos)
                       const isActive = globalIdx === activeIdx
                       return (
@@ -303,8 +304,17 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                                 .filter(Boolean).join(' · ')}
                             </p>
                           </div>
-                          {aging != null && (
-                            <span className={`text-caption font-mono font-bold flex-shrink-0 ${agCls}`}>{aging}d</span>
+                          {(aging != null || data) && (
+                            <div className="flex flex-shrink-0 flex-col items-end gap-0.5 pt-0.5">
+                              {aging != null && (
+                                <span className={`text-caption font-mono font-bold ${agCls}`}>{aging}d</span>
+                              )}
+                              {data && (
+                                <span className="whitespace-nowrap text-caption text-muted">
+                                  {data.label} <span className="font-mono text-secondary">{data.valor}</span>
+                                </span>
+                              )}
+                            </div>
                           )}
                           {isActive && (
                             <kbd className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 self-center text-muted leading-none">

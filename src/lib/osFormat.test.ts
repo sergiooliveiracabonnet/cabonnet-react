@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, fmtHorasMin } from './osFormat'
+import { fmtDate, osDataRelevante, situacaoVariant, FORN_LABEL, shortEquipe, fmtHorasMin } from './osFormat'
 
 describe('fmtDate', () => {
   it('retorna null para valor nulo', () => {
@@ -25,6 +25,34 @@ describe('fmtDate', () => {
 
   it('ignora segundos e mantém só HH:MM', () => {
     expect(fmtDate('25/04/2025 08:30:00')).toBe('25/04/2025 08:30')
+  })
+})
+
+describe('osDataRelevante', () => {
+  it('prioriza a data de execução — é ela que identifica a OS já atendida', () => {
+    expect(osDataRelevante({
+      dataexecucao: '02/08/2026 14:20', dataagendamento: '01/08/2026', datacadastro: '28/07/2026',
+    })).toEqual({ campo: 'execucao', label: 'Atend.', valor: '02/08/2026' })
+  })
+
+  it('usa databaixa quando não há dataexecucao', () => {
+    expect(osDataRelevante({ dataexecucao: '', databaixa: '2026-08-02 09:00', datacadastro: '28/07/2026' }))
+      .toEqual({ campo: 'execucao', label: 'Atend.', valor: '02/08/2026' })
+  })
+
+  it('cai para o agendamento quando a OS ainda não foi atendida', () => {
+    expect(osDataRelevante({ dataexecucao: '', databaixa: '', dataagendamento: '04/08/2026', datacadastro: '28/07/2026' }))
+      .toEqual({ campo: 'agendamento', label: 'Agend.', valor: '04/08/2026' })
+  })
+
+  it('cai para a abertura quando não há execução nem agendamento', () => {
+    expect(osDataRelevante({ dataexecucao: '', databaixa: '', dataagendamento: '', datacadastro: '28/07/2026' }))
+      .toEqual({ campo: 'cadastro', label: 'Aberta', valor: '28/07/2026' })
+  })
+
+  it('retorna null sem nenhuma data e não quebra com OS ausente', () => {
+    expect(osDataRelevante({ dataexecucao: '', databaixa: '', dataagendamento: '', datacadastro: '' })).toBeNull()
+    expect(osDataRelevante(null)).toBeNull()
   })
 })
 

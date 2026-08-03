@@ -91,6 +91,32 @@ export function fmtDate(raw: string | null | undefined): string | null {
   return time ? `${day}/${month}/${year} ${time}` : `${day}/${month}/${year}`
 }
 
+export interface OSDataRelevante {
+  campo: 'execucao' | 'agendamento' | 'cadastro'
+  label: string
+  valor: string
+}
+
+// Qual data situa a OS no tempo para quem está procurando por ela.
+// Ordem: quando foi atendida > quando está agendada > quando foi aberta —
+// a data de execução é a que o operador usa para reconhecer a OS ("foi a da
+// terça"), e as outras cobrem o caso de ela ainda não ter sido atendida.
+export function osDataRelevante(os: Partial<OSRow> | null | undefined): OSDataRelevante | null {
+  if (!os) return null
+  const soData = (raw: string | null | undefined) => fmtDate(raw)?.split(' ')[0] ?? null
+
+  const exec = soData((os.dataexecucao as string) || (os.databaixa as string))
+  if (exec) return { campo: 'execucao', label: 'Atend.', valor: exec }
+
+  const agend = soData(os.dataagendamento as string)
+  if (agend) return { campo: 'agendamento', label: 'Agend.', valor: agend }
+
+  const aberta = soData(os.datacadastro as string)
+  if (aberta) return { campo: 'cadastro', label: 'Aberta', valor: aberta }
+
+  return null
+}
+
 export type SituacaoVariant = 'green' | 'red' | 'cyan' | 'orange' | 'yellow' | 'secondary'
 
 export function situacaoVariant(s = ''): SituacaoVariant {
