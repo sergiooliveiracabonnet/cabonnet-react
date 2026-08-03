@@ -130,10 +130,14 @@ The bot isolates notifications by operator using team codes matched against `nom
 
 | Operator | Frentes | Telegram var |
 |---|---|---|
-| INSTACABLE | F01, F04, F05, F07, F20, F27, F45, F48, F49, F50 | `TELEGRAM_CHAT_INSTACABLE` |
-| WES | F08, F11, F36, F39, F44 | `TELEGRAM_CHAT_WES` |
-| THM | F12–F19 | `TELEGRAM_CHAT_OPERACIONAL_THM` |
+| INSTACABLE | F01, F04, F05, F07, F20, F45, F46, F47, F48, F49, F50 | `TELEGRAM_CHAT_INSTACABLE` |
+| WES | F08, F11, F23, F36, F44 | `TELEGRAM_CHAT_WES` |
+| THM | F12, F13, F14 | `TELEGRAM_CHAT_OPERACIONAL_THM` |
 | REDE | service starts with "REDE" | `TELEGRAM_CHAT_REDE` |
+
+19 frentes at present. `cabonnet/config.py` is the source of truth — this table is a copy and drifts; check the code before relying on it.
+
+**F27 and F39 are orphans:** they still have display names in `EQUIPE_NAMES` (`src/lib/osFormat.ts`) but belong to no operator group. `_operadora_da_os()` returns `None` for them, and the filters in `_tg_broadcast_status_changes` match by operator name, so an OS on either frente sends no Telegram notification to any group. Decide whether they are retired (drop the names) or active (add them to a group) — don't leave them half-registered.
 
 Each operator group receives only its own OS status changes. The Alertas group receives all changes from all operators plus THM's "Executadas Hoje" scheduled report.
 
