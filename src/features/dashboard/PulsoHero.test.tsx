@@ -35,8 +35,33 @@ describe('PulsoHero', () => {
     expect(within(vitais).getByText('MTTR')).toBeInTheDocument()
     expect(within(vitais).getByText('2,1d')).toBeInTheDocument()
     // MTTR é métrica de fluxo e tem Δ comparável
-    expect(within(vitais).getByText('↑ 0.3d')).toBeInTheDocument()
+    expect(within(vitais).getByText('↑ 0,3d')).toBeInTheDocument()
     expect(screen.getByText('A fila recua pelo terceiro dia seguido.')).toBeInTheDocument()
+  })
+
+  // O valor do período anterior era só um title= (precisava de hover); agora é texto.
+  it('expõe o valor do período anterior e a meta de cada vital sem depender de hover', () => {
+    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} mudancas={MUDANCAS} />)
+    const vitais = screen.getByTestId('pulso-vitais')
+    expect(within(vitais).getByText('antes 1,8d')).toBeInTheDocument()
+    expect(within(vitais).getByText('meta ≥ 90%')).toBeInTheDocument()
+    expect(within(vitais).getByText('meta ≥ 80%')).toBeInTheDocument()
+    expect(within(vitais).getByText('alvo ≤ 2d')).toBeInTheDocument()
+  })
+
+  it('resume o estado do painel num veredito derivado do pior vital', () => {
+    // slaFila 87 e taxa 76 caem na faixa de atenção
+    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} />)
+    expect(screen.getByTestId('pulso-veredito')).toHaveTextContent('Sob atenção')
+    cleanup()
+
+    render(<PulsoHero pulso={makePulso({ slaFila: 60 })} aiData={null} isLoadingAI={false} />)
+    expect(screen.getByTestId('pulso-veredito')).toHaveTextContent('Crítico')
+    expect(screen.getByTestId('pulso-veredito')).toHaveTextContent('SLA da Fila')
+    cleanup()
+
+    render(<PulsoHero pulso={makePulso({ slaFila: 95, taxa: 88, mttr: 1.4 })} aiData={null} isLoadingAI={false} />)
+    expect(screen.getByTestId('pulso-veredito')).toHaveTextContent('Dentro das metas')
   })
 
   // SLA da Fila é estoque (foto de agora) e o Δ de 'sla' em mudancas é do SLA do
@@ -54,8 +79,8 @@ describe('PulsoHero', () => {
     const queda = [{ id: 'mttr', label: 'MTTR', atual: 1.8, anterior: 2.1, delta: -0.3, unidade: 'd', melhorou: true, variacao: 14.3 }]
     render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} mudancas={queda} />)
     const vitais = screen.getByTestId('pulso-vitais')
-    expect(within(vitais).getByText('↓ 0.3d')).toBeInTheDocument()
-    expect(within(vitais).queryByText(/-0\.3/)).not.toBeInTheDocument()
+    expect(within(vitais).getByText('↓ 0,3d')).toBeInTheDocument()
+    expect(within(vitais).queryByText(/-0,3/)).not.toBeInTheDocument()
   })
 
   it('não expõe mais score sintético nem gauge', () => {
