@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, Sparkles, TrendingDown, TrendingUp, Zap } from 'lucide-react'
+import { Pulse, Sparkle, TrendDown, TrendUp, Lightning } from '@phosphor-icons/react'
 import type { Pulso } from '../../lib/types'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
 import type { DashMover } from './DashboardTypes'
@@ -99,7 +99,7 @@ function SaldoCell({ label, valor, descricao, tone, icon: Icon }: {
   valor: string
   descricao: string
   tone: Tone
-  icon?: typeof TrendingUp
+  icon?: typeof TrendUp
 }) {
   return (
     <div className={`${CELL} px-3 py-2.5`}>
@@ -203,7 +203,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
       <header className="flex min-h-12 items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/[0.07] text-primary">
-            <Activity size={14} aria-hidden="true" />
+            <Pulse size={14} aria-hidden="true" />
           </span>
           <div className="min-w-0">
             <h2 id="dashboard-pulse-title" className="text-body font-bold text-text">Pulso operacional</h2>
@@ -289,7 +289,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
               label="Saldo do dia"
               valor={fluxoHoje > 0 ? `+${fluxoHoje}` : `${fluxoHoje}`}
               tone={saldoTone}
-              icon={fluxoHoje < 0 ? TrendingDown : fluxoHoje > 0 ? TrendingUp : undefined}
+              icon={fluxoHoje < 0 ? TrendDown : fluxoHoje > 0 ? TrendUp : undefined}
               descricao={fluxoHoje < 0 ? 'fila encolhendo' : fluxoHoje > 0 ? 'fila crescendo' : 'estável'}
             />
             {/* Backlog em dias de capacidade: "120 na fila" não decide nada;
@@ -309,7 +309,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
             <span className={MICRO}>Leitura operacional</span>
             {aiData && (
               <span className="inline-flex items-center gap-1 rounded-pill border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-caption font-bold text-primary/80">
-                <Sparkles size={8} aria-hidden="true" /> IA
+                <Sparkle size={8} aria-hidden="true" /> IA
               </span>
             )}
           </div>
@@ -331,7 +331,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
                 <p className="text-label leading-snug text-secondary"><strong className="text-yellow">Sugestão:</strong> {aiData.sugestao}</p>
               </div>
               <div className="flex items-start gap-2">
-                <Zap size={11} className="mt-0.5 flex-shrink-0 text-green" aria-hidden="true" />
+                <Lightning size={11} className="mt-0.5 flex-shrink-0 text-green" aria-hidden="true" />
                 <p className="text-label font-semibold leading-snug text-text"><strong className="text-green">Ação:</strong> {aiData.acao}</p>
               </div>
             </div>
@@ -349,7 +349,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
                   className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-pill border px-2.5 py-[5px] text-caption font-semibold ${insightClasses[insight.level] ?? insightClasses.cyan}`}
                 >
                   {insight.ai
-                    ? <Sparkles size={8} className="flex-shrink-0 opacity-70" aria-hidden="true" />
+                    ? <Sparkle size={8} className="flex-shrink-0 opacity-70" aria-hidden="true" />
                     : <span className="h-1.5 w-1.5 flex-shrink-0 rounded-pill bg-current" />}
                   {insight.text}
                 </span>
@@ -365,7 +365,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
                 onClick={() => setShowAIComposer(current => !current)}
                 className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md border border-primary/20 px-2.5 py-1.5 text-caption font-semibold text-primary/75 transition-colors hover:border-primary/40 hover:bg-primary/[0.08] hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:min-h-8"
               >
-                <Sparkles size={11} aria-hidden="true" /> Enriquecer com IA
+                <Sparkle size={11} aria-hidden="true" /> Enriquecer com IA
               </button>
 
               {showAIComposer && (
@@ -382,7 +382,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
                     onClick={() => onRequestAI(draftObs)}
                     className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md border border-primary/20 px-3 py-1.5 text-caption font-semibold text-primary/80 transition-colors hover:border-primary/40 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:min-h-8"
                   >
-                    <Sparkles size={10} aria-hidden="true" /> Analisar contexto
+                    <Sparkle size={10} aria-hidden="true" /> Analisar contexto
                   </button>
                 </div>
               )}
@@ -397,7 +397,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
                 onClick={() => setShowReanalysis(current => !current)}
                 className="inline-flex min-h-11 cursor-pointer items-center gap-1 text-caption text-muted transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:min-h-8"
               >
-                <Sparkles size={9} aria-hidden="true" /> Reanalisar com novo contexto
+                <Sparkle size={9} aria-hidden="true" /> Reanalisar com novo contexto
               </button>
               {showReanalysis && (
                 <div className="mt-2 space-y-2 rounded-md border border-white/[0.06] bg-surface/30 p-2.5">
@@ -413,7 +413,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
                     onClick={() => { onRequestAI(draftObs); setShowReanalysis(false) }}
                     className="inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-md border border-primary/20 px-2.5 py-1 text-caption font-semibold text-primary/80 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:min-h-8"
                   >
-                    <Sparkles size={9} aria-hidden="true" /> Analisar
+                    <Sparkle size={9} aria-hidden="true" /> Analisar
                   </button>
                 </div>
               )}

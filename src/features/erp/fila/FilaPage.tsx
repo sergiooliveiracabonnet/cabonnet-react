@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Flame, CheckCircle2, Send, Check, Gauge, Truck, MapPin, Wrench, Activity, Megaphone, Copy, ClipboardList, UserX, Image as ImageIcon } from 'lucide-react'
+import { Warning, Fire, CheckCircle, PaperPlaneTilt, Check, Gauge, Truck, MapPin, Wrench, Pulse, Megaphone, Copy, ClipboardText, UserMinus, Image as ImageIcon } from '@phosphor-icons/react'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 import { useAuditStore } from '../../../store/auditStore'
 import { useFilaGeralStore } from '../../../store/filaGeralStore'
@@ -83,7 +83,7 @@ function TendenciaPanel({ items }: { items: TendenciaItem[] }) {
     <div className="rounded-xl bg-card border border-white/[0.08] p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Activity size={14} className="text-muted" />
+          <Pulse size={14} className="text-muted" />
           <h3 className="text-label font-semibold text-text">Violações da Fila · 7 dias</h3>
         </div>
         <span className="text-caption text-muted tabular-nums">{totalViol} no total</span>
@@ -289,7 +289,7 @@ export default function FilaPage() {
               className="flex items-center gap-1 px-2 py-1 rounded-md text-caption font-medium
                          text-muted hover:text-primary hover:bg-primary/10 transition-colors"
             >
-              {st === 'ok' ? <Check size={12} className="text-green" /> : <Send size={12} />}
+              {st === 'ok' ? <Check size={12} className="text-green" /> : <PaperPlaneTilt size={12} />}
               {st === 'ok' ? 'Enviado' : 'Notificar'}
             </button>
             <button
@@ -312,7 +312,7 @@ export default function FilaPage() {
               title="Copiar OS + histórico"
               className="p-1 rounded-md text-muted hover:text-primary hover:bg-primary/10 transition-colors"
             >
-              {copied === `${row.numos}:full` ? <Check size={12} className="text-green" /> : <ClipboardList size={12} />}
+              {copied === `${row.numos}:full` ? <Check size={12} className="text-green" /> : <ClipboardText size={12} />}
             </button>
           </div>
         )
@@ -340,7 +340,7 @@ export default function FilaPage() {
                            : 'border-green/30 text-green hover:bg-green/10'}`}
             >
               {copiedImage
-                ? <><CheckCircle2 size={14} /> Copiado!</>
+                ? <><CheckCircle size={14} /> Copiado!</>
                 : <><ImageIcon size={14} /> Copiar Imagem</>}
             </button>
             <button
@@ -357,10 +357,10 @@ export default function FilaPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard title="Violadas" value={kpis.violadas} tone="critical" icon={AlertTriangle} />
-        <StatCard title="Atenção" value={kpis.atencao} tone="warning" icon={Flame} />
-        <StatCard title="Sem Equipe" value={kpis.semEquipe} tone="warning" icon={UserX} />
-        <StatCard title="No prazo" value={kpis.noPrazo} tone="ok" icon={CheckCircle2} />
+        <StatCard title="Violadas" value={kpis.violadas} tone="critical" icon={Warning} />
+        <StatCard title="Atenção" value={kpis.atencao} tone="warning" icon={Fire} />
+        <StatCard title="Sem Equipe" value={kpis.semEquipe} tone="warning" icon={UserMinus} />
+        <StatCard title="No prazo" value={kpis.noPrazo} tone="ok" icon={CheckCircle} />
         <StatCard
           title="Cumprimento SLA"
           value={cumprimento.pct != null ? `${cumprimento.pct}%` : '—'}

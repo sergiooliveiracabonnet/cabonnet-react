@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { FileText, Download, Printer, ChevronRight } from 'lucide-react'
+import { FileText, DownloadSimple, Printer, CaretRight } from '@phosphor-icons/react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { PageHeader } from '../../components/ui/PageHeader'
 import {
@@ -133,7 +133,7 @@ export default function FechamentoPage() {
               onChange={e => setCustomFrom(e.target.value)}
               className="px-2 py-1.5 rounded-md text-caption bg-bg border border-white/[0.08] text-text focus:outline-none focus:border-primary"
             />
-            <ChevronRight size={12} className="text-muted" />
+            <CaretRight size={12} className="text-muted" />
             <input
               type="date"
               value={customTo}
@@ -200,7 +200,7 @@ export default function FechamentoPage() {
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-caption font-semibold
                      bg-card border border-white/[0.08] text-secondary hover:text-text hover:bg-surface/40 transition-all"
         >
-          <Download size={13} /> CSV
+          <DownloadSimple size={13} /> CSV
         </button>
         <button
           onClick={handlePrint}
@@ -239,7 +239,7 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }: {
             <FileText size={12} /> PDF
           </button>
           <button onClick={onCSV}   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-semibold bg-bg border border-white/[0.08] text-secondary hover:text-text transition-all">
-            <Download size={12} /> CSV
+            <DownloadSimple size={12} /> CSV
           </button>
           <button onClick={onPrint} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-semibold bg-bg border border-white/[0.08] text-secondary hover:text-text transition-all">
             <Printer size={12} /> Imprimir

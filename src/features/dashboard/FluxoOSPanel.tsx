@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Activity } from 'lucide-react'
+import { Pulse } from '@phosphor-icons/react'
 import { DashboardPanelHeader } from './DashboardKpiPrimitives'
 
 // Painel "Fluxo de OS — 14 dias": entradas × concluídas por dia com crosshair.
@@ -94,7 +94,7 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-[220px] flex-1">
           <DashboardPanelHeader
-            icon={Activity}
+            icon={Pulse}
             color={BLUE}
             meta="diário · hover detalha"
           >

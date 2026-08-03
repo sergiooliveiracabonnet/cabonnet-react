@@ -1,6 +1,5 @@
 import { Badge } from '../../components/ui/Badge'
-import { ChevronDown, ChevronRight, Clock } from 'lucide-react'
-
+import { CaretDown, CaretRight, Clock } from '@phosphor-icons/react'
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface HistoricoSnap {
@@ -178,8 +177,8 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/30 transition-colors text-left"
       >
         {isOpen
-          ? <ChevronDown  size={12} className="text-muted flex-shrink-0" />
-          : <ChevronRight size={12} className="text-muted flex-shrink-0" />}
+          ? <CaretDown  size={12} className="text-muted flex-shrink-0" />
+          : <CaretRight size={12} className="text-muted flex-shrink-0" />}
         <div className="flex-shrink-0 w-[72px]">
           <p className="font-mono text-label text-text">{snap.hora}</p>
           {relTxt && <p className="text-caption text-muted/50">{relTxt}</p>}

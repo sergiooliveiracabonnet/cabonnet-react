@@ -1,9 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  CheckCircle, Clock, Calendar, ExternalLink, MapPin, Users, Wrench,
-  AlertTriangle, Hash, Check, Filter, FileText, Copy, ClipboardList,
-} from 'lucide-react'
+import { CheckCircle, Clock, Calendar, ArrowSquareOut, MapPin, Users, Wrench, Warning, Hash, Check, Funnel, FileText, Copy, ClipboardText } from '@phosphor-icons/react'
 import type { OSRow, Fornecedor } from '../../lib/types'
 
 interface StepItem {
@@ -170,7 +167,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
       },
     },
     {
-      icon: isConcluida ? CheckCircle : isAtendimento ? Wrench : AlertTriangle,
+      icon: isConcluida ? CheckCircle : isAtendimento ? Wrench : Warning,
       color: isConcluida ? 'green' : isAtendimento ? 'cyan' : 'yellow',
       label: sit ?? 'Status atual', done: isConcluida,
     },
@@ -190,7 +187,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
               {copied === 'wha' ? <Check size={13} /> : <Copy size={13} />}
             </ActionBtn>
             <ActionBtn title="Copiar OS + histórico" active={copied === 'wha-full'} onClick={() => copyWith('wha-full', buildOSWhatsApp(os, osDetails?.historico))}>
-              {copied === 'wha-full' ? <Check size={13} /> : <ClipboardList size={13} />}
+              {copied === 'wha-full' ? <Check size={13} /> : <ClipboardText size={13} />}
             </ActionBtn>
             <ActionBtn title="Copiar nº da OS" active={copied === 'num'} onClick={() => copyWith('num', String(os.numos))}>
               {copied === 'num' ? <Check size={13} /> : <Hash size={13} />}
@@ -200,7 +197,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
             </ActionBtn>
             {os.nomedaequipe && (
               <ActionBtn title={`Filtrar OS da equipe`} onClick={handleVerEquipe}>
-                <Filter size={13} />
+                <Funnel size={13} />
               </ActionBtn>
             )}
             <button
@@ -208,7 +205,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
               className="flex items-center gap-1.5 px-3 h-8 rounded-xl border border-primary/30 bg-primary/10
                          text-label font-semibold text-primary hover:bg-primary/20 transition-all duration-fast ml-1"
             >
-              <ExternalLink size={12} /> Detalhes
+              <ArrowSquareOut size={12} /> Detalhes
             </button>
           </div>
         }
@@ -265,7 +262,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
               {obsCrit && (
                 <div className="bg-red/[0.08] border border-red/20 rounded-xl p-4">
                   <p className="text-caption font-bold uppercase tracking-[0.05em] text-red mb-2 flex items-center gap-1.5">
-                    <AlertTriangle size={11} /> Observação Crítica
+                    <Warning size={11} /> Observação Crítica
                   </p>
                   <p className="text-label text-red/85 leading-relaxed whitespace-pre-wrap">{obsCrit as string}</p>
                 </div>
@@ -308,7 +305,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                     <p className="text-label text-muted italic">Endereço não cadastrado</p>
                   )}
                 </div>
-                <ExternalLink size={11} className="text-muted/40 group-hover:text-primary/60 flex-shrink-0 mt-1 transition-colors" />
+                <ArrowSquareOut size={11} className="text-muted/40 group-hover:text-primary/60 flex-shrink-0 mt-1 transition-colors" />
               </button>
 
               {/* Equipe (destaque) + Tipo */}

@@ -1,4 +1,4 @@
-import { MapPin, AlertTriangle } from 'lucide-react'
+import { MapPin, Warning } from '@phosphor-icons/react'
 import type { BacklogData } from '../../../hooks/useBacklog'
 import {
   filtrarRevisitasAtivas, filtrarRevisitaPorTipo, revisitaPorCidade, clientesCronicos,
@@ -67,7 +67,7 @@ export function RevisitaTab({ data, tipo }: RevisitaTabProps) {
         </section>
 
         <section className="space-y-2">
-          <SectionLabel icon={AlertTriangle} color="#f87171">Crônicos — 2+ revisitas</SectionLabel>
+          <SectionLabel icon={Warning} color="#f87171">Crônicos — 2+ revisitas</SectionLabel>
           <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
             {cronicos.length === 0 && (
               <p className="px-4 py-6 text-caption text-muted text-center">Nenhum cliente crônico no período.</p>

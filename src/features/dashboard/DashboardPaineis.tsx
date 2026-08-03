@@ -1,7 +1,5 @@
 import { useMemo } from 'react'
-import {
-  Zap, CheckCircle2, MapPin, Clock, Gauge, Target, AlertCircle, Layers, Package, Activity,
-} from 'lucide-react'
+import { Lightning, CheckCircle, MapPin, Clock, Gauge, Target, WarningCircle, Stack, Package, Pulse } from '@phosphor-icons/react'
 import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } from '../../lib/types'
 import { TrendPill } from '../../components/ui/StatCard'
 import { DashboardPanelHeader, SectionLabel } from './DashboardKpiPrimitives'
@@ -42,7 +40,7 @@ export function AlertaTopoBanner({ clustersCount, anomaliasCount, onScrollCluste
   if (!clustersCount && !anomaliasCount) return null
   return (
     <div className="flex items-center gap-3 flex-wrap rounded-xl border border-red/25 bg-red/[0.06] px-4 py-2.5">
-      <AlertCircle size={13} className="text-red flex-shrink-0" />
+      <WarningCircle size={13} className="text-red flex-shrink-0" />
       <span className="text-label font-bold text-red">Atenção necessária:</span>
       {clustersCount > 0 && (
         <button
@@ -69,9 +67,9 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
   if (!clusters?.length) {
     return (
       <div className="h-full rounded-lg border border-border border-l-2 border-l-green bg-card p-5">
-        <SectionLabel icon={Zap} color="#4ade80">Clusters de Falha</SectionLabel>
+        <SectionLabel icon={Lightning} color="#4ade80">Clusters de Falha</SectionLabel>
         <div className="flex items-center gap-3 mt-4">
-          <CheckCircle2 size={18} className="text-green flex-shrink-0" />
+          <CheckCircle size={18} className="text-green flex-shrink-0" />
           <p className="text-body text-green font-semibold">
             Nenhum cluster detectado — sem bairros com 4+ OS de manutenção nas últimas 24h
           </p>
@@ -84,7 +82,7 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
     <div className="h-full rounded-lg border border-border border-l-2 border-l-red bg-card">
       <div className="p-5">
         <div className="flex items-start justify-between mb-4">
-          <SectionLabel icon={Zap} color="#f87171">Clusters de Falha</SectionLabel>
+          <SectionLabel icon={Lightning} color="#f87171">Clusters de Falha</SectionLabel>
           <span className="text-caption font-bold uppercase tracking-[0.05em] bg-red/15 text-red
                            border border-red/25 rounded-full px-2.5 py-1">
             ALERTA
@@ -217,7 +215,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
 
       {criticas > 0 && (
         <p className="mt-3 flex items-center gap-1.5 text-caption text-muted">
-          <AlertCircle size={11} className="text-red flex-shrink-0" />
+          <WarningCircle size={11} className="text-red flex-shrink-0" />
           <span><span className="text-red font-semibold tabular-nums">{criticas} OS além de 2× o SLA</span> — priorizar hoje</span>
         </p>
       )}
@@ -260,7 +258,7 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <DashboardPanelHeader
-        icon={Layers}
+        icon={Stack}
         color="#3b82f6"
         actionLabel="Abrir OS"
       >
@@ -578,7 +576,7 @@ export function QualidadePeriodoCard({ pulso, taxaRevisitas }: { pulso: Pulso; t
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
-      <SectionLabel icon={Activity} color="#a78bfa">Qualidade do Período</SectionLabel>
+      <SectionLabel icon={Pulse} color="#a78bfa">Qualidade do Período</SectionLabel>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
         {stats.map(s => (
           <div key={s.label} title={s.hint}

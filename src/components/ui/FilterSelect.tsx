@@ -1,5 +1,4 @@
-import { ChevronDown } from 'lucide-react'
-
+import { CaretDown } from '@phosphor-icons/react'
 interface Option {
   value: string
   label: string
@@ -31,7 +30,7 @@ export function FilterSelect({ value, onChange, options, placeholder, className 
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
-      <ChevronDown
+      <CaretDown
         size={11}
         className="absolute right-2 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
       />

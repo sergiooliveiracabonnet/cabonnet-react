@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, X } from 'lucide-react'
+import { MagnifyingGlass, X } from '@phosphor-icons/react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import OSDrawer from '../../features/ordens/OSDrawer'
 import { Badge } from './Badge'
@@ -149,7 +149,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
         >
           <div className="w-full max-w-[600px] bg-elevated border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
             <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.08]">
-              <Search size={16} className="text-muted flex-shrink-0" />
+              <MagnifyingGlass size={16} className="text-muted flex-shrink-0" />
               <input
                 ref={inputRef}
                 value={query}

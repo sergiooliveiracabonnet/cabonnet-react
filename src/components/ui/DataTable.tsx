@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
-import { ChevronUp, ChevronDown, Inbox } from 'lucide-react'
+import { CaretUp, CaretDown, Tray } from '@phosphor-icons/react'
 import { EmptyState } from './EmptyState'
 
 interface Column<T = Record<string, unknown>> {
@@ -121,7 +121,7 @@ export function DataTable<T extends Record<string, unknown>>({
                                hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
                   >
                     {col.label}
-                    {sortKey === col.key && (sortDir === 'asc' ? <ChevronUp size={9} /> : <ChevronDown size={9} />)}
+                    {sortKey === col.key && (sortDir === 'asc' ? <CaretUp size={9} /> : <CaretDown size={9} />)}
                   </button>
                 ) : (
                   <span className="inline-flex items-center gap-1">{col.label}</span>
@@ -178,7 +178,7 @@ export function DataTable<T extends Record<string, unknown>>({
           {sorted.length === 0 && (
             <tr>
               <td colSpan={columns.length}>
-                <EmptyState icon={Inbox}
+                <EmptyState icon={Tray}
                             title={emptyTitle ?? 'Nenhum resultado encontrado'}
                             description={emptyDescription} />
               </td>

@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, Download, BarChart3, ArrowRight } from 'lucide-react'
+import { WarningCircle, DownloadSimple, ChartBar, ArrowRight } from '@phosphor-icons/react'
 import type { OSRow, KPI, AccentColor } from '../../lib/types'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useAINarrative } from '../../hooks/useAINarrative'
@@ -77,7 +77,7 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <div className="w-14 h-14 rounded-full bg-red/10 border border-red/20 flex items-center justify-center">
-          <AlertCircle size={24} className="text-red" />
+          <WarningCircle size={24} className="text-red" />
         </div>
         <p className="text-title font-semibold text-text">Servidor indisponível</p>
         <p className="text-label text-muted text-center max-w-xs leading-relaxed">
@@ -110,7 +110,7 @@ export default function DashboardPage() {
       return (
         <div className="space-y-4 max-w-[1600px]">
           <section>
-            <SectionLabel icon={AlertCircle} color="#f87171">Prioridades agora</SectionLabel>
+            <SectionLabel icon={WarningCircle} color="#f87171">Prioridades agora</SectionLabel>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
               {riskStats.map((k, i) => (
                 <StatCard
@@ -128,7 +128,7 @@ export default function DashboardPage() {
             </div>
           </section>
           <section>
-            <SectionLabel icon={BarChart3} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
+            <SectionLabel icon={ChartBar} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
             <div className="grid grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
               {perfStats.map((k, i) => (
                 <StatCard
@@ -165,7 +165,7 @@ export default function DashboardPage() {
         {/* ── Aviso de falha interna de builder (visível só em erro real) ── */}
         {builderErrors.length > 0 && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow/10 border border-yellow/20 text-caption text-yellow">
-            <AlertCircle size={13} />
+            <WarningCircle size={13} />
             <span>Erro interno em: <strong>{builderErrors.join(', ')}</strong> — dados parciais. Verifique o console.</span>
           </div>
         )}
@@ -199,7 +199,7 @@ export default function DashboardPage() {
 
         {/* ═══ NÍVEL 2 — capacidade operacional ═══ */}
         <section>
-          <SectionLabel icon={BarChart3} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
+          <SectionLabel icon={ChartBar} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
           <div className="grid grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
             {perfKpis.map((k, i) => (
               <StatCard
@@ -310,7 +310,7 @@ export default function DashboardPage() {
                            border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
                            transition-all duration-fast"
               >
-                <Download size={11} /> CSV
+                <DownloadSimple size={11} /> CSV
               </button>
             </div>
           )

@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
-import { LayoutDashboard } from 'lucide-react'
-
+import { SquaresFour } from '@phosphor-icons/react'
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5 text-center px-4">
@@ -17,7 +16,7 @@ export default function NotFound() {
                    border border-primary/40 text-primary hover:bg-primary/10 hover:border-primary/70
                    transition-colors duration-150"
       >
-        <LayoutDashboard size={13} /> Ir para o Resumo
+        <SquaresFour size={13} /> Ir para o Resumo
       </Link>
     </div>
   )

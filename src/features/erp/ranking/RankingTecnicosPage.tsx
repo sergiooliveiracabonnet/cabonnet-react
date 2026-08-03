@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Award, ArrowUpDown, ArrowUp, ArrowDown, Pencil, Check, X } from 'lucide-react'
+import { Trophy, ArrowsDownUp, ArrowUp, ArrowDown, Pencil, Check, X } from '@phosphor-icons/react'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 import { isCOPE, isReagend, isExecucaoReal } from '../../../lib/transform'
 import { shortEquipe } from '../../../lib/osFormat'
@@ -112,7 +112,7 @@ function revisitaColor(taxa: number | null): string {
 }
 
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: 'asc' | 'desc' }) {
-  if (sortKey !== col) return <ArrowUpDown size={11} className="text-muted/40" />
+  if (sortKey !== col) return <ArrowsDownUp size={11} className="text-muted/40" />
   return sortDir === 'desc' ? <ArrowDown size={11} className="text-primary" /> : <ArrowUp size={11} className="text-primary" />
 }
 
@@ -206,7 +206,7 @@ export default function RankingTecnicosPage() {
       <PageHeader
         title="Ranking de Técnicos"
         description="Volume, SLA e taxa de retrabalho por técnico, lado a lado — sem score composto, sem peso inventado"
-        icon={Award}
+        icon={Trophy}
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

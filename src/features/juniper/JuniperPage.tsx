@@ -1,9 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Zap, ShieldCheck, RefreshCw, Users, Layers,
-  Clipboard, GitMerge, Trash2, Activity, Clock, AlertCircle, Sparkles,
-} from 'lucide-react'
+import { Lightning, ShieldCheck, ArrowsClockwise, Users, Stack, Clipboard, GitMerge, Trash, Pulse, Clock, WarningCircle, Sparkle } from '@phosphor-icons/react'
 import type { OSRow } from '../../lib/types'
 import { AreaChart, Area, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/line-chart'
 import { api, endpoints } from '../../lib/api'
@@ -186,7 +183,7 @@ export default function JuniperPage() {
       {/* ── Header ── */}
       <PageHeader
         title="Juniper PPPoE — Validação de Clientes"
-        icon={Zap}
+        icon={Lightning}
         titleExtra={
           <span className="flex items-center gap-1.5">
             <span className="relative flex h-1.5 w-1.5">
@@ -215,7 +212,7 @@ export default function JuniperPage() {
             <p className="text-caption text-muted mt-0.5">A última coleta está defasada — verifique a conexão com o servidor.</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw size={11} /> Atualizar agora
+            <ArrowsClockwise size={11} /> Atualizar agora
           </Button>
         </div>
       )}
@@ -223,12 +220,12 @@ export default function JuniperPage() {
       {/* ── Falha de coleta: não confundir com zero conexões ── */}
       {isError && (
         <div className="flex items-center gap-3 px-4 py-3 bg-yellow/[0.08] border border-yellow/30 rounded-xl">
-          <AlertCircle size={16} className="text-yellow flex-shrink-0" />
+          <WarningCircle size={16} className="text-yellow flex-shrink-0" />
           <div className="flex-1">
             <p className="text-label font-semibold text-yellow">Não foi possível validar o estado do Juniper</p>
             <p className="text-caption text-muted mt-0.5">A ausência de resposta não significa que não existam conexões ativas.</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()}><RefreshCw size={11} /> Tentar novamente</Button>
+          <Button variant="outline" size="sm" onClick={() => refetch()}><ArrowsClockwise size={11} /> Tentar novamente</Button>
         </div>
       )}
 
@@ -237,14 +234,14 @@ export default function JuniperPage() {
         <div className="flex items-center gap-4 px-5 py-4 bg-red/[0.08] border-[1.5px] border-red/50 rounded-xl">
           <div className="relative flex-shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red opacity-40" />
-            <AlertCircle size={22} className="text-red relative" />
+            <WarningCircle size={22} className="text-red relative" />
           </div>
           <div className="flex-1">
             <p className="font-bold text-body text-red">ALERTA — {kpis.total ?? 0} {(kpis.total ?? 0) === 1 ? 'conexão ativa detectada' : 'conexões ativas detectadas'}</p>
             <p className="text-caption text-muted mt-0.5">Última verificação: {kpis.ultima ?? '—'}</p>
           </div>
           <Button variant="danger" size="sm" onClick={() => refetch()}>
-            <RefreshCw size={11} /> Verificar
+            <ArrowsClockwise size={11} /> Verificar
           </Button>
         </div>
       )}
@@ -264,7 +261,7 @@ export default function JuniperPage() {
         <div className="flex items-center gap-5 flex-wrap">
           <div className={`relative flex-shrink-0 p-3 rounded-2xl ${heroStyle.icon}`}>
             {hero.nivel === 'alert' && <span className="absolute inset-0 rounded-2xl animate-ping bg-red/20" />}
-            <Zap size={40} className={`${heroStyle.text} relative`} />
+            <Lightning size={40} className={`${heroStyle.text} relative`} />
           </div>
           <div className="flex-1 min-w-0">
             <p className={`font-headline font-bold text-[22px] ${heroStyle.text}`}>
@@ -310,7 +307,7 @@ export default function JuniperPage() {
       {/* ── Distribuição por interface ── */}
       {interfaces.length > 0 && (
         <>
-          <SectionTitle icon={Layers}>Origem das Conexões Ativas</SectionTitle>
+          <SectionTitle icon={Stack}>Origem das Conexões Ativas</SectionTitle>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {interfaces.map(iface => <InterfaceCard key={iface.nome} iface={iface} maxIface={maxIface} />)}
           </div>
@@ -372,7 +369,7 @@ export default function JuniperPage() {
 
         {clientesFiltrados.length === 0 ? (
           <div className="py-16 text-center text-muted">
-            <Zap size={40} className="mx-auto mb-4 opacity-20" />
+            <Lightning size={40} className="mx-auto mb-4 opacity-20" />
             <p className={`text-title font-semibold mb-2 ${isLoading || isError || (searchTable && clientes.length) ? 'text-secondary' : 'text-green'}`}>
               {isLoading
                 ? 'Validando conexões…'
@@ -437,7 +434,7 @@ export default function JuniperPage() {
       <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] bg-surface/20">
           <div className="flex items-center gap-2">
-            <Activity size={12} className="text-muted" />
+            <Pulse size={12} className="text-muted" />
             <span className="text-caption font-bold uppercase tracking-[0.06em] text-muted">
               {historico.length} snapshots
             </span>
@@ -449,7 +446,7 @@ export default function JuniperPage() {
               <button onClick={limparHistorico}
                 className="flex items-center gap-1 text-caption text-red/60 hover:text-red transition-colors"
                 title="Limpar histórico">
-                <Trash2 size={10} /> Limpar
+                <Trash size={10} /> Limpar
               </button>
             )}
           </div>
@@ -489,11 +486,11 @@ export default function JuniperPage() {
 
       {/* ── Correlação IA — Inativos × OS ── */}
       <>
-        <SectionTitle icon={Sparkles}>Correlação IA — Conexões ativas × OS</SectionTitle>
+        <SectionTitle icon={Sparkle}>Correlação IA — Conexões ativas × OS</SectionTitle>
         {!aiEnabled ? (
           <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles size={12} className="text-primary/40" />
+              <Sparkle size={12} className="text-primary/40" />
               <span className="text-caption font-bold text-muted uppercase tracking-wide">Conexões ativas × OS · IA</span>
             </div>
             <button
@@ -502,7 +499,7 @@ export default function JuniperPage() {
                          px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                          transition-all duration-fast"
             >
-              <Sparkles size={11} /> Analisar com IA
+              <Sparkle size={11} /> Analisar com IA
             </button>
           </div>
         ) : (

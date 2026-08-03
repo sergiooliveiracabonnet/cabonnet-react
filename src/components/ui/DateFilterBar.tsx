@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calendar, ChevronDown, ChevronLeft, ChevronRight, Server } from 'lucide-react'
+import { Calendar, CaretDown, CaretLeft, CaretRight, HardDrives } from '@phosphor-icons/react'
 import { useUIStore, PRESETS, isSameMonth } from '../../store/uiStore'
 import type { DateCampo } from '../../lib/types'
 
@@ -85,7 +85,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                 aria-label="Mês anterior"
                 className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface/60 hover:text-secondary md:h-5 md:w-5"
               >
-                <ChevronLeft size={12} />
+                <CaretLeft size={12} />
               </button>
             )}
             <button
@@ -106,7 +106,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                 aria-label={mensalAtual ? 'Mês atual' : 'Próximo mês'}
                 className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface/60 hover:text-secondary disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-muted md:h-5 md:w-5"
               >
-                <ChevronRight size={12} />
+                <CaretRight size={12} />
               </button>
             )}
           </div>
@@ -166,7 +166,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
         >
           <span className="opacity-60">por</span>
           <span className="font-semibold">{campoLabel}</span>
-          <ChevronDown size={10} className={`transition-transform ${showCampo ? 'rotate-180' : ''}`} />
+          <CaretDown size={10} className={`transition-transform ${showCampo ? 'rotate-180' : ''}`} />
         </button>
 
         {showCampo && (
@@ -199,7 +199,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                       ? 'border-orange/40 bg-orange/[0.07] text-orange'
                       : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
       >
-        <Server size={10} className="flex-shrink-0" />
+        <HardDrives size={10} className="flex-shrink-0" />
         <span>Rede</span>
         {hideRede && <span className="text-caption font-bold opacity-80">OFF</span>}
       </button>

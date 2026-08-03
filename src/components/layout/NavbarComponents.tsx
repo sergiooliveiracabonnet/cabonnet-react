@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient, useQuery } from '@tanstack/react-query'
-import { RefreshCw, ChevronDown, Clock, AlertTriangle, Bell, History, Sparkles, ExternalLink, X as XIcon } from 'lucide-react'
+import { ArrowsClockwise, CaretDown, Clock, Warning, Bell, ClockCounterClockwise, Sparkle, ArrowSquareOut, X as XIcon } from '@phosphor-icons/react'
 import { aiStatus } from '../../lib/api'
 import { useUIStore } from '../../store/uiStore'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -113,9 +113,9 @@ export const RefreshControl = memo(function RefreshControl() {
                       ? 'border-yellow/40 text-yellow bg-yellow/5 hover:bg-yellow/10'
                       : 'border-white/[0.08] text-secondary hover:border-muted/40 hover:text-text'}`}
       >
-        <RefreshCw size={12} className={`flex-shrink-0 ${spinning ? 'animate-spin' : ''}`} />
+        <ArrowsClockwise size={12} className={`flex-shrink-0 ${spinning ? 'animate-spin' : ''}`} />
         <span className="hidden w-[36px] text-center font-mono text-caption tabular-nums sm:block">{btnLabel}</span>
-        <ChevronDown size={10} className={`hidden transition-transform sm:block ${showMenu ? 'rotate-180' : ''}`} />
+        <CaretDown size={10} className={`hidden transition-transform sm:block ${showMenu ? 'rotate-180' : ''}`} />
       </button>
 
       {showMenu && (
@@ -128,7 +128,7 @@ export const RefreshControl = memo(function RefreshControl() {
                        text-caption font-semibold text-primary hover:bg-primary/10
                        border-b border-white/[0.08] transition-colors disabled:opacity-50"
           >
-            <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
+            <ArrowsClockwise size={12} className={isLoading ? 'animate-spin' : ''} />
             Atualizar agora
           </button>
           <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.08]">
@@ -211,7 +211,7 @@ export function AIStatusBadge() {
         title="Status da API Anthropic"
         className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-surface transition-colors"
       >
-        <Sparkles size={13} className={valid ? 'text-green' : noConn ? 'text-orange' : valid === false ? 'text-red' : 'text-muted'} />
+        <Sparkle size={13} className={valid ? 'text-green' : noConn ? 'text-orange' : valid === false ? 'text-red' : 'text-muted'} />
         <span className={`w-1.5 h-1.5 rounded-full ${dotCls}`} />
       </button>
 
@@ -222,7 +222,7 @@ export function AIStatusBadge() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
               <div className="flex items-center gap-2">
-                <Sparkles size={13} className="text-primary" />
+                <Sparkle size={13} className="text-primary" />
                 <span className="text-label font-bold text-text">Anthropic API</span>
               </div>
               <button onClick={() => setOpen(false)} className="text-muted hover:text-text transition-colors">
@@ -306,7 +306,7 @@ export function AIStatusBadge() {
                            hover:bg-primary/20 transition-colors"
               >
                 Ver saldo no Console Anthropic
-                <ExternalLink size={11} />
+                <ArrowSquareOut size={11} />
               </a>
             </div>
           </div>
@@ -344,7 +344,7 @@ export function SlaCriticasBadge({ slaCriticas }: { slaCriticas: OSRow[] }) {
         className="relative w-8 h-8 rounded-md flex items-center justify-center
                    text-red bg-red/[0.08] hover:bg-red/[0.15] transition-all duration-fast"
       >
-        <AlertTriangle size={14} />
+        <Warning size={14} />
         <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
                          bg-red text-caption font-bold text-white flex items-center justify-center leading-none">
           {slaCriticas.length > 9 ? '9+' : slaCriticas.length}
@@ -355,7 +355,7 @@ export function SlaCriticasBadge({ slaCriticas }: { slaCriticas: OSRow[] }) {
         <div className="absolute right-0 top-10 z-50 w-80
                         bg-elevated border border-red/30 rounded-lg shadow-accent overflow-hidden">
           <div className="flex items-center gap-2 px-3 py-2.5 border-b border-red/20 bg-red/[0.06]">
-            <AlertTriangle size={13} className="text-red flex-shrink-0" />
+            <Warning size={13} className="text-red flex-shrink-0" />
             <p className="text-label font-bold text-red flex-1">
               {slaCriticas.length} OS com SLA 2× excedido
             </p>
@@ -529,7 +529,7 @@ export function AuditLogBadge() {
         className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all duration-fast
           ${auditEntries.length > 0 ? 'text-muted hover:text-secondary hover:bg-surface' : 'text-disabled hover:text-muted hover:bg-surface'}`}
       >
-        <History size={14} />
+        <ClockCounterClockwise size={14} />
         {auditEntries.length > 0 && (
           <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary" />
         )}
@@ -540,7 +540,7 @@ export function AuditLogBadge() {
                         bg-elevated border border-white/[0.08] rounded-lg shadow-accent overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.08] bg-surface/30">
             <div className="flex items-center gap-2">
-              <History size={12} className="text-muted" />
+              <ClockCounterClockwise size={12} className="text-muted" />
               <span className="text-label font-bold text-text">Log de Atividade</span>
             </div>
             {auditEntries.length > 0 && (

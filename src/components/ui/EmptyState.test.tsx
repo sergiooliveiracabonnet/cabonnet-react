@@ -1,11 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { EmptyState } from './EmptyState'
-import { Inbox } from 'lucide-react'
-
+import { Tray } from '@phosphor-icons/react'
 describe('EmptyState', () => {
   it('renderiza título e descrição', () => {
-    render(<EmptyState icon={Inbox} title="Sem ordens" description="Ajuste os filtros." />)
+    render(<EmptyState icon={Tray} title="Sem ordens" description="Ajuste os filtros." />)
     expect(screen.getByText('Sem ordens')).toBeInTheDocument()
     expect(screen.getByText('Ajuste os filtros.')).toBeInTheDocument()
   })

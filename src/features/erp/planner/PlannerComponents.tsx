@@ -1,5 +1,5 @@
 import { useState, useMemo, type ComponentType } from 'react'
-import { Package, Wrench, Radio, X, CheckCircle2, Clock } from 'lucide-react'
+import { Package, Wrench, Broadcast, X, CheckCircle, Clock } from '@phosphor-icons/react'
 import type { OSRow } from '../../../lib/types'
 import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
 import { isCOPE, isReagend, isConcluida } from '../../../lib/transform'
@@ -90,7 +90,7 @@ export function buildPlanner(allRows: OSRow[], days: WeekDay[]): TeamSchedule[] 
 export function tipoIcon(r: OSRow): { color: string; Icon: IconComp | null } {
   if (r._tipo === 'INSTALACAO') return { color: '#3b82f6', Icon: Package }
   if (r._tipo === 'MANUTENCAO') return { color: '#f97316', Icon: Wrench  }
-  if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Radio   }
+  if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Broadcast   }
   return { color: '#64748b', Icon: null }
 }
 
@@ -173,7 +173,7 @@ export function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null
           <div className="flex items-center gap-3 flex-shrink-0">
             <div className="flex items-center gap-2 text-caption">
               {nPending   > 0 && <span className="flex items-center gap-1 text-yellow font-semibold"><Clock size={11}/>{nPending}</span>}
-              {nConcluded > 0 && <span className="flex items-center gap-1 text-green  font-semibold"><CheckCircle2 size={11}/>{nConcluded}</span>}
+              {nConcluded > 0 && <span className="flex items-center gap-1 text-green  font-semibold"><CheckCircle size={11}/>{nConcluded}</span>}
             </div>
             <button onClick={onClose}
                     className="w-7 h-7 rounded-lg flex items-center justify-center
@@ -198,7 +198,7 @@ export function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null
           {concluded.length > 0 && (
             <div>
               <div className={`px-4 pb-1.5 flex items-center gap-2 ${pending.length > 0 ? 'pt-3 border-t border-white/[0.08] mt-1' : 'pt-3'}`}>
-                <CheckCircle2 size={10} className="text-green" />
+                <CheckCircle size={10} className="text-green" />
                 <span className="text-caption font-bold uppercase tracking-[0.06em] text-green">
                   Concluídas ({nConcluded})
                 </span>
@@ -285,7 +285,7 @@ export function PlannerCell({ rows = [] as OSRow[], isPast, _isToday: _isToday =
             <span className="text-caption font-bold text-text">{count} OS</span>
             <div className="flex gap-2 text-caption">
               {nPending > 0 && <span className="text-yellow flex items-center gap-0.5"><Clock size={9}/>{nPending}</span>}
-              {nConcl   > 0 && <span className="text-green  flex items-center gap-0.5"><CheckCircle2 size={9}/>{nConcl}</span>}
+              {nConcl   > 0 && <span className="text-green  flex items-center gap-0.5"><CheckCircle size={9}/>{nConcl}</span>}
             </div>
           </div>
           <div className="space-y-1">

@@ -1,5 +1,5 @@
 ﻿import { useLayoutEffect, useRef, useState } from 'react'
-import { AlertTriangle, Calendar, Clock, FileText, MapPin, Users, Wrench } from 'lucide-react'
+import { Warning, Calendar, Clock, FileText, MapPin, Users, Wrench } from '@phosphor-icons/react'
 import { Badge } from '../../components/ui/Badge'
 import { situacaoVariant, shortEquipe } from '../../lib/osFormat'
 import type { OSRow } from '../../lib/types'
@@ -121,7 +121,7 @@ export function OSHoverCard({ os, anchorRect }: OSHoverCardProps) {
         {/* Critical observation */}
         {obsCrit && (
           <div className="flex gap-2 bg-red/[0.07] border border-red/[0.20] rounded-xl px-2.5 py-2">
-            <AlertTriangle size={10} className="text-red flex-shrink-0 mt-0.5" />
+            <Warning size={10} className="text-red flex-shrink-0 mt-0.5" />
             <p className="text-caption text-red/90 line-clamp-2 leading-relaxed">{obsCrit}</p>
           </div>
         )}

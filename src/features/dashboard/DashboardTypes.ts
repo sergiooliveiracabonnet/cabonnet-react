@@ -1,8 +1,5 @@
 import type { ComponentType, CSSProperties } from 'react'
-import {
-  AlertCircle, CheckCircle2, Target,
-  Clock, BarChart3, Radio, Activity, Users, RotateCcw, Send, CalendarClock, CalendarDays,
-} from 'lucide-react'
+import { WarningCircle, CheckCircle, Target, Clock, ChartBar, Broadcast, Pulse, Users, ArrowCounterClockwise, PaperPlaneTilt, CalendarCheck, CalendarDots } from '@phosphor-icons/react'
 import { isCOPE, isReagend, getReagendTipo, getAtendimentoBucket, isAgendamentoDesassistido } from '../../lib/transform'
 import type { OSRow, KPI, Pulso, AccentColor } from '../../lib/types'
 import type { ProjecaoRisco } from '../../lib/builders/dashboard'
@@ -67,11 +64,11 @@ export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
 }
 
 export const KPI_ICONS: Partial<Record<string, IconComp>> = {
-  criticas: AlertCircle, criticasDesassist: AlertCircle, semEq: Users, pend: Clock, atend: Activity,
-  atendHoje: Activity, atendAmanha: CalendarClock, atendFutura: CalendarDays,
-  copeAguardando: Send,
-  reagendInviab: RotateCcw, reagendMobile: RotateCcw, reagendFutura: RotateCcw, reagend: RotateCcw,
-  total: BarChart3, rede: Radio, concl: CheckCircle2, taxa: Target,
+  criticas: WarningCircle, criticasDesassist: WarningCircle, semEq: Users, pend: Clock, atend: Pulse,
+  atendHoje: Pulse, atendAmanha: CalendarCheck, atendFutura: CalendarDots,
+  copeAguardando: PaperPlaneTilt,
+  reagendInviab: ArrowCounterClockwise, reagendMobile: ArrowCounterClockwise, reagendFutura: ArrowCounterClockwise, reagend: ArrowCounterClockwise,
+  total: ChartBar, rede: Broadcast, concl: CheckCircle, taxa: Target,
 }
 
 export interface DashFornCard { nome: string; total: number; concluidas: number; sla: number; conclPct?: number; cor: string }

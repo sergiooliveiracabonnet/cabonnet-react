@@ -1,4 +1,4 @@
-import { Users } from 'lucide-react'
+import { Users } from '@phosphor-icons/react'
 import { DashboardPanelHeader } from './DashboardKpiPrimitives'
 
 export interface CapacidadeCidadeView {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Send, Bell, BellOff, Trash2, CheckCheck, Settings, AlertTriangle, Clock, TrendingUp, MapPin, Sparkles, Users } from 'lucide-react'
+import { PaperPlaneTilt, Bell, BellSlash, Trash, Checks, Gear, Warning, Clock, TrendUp, MapPin, Sparkle, Users } from '@phosphor-icons/react'
 import { useTelegramStore } from '../../store/telegramStore'
 import { telegram, ai } from '../../lib/api'
 import { Badge } from '../../components/ui/Badge'
@@ -7,10 +7,10 @@ import { Badge } from '../../components/ui/Badge'
 interface BriefingData { texto: string; acoes: string[]; data: string; cached?: boolean }
 
 const ICON_MAP = {
-  'alert-triangle': AlertTriangle,
-  'alert-circle':   AlertTriangle,
+  'alert-triangle': Warning,
+  'alert-circle':   Warning,
   'clock':          Clock,
-  'trending-up':    TrendingUp,
+  'trending-up':    TrendUp,
   'map-pin':        MapPin,
   'users':          Users,
 }
@@ -23,7 +23,7 @@ export function TelegramIndicator() {
 
   return (
     <div className="flex items-center gap-1.5">
-      <Send size={12} className={enabled ? 'text-green' : 'text-muted'} />
+      <PaperPlaneTilt size={12} className={enabled ? 'text-green' : 'text-muted'} />
       <span className={`text-caption font-semibold ${enabled ? 'text-green' : 'text-muted'}`}>
         {enabled ? 'TG' : 'TG off'}
       </span>
@@ -97,7 +97,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
 
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.08]">
-        <Send size={15} className={store.enabled ? 'text-green' : 'text-muted'} />
+        <PaperPlaneTilt size={15} className={store.enabled ? 'text-green' : 'text-muted'} />
         <div className="flex-1">
           <p className="font-bold text-title text-text">Alertas & Telegram</p>
           <p className={`text-caption ${store.enabled ? 'text-green' : 'text-muted'}`}>
@@ -108,7 +108,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-bold transition-all
             ${store.ativo ? 'bg-green/15 text-green border border-green/30' : 'bg-surface/40 text-muted border border-white/[0.08] hover:text-secondary'}`}
         >
-          {store.ativo ? <><Bell size={11} /> Ativo</> : <><BellOff size={11} /> Inativo</>}
+          {store.ativo ? <><Bell size={11} /> Ativo</> : <><BellSlash size={11} /> Inativo</>}
         </button>
         <button onClick={onClose} aria-label="Fechar Alertas e Telegram" className="w-10 h-10 rounded-lg text-muted hover:text-text hover:bg-surface text-lg leading-none">×</button>
       </div>
@@ -131,12 +131,12 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
             <div className="flex gap-2">
               {naoLidos > 0 && (
                 <button onClick={store.markAllRead} className="flex items-center gap-1 text-caption text-cyan hover:text-primary transition-colors">
-                  <CheckCheck size={10} /> Marcar todos lidos
+                  <Checks size={10} /> Marcar todos lidos
                 </button>
               )}
               {store.history.length > 0 && (
                 <button onClick={() => { if (window.confirm('Limpar todo o histórico local de alertas?')) store.clearHistory() }} className="min-h-8 flex items-center gap-1 text-caption text-red/70 hover:text-red transition-colors">
-                  <Trash2 size={10} /> Limpar
+                  <Trash size={10} /> Limpar
                 </button>
               )}
             </div>
@@ -190,7 +190,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
           {/* Nível de verbosidade */}
           <div>
             <label className="text-caption font-bold uppercase tracking-[0.06em] text-muted block mb-2">
-              <Settings size={9} className="inline mr-1" /> Nível de Alertas Telegram
+              <Gear size={9} className="inline mr-1" /> Nível de Alertas Telegram
             </label>
             <div className="flex flex-col gap-1.5">
               {[['critico','Apenas críticos'],['atencao','Críticos + Atenção'],['todos','Todos']].map(([v, l]) => (
@@ -239,12 +239,12 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
           {/* Briefing Executivo */}
           <div>
             <label className="text-caption font-bold uppercase tracking-[0.06em] text-muted block mb-2">
-              <Sparkles size={9} className="inline mr-1 text-primary" /> Briefing Executivo IA
+              <Sparkle size={9} className="inline mr-1 text-primary" /> Briefing Executivo IA
             </label>
             {briefing?.texto ? (
               <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4 space-y-3 mb-2">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={11} className="text-primary flex-shrink-0" />
+                  <Sparkle size={11} className="text-primary flex-shrink-0" />
                   <span className="text-caption text-muted">{briefing.data || 'Hoje'}</span>
                 </div>
                 <p className="text-caption text-text leading-relaxed">{briefing.texto}</p>
@@ -275,12 +275,12 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
             <button onClick={gerarBriefing} disabled={!!enviando}
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary/15 border border-primary/30 text-primary text-label font-bold hover:bg-primary/25 transition-all disabled:opacity-50"
             >
-              <Sparkles size={12} /> {enviando === 'briefing' ? 'Gerando…' : 'Gerar briefing executivo agora'}
+              <Sparkle size={12} /> {enviando === 'briefing' ? 'Gerando…' : 'Gerar briefing executivo agora'}
             </button>
             <button onClick={testar} disabled={!!enviando}
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface/40 border border-white/[0.08] text-secondary text-label font-bold hover:bg-surface transition-all disabled:opacity-50"
             >
-              <Send size={12} /> {enviando === 'teste' ? 'Enviando…' : 'Enviar mensagem de teste'}
+              <PaperPlaneTilt size={12} /> {enviando === 'teste' ? 'Enviando…' : 'Enviar mensagem de teste'}
             </button>
             <button onClick={enviarStatusNow} disabled={!!enviando}
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface/40 border border-white/[0.08] text-secondary text-label font-bold hover:bg-surface transition-all disabled:opacity-50"

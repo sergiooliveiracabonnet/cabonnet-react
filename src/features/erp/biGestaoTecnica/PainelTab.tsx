@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Wrench, Home, Star, Layers } from 'lucide-react'
+import { Wrench, House, Star, Stack } from '@phosphor-icons/react'
 import type { BacklogData } from '../../../hooks/useBacklog'
 import type { Vt24hStats } from '../../../lib/builders/vt24h'
 import { buildBiGestaoTecnicaPainel } from '../../../lib/builders/biGestaoTecnicaPainel'
@@ -29,14 +29,14 @@ export function PainelTab({ data, vt24h }: PainelTabProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard title="Total Manutenção" value={fmt(painel.totalManutencao)} icon={Wrench} />
-        <StatCard title="Total Instalação" value={fmt(painel.totalInstalacao)} icon={Home} />
+        <StatCard title="Total Instalação" value={fmt(painel.totalInstalacao)} icon={House} />
         <StatCard title="Total Serviço"    value={fmt(painel.totalServico)}    icon={Star} />
-        <StatCard title="Total OS Geral"   value={fmt(painel.totalGeral)}      icon={Layers} />
+        <StatCard title="Total OS Geral"   value={fmt(painel.totalGeral)}      icon={Stack} />
       </div>
 
       {painel.ostPorMes.length > 0 && (
         <section className="space-y-2">
-          <SectionLabel icon={Layers} color="#c4b5fd">Total de OS por Mês</SectionLabel>
+          <SectionLabel icon={Stack} color="#c4b5fd">Total de OS por Mês</SectionLabel>
           <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
             <div style={{ height: 260 }}>
               <BarChart data={painel.ostPorMes}>

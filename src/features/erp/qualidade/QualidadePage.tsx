@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, MapPin, RefreshCw, Wrench, Home, Star, Search, Sparkles, ClipboardCheck, Activity, BarChart3 } from 'lucide-react'
+import { Warning, MapPin, ArrowsClockwise, Wrench, House, Star, MagnifyingGlass, Sparkle, ClipboardText, Pulse, ChartBar } from '@phosphor-icons/react'
 import { useBacklog, type BacklogRow } from '../../../hooks/useBacklog'
 import { AreaChart, Area, XAxis, YAxis, Grid, ChartTooltip, Legend } from '../../../components/ui/line-chart'
 import { BarChart, Bar, XAxis as BXAxis, YAxis as BYAxis, Grid as BGrid, ChartTooltip as BTip } from '../../../components/ui/bar-chart'
@@ -53,7 +53,7 @@ function fmtPeriodo(ini: string): string {
 type Preset = 'atual' | 'anterior' | 'custom'
 
 const TIPO_ICON: Record<Exclude<Tipo,'todos'>, typeof Wrench> = {
-  instalacao: Home,
+  instalacao: House,
   manutencao: Wrench,
   servico:    Star,
 }
@@ -205,7 +205,7 @@ export default function QualidadePage() {
         <button onClick={() => refetch()} disabled={isFetching}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08]
                            bg-surface/40 text-label text-muted hover:text-text transition-colors disabled:opacity-50">
-          <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
+          <ArrowsClockwise size={12} className={isFetching ? 'animate-spin' : ''} />
           Atualizar
         </button>
       </div>
@@ -220,7 +220,7 @@ export default function QualidadePage() {
 
       {isError && !data && (
         <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-8 text-center">
-          <AlertTriangle size={20} className="text-red-400 mx-auto mb-2" />
+          <Warning size={20} className="text-red-400 mx-auto mb-2" />
           <p className="text-body text-red-400">Erro ao carregar dados.</p>
           <button onClick={() => refetch()} className="mt-3 text-caption text-muted underline">Tentar novamente</button>
         </div>
@@ -235,7 +235,7 @@ export default function QualidadePage() {
             <span className="text-caption font-semibold text-text">{fmtPeriodo(data.periodo)}</span>
             {isFetching && (
               <span className="flex items-center gap-1 text-caption text-primary">
-                <RefreshCw size={10} className="animate-spin" /> Atualizando…
+                <ArrowsClockwise size={10} className="animate-spin" /> Atualizando…
               </span>
             )}
           </div>
@@ -243,7 +243,7 @@ export default function QualidadePage() {
           {/* ── Gráfico diário ───────────────────────────────────────────── */}
           {diario.length > 0 && (
             <section className="space-y-2">
-              <SectionLabel icon={Activity} color="#a78bfa">
+              <SectionLabel icon={Pulse} color="#a78bfa">
                 Acompanhamento Diário — Instalação vs Manutenção
               </SectionLabel>
               <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
@@ -322,7 +322,7 @@ export default function QualidadePage() {
           {/* ── Ocorrências que causam revisitas ────────────────────────── */}
           {ocorrencias.length > 0 && (
             <section className="space-y-2">
-              <SectionLabel icon={BarChart3} color={cor}>
+              <SectionLabel icon={ChartBar} color={cor}>
                 Principais Ocorrências — clique para ver as OS
               </SectionLabel>
 
@@ -391,7 +391,7 @@ export default function QualidadePage() {
                     </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted">
-                      <Search size={24} className="opacity-30" />
+                      <MagnifyingGlass size={24} className="opacity-30" />
                       <p className="text-label">Selecione uma ocorrência no gráfico</p>
                       <p className="text-caption opacity-60">para ver as OS associadas</p>
                     </div>
@@ -433,7 +433,7 @@ export default function QualidadePage() {
             {/* Clientes crônicos */}
             {cronicos.length > 0 && (
               <section className="space-y-2">
-                <SectionLabel icon={AlertTriangle} color="#f87171">
+                <SectionLabel icon={Warning} color="#f87171">
                   Crônicos — 2+ revisitas
                 </SectionLabel>
                 <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
@@ -464,7 +464,7 @@ export default function QualidadePage() {
 
           {/* ── Causa Raiz registrada pelo time (real, via Telegram) ─── */}
           <section className="space-y-2 pt-2">
-            <SectionLabel icon={ClipboardCheck} color="#2dd4bf">
+            <SectionLabel icon={ClipboardText} color="#2dd4bf">
               Causa Raiz Registrada pelo Time
             </SectionLabel>
             <RevisitaMotivosSection />
@@ -472,7 +472,7 @@ export default function QualidadePage() {
 
           {/* ── Causa Raiz por IA (inferida das observações) ─────────── */}
           <section className="space-y-2 pt-2">
-            <SectionLabel icon={Sparkles} color="#8b5cf6">
+            <SectionLabel icon={Sparkle} color="#8b5cf6">
               Causa Raiz de Revisitas (IA, inferida das observações)
             </SectionLabel>
             <CausaRaizSection inicio={inicio} fim={fim} />

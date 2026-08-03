@@ -1,8 +1,5 @@
 import { useMemo, useState } from 'react'
-import {
-  BarChart2, TrendingUp, Clock, AlertTriangle,
-  ChevronRight, Download, FileText,
-} from 'lucide-react'
+import { ChartBar, TrendUp, Clock, Warning, CaretRight, DownloadSimple, FileText } from '@phosphor-icons/react'
 import type { OSRow } from '../../../lib/types'
 
 interface DrillState { title: string; rows: OSRow[]; color?: string }
@@ -198,7 +195,7 @@ export default function RelatoriosPage() {
         actions={<>
           <button type="button" onClick={() => exportCSV(`relatorio-operacional-${new Date().toISOString().slice(0, 10)}.csv`, exportRows())}
             disabled={!ranking.length} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/[0.08] bg-elevated px-3 text-label font-semibold text-secondary transition-colors hover:bg-surface/40 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
-            <Download size={15} /> CSV
+            <DownloadSimple size={15} /> CSV
           </button>
           <button type="button" onClick={() => printRelatoriosPDF(theme, ranking, totals, kpis, periodoFilter, tipoFilter, [
             `Data: ${dateField === 'datacadastro' ? 'cadastro' : dateField === 'dataagendamento' ? 'agendamento' : 'execução/baixa'}`,
@@ -290,10 +287,10 @@ export default function RelatoriosPage() {
       {/* ── KPIs ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total de OS',  value: kpis.total,                     Icon: BarChart2,     colorCls: 'text-primary',     bgCls: 'bg-primary/10',    rows: drillTotal,   color: '#3b82f6' },
-          { label: 'SLA Vencido',  value: kpis.criticas,                  Icon: AlertTriangle, colorCls: 'text-red',     bgCls: 'bg-red/10',    rows: drillSlaVenc, color: '#f87171' },
+          { label: 'Total de OS',  value: kpis.total,                     Icon: ChartBar,     colorCls: 'text-primary',     bgCls: 'bg-primary/10',    rows: drillTotal,   color: '#3b82f6' },
+          { label: 'SLA Vencido',  value: kpis.criticas,                  Icon: Warning, colorCls: 'text-red',     bgCls: 'bg-red/10',    rows: drillSlaVenc, color: '#f87171' },
           { label: 'Sem Equipe',   value: kpis.semEquipe,                 Icon: Clock,         colorCls: 'text-orange',  bgCls: 'bg-orange/10', rows: drillSemEq,   color: '#f97316' },
-          { label: 'Aging Médio',  value: `${kpis.avgAging.toFixed(1)}d`, Icon: TrendingUp,    colorCls: 'text-green', bgCls: 'bg-green/10',rows: drillAging,   color: '#4ade80' },
+          { label: 'Aging Médio',  value: `${kpis.avgAging.toFixed(1)}d`, Icon: TrendUp,    colorCls: 'text-green', bgCls: 'bg-green/10',rows: drillAging,   color: '#4ade80' },
         ].map(k => {
           const KIcon = k.Icon
           return (
@@ -308,7 +305,7 @@ export default function RelatoriosPage() {
                 <p className="font-mono font-black tabular-nums text-[26px] leading-none text-text">{k.value}</p>
                 <p className="text-caption text-secondary mt-0.5">{k.label}</p>
               </div>
-              <ChevronRight size={13} className="text-muted flex-shrink-0" />
+              <CaretRight size={13} className="text-muted flex-shrink-0" />
             </button>
           )
         })}

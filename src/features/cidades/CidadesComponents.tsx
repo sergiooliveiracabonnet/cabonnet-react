@@ -1,5 +1,5 @@
 import { useState, useMemo, type ComponentType } from 'react'
-import { ChevronDown, ChevronUp, Activity } from 'lucide-react'
+import { CaretDown, CaretUp, Pulse } from '@phosphor-icons/react'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe } from '../../lib/osFormat'
 import { estourouSLA } from '../../lib/builders/_helpers'
@@ -130,7 +130,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
   return (
     <div id="city-health" className="bg-card border border-white/[0.08] rounded-xl overflow-hidden scroll-mt-4">
       <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/[0.08] flex-wrap">
-        <Activity size={13} className="text-primary flex-shrink-0" />
+        <Pulse size={13} className="text-primary flex-shrink-0" />
         <span className="font-bold text-body text-text">Saúde por Cidade</span>
         <span className="text-caption text-muted">
           — fila ao vivo vs capacidade dos últimos 14 dias · ordenado por backlog
@@ -242,8 +242,8 @@ export function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, gro
           <Badge variant="orange">{semEquipe} sem equipe</Badge>
         )}
         {open
-          ? <ChevronUp   size={13} className="text-muted flex-shrink-0" />
-          : <ChevronDown size={13} className="text-muted flex-shrink-0" />}
+          ? <CaretUp   size={13} className="text-muted flex-shrink-0" />
+          : <CaretDown size={13} className="text-muted flex-shrink-0" />}
       </button>
 
       {open && (
@@ -486,10 +486,10 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
                 <span className="flex items-center gap-1">
                   {col.label}
                   {sort.key !== col.key
-                    ? <ChevronDown size={9} className="opacity-20 flex-shrink-0" />
+                    ? <CaretDown size={9} className="opacity-20 flex-shrink-0" />
                     : sort.dir === 'asc'
-                      ? <ChevronUp   size={9} className="text-primary flex-shrink-0" />
-                      : <ChevronDown size={9} className="text-primary flex-shrink-0" />}
+                      ? <CaretUp   size={9} className="text-primary flex-shrink-0" />
+                      : <CaretDown size={9} className="text-primary flex-shrink-0" />}
                 </span>
               </th>
             ))}

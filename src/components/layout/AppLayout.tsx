@@ -1,6 +1,6 @@
 import { Suspense, useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { AlertTriangle, X } from 'lucide-react'
+import { Warning, X } from '@phosphor-icons/react'
 import { Sidebar } from './Sidebar'
 import { Navbar } from './Navbar'
 import { DateFilterBar } from '../ui/DateFilterBar'
@@ -43,7 +43,7 @@ function BuilderErrorBanner() {
                      bg-elevated border border-yellow/30 shadow-lg shadow-black/30"
           role="alert"
         >
-          <AlertTriangle size={13} className="text-yellow flex-shrink-0 mt-0.5" />
+          <Warning size={13} className="text-yellow flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-label font-semibold text-text leading-snug">
               {BUILDER_LABELS[name] ?? name} temporariamente indisponível

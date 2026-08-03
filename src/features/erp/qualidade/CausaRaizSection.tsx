@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Sparkles, Download, ChevronDown, ChevronUp } from 'lucide-react'
+import { Sparkle, DownloadSimple, CaretDown, CaretUp } from '@phosphor-icons/react'
 import { useRevisitasDetalhe, type ParRevisita } from '../../../hooks/useRevisitasDetalhe'
 import { ai } from '../../../lib/api'
 
@@ -128,7 +128,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
               onClick={() => exportParesCsv(pares, analise.analises)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08]
                          bg-surface/40 text-label text-muted hover:text-text transition-colors">
-              <Download size={11} />
+              <DownloadSimple size={11} />
               Exportar CSV
             </button>
           )}
@@ -138,7 +138,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
             className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-label
                        transition-all disabled:opacity-50
                        border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20">
-            <Sparkles size={13} className={analisando ? 'animate-pulse' : ''} />
+            <Sparkle size={13} className={analisando ? 'animate-pulse' : ''} />
             {analisando ? 'Analisando com IA…' : analise ? 'Reanalisar com IA' : 'Analisar Causa Raiz (IA)'}
           </button>
         </div>
@@ -157,7 +157,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
           {/* Narrativa */}
           <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
             <div className="flex items-start gap-2">
-              <Sparkles size={13} className="text-violet-400 flex-shrink-0 mt-0.5" />
+              <Sparkle size={13} className="text-violet-400 flex-shrink-0 mt-0.5" />
               <p className="text-label text-text leading-relaxed">{analise.narrativa}</p>
             </div>
             {analise.cached && (
@@ -198,7 +198,7 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
         <button
           onClick={() => setShowTabela(v => !v)}
           className="flex items-center gap-1.5 text-label text-muted hover:text-text transition-colors py-1">
-          {showTabela ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          {showTabela ? <CaretUp size={12} /> : <CaretDown size={12} />}
           {showTabela ? 'Ocultar' : 'Ver'} tabela de pares ({pares.length})
         </button>
       </div>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { AlertTriangle, ArrowUpRight, CircleCheck, Radio } from 'lucide-react'
+import { Warning, ArrowUpRight, CheckCircle, Broadcast } from '@phosphor-icons/react'
 import type { KPI, OSRow } from '../../lib/types'
 import type { ProjecaoRisco } from '../../lib/builders/dashboard'
 
@@ -52,7 +52,7 @@ export function DashboardCommandCenter({
         <header className="flex min-h-11 items-center justify-between gap-3 border-b border-white/[0.06] px-3 py-2 sm:min-h-12 sm:px-4 sm:py-2.5">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-red/20 bg-red/[0.07] text-red">
-              <AlertTriangle size={14} aria-hidden="true" />
+              <Warning size={14} aria-hidden="true" />
             </span>
             <div className="min-w-0">
               <h2 id="dashboard-priorities-title" className="text-body font-bold text-text">
@@ -62,7 +62,7 @@ export function DashboardCommandCenter({
             </div>
           </div>
           <span className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border border-white/[0.08] bg-surface/50 px-2 py-1 text-caption font-semibold text-secondary">
-            {activeCount > 0 ? <Radio size={9} className="text-orange" aria-hidden="true" /> : <CircleCheck size={10} className="text-green" aria-hidden="true" />}
+            {activeCount > 0 ? <Broadcast size={9} className="text-orange" aria-hidden="true" /> : <CheckCircle size={10} className="text-green" aria-hidden="true" />}
             {activeCount} {activeCount === 1 ? 'frente ativa' : 'frentes ativas'}
           </span>
         </header>
@@ -107,7 +107,7 @@ export function DashboardCommandCenter({
                        bg-orange/[0.045] px-3 py-1 text-left transition-colors duration-200 hover:border-orange/40
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange/40"
           >
-            <AlertTriangle size={13} className="flex-shrink-0 text-orange" aria-hidden="true" />
+            <Warning size={13} className="flex-shrink-0 text-orange" aria-hidden="true" />
             <span className="min-w-0 flex-1 text-caption text-secondary">
               <span className="sm:hidden">
                 <strong className="text-orange">{projectedTotal} em risco</strong>

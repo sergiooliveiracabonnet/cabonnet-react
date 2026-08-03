@@ -1,7 +1,5 @@
 import { useState, useMemo, type ReactNode } from 'react'
-import {
-  MapPin, ChevronRight, Search, X,
-} from 'lucide-react'
+import { MapPin, CaretRight, MagnifyingGlass, X } from '@phosphor-icons/react'
 import { Modal }  from '../../components/ui/Modal'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { Badge }   from '../../components/ui/Badge'
@@ -136,7 +134,7 @@ export function HeroCount({ value, label, sub, color, onClick }: {
           <span className="absolute bottom-3 right-3 flex items-center gap-0.5
                            text-caption font-semibold uppercase tracking-wide"
                 style={{ color: `${color}90` }}>
-            Ver OS <ChevronRight size={10} />
+            Ver OS <CaretRight size={10} />
           </span>
         )}
       </div>
@@ -190,7 +188,7 @@ export function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no pe
                     style={{ color }}>
                 {c.total}
               </span>
-              {clickable && <ChevronRight size={10} className="text-muted flex-shrink-0" />}
+              {clickable && <CaretRight size={10} className="text-muted flex-shrink-0" />}
             </div>
           )
         })}
@@ -281,7 +279,7 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
     <div className="mt-2 space-y-1.5">
       {/* Input */}
       <div className="relative">
-        <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+        <MagnifyingGlass size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
         <input
           value={q}
           onChange={e => setQ(e.target.value)}
@@ -402,7 +400,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
                 {e.slaPct}%
               </span>
               {clickable
-                ? <ChevronRight size={11} className="text-muted justify-self-end" />
+                ? <CaretRight size={11} className="text-muted justify-self-end" />
                 : <span />}
             </div>
           )

@@ -1,8 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useMap } from 'react-leaflet'
-import {
-  TrendingUp, X, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, MapPin as PinIcon, Loader2, Info, Wrench,
-} from 'lucide-react'
+import { TrendUp, X, CaretDown, CaretUp, CheckCircle, Warning, MapPin as PinIcon, CircleNotch, Info, Wrench } from '@phosphor-icons/react'
 import L from 'leaflet'
 import type { BairroAgg } from './geo'
 import type { GeocodeResult } from './searchAddress'
@@ -136,7 +134,7 @@ export function MapLegend() {
       <details className="group rounded-xl border border-white/[0.10] bg-elevated/95 shadow-xl backdrop-blur sm:open:min-w-56" open>
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-caption font-bold uppercase tracking-[0.05em] text-secondary">
           Legenda
-          <ChevronDown size={13} className="transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+          <CaretDown size={13} className="transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
         </summary>
         <div className="space-y-2 border-t border-white/[0.08] px-3 pb-3 pt-2">
           {items.map(item => (
@@ -273,8 +271,8 @@ export function AddressSearchPanel({ result, info, onClose }: {
         <div className={`flex items-start gap-2.5 px-4 py-3 border-b border-white/[0.08]
                           ${temEquipesProximas ? 'bg-green/[0.06]' : 'bg-yellow/[0.06]'}`}>
           {temEquipesProximas
-            ? <CheckCircle2 size={15} className="text-green flex-shrink-0 mt-0.5" />
-            : <AlertTriangle size={15} className="text-yellow flex-shrink-0 mt-0.5" />}
+            ? <CheckCircle size={15} className="text-green flex-shrink-0 mt-0.5" />
+            : <Warning size={15} className="text-yellow flex-shrink-0 mt-0.5" />}
           <div>
             {temEquipesProximas ? (
               <>
@@ -326,7 +324,7 @@ export function AddressSearchPanel({ result, info, onClose }: {
                   </span>
                   <span className="text-muted font-mono flex-shrink-0">~{b.distKm.toFixed(1)}km</span>
                   <span className="font-mono font-semibold text-text flex-shrink-0 w-6 text-right">{b.count}</span>
-                  {b.criticos > 0 && <span className="inline-flex items-center gap-0.5 text-caption font-bold text-red flex-shrink-0"><AlertTriangle size={10} aria-hidden="true" />{b.criticos}</span>}
+                  {b.criticos > 0 && <span className="inline-flex items-center gap-0.5 text-caption font-bold text-red flex-shrink-0"><Warning size={10} aria-hidden="true" />{b.criticos}</span>}
                 </div>
               ))}
             </div>
@@ -359,7 +357,7 @@ export function EquipeGeocodeStatus({ resolved, total, capped, totalEquipe }: {
     <div className="absolute left-1/2 top-40 z-[500] max-w-[calc(100%-1rem)] -translate-x-1/2 sm:top-20">
       <div className="flex items-center gap-2 bg-elevated/95 backdrop-blur-md border border-white/[0.08]
                        rounded-full px-3.5 py-1.5 shadow-2xl">
-        {!done && <Loader2 size={11} className="animate-spin text-primary" />}
+        {!done && <CircleNotch size={11} className="animate-spin text-primary" />}
         <span className="text-caption font-semibold text-secondary">
           {done ? `${total} OS localizadas` : `Localizando ${resolved}/${total}…`}
         </span>
@@ -383,7 +381,7 @@ export function RankingPanel({ cidades, onSelect, selected }: {
     <div className="absolute right-2 top-40 z-[500] w-[min(15rem,calc(100%-1rem))] sm:right-4 sm:top-4 sm:w-60">
       <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.08]">
-          <TrendingUp size={12} className="text-primary" />
+          <TrendUp size={12} className="text-primary" />
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking de cidades</p>
         </div>
         <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
@@ -406,7 +404,7 @@ export function RankingPanel({ cidades, onSelect, selected }: {
                 </span>
                 <span className="text-caption font-mono font-semibold text-text flex-shrink-0">{g.count}</span>
                 {g.criticos > 0 && (
-                  <span className="inline-flex items-center gap-0.5 text-caption font-bold text-red flex-shrink-0"><AlertTriangle size={10} aria-hidden="true" />{g.criticos}</span>
+                  <span className="inline-flex items-center gap-0.5 text-caption font-bold text-red flex-shrink-0"><Warning size={10} aria-hidden="true" />{g.criticos}</span>
                 )}
               </button>
             )
@@ -423,10 +421,10 @@ export function RankingPanel({ cidades, onSelect, selected }: {
 export type SortKey = '_aging' | 'numos' | 'descsituacao'
 
 export function SortIcon({ k, sortKey, sortDir }: { k: SortKey, sortKey: SortKey, sortDir: 'desc' | 'asc' }) {
-  if (sortKey !== k) return <ChevronDown size={8} className="opacity-30" />
+  if (sortKey !== k) return <CaretDown size={8} className="opacity-30" />
   return sortDir === 'asc'
-    ? <ChevronUp size={8} className="text-primary" />
-    : <ChevronDown size={8} className="text-primary" />
+    ? <CaretUp size={8} className="text-primary" />
+    : <CaretDown size={8} className="text-primary" />
 }
 
 // ── Painel lateral de bairro com lista de OS ──────────────────────────────────
@@ -562,7 +560,7 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
     <div className="absolute right-2 top-40 z-[500] w-[min(16rem,calc(100%-1rem))] sm:right-4 sm:top-4 sm:w-64">
       <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.08]">
-          <TrendingUp size={12} className="text-primary" />
+          <TrendUp size={12} className="text-primary" />
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking por bairro</p>
         </div>
         <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
@@ -589,7 +587,7 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
                   </p>
                 </div>
                 <span className="text-caption font-mono font-semibold text-text flex-shrink-0">{b.count}</span>
-                {b.criticos > 0 && <span className="inline-flex items-center gap-0.5 text-caption font-bold text-red flex-shrink-0"><AlertTriangle size={10} aria-hidden="true" />{b.criticos}</span>}
+                {b.criticos > 0 && <span className="inline-flex items-center gap-0.5 text-caption font-bold text-red flex-shrink-0"><Warning size={10} aria-hidden="true" />{b.criticos}</span>}
               </button>
             )
           })}

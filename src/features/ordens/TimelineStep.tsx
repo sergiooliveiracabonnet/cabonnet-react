@@ -1,6 +1,5 @@
 import { useState, type ComponentType } from 'react'
-import { Calendar, Users, Clock, ChevronDown, ChevronRight, Wrench, Package, RotateCcw, MessageSquare } from 'lucide-react'
-
+import { Calendar, Users, Clock, CaretDown, CaretRight, Wrench, Package, ArrowCounterClockwise, ChatText } from '@phosphor-icons/react'
 interface TimelineNodeProps {
   icon:    ComponentType<{ size?: number; className?: string }>
   color:   string
@@ -84,8 +83,8 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
           </p>
           {hasExtra && (
             open
-              ? <ChevronDown  size={11} className="text-muted/50 flex-shrink-0" />
-              : <ChevronRight size={11} className="text-muted/50 flex-shrink-0" />
+              ? <CaretDown  size={11} className="text-muted/50 flex-shrink-0" />
+              : <CaretRight size={11} className="text-muted/50 flex-shrink-0" />
           )}
         </button>
 
@@ -149,7 +148,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {(d.historico?.length ?? 0) > 0 && (
               <div className="space-y-1.5">
                 <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
-                  <MessageSquare size={10} /> Histórico de ocorrências
+                  <ChatText size={10} /> Histórico de ocorrências
                 </p>
                 {d.historico!.map((entry, i) => (
                   <div
@@ -165,7 +164,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         {entry.isReagend && (
                           <span className="flex items-center gap-1 text-caption font-bold uppercase tracking-wide text-orange/80">
-                            <RotateCcw size={9} /> Reagendamento
+                            <ArrowCounterClockwise size={9} /> Reagendamento
                           </span>
                         )}
                         {entry.autor && (

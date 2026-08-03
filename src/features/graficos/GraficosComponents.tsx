@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { OSRow } from '../../lib/types'
-import {
-  BarChart2, TrendingUp, Sliders, ZoomIn,
-  ChevronUp, ChevronDown, Sparkles, TrendingDown, Minus,
-} from 'lucide-react'
+import { ChartBar, TrendUp, Sliders, MagnifyingGlassPlus, CaretUp, CaretDown, Sparkle, TrendDown, Minus } from '@phosphor-icons/react'
 import { ChartCard }      from '../../components/ui/ChartCard'
 import { SectionTitle }   from '../../components/ui/SectionTitle'
 import { Modal }          from '../../components/ui/Modal'
@@ -37,10 +34,10 @@ export const FORN_PILLS = [
 ]
 
 export const TABS = [
-  { id: 'distribuicao', label: 'Distribuição', icon: BarChart2  },
-  { id: 'tendencia',    label: 'Tendência',    icon: TrendingUp },
+  { id: 'distribuicao', label: 'Distribuição', icon: ChartBar  },
+  { id: 'tendencia',    label: 'Tendência',    icon: TrendUp },
   { id: 'estatistica',  label: 'Estatística',  icon: Sliders    },
-  { id: 'cohort',       label: 'Cohort',       icon: ZoomIn     },
+  { id: 'cohort',       label: 'Cohort',       icon: MagnifyingGlassPlus     },
 ]
 
 export const COLORS = ['#3b82f6','#4ade80','#facc15','#f97316','#c4b5fd','#f87171','#22d3ee','#ec4899','#84cc16','#8b5cf6']
@@ -148,10 +145,10 @@ export function DrillModal({ drill, onClose, onOS }: { drill: DrillState | null;
                     <span className="flex items-center gap-1">
                       {col.label}
                       {sort.key !== col.key
-                        ? <ChevronDown size={9} className="opacity-20 flex-shrink-0" />
+                        ? <CaretDown size={9} className="opacity-20 flex-shrink-0" />
                         : sort.dir === 'asc'
-                          ? <ChevronUp   size={9} className="text-primary flex-shrink-0" />
-                          : <ChevronDown size={9} className="text-primary flex-shrink-0" />}
+                          ? <CaretUp   size={9} className="text-primary flex-shrink-0" />
+                          : <CaretDown size={9} className="text-primary flex-shrink-0" />}
                     </span>
                   </th>
                 ))}
@@ -213,9 +210,9 @@ const CONF_STYLE = {
   baixa: 'bg-orange/15 text-orange border-orange/25',
 }
 const TEND_STYLE = {
-  crescente:   { cls: 'text-red',      Icon: TrendingUp   },
+  crescente:   { cls: 'text-red',      Icon: TrendUp   },
   estável:     { cls: 'text-cyan-400', Icon: Minus        },
-  decrescente: { cls: 'text-green',    Icon: TrendingDown },
+  decrescente: { cls: 'text-green',    Icon: TrendDown },
 }
 
 type EvolAny = { labels?: string[]; [k: string]: unknown }
@@ -234,7 +231,7 @@ export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown
   return (
     <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <Sparkles size={14} className="text-primary" />
+        <Sparkle size={14} className="text-primary" />
         <span className="text-body font-bold text-text">Previsão de Demanda — próximos 7 dias</span>
         <span className="text-caption text-muted/60 ml-1">regressão linear + sazonalidade · R²={forecast.r2}</span>
         {isFetching && <span className="text-caption text-muted animate-pulse ml-auto">Analisando…</span>}
@@ -254,7 +251,7 @@ export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown
               onClick={() => setAiEnabled(true)}
               className="flex items-center gap-1.5 text-caption font-semibold text-primary/70 hover:text-primary mt-1"
             >
-              <Sparkles size={11} /> Explicar com IA
+              <Sparkle size={11} /> Explicar com IA
             </button>
           ) : isError ? (
             <p className="text-caption text-muted mt-0.5">Explicação indisponível — verifique ANTHROPIC_API_KEY no servidor.</p>
@@ -264,7 +261,7 @@ export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown
 
       {forecast.pico_previsto && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange/[0.07] border border-orange/20">
-          <TrendingUp size={12} className="text-orange flex-shrink-0" />
+          <TrendUp size={12} className="text-orange flex-shrink-0" />
           <span className="text-caption text-secondary">
             Pico previsto: <span className="font-bold text-text">{forecast.pico_previsto.data}</span>
             {' '}— <span className="font-bold text-orange">{forecast.pico_previsto.volume} OS</span>
@@ -344,7 +341,7 @@ export function TabDistribuicao({ d, rows, onDrill }: { d: Record<string,unknown
         ))}
       </div>
 
-      <SectionTitle icon={BarChart2}>Composição da amostra</SectionTitle>
+      <SectionTitle icon={ChartBar}>Composição da amostra</SectionTitle>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard title="Status das OS · quantidade e participação" dot="#4ade80" height="h-auto">
           <RankedDistribution data={statusData} color="#4ade80"
@@ -368,7 +365,7 @@ export function TabDistribuicao({ d, rows, onDrill }: { d: Record<string,unknown
         </ChartCard>
       </div>
 
-      <SectionTitle icon={BarChart2}>Distribuição operacional</SectionTitle>
+      <SectionTitle icon={ChartBar}>Distribuição operacional</SectionTitle>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard title="OS por Cidade" dot="#facc15" height="h-auto">
           <RankedDistribution data={cidadeData} color="#facc15"
@@ -433,7 +430,7 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
 
       <ForecastCard evolucao={d.evolucao} totalAtivo={totalAtivo} fila={fila} />
 
-      <SectionTitle icon={TrendingUp}>Fluxo operacional</SectionTitle>
+      <SectionTitle icon={TrendUp}>Fluxo operacional</SectionTitle>
 
       <ChartCard title="Abertas por cadastro × Concluídas por execução · últimos 30 dias" dot="#3b82f6" height="h-80">
         <AreaChart data={evolucaoData} onClick={(cd: Record<string,unknown>) => {
@@ -451,7 +448,7 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
         </AreaChart>
       </ChartCard>
 
-      <SectionTitle icon={TrendingUp}>Visão mensal</SectionTitle>
+      <SectionTitle icon={TrendUp}>Visão mensal</SectionTitle>
 
       <ChartCard title="Abertura × Conclusão × SLA Excedido — Mês a Mês" dot="#3b82f6" height="h-80">
         <AreaChart
@@ -587,7 +584,7 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
         ))}
       </div>
 
-      <SectionTitle icon={ZoomIn}>Evolução das coortes por mês de abertura</SectionTitle>
+      <SectionTitle icon={MagnifyingGlassPlus}>Evolução das coortes por mês de abertura</SectionTitle>
       <p className="-mt-2 text-caption text-muted">Cada barra contém todas as OS cadastradas no mês, separadas entre encerradas e ainda abertas.</p>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

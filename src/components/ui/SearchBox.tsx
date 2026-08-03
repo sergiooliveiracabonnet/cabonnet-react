@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, X } from 'lucide-react'
-
+import { MagnifyingGlass, X } from '@phosphor-icons/react'
 interface SearchBoxProps {
   value:        string
   onChange:     (value: string) => void
@@ -33,7 +32,7 @@ export function SearchBox({ value, onChange, placeholder = 'Buscar…', classNam
 
   return (
     <div className={`relative flex items-center ${className}`}>
-      <Search size={12} className="absolute left-2.5 text-muted pointer-events-none" />
+      <MagnifyingGlass size={12} className="absolute left-2.5 text-muted pointer-events-none" />
       <input
         type="text"
         value={local}

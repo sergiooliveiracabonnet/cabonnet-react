@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
-import {
-  Monitor, Pause, Play, X, Maximize2, Minimize2,
-  Activity, Users, Package, AlertCircle,
-} from 'lucide-react'
+import { Monitor, Pause, Play, X, ArrowsOut, ArrowsIn, Pulse, Users, Package, WarningCircle } from '@phosphor-icons/react'
 import { OSDataProvider, useOSDerived } from '../../contexts/OSDataContext'
 import { isCOPE, isReagend } from '../../lib/transform'
 import { shortEquipe } from '../../lib/osFormat'
@@ -12,7 +9,7 @@ import { shortEquipe } from '../../lib/osFormat'
 const SLIDE_MS     = 30_000
 const TOTAL_SLIDES = 3
 const SLIDE_CONFIG = [
-  { name: 'Operacional',   icon: Activity },
+  { name: 'Operacional',   icon: Pulse },
   { name: 'SLA & Equipes', icon: Users    },
   { name: 'Fornecedores',  icon: Package  },
 ]
@@ -51,7 +48,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
   return (
     <div className="h-full p-6 flex flex-col gap-4">
       <div className="flex items-center gap-2 flex-shrink-0">
-        <Activity size={13} className="text-muted" />
+        <Pulse size={13} className="text-muted" />
         <p className="text-caption font-bold uppercase tracking-[0.09em] text-muted/70">
           Visão Operacional
         </p>
@@ -130,7 +127,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       {/* SLA Críticas */}
       <div className="flex flex-col gap-2.5 overflow-hidden">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
-          <AlertCircle size={13} className="text-red flex-shrink-0" />
+          <WarningCircle size={13} className="text-red flex-shrink-0" />
           <p className="text-caption font-bold uppercase tracking-[0.09em] text-muted/70">
             OS com SLA 2× Excedido
           </p>
@@ -383,7 +380,7 @@ function NocInner() {
                      text-secondary hover:text-text hover:bg-surface transition-all"
           title={isFullscreen ? 'Sair da tela cheia (F)' : 'Tela cheia (F)'}
         >
-          {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          {isFullscreen ? <ArrowsIn size={14} /> : <ArrowsOut size={14} />}
         </button>
 
         <button
@@ -409,7 +406,7 @@ function NocInner() {
       {noData && !error && (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-8">
           <div className="w-12 h-12 rounded-full bg-yellow/10 border border-yellow/30 flex items-center justify-center">
-            <AlertCircle size={24} className="text-yellow" />
+            <WarningCircle size={24} className="text-yellow" />
           </div>
           <div>
             <p className="text-title font-semibold text-text mb-1">Sem dados disponíveis</p>
@@ -428,7 +425,7 @@ function NocInner() {
       {/* ── Critical overlay ── */}
       {!noData && isCritical && critOverlay && (
         <div className="flex items-center gap-4 px-5 py-3 bg-red/10 border-b border-red/30 flex-shrink-0">
-          <AlertCircle size={18} className="text-red flex-shrink-0 animate-pulse" />
+          <WarningCircle size={18} className="text-red flex-shrink-0 animate-pulse" />
           <p className="text-label font-semibold text-red flex-1">
             Situacao critica detectada — {criticas} OS criticas, {semEquipe} sem equipe
           </p>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Briefcase } from 'lucide-react'
+import { MapPin, Briefcase } from '@phosphor-icons/react'
 import { TabBar } from '../../components/ui/TabBar'
 import CidadesPage from './CidadesPage'
 import GerencialPage from '../gerencial/GerencialPage'

@@ -1,4 +1,4 @@
-import { CalendarRange } from 'lucide-react'
+import { CalendarBlank } from '@phosphor-icons/react'
 import { DashboardPanelHeader } from './DashboardKpiPrimitives'
 
 export interface CoorteLinhaView {
@@ -35,7 +35,7 @@ export function CoortePanel({ buckets, linhas }: { buckets: number[]; linhas: Co
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <DashboardPanelHeader
-        icon={CalendarRange}
+        icon={CalendarBlank}
         color="#a78bfa"
         meta={<span className="hidden sm:inline">{linhas.length} semanas</span>}
       >

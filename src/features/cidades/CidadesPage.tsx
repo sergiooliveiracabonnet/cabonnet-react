@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { MapPin, Wrench, Clock, CheckCircle, Calendar, CalendarClock, List, Sparkles, AlertTriangle, Users, TrendingUp, X } from 'lucide-react'
+import { MapPin, Wrench, Clock, CheckCircle, Calendar, CalendarCheck, List, Sparkle, Warning, Users, TrendUp, X } from '@phosphor-icons/react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import OSDrawer from '../ordens/OSDrawer'
@@ -97,7 +97,7 @@ export default function CidadesPage() {
     { id: 'pend',   title: 'Pendentes',                       icon: Clock,       color: 'yellow',  rows: pendRows,         defaultOpen: true, semEquipe: pendSemEquipe, breakdown: tipoBreakdown(pendRows) },
     { id: 'concl',  title: `Executadas hoje (${hoje.slice(0, 5)})`, icon: CheckCircle, color: 'green', rows: conclRows, defaultOpen: true, breakdown: tipoBreakdown(conclRows) },
     {
-      id: 'amanha', title: `Agendado Amanhã · ${amanha.slice(0, 5)}`, icon: CalendarClock, color: 'orange', rows: futuroAmanhaRows, defaultOpen: true,
+      id: 'amanha', title: `Agendado Amanhã · ${amanha.slice(0, 5)}`, icon: CalendarCheck, color: 'orange', rows: futuroAmanhaRows, defaultOpen: true,
       subtitle: `OS agendadas para ${amanha} (pendentes e em atendimento)`,
       breakdown: tipoBreakdown(futuroAmanhaRows),
     },
@@ -129,8 +129,8 @@ export default function CidadesPage() {
       icon: MapPin, color: executive.prioritaria ? 'text-red' : 'text-green',
       onClick: () => executive.prioritaria && setCidadeFilter(executive.prioritaria.cidade),
     },
-    { label: 'Acumulando fila', value: executive.acumulando, sub: 'demanda acima da execução', icon: TrendingUp, color: executive.acumulando ? 'text-orange' : 'text-green', onClick: () => document.getElementById('city-health')?.scrollIntoView({ behavior: 'smooth' }) },
-    { label: 'OS críticas', value: executive.criticas, sub: 'mais de 2× o SLA', icon: AlertTriangle, color: executive.criticas ? 'text-red' : 'text-green', onClick: () => { setOpenPanels(prev => ({ ...prev, fila: true })); setTimeout(() => document.getElementById('panel-fila')?.scrollIntoView({ behavior: 'smooth' }), 50) } },
+    { label: 'Acumulando fila', value: executive.acumulando, sub: 'demanda acima da execução', icon: TrendUp, color: executive.acumulando ? 'text-orange' : 'text-green', onClick: () => document.getElementById('city-health')?.scrollIntoView({ behavior: 'smooth' }) },
+    { label: 'OS críticas', value: executive.criticas, sub: 'mais de 2× o SLA', icon: Warning, color: executive.criticas ? 'text-red' : 'text-green', onClick: () => { setOpenPanels(prev => ({ ...prev, fila: true })); setTimeout(() => document.getElementById('panel-fila')?.scrollIntoView({ behavior: 'smooth' }), 50) } },
     { label: 'Sem equipe', value: executive.semEquipe, sub: 'exigem designação', icon: Users, color: executive.semEquipe ? 'text-orange' : 'text-green', onClick: () => { setOpenPanels(prev => ({ ...prev, pend: true })); setTimeout(() => document.getElementById('panel-pend')?.scrollIntoView({ behavior: 'smooth' }), 50) } },
   ]
 
@@ -206,7 +206,7 @@ export default function CidadesPage() {
         {!aiEnabled ? (
           <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles size={12} className="text-primary/40" />
+              <Sparkle size={12} className="text-primary/40" />
               <span className="text-caption font-bold text-muted uppercase tracking-wide">Clusters de Pendências · IA</span>
             </div>
             <button
@@ -215,13 +215,13 @@ export default function CidadesPage() {
                          px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                          transition-all duration-fast"
             >
-              <Sparkles size={11} /> Analisar com IA
+              <Sparkle size={11} /> Analisar com IA
             </button>
           </div>
         ) : aiClusters && aiClusters.clusters.length > 0 && (
           <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <Sparkles size={13} className="text-primary" />
+              <Sparkle size={13} className="text-primary" />
               <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
                 Clusters de pendencias detectados
               </span>

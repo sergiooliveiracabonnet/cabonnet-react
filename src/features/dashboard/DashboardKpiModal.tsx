@@ -1,9 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  ChevronDown, ChevronRight, ChevronUp, ChevronsUpDown,
-  Users, RotateCcw, Copy, Check, ClipboardList, MapPin,
-} from 'lucide-react'
+import { CaretDown, CaretRight, CaretUp, CaretUpDown, Users, ArrowCounterClockwise, Copy, Check, ClipboardText, MapPin } from '@phosphor-icons/react'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant, buildOSWhatsApp, CATEGORIA_LABEL, CATEGORIA_COLOR } from '../../lib/osFormat'
 import { useOSDetails, parseOSDetails, osDetailsQuery } from '../../hooks/useOSDetails'
@@ -47,8 +44,8 @@ function SortHeader({ label, active, dir, onClick, className = '' }: {
     >
       {label}
       {active
-        ? (dir === 'asc' ? <ChevronUp size={11} /> : <ChevronDown size={11} />)
-        : <ChevronsUpDown size={11} className="opacity-40" />}
+        ? (dir === 'asc' ? <CaretUp size={11} /> : <CaretDown size={11} />)
+        : <CaretUpDown size={11} className="opacity-40" />}
     </button>
   )
 }
@@ -74,7 +71,7 @@ function OcorrenciasExpand({ numos }: { numos: string }) {
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             {e.isReagend && (
               <span className="flex items-center gap-1 text-caption font-bold uppercase tracking-wide text-orange/80">
-                <RotateCcw size={9} /> Reagendamento
+                <ArrowCounterClockwise size={9} /> Reagendamento
               </span>
             )}
             {e.autor && <span className="text-caption font-semibold text-muted">{e.autor}</span>}
@@ -187,7 +184,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                     <button onClick={() => setExpanded(v => v === os.numos ? null : os.numos)}
                             title="Ver histórico de reagendamentos"
                             className={`${COL_W.chevron} flex-shrink-0 text-muted/50 hover:text-primary transition-colors`}>
-                      {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                      {isOpen ? <CaretDown size={13} /> : <CaretRight size={13} />}
                     </button>
                     <button onClick={() => onOS(os)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
                       <span className={`font-mono text-primary ${COL_W.numos} flex-shrink-0`}>{os.numos}</span>
@@ -217,7 +214,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                     </button>
                     <button onClick={() => copyCompleto(os)} title="Copiar OS + histórico"
                             className={`${COL_W.action} flex-shrink-0 text-muted/50 hover:text-primary transition-colors`}>
-                      {copied === `${os.numos}:full` ? <Check size={13} className="text-green" /> : <ClipboardList size={13} />}
+                      {copied === `${os.numos}:full` ? <Check size={13} className="text-green" /> : <ClipboardText size={13} />}
                     </button>
                   </div>
                   {isOpen && <OcorrenciasExpand numos={os.numos} />}

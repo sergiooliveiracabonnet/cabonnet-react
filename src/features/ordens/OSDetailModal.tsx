@@ -3,7 +3,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe } from '../../lib/osFormat'
 import type { OSRow } from '../../lib/types'
-import { CheckSquare, Square, XCircle } from 'lucide-react'
+import { CheckSquare, Square, XCircle } from '@phosphor-icons/react'
 import { useOSDetails } from '../../hooks/useOSDetails'
 import { osFotoUrl } from '../../lib/api'
 

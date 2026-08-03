@@ -1,4 +1,4 @@
-import { UserX } from 'lucide-react'
+import { UserMinus } from '@phosphor-icons/react'
 import type { OSRow } from '../../lib/types'
 import { DashboardPanelHeader } from './DashboardKpiPrimitives'
 
@@ -29,7 +29,7 @@ export function ChurnPanel({ janelaDias, clientes, totalReincidentes, totalBase,
   if (!clientes.length) {
     return (
       <div className="h-full rounded-lg border border-border border-l-2 border-l-green bg-card p-5">
-        <DashboardPanelHeader icon={UserX} color="#4ade80">Risco de Churn — Reincidência</DashboardPanelHeader>
+        <DashboardPanelHeader icon={UserMinus} color="#4ade80">Risco de Churn — Reincidência</DashboardPanelHeader>
         <p className="mt-3 text-body font-semibold text-green">
           Nenhum cliente com manutenção repetida nos últimos {janelaDias} dias
         </p>
@@ -40,7 +40,7 @@ export function ChurnPanel({ janelaDias, clientes, totalReincidentes, totalBase,
   return (
     <div className="h-full rounded-lg border border-border border-l-2 border-l-orange bg-card p-5">
       <DashboardPanelHeader
-        icon={UserX}
+        icon={UserMinus}
         color="#fb923c"
         actionLabel="Abrir OS"
         meta={<span className="hidden sm:inline tabular-nums">{pctReincidencia}% da base</span>}

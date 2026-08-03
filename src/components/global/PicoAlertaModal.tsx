@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Sparkles, X, Bookmark, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
+import { Sparkle, X, Bookmark, CaretDown, CaretUp, Warning } from '@phosphor-icons/react'
 import { usePicoAlertas, usePicoAlertasActions, type PicoAlerta } from '../../hooks/usePicoAlertas'
 import { useJustificativasActions } from '../../hooks/useJustificativas'
 import { ai } from '../../lib/api'
@@ -81,7 +81,7 @@ function AlertaPainel({
 
       {/* Info do pico */}
       <div className="flex items-start gap-3 p-3 rounded-xl border border-red-500/20 bg-red-500/5">
-        <AlertTriangle size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
+        <Warning size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
         <div>
           <p className="text-body font-bold text-text">
             {fmt(alerta.count_os)} OS abertas em {alerta.data}
@@ -116,7 +116,7 @@ function AlertaPainel({
           className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-label
                      transition-all disabled:opacity-50
                      border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20">
-          <Sparkles size={12} className={iaLoading ? 'animate-pulse' : ''} />
+          <Sparkle size={12} className={iaLoading ? 'animate-pulse' : ''} />
           {iaLoading ? 'Gerando…' : iaResult ? 'Regerar' : 'Gerar Justificativa (IA)'}
         </button>
         {iaResult && (
@@ -143,10 +143,10 @@ function AlertaPainel({
             onClick={() => setExpanded(v => !v)}
             className="w-full flex items-center justify-between px-4 py-2.5 text-caption text-violet-300">
             <span className="flex items-center gap-1.5">
-              <Sparkles size={11} />
+              <Sparkle size={11} />
               Resultado da análise
             </span>
-            {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {expanded ? <CaretUp size={12} /> : <CaretDown size={12} />}
           </button>
           {expanded && (
             <div className="px-4 pb-4 space-y-2.5 text-label">

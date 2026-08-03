@@ -1,4 +1,4 @@
-import { Maximize2 } from 'lucide-react'
+import { ArrowsOut } from '@phosphor-icons/react'
 import type { ReactNode } from 'react'
 
 interface ChartCardProps {
@@ -37,7 +37,7 @@ export function ChartCard({ title, dot, children, height = 'h-48', onExpand, cla
             aria-label="Expandir gráfico"
             className="text-muted hover:text-text transition-colors duration-150 p-1 rounded-md hover:bg-surface"
           >
-            <Maximize2 size={11} />
+            <ArrowsOut size={11} />
           </button>
         )}
       </div>

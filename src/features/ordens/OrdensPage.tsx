@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BarChart2, ChevronUp, Download, Send, CheckCircle, FileText, Router, Wrench, HardHat, Copy, Users, SlidersHorizontal, RefreshCw, AlertTriangle } from 'lucide-react'
+import { ChartBar, CaretUp, DownloadSimple, PaperPlaneTilt, CheckCircle, FileText, WifiHigh, Wrench, HardHat, Copy, Users, SlidersHorizontal, ArrowsClockwise, Warning } from '@phosphor-icons/react'
 import type { OSRow } from '../../lib/types'
 type ColRender = (value: unknown, row: OSRow) => React.ReactNode
 import { useOrdens } from '../../hooks/useOrdens'
@@ -261,13 +261,13 @@ export default function OrdensPage() {
           <>
             <details className="relative group">
               <summary className="list-none cursor-pointer min-h-9 inline-flex items-center gap-2 px-3 rounded-md border border-primary/30 text-primary text-label font-semibold hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
-                <Download size={13} /> Exportar <span className="text-muted">({os.filtered.length})</span>
+                <DownloadSimple size={13} /> Exportar <span className="text-muted">({os.filtered.length})</span>
               </summary>
               <div className="absolute right-0 top-full mt-2 z-dropdown w-48 rounded-xl border border-white/[0.10] bg-card-high shadow-xl p-1.5">
                 <button onClick={handleCopyImage} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text">
                   {copied ? <CheckCircle size={14} className="text-green" /> : <Copy size={14} />} {copied ? 'Imagem copiada' : 'Copiar imagem'}
                 </button>
-                <button onClick={handleExport} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text"><Download size={14} /> Baixar CSV</button>
+                <button onClick={handleExport} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text"><DownloadSimple size={14} /> Baixar CSV</button>
                 <button onClick={handleExportPDF} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text"><FileText size={14} /> Baixar PDF</button>
               </div>
             </details>
@@ -276,7 +276,7 @@ export default function OrdensPage() {
               className="gap-1.5 min-h-9 border-primary/30 text-primary hover:bg-primary/10"
               onClick={() => setTgModal(true)}
             >
-              <Send size={11} /> Telegram
+              <PaperPlaneTilt size={11} /> Telegram
             </Button>
           </>
         }
@@ -284,7 +284,7 @@ export default function OrdensPage() {
 
       {actionError && (
         <div role="alert" className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red/25 bg-red/[0.07] text-label text-red">
-          <AlertTriangle size={15} /> {actionError}
+          <Warning size={15} /> {actionError}
         </div>
       )}
 
@@ -300,8 +300,8 @@ export default function OrdensPage() {
           className="flex items-center gap-1.5 min-h-9 text-caption font-semibold text-secondary hover:text-text
                      border border-white/[0.08] rounded-xl px-3 transition-all duration-fast"
         >
-          <BarChart2 size={12} /> KPIs
-          <ChevronUp size={11} className={`transition-transform ${kpiVisible ? '' : 'rotate-180'}`} />
+          <ChartBar size={12} /> KPIs
+          <CaretUp size={11} className={`transition-transform ${kpiVisible ? '' : 'rotate-180'}`} />
         </button>
 
         {/* GroupBy toggle */}
@@ -373,7 +373,7 @@ export default function OrdensPage() {
       {/* ── Resumo por Tipo ── */}
       <div className="flex items-center justify-center gap-2 flex-wrap">
         <TipoPill
-          label="Instalação" icone={Router} cor="cyan" total={os.kpis.instalacao}
+          label="Instalação" icone={WifiHigh} cor="cyan" total={os.kpis.instalacao}
           ativo={os.tipoOs === 'INSTALACAO'}
           onClick={() => { os.setTipoOs(os.tipoOs === 'INSTALACAO' ? '' : 'INSTALACAO'); scrollToTable() }}
         />
@@ -402,7 +402,7 @@ export default function OrdensPage() {
         <FilterSelect value={os.cidade}     onChange={os.setCidade}     options={cidadeOpts}        placeholder="Cidade"      className="w-36" />
         <FilterSelect value={os.equipe}     onChange={os.setEquipe}     options={equipeOpts}        placeholder="Equipe"      className="w-36" />
         <button onClick={() => setMoreFilters(v => !v)} className={`min-h-9 px-3 inline-flex items-center gap-2 rounded-lg border text-caption font-semibold ${moreFilters ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/[0.08] text-secondary hover:text-text'}`}>
-          <SlidersHorizontal size={13} /> Mais filtros <ChevronUp size={11} className={`transition-transform ${moreFilters ? '' : 'rotate-180'}`} />
+          <SlidersHorizontal size={13} /> Mais filtros <CaretUp size={11} className={`transition-transform ${moreFilters ? '' : 'rotate-180'}`} />
         </button>
         {os.filtersActive && <Button variant="ghost" size="sm" className="min-h-9" onClick={clearAllFilters}>Limpar tudo</Button>}
         </div>
@@ -446,10 +446,10 @@ export default function OrdensPage() {
           <div className="p-4"><TableSkeleton rows={8} cols={8} /></div>
         ) : os.error ? (
           <div role="alert" className="py-14 px-6 text-center">
-            <AlertTriangle size={28} className="mx-auto text-red mb-3" />
+            <Warning size={28} className="mx-auto text-red mb-3" />
             <p className="text-title font-semibold text-text">Não foi possível carregar as ordens</p>
             <p className="text-label text-muted mt-1">Verifique a conexão com o servidor e tente novamente.</p>
-            <Button variant="outline" size="sm" className="mt-4 min-h-9" onClick={() => window.location.reload()}><RefreshCw size={12} /> Tentar novamente</Button>
+            <Button variant="outline" size="sm" className="mt-4 min-h-9" onClick={() => window.location.reload()}><ArrowsClockwise size={12} /> Tentar novamente</Button>
           </div>
         ) : os.equipe ? (
           /* ── Vista agrupada por período (quando equipe está selecionada) ── */

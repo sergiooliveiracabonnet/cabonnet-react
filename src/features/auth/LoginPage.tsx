@@ -1,5 +1,5 @@
 import { useState, useRef, type FormEvent } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeSlash } from '@phosphor-icons/react'
 import { api } from '../../lib/api'
 import { useAuthStore } from '../../store/authStore'
 import { useAuditStore } from '../../store/auditStore'
@@ -399,7 +399,7 @@ export function LoginPage() {
                   style={{ color: 'rgba(148,163,184,0.45)' }}
                   tabIndex={-1}
                 >
-                  {showPwd ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {showPwd ? <EyeSlash size={14} /> : <Eye size={14} />}
                 </button>
               </div>
             </div>

@@ -1,6 +1,5 @@
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react'
-import { Minus, TrendingUp, TrendingDown, Calendar } from 'lucide-react'
-
+import { Minus, TrendUp, TrendDown, Calendar } from '@phosphor-icons/react'
 function Sparkline({ data, color }: { data: number[]; color: string }) {
   if (data.length < 2) return null
   const w = 64, h = 20, pad = 2
@@ -47,7 +46,7 @@ export function TrendPill({ trend }: { trend?: StatTrend | null }) {
   if (delta == null) return null
   const positive = (delta > 0) === (higherIsBetter !== false)
   const color    = positive ? 'rgb(var(--c-green))' : 'rgb(var(--c-red))'
-  const Icon     = delta === 0 ? Minus : delta > 0 ? TrendingUp : TrendingDown
+  const Icon     = delta === 0 ? Minus : delta > 0 ? TrendUp : TrendDown
   return (
     <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-caption font-bold flex-shrink-0"
          style={{ background: `color-mix(in srgb, ${color} 8%, transparent)`,

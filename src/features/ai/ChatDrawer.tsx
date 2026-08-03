@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { AlertCircle, Bot, Loader2, Send, User, Wrench } from 'lucide-react'
+import { WarningCircle, Robot, CircleNotch, PaperPlaneTilt, User, Wrench } from '@phosphor-icons/react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Drawer } from '../../components/ui/Drawer'
@@ -146,7 +146,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                        flex items-center justify-center transition-all flex-shrink-0
                        disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+            {loading ? <CircleNotch size={14} className="animate-spin" /> : <PaperPlaneTilt size={14} />}
           </button>
         </div>
       }
@@ -155,7 +155,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center gap-4 py-10 text-center">
             <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <Bot size={22} className="text-primary" />
+              <Robot size={22} className="text-primary" />
             </div>
             <div>
               <p className="text-sm font-semibold text-text">Assistente operacional</p>
@@ -184,7 +184,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                             ${msg.role === 'user'
                               ? 'bg-primary/15 text-primary border border-primary/20'
                               : 'bg-surface border border-white/[0.08] text-secondary'}`}>
-              {msg.role === 'user' ? <User size={12} /> : <Bot size={12} />}
+              {msg.role === 'user' ? <User size={12} /> : <Robot size={12} />}
             </div>
 
             <div className={`flex flex-col gap-1 min-w-0 max-w-[87%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
@@ -220,10 +220,10 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
           <div className="flex gap-2.5">
             <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0
                             bg-surface border border-white/[0.08] text-secondary">
-              <Bot size={12} />
+              <Robot size={12} />
             </div>
             <div className="flex items-center gap-2 bg-card border border-white/[0.08] rounded-2xl rounded-tl-sm px-3.5 py-2.5">
-              <Loader2 size={12} className="text-primary animate-spin flex-shrink-0" />
+              <CircleNotch size={12} className="text-primary animate-spin flex-shrink-0" />
               <span className="text-label text-muted">Consultando dados…</span>
             </div>
           </div>
@@ -232,7 +232,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         {error && (
           <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl
                           bg-red/[0.07] border border-red/20 text-red text-label">
-            <AlertCircle size={13} className="flex-shrink-0" />
+            <WarningCircle size={13} className="flex-shrink-0" />
             <span>{error}</span>
           </div>
         )}

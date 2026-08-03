@@ -1,8 +1,5 @@
 import { useMemo, useState, type ComponentType } from 'react'
-import {
-  TrendingUp, TrendingDown, Minus, BarChart3,
-  ChevronDown, ChevronUp, Package, Wrench, Radio, Settings, Sparkles,
-} from 'lucide-react'
+import { TrendUp, TrendDown, Minus, ChartBar, CaretDown, CaretUp, Package, Wrench, Broadcast, Gear, Sparkle } from '@phosphor-icons/react'
 import { useERPRows } from '../useERPRows'
 import { useUIStore } from '../../../store/uiStore'
 import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
@@ -74,8 +71,8 @@ function getDayLabelsFromRange(from: Date | null | undefined, to: Date | null | 
 function tipoIcon(r: { _tipo?: string }): { color: string; Icon: IconComp; label: string } {
   if (r._tipo === 'INSTALACAO') return { color: '#3b82f6', Icon: Package,  label: 'Instalação'  }
   if (r._tipo === 'MANUTENCAO') return { color: '#f97316', Icon: Wrench,   label: 'Manutenção'  }
-  if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Radio,    label: 'Rede'        }
-  return                               { color: '#64748b', Icon: Settings, label: 'Serviço'     }
+  if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Broadcast,    label: 'Rede'        }
+  return                               { color: '#64748b', Icon: Gear, label: 'Serviço'     }
 }
 
 // ─── Build ────────────────────────────────────────────────────────────────────
@@ -125,7 +122,7 @@ function buildProdutividade(allRows: OSRow[], days: DayInfo[]): { teams: TeamEnt
 
 function DeltaBadge({ delta }: { delta: number }) {
   const color  = delta > 0 ? '#4ade80' : delta < 0 ? '#f87171' : '#6b7280'
-  const Icon   = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus
+  const Icon   = delta > 0 ? TrendUp : delta < 0 ? TrendDown : Minus
   const prefix = delta > 0 ? '+' : ''
   return (
     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-caption font-bold border"
@@ -342,8 +339,8 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
 
         <td className="px-4 py-3 w-8">
           {isExpanded
-            ? <ChevronUp size={12} className="text-muted" />
-            : <ChevronDown size={12} className="text-muted" />}
+            ? <CaretUp size={12} className="text-muted" />
+            : <CaretDown size={12} className="text-muted" />}
         </td>
       </tr>
 
@@ -394,7 +391,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                     </span>
                     {/* Seta indicadora */}
                     {clickable && (
-                      <ChevronDown
+                      <CaretDown
                         size={11}
                         className="transition-transform duration-200"
                         style={{
@@ -530,7 +527,7 @@ export default function PlannerExecutadoView() {
 
       {/* Tabela */}
       <section className="space-y-2">
-        <SectionLabel icon={BarChart3} color="#3b82f6">Ranking — {teams.length} equipes · {days.length} dias</SectionLabel>
+        <SectionLabel icon={ChartBar} color="#3b82f6">Ranking — {teams.length} equipes · {days.length} dias</SectionLabel>
 
         {teams.length === 0 ? (
           <div className="rounded-2xl border border-white/[0.08] bg-card px-4 py-12 text-center">
@@ -599,7 +596,7 @@ export default function PlannerExecutadoView() {
       {!aiEnabled ? (
         <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles size={12} className="text-primary/40" />
+            <Sparkle size={12} className="text-primary/40" />
             <span className="text-caption font-bold text-muted uppercase tracking-wide">Análise de Quedas de Produtividade · IA</span>
           </div>
           <button
@@ -608,13 +605,13 @@ export default function PlannerExecutadoView() {
                        px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                        transition-all duration-fast"
           >
-            <Sparkles size={11} /> Analisar com IA
+            <Sparkle size={11} /> Analisar com IA
           </button>
         </div>
       ) : (aiLoading || aiProdutividade) && (
         <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkles size={12} className="text-primary" />
+            <Sparkle size={12} className="text-primary" />
             <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
               Análise de Quedas de Produtividade · IA
             </span>
@@ -632,7 +629,7 @@ export default function PlannerExecutadoView() {
                   {aiProdutividade.analises.map((a, i) => (
                     <div key={i} className="rounded-lg border border-white/[0.06] bg-surface/30 p-3 space-y-1">
                       <div className="flex items-center gap-2">
-                        <TrendingDown size={12} className="text-red flex-shrink-0" />
+                        <TrendDown size={12} className="text-red flex-shrink-0" />
                         <span className="text-label font-semibold text-text">{a.equipe}</span>
                       </div>
                       <p className="text-caption text-muted pl-5">

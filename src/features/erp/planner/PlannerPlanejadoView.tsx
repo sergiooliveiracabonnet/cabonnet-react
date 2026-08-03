@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CalendarDays, MapPin, ChevronLeft, ChevronRight, Target, Sparkles } from 'lucide-react'
+import { CalendarDots, MapPin, CaretLeft, CaretRight, Target, Sparkle } from '@phosphor-icons/react'
 import { useERPRows }  from '../useERPRows'
 import { useERPStore } from '../../../store/erpStore'
 import { useIsGestor } from '../../../hooks/useRole'
@@ -107,7 +107,7 @@ export default function PlannerPlanejadoView() {
           <button onClick={() => setWeekOffset(p => p - 1)}
                   className="w-8 h-8 rounded-lg border border-white/[0.08] flex items-center justify-center
                              text-muted hover:text-text hover:border-muted/40 transition-all">
-            <ChevronLeft size={14} />
+            <CaretLeft size={14} />
           </button>
           <span className="text-label font-semibold text-text px-1 min-w-[160px] text-center">
             {weekOffset === 0 ? `Semana atual · ${weekLabel}` : weekOffset > 0 ? `+${weekOffset}sem · ${weekLabel}` : `${weekOffset}sem · ${weekLabel}`}
@@ -115,7 +115,7 @@ export default function PlannerPlanejadoView() {
           <button onClick={() => setWeekOffset(p => p + 1)}
                   className="w-8 h-8 rounded-lg border border-white/[0.08] flex items-center justify-center
                              text-muted hover:text-text hover:border-muted/40 transition-all">
-            <ChevronRight size={14} />
+            <CaretRight size={14} />
           </button>
           {weekOffset !== 0 && (
             <button onClick={() => setWeekOffset(0)}
@@ -174,7 +174,7 @@ export default function PlannerPlanejadoView() {
       {/* Grade principal */}
       <section className="space-y-2">
         <div className="flex items-center justify-between">
-          <SectionLabel icon={CalendarDays} color="#3b82f6">
+          <SectionLabel icon={CalendarDots} color="#3b82f6">
             Grade — {teams.length} equipes com OS na semana
           </SectionLabel>
           <div className="flex items-center gap-3 text-caption text-muted">
@@ -307,7 +307,7 @@ export default function PlannerPlanejadoView() {
         <section className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Sparkles size={13} className="text-primary/70" />
+              <Sparkle size={13} className="text-primary/70" />
               <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
                 Sugestao de balanceamento
               </span>
@@ -319,7 +319,7 @@ export default function PlannerPlanejadoView() {
                            px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                            transition-all duration-fast"
               >
-                <Sparkles size={11} /> Analisar com IA
+                <Sparkle size={11} /> Analisar com IA
               </button>
             )}
           </div>

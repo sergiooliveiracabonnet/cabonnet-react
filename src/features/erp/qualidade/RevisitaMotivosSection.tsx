@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ClipboardCheck } from 'lucide-react'
+import { ClipboardText } from '@phosphor-icons/react'
 import { useRevisitaMotivos } from '../../../hooks/useRevisitaMotivos'
 
 // Causa raiz REAL de revisitas — não é IA nem estimativa com percentual fixo.
@@ -60,7 +60,7 @@ export function RevisitaMotivosSection() {
 
       {data && data.total === 0 && (
         <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-6 text-center">
-          <ClipboardCheck size={18} className="text-muted mx-auto mb-2" />
+          <ClipboardText size={18} className="text-muted mx-auto mb-2" />
           <p className="text-label text-muted">
             Nenhuma revisita foi classificada pelo time nos últimos {dias} dias.
           </p>

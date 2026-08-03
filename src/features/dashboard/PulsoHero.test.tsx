@@ -102,7 +102,10 @@ describe('PulsoHero', () => {
     expect(screen.getByText('Backlog da fila')).toBeInTheDocument()
     expect(screen.getByText('3,2d')).toBeInTheDocument()
     expect(screen.queryByText('Projeção do mês')).not.toBeInTheDocument()
-    expect(container.querySelectorAll('svg[aria-hidden="true"]:not([class*="lucide"]) path')).toHaveLength(0)
+    // Exclui os ícones para sobrar só SVG desenhado à mão (sparkline). O lucide
+    // marcava os seus com class="lucide"; o Phosphor não usa classe, mas todo
+    // ícone dele vem no grid 256 — é esse o marcador equivalente.
+    expect(container.querySelectorAll('svg[aria-hidden="true"]:not([viewBox="0 0 256 256"]) path')).toHaveLength(0)
   })
 
   it('mini-stats de qualidade continuam fora daqui (vivem no QualidadePeriodoCard)', () => {

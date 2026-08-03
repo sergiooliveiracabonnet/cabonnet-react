@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, type ComponentType, type CSSProperties } from 'react'
 import { NavLink } from 'react-router-dom'
-import { ChevronRight, LogOut } from 'lucide-react'
+import { CaretRight, SignOut } from '@phosphor-icons/react'
 import { useUIStore } from '../../store/uiStore'
 import { useAuthStore } from '../../store/authStore'
 import { useAuditStore } from '../../store/auditStore'
@@ -70,7 +70,7 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onN
               <span className="truncate flex-1 leading-none">{label}</span>
             )}
             {sidebarOpen && isActive && (
-              <ChevronRight size={10} className="flex-shrink-0 opacity-40" style={{ color: groupColor }} />
+              <CaretRight size={10} className="flex-shrink-0 opacity-40" style={{ color: groupColor }} />
             )}
           </>
         )}
@@ -253,7 +253,7 @@ export function Sidebar() {
                          opacity-0 group-hover:opacity-100 transition-all duration-150
                          text-muted hover:text-red hover:bg-red/10"
             >
-              <LogOut size={11} />
+              <SignOut size={11} />
             </button>
           </div>
         ) : (
@@ -268,7 +268,7 @@ export function Sidebar() {
               className="w-6 h-6 rounded-md flex items-center justify-center
                          text-muted hover:text-red hover:bg-red/10 transition-colors duration-150"
             >
-              <LogOut size={11} />
+              <SignOut size={11} />
             </button>
           </div>
         )}

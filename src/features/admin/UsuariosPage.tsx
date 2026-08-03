@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import { Shield, UserPlus, Key, Power, AlertTriangle } from 'lucide-react'
+import { Shield, UserPlus, Key, Power, Warning } from '@phosphor-icons/react'
 import { useUsuarios, useUsuariosActions } from '../../hooks/useUsuarios'
 import { usePermissoes, usePermissoesActions } from '../../hooks/usePermissoes'
 import { Badge } from '../../components/ui/Badge'
@@ -64,7 +64,7 @@ function NovoUsuarioModal({ open, onClose }: { open: boolean; onClose: () => voi
             {(Object.keys(ROLE_LABEL) as UserRole[]).map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
           </select>
         </div>
-        {error && <p className="text-label text-red flex items-center gap-1.5"><AlertTriangle size={12} /> {error}</p>}
+        {error && <p className="text-label text-red flex items-center gap-1.5"><Warning size={12} /> {error}</p>}
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" size="sm" onClick={() => { reset(); onClose() }}>Cancelar</Button>
           <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Salvando…' : 'Criar'}</Button>
@@ -102,7 +102,7 @@ function ResetSenhaModal({ user, onClose }: { user: UsuarioItem | null; onClose:
       <div className="space-y-3">
         <input type="password" autoFocus value={password} onChange={e => setPassword(e.target.value)}
                placeholder="Nova senha" className={inputCls} />
-        {error && <p className="text-label text-red flex items-center gap-1.5"><AlertTriangle size={12} /> {error}</p>}
+        {error && <p className="text-label text-red flex items-center gap-1.5"><Warning size={12} /> {error}</p>}
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
           <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Salvando…' : 'Redefinir'}</Button>
@@ -140,7 +140,7 @@ function PermissoesMatrix() {
 
   return (
     <div>
-      {error && <p className="text-label text-red flex items-center gap-1.5 mb-2"><AlertTriangle size={12} /> {error}</p>}
+      {error && <p className="text-label text-red flex items-center gap-1.5 mb-2"><Warning size={12} /> {error}</p>}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-label">
           <thead>
@@ -267,7 +267,7 @@ export default function UsuariosPage() {
                     <tr>
                       <td colSpan={4} className="px-3 pb-2.5">
                         <p className="text-caption text-red flex items-center gap-1.5">
-                          <AlertTriangle size={11} /> {rowError.msg}
+                          <Warning size={11} /> {rowError.msg}
                         </p>
                       </td>
                     </tr>

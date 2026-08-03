@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
-
+import { X } from '@phosphor-icons/react'
 interface DrawerProps {
   open:           boolean
   onClose?:       () => void

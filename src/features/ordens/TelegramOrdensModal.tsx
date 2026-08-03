@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Send, CheckCircle, XCircle } from 'lucide-react'
+import { PaperPlaneTilt, CheckCircle, XCircle } from '@phosphor-icons/react'
 import { Modal }   from '../../components/ui/Modal'
 import { Button }  from '../../components/ui/Button'
 import { captureOSPorEquipe, captureOSDetalhado, type CaptureOSRow } from '../../lib/captureOSTable'
@@ -174,7 +174,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
           >
             {sending === 'resumo'
               ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Gerando…</>
-              : <><Send size={11} /> Resumo</>}
+              : <><PaperPlaneTilt size={11} /> Resumo</>}
           </Button>
           <Button
             size="sm" className="gap-1.5"
@@ -183,7 +183,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
           >
             {sending === 'detalhado'
               ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Gerando…</>
-              : <><Send size={11} /> Detalhado</>}
+              : <><PaperPlaneTilt size={11} /> Detalhado</>}
           </Button>
         </div>
       </div>

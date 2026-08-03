@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight } from '@phosphor-icons/react'
 import type { IconComp } from './DashboardTypes'
 
 export function SectionLabel({ icon: Icon, color, children }: {

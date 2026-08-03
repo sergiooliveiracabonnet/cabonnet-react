@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react'
-import { Briefcase, MapPin, Clock, ChevronRight, Package, Wrench, Users, Camera, Check } from 'lucide-react'
+import { Briefcase, MapPin, Clock, CaretRight, Package, Wrench, Users, Camera, Check } from '@phosphor-icons/react'
 import { toBlob } from 'html-to-image'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useUIStore, PRESETS } from '../../store/uiStore'
@@ -473,7 +473,7 @@ export default function GerencialPage() {
                 onClick={() => openDrill({ title: `Instalação em Rota hoje — ${rotaInst.length} ordens`, rows: rotaInst, color: '#3b82f6' })}
                 title="Ver todas as OS na rua hoje">
                 {rotaInst.length}
-                <ChevronRight size={14} className="mt-0.5 opacity-60" />
+                <CaretRight size={14} className="mt-0.5 opacity-60" />
               </button>
             </div>
           </div>
@@ -525,7 +525,7 @@ export default function GerencialPage() {
                 onClick={() => openDrill({ title: `VT/Manutenção em Rota hoje — ${rotaVTManut.length} ordens`, rows: rotaVTManut, color: '#f97316' })}
                 title="Ver todas as OS na rua hoje">
                 {rotaVTManut.length}
-                <ChevronRight size={14} className="mt-0.5 opacity-60" />
+                <CaretRight size={14} className="mt-0.5 opacity-60" />
               </button>
             </div>
           </div>
@@ -578,7 +578,7 @@ export default function GerencialPage() {
                 onClick={() => openDrill({ title: `Serviço em Rota hoje — ${rotaServ.length} ordens`, rows: rotaServ, color: '#c4b5fd' })}
                 title="Ver todas as OS na rua hoje">
                 {rotaServ.length}
-                <ChevronRight size={14} className="mt-0.5 opacity-60" />
+                <CaretRight size={14} className="mt-0.5 opacity-60" />
               </button>
             </div>
           </div>

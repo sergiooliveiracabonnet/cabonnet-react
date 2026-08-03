@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { MousePointerClick } from 'lucide-react'
+import { CursorClick } from '@phosphor-icons/react'
 import type { OSRow } from '../../lib/types'
 import { useOSDerived }  from '../../contexts/OSDataContext'
 import { buildGraficos } from '../../lib/builders'
@@ -45,7 +45,7 @@ export default function GraficosPage() {
         <div>
           <h2 className="font-headline text-xl font-semibold text-text">Gráficos &amp; Análises</h2>
           <div className="flex items-center gap-1.5 mt-1 text-caption text-muted/60">
-            <MousePointerClick size={11} className="flex-shrink-0" />
+            <CursorClick size={11} className="flex-shrink-0" />
             <span>Clique nos gráficos para ver as OS detalhadas</span>
           </div>
         </div>

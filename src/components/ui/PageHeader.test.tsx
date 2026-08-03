@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { Award } from 'lucide-react'
+import { Trophy } from '@phosphor-icons/react'
 import { PageHeader } from './PageHeader'
 
 describe('PageHeader', () => {
@@ -14,7 +14,7 @@ describe('PageHeader', () => {
     expect(screen.getByRole('button', { name: 'Exportar' })).toBeInTheDocument()
   })
   it('renderiza o ícone antes do título quando fornecido', () => {
-    const { container } = render(<PageHeader title="Ranking de Técnicos" icon={Award} />)
+    const { container } = render(<PageHeader title="Ranking de Técnicos" icon={Trophy} />)
     expect(container.querySelector('svg')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Ranking de Técnicos' })).toBeInTheDocument()
   })

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Menu, Search, Send, MessageSquare } from 'lucide-react'
+import { ListBullets, MagnifyingGlass, PaperPlaneTilt, ChatText } from '@phosphor-icons/react'
 import { AnimatedThemeToggler } from '../ui/AnimatedThemeToggler'
 import { useUIStore } from '../../store/uiStore'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -77,7 +77,7 @@ export function Navbar() {
                    transition-all duration-fast flex-shrink-0"
         aria-label="Abrir ou fechar menu de navegação"
       >
-        <Menu size={17} />
+        <ListBullets size={17} />
       </button>
       <div className="hidden h-5 w-px flex-shrink-0 bg-border sm:block" />
       <div className="flex-1 min-w-0">
@@ -94,7 +94,7 @@ export function Navbar() {
                    bg-surface text-muted hover:border-muted/30 hover:text-secondary
                    transition-colors duration-150"
       >
-        <Search size={12} className="flex-shrink-0" />
+        <MagnifyingGlass size={12} className="flex-shrink-0" />
         <span className="text-caption flex-1 text-left hidden sm:block">Buscar OS, contrato ou CPF…</span>
         <kbd className="hidden md:flex items-center text-caption font-mono
                         bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted">⌃K</kbd>
@@ -114,7 +114,7 @@ export function Navbar() {
           className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all duration-fast
             ${tg.enabled ? 'text-green hover:bg-green/10' : 'text-muted hover:text-secondary hover:bg-surface'}`}
         >
-          <Send size={13} />
+          <PaperPlaneTilt size={13} />
           {naoLidos > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
                              bg-primary text-caption font-bold text-white flex items-center justify-center leading-none">
@@ -139,7 +139,7 @@ export function Navbar() {
         className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md sm:h-8 sm:w-8
                    text-primary bg-primary/10 hover:bg-primary/20 transition-all duration-fast"
       >
-        <MessageSquare size={14} />
+        <ChatText size={14} />
       </button>
 
       <div className="hidden xl:block"><AIStatusBadge /></div>

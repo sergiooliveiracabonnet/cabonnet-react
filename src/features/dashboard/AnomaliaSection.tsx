@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertCircle, ChevronDown, RefreshCw, Sparkles } from 'lucide-react'
+import { WarningCircle, CaretDown, ArrowsClockwise, Sparkle } from '@phosphor-icons/react'
 import { useAIAnomalias } from '../../hooks/useAIAnomalias'
 import type { AnomaliasData, Composicao } from '../../lib/types'
 import type { AnomaliaContextType } from './PulsoHero'
@@ -68,12 +68,12 @@ export function AnomaliaSection({ anomalias, contexto }: {
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-surface/15 transition-colors"
       >
-        <AlertCircle size={14} className="text-yellow flex-shrink-0" />
+        <WarningCircle size={14} className="text-yellow flex-shrink-0" />
         <span className="font-semibold text-body text-text flex-1">Detecções Automáticas</span>
         <span className="text-caption font-mono bg-yellow/10 text-yellow border border-yellow/20 rounded-full px-2.5 py-1">
           {total} anomalia{total !== 1 ? 's' : ''}
         </span>
-        <ChevronDown size={13} className={`text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <CaretDown size={13} className={`text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
@@ -139,7 +139,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
           <div className="border-t border-white/[0.08] pt-4">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
-                <Sparkles size={12} className="text-primary/70" />
+                <Sparkle size={12} className="text-primary/70" />
                 <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted">Análise de Causa Raiz</p>
               </div>
               {!rcaLoading && (
@@ -149,7 +149,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
                              px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                              transition-all duration-fast"
                 >
-                  {aiEnabled ? <RefreshCw size={11} /> : <Sparkles size={11} />}
+                  {aiEnabled ? <ArrowsClockwise size={11} /> : <Sparkle size={11} />}
                   {aiEnabled ? 'Reanalisar' : 'Analisar com IA'}
                 </button>
               )}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { RefreshCw, AlertTriangle, LayoutDashboard, Home, Wrench, Star } from 'lucide-react'
+import { ArrowsClockwise, Warning, SquaresFour, House, Wrench, Star } from '@phosphor-icons/react'
 import { useBacklog } from '../../../hooks/useBacklog'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 import { TabBar } from '../../../components/ui/TabBar'
@@ -31,8 +31,8 @@ function mesAnteriorRange(): [string, string] {
 type Preset = 'atual' | 'anterior' | 'custom'
 
 const TABS = [
-  { id: 'painel',     label: 'Painel',             icon: LayoutDashboard },
-  { id: 'instalacao', label: 'Revisita Instalação', icon: Home            },
+  { id: 'painel',     label: 'Painel',             icon: SquaresFour },
+  { id: 'instalacao', label: 'Revisita Instalação', icon: House            },
   { id: 'servico',    label: 'Revisita Serviço',    icon: Star            },
   { id: 'manutencao', label: 'Revisita Manutenção', icon: Wrench          },
 ]
@@ -98,7 +98,7 @@ export default function BiGestaoTecnicaPage() {
         <button onClick={() => refetch()} disabled={isFetching}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08]
                            bg-surface/40 text-label text-muted hover:text-text transition-colors disabled:opacity-50">
-          <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
+          <ArrowsClockwise size={12} className={isFetching ? 'animate-spin' : ''} />
           Atualizar
         </button>
       </div>
@@ -114,7 +114,7 @@ export default function BiGestaoTecnicaPage() {
 
       {isError && !data && (
         <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-8 text-center">
-          <AlertTriangle size={20} className="text-red-400 mx-auto mb-2" />
+          <Warning size={20} className="text-red-400 mx-auto mb-2" />
           <p className="text-body text-red-400">Erro ao carregar dados.</p>
           <button onClick={() => refetch()} className="mt-3 text-caption text-muted underline">Tentar novamente</button>
         </div>

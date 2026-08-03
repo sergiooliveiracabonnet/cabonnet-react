@@ -1,10 +1,5 @@
 import { useMemo, type ComponentType, type CSSProperties } from 'react'
-import {
-  LayoutDashboard, ClipboardList,
-  BarChart2, PieChart, MapPin,
-  Zap, Monitor, FileText, Map,
-  Bell, Award, CalendarDays, Shield, Siren, Medal, Users, Wrench,
-} from 'lucide-react'
+import { SquaresFour, ClipboardText, ChartBar, ChartPie, MapPin, Lightning, Monitor, FileText, MapTrifold, Bell, Trophy, CalendarDots, Shield, Siren, Medal, Users, Wrench } from '@phosphor-icons/react'
 import { useAuthStore, type UserRole } from '../store/authStore'
 import { rotaParaModulo } from './modulos'
 
@@ -25,7 +20,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     key: 'agora', label: 'Agora', color: '#c4b5fd',
     links: [
-      { to: '/',             label: 'Dashboard',          icon: LayoutDashboard },
+      { to: '/',             label: 'Dashboard',          icon: SquaresFour },
       { to: '/erp/fila',     label: 'Fila de Prioridade', icon: Siren           },
       { to: '/erp/alertas',  label: 'Alertas',            icon: Bell            },
     ],
@@ -33,9 +28,9 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     key: 'operar', label: 'Operar', color: '#22d3ee',
     links: [
-      { to: '/ordens',      label: 'Ordens',  icon: ClipboardList },
-      { to: '/erp/planner', label: 'Planner', icon: CalendarDays  },
-      { to: '/mapa',        label: 'Mapa',    icon: Map            },
+      { to: '/ordens',      label: 'Ordens',  icon: ClipboardText },
+      { to: '/erp/planner', label: 'Planner', icon: CalendarDots  },
+      { to: '/mapa',        label: 'Mapa',    icon: MapTrifold            },
     ],
   },
   {
@@ -43,10 +38,10 @@ export const NAV_GROUPS: NavGroup[] = [
     links: [
       { to: '/cidades',        label: 'Cidades',          icon: MapPin    },
       { to: '/erp/ranking',    label: 'Ranking Técnicos', icon: Medal     },
-      { to: '/erp/qualidade',  label: 'Qualidade',        icon: Award     },
+      { to: '/erp/qualidade',  label: 'Qualidade',        icon: Trophy     },
       { to: '/erp/bi-gestao-tecnica', label: 'BI Técnico', icon: Wrench   },
-      { to: '/erp/relatorios', label: 'Relatórios',       icon: BarChart2 },
-      { to: '/graficos',       label: 'Gráficos',         icon: PieChart  },
+      { to: '/erp/relatorios', label: 'Relatórios',       icon: ChartBar },
+      { to: '/graficos',       label: 'Gráficos',         icon: ChartPie  },
       { to: '/fechamento',     label: 'Fechamento',       icon: FileText  },
     ],
   },
@@ -54,7 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
     key: 'infra', label: 'Infra & Campo', color: '#fb923c',
     links: [
       { to: '/fornecedor', label: 'Fornecedor', icon: Shield  },
-      { to: '/juniper',    label: 'Juniper',    icon: Zap     },
+      { to: '/juniper',    label: 'Juniper',    icon: Lightning     },
       { to: '/noc',        label: 'NOC',        icon: Monitor },
     ],
   },

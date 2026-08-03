@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { DashboardPanelHeader, SectionLabel } from './DashboardKpiPrimitives'
-import { AlertCircle } from 'lucide-react'
-
+import { WarningCircle } from '@phosphor-icons/react'
 describe('SectionLabel', () => {
   it('renderiza um heading h2 com o texto da seção', () => {
-    render(<SectionLabel icon={AlertCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>)
+    render(<SectionLabel icon={WarningCircle} color="#f87171">Alertas &amp; Risco</SectionLabel>)
     expect(screen.getByRole('heading', { level: 2, name: 'Alertas & Risco' })).toBeInTheDocument()
   })
 })
@@ -14,7 +13,7 @@ describe('DashboardPanelHeader', () => {
   it('combina título semântico, contexto e affordance de drill-down', () => {
     render(
       <DashboardPanelHeader
-        icon={AlertCircle}
+        icon={WarningCircle}
         color="#f87171"
         meta="comparação do período"
         actionLabel="Abrir OS"

@@ -1,8 +1,5 @@
 import { useMemo, useState } from 'react'
-import {
-  AlertTriangle, ShieldAlert, ShieldCheck, Info,
-  Activity, RefreshCw, Settings, BarChart3, Sparkles, Search, CheckCircle2,
-} from 'lucide-react'
+import { Warning, ShieldWarning, ShieldCheck, Info, Pulse, ArrowsClockwise, Gear, ChartBar, Sparkle, MagnifyingGlass, CheckCircle } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../../../components/ui/PageHeader'
 import { useERPRows }    from '../useERPRows'
@@ -165,7 +162,7 @@ export default function AlertasPage() {
                        px-3 py-1.5 rounded-xl border border-white/[0.08] hover:border-muted/40
                        hover:bg-surface/30 transition-all duration-150 flex-shrink-0"
           >
-            <Settings size={13} /> Configurar
+            <Gear size={13} /> Configurar
           </button>
         }
       />
@@ -173,8 +170,8 @@ export default function AlertasPage() {
       {/* ── Severity Bento ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {[
-          { sev: 'CRITICO', Icon: ShieldAlert,  desc: 'situações críticas' },
-          { sev: 'ALTO',    Icon: AlertTriangle, desc: 'pontos de atenção'  },
+          { sev: 'CRITICO', Icon: ShieldWarning,  desc: 'situações críticas' },
+          { sev: 'ALTO',    Icon: Warning, desc: 'pontos de atenção'  },
           { sev: 'MEDIO',   Icon: Info,          desc: 'avisos preventivos' },
         ].map(({ sev, Icon: SIcon, desc }, i) => {
           const s = SEV_CFG_MAP[sev]
@@ -239,7 +236,7 @@ export default function AlertasPage() {
       {!aiEnabled ? (
         <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles size={12} className="text-primary/40" />
+            <Sparkle size={12} className="text-primary/40" />
             <span className="text-caption font-bold text-muted uppercase tracking-wide">Análise de Alertas · IA</span>
           </div>
           <button
@@ -248,13 +245,13 @@ export default function AlertasPage() {
                        px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                        transition-all duration-fast"
           >
-            <Sparkles size={11} /> Analisar com IA
+            <Sparkle size={11} /> Analisar com IA
           </button>
         </div>
       ) : (aiLoading || aiAlertas) && (
         <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkles size={12} className="text-primary" />
+            <Sparkle size={12} className="text-primary" />
             <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
               Análise de Alertas · IA
             </span>
@@ -312,7 +309,7 @@ export default function AlertasPage() {
       {(grafOS.cidades.length > 0 || grafOS.loading) && (
         <section>
           <div className="flex items-center justify-between mb-2">
-            <SectionLabel icon={Activity} color="#3b82f6">
+            <SectionLabel icon={Pulse} color="#3b82f6">
               OS por Cidade · Vale do Paraíba
             </SectionLabel>
             <div className="flex items-center gap-3">
@@ -332,7 +329,7 @@ export default function AlertasPage() {
               <button onClick={grafOS.refresh} title="Atualizar" aria-label="Atualizar dados por cidade"
                 className="w-9 h-9 flex items-center justify-center text-muted hover:text-text
                            transition-colors rounded-md hover:bg-surface">
-                <RefreshCw size={11} className={grafOS.loading ? 'animate-spin' : ''} />
+                <ArrowsClockwise size={11} className={grafOS.loading ? 'animate-spin' : ''} />
               </button>
             </div>
           </div>
@@ -354,7 +351,7 @@ export default function AlertasPage() {
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
           <label className="relative flex-1 min-w-0">
             <span className="sr-only">Pesquisar alertas</span>
-            <Search size={14} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <MagnifyingGlass size={14} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
             <input value={search} onChange={event => setSearch(event.target.value)}
               placeholder="Pesquisar OS, cliente, equipe, cidade ou regra"
               className="w-full h-10 rounded-lg border border-white/[0.08] bg-surface pl-9 pr-3 text-label text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50" />
@@ -397,7 +394,7 @@ export default function AlertasPage() {
         </div>
       ) : visibleAlerts.length === 0 && visibleRuleAlerts.length === 0 ? (
         <div className="rounded-xl border border-white/[0.08] bg-card px-5 py-12 text-center">
-          <CheckCircle2 size={24} className="mx-auto mb-3 text-muted" />
+          <CheckCircle size={24} className="mx-auto mb-3 text-muted" />
           <p className="text-label font-semibold text-text">Nenhum alerta corresponde aos filtros</p>
           <button onClick={() => { setSearch(''); setSeverityFilter('TODOS'); setStatusFilter('TODOS') }}
             className="mt-3 min-h-10 px-3 text-label text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary/50 rounded-md">
@@ -412,7 +409,7 @@ export default function AlertasPage() {
             const s = SEV_CFG[sev as keyof typeof SEV_CFG]
             return (
               <section key={sev} className="space-y-2">
-                <SectionLabel icon={AlertTriangle} color={s.color}>
+                <SectionLabel icon={Warning} color={s.color}>
                   {s.label} · {group.reduce((n, a) => n + a.count, 0)} ocorrências
                 </SectionLabel>
                 {group.map((alert, i) => {
@@ -428,7 +425,7 @@ export default function AlertasPage() {
 
           {visibleRuleAlerts.length > 0 && (
             <section className="space-y-2">
-              <SectionLabel icon={BarChart3} color="#3b82f6">
+              <SectionLabel icon={ChartBar} color="#3b82f6">
                 Regras de Negócio · {visibleRuleAlerts.length} disparo{visibleRuleAlerts.length > 1 ? 's' : ''}
               </SectionLabel>
               {visibleRuleAlerts.map((rule, i) => {

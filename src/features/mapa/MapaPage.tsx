@@ -1,9 +1,6 @@
 import { useState, useMemo } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Marker, Circle as MapCircle, Tooltip, ZoomControl, ScaleControl } from 'react-leaflet'
-import {
-  Map as MapIcon, Flame, Circle, X, LayoutGrid, Layers, Search, Loader2, AlertTriangle, Wrench,
-  SlidersHorizontal, RotateCcw,
-} from 'lucide-react'
+import { MapTrifold as MapIcon, Fire, Circle, X, GridFour, Stack, MagnifyingGlass, CircleNotch, Warning, Wrench, SlidersHorizontal, ArrowCounterClockwise } from '@phosphor-icons/react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { isConcluida } from '../../lib/transform'
 import { aggregateByCidade, aggregateByBairro, buildHeatPoints, buildEquipeOptions, type BairroAgg } from './geo'
@@ -215,7 +212,7 @@ export default function MapaPage() {
         {/* Busca de endereço */}
         <div className="order-3 flex w-full min-w-0 items-center gap-2 lg:order-none lg:w-auto lg:flex-1">
           <div className="relative flex min-w-0 flex-1 lg:max-w-md">
-            <Search size={11} className="absolute left-2.5 text-muted pointer-events-none" />
+            <MagnifyingGlass size={11} className="absolute left-2.5 text-muted pointer-events-none" />
             <input
               aria-label="Buscar endereço no mapa"
               type="text"
@@ -235,7 +232,7 @@ export default function MapaPage() {
                        bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25
                        disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-fast"
           >
-            {searching ? <Loader2 size={11} className="animate-spin" /> : <Search size={11} />}
+            {searching ? <CircleNotch size={11} className="animate-spin" /> : <MagnifyingGlass size={11} />}
             Buscar
           </button>
           {(searchResult || searchError) && (
@@ -252,7 +249,7 @@ export default function MapaPage() {
         </div>
         {searchError && (
           <span role="alert" className="order-4 w-full text-caption text-yellow flex items-center gap-1">
-            <AlertTriangle size={10} /> {searchError}
+            <Warning size={10} /> {searchError}
           </span>
         )}
 
@@ -286,7 +283,7 @@ export default function MapaPage() {
             <FilterSelect ariaLabel="Filtrar por aging" value={filterAging} onChange={setFilterAging} options={agingOpts} />
             <button type="button" onClick={clearFilters} disabled={activeFilterCount === 0}
                     className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/[0.08] px-3 text-caption font-semibold text-secondary hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 sm:col-span-1">
-              <RotateCcw size={13} /> Limpar filtros
+              <ArrowCounterClockwise size={13} /> Limpar filtros
             </button>
           </div>
         )}
@@ -299,8 +296,8 @@ export default function MapaPage() {
         <div className="absolute left-2 top-2 z-[500] flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-2 sm:left-4 sm:top-4">
           <div className="flex rounded-xl border border-white/[0.10] bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Agrupamento geográfico">
             {([
-              { val: 'cidade', icon: LayoutGrid, label: 'Cidade' },
-              { val: 'bairro', icon: Layers, label: 'Bairro' },
+              { val: 'cidade', icon: GridFour, label: 'Cidade' },
+              { val: 'bairro', icon: Stack, label: 'Bairro' },
             ] as const).map(({ val, icon: Icon, label }) => (
               <button key={val} type="button" onClick={() => handleGranularity(val)} aria-pressed={granularity === val}
                       className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-caption font-semibold transition-colors
@@ -313,7 +310,7 @@ export default function MapaPage() {
           <div className="flex rounded-xl border border-white/[0.10] bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Camada de visualização">
             {([
               { val: 'bolhas', icon: Circle, label: 'Bolhas' },
-              { val: 'calor', icon: Flame, label: 'Concentração' },
+              { val: 'calor', icon: Fire, label: 'Concentração' },
             ] as const).map(({ val, icon: Icon, label }) => (
               <button key={val} type="button" onClick={() => setView(val)} aria-pressed={view === val}
                       disabled={val === 'calor' && granularity === 'bairro'}

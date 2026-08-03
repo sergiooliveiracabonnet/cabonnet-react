@@ -1,7 +1,5 @@
 import { useMemo } from 'react'
-import {
-  CheckCircle2, Package, Wrench, Radio, TrendingUp, TrendingDown, Gauge, AlertCircle,
-} from 'lucide-react'
+import { CheckCircle, Package, Wrench, Broadcast, TrendUp, TrendDown, Gauge, WarningCircle } from '@phosphor-icons/react'
 import type { OSRow, PulsoRitmoIntradiario } from '../../lib/types'
 import { SectionLabel } from './DashboardKpiPrimitives'
 import type { CatCfgItem, CampoProjecaoReal } from './DashboardTypes'
@@ -11,12 +9,12 @@ const CAT_CFG: CatCfgItem[] = [
   { cat: 'INSTALACAO',    label: 'Instalação',      icon: Package, color: '#3b82f6' },
   { cat: 'VT_MANUTENCAO', label: 'VT / Manutenção', icon: Wrench,  color: '#fb923c' },
   { cat: 'SERVICO',       label: 'Serviço',          icon: null,    color: '#c4b5fd' },
-  { cat: 'REDE',          label: 'Rede',             icon: Radio,   color: '#71717a' },
+  { cat: 'REDE',          label: 'Rede',             icon: Broadcast,   color: '#71717a' },
 ]
 
 function RitmoIndicator({ p }: { p: CampoProjecaoReal }) {
   const cor  = p.status === 'acima' ? '#4ade80' : p.status === 'abaixo' ? '#facc15' : '#94a3b8'
-  const Icon = p.status === 'acima' ? TrendingUp : p.status === 'abaixo' ? TrendingDown : Gauge
+  const Icon = p.status === 'acima' ? TrendUp : p.status === 'abaixo' ? TrendDown : Gauge
   return (
     <div className="flex items-center gap-1.5 text-caption">
       <Icon size={11} style={{ color: cor }} />
@@ -40,7 +38,7 @@ function RitmoIntradiarioBar({ r }: { r: PulsoRitmoIntradiario }) {
         {r.alerta && (
           <span className="text-caption font-semibold text-yellow flex items-center gap-1"
                 title={`Com ${Math.round(r.fracTarde * 100)}% do turno decorrido, o esperado no ritmo da manhã seria ~${r.esperadoTarde}`}>
-            <AlertCircle size={9} /> Tarde abaixo do ritmo — {r.tarde} de ~{r.esperadoTarde} esperadas
+            <WarningCircle size={9} /> Tarde abaixo do ritmo — {r.tarde} de ~{r.esperadoTarde} esperadas
           </span>
         )}
       </div>
@@ -90,7 +88,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
     <div className="rounded-lg border border-border border-l-2 border-l-green bg-card">
       <div className="p-5">
         <div className="flex items-start justify-between mb-3">
-          <SectionLabel icon={CheckCircle2} color="#4ade80">Executadas Hoje</SectionLabel>
+          <SectionLabel icon={CheckCircle} color="#4ade80">Executadas Hoje</SectionLabel>
           {total > 0 && (
             <button
               onClick={() => onOpenModal('Executadas Hoje', hojeRows)}

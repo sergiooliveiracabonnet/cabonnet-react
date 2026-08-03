@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { StatCard, accentToTone } from './StatCard'
-import { TrendingUp } from 'lucide-react'
-
+import { TrendUp } from '@phosphor-icons/react'
 // Este projeto não usa `test.globals` no vite.config.js, então o RTL não
 // detecta `afterEach` global e não desmonta entre testes — sem isso, testes
 // que repetem o mesmo texto (ex: value=7 em dois testes) colidem com
@@ -32,7 +31,7 @@ describe('StatCard', () => {
   })
 
   it('renderiza ícone quando fornecido', () => {
-    const { container } = render(<StatCard title="KPI" value={1} icon={TrendingUp} />)
+    const { container } = render(<StatCard title="KPI" value={1} icon={TrendUp} />)
     expect(container.querySelector('svg')).toBeInTheDocument()
   })
 

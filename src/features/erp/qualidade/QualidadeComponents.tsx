@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Search } from 'lucide-react'
+import { MagnifyingGlass } from '@phosphor-icons/react'
 import type { BacklogRow } from '../../../hooks/useBacklog'
 
 // ─── Classificação por tipo ───────────────────────────────────────────────────
@@ -141,7 +141,7 @@ export function DrillTable({ rows }: { rows: BacklogRow[] }) {
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-[160px] max-w-[260px]">
-          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <MagnifyingGlass size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
                  placeholder="Buscar numos ou cliente…"
                  className="w-full pl-8 pr-3 py-2 rounded-lg border border-white/[0.08] bg-surface/40

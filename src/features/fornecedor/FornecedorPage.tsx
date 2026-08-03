@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Home, Award, Clock, Target, DollarSign, Sparkles } from 'lucide-react'
+import { House, Trophy, Clock, Target, CurrencyDollar, Sparkle } from '@phosphor-icons/react'
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/bar-chart'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { buildFornecedor } from '../../lib/builders'
@@ -85,7 +85,7 @@ export default function FornecedorPage() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <PageHeader title="Análise por Fornecedor" icon={Home} />
+      <PageHeader title="Análise por Fornecedor" icon={House} />
 
       {/* Filtro */}
       <div className="flex flex-wrap gap-2">
@@ -112,7 +112,7 @@ export default function FornecedorPage() {
           {/* Ranking por SLA */}
           {ranking.length > 1 && (
             <div className="bg-card border border-white/[0.08] rounded-xl p-4">
-              <SectionTitle icon={Award} className="mb-3">Ranking por SLA</SectionTitle>
+              <SectionTitle icon={Trophy} className="mb-3">Ranking por SLA</SectionTitle>
               <p className="text-caption text-muted mb-4">
                 SLA = % das OS entregues dentro do prazo. Empate desconta pelo menor MTTR.
                 A linha vertical indica a meta configurada. A coluna ao lado do percentual traz a
@@ -202,7 +202,7 @@ export default function FornecedorPage() {
           {!aiEnabled ? (
             <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles size={12} className="text-primary/40" />
+                <Sparkle size={12} className="text-primary/40" />
                 <span className="text-caption font-bold text-muted uppercase tracking-wide">Recomendações por Fornecedor · IA</span>
               </div>
               <button
@@ -211,13 +211,13 @@ export default function FornecedorPage() {
                            px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
                            transition-all duration-fast"
               >
-                <Sparkles size={11} /> Analisar com IA
+                <Sparkle size={11} /> Analisar com IA
               </button>
             </div>
           ) : (aiLoading || aiFornecedor) && (
             <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Sparkles size={12} className="text-primary" />
+                <Sparkle size={12} className="text-primary" />
                 <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
                   Recomendações por Fornecedor · IA
                 </span>
@@ -368,7 +368,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
 
           {/* Custo mensal — input */}
           <div className="flex items-center gap-2 py-2 border-t border-white/[0.05]">
-            <DollarSign size={12} className="text-muted flex-shrink-0" />
+            <CurrencyDollar size={12} className="text-muted flex-shrink-0" />
             <span className="text-caption text-muted">Custo mensal desta operadora (R$):</span>
             <input
               type="number" min={0} step={500}

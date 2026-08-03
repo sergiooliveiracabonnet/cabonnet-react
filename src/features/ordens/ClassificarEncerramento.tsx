@@ -1,4 +1,4 @@
-import { Wrench, Package, User, HelpCircle, Check } from 'lucide-react'
+import { Wrench, Package, User, Question, Check } from '@phosphor-icons/react'
 import { useMotivoEncerramento } from '../../hooks/useMotivoEncerramento'
 
 // Classificação manual de "por que essa OS encerrou assim" — mesmas 4 categorias
@@ -10,7 +10,7 @@ const MOTIVOS = [
   { value: 'Material', label: 'Material',  icon: Package     },
   { value: 'Técnico',   label: 'Técnico',   icon: Wrench      },
   { value: 'Cliente',   label: 'Cliente',   icon: User        },
-  { value: 'Outro',     label: 'Outro',     icon: HelpCircle  },
+  { value: 'Outro',     label: 'Outro',     icon: Question  },
 ]
 
 export function ClassificarEncerramento({ numos, nomedaequipe, nomedacidade }: {

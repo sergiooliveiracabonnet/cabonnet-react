@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react'
-import {
-  Clock, Users, TrendingDown,
-  CalendarX, ChevronDown, X,
-  ShieldAlert, BarChart2, Bell, MapPin, BarChart3, CheckCircle2, ExternalLink,
-} from 'lucide-react'
+import { Clock, Users, TrendDown, CalendarX, CaretDown, X, ShieldWarning, ChartBar, Bell, MapPin, CheckCircle, ArrowSquareOut } from '@phosphor-icons/react'
 import type { FiredAlert } from '../../../hooks/useAlerts'
 import type { OSRow } from '../../../lib/types'
 import { DEFAULT_RULES, DEFAULT_SLA_LIMITS, useAlertStore }  from '../../../store/alertStore'
@@ -41,7 +37,7 @@ export const SEV_CFG = {
 export const SEV_CFG_MAP = SEV_CFG as Record<string, typeof SEV_CFG[SevKey]>
 
 const RULE_SEV_MAP: Record<string, SevKey>  = { critical: 'CRITICO', warning: 'ALTO', info: 'MEDIO' }
-const RULE_ICONS:   Record<string, IconComp> = { criticas: ShieldAlert, taxa: BarChart2, semEquipe: Users, total: BarChart3 }
+const RULE_ICONS:   Record<string, IconComp> = { criticas: ShieldWarning, taxa: ChartBar, semEquipe: Users, total: ChartBar }
 
 // ─── buildAlerts ──────────────────────────────────────────────────────────────
 
@@ -70,7 +66,7 @@ export function buildAlerts(
 
   return ([
     {
-      id: 'sla_sem_equipe', severity: 'CRITICO' as SevKey, Icon: ShieldAlert,
+      id: 'sla_sem_equipe', severity: 'CRITICO' as SevKey, Icon: ShieldWarning,
       title: 'SLA Crítico Sem Equipe',
       desc:  `${slaSemEquipe.length} OS com SLA crítico aguardando atribuição de equipe`,
       count: slaSemEquipe.length,
@@ -96,7 +92,7 @@ export function buildAlerts(
       }),
     },
     {
-      id: 'sla_equipe', severity: 'ALTO', Icon: TrendingDown,
+      id: 'sla_equipe', severity: 'ALTO', Icon: TrendDown,
       title: `SLA de Equipe Abaixo de ${slaEquipePct}%`,
       desc:  `${slaBaixo.length} equipes com desempenho abaixo da meta`,
       count: slaBaixo.length,
@@ -168,7 +164,7 @@ export function AlertCard({ alert, delay = 0, acknowledged = false, onToggleAckn
           <span className="font-mono font-black tabular-nums text-[40px] leading-none" style={{ color: sev.color }}>
             {alert.count}
           </span>
-          <ChevronDown size={14} className="text-muted transition-transform duration-200"
+          <CaretDown size={14} className="text-muted transition-transform duration-200"
                        style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
         </div>
       </button>
@@ -196,11 +192,11 @@ export function AlertCard({ alert, delay = 0, acknowledged = false, onToggleAckn
           <div className="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-white/[0.06]">
             <button onClick={onToggleAcknowledged}
               className="min-h-10 inline-flex items-center gap-2 rounded-lg border border-white/[0.08] px-3 text-label text-secondary hover:text-text hover:bg-surface focus-visible:ring-2 focus-visible:ring-primary/50">
-              <CheckCircle2 size={14} /> {acknowledged ? 'Marcar como pendente' : 'Reconhecer alerta'}
+              <CheckCircle size={14} /> {acknowledged ? 'Marcar como pendente' : 'Reconhecer alerta'}
             </button>
             <button onClick={onView}
               className="min-h-10 inline-flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/[0.08] px-3 text-label font-semibold text-primary hover:bg-primary/[0.14] focus-visible:ring-2 focus-visible:ring-primary/50">
-              <ExternalLink size={14} /> Ver ocorrências em Ordens
+              <ArrowSquareOut size={14} /> Ver ocorrências em Ordens
             </button>
           </div>
         </div>
@@ -241,7 +237,7 @@ export function RuleCard({ rule, delay = 0, acknowledged = false, onToggleAcknow
         <button onClick={onToggleAcknowledged} aria-label={acknowledged ? `Marcar ${rule.label} como pendente` : `Reconhecer ${rule.label}`}
           title={acknowledged ? 'Alerta reconhecido' : 'Reconhecer alerta'}
           className={`min-w-10 min-h-10 rounded-lg border flex items-center justify-center hover:text-green hover:border-green/30 focus-visible:ring-2 focus-visible:ring-primary/50 ${acknowledged ? 'border-green/30 bg-green/10 text-green' : 'border-white/[0.08] text-muted'}`}>
-          <CheckCircle2 size={16} />
+          <CheckCircle size={16} />
         </button>
       </div>
     </div>
