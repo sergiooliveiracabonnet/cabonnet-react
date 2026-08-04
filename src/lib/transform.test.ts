@@ -29,6 +29,21 @@ function daysAgo(n: number): string {
   return `${dd}/${mm}/${yyyy}`
 }
 
+// buildDashboard ignora domingos ao medir produtividade por frente. Ancorar um
+// teste de produtividade em daysAgo(n) fixo faz ele quebrar sempre que aquele n
+// cair num domingo — daysAgo(2) cai em domingo toda terça-feira, e o CI roda em
+// UTC, que vira o dia antes de Brasília. Aqui recuamos até um dia que conte.
+function diaUtilAtras(n: number): { dia: string; anterior: string } {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  if (d.getDay() === 0) d.setDate(d.getDate() - 1)
+  const fmt = (x: Date) =>
+    `${String(x.getDate()).padStart(2, '0')}/${String(x.getMonth() + 1).padStart(2, '0')}/${x.getFullYear()}`
+  const anterior = new Date(d)
+  anterior.setDate(anterior.getDate() - 1)
+  return { dia: fmt(d), anterior: fmt(anterior) }
+}
+
 function hoursAgo(n: number): string {
   const d = new Date()
   d.setHours(d.getHours() - n)
@@ -641,10 +656,10 @@ describe('buildDashboard', () => {
 
   it('meta do mês sai da capacidade instalada (frentes × produtividade × dias úteis)', () => {
     // 2 frentes, 3 OS cada, no mesmo dia útil → mediana 3 OS/frente/dia
-    const dia = daysAgo(2)
+    const { dia, anterior } = diaUtilAtras(2)
     const exec = (numos: string, equipe: string) => makeOS({
       numos, descsituacao: 'Concluída', tiposervico: 'MANUTENCAO', nomedaequipe: equipe,
-      datacadastro: daysAgo(3), dataexecucao: dia, databaixa: dia,
+      datacadastro: anterior, dataexecucao: dia, databaixa: dia,
     })
     const capRows = enrichRows([
       exec('K1', 'MANUTENCAO F01'), exec('K2', 'MANUTENCAO F01'), exec('K3', 'MANUTENCAO F01'),
