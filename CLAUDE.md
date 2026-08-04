@@ -135,9 +135,11 @@ The bot isolates notifications by operator using team codes matched against `nom
 | THM | F12, F13, F14 | `TELEGRAM_CHAT_OPERACIONAL_THM` |
 | REDE | service starts with "REDE" | `TELEGRAM_CHAT_REDE` |
 
-19 frentes at present. `cabonnet/config.py` is the source of truth — this table is a copy and drifts; check the code before relying on it.
+19 frentes at present. `cabonnet/config.py` is the source of truth — every other list is a copy.
 
-**F27 and F39 are orphans:** they still have display names in `EQUIPE_NAMES` (`src/lib/osFormat.ts`) but belong to no operator group. `_operadora_da_os()` returns `None` for them, and the filters in `_tg_broadcast_status_changes` match by operator name, so an OS on either frente sends no Telegram notification to any group. Decide whether they are retired (drop the names) or active (add them to a group) — don't leave them half-registered.
+**The mapping is duplicated in four places and has drifted before.** `cabonnet/config.py` (backend), `cabonnet/stats.py`, the AI prompt in `cabonnet/ai.py`, and `INST_EQS`/`WES_EQS`/`THM_EQS` in `src/features/fechamento/fechamentoUtils.ts` (frontend). The frontend copy sat on the pre-`9f0c7ca` mapping and the Fechamento tabs silently excluded F46, F47 and F23 from their operator's closing. Two tests pin it now: `tests/python/test_operator_team_consistency.py` for the three Python sources and `src/features/fechamento/fechamentoUtils.test.ts`, which reads `config.py` rather than repeating the list. Adding or retiring a frente means touching all four.
+
+**F27 and F39 are retired** (confirmed 2026-08-03) — removed from `EQUIPE_NAMES`, `TEAMS` (`src/features/erp/erpConstants.ts`) and the Fechamento lists. Don't reintroduce them.
 
 Each operator group receives only its own OS status changes. The Alertas group receives all changes from all operators plus THM's "Executadas Hoje" scheduled report.
 
