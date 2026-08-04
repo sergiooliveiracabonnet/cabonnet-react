@@ -12,8 +12,12 @@ export interface FechamentoStats {
 }
 
 // ── Scope identifiers ──────────────────────────────────────────────────────────
-const INST_EQS = ['F01', 'F04', 'F05', 'F07', 'F20', 'F27', 'F45', 'F48', 'F49', 'F50']
-const WES_EQS  = ['F08', 'F11', 'F36', 'F39', 'F44']
+// Espelho de _OPERADORA_GRUPOS (cabonnet/config.py). Ficou parado no mapeamento
+// anterior a 9f0c7ca e as abas do fechamento deixavam de fora F46, F47 e F23 —
+// frentes que trabalham — enquanto contavam F27 e F39, que não existem mais.
+// fechamentoUtils.test.ts trava as três listas contra o mapeamento confirmado.
+const INST_EQS = ['F01', 'F04', 'F05', 'F07', 'F20', 'F45', 'F46', 'F47', 'F48', 'F49', 'F50']
+const WES_EQS  = ['F08', 'F11', 'F23', 'F36', 'F44']
 const THM_EQS  = ['F12', 'F13', 'F14']
 const normEq   = (s: string | null | undefined): string => (s || '').toUpperCase().replace(/([A-Z])\s+(\d)/g, '$1$2')
 
