@@ -76,18 +76,19 @@ def build_revisit_journeys(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if _recurrence(row) > 0:
             revisits.append(row)
 
-    previous_by_os: dict[str, tuple[dict[str, Any], str] | None] = {}
+    # Chaveado pela identidade da linha, não pelo numos: a mesma OS pode aparecer
+    # duplicada entre contratos/cidades e uma chave textual faria a segunda
+    # ocorrência sobrescrever o vínculo da primeira.
+    previous_by_row: dict[int, tuple[dict[str, Any], str] | None] = {}
     for key, group in grouped.items():
         ordered = sorted(group, key=lambda item: (_date(item), _text(item.get("numos"))))
         for index, row in enumerate(ordered):
-            previous_by_os[_text(row.get("numos"))] = (
-                (ordered[index - 1], key[1]) if index else None
-            )
+            previous_by_row[id(row)] = (ordered[index - 1], key[1]) if index else None
 
     result: list[dict[str, Any]] = []
     for revisit in sorted(revisits, key=lambda item: (_date(item) or dt.datetime.max, _text(item.get("numos")))):
         revisit_os = _text(revisit.get("numos"))
-        linked = previous_by_os.get(revisit_os)
+        linked = previous_by_row.get(id(revisit))
         origin, basis = linked if linked else (None, None)
         origin_date = _date(origin) if origin else None
         revisit_date = _date(revisit)
@@ -130,16 +131,29 @@ def _technical_type(row: dict[str, Any] | None) -> str:
     return "servico"
 
 
+_TYPE_FLAG = {
+    "instalacao": "revisita_inst",
+    "manutencao": "revisita_manut",
+    "servico": "revisita_serv",
+}
+
+
 def annotate_revisit_types(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Classifica o retorno pelo serviço que o originou, não pela OS de retorno."""
+    """Refina a classificação do retorno usando o serviço que o originou.
+
+    Só reescreve as flags quando a jornada linka com uma origem. Sem origem —
+    revisita no começo da janela buscada, ou linha sem data de execução
+    parseável — mantém o que a fonte já trouxe: zerar aqui fazia a revisita
+    sumir das três abas em vez de apenas ficar sem refinamento.
+    """
     copies = [dict(row) for row in rows]
-    by_os = {_text(row.get("numos")): row for row in copies}
-    for row in copies:
-        row.update({"revisita_inst": 0, "revisita_manut": 0, "revisita_serv": 0})
     for journey in build_revisit_journeys(copies):
-        revisit = by_os.get(journey["revisit_os"])
-        if not revisit or not journey.get("origin"):
+        origin = journey.get("origin")
+        revisit = journey.get("revisit")
+        # `revisit` é a própria linha de `copies`; usar a referência evita que
+        # numos duplicado mande a flag para a linha errada.
+        if not origin or not isinstance(revisit, dict):
             continue
-        origin_type = _technical_type(journey.get("origin"))
-        revisit[{"instalacao": "revisita_inst", "manutencao": "revisita_manut", "servico": "revisita_serv"}[origin_type]] = 1
+        revisit.update({"revisita_inst": 0, "revisita_manut": 0, "revisita_serv": 0})
+        revisit[_TYPE_FLAG[_technical_type(origin)]] = 1
     return copies

@@ -12,6 +12,10 @@ def _row(numos, recurrence, date, **overrides):
         "servico": "ASSISTENCIA TECNICA",
         "tiposervico": "MANUTENCAO",
         "equipeexecutou": "F01",
+        # A fonte (imanager_bi) sempre entrega as três flags zeradas.
+        "revisita_inst": 0,
+        "revisita_manut": 0,
+        "revisita_serv": 0,
         **overrides,
     }
 
@@ -118,3 +122,38 @@ def test_second_maintenance_return_is_revisit_maintenance():
 
     assert revisit["revisita_inst"] == 0
     assert revisit["revisita_manut"] == 1
+
+
+# A origem pode estar fora do recorte buscado (revisita no começo da janela) ou a
+# linha pode não ter data de execução parseável. Nesses casos a jornada não linka
+# — e zerar a flag que a fonte já trouxe fazia a revisita sumir das três abas.
+def test_keeps_source_flag_when_journey_has_no_origin():
+    rows = [_row(9000080, 1, "05/07/2026", revisita_manut=1)]
+
+    revisit = annotate_revisit_types(rows)[0]
+
+    assert revisit["revisita_manut"] == 1
+
+
+def test_keeps_source_flag_when_execution_date_is_missing():
+    rows = [
+        _row(9000090, 0, "01/07/2026", tiposervico="INSTALACAO", servico="INSTALACAO FTTH"),
+        _row(9000091, 1, "", revisita_manut=1),
+    ]
+
+    revisit = next(row for row in annotate_revisit_types(rows) if row["numos"] == "9000091")
+
+    assert revisit["revisita_manut"] == 1
+
+
+def test_duplicate_numos_does_not_move_flag_to_the_wrong_row():
+    rows = [
+        _row(9000100, 0, "01/07/2026", tiposervico="INSTALACAO", servico="INSTALACAO FTTH"),
+        _row(9000101, 1, "05/07/2026"),
+        _row(9000101, 0, "02/07/2026", codigocontrato="OUTRO", nomedacidade="Caçapava"),
+    ]
+
+    annotated = annotate_revisit_types(rows)
+
+    assert annotated[1]["revisita_inst"] == 1
+    assert annotated[2]["revisita_inst"] == 0

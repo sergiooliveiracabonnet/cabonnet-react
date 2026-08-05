@@ -40,13 +40,20 @@ export function contarTotalPorTipo(rows: BacklogRow[], tipo: RevisitaTipo): numb
 
 export interface RevisitaCidadeRow { cidade: string; rev: number; total: number; taxa: number }
 
+// `total` e `rev` vivem em universos diferentes e por isso são contados em
+// passadas independentes: a base é a OS do próprio tipo, enquanto a flag de
+// revisita mora na OS de RETORNO, que quase sempre é um VT de manutenção.
+// Pré-filtrar por rowMatchesTipo zerava `rev` nas abas Instalação e Serviço.
 export function revisitaPorCidade(allRows: BacklogRow[], tipo: RevisitaTipo): RevisitaCidadeRow[] {
   const m: Record<string, { rev: number; total: number }> = {}
-  for (const r of allRows.filter(row => rowMatchesTipo(row, tipo))) {
+  const bucket = (cidade: string) => {
+    if (!m[cidade]) m[cidade] = { rev: 0, total: 0 }
+    return m[cidade]
+  }
+  for (const r of allRows) {
     const c = r.nomedacidade || 'Sem cidade'
-    if (!m[c]) m[c] = { rev: 0, total: 0 }
-    m[c].total++
-    if (isRevisitaAtiva(r) && Number(r[FLAG_KEY[tipo]]) === 1) m[c].rev++
+    if (rowMatchesTipo(r, tipo)) bucket(c).total++
+    if (isRevisitaAtiva(r) && Number(r[FLAG_KEY[tipo]]) === 1) bucket(c).rev++
   }
   return Object.entries(m)
     .map(([cidade, v]) => ({ cidade, ...v, taxa: v.total ? Math.round((v.rev / v.total) * 100) : 0 }))

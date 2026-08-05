@@ -104,15 +104,41 @@ describe('clientesCronicos', () => {
 })
 
 describe('base das taxas por tipo', () => {
+  // O backend marca revisita_inst na OS de RETORNO (quase sempre um VT de
+  // manutenção), não na instalação que a originou. A base da taxa continua
+  // sendo o total de instalações — são universos diferentes de propósito.
   it('usa somente instalacoes como base da revisita de instalacao', () => {
     const rows = [
-      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', recorrencia: 1, revisita_inst: 1 }),
+      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08' }),
       makeRow({ numos: '2', tiposervico: 'INSTALACAO', nomedaequipe: 'F11' }),
-      makeRow({ numos: '3', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01' }),
+      makeRow({ numos: '3', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01', recorrencia: 1, revisita_inst: 1 }),
     ]
     expect(contarTotalPorTipo(rows, 'instalacao')).toBe(2)
     expect(revisitaPorCidade(rows, 'instalacao')).toEqual([
       { cidade: 'TAUBATE', rev: 1, total: 2, taxa: 50 },
+    ])
+  })
+
+  it('soma por cidade bate com o total do KPI, sem depender do tipo da OS de retorno', () => {
+    const rows = [
+      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', nomedacidade: 'TAUBATE' }),
+      makeRow({ numos: '2', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01', nomedacidade: 'TAUBATE',
+                recorrencia: 1, revisita_inst: 1 }),
+      makeRow({ numos: '3', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01', nomedacidade: 'CACAPAVA',
+                recorrencia: 2, revisita_inst: 1 }),
+    ]
+    const somaCidades = revisitaPorCidade(rows, 'instalacao').reduce((acc, c) => acc + c.rev, 0)
+    expect(somaCidades).toBe(filtrarRevisitaPorTipo(rows, 'instalacao').length)
+    expect(somaCidades).toBe(2)
+  })
+
+  it('não divide por zero quando a cidade só tem retorno e nenhuma OS da base', () => {
+    const rows = [
+      makeRow({ numos: '1', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01', nomedacidade: 'CACAPAVA',
+                recorrencia: 1, revisita_inst: 1 }),
+    ]
+    expect(revisitaPorCidade(rows, 'instalacao')).toEqual([
+      { cidade: 'CACAPAVA', rev: 1, total: 0, taxa: 0 },
     ])
   })
 })
