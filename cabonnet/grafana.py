@@ -990,6 +990,8 @@ def build_backlog_json(rows):
 
     kpis = {
         "total":         total,
+        "revisitas":     sum(1 for r in rows if _i(r, "recorrencia") > 0),
+        "visitas_unicas": sum(1 for r in rows if _i(r, "recorrencia") == 0),
         "rev_inst":      sum(_i(r, "revisita_inst")  for r in rows),
         "rev_manut":     sum(_i(r, "revisita_manut") for r in rows),
         "rev_serv":      sum(_i(r, "revisita_serv")  for r in rows),

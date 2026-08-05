@@ -10,7 +10,8 @@ function makeRow(overrides: Partial<BacklogRow> = {}): BacklogRow {
     servico: 'ASSISTENCIA TECNICA', tiposervico: 'MANUTENCAO', nomedacidade: 'TAUBATE', bairro: 'CENTRO',
     periodo: '2026-07', descsituacao: 'Concluída', nomedaequipe: 'F01', equipeexecutou: 'F01',
     datacadastro: '01/07/2026', dataagendamento: '02/07/2026', dataexecucao: '02/07/2026',
-    horas_resolucao: 24, revisita_inst: 0, revisita_manut: 0, revisita_serv: 0,
+    horas_resolucao: 24, recorrencia: 0, is_revisita: false,
+    revisita_inst: 0, revisita_manut: 0, revisita_serv: 0,
     tempo_maior_24h: 0, tempo_maior_4h: 0, tempo_maior_3h: 0,
     ...overrides,
   }
@@ -19,7 +20,7 @@ function makeRow(overrides: Partial<BacklogRow> = {}): BacklogRow {
 function makeData(rows: BacklogRow[]): BacklogData {
   return {
     rows,
-    kpis: { total: rows.length, rev_inst: 0, rev_manut: 0, rev_serv: 0, violacoes_24h: 0, violacoes_4h: 0, violacoes_3h: 0 },
+    kpis: { total: rows.length, revisitas: 0, visitas_unicas: rows.length, rev_inst: 0, rev_manut: 0, rev_serv: 0, violacoes_24h: 0, violacoes_4h: 0, violacoes_3h: 0 },
     por_equipe: [], por_cidade: [], por_tipo: [],
     n: rows.length, periodo: '2026-07-01', fim: '2026-08-01',
   }

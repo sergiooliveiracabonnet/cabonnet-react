@@ -18,6 +18,9 @@ export interface BacklogRow {
   dataagendamento: string
   dataexecucao:    string
   horas_resolucao: number
+  recorrencia:     number
+  is_revisita:     boolean
+  /** @deprecated compatibilidade do contrato antigo; usar `recorrencia` */
   revisita_inst:   number
   revisita_manut:  number
   revisita_serv:   number
@@ -28,6 +31,8 @@ export interface BacklogRow {
 
 export interface BacklogKpis {
   total:         number
+  revisitas:     number
+  visitas_unicas: number
   rev_inst:      number
   rev_manut:     number
   rev_serv:      number
@@ -67,9 +72,11 @@ export interface BacklogData {
   n:          number
   periodo:    string
   fim:        string
+  source?:    string
+  cached?:    boolean
 }
 
-const BACKLOG_SCHEMA_VERSION = 7   // incrementar quando o schema do backend mudar
+const BACKLOG_SCHEMA_VERSION = 8   // fonte oficial iManager/Power BI + campo recorrencia
 
 export function useBacklog(inicio: string, fim: string) {
   return useQuery<BacklogData>({

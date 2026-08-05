@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowsClockwise, Warning, SquaresFour, House, Wrench, Star } from '@phosphor-icons/react'
+import { ArrowsClockwise, Warning, SquaresFour, House, Wrench, Star, MagnifyingGlass } from '@phosphor-icons/react'
 import { useBacklog } from '../../../hooks/useBacklog'
 import { useOSDerived } from '../../../contexts/OSDataContext'
 import { TabBar } from '../../../components/ui/TabBar'
@@ -7,6 +7,7 @@ import { PageHeader } from '../../../components/ui/PageHeader'
 import { PainelTab } from './PainelTab'
 import { RevisitaTab } from './RevisitaTab'
 import { FiltrosBiTecnica } from './FiltrosBiTecnica'
+import { InvestigationTab } from './InvestigationTab'
 import { filtrarBacklogRows, FILTROS_VAZIOS, type BiTecnicaFiltros } from '../../../lib/builders/biTecnicaFiltros'
 import { buildVt24hStats } from '../../../lib/builders/vt24h'
 
@@ -32,6 +33,7 @@ type Preset = 'atual' | 'anterior' | 'custom'
 
 const TABS = [
   { id: 'painel',     label: 'Painel',             icon: SquaresFour },
+  { id: 'investigacao', label: 'Investigar Revisitas', icon: MagnifyingGlass },
   { id: 'instalacao', label: 'Revisita Instalação', icon: House            },
   { id: 'servico',    label: 'Revisita Serviço',    icon: Star            },
   { id: 'manutencao', label: 'Revisita Manutenção', icon: Wrench          },
@@ -125,6 +127,7 @@ export default function BiGestaoTecnicaPage() {
           <FiltrosBiTecnica rows={data.rows} filtros={filtros} onChange={setFiltros} />
           <div>
             {tab === 'painel'     && <PainelTab data={dataFiltrado} vt24h={vt24h} />}
+            {tab === 'investigacao' && <InvestigationTab inicio={inicio} fim={fim} />}
             {tab === 'instalacao' && <RevisitaTab data={dataFiltrado} tipo="instalacao" />}
             {tab === 'servico'    && <RevisitaTab data={dataFiltrado} tipo="servico" />}
             {tab === 'manutencao' && <RevisitaTab data={dataFiltrado} tipo="manutencao" />}

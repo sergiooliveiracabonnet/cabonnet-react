@@ -11,24 +11,25 @@ function makeRow(overrides: Partial<BacklogRow> = {}): BacklogRow {
     servico: 'ASSISTENCIA TECNICA', tiposervico: 'MANUTENCAO', nomedacidade: 'TAUBATE', bairro: 'CENTRO',
     periodo: '2026-07', descsituacao: 'Concluída', nomedaequipe: 'F01', equipeexecutou: 'F01',
     datacadastro: '01/07/2026', dataagendamento: '02/07/2026', dataexecucao: '02/07/2026',
-    horas_resolucao: 24, revisita_inst: 0, revisita_manut: 0, revisita_serv: 0,
+    horas_resolucao: 24, recorrencia: 0, is_revisita: false,
+    revisita_inst: 0, revisita_manut: 0, revisita_serv: 0,
     tempo_maior_24h: 0, tempo_maior_4h: 0, tempo_maior_3h: 0,
     ...overrides,
   }
 }
 
 describe('isRevisitaAtiva', () => {
-  it('true quando qualquer flag está ativo', () => {
-    expect(isRevisitaAtiva(makeRow({ revisita_manut: 1 }))).toBe(true)
+  it('true quando a recorrência oficial é maior que zero', () => {
+    expect(isRevisitaAtiva(makeRow({ recorrencia: 2, is_revisita: true }))).toBe(true)
   })
-  it('false quando nenhum flag está ativo', () => {
+  it('false quando a recorrência oficial é zero', () => {
     expect(isRevisitaAtiva(makeRow())).toBe(false)
   })
 })
 
 describe('filtrarRevisitasAtivas', () => {
-  it('mantém só as linhas com algum flag ativo', () => {
-    const rows = [makeRow({ numos: '1', revisita_inst: 1 }), makeRow({ numos: '2' })]
+  it('mantém só as linhas com recorrência oficial maior que zero', () => {
+    const rows = [makeRow({ numos: '1', recorrencia: 1 }), makeRow({ numos: '2' })]
     expect(filtrarRevisitasAtivas(rows).map(r => r.numos)).toEqual(['1'])
   })
 })
@@ -36,8 +37,8 @@ describe('filtrarRevisitasAtivas', () => {
 describe('filtrarRevisitaPorTipo', () => {
   it('filtra só o tipo pedido', () => {
     const rows = [
-      makeRow({ numos: '1', revisita_inst: 1 }),
-      makeRow({ numos: '2', revisita_manut: 1 }),
+      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', recorrencia: 1 }),
+      makeRow({ numos: '2', recorrencia: 1 }),
     ]
     expect(filtrarRevisitaPorTipo(rows, 'instalacao').map(r => r.numos)).toEqual(['1'])
     expect(filtrarRevisitaPorTipo(rows, 'manutencao').map(r => r.numos)).toEqual(['2'])
@@ -47,10 +48,10 @@ describe('filtrarRevisitaPorTipo', () => {
 describe('contarRevisitasPorTipo', () => {
   it('conta cada tipo independentemente', () => {
     const rows = [
-      makeRow({ revisita_inst: 1 }),
-      makeRow({ revisita_inst: 1 }),
-      makeRow({ revisita_manut: 1 }),
-      makeRow({ revisita_serv: 1 }),
+      makeRow({ tiposervico: 'INSTALACAO', nomedaequipe: 'F08', recorrencia: 1 }),
+      makeRow({ tiposervico: 'INSTALACAO', nomedaequipe: 'F11', recorrencia: 2 }),
+      makeRow({ tiposervico: 'MANUTENCAO', recorrencia: 1 }),
+      makeRow({ tiposervico: 'SERVICOS', nomedaequipe: 'F09', recorrencia: 1 }),
     ]
     expect(contarRevisitasPorTipo(rows)).toEqual({ instalacao: 2, manutencao: 1, servico: 1 })
   })
@@ -59,9 +60,9 @@ describe('contarRevisitasPorTipo', () => {
 describe('revisitaPorCidade', () => {
   it('calcula total e taxa por cidade pro tipo pedido', () => {
     const rows = [
-      makeRow({ nomedacidade: 'TAUBATE', revisita_manut: 1 }),
+      makeRow({ nomedacidade: 'TAUBATE', recorrencia: 1 }),
       makeRow({ nomedacidade: 'TAUBATE' }),
-      makeRow({ nomedacidade: 'CACAPAVA', revisita_manut: 1 }),
+      makeRow({ nomedacidade: 'CACAPAVA', recorrencia: 1 }),
     ]
     const result = revisitaPorCidade(rows, 'manutencao')
     expect(result).toEqual(expect.arrayContaining([
@@ -72,7 +73,7 @@ describe('revisitaPorCidade', () => {
 
   it('usa "Sem cidade" quando nomedacidade está vazio', () => {
     const result = revisitaPorCidade([
-      makeRow({ nomedacidade: '', tiposervico: 'SERVICOS', nomedaequipe: 'F09', revisita_serv: 1 }),
+      makeRow({ nomedacidade: '', tiposervico: 'SERVICOS', nomedaequipe: 'F09', recorrencia: 1 }),
     ], 'servico')
     expect(result[0].cidade).toBe('Sem cidade')
   })
@@ -105,7 +106,7 @@ describe('clientesCronicos', () => {
 describe('base das taxas por tipo', () => {
   it('usa somente instalacoes como base da revisita de instalacao', () => {
     const rows = [
-      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', revisita_inst: 1 }),
+      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', recorrencia: 1 }),
       makeRow({ numos: '2', tiposervico: 'INSTALACAO', nomedaequipe: 'F11' }),
       makeRow({ numos: '3', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01' }),
     ]

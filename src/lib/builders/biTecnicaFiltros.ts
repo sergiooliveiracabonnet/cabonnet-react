@@ -28,5 +28,15 @@ export function filtrarBacklogRows(data: BacklogData, filtros: BiTecnicaFiltros)
     (!filtros.fornecedor || getFornecedor(r.nomedaequipe) === filtros.fornecedor) &&
     (!filtros.equipe     || r.nomedaequipe === filtros.equipe)
   )
-  return { ...data, rows, kpis: { ...data.kpis, total: rows.length } }
+  const revisitas = rows.filter(r => Number(r.recorrencia) > 0).length
+  return {
+    ...data,
+    rows,
+    kpis: {
+      ...data.kpis,
+      total: rows.length,
+      revisitas,
+      visitas_unicas: rows.length - revisitas,
+    },
+  }
 }

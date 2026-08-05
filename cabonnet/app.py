@@ -77,7 +77,6 @@ from cabonnet.query_payload import compact_query_parts
 from cabonnet.grafana import (
     SQL_AGENDADO,
     SQL_ATENDIMENTO,
-    SQL_BACKLOG_TEMPLATE,
     SQL_DETALHES_TEMPLATE,
     SQL_EQUIPE_REAGENDOU_TEMPLATE,
     SQL_ERP_OS_CIDADES,
@@ -93,7 +92,6 @@ from cabonnet.grafana import (
     frames_to_csv,
     frames_to_dict_list,
     grafana_post,
-    sql_backlog,
     sql_checklist,
     sql_detalhes,
     sql_equipe_reagendou,
@@ -893,6 +891,7 @@ _BACKLOG_CACHE_TTL = 5 * 60  # 5 minutos
 @router.get("/backlog")
 async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require_auth)):
     from datetime import date, timedelta
+    from cabonnet.imanager_bi import fetch_bi_rows, filter_bi_period
     import re
     _date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
     today      = date.today()
@@ -916,10 +915,12 @@ async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require
                 and (now - cached["ts"]) < _BACKLOG_CACHE_TTL):
             return cached["data"]
     try:
-        rows   = frames_to_dict_list(grafana_post(sql_backlog(inicio_use, fim_use)))
+        rows   = filter_bi_period(fetch_bi_rows(), inicio_use, fim_use)
         result = build_backlog_json(rows)
         result["periodo"] = inicio_use
         result["fim"]     = fim_use
+        result["source"]  = "imanager-powerbi-report-21"
+        result["cached"]  = False
         with state._backlog_cache_lock:
             state._backlog_cache["data"] = result
             state._backlog_cache["ts"]   = now
@@ -927,7 +928,63 @@ async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require
         return result
     except Exception as ex:
         log.exception("Erro /backlog")
+        with state._backlog_cache_lock:
+            cached = state._backlog_cache
+            if cached.get("data") is not None and cached.get("key") == cache_key:
+                stale = dict(cached["data"])
+                stale["cached"] = True
+                stale["cache_age_min"] = round((now - cached["ts"]) / 60, 1)
+                return stale
         raise HTTPException(502, str(ex))
+
+
+@router.get("/api/revisit-journeys")
+async def revisit_journeys(inicio: str, fim: str, _role: str = Depends(_require_auth)):
+    """Relaciona as revisitas oficiais do período com sua OS precedente.
+
+    O histórico completo disponível no visual é mantido durante o pareamento;
+    o recorte solicitado só é aplicado às revisitas devolvidas. Assim uma OS
+    aberta no fim do mês pode ser a origem de uma revisita no mês seguinte.
+    """
+    import re
+    from cabonnet.imanager_bi import fetch_bi_rows, filter_bi_period
+    from cabonnet.revisit_journey import build_revisit_journeys
+
+    date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    if not date_re.match(inicio or "") or not date_re.match(fim or ""):
+        raise HTTPException(400, "inicio e fim devem usar o formato YYYY-MM-DD")
+    try:
+        if datetime.strptime(inicio, "%Y-%m-%d") >= datetime.strptime(fim, "%Y-%m-%d"):
+            raise HTTPException(400, "fim deve ser posterior a inicio")
+    except ValueError as exc:
+        raise HTTPException(400, "periodo invalido") from exc
+
+    try:
+        rows = fetch_bi_rows()
+        target_os = {
+            str(row.get("numos") or "")
+            for row in filter_bi_period(rows, inicio, fim)
+            if int(row.get("recorrencia") or 0) > 0
+        }
+        journeys = [
+            item for item in build_revisit_journeys(rows)
+            if item["revisit_os"] in target_os
+        ]
+        linked = sum(item["origin_os"] is not None for item in journeys)
+        return {
+            "journeys": journeys,
+            "n": len(journeys),
+            "linked": linked,
+            "unlinked": len(journeys) - linked,
+            "periodo": inicio,
+            "fim": fim,
+            "source": "imanager-powerbi-report-21",
+        }
+    except HTTPException:
+        raise
+    except Exception as ex:
+        log.exception("Erro /api/revisit-journeys")
+        raise HTTPException(502, str(ex)) from ex
 
 
 _REVISITAS_DETALHE_CACHE_TTL = 5 * 60  # 5 minutos
