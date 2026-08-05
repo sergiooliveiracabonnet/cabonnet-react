@@ -20,9 +20,9 @@ function EvidencePanel({ title, numos, details, loading }: { title: string; numo
         <div><dt className="text-muted">Reagendada</dt><dd className="text-text mt-0.5">{details.reagendada ? 'Sim' : 'Não'}</dd></div>
         <div><dt className="text-muted">Motivo inconclusivo</dt><dd className="text-text mt-0.5">{details.motivoInconclusivo || '—'}</dd></div>
       </dl>
-      {details.obsTecnico && <div><p className="text-[10px] uppercase tracking-wider text-muted">Observação técnica</p><p className="mt-1 text-xs leading-relaxed text-text">{details.obsTecnico}</p></div>}
+      {details.obsTecnico && <div><p className="text-caption uppercase tracking-wider text-muted">Observação técnica</p><p className="mt-1 text-xs leading-relaxed text-text">{details.obsTecnico}</p></div>}
       <div>
-        <p className="text-[10px] uppercase tracking-wider text-muted">Ocorrências ({details.historico.length})</p>
+        <p className="text-caption uppercase tracking-wider text-muted">Ocorrências ({details.historico.length})</p>
         <div className="mt-2 max-h-44 overflow-y-auto space-y-2">
           {details.historico.length === 0 && <p className="text-xs text-muted">Nenhuma ocorrência registrada.</p>}
           {details.historico.slice(0, 12).map((item, index) => (
@@ -65,7 +65,7 @@ export function RevisitInvestigationDrawer({ journey, onClose }: { journey: Revi
           <div className="flex items-start gap-3">
             {cause.level === 'undetermined' ? <WarningCircle size={20} className="text-amber-400 shrink-0" /> : <CheckCircle size={20} className="text-violet-300 shrink-0" />}
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-violet-300">{cause.level === 'confirmed' ? 'Causa confirmada' : cause.level === 'probable' ? 'Hipótese baseada nas evidências' : 'Diagnóstico indeterminado'}</p>
+              <p className="text-caption uppercase tracking-wider text-violet-300">{cause.level === 'confirmed' ? 'Causa confirmada' : cause.level === 'probable' ? 'Hipótese baseada nas evidências' : 'Diagnóstico indeterminado'}</p>
               <p className="mt-1 text-base font-bold text-text">{cause.category}</p>
               {cause.level === 'probable' && <p className="mt-1 text-xs text-muted">Confiança heurística: {cause.confidence}%. Necessita validação operacional.</p>}
             </div>

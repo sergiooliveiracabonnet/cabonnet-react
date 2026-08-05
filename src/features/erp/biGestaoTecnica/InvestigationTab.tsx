@@ -44,12 +44,12 @@ export function InvestigationTab({ inicio, fim }: { inicio: string; fim: string 
         <table className="w-full min-w-[850px] text-left text-xs">
           <thead className="bg-surface/60 text-muted"><tr><th className="px-4 py-3">Jornada</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Cidade</th><th className="px-4 py-3">Equipes</th><th className="px-4 py-3">Intervalo</th><th className="px-4 py-3">Vínculo</th><th className="px-4 py-3"><span className="sr-only">Ação</span></th></tr></thead>
           <tbody className="divide-y divide-white/[0.05]">{rows.map(j => <tr key={j.revisit_os} className="hover:bg-white/[0.025]">
-            <td className="px-4 py-3 font-mono text-text">{j.origin_os || '—'} → <span className="text-primary">{j.revisit_os}</span><div className="text-[10px] text-muted mt-1">recorrência {j.recurrence}</div></td>
+            <td className="px-4 py-3 font-mono text-text">{j.origin_os || '—'} → <span className="text-primary">{j.revisit_os}</span><div className="text-caption text-muted mt-1">recorrência {j.recurrence}</div></td>
             <td className="px-4 py-3 text-text max-w-48 truncate">{j.revisit.nomecliente || '—'}</td>
             <td className="px-4 py-3 text-muted">{j.revisit.nomedacidade}</td>
             <td className="px-4 py-3 text-muted">{j.origin?.equipeexecutou || '—'} → {j.revisit.equipeexecutou || '—'}</td>
             <td className="px-4 py-3 text-text">{j.days_between == null ? '—' : `${j.days_between}d`}</td>
-            <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${j.link_confidence === 'high' ? 'bg-emerald-500/10 text-emerald-300' : j.link_confidence === 'unlinked' ? 'bg-amber-500/10 text-amber-300' : 'bg-cyan-500/10 text-cyan-300'}`}>{j.link_confidence}</span></td>
+            <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-1 text-caption font-semibold ${j.link_confidence === 'high' ? 'bg-emerald-500/10 text-emerald-300' : j.link_confidence === 'unlinked' ? 'bg-amber-500/10 text-amber-300' : 'bg-cyan-500/10 text-cyan-300'}`}>{j.link_confidence}</span></td>
             <td className="px-4 py-3 text-right"><button onClick={() => setSelected(j)} className="min-h-11 cursor-pointer rounded-lg border border-white/[0.1] px-3 text-xs font-semibold text-text hover:bg-white/[0.05] focus:outline-none focus:ring-2 focus:ring-primary/50">Investigar</button></td>
           </tr>)}</tbody>
         </table>
