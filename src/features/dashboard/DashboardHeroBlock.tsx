@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { CheckCircle, Package, Wrench, Broadcast, TrendUp, TrendDown, Gauge, WarningCircle } from '@phosphor-icons/react'
+import { CheckCircle, Package, Wrench, Broadcast, TrendUp, TrendDown, Gauge, WarningCircle, ArrowRight } from '@phosphor-icons/react'
 import type { OSRow, PulsoRitmoIntradiario } from '../../lib/types'
 import { SectionLabel } from './DashboardKpiPrimitives'
 import type { CatCfgItem, CampoProjecaoReal } from './DashboardTypes'
@@ -95,7 +95,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
               className="text-caption text-muted hover:text-green border border-white/[0.08]
                          hover:border-green/30 rounded-lg px-2.5 py-1 transition-all duration-fast"
             >
-              Ver todas →
+              Ver todas <ArrowRight size={11} weight="bold" className="inline-block align-[-1px]" />
             </button>
           )}
         </div>

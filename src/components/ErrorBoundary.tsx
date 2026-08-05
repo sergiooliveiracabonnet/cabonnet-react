@@ -1,4 +1,5 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react'
+import { Warning } from '@phosphor-icons/react'
 
 interface Props {
   children: ReactNode
@@ -30,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           fontFamily: 'monospace', padding: '2rem', gap: '1rem',
         }}>
-          <div style={{ fontSize: 32, color: '#f87171' }}>⚠</div>
+          <Warning size={32} color="#f87171" />
           <p style={{ fontSize: 14, fontWeight: 700, color: '#f87171' }}>Erro de renderização</p>
           <pre style={{
             background: '#0d1220', border: '1px solid rgba(248,113,113,.3)', borderRadius: 8,

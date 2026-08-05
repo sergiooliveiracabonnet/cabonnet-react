@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Sparkle, X, Bookmark, CaretDown, CaretUp, Warning } from '@phosphor-icons/react'
+import { Sparkle, X, Bookmark, CaretDown, CaretUp, Warning, Circle } from '@phosphor-icons/react'
 import { usePicoAlertas, usePicoAlertasActions, type PicoAlerta } from '../../hooks/usePicoAlertas'
 import { useJustificativasActions } from '../../hooks/useJustificativas'
 import { ai } from '../../lib/api'
@@ -163,7 +163,9 @@ function AlertaPainel({
                   <p className="text-caption font-bold uppercase tracking-[0.07em] text-muted mb-1">Ações</p>
                   <ul className="space-y-0.5">
                     {iaResult.acoes.map((a, i) => (
-                      <li key={i} className="flex gap-1.5 text-text"><span className="text-violet-400">•</span>{a}</li>
+                      <li key={i} className="flex items-baseline gap-1.5 text-text">
+                        <Circle size={5} weight="fill" className="text-violet-400 flex-shrink-0 translate-y-[-2px]" />{a}
+                      </li>
                     ))}
                   </ul>
                 </div>

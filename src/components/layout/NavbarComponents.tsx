@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient, useQuery } from '@tanstack/react-query'
-import { ArrowsClockwise, CaretDown, Clock, Warning, Bell, ClockCounterClockwise, Sparkle, ArrowSquareOut, X as XIcon } from '@phosphor-icons/react'
+import { ArrowsClockwise, CaretDown, Clock, Warning, Bell, ClockCounterClockwise, Sparkle, ArrowSquareOut, ArrowRight, X as XIcon } from '@phosphor-icons/react'
 import { aiStatus } from '../../lib/api'
 import { useUIStore } from '../../store/uiStore'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -388,7 +388,7 @@ export function SlaCriticasBadge({ slaCriticas }: { slaCriticas: OSRow[] }) {
               onClick={() => { navigate('/ordens'); setShowAlerta(false) }}
               className="w-full text-center text-caption font-semibold text-primary hover:text-primary/80 transition-colors"
             >
-              Ver todas em Ordens →
+              Ver todas em Ordens <ArrowRight size={11} weight="bold" className="inline-block align-[-1px]" />
             </button>
           </div>
         </div>

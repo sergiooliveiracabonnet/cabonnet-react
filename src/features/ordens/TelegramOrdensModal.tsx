@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PaperPlaneTilt, CheckCircle, XCircle } from '@phosphor-icons/react'
+import { PaperPlaneTilt, CheckCircle, XCircle, CalendarDots } from '@phosphor-icons/react'
 import { Modal }   from '../../components/ui/Modal'
 import { Button }  from '../../components/ui/Button'
 import { captureOSPorEquipe, captureOSDetalhado, type CaptureOSRow } from '../../lib/captureOSTable'
@@ -132,8 +132,9 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
             <span className="text-caption text-muted">Alertas | Cabonnet</span>
           </div>
           {isFornGrupo && (
-            <p className="text-caption text-cyan font-semibold">
-              📅 Somente OS agendadas para hoje ({rows.length} de {allRows.length} total)
+            <p className="text-caption text-cyan font-semibold flex items-center gap-1">
+              <CalendarDots size={13} weight="bold" className="flex-shrink-0" />
+              Somente OS agendadas para hoje ({rows.length} de {allRows.length} total)
             </p>
           )}
           <div className="grid grid-cols-2 gap-2">

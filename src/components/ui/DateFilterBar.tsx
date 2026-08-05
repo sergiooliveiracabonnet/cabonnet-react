@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calendar, CaretDown, CaretLeft, CaretRight, HardDrives } from '@phosphor-icons/react'
+import { Calendar, CaretDown, CaretLeft, CaretRight, HardDrives, ArrowRight } from '@phosphor-icons/react'
 import { useUIStore, PRESETS, isSameMonth } from '../../store/uiStore'
 import type { DateCampo } from '../../lib/types'
 
@@ -55,15 +55,19 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
 
   const campoLabel = CAMPOS.find(c => c.value === campo)?.label ?? 'Abertura'
 
+  // ReactNode, não string: a seta entre as datas é ícone Phosphor
   const rangeLabel = (() => {
-    if (preset === 'custom') {
-      const f = from ? fmt(from) : '...'
-      const t = to   ? fmt(to)   : 'hoje'
-      return `${f} → ${t}`
-    }
     const f = from ? fmt(from) : '...'
-    const t = to   ? fmt(to)   : fmt(new Date())
-    return `${f} → ${t}`
+    const t = to
+      ? fmt(to)
+      : (preset === 'custom' ? 'hoje' : fmt(new Date()))
+    return (
+      <>
+        {f}
+        <ArrowRight size={10} weight="bold" className="mx-1 inline-block align-[-1px]" />
+        {t}
+      </>
+    )
   })()
 
   return (
@@ -140,7 +144,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             className="bg-surface border border-white/[0.08] rounded-md px-2 py-0.5 font-mono text-secondary
                        outline-none focus:border-primary/50 w-[120px] text-caption"
           />
-          <span className="text-muted text-caption">→</span>
+          <ArrowRight size={12} weight="bold" className="text-muted flex-shrink-0" />
           <input
             type="date"
             value={toInputVal(to)}

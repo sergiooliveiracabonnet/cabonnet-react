@@ -1,5 +1,5 @@
 import { useState, useMemo, type ComponentType } from 'react'
-import { Package, Wrench, Broadcast, X, CheckCircle, Clock } from '@phosphor-icons/react'
+import { Package, Wrench, Broadcast, X, CheckCircle, Clock, Check } from '@phosphor-icons/react'
 import type { OSRow } from '../../../lib/types'
 import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
 import { isCOPE, isReagend, isConcluida } from '../../../lib/transform'
@@ -296,7 +296,9 @@ export function PlannerCell({ rows = [] as OSRow[], isPast, _isToday: _isToday =
                 <div key={r.numos} className={`flex items-center gap-2 text-caption ${concl ? 'opacity-60' : ''}`}>
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: tc }} />
                   <span className="text-text truncate flex-1">{r.nomecliente || r.numos}</span>
-                  <span className="text-muted flex-shrink-0">{concl ? '✓' : r.nomedacidade || '—'}</span>
+                  <span className="text-muted flex-shrink-0">
+                    {concl ? <Check size={12} weight="bold" alt="Concluída" /> : r.nomedacidade || '—'}
+                  </span>
                 </div>
               )
             })}

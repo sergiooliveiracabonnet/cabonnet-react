@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Lightning, CheckCircle, MapPin, Clock, Gauge, Target, WarningCircle, Stack, Package, Pulse } from '@phosphor-icons/react'
+import { Lightning, CheckCircle, MapPin, Clock, Gauge, Target, WarningCircle, Stack, Package, Pulse, TrendUp, TrendDown } from '@phosphor-icons/react'
 import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } from '../../lib/types'
 import { TrendPill } from '../../components/ui/StatCard'
 import { DashboardPanelHeader, SectionLabel } from './DashboardKpiPrimitives'
@@ -14,8 +14,12 @@ export function MudancasStrip({ mudancas }: { mudancas: DashMover[] }) {
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-card border border-border px-4 py-2.5">
       <div className="flex items-center gap-2">
         <span className="text-caption font-bold uppercase tracking-[0.07em] text-muted">O que mais mudou</span>
-        <span className={`text-label font-semibold tabular-nums ${destaque.melhorou ? 'text-green' : 'text-red'}`}>
-          {destaque.label} {destaque.melhorou ? '↑' : '↓'} {Math.abs(destaque.delta)}{destaque.unidade}
+        <span className={`inline-flex items-center gap-1 text-label font-semibold tabular-nums ${destaque.melhorou ? 'text-green' : 'text-red'}`}>
+          {destaque.label}
+          {destaque.melhorou
+            ? <TrendUp   size={13} weight="bold" alt="em alta" />
+            : <TrendDown size={13} weight="bold" alt="em queda" />}
+          {Math.abs(destaque.delta)}{destaque.unidade}
         </span>
         <span className="text-caption text-muted">vs período anterior</span>
       </div>
@@ -24,8 +28,11 @@ export function MudancasStrip({ mudancas }: { mudancas: DashMover[] }) {
           <span key={m.id}
             className={`inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border tabular-nums
                         ${m.melhorou ? 'text-green bg-green/10 border-green/20' : 'text-red bg-red/10 border-red/20'}`}
-            title={`${m.label}: ${m.anterior}${m.unidade} → ${m.atual}${m.unidade} (${m.variacao}% de variação)`}>
-            {m.melhorou ? '↑' : '↓'} {m.label} {m.atual}{m.unidade}
+            title={`${m.label}: de ${m.anterior}${m.unidade} para ${m.atual}${m.unidade} (${m.variacao}% de variação)`}>
+            {m.melhorou
+              ? <TrendUp   size={12} weight="bold" alt="em alta" />
+              : <TrendDown size={12} weight="bold" alt="em queda" />}
+            {m.label} {m.atual}{m.unidade}
           </span>
         ))}
       </div>
@@ -540,7 +547,9 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
 
       {meta.projecaoFinal != null && (
         <p className="mt-2.5 text-caption" style={{ color: cor }}>
-          {meta.status === 'acima' ? '↑ No ritmo atual' : meta.status === 'abaixo' ? '↓ No ritmo atual' : 'No ritmo atual'}:
+          {meta.status === 'acima'  && <TrendUp   size={12} weight="bold" alt="acima do ritmo" className="inline-block mr-1 align-[-1px]" />}
+          {meta.status === 'abaixo' && <TrendDown size={12} weight="bold" alt="abaixo do ritmo" className="inline-block mr-1 align-[-1px]" />}
+          No ritmo atual:
           {' '}projeção de <strong>{meta.projecaoFinal}</strong> até o fim do mês
           {meta.status === 'abaixo' ? ' — abaixo da meta' : meta.status === 'acima' ? ' — acima da meta' : ''}
         </p>
@@ -563,7 +572,7 @@ export function QualidadePeriodoCard({ pulso, taxaRevisitas }: { pulso: Pulso; t
       warn: slaAtingimento != null && slaAtingimento < 90, danger: slaAtingimento != null && slaAtingimento < 75 },
     { label: 'MTTR',         value: mttr > 0 ? `${mttr.toLocaleString('pt-BR')}d` : '—',
       sub: mttrP90 > 0 ? `P90 ${mttrP90.toLocaleString('pt-BR')}d` : undefined,
-      hint: 'Mediana do tempo abertura → baixa das concluídas · P90 = cauda',
+      hint: 'Mediana do tempo da abertura até a baixa das concluídas · P90 = cauda',
       warn: mttr > 2, danger: mttr > 5 },
     { label: 'Aging Médio',  value: agingMed > 0 ? `${agingMed.toLocaleString('pt-BR')}d` : '—',
       warn: agingMed > 3, danger: agingMed > 7 },

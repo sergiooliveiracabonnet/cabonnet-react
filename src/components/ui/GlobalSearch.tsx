@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MagnifyingGlass, X } from '@phosphor-icons/react'
+import { MagnifyingGlass, X, ArrowUp, ArrowDown, ArrowElbowDownLeft } from '@phosphor-icons/react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import OSDrawer from '../../features/ordens/OSDrawer'
 import { Badge } from './Badge'
@@ -202,7 +202,9 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                               <Icon size={14} className="text-muted flex-shrink-0" />
                               <span className="text-body text-text font-medium flex-1">{link.label}</span>
                               {isActive && (
-                                <kbd className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 text-muted leading-none">↵</kbd>
+                                <kbd className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 text-muted leading-none">
+                                  <ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />
+                                </kbd>
                               )}
                             </button>
                           )
@@ -212,14 +214,15 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                   ))}
                   <div className="px-4 py-2.5 border-t border-white/[0.08] flex items-center gap-5 text-muted/50 mt-1">
                     {[
-                      { keys: ['↑', '↓'], label: 'navegar' },
-                      { keys: ['↵'],      label: 'abrir'   },
-                      { keys: ['ESC'],    label: 'fechar'  },
+                      { keys: [<ArrowUp size={10} weight="bold" alt="seta para cima" />,
+                               <ArrowDown size={10} weight="bold" alt="seta para baixo" />], label: 'navegar' },
+                      { keys: [<ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />], label: 'abrir' },
+                      { keys: ['ESC'], label: 'fechar' },
                     ].map(({ keys, label }) => (
                       <div key={label} className="flex items-center gap-1.5">
                         <div className="flex gap-1">
-                          {keys.map(k => (
-                            <kbd key={k} className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted/70">
+                          {keys.map((k, ki) => (
+                            <kbd key={ki} className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted/70">
                               {k}
                             </kbd>
                           ))}
@@ -259,7 +262,9 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                           <Icon size={14} className="text-muted flex-shrink-0" />
                           <span className="text-body text-text font-medium flex-1">{page.label}</span>
                           {isActive && (
-                            <kbd className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 text-muted leading-none">↵</kbd>
+                            <kbd className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 text-muted leading-none">
+                              <ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />
+                            </kbd>
                           )}
                         </button>
                       )
@@ -318,7 +323,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                           )}
                           {isActive && (
                             <kbd className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 self-center text-muted leading-none">
-                              ↵
+                              <ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />
                             </kbd>
                           )}
                         </button>
@@ -329,7 +334,11 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                     <span className="text-caption text-muted">
                       {results.os.length} resultado{results.os.length !== 1 ? 's' : ''}
                     </span>
-                    <span className="text-caption text-muted/50">↑↓ para navegar</span>
+                    <span className="flex items-center gap-1 text-caption text-muted/50">
+                      <ArrowUp size={10} weight="bold" alt="seta para cima" />
+                      <ArrowDown size={10} weight="bold" alt="seta para baixo" />
+                      para navegar
+                    </span>
                   </div>
                 </div>
               )}

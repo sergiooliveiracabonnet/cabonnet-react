@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { FileText, DownloadSimple, Printer, CaretRight } from '@phosphor-icons/react'
+import { FileText, DownloadSimple, Printer, CaretRight, Medal } from '@phosphor-icons/react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { PageHeader } from '../../components/ui/PageHeader'
 import {
@@ -277,7 +277,8 @@ function EquipesTable({ byEquipe }: { byEquipe: Record<string, TeamStats> }) {
     return <p className="text-label text-muted">Sem dados para o período.</p>
   }
 
-  const medals = ['🥇', '🥈', '🥉']
+  // 1º/2º/3º usam o mesmo ícone com tons decrescentes — sem emoji (ver regra de ícones Phosphor)
+  const medalClasses = ['text-yellow', 'text-secondary', 'text-orange']
 
   return (
     <div className="overflow-x-auto">
@@ -295,7 +296,12 @@ function EquipesTable({ byEquipe }: { byEquipe: Record<string, TeamStats> }) {
         <tbody className="divide-y divide-white/[0.04]">
           {equipes.map((e, i) => (
             <tr key={e.eq} className="hover:bg-surface/20">
-              <td className="px-2 py-2 text-center text-caption">{i < 3 ? medals[i] : i + 1}</td>
+              <td className="px-2 py-2 text-center text-caption">
+                {i < 3
+                  ? <Medal size={14} weight="fill" alt={`${i + 1}º lugar`}
+                           className={`inline-block ${medalClasses[i]}`} />
+                  : i + 1}
+              </td>
               <td className="px-2 py-2 font-semibold text-text">{e.eq}</td>
               <td className="px-2 py-2 text-center font-bold text-green">{e.exec}</td>
               <td className="px-2 py-2 text-center text-yellow">{e.pend || '—'}</td>

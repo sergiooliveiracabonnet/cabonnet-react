@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { PaperPlaneTilt, Bell, BellSlash, Trash, Checks, Gear, Warning, Clock, TrendUp, MapPin, Sparkle, Users } from '@phosphor-icons/react'
+import { PaperPlaneTilt, Bell, BellSlash, Trash, Checks, Gear, Warning, Clock, TrendUp, MapPin, Sparkle, Users, Circle, X } from '@phosphor-icons/react'
 import { useTelegramStore } from '../../store/telegramStore'
 import { telegram, ai } from '../../lib/api'
 import { Badge } from '../../components/ui/Badge'
@@ -100,8 +100,9 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
         <PaperPlaneTilt size={15} className={store.enabled ? 'text-green' : 'text-muted'} />
         <div className="flex-1">
           <p className="font-bold text-title text-text">Alertas & Telegram</p>
-          <p className={`text-caption ${store.enabled ? 'text-green' : 'text-muted'}`}>
-            {store.enabled ? '● Bot configurado e ativo' : '● Bot não configurado no servidor'}
+          <p className={`flex items-center gap-1.5 text-caption ${store.enabled ? 'text-green' : 'text-muted'}`}>
+            <Circle size={7} weight="fill" className="flex-shrink-0" />
+            {store.enabled ? 'Bot configurado e ativo' : 'Bot não configurado no servidor'}
           </p>
         </div>
         <button onClick={() => store.setAtivo(!store.ativo)}
@@ -110,7 +111,10 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
         >
           {store.ativo ? <><Bell size={11} /> Ativo</> : <><BellSlash size={11} /> Inativo</>}
         </button>
-        <button onClick={onClose} aria-label="Fechar Alertas e Telegram" className="w-10 h-10 rounded-lg text-muted hover:text-text hover:bg-surface text-lg leading-none">×</button>
+        <button onClick={onClose} aria-label="Fechar Alertas e Telegram"
+                className="w-10 h-10 rounded-lg text-muted hover:text-text hover:bg-surface flex items-center justify-center">
+          <X size={16} weight="bold" />
+        </button>
       </div>
 
       {/* Tabs */}

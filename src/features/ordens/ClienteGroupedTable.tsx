@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { ArrowRight } from '@phosphor-icons/react'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { Badge } from '../../components/ui/Badge'
 import type { OSRow } from '../../lib/types'
@@ -101,8 +102,11 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
                   </span>
                 )}
               </div>
-              <span className="text-caption text-muted flex-shrink-0">
-                {primeiraData}{primeiraData !== ultimaData ? ` → ${ultimaData}` : ''}
+              <span className="inline-flex items-center gap-1 text-caption text-muted flex-shrink-0">
+                {primeiraData}
+                {primeiraData !== ultimaData && (
+                  <><ArrowRight size={10} weight="bold" className="flex-shrink-0" />{ultimaData}</>
+                )}
               </span>
             </div>
 

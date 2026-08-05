@@ -238,8 +238,11 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
                     <span className="flex items-baseline gap-2">
                       <span className={`text-display font-black tabular-nums ${TONE_TEXT[v.tone]}`}>{v.valor}</span>
                       {m && (
-                        <span className={`text-caption font-bold tabular-nums ${m.melhorou ? 'text-green' : 'text-red'}`}>
-                          {m.delta > 0 ? '↑' : '↓'} {fmt(Math.abs(m.delta))}{m.unidade}
+                        <span className={`inline-flex items-center gap-1 text-caption font-bold tabular-nums ${m.melhorou ? 'text-green' : 'text-red'}`}>
+                          {m.delta > 0
+                            ? <TrendUp   size={12} weight="bold" alt="alta" />
+                            : <TrendDown size={12} weight="bold" alt="queda" />}
+                          {fmt(Math.abs(m.delta))}{m.unidade}
                         </span>
                       )}
                     </span>

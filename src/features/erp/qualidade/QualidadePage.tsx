@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Warning, MapPin, ArrowsClockwise, Wrench, House, Star, MagnifyingGlass, Sparkle, ClipboardText, Pulse, ChartBar } from '@phosphor-icons/react'
+import { Warning, MapPin, ArrowsClockwise, Wrench, House, Star, MagnifyingGlass, Sparkle, ClipboardText, Pulse, ChartBar, X, CaretUp, CaretDown, ArrowRight } from '@phosphor-icons/react'
 import { useBacklog, type BacklogRow } from '../../../hooks/useBacklog'
 import { AreaChart, Area, XAxis, YAxis, Grid, ChartTooltip, Legend } from '../../../components/ui/line-chart'
 import { BarChart, Bar, XAxis as BXAxis, YAxis as BYAxis, Grid as BGrid, ChartTooltip as BTip } from '../../../components/ui/bar-chart'
@@ -305,7 +305,7 @@ export default function QualidadePage() {
                       value={fmt(revisitasFiltradas.length)}
                       sub={`${taxaGeral}% do total de ${fmt(totalOS)} OS no período`}
                       tone={taxaTone(taxaGeral)} delay={30} />
-            <StatCard title="Inst → Manut (BI)"
+            <StatCard title={<>Inst <ArrowRight size={10} weight="bold" className="inline-block align-[-1px]" /> Manut (BI)</>}
                       value={fmt(data?.kpis.rev_inst ?? 0)}
                       sub="instalações que geraram VT no mesmo mês"
                       delay={60} />
@@ -313,7 +313,7 @@ export default function QualidadePage() {
                       value={fmt(data?.kpis.rev_manut ?? 0)}
                       sub="2ª+ manutenção do mesmo cliente no mês"
                       tone="warning" delay={90} />
-            <StatCard title="Serviço → Manut (BI)"
+            <StatCard title={<>Serviço <ArrowRight size={10} weight="bold" className="inline-block align-[-1px]" /> Manut (BI)</>}
                       value={fmt(data?.kpis.rev_serv ?? 0)}
                       sub="serviço técnico que gerou VT no mesmo mês"
                       delay={120} />
@@ -367,8 +367,10 @@ export default function QualidadePage() {
                           <p className="text-caption font-bold text-text leading-tight">{ocSelecionada.servico}</p>
                           <p className="text-caption text-muted mt-0.5">{ocSelecionada.count} revisitas</p>
                         </div>
-                        <button onClick={() => setOcSelecionada(null)}
-                                className="text-caption text-muted hover:text-text transition-colors flex-shrink-0">✕</button>
+                        <button onClick={() => setOcSelecionada(null)} aria-label="Fechar"
+                                className="text-muted hover:text-text transition-colors flex-shrink-0">
+                          <X size={14} weight="bold" />
+                        </button>
                       </div>
                       <div className="overflow-y-auto max-h-[340px] divide-y divide-white/[0.04]">
                         {ocSelecionada.os.map(r => (
@@ -457,7 +459,10 @@ export default function QualidadePage() {
           <div>
             <button onClick={() => setShowDrill(v => !v)}
                     className="text-label text-muted hover:text-text transition-colors py-1 flex items-center gap-1">
-              {showDrill ? '▲ Ocultar' : '▼ Ver'} lista completa de revisitas ({fmt(revisitasFiltradas.length)})
+              {showDrill
+                ? <><CaretUp   size={11} weight="bold" className="inline-block align-[-1px] mr-1" />Ocultar</>
+                : <><CaretDown size={11} weight="bold" className="inline-block align-[-1px] mr-1" />Ver</>}
+              {' '}lista completa de revisitas ({fmt(revisitasFiltradas.length)})
             </button>
           </div>
           {showDrill && <DrillTable rows={revisitasFiltradas} />}

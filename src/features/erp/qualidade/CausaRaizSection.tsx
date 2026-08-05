@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Sparkle, DownloadSimple, CaretDown, CaretUp } from '@phosphor-icons/react'
+import { Sparkle, DownloadSimple, CaretDown, CaretUp, ArrowRight } from '@phosphor-icons/react'
 import { useRevisitasDetalhe, type ParRevisita } from '../../../hooks/useRevisitasDetalhe'
 import { ai } from '../../../lib/api'
 
@@ -40,7 +40,8 @@ function exportParesCsv(pares: ParRevisita[], analises: AnaliseIA['analises']): 
     ...pares.map(p => {
       const ia = mapaAnalise.get(p.numos_orig + '|' + p.numos_rev)
       return [
-        p.tipo === 'inst' ? 'Instalação→Manut.' : 'Manut. Repetida',
+        // Célula de CSV é texto puro — sem glifo de seta, a relação vai por extenso
+        p.tipo === 'inst' ? 'Instalação para Manut.' : 'Manut. Repetida',
         p.nomecliente, p.nomedacidade,
         p.numos_orig, p.servico_orig, p.equipe_orig, p.data_orig, p.obs_orig,
         p.numos_rev,  p.servico_rev,  p.equipe_rev,  p.data_rev,  p.obs_rev,
@@ -226,7 +227,9 @@ export function CausaRaizSection({ inicio, fim }: { inicio: string; fim: string 
                       <tr key={i} className="border-b border-white/[0.03] hover:bg-surface/10 transition-colors">
                         <td className="px-2.5 py-2">
                           <span className="text-caption font-bold" style={{ color: cor }}>
-                            {p.tipo === 'inst' ? 'Inst→M' : 'M→M'}
+                            {p.tipo === 'inst' ? 'Inst' : 'M'}
+                            <ArrowRight size={9} weight="bold" className="inline-block align-[-1px] mx-0.5" />
+                            M
                           </span>
                         </td>
                         <td className="px-2.5 py-2 max-w-[120px]"><p className="truncate text-text">{p.nomecliente}</p></td>

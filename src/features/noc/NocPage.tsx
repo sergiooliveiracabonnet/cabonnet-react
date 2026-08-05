@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
-import { Monitor, Pause, Play, X, ArrowsOut, ArrowsIn, Pulse, Users, Package, WarningCircle } from '@phosphor-icons/react'
+import { Monitor, Pause, Play, X, ArrowsOut, ArrowsIn, ArrowsLeftRight, Pulse, Users, Package, WarningCircle } from '@phosphor-icons/react'
 import { OSDataProvider, useOSDerived } from '../../contexts/OSDataContext'
 import { isCOPE, isReagend } from '../../lib/transform'
 import { shortEquipe } from '../../lib/osFormat'
@@ -486,8 +486,9 @@ function NocInner() {
 
           <div className="flex-1" />
 
-          <span className="text-caption text-muted/35 font-mono hidden xl:block mr-3">
-            ←→ slides · Espaço pausar · F tela cheia
+          <span className="flex items-center gap-1 text-caption text-muted/35 font-mono hidden xl:flex mr-3">
+            <ArrowsLeftRight size={11} weight="bold" alt="setas esquerda e direita" />
+            slides · Espaço pausar · F tela cheia
           </span>
 
           {paused && (

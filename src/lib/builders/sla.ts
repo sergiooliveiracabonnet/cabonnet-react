@@ -38,7 +38,7 @@ export function buildSla(rows: OSRow[]) {
   const hipoteses = [
     { pergunta: 'Qual equipe tem maior risco de SLA?', resposta: pior?.nome ?? '—', sub: pior ? `${pior.sla}% SLA · ${pior.criticas} críticas` : null },
     { pergunta: 'Quantas OS estão fora do SLA?', resposta: String(slaExcTotal), sub: `${Math.round(slaExcTotal / (base.length || 1) * 100)}% do total ativo` },
-    { pergunta: 'OS sem data de agendamento', resposta: String(semAgend), sub: semAgend > 0 ? 'precisam ser agendadas' : 'Todas agendadas ✓' },
+    { pergunta: 'OS sem data de agendamento', resposta: String(semAgend), sub: semAgend > 0 ? 'precisam ser agendadas' : 'Todas agendadas' },
   ]
 
   const statuses  = ['Pendente','Atendimento','Concluída','Concluída/Sem Execução']

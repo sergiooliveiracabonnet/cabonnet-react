@@ -3,7 +3,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe } from '../../lib/osFormat'
 import type { OSRow } from '../../lib/types'
-import { CheckSquare, Square, XCircle } from '@phosphor-icons/react'
+import { CheckSquare, Square, XCircle, Warning } from '@phosphor-icons/react'
 import { useOSDetails } from '../../hooks/useOSDetails'
 import { osFotoUrl } from '../../lib/api'
 
@@ -174,8 +174,9 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
             <div className="space-y-3">
               {observacaoCritica && (
                 <div className="bg-red/[0.07] border border-red/25 rounded-xl p-4">
-                  <p className="font-headline text-caption font-bold uppercase tracking-[0.05em] text-red mb-1.5">
-                    ⚠ Observação Crítica
+                  <p className="font-headline text-caption font-bold uppercase tracking-[0.05em] text-red mb-1.5 flex items-center gap-1.5">
+                    <Warning size={13} weight="fill" className="flex-shrink-0" />
+                    Observação Crítica
                   </p>
                   <p className="text-body text-red/90 leading-relaxed font-sans whitespace-pre-wrap">
                     {observacaoCritica}

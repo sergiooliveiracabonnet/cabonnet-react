@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { CaretDown, CaretRight, CaretUp, CaretUpDown, Users, ArrowCounterClockwise, Copy, Check, ClipboardText, MapPin } from '@phosphor-icons/react'
+import { CaretDown, CaretRight, CaretUp, CaretUpDown, Users, ArrowCounterClockwise, Copy, Check, ClipboardText, MapPin, Spinner } from '@phosphor-icons/react'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant, buildOSWhatsApp, CATEGORIA_LABEL, CATEGORIA_COLOR } from '../../lib/osFormat'
 import { useOSDetails, parseOSDetails, osDetailsQuery } from '../../hooks/useOSDetails'
@@ -53,7 +53,13 @@ function SortHeader({ label, active, dir, onClick, className = '' }: {
 // Timeline de reagendamentos/ocorrências de uma OS — busca /detalhes sob demanda.
 function OcorrenciasExpand({ numos }: { numos: string }) {
   const { details, isLoading } = useOSDetails(numos)
-  if (isLoading) return <p className="px-10 py-3 text-caption text-muted">⏳ Carregando histórico…</p>
+  if (isLoading) {
+    return (
+      <p className="flex items-center gap-1.5 px-10 py-3 text-caption text-muted">
+        <Spinner size={12} className="animate-spin flex-shrink-0" /> Carregando histórico…
+      </p>
+    )
+  }
   const hist = details?.historico ?? []
   const equipeReagend = details?.equipeReagend
   if (!hist.length) return <p className="px-10 py-3 text-caption text-muted/60 italic">Sem ocorrências registradas.</p>

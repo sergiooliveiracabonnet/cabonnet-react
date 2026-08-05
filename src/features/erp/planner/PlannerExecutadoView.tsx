@@ -1,5 +1,5 @@
 import { useMemo, useState, type ComponentType } from 'react'
-import { TrendUp, TrendDown, Minus, ChartBar, CaretDown, CaretUp, Package, Wrench, Broadcast, Gear, Sparkle } from '@phosphor-icons/react'
+import { TrendUp, TrendDown, Minus, ChartBar, CaretDown, CaretUp, Package, Wrench, Broadcast, Gear, Sparkle, ArrowRight } from '@phosphor-icons/react'
 import { useERPRows } from '../useERPRows'
 import { useUIStore } from '../../../store/uiStore'
 import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
@@ -656,7 +656,11 @@ export default function PlannerExecutadoView() {
             <span className="w-2.5 h-2.5 rounded-sm" style={{ background: c }} />{l}
           </span>
         ))}
-        <span>· Expanda uma equipe → clique no dia para ver as OS</span>
+        <span className="inline-flex items-center gap-1">
+          · Expanda uma equipe
+          <ArrowRight size={10} weight="bold" className="flex-shrink-0" />
+          clique no dia para ver as OS
+        </span>
       </div>
     </div>
   )

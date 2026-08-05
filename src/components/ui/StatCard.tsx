@@ -58,7 +58,7 @@ export function TrendPill({ trend }: { trend?: StatTrend | null }) {
 }
 
 export interface StatCardProps {
-  title:      string
+  title:      ReactNode
   value:      ReactNode
   sub?:       string
   icon?:      ComponentType<{ size?: number; className?: string }>

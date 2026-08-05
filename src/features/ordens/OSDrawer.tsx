@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle, Clock, Calendar, ArrowSquareOut, MapPin, Users, Wrench, Warning, Hash, Check, Funnel, FileText, Copy, ClipboardText } from '@phosphor-icons/react'
+import { CheckCircle, Clock, Calendar, ArrowSquareOut, ArrowRight, MapPin, Users, Wrench, Warning, Hash, Check, Funnel, FileText, Copy, ClipboardText } from '@phosphor-icons/react'
 import type { OSRow, Fornecedor } from '../../lib/types'
 
 interface StepItem {
@@ -75,7 +75,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   // Dados do técnico (mobile) vindos do /detalhes
   const d = osDetails  // atalho
 
-  const obsTecnico       = loadingDetails ? '⏳ Carregando…' : (d?.obsTecnico || obsGeral || null)
+  const obsTecnico       = loadingDetails ? 'Carregando…' : (d?.obsTecnico || obsGeral || null)
   const nomeTecnico      = d?.nomeTecnico || null
   const historico        = d?.historico   || []
   const materiais        = d?.materiais   || []
@@ -482,7 +482,7 @@ function InfoCard({ icon: Icon, label, value, prominent = false, action = null }
           className="text-caption font-semibold text-primary/70 hover:text-primary text-left
                      transition-colors leading-none"
         >
-          {action.label} →
+          {action.label} <ArrowRight size={11} weight="bold" className="inline-block align-[-1px]" />
         </button>
       )}
     </div>

@@ -384,7 +384,8 @@ export default function FilaPage() {
 
       {fila.length === 0 ? (
         <div className="rounded-xl bg-card border border-white/[0.08] p-12 text-center">
-          <p className="text-body text-secondary">Nenhuma OS em aberto 🎉</p>
+          <CheckCircle size={32} weight="fill" className="text-green mx-auto mb-3" />
+          <p className="text-body text-secondary">Nenhuma OS em aberto</p>
         </div>
       ) : (
         <div ref={tableRef} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">

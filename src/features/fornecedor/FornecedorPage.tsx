@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { House, Trophy, Clock, Target, CurrencyDollar, Sparkle } from '@phosphor-icons/react'
+import { House, Trophy, Clock, Target, CurrencyDollar, Sparkle, TrendUp, TrendDown, CaretUp, ArrowRight } from '@phosphor-icons/react'
 import { BarChart, Bar, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/bar-chart'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { buildFornecedor } from '../../lib/builders'
@@ -349,8 +349,11 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
             </span>
           )}
           {meta != null && (
-            <span className={`text-caption font-bold px-1.5 py-0.5 rounded border ${acimaDoMeta ? 'badge-green' : 'badge-red'}`}>
-              {acimaDoMeta ? '↑ Acima da meta' : '↓ Abaixo da meta'} ({meta}%)
+            <span className={`inline-flex items-center gap-1 text-caption font-bold px-1.5 py-0.5 rounded border ${acimaDoMeta ? 'badge-green' : 'badge-red'}`}>
+              {acimaDoMeta
+                ? <TrendUp   size={11} weight="bold" alt="acima" />
+                : <TrendDown size={11} weight="bold" alt="abaixo" />}
+              {acimaDoMeta ? 'Acima da meta' : 'Abaixo da meta'} ({meta}%)
             </span>
           )}
           {kpis?.mttr != null && (
@@ -359,7 +362,8 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
             </span>
           )}
           <Badge variant="cyan">{kpis?.total ?? 0} OS</Badge>
-          <span className={`text-muted transition-transform text-caption ${expanded ? '' : 'rotate-180'}`}>▲</span>
+          <CaretUp size={12} weight="bold"
+                   className={`text-muted transition-transform ${expanded ? '' : 'rotate-180'}`} />
         </div>
       </button>
 
@@ -380,8 +384,9 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                          text-text outline-none focus:border-primary/50 transition-colors disabled:opacity-40"
             />
             {kpis?.custoPorOs != null && (
-              <span className="text-caption text-muted">
-                → <span className="text-orange font-semibold">{fmtCusto(kpis.custoPorOs)} / OS concluída</span>
+              <span className="inline-flex items-center gap-1 text-caption text-muted">
+                <ArrowRight size={11} weight="bold" className="flex-shrink-0" />
+                <span className="text-orange font-semibold">{fmtCusto(kpis.custoPorOs)} / OS concluída</span>
                 {' '}<span className="text-muted/60">(custo rateado para os {dias}d do período)</span>
               </span>
             )}

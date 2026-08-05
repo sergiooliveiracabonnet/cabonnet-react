@@ -34,8 +34,10 @@ describe('PulsoHero', () => {
     expect(within(vitais).getByText('76%')).toBeInTheDocument()
     expect(within(vitais).getByText('MTTR')).toBeInTheDocument()
     expect(within(vitais).getByText('2,1d')).toBeInTheDocument()
-    // MTTR é métrica de fluxo e tem Δ comparável
-    expect(within(vitais).getByText('↑ 0,3d')).toBeInTheDocument()
+    // MTTR é métrica de fluxo e tem Δ comparável. O sentido vem do ícone Phosphor
+    // (TrendUp/TrendDown com <title>), não de um glifo no texto.
+    expect(within(vitais).getByText('0,3d')).toBeInTheDocument()
+    expect(within(vitais).getByTitle('alta')).toBeInTheDocument()
     expect(screen.getByText('A fila recua pelo terceiro dia seguido.')).toBeInTheDocument()
   })
 
@@ -79,7 +81,8 @@ describe('PulsoHero', () => {
     const queda = [{ id: 'mttr', label: 'MTTR', atual: 1.8, anterior: 2.1, delta: -0.3, unidade: 'd', melhorou: true, variacao: 14.3 }]
     render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} mudancas={queda} />)
     const vitais = screen.getByTestId('pulso-vitais')
-    expect(within(vitais).getByText('↓ 0,3d')).toBeInTheDocument()
+    expect(within(vitais).getByText('0,3d')).toBeInTheDocument()
+    expect(within(vitais).getByTitle('queda')).toBeInTheDocument()
     expect(within(vitais).queryByText(/-0,3/)).not.toBeInTheDocument()
   })
 
@@ -130,6 +133,7 @@ describe('PulsoHero', () => {
     render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} mudancas={[]} />)
     const vitais = screen.getByTestId('pulso-vitais')
     expect(within(vitais).getByText('87%')).toBeInTheDocument()
-    expect(within(vitais).queryByText(/↑|↓/)).not.toBeInTheDocument()
+    expect(within(vitais).queryByTitle('alta')).not.toBeInTheDocument()
+    expect(within(vitais).queryByTitle('queda')).not.toBeInTheDocument()
   })
 })

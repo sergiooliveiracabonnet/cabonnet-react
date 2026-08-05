@@ -1,5 +1,5 @@
 ﻿import { useLayoutEffect, useRef, useState } from 'react'
-import { Warning, Calendar, Clock, FileText, MapPin, Users, Wrench } from '@phosphor-icons/react'
+import { Warning, Calendar, Clock, FileText, MapPin, Users, Wrench, ArrowElbowDownLeft } from '@phosphor-icons/react'
 import { Badge } from '../../components/ui/Badge'
 import { situacaoVariant, shortEquipe } from '../../lib/osFormat'
 import type { OSRow } from '../../lib/types'
@@ -138,7 +138,9 @@ export function OSHoverCard({ os, anchorRect }: OSHoverCardProps) {
       {/* Footer hint */}
       <div className="px-4 pb-3 flex justify-end">
         <span className="inline-flex items-center gap-1.5 text-caption text-muted/40">
-          <kbd className="bg-surface/40 border border-white/[0.08] rounded px-1.5 py-0.5 font-mono leading-none">↵</kbd>
+          <kbd className="bg-surface/40 border border-white/[0.08] rounded px-1.5 py-0.5 font-mono leading-none">
+            <ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />
+          </kbd>
           ver detalhes
         </span>
       </div>

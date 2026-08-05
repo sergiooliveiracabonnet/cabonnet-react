@@ -1,5 +1,5 @@
 import { Badge } from '../../components/ui/Badge'
-import { CaretDown, CaretRight, Clock } from '@phosphor-icons/react'
+import { CaretDown, CaretRight, Clock, Circle } from '@phosphor-icons/react'
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface HistoricoSnap {
@@ -96,9 +96,10 @@ export function ClientCard({ c }: { c: JuniperClient }) {
             </div>
             <p className="text-caption text-muted/60 ml-3.5 uppercase tracking-[0.04em] font-mono truncate">{c.iface}</p>
           </div>
-          <span className={`flex-shrink-0 text-caption font-bold px-2.5 py-1 rounded-full tracking-widest border
+          <span className={`flex-shrink-0 inline-flex items-center gap-1.5 text-caption font-bold px-2.5 py-1 rounded-full tracking-widest border
             ${isOnline ? 'bg-red/[0.10] text-red border-red/25' : 'bg-surface text-muted border-white/[0.08]'}`}>
-            {isOnline ? '● ATIVA' : '● INATIVA'}
+            <Circle size={7} weight="fill" className="flex-shrink-0" />
+            {isOnline ? 'ATIVA' : 'INATIVA'}
           </span>
         </div>
 
