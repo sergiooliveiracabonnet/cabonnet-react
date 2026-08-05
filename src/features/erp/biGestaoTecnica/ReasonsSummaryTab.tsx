@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react'
 import { ChartBar, CheckCircle, ClipboardText, MagnifyingGlass, WarningCircle, MapPin } from '@phosphor-icons/react'
 import { StatCard } from '../../../components/ui/StatCard'
+import OSDrawer from '../../ordens/OSDrawer'
 import { useRevisitJourneys } from '../../../hooks/useRevisitJourneys'
 import { useRevisitaMotivos } from '../../../hooks/useRevisitaMotivos'
 import { buildRevisitReasonsSummary, summarizeReasonItems } from '../../../lib/builders/revisitReasonsSummary'
+import { backlogRowToOSRow } from '../../../lib/builders/backlogToOSRow'
+import type { OSRow } from '../../../lib/types'
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Conectorização/Sinal': 'rgb(var(--c-red))', Equipamento: 'rgb(var(--c-orange))', Configuração: 'rgb(var(--c-yellow))',
@@ -41,6 +44,17 @@ export function ReasonsSummaryTab({ inicio, fim }: { inicio: string; fim: string
   function selecionarCidade(city: string) {
     setActiveCity(current => (current === city ? null : city))
     setActiveCategory(null)
+  }
+
+  // A linha da tabela guarda só o numos; a jornada é quem tem a OS inteira.
+  const [drawerOS, setDrawerOS] = useState<OSRow | null>(null)
+  const journeyByOs = useMemo(
+    () => new Map((journeys.data?.journeys ?? []).map(journey => [journey.revisit_os, journey])),
+    [journeys.data],
+  )
+  function abrirOS(revisitOs: string) {
+    const journey = journeyByOs.get(revisitOs)
+    if (journey) setDrawerOS(backlogRowToOSRow(journey.revisit))
   }
 
   if (journeys.isLoading || motives.isLoading) return <div className="py-20 text-center text-sm text-muted">Consolidando motivos e ocorrências…</div>
@@ -121,14 +135,20 @@ export function ReasonsSummaryTab({ inicio, fim }: { inicio: string; fim: string
 
     <section className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] p-3">
-        <div><h2 className="text-sm font-bold text-text">OS que formam o resumo</h2><p className="text-caption text-muted">{[activeCity, activeCategory].filter(Boolean).join(' · ') || 'Todas as revisitas do período'}</p></div>
+        <div><h2 className="text-sm font-bold text-text">OS que formam o resumo</h2><p className="text-caption text-muted">{[activeCity, activeCategory].filter(Boolean).join(' · ') || 'Todas as revisitas do período'} · clique numa linha para abrir a OS</p></div>
         {(activeCategory || activeCity) && <button onClick={() => { setActiveCategory(null); setActiveCity(null) }} className="min-h-11 cursor-pointer rounded-lg border border-white/[0.1] px-3 text-xs text-text hover:bg-white/[0.05] focus:outline-none focus:ring-2 focus:ring-primary/50">Limpar filtro</button>}
       </div>
       <div className="max-h-96 overflow-auto">
         <table className="w-full min-w-[760px] text-left text-xs"><thead className="sticky top-0 bg-surface text-muted"><tr><th className="px-4 py-3">OS</th><th className="px-4 py-3">Motivo</th><th className="px-4 py-3">Qualidade</th><th className="px-4 py-3">Equipe</th><th className="px-4 py-3">Cidade</th><th className="px-4 py-3">Ocorrência principal</th></tr></thead>
-          <tbody className="divide-y divide-white/[0.05]">{selectedItems.map(item => <tr key={item.revisitOs}><td className="px-4 py-3 font-mono text-primary">{item.revisitOs}</td><td className="px-4 py-3 font-semibold text-text">{item.category}</td><td className="px-4 py-3"><span className="inline-flex items-center gap-1 text-caption text-muted">{item.level === 'confirmed' ? <CheckCircle size={13} className="text-emerald-400"/> : item.level === 'probable' ? <MagnifyingGlass size={13} className="text-amber-400"/> : <WarningCircle size={13}/>} {item.level === 'confirmed' ? 'Confirmada' : item.level === 'probable' ? 'Provável' : 'Sem evidência'}</span></td><td className="px-4 py-3 text-muted">{item.team}</td><td className="px-4 py-3 text-muted">{item.city}</td><td className="max-w-sm truncate px-4 py-3 text-muted" title={item.occurrence}>{item.occurrence || '—'}</td></tr>)}</tbody>
+          <tbody className="divide-y divide-white/[0.05]">{selectedItems.map(item => <tr key={item.revisitOs}
+            onClick={() => abrirOS(item.revisitOs)}
+            onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); abrirOS(item.revisitOs) } }}
+            tabIndex={0} role="button" aria-label={`Abrir OS ${item.revisitOs}`}
+            className="cursor-pointer transition-colors hover:bg-white/[0.04] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/50"><td className="px-4 py-3 font-mono text-primary underline decoration-primary/30 underline-offset-2">{item.revisitOs}</td><td className="px-4 py-3 font-semibold text-text">{item.category}</td><td className="px-4 py-3"><span className="inline-flex items-center gap-1 text-caption text-muted">{item.level === 'confirmed' ? <CheckCircle size={13} className="text-emerald-400"/> : item.level === 'probable' ? <MagnifyingGlass size={13} className="text-amber-400"/> : <WarningCircle size={13}/>} {item.level === 'confirmed' ? 'Confirmada' : item.level === 'probable' ? 'Provável' : 'Sem evidência'}</span></td><td className="px-4 py-3 text-muted">{item.team}</td><td className="px-4 py-3 text-muted">{item.city}</td><td className="max-w-sm truncate px-4 py-3 text-muted" title={item.occurrence}>{item.occurrence || '—'}</td></tr>)}</tbody>
         </table>
       </div>
     </section>
+
+    <OSDrawer os={drawerOS} onClose={() => setDrawerOS(null)} />
   </div>
 }
