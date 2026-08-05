@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import { ChartBar, CheckCircle, ClipboardText, MagnifyingGlass, WarningCircle, MapPin } from '@phosphor-icons/react'
+import { ChartBar, CheckCircle, ClipboardText, MagnifyingGlass, WarningCircle, MapPin, Stack } from '@phosphor-icons/react'
 import { StatCard } from '../../../components/ui/StatCard'
 import OSDrawer from '../../ordens/OSDrawer'
 import { useRevisitJourneys } from '../../../hooks/useRevisitJourneys'
 import { useRevisitaMotivos } from '../../../hooks/useRevisitaMotivos'
-import { buildRevisitReasonsSummary, summarizeReasonItems } from '../../../lib/builders/revisitReasonsSummary'
+import { buildRevisitReasonsSummary, summarizeReasonItems, REVISIT_TIPOS } from '../../../lib/builders/revisitReasonsSummary'
 import { backlogRowToOSRow } from '../../../lib/builders/backlogToOSRow'
 import type { OSRow } from '../../../lib/types'
 
@@ -98,8 +98,50 @@ export function ReasonsSummaryTab({ inicio, fim }: { inicio: string; fim: string
             {city.categories.map(category => <div key={category.category} style={{ width: `${category.pct}%`, backgroundColor: colorFor(category.category) }}
               title={`${category.category}: ${category.count} (${category.pct}%)`} />)}
           </div>
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-caption tabular-nums">
+            {city.byTipo.map(tipo => <span key={tipo.tipo} className={tipo.count ? 'text-secondary' : 'text-muted/50'}>
+              {tipo.label} <span className="font-mono font-bold text-text">{tipo.count}</span>
+            </span>)}
+          </div>
           <p className="mt-1.5 text-caption text-muted">{city.coveragePct}% com motivo explicado</p>
         </button>)}
+      </div>
+    </section>
+
+    <section className="rounded-xl border border-white/[0.08] bg-card p-4" aria-labelledby="reason-tipos-title">
+      <div className="flex items-center gap-2 mb-4">
+        <Stack size={17} className="text-primary" />
+        <h2 id="reason-tipos-title" className="text-sm font-bold text-text">
+          Revisitas por tipo{activeCity ? ` · ${activeCity}` : ' · todas as cidades'}
+        </h2>
+        <span className="text-caption text-muted">quantidade e motivação de cada uma</span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {scope.byTipo.map(tipo => <div key={tipo.tipo} className="rounded-lg border border-white/[0.07] p-3">
+          <div className="flex items-baseline justify-between gap-2 border-b border-white/[0.06] pb-2">
+            <span className="text-xs font-bold text-text">{tipo.label}</span>
+            <span className="tabular-nums">
+              <span className="font-mono text-lg font-black text-text">{tipo.count.toLocaleString('pt-BR')}</span>
+              <span className="ml-1 text-caption text-muted">{tipo.pct}%</span>
+            </span>
+          </div>
+          {tipo.count === 0
+            ? <p className="py-6 text-center text-caption text-muted">Nenhuma revisita deste tipo no período.</p>
+            : <ul className="mt-2 space-y-1.5">
+                {tipo.categories.map(category => <li key={category.category}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-caption text-secondary">{category.category}</span>
+                    <span className="shrink-0 tabular-nums text-caption">
+                      <span className="font-mono font-bold text-text">{category.count}</span>
+                      <span className="ml-1 text-muted">{category.pct}%</span>
+                    </span>
+                  </div>
+                  <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-surface">
+                    <div className="h-full rounded-full" style={{ width: `${category.pct}%`, backgroundColor: colorFor(category.category) }} />
+                  </div>
+                </li>)}
+              </ul>}
+        </div>)}
       </div>
     </section>
 
@@ -139,12 +181,12 @@ export function ReasonsSummaryTab({ inicio, fim }: { inicio: string; fim: string
         {(activeCategory || activeCity) && <button onClick={() => { setActiveCategory(null); setActiveCity(null) }} className="min-h-11 cursor-pointer rounded-lg border border-white/[0.1] px-3 text-xs text-text hover:bg-white/[0.05] focus:outline-none focus:ring-2 focus:ring-primary/50">Limpar filtro</button>}
       </div>
       <div className="max-h-96 overflow-auto">
-        <table className="w-full min-w-[760px] text-left text-xs"><thead className="sticky top-0 bg-surface text-muted"><tr><th className="px-4 py-3">OS</th><th className="px-4 py-3">Motivo</th><th className="px-4 py-3">Qualidade</th><th className="px-4 py-3">Equipe</th><th className="px-4 py-3">Cidade</th><th className="px-4 py-3">Ocorrência principal</th></tr></thead>
+        <table className="w-full min-w-[860px] text-left text-xs"><thead className="sticky top-0 bg-surface text-muted"><tr><th className="px-4 py-3">OS</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Motivo</th><th className="px-4 py-3">Qualidade</th><th className="px-4 py-3">Equipe</th><th className="px-4 py-3">Cidade</th><th className="px-4 py-3">Ocorrência principal</th></tr></thead>
           <tbody className="divide-y divide-white/[0.05]">{selectedItems.map(item => <tr key={item.revisitOs}
             onClick={() => abrirOS(item.revisitOs)}
             onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); abrirOS(item.revisitOs) } }}
             tabIndex={0} role="button" aria-label={`Abrir OS ${item.revisitOs}`}
-            className="cursor-pointer transition-colors hover:bg-white/[0.04] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/50"><td className="px-4 py-3 font-mono text-primary underline decoration-primary/30 underline-offset-2">{item.revisitOs}</td><td className="px-4 py-3 font-semibold text-text">{item.category}</td><td className="px-4 py-3"><span className="inline-flex items-center gap-1 text-caption text-muted">{item.level === 'confirmed' ? <CheckCircle size={13} className="text-emerald-400"/> : item.level === 'probable' ? <MagnifyingGlass size={13} className="text-amber-400"/> : <WarningCircle size={13}/>} {item.level === 'confirmed' ? 'Confirmada' : item.level === 'probable' ? 'Provável' : 'Sem evidência'}</span></td><td className="px-4 py-3 text-muted">{item.team}</td><td className="px-4 py-3 text-muted">{item.city}</td><td className="max-w-sm truncate px-4 py-3 text-muted" title={item.occurrence}>{item.occurrence || '—'}</td></tr>)}</tbody>
+            className="cursor-pointer transition-colors hover:bg-white/[0.04] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/50"><td className="px-4 py-3 font-mono text-primary underline decoration-primary/30 underline-offset-2">{item.revisitOs}</td><td className="px-4 py-3 text-secondary">{REVISIT_TIPOS.find(t => t.tipo === item.tipo)?.label ?? '—'}</td><td className="px-4 py-3 font-semibold text-text">{item.category}</td><td className="px-4 py-3"><span className="inline-flex items-center gap-1 text-caption text-muted">{item.level === 'confirmed' ? <CheckCircle size={13} className="text-emerald-400"/> : item.level === 'probable' ? <MagnifyingGlass size={13} className="text-amber-400"/> : <WarningCircle size={13}/>} {item.level === 'confirmed' ? 'Confirmada' : item.level === 'probable' ? 'Provável' : 'Sem evidência'}</span></td><td className="px-4 py-3 text-muted">{item.team}</td><td className="px-4 py-3 text-muted">{item.city}</td><td className="max-w-sm truncate px-4 py-3 text-muted" title={item.occurrence}>{item.occurrence || '—'}</td></tr>)}</tbody>
         </table>
       </div>
     </section>

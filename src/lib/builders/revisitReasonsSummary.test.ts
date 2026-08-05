@@ -2,13 +2,22 @@ import { describe, expect, it } from 'vitest'
 import { buildRevisitReasonsSummary, summarizeReasonItems } from './revisitReasonsSummary'
 import type { RevisitJourney } from '../../hooks/useRevisitJourneys'
 
-function journey(os: string, observacao = '', cidade = 'Taubaté'): RevisitJourney {
+type Flags = { revisita_inst?: number; revisita_manut?: number; revisita_serv?: number }
+
+function journey(os: string, observacao = '', cidade = 'Taubaté', flags: Flags = {}): RevisitJourney {
   return {
     origin_os: null, revisit_os: os, recurrence: 1, link_basis: null,
     link_confidence: 'unlinked', days_between: null, same_team: null, origin: null,
-    revisit: { numos: os, observacao, nomedacidade: cidade, equipeexecutou: 'F01' } as RevisitJourney['revisit'],
+    revisit: {
+      numos: os, observacao, nomedacidade: cidade, equipeexecutou: 'F01',
+      revisita_inst: 0, revisita_manut: 0, revisita_serv: 0, ...flags,
+    } as RevisitJourney['revisit'],
   }
 }
+
+const INST  = { revisita_inst: 1 }
+const MANUT = { revisita_manut: 1 }
+const SERV  = { revisita_serv: 1 }
 
 describe('buildRevisitReasonsSummary', () => {
   it('fecha o total oficial sem duplicar OS entre categorias', () => {
@@ -85,5 +94,65 @@ describe('recorte por cidade', () => {
     expect(result.total).toBe(2)
     expect(soTaubate.total).toBe(1)
     expect(soTaubate.categories[0]).toMatchObject({ category: 'Conectorização/Sinal', pct: 100 })
+  })
+})
+
+describe('quebra por tipo de revisita', () => {
+  it('lê o tipo das flags oficiais da linha', () => {
+    const result = buildRevisitReasonsSummary([
+      journey('1', 'sinal baixo', 'Taubaté', INST),
+      journey('2', 'sinal baixo', 'Taubaté', MANUT),
+      journey('3', 'sinal baixo', 'Taubaté', SERV),
+    ], [])
+
+    expect(result.items.map(i => i.tipo)).toEqual(['instalacao', 'manutencao', 'servico'])
+  })
+
+  // A diretoria precisa ver o zero: uma cidade sem revisita de instalação é
+  // informação, não ausência de informação.
+  it('sempre devolve os três tipos, mesmo zerados', () => {
+    const result = buildRevisitReasonsSummary([journey('1', 'sinal baixo', 'Taubaté', MANUT)], [])
+
+    expect(result.byTipo.map(t => t.tipo)).toEqual(['instalacao', 'servico', 'manutencao'])
+    expect(result.byTipo.find(t => t.tipo === 'instalacao')).toMatchObject({ count: 0, pct: 0 })
+    expect(result.byTipo.find(t => t.tipo === 'manutencao')).toMatchObject({ count: 1, pct: 100 })
+  })
+
+  it('traz os motivos de cada tipo, com percentual dentro do tipo', () => {
+    const result = buildRevisitReasonsSummary([
+      journey('1', 'sinal baixo',      'Taubaté', INST),
+      journey('2', 'conector solto',   'Taubaté', INST),
+      journey('3', 'trocado roteador', 'Taubaté', MANUT),
+    ], [])
+
+    const inst = result.byTipo.find(t => t.tipo === 'instalacao')
+    expect(inst?.count).toBe(2)
+    expect(inst?.categories[0]).toMatchObject({ category: 'Conectorização/Sinal', count: 2, pct: 100 })
+
+    const manut = result.byTipo.find(t => t.tipo === 'manutencao')
+    expect(manut?.categories[0]).toMatchObject({ category: 'Equipamento', count: 1, pct: 100 })
+  })
+
+  it('cada cidade tem sua própria quebra por tipo', () => {
+    const result = buildRevisitReasonsSummary([
+      journey('1', 'sinal baixo',      'Taubaté',  INST),
+      journey('2', 'trocado roteador', 'Taubaté',  MANUT),
+      journey('3', 'trocado roteador', 'Caçapava', MANUT),
+    ], [])
+
+    const taubate = result.byCity.find(c => c.city === 'Taubaté')
+    const cacapava = result.byCity.find(c => c.city === 'Caçapava')
+
+    expect(taubate?.byTipo.find(t => t.tipo === 'instalacao')?.count).toBe(1)
+    expect(cacapava?.byTipo.find(t => t.tipo === 'instalacao')?.count).toBe(0)
+    expect(cacapava?.byTipo.find(t => t.tipo === 'manutencao')?.categories[0]?.category).toBe('Equipamento')
+  })
+
+  it('revisita sem flag não é contada em nenhum tipo', () => {
+    const result = buildRevisitReasonsSummary([journey('1', 'sinal baixo', 'Taubaté')], [])
+
+    expect(result.items[0].tipo).toBeNull()
+    expect(result.byTipo.reduce((acc, t) => acc + t.count, 0)).toBe(0)
+    expect(result.total).toBe(1)
   })
 })
