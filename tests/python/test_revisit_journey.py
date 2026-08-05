@@ -146,6 +146,63 @@ def test_keeps_source_flag_when_execution_date_is_missing():
     assert revisit["revisita_manut"] == 1
 
 
+# "ASSISTENCIA - PRIMEIRA CONEXAO 30 D" é o RETORNO pós-instalação, não a
+# instalação. Casar "PRIMEIRA CONEXAO" solto marcava 142 dessas como origem de
+# instalação na base real — e nenhuma instalação de verdade.
+def test_assistencia_pos_instalacao_nao_e_instalacao():
+    rows = [
+        _row(9000110, 0, "01/07/2026", tiposervico="MANUTENCAO",
+             servico="ASSISTENCIA - PRIMEIRA CONEXAO 30 D"),
+        _row(9000111, 1, "05/07/2026"),
+    ]
+
+    revisit = annotate_revisit_types(rows)[1]
+
+    assert revisit["revisita_inst"] == 0
+
+
+# Entre a instalação e o retorno quase sempre entram outras OS (upgrade,
+# transferência, troca). Exigir que a instalação seja a visita IMEDIATAMENTE
+# anterior zerava a aba: na base real só 29 de 1758 revisitas casavam.
+def test_instalacao_conta_mesmo_com_outra_os_no_meio():
+    rows = [
+        _row(9000120, 0, "01/07/2026", tiposervico="INSTALACAO PRINCIPAL",
+             servico="PRIMEIRA CONEXAO DO ASSINANTE"),
+        _row(9000121, 0, "05/07/2026", tiposervico="SERVICOS",
+             servico="ALTERACAO DE PROGRAMACAO - UPGRADE"),
+        _row(9000122, 1, "10/07/2026", servico="ASSISTENCIA - VT 24H"),
+    ]
+
+    revisit = next(row for row in annotate_revisit_types(rows) if row["numos"] == "9000122")
+
+    assert revisit["revisita_inst"] == 1
+    assert revisit["revisita_serv"] == 0
+
+
+def test_instalacao_fora_da_janela_nao_conta_como_revisita_de_instalacao():
+    rows = [
+        _row(9000130, 0, "01/06/2026", tiposervico="INSTALACAO PRINCIPAL",
+             servico="PRIMEIRA CONEXAO DO ASSINANTE"),
+        _row(9000131, 1, "20/07/2026", servico="ASSISTENCIA - VT 24H"),
+    ]
+
+    revisit = next(row for row in annotate_revisit_types(rows) if row["numos"] == "9000131")
+
+    assert revisit["revisita_inst"] == 0
+
+
+def test_instalacao_de_outro_contrato_nao_conta():
+    rows = [
+        _row(9000140, 0, "01/07/2026", codigocontrato="OUTRO",
+             tiposervico="INSTALACAO PRINCIPAL", servico="PRIMEIRA CONEXAO DO ASSINANTE"),
+        _row(9000141, 1, "10/07/2026", servico="ASSISTENCIA - VT 24H"),
+    ]
+
+    revisit = next(row for row in annotate_revisit_types(rows) if row["numos"] == "9000141")
+
+    assert revisit["revisita_inst"] == 0
+
+
 def test_duplicate_numos_does_not_move_flag_to_the_wrong_row():
     rows = [
         _row(9000100, 0, "01/07/2026", tiposervico="INSTALACAO", servico="INSTALACAO FTTH"),

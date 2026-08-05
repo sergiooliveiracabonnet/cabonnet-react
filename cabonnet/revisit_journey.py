@@ -119,16 +119,65 @@ def build_revisit_journeys(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return result
 
 
+# Janela da regra de negócio: instalação que gera chamado técnico em até N dias.
+# Mesmo prazo do SQL original (grafana.py, "revisita_inst").
+_INSTALL_REVISIT_WINDOW_DAYS = 30
+
+
+def _is_installation(row: dict[str, Any] | None) -> bool:
+    """"ASSISTENCIA - PRIMEIRA CONEXAO 30 D" é o retorno pós-instalação, não a
+    instalação — casar "PRIMEIRA CONEXAO" solto marcava essas como origem."""
+    if not row:
+        return False
+    service = _key_text(row.get("servico"))
+    if "ASSISTENCIA" in service:
+        return False
+    return "INSTALAC" in _key_text(row.get("tiposervico")) or "PRIMEIRA CONEXAO" in service
+
+
 def _technical_type(row: dict[str, Any] | None) -> str:
     if not row:
         return "servico"
+    if _is_installation(row):
+        return "instalacao"
     service_type = _key_text(row.get("tiposervico"))
     service = _key_text(row.get("servico"))
-    if "INSTALAC" in service_type or "INSTALAC" in service or "PRIMEIRA CONEXAO" in service:
-        return "instalacao"
     if "MANUTENC" in service_type or "ASSISTENCIA" in service or " VT " in f" {service} ":
         return "manutencao"
     return "servico"
+
+
+def _installations_by_group(rows: list[dict[str, Any]]) -> dict[tuple[str, str, str], list[dict[str, Any]]]:
+    grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        key = _group_key(row)
+        if key and _date(row) and _is_installation(row):
+            grouped[key].append(row)
+    for group in grouped.values():
+        group.sort(key=lambda item: _date(item))
+    return grouped
+
+
+def _installation_before(
+    revisit: dict[str, Any],
+    installations: dict[tuple[str, str, str], list[dict[str, Any]]],
+    window_days: int,
+) -> dict[str, Any] | None:
+    """A instalação não precisa ser a visita imediatamente anterior: entre ela e
+    o retorno quase sempre entram upgrade, transferência ou troca. Exigir
+    adjacência zerava a categoria."""
+    key = _group_key(revisit)
+    revisit_date = _date(revisit)
+    if not key or not revisit_date:
+        return None
+    found = None
+    for candidate in installations.get(key, []):
+        candidate_date = _date(candidate)
+        if candidate_date is None or candidate_date >= revisit_date:
+            break
+        if (revisit_date.date() - candidate_date.date()).days <= window_days:
+            found = candidate
+    return found
 
 
 _TYPE_FLAG = {
@@ -147,13 +196,27 @@ def annotate_revisit_types(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     sumir das três abas em vez de apenas ficar sem refinamento.
     """
     copies = [dict(row) for row in rows]
+    installations = _installations_by_group(copies)
+    zeradas = {"revisita_inst": 0, "revisita_manut": 0, "revisita_serv": 0}
+
     for journey in build_revisit_journeys(copies):
-        origin = journey.get("origin")
-        revisit = journey.get("revisit")
         # `revisit` é a própria linha de `copies`; usar a referência evita que
         # numos duplicado mande a flag para a linha errada.
-        if not origin or not isinstance(revisit, dict):
+        revisit = journey.get("revisit")
+        if not isinstance(revisit, dict):
             continue
-        revisit.update({"revisita_inst": 0, "revisita_manut": 0, "revisita_serv": 0})
+
+        # A janela manda na categoria de instalação: instalação mais velha que
+        # ela não faz do retorno uma revisita de instalação, mesmo sendo a
+        # origem imediata.
+        if _installation_before(revisit, installations, _INSTALL_REVISIT_WINDOW_DAYS):
+            revisit.update(zeradas)
+            revisit["revisita_inst"] = 1
+            continue
+
+        origin = journey.get("origin")
+        if not origin or _is_installation(origin):
+            continue
+        revisit.update(zeradas)
         revisit[_TYPE_FLAG[_technical_type(origin)]] = 1
     return copies
