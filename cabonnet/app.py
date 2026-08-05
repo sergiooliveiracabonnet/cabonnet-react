@@ -976,7 +976,7 @@ async def revisit_journeys(
     """
     import re
     from cabonnet.imanager_bi import fetch_bi_rows, filter_bi_period, drop_rede
-    from cabonnet.revisit_journey import build_revisit_journeys
+    from cabonnet.revisit_journey import build_revisit_journeys, official_install_revisit_predicate
 
     date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
     if not date_re.match(inicio or "") or not date_re.match(fim or ""):
@@ -991,13 +991,17 @@ async def revisit_journeys(
         rows = fetch_bi_rows()
         if _truthy(hide_rede):
             rows = drop_rede(rows)
+        # A revisita de instalação é marcada pelo serviço oficial de 30 dias, que
+        # quase nunca vem com recorrencia > 0. Sem este predicado a aba de
+        # Motivos não enxergaria a categoria inteira.
+        e_revisita_de_instalacao = official_install_revisit_predicate(rows)
         target_os = {
             str(row.get("numos") or "")
             for row in filter_bi_period(rows, inicio, fim)
-            if int(row.get("recorrencia") or 0) > 0
+            if int(row.get("recorrencia") or 0) > 0 or e_revisita_de_instalacao(row)
         }
         journeys = [
-            item for item in build_revisit_journeys(rows)
+            item for item in build_revisit_journeys(rows, extra_is_revisit=e_revisita_de_instalacao)
             if item["revisit_os"] in target_os
         ]
         linked = sum(item["origin_os"] is not None for item in journeys)

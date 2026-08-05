@@ -15,15 +15,20 @@ export function filtrarRevisitasAtivas(rows: BacklogRow[]): BacklogRow[] {
   return rows.filter(isRevisitaAtiva)
 }
 
+// A flag é o critério, sozinha. Revisita de instalação é marcada pelo serviço
+// oficial de 30 dias, que quase nunca traz recorrencia > 0 — na base real, 142
+// OS com esse serviço e só 9 com recorrencia. Exigir recorrencia aqui anulava a
+// classificação feita no backend. Para manutenção e serviço nada muda: essas
+// flags só são atribuídas a linhas que já têm recorrencia > 0.
 export function filtrarRevisitaPorTipo(rows: BacklogRow[], tipo: RevisitaTipo): BacklogRow[] {
-  return rows.filter(r => isRevisitaAtiva(r) && Number(r[FLAG_KEY[tipo]]) === 1)
+  return rows.filter(r => Number(r[FLAG_KEY[tipo]]) === 1)
 }
 
 export function contarRevisitasPorTipo(rows: BacklogRow[]): Record<RevisitaTipo, number> {
   return {
-    instalacao: rows.filter(r => isRevisitaAtiva(r) && Number(r.revisita_inst) === 1).length,
-    manutencao: rows.filter(r => isRevisitaAtiva(r) && Number(r.revisita_manut) === 1).length,
-    servico:    rows.filter(r => isRevisitaAtiva(r) && Number(r.revisita_serv) === 1).length,
+    instalacao: rows.filter(r => Number(r.revisita_inst) === 1).length,
+    manutencao: rows.filter(r => Number(r.revisita_manut) === 1).length,
+    servico:    rows.filter(r => Number(r.revisita_serv) === 1).length,
   }
 }
 
@@ -53,7 +58,7 @@ export function revisitaPorCidade(allRows: BacklogRow[], tipo: RevisitaTipo): Re
   for (const r of allRows) {
     const c = r.nomedacidade || 'Sem cidade'
     if (rowMatchesTipo(r, tipo)) bucket(c).total++
-    if (isRevisitaAtiva(r) && Number(r[FLAG_KEY[tipo]]) === 1) bucket(c).rev++
+    if (Number(r[FLAG_KEY[tipo]]) === 1) bucket(c).rev++
   }
   return Object.entries(m)
     .map(([cidade, v]) => ({ cidade, ...v, taxa: v.total ? Math.round((v.rev / v.total) * 100) : 0 }))

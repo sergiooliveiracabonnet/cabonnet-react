@@ -59,7 +59,27 @@ def _same_team(origin: dict[str, Any], revisit: dict[str, Any]) -> bool | None:
     return left == right if left and right else None
 
 
-def build_revisit_journeys(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def official_install_revisit_predicate(rows: list[dict[str, Any]]):
+    """Predicado "esta linha é uma revisita de instalação oficial".
+
+    Serve para as telas enxergarem essas OS como revisita mesmo quando o campo
+    `recorrencia` vem zerado — que é o caso de quase todas elas.
+    """
+    installations = _installations_by_group(rows)
+
+    def _predicate(row: dict[str, Any]) -> bool:
+        return (
+            _has_official_install_service(row)
+            and _installation_before(row, installations, _INSTALL_REVISIT_WINDOW_DAYS) is not None
+        )
+
+    return _predicate
+
+
+def build_revisit_journeys(
+    rows: list[dict[str, Any]],
+    extra_is_revisit=None,
+) -> list[dict[str, Any]]:
     """Retorna um registro auditável para cada linha com ``recorrencia > 0``.
 
     O pareamento usa a visita imediatamente anterior dentro da mesma cidade e
@@ -73,7 +93,7 @@ def build_revisit_journeys(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         key = _group_key(row)
         if key and _date(row):
             grouped[key].append(row)
-        if _recurrence(row) > 0:
+        if _recurrence(row) > 0 or (extra_is_revisit is not None and extra_is_revisit(row)):
             revisits.append(row)
 
     # Chaveado pela identidade da linha, não pelo numos: a mesma OS pode aparecer
@@ -122,6 +142,17 @@ def build_revisit_journeys(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 # Janela da regra de negócio: instalação que gera chamado técnico em até N dias.
 # Mesmo prazo do SQL original (grafana.py, "revisita_inst").
 _INSTALL_REVISIT_WINDOW_DAYS = 30
+
+# Serviço que a própria operação criou para o retorno pós-instalação. Ele é o
+# marcador oficial da categoria — decisão de negócio de 2026-08-05. Casa tanto
+# "...30 D" quanto "...30 DIAS".
+_OFFICIAL_INSTALL_REVISIT_SERVICE = "PRIMEIRA CONEXAO 30 D"
+
+
+def _has_official_install_service(row: dict[str, Any] | None) -> bool:
+    if not row:
+        return False
+    return _OFFICIAL_INSTALL_REVISIT_SERVICE in _key_text(row.get("servico"))
 
 
 def _is_installation(row: dict[str, Any] | None) -> bool:
@@ -199,22 +230,30 @@ def annotate_revisit_types(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     installations = _installations_by_group(copies)
     zeradas = {"revisita_inst": 0, "revisita_manut": 0, "revisita_serv": 0}
 
+    # Passada 1 — o serviço oficial de 30 dias. Roda sobre TODAS as linhas, não
+    # só sobre as de recorrencia > 0: na base real, 142 OS têm esse serviço e só
+    # 9 tinham recorrencia, então exigi-la escondia a categoria quase inteira.
+    oficiais: set[int] = set()
+    for row in copies:
+        if not _has_official_install_service(row):
+            continue
+        if not _installation_before(row, installations, _INSTALL_REVISIT_WINDOW_DAYS):
+            continue
+        row.update(zeradas)
+        row["revisita_inst"] = 1
+        oficiais.add(id(row))
+
+    # Passada 2 — as demais categorias, pelo tipo da OS que originou a jornada.
     for journey in build_revisit_journeys(copies):
         # `revisit` é a própria linha de `copies`; usar a referência evita que
         # numos duplicado mande a flag para a linha errada.
         revisit = journey.get("revisit")
-        if not isinstance(revisit, dict):
-            continue
-
-        # A janela manda na categoria de instalação: instalação mais velha que
-        # ela não faz do retorno uma revisita de instalação, mesmo sendo a
-        # origem imediata.
-        if _installation_before(revisit, installations, _INSTALL_REVISIT_WINDOW_DAYS):
-            revisit.update(zeradas)
-            revisit["revisita_inst"] = 1
+        if not isinstance(revisit, dict) or id(revisit) in oficiais:
             continue
 
         origin = journey.get("origin")
+        # Origem de instalação não basta para a categoria: só o serviço oficial
+        # marca instalação. Sem isso, um VT qualquer no mesmo prazo entraria.
         if not origin or _is_installation(origin):
             continue
         revisit.update(zeradas)

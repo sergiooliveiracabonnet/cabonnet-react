@@ -142,3 +142,32 @@ describe('base das taxas por tipo', () => {
     ])
   })
 })
+
+// A revisita de instalação passou a ser marcada pelo serviço oficial de 30
+// dias, que quase nunca traz recorrencia > 0 (142 na base real, 9 com
+// recorrencia). Exigir recorrencia aqui anulava a mudança no backend.
+describe('a flag oficial é o critério, não a recorrência', () => {
+  it('conta revisita de instalação vinda do serviço oficial sem recorrência', () => {
+    const rows = [
+      makeRow({ numos: '1', recorrencia: 0, revisita_inst: 1 }),
+      makeRow({ numos: '2', recorrencia: 0, revisita_inst: 1 }),
+    ]
+    expect(contarRevisitasPorTipo(rows).instalacao).toBe(2)
+    expect(filtrarRevisitaPorTipo(rows, 'instalacao').map(r => r.numos)).toEqual(['1', '2'])
+  })
+
+  it('linha sem flag nenhuma continua fora, mesmo com recorrência', () => {
+    const rows = [makeRow({ numos: '1', recorrencia: 3 })]
+    expect(contarRevisitasPorTipo(rows)).toEqual({ instalacao: 0, manutencao: 0, servico: 0 })
+  })
+
+  it('soma por cidade acompanha o mesmo critério', () => {
+    const rows = [
+      makeRow({ numos: '1', nomedacidade: 'TAUBATE', tiposervico: 'INSTALACAO', nomedaequipe: 'F08' }),
+      makeRow({ numos: '2', nomedacidade: 'TAUBATE', recorrencia: 0, revisita_inst: 1 }),
+    ]
+    expect(revisitaPorCidade(rows, 'instalacao')).toEqual([
+      { cidade: 'TAUBATE', rev: 1, total: 1, taxa: 100 },
+    ])
+  })
+})

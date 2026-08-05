@@ -99,17 +99,20 @@ def test_never_links_different_cities():
     assert result[0]["origin_os"] is None
 
 
-def test_revisit_type_comes_from_origin_service_not_return_service():
+def test_origem_de_instalacao_sozinha_nao_classifica_como_instalacao():
+    """A regra da origem vale para manutenção e serviço. Instalação tem marcador
+    próprio — o serviço oficial de 30 dias — e só ele conta."""
     rows = [
         _row(9000060, 0, "01/07/2026", tiposervico="INSTALACAO", servico="INSTALACAO FTTH"),
-        _row(9000061, 1, "05/07/2026", tiposervico="MANUTENCAO", servico="ASSISTENCIA - VT 24H"),
+        _row(9000061, 1, "05/07/2026", tiposervico="MANUTENCAO", servico="ASSISTENCIA - VT 24H",
+             revisita_manut=1),
     ]
 
     annotated = annotate_revisit_types(rows)
     revisit = next(row for row in annotated if row["numos"] == "9000061")
 
-    assert revisit["revisita_inst"] == 1
-    assert revisit["revisita_manut"] == 0
+    assert revisit["revisita_inst"] == 0
+    assert revisit["revisita_manut"] == 1
 
 
 def test_second_maintenance_return_is_revisit_maintenance():
@@ -170,7 +173,7 @@ def test_instalacao_conta_mesmo_com_outra_os_no_meio():
              servico="PRIMEIRA CONEXAO DO ASSINANTE"),
         _row(9000121, 0, "05/07/2026", tiposervico="SERVICOS",
              servico="ALTERACAO DE PROGRAMACAO - UPGRADE"),
-        _row(9000122, 1, "10/07/2026", servico="ASSISTENCIA - VT 24H"),
+        _row(9000122, 0, "10/07/2026", servico="ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS"),
     ]
 
     revisit = next(row for row in annotate_revisit_types(rows) if row["numos"] == "9000122")
@@ -183,7 +186,7 @@ def test_instalacao_fora_da_janela_nao_conta_como_revisita_de_instalacao():
     rows = [
         _row(9000130, 0, "01/06/2026", tiposervico="INSTALACAO PRINCIPAL",
              servico="PRIMEIRA CONEXAO DO ASSINANTE"),
-        _row(9000131, 1, "20/07/2026", servico="ASSISTENCIA - VT 24H"),
+        _row(9000131, 0, "20/07/2026", servico="ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS"),
     ]
 
     revisit = next(row for row in annotate_revisit_types(rows) if row["numos"] == "9000131")
@@ -195,7 +198,7 @@ def test_instalacao_de_outro_contrato_nao_conta():
     rows = [
         _row(9000140, 0, "01/07/2026", codigocontrato="OUTRO",
              tiposervico="INSTALACAO PRINCIPAL", servico="PRIMEIRA CONEXAO DO ASSINANTE"),
-        _row(9000141, 1, "10/07/2026", servico="ASSISTENCIA - VT 24H"),
+        _row(9000141, 0, "10/07/2026", servico="ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS"),
     ]
 
     revisit = next(row for row in annotate_revisit_types(rows) if row["numos"] == "9000141")
@@ -205,8 +208,9 @@ def test_instalacao_de_outro_contrato_nao_conta():
 
 def test_duplicate_numos_does_not_move_flag_to_the_wrong_row():
     rows = [
-        _row(9000100, 0, "01/07/2026", tiposervico="INSTALACAO", servico="INSTALACAO FTTH"),
-        _row(9000101, 1, "05/07/2026"),
+        _row(9000100, 0, "01/07/2026", tiposervico="INSTALACAO PRINCIPAL",
+             servico="PRIMEIRA CONEXAO DO ASSINANTE"),
+        _row(9000101, 1, "05/07/2026", servico="ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS"),
         _row(9000101, 0, "02/07/2026", codigocontrato="OUTRO", nomedacidade="Caçapava"),
     ]
 
@@ -214,3 +218,46 @@ def test_duplicate_numos_does_not_move_flag_to_the_wrong_row():
 
     assert annotated[1]["revisita_inst"] == 1
     assert annotated[2]["revisita_inst"] == 0
+
+
+# ── Revisita de instalação = o serviço oficial de 30 dias ────────────────────
+# Decisão de negócio (2026-08-05): a categoria passa a ser o serviço que a
+# própria operação criou para o retorno pós-instalação. O campo `recorrencia`
+# deixa de ser pré-requisito aqui — dos 142 desses serviços na base real, só 9
+# tinham recorrencia > 0, e a aba mostrava esses 9.
+
+def test_servico_oficial_de_30_dias_conta_mesmo_sem_recorrencia():
+    rows = [
+        _row(9000200, 0, "01/07/2026", tiposervico="INSTALACAO PRINCIPAL",
+             servico="PRIMEIRA CONEXAO DO ASSINANTE"),
+        _row(9000201, 0, "10/07/2026", servico="ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS"),
+    ]
+
+    revisit = next(row for row in annotate_revisit_types(rows) if row["numos"] == "9000201")
+
+    assert revisit["revisita_inst"] == 1
+
+
+def test_servico_oficial_sem_instalacao_na_janela_nao_conta():
+    rows = [
+        _row(9000210, 0, "01/05/2026", tiposervico="INSTALACAO PRINCIPAL",
+             servico="PRIMEIRA CONEXAO DO ASSINANTE"),
+        _row(9000211, 0, "20/07/2026", servico="ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS"),
+    ]
+
+    revisit = next(row for row in annotate_revisit_types(rows) if row["numos"] == "9000211")
+
+    assert revisit["revisita_inst"] == 0
+
+
+def test_vt_apos_instalacao_nao_e_mais_revisita_de_instalacao():
+    """Só o serviço oficial conta — um VT 24H no mesmo prazo não entra."""
+    rows = [
+        _row(9000220, 0, "01/07/2026", tiposervico="INSTALACAO PRINCIPAL",
+             servico="PRIMEIRA CONEXAO DO ASSINANTE"),
+        _row(9000221, 1, "10/07/2026", servico="ASSISTENCIA - VT 24H", revisita_manut=1),
+    ]
+
+    revisit = next(row for row in annotate_revisit_types(rows) if row["numos"] == "9000221")
+
+    assert revisit["revisita_inst"] == 0
