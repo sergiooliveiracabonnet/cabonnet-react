@@ -116,3 +116,30 @@ def build_revisit_journeys(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         })
 
     return result
+
+
+def _technical_type(row: dict[str, Any] | None) -> str:
+    if not row:
+        return "servico"
+    service_type = _key_text(row.get("tiposervico"))
+    service = _key_text(row.get("servico"))
+    if "INSTALAC" in service_type or "INSTALAC" in service or "PRIMEIRA CONEXAO" in service:
+        return "instalacao"
+    if "MANUTENC" in service_type or "ASSISTENCIA" in service or " VT " in f" {service} ":
+        return "manutencao"
+    return "servico"
+
+
+def annotate_revisit_types(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Classifica o retorno pelo serviço que o originou, não pela OS de retorno."""
+    copies = [dict(row) for row in rows]
+    by_os = {_text(row.get("numos")): row for row in copies}
+    for row in copies:
+        row.update({"revisita_inst": 0, "revisita_manut": 0, "revisita_serv": 0})
+    for journey in build_revisit_journeys(copies):
+        revisit = by_os.get(journey["revisit_os"])
+        if not revisit or not journey.get("origin"):
+            continue
+        origin_type = _technical_type(journey.get("origin"))
+        revisit[{"instalacao": "revisita_inst", "manutencao": "revisita_manut", "servico": "revisita_serv"}[origin_type]] = 1
+    return copies

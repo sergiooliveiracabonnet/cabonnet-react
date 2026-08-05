@@ -37,8 +37,8 @@ describe('filtrarRevisitasAtivas', () => {
 describe('filtrarRevisitaPorTipo', () => {
   it('filtra só o tipo pedido', () => {
     const rows = [
-      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', recorrencia: 1 }),
-      makeRow({ numos: '2', recorrencia: 1 }),
+      makeRow({ numos: '1', tiposervico: 'MANUTENCAO', recorrencia: 1, revisita_inst: 1 }),
+      makeRow({ numos: '2', recorrencia: 1, revisita_manut: 1 }),
     ]
     expect(filtrarRevisitaPorTipo(rows, 'instalacao').map(r => r.numos)).toEqual(['1'])
     expect(filtrarRevisitaPorTipo(rows, 'manutencao').map(r => r.numos)).toEqual(['2'])
@@ -48,10 +48,10 @@ describe('filtrarRevisitaPorTipo', () => {
 describe('contarRevisitasPorTipo', () => {
   it('conta cada tipo independentemente', () => {
     const rows = [
-      makeRow({ tiposervico: 'INSTALACAO', nomedaequipe: 'F08', recorrencia: 1 }),
-      makeRow({ tiposervico: 'INSTALACAO', nomedaequipe: 'F11', recorrencia: 2 }),
-      makeRow({ tiposervico: 'MANUTENCAO', recorrencia: 1 }),
-      makeRow({ tiposervico: 'SERVICOS', nomedaequipe: 'F09', recorrencia: 1 }),
+      makeRow({ recorrencia: 1, revisita_inst: 1 }),
+      makeRow({ recorrencia: 2, revisita_inst: 1 }),
+      makeRow({ recorrencia: 1, revisita_manut: 1 }),
+      makeRow({ recorrencia: 1, revisita_serv: 1 }),
     ]
     expect(contarRevisitasPorTipo(rows)).toEqual({ instalacao: 2, manutencao: 1, servico: 1 })
   })
@@ -60,9 +60,9 @@ describe('contarRevisitasPorTipo', () => {
 describe('revisitaPorCidade', () => {
   it('calcula total e taxa por cidade pro tipo pedido', () => {
     const rows = [
-      makeRow({ nomedacidade: 'TAUBATE', recorrencia: 1 }),
+      makeRow({ nomedacidade: 'TAUBATE', recorrencia: 1, revisita_manut: 1 }),
       makeRow({ nomedacidade: 'TAUBATE' }),
-      makeRow({ nomedacidade: 'CACAPAVA', recorrencia: 1 }),
+      makeRow({ nomedacidade: 'CACAPAVA', recorrencia: 1, revisita_manut: 1 }),
     ]
     const result = revisitaPorCidade(rows, 'manutencao')
     expect(result).toEqual(expect.arrayContaining([
@@ -73,7 +73,7 @@ describe('revisitaPorCidade', () => {
 
   it('usa "Sem cidade" quando nomedacidade está vazio', () => {
     const result = revisitaPorCidade([
-      makeRow({ nomedacidade: '', tiposervico: 'SERVICOS', nomedaequipe: 'F09', recorrencia: 1 }),
+      makeRow({ nomedacidade: '', tiposervico: 'SERVICOS', nomedaequipe: 'F09', recorrencia: 1, revisita_serv: 1 }),
     ], 'servico')
     expect(result[0].cidade).toBe('Sem cidade')
   })
@@ -106,7 +106,7 @@ describe('clientesCronicos', () => {
 describe('base das taxas por tipo', () => {
   it('usa somente instalacoes como base da revisita de instalacao', () => {
     const rows = [
-      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', recorrencia: 1 }),
+      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', recorrencia: 1, revisita_inst: 1 }),
       makeRow({ numos: '2', tiposervico: 'INSTALACAO', nomedaequipe: 'F11' }),
       makeRow({ numos: '3', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01' }),
     ]

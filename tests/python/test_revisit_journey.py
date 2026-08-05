@@ -1,4 +1,4 @@
-from cabonnet.revisit_journey import build_revisit_journeys
+from cabonnet.revisit_journey import annotate_revisit_types, build_revisit_journeys
 
 
 def _row(numos, recurrence, date, **overrides):
@@ -93,3 +93,28 @@ def test_never_links_different_cities():
     result = build_revisit_journeys(rows)
 
     assert result[0]["origin_os"] is None
+
+
+def test_revisit_type_comes_from_origin_service_not_return_service():
+    rows = [
+        _row(9000060, 0, "01/07/2026", tiposervico="INSTALACAO", servico="INSTALACAO FTTH"),
+        _row(9000061, 1, "05/07/2026", tiposervico="MANUTENCAO", servico="ASSISTENCIA - VT 24H"),
+    ]
+
+    annotated = annotate_revisit_types(rows)
+    revisit = next(row for row in annotated if row["numos"] == "9000061")
+
+    assert revisit["revisita_inst"] == 1
+    assert revisit["revisita_manut"] == 0
+
+
+def test_second_maintenance_return_is_revisit_maintenance():
+    rows = [
+        _row(9000070, 0, "01/07/2026", tiposervico="MANUTENCAO"),
+        _row(9000071, 1, "05/07/2026", tiposervico="MANUTENCAO"),
+    ]
+
+    revisit = annotate_revisit_types(rows)[1]
+
+    assert revisit["revisita_inst"] == 0
+    assert revisit["revisita_manut"] == 1

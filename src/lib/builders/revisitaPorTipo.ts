@@ -3,6 +3,10 @@ import { getEquipeTipo } from '../transform'
 
 export type RevisitaTipo = 'instalacao' | 'manutencao' | 'servico'
 
+const FLAG_KEY: Record<RevisitaTipo, 'revisita_inst' | 'revisita_manut' | 'revisita_serv'> = {
+  instalacao: 'revisita_inst', manutencao: 'revisita_manut', servico: 'revisita_serv',
+}
+
 export function isRevisitaAtiva(r: BacklogRow): boolean {
   return Number(r.recorrencia) > 0
 }
@@ -12,14 +16,14 @@ export function filtrarRevisitasAtivas(rows: BacklogRow[]): BacklogRow[] {
 }
 
 export function filtrarRevisitaPorTipo(rows: BacklogRow[], tipo: RevisitaTipo): BacklogRow[] {
-  return rows.filter(r => rowMatchesTipo(r, tipo) && isRevisitaAtiva(r))
+  return rows.filter(r => isRevisitaAtiva(r) && Number(r[FLAG_KEY[tipo]]) === 1)
 }
 
 export function contarRevisitasPorTipo(rows: BacklogRow[]): Record<RevisitaTipo, number> {
   return {
-    instalacao: rows.filter(r => rowMatchesTipo(r, 'instalacao') && isRevisitaAtiva(r)).length,
-    manutencao: rows.filter(r => rowMatchesTipo(r, 'manutencao') && isRevisitaAtiva(r)).length,
-    servico:    rows.filter(r => rowMatchesTipo(r, 'servico') && isRevisitaAtiva(r)).length,
+    instalacao: rows.filter(r => isRevisitaAtiva(r) && Number(r.revisita_inst) === 1).length,
+    manutencao: rows.filter(r => isRevisitaAtiva(r) && Number(r.revisita_manut) === 1).length,
+    servico:    rows.filter(r => isRevisitaAtiva(r) && Number(r.revisita_serv) === 1).length,
   }
 }
 
@@ -42,7 +46,7 @@ export function revisitaPorCidade(allRows: BacklogRow[], tipo: RevisitaTipo): Re
     const c = r.nomedacidade || 'Sem cidade'
     if (!m[c]) m[c] = { rev: 0, total: 0 }
     m[c].total++
-    if (isRevisitaAtiva(r)) m[c].rev++
+    if (isRevisitaAtiva(r) && Number(r[FLAG_KEY[tipo]]) === 1) m[c].rev++
   }
   return Object.entries(m)
     .map(([cidade, v]) => ({ cidade, ...v, taxa: v.total ? Math.round((v.rev / v.total) * 100) : 0 }))

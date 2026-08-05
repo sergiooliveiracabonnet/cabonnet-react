@@ -915,7 +915,8 @@ async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require
                 and (now - cached["ts"]) < _BACKLOG_CACHE_TTL):
             return cached["data"]
     try:
-        rows   = filter_bi_period(fetch_bi_rows(), inicio_use, fim_use)
+        from cabonnet.revisit_journey import annotate_revisit_types
+        rows   = filter_bi_period(annotate_revisit_types(fetch_bi_rows()), inicio_use, fim_use)
         result = build_backlog_json(rows)
         result["periodo"] = inicio_use
         result["fim"]     = fim_use

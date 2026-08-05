@@ -18,6 +18,10 @@ export interface BacklogRow {
   dataagendamento: string
   dataexecucao:    string
   horas_resolucao: number
+  observacao?:      string
+  motivocancelamento?: string
+  motivoreagendamento?: string
+  executante?:      string
   recorrencia:     number
   is_revisita:     boolean
   /** @deprecated compatibilidade do contrato antigo; usar `recorrencia` */

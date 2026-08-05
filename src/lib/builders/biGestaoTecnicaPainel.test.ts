@@ -18,7 +18,7 @@ function makeRow(overrides: Partial<BacklogRow> = {}): BacklogRow {
 describe('buildBiGestaoTecnicaPainel', () => {
   it('calcula revisita de instalacao sobre as instalacoes de origem', () => {
     const rows = [
-      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', recorrencia: 1 }),
+      makeRow({ numos: '1', tiposervico: 'INSTALACAO', nomedaequipe: 'F08', recorrencia: 1, revisita_inst: 1 }),
       makeRow({ numos: '2', tiposervico: 'INSTALACAO', nomedaequipe: 'F11' }),
       makeRow({ numos: '3', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01' }),
     ]
@@ -79,7 +79,7 @@ describe('buildBiGestaoTecnicaPainel', () => {
 
   it('revisitaPct usa contarRevisitasPorTipo sobre o total do tipo', () => {
     const rows = [
-      makeRow({ numos: '1', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01', recorrencia: 1 }),
+      makeRow({ numos: '1', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01', recorrencia: 1, revisita_manut: 1 }),
       makeRow({ numos: '2', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01' }),
     ]
     expect(buildBiGestaoTecnicaPainel(rows).revisitaPct.manutencao).toBe(50)
@@ -88,7 +88,7 @@ describe('buildBiGestaoTecnicaPainel', () => {
   it('revisitaPct ignora flag de revisita em linha de outro tipo (REDE) — nunca passa de 100%', () => {
     const rows = [
       makeRow({ numos: '1', tiposervico: 'MANUTENCAO', nomedaequipe: 'F01', recorrencia: 0 }),
-      makeRow({ numos: '2', tiposervico: 'MANUTENCAO', nomedaequipe: '03-VAL-REDE F04', recorrencia: 1 }),
+      makeRow({ numos: '2', tiposervico: 'MANUTENCAO', nomedaequipe: '03-VAL-REDE F04', recorrencia: 1, revisita_manut: 1 }),
     ]
     const painel = buildBiGestaoTecnicaPainel(rows)
     expect(painel.totalManutencao).toBe(1)
