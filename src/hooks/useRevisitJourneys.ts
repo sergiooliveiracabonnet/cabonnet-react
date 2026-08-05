@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
+import { useUIStore } from '../store/uiStore'
 import type { BacklogRow } from './useBacklog'
 
 export type LinkConfidence = 'high' | 'medium' | 'low' | 'unlinked'
@@ -25,9 +26,12 @@ export interface RevisitJourneysData {
 }
 
 export function useRevisitJourneys(inicio: string, fim: string) {
+  const hideRede = useUIStore(s => s.hideRede)
   return useQuery<RevisitJourneysData>({
-    queryKey: ['revisit-journeys', inicio, fim],
-    queryFn: () => api.get(`/api/revisit-journeys?inicio=${inicio}&fim=${fim}`),
+    queryKey: ['revisit-journeys', inicio, fim, hideRede],
+    queryFn: () => api.get(
+      `/api/revisit-journeys?inicio=${inicio}&fim=${fim}${hideRede ? '&hide_rede=1' : ''}`,
+    ),
     staleTime: 5 * 60_000,
     enabled: Boolean(inicio && fim),
     retry: 1,

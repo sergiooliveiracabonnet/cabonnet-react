@@ -888,10 +888,19 @@ async def revisitas(_role: str = Depends(_require_auth)):
 _BACKLOG_CACHE_TTL = 5 * 60  # 5 minutos
 
 
+def _truthy(value: str) -> bool:
+    return str(value or "").strip().lower() in ("1", "true", "on", "yes")
+
+
 @router.get("/backlog")
-async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require_auth)):
+async def backlog(
+    inicio: str = "",
+    fim: str = "",
+    hide_rede: str = "",
+    _role: str = Depends(_require_auth),
+):
     from datetime import date, timedelta
-    from cabonnet.imanager_bi import fetch_bi_rows, filter_bi_period
+    from cabonnet.imanager_bi import fetch_bi_rows, filter_bi_period, drop_rede
     import re
     _date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
     today      = date.today()
@@ -906,7 +915,10 @@ async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require
         inicio_use = first_this.isoformat()
         fim_use    = fim_default
 
-    cache_key = f"{inicio_use}|{fim_use}"
+    sem_rede = _truthy(hide_rede)
+    # O estado do toggle entra na chave: sem isso a primeira resposta cacheada
+    # seria servida para os dois estados do botão.
+    cache_key = f"{inicio_use}|{fim_use}|rede={'off' if sem_rede else 'on'}"
     now = _time_mod.time()
     with state._backlog_cache_lock:
         cached = state._backlog_cache
@@ -916,7 +928,13 @@ async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require
             return cached["data"]
     try:
         from cabonnet.revisit_journey import annotate_revisit_types
-        rows   = filter_bi_period(annotate_revisit_types(fetch_bi_rows()), inicio_use, fim_use)
+        source = fetch_bi_rows()
+        # Recorta antes de anotar, como o OSDataContext faz no frontend: com o
+        # toggle off as OS de Rede não existem para esta tela, e nenhum agregado
+        # calculado abaixo pode contá-las.
+        if sem_rede:
+            source = drop_rede(source)
+        rows   = filter_bi_period(annotate_revisit_types(source), inicio_use, fim_use)
         result = build_backlog_json(rows)
         result["periodo"] = inicio_use
         result["fim"]     = fim_use
@@ -940,15 +958,24 @@ async def backlog(inicio: str = "", fim: str = "", _role: str = Depends(_require
 
 
 @router.get("/api/revisit-journeys")
-async def revisit_journeys(inicio: str, fim: str, _role: str = Depends(_require_auth)):
+async def revisit_journeys(
+    inicio: str,
+    fim: str,
+    hide_rede: str = "",
+    _role: str = Depends(_require_auth),
+):
     """Relaciona as revisitas oficiais do período com sua OS precedente.
 
     O histórico completo disponível no visual é mantido durante o pareamento;
     o recorte solicitado só é aplicado às revisitas devolvidas. Assim uma OS
     aberta no fim do mês pode ser a origem de uma revisita no mês seguinte.
+
+    ``hide_rede`` acompanha o toggle "Rede" do header: com ele ligado as OS de
+    Rede saem antes do pareamento, então não aparecem nem como revisita nem
+    como origem.
     """
     import re
-    from cabonnet.imanager_bi import fetch_bi_rows, filter_bi_period
+    from cabonnet.imanager_bi import fetch_bi_rows, filter_bi_period, drop_rede
     from cabonnet.revisit_journey import build_revisit_journeys
 
     date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -962,6 +989,8 @@ async def revisit_journeys(inicio: str, fim: str, _role: str = Depends(_require_
 
     try:
         rows = fetch_bi_rows()
+        if _truthy(hide_rede):
+            rows = drop_rede(rows)
         target_os = {
             str(row.get("numos") or "")
             for row in filter_bi_period(rows, inicio, fim)

@@ -388,6 +388,19 @@ def _fetch_bi_rows(session: requests.Session | None = None) -> list[dict[str, An
     return normalize_bi_rows(decode_dsr_rows(data))
 
 
+_REDE_EQUIPE_RE = re.compile(r"\bREDE\b")
+
+
+def is_rede_row(row: dict[str, Any]) -> bool:
+    """Mesma regra do getEquipeTipo (src/lib/transform.ts): REDE vem do nome da
+    equipe, não do serviço. As duas telas precisam esconder o mesmo conjunto."""
+    return bool(_REDE_EQUIPE_RE.search(str(row.get("nomedaequipe") or "").upper()))
+
+
+def drop_rede(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [row for row in rows if not is_rede_row(row)]
+
+
 def filter_bi_period(rows: list[dict[str, Any]], inicio: str, fim: str) -> list[dict[str, Any]]:
     start = dt.datetime.strptime(inicio, "%Y-%m-%d").date()
     end = dt.datetime.strptime(fim, "%Y-%m-%d").date()

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
+import { useUIStore } from '../store/uiStore'
 
 export interface BacklogRow {
   nomecliente:     string
@@ -82,10 +83,17 @@ export interface BacklogData {
 
 const BACKLOG_SCHEMA_VERSION = 8   // fonte oficial iManager/Power BI + campo recorrencia
 
+// O toggle "Rede" do header vale para estas telas também. Ele é lido aqui, e
+// não em cada página, para que todo consumidor de backlog respeite o mesmo
+// estado — e vai como parâmetro porque os agregados (kpis, por_equipe,
+// por_cidade) são calculados no backend e precisam excluir Rede junto.
 export function useBacklog(inicio: string, fim: string) {
+  const hideRede = useUIStore(s => s.hideRede)
   return useQuery<BacklogData>({
-    queryKey:      ['backlog', BACKLOG_SCHEMA_VERSION, inicio, fim],
-    queryFn:       () => api.get<BacklogData>(`/backlog?inicio=${inicio}&fim=${fim}`),
+    queryKey:      ['backlog', BACKLOG_SCHEMA_VERSION, inicio, fim, hideRede],
+    queryFn:       () => api.get<BacklogData>(
+      `/backlog?inicio=${inicio}&fim=${fim}${hideRede ? '&hide_rede=1' : ''}`,
+    ),
     staleTime:     5 * 60_000,
     gcTime:        10 * 60_000,
     retry:         1,
