@@ -550,11 +550,9 @@ _MODULO_LABELS = {
     "noc":                "NOC",
     "erp_relatorios":     "Relatórios",
     "erp_alertas":        "Alertas",
-    "erp_qualidade":      "Qualidade",
     "erp_planner":        "Planner",
     "erp_fila":           "Fila de Prioridade",
     "erp_ranking":        "Ranking Técnicos",
-    "erp_bi_tecnica":     "BI-Gestão Técnica",
 }
 _ROLES_VALIDOS = ("gestor", "operador", "viewer")
 
@@ -885,174 +883,6 @@ async def revisitas(_role: str = Depends(_require_auth)):
         raise HTTPException(502, str(ex))
 
 
-_BACKLOG_CACHE_TTL = 5 * 60  # 5 minutos
-
-
-def _truthy(value: str) -> bool:
-    return str(value or "").strip().lower() in ("1", "true", "on", "yes")
-
-
-@router.get("/backlog")
-async def backlog(
-    inicio: str = "",
-    fim: str = "",
-    hide_rede: str = "",
-    _role: str = Depends(_require_auth),
-):
-    from datetime import date, timedelta
-    from cabonnet.imanager_bi import fetch_bi_rows, filter_bi_period, drop_rede
-    import re
-    _date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-    today      = date.today()
-    first_this = today.replace(day=1)
-    first_prev = (first_this - timedelta(days=1)).replace(day=1)
-    fim_default = (today + timedelta(days=1)).isoformat()
-
-    if inicio and _date_re.match(inicio) and fim and _date_re.match(fim):
-        inicio_use = inicio
-        fim_use    = fim
-    else:
-        inicio_use = first_this.isoformat()
-        fim_use    = fim_default
-
-    sem_rede = _truthy(hide_rede)
-    # O estado do toggle entra na chave: sem isso a primeira resposta cacheada
-    # seria servida para os dois estados do botão.
-    cache_key = f"{inicio_use}|{fim_use}|rede={'off' if sem_rede else 'on'}"
-    now = _time_mod.time()
-    with state._backlog_cache_lock:
-        cached = state._backlog_cache
-        if (cached["data"] is not None
-                and cached.get("key") == cache_key
-                and (now - cached["ts"]) < _BACKLOG_CACHE_TTL):
-            return cached["data"]
-    try:
-        from cabonnet.revisit_journey import annotate_revisit_types
-        source = fetch_bi_rows()
-        # Recorta antes de anotar, como o OSDataContext faz no frontend: com o
-        # toggle off as OS de Rede não existem para esta tela, e nenhum agregado
-        # calculado abaixo pode contá-las.
-        if sem_rede:
-            source = drop_rede(source)
-        rows   = filter_bi_period(annotate_revisit_types(source), inicio_use, fim_use)
-        result = build_backlog_json(rows)
-        result["periodo"] = inicio_use
-        result["fim"]     = fim_use
-        result["source"]  = "imanager-powerbi-report-21"
-        result["cached"]  = False
-        with state._backlog_cache_lock:
-            state._backlog_cache["data"] = result
-            state._backlog_cache["ts"]   = now
-            state._backlog_cache["key"]  = cache_key
-        return result
-    except Exception as ex:
-        log.exception("Erro /backlog")
-        with state._backlog_cache_lock:
-            cached = state._backlog_cache
-            if cached.get("data") is not None and cached.get("key") == cache_key:
-                stale = dict(cached["data"])
-                stale["cached"] = True
-                stale["cache_age_min"] = round((now - cached["ts"]) / 60, 1)
-                return stale
-        raise HTTPException(502, str(ex))
-
-
-@router.get("/api/revisit-journeys")
-async def revisit_journeys(
-    inicio: str,
-    fim: str,
-    hide_rede: str = "",
-    _role: str = Depends(_require_auth),
-):
-    """Relaciona as revisitas oficiais do período com sua OS precedente.
-
-    O histórico completo disponível no visual é mantido durante o pareamento;
-    o recorte solicitado só é aplicado às revisitas devolvidas. Assim uma OS
-    aberta no fim do mês pode ser a origem de uma revisita no mês seguinte.
-
-    ``hide_rede`` acompanha o toggle "Rede" do header: com ele ligado as OS de
-    Rede saem antes do pareamento, então não aparecem nem como revisita nem
-    como origem.
-    """
-    import re
-    from cabonnet.imanager_bi import fetch_bi_rows, filter_bi_period, drop_rede
-    from cabonnet.revisit_journey import build_revisit_journeys, official_install_revisit_predicate
-
-    date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-    if not date_re.match(inicio or "") or not date_re.match(fim or ""):
-        raise HTTPException(400, "inicio e fim devem usar o formato YYYY-MM-DD")
-    try:
-        if datetime.strptime(inicio, "%Y-%m-%d") >= datetime.strptime(fim, "%Y-%m-%d"):
-            raise HTTPException(400, "fim deve ser posterior a inicio")
-    except ValueError as exc:
-        raise HTTPException(400, "periodo invalido") from exc
-
-    try:
-        rows = fetch_bi_rows()
-        if _truthy(hide_rede):
-            rows = drop_rede(rows)
-        # A revisita de instalação é marcada pelo serviço oficial de 30 dias, que
-        # quase nunca vem com recorrencia > 0. Sem este predicado a aba de
-        # Motivos não enxergaria a categoria inteira.
-        e_revisita_de_instalacao = official_install_revisit_predicate(rows)
-        target_os = {
-            str(row.get("numos") or "")
-            for row in filter_bi_period(rows, inicio, fim)
-            if int(row.get("recorrencia") or 0) > 0 or e_revisita_de_instalacao(row)
-        }
-        journeys = [
-            item for item in build_revisit_journeys(rows, extra_is_revisit=e_revisita_de_instalacao)
-            if item["revisit_os"] in target_os
-        ]
-        linked = sum(item["origin_os"] is not None for item in journeys)
-        return {
-            "journeys": journeys,
-            "n": len(journeys),
-            "linked": linked,
-            "unlinked": len(journeys) - linked,
-            "periodo": inicio,
-            "fim": fim,
-            "source": "imanager-powerbi-report-21",
-        }
-    except HTTPException:
-        raise
-    except Exception as ex:
-        log.exception("Erro /api/revisit-journeys")
-        raise HTTPException(502, str(ex)) from ex
-
-
-_REVISITAS_DETALHE_CACHE_TTL = 5 * 60  # 5 minutos
-
-
-@router.get("/revisitas-detalhe")
-async def revisitas_detalhe(inicio: str = "", fim: str = "", _role: str = Depends(_require_auth)):
-    import re
-    _date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-    today      = date.today()
-    first_this = today.replace(day=1)
-    fim_default = (today.replace(day=1).__class__(today.year, today.month + 1, 1)
-                   if today.month < 12
-                   else today.replace(year=today.year + 1, month=1, day=1)).isoformat()
-
-    if inicio and _date_re.match(inicio) and fim and _date_re.match(fim):
-        inicio_use = inicio
-        fim_use    = fim
-    else:
-        from datetime import timedelta
-        inicio_use = first_this.isoformat()
-        fim_use    = (today + timedelta(days=1)).isoformat()
-
-    try:
-        rows   = frames_to_dict_list(grafana_post(sql_revisitas_com_obs(inicio_use, fim_use)))
-        result = build_pares_revisita(rows)
-        result["periodo"] = inicio_use
-        result["fim"]     = fim_use
-        return result
-    except Exception as ex:
-        log.exception("Erro /revisitas-detalhe")
-        raise HTTPException(502, str(ex))
-
-
 @router.get("/atendimento")
 async def atendimento():
     try:
@@ -1306,12 +1136,6 @@ async def ai_revisitas_causa(request: Request):
         msg  = "ANTHROPIC_API_KEY não configurada no .env" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
         raise HTTPException(code, msg)
     return {"ok": True, **result}
-
-
-@router.get("/api/revisita-motivos")
-async def get_revisita_motivos(dias: int = 90, _role: str = Depends(_require_modulo("erp_qualidade"))):
-    from cabonnet.db import _db_list_revisita_motivos
-    return {"ok": True, **_db_list_revisita_motivos(dias)}
 
 
 @router.get("/api/motivo-encerramento")

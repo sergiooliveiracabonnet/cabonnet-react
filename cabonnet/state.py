@@ -78,10 +78,6 @@ _revisitas_cache_lock = threading.Lock()
 _ate_cache      = {"data": None, "ts": 0}
 _ate_cache_lock = threading.Lock()
 
-# ── Cache backlog iManager (SLA + Recorrência) ────────────────────────────────
-_backlog_cache      = {"data": None, "ts": 0, "meses": 0}
-_backlog_cache_lock = threading.Lock()
-
 # ── Uso acumulado da AI (tokens + custo estimado) ────────────────────────────
 _ai_usage           = {"input_tokens": 0, "output_tokens": 0, "calls": 0, "errors": 0}
 _ai_usage_lock      = threading.Lock()

@@ -85,13 +85,6 @@ export const justificativas = {
   delete: (id: number)    => request<{ ok: boolean }>(`/api/justificativas/${id}`, { method: 'DELETE' }),
 }
 
-export interface RevisitaMotivoItem { numos: string; motivo: string; ts: number; nomedaequipe: string; nomedacidade: string; origem: 'telegram' | 'manual' }
-export interface RevisitaMotivoDist { motivo: string; count: number; pct: number }
-
-export const revisitaMotivos = {
-  get: (dias = 90) => request<{ ok: boolean; total: number; distribuicao: RevisitaMotivoDist[]; itens: RevisitaMotivoItem[] }>(`/api/revisita-motivos?dias=${dias}`),
-}
-
 export interface MotivoEncerramentoItem { motivo: string; observacao: string; criado_em: string }
 
 export const motivoEncerramento = {
@@ -176,8 +169,6 @@ export const permissoes = {
 export const endpoints = {
   query:            '/query',
   revisitas:        '/revisitas',
-  revisitasDetalhe: '/revisitas-detalhe',
-  backlog:          '/backlog',
   atendimento:      '/atendimento',
   juniper:          '/juniper',
   juniperHist:      '/juniper/historico',

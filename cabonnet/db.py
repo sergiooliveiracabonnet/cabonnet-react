@@ -22,15 +22,15 @@ log_db = logging.getLogger("CaboNetServer.DB")
 ALL_MODULOS = [
     "dashboard", "ordens", "graficos", "cidades", "fornecedor", "juniper",
     "fechamento", "mapa", "noc",
-    "erp_relatorios", "erp_alertas", "erp_qualidade",
-    "erp_planner", "erp_fila", "erp_ranking", "erp_bi_tecnica",
+    "erp_relatorios", "erp_alertas",
+    "erp_planner", "erp_fila", "erp_ranking",
 ]
 
 # Defaults semeados no bootstrap — só o ponto de partida, ajustável depois pela
 # própria tela de permissões.
 _DEFAULT_OPERADOR_MODULOS = [
     "dashboard", "ordens", "cidades", "mapa", "juniper",
-    "erp_relatorios", "erp_alertas", "erp_qualidade",
+    "erp_relatorios", "erp_alertas",
     "erp_planner", "erp_fila", "erp_ranking",
 ]
 _DEFAULT_VIEWER_MODULOS = ["dashboard", "graficos", "cidades", "mapa"]

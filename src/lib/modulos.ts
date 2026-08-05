@@ -14,11 +14,9 @@ export const MODULO_ROTA: Record<string, string> = {
   noc:               '/noc',
   erp_relatorios:    '/erp/relatorios',
   erp_alertas:       '/erp/alertas',
-  erp_qualidade:     '/erp/qualidade',
   erp_planner:       '/erp/planner',
   erp_fila:          '/erp/fila',
   erp_ranking:       '/erp/ranking',
-  erp_bi_tecnica:    '/erp/bi-gestao-tecnica',
 }
 
 export function moduloParaRota(chave: string): string | undefined {

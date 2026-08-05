@@ -1,8 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Cliente do BI Técnico oficial (iManager relatório 21 / Power BI).
+"""Acesso programático ao i-Manager Gerencial (relatório 21 / Power BI).
 
-A integração replica a consulta do visual ``Dados Analisar Painel``. O campo
-``recorrencia`` pertence ao modelo oficial; não é recalculado neste projeto.
+Autentica na API do i-Manager com ``IMANAGER_USER``/``IMANAGER_PASS`` do ``.env``
+e replica a consulta do visual ``Dados Analisar Painel``. ``fetch_bi_rows()``
+devolve as linhas de OS das 5 cidades já normalizadas, com cache em memória.
+
+Traz campos que o Grafana não entrega — ``vendedor``, ``equipevenda``,
+``motivocancelamento``, ``motivoreagendamento``, ``executante``, ``observacao``,
+``recorrencia``. O campo ``recorrencia`` pertence ao modelo oficial; não é
+recalculado neste projeto.
+
+Nenhuma rota consome este módulo hoje: as telas que o usavam (BI Técnico e
+Qualidade) foram removidas, mas o acesso foi mantido de propósito por ser a
+fonte mais rica de dados de OS disponível.
 """
 
 from __future__ import annotations
@@ -386,19 +396,6 @@ def _fetch_bi_rows(session: requests.Session | None = None) -> list[dict[str, An
     ))
     data = query_result["results"][0]["result"]["data"]
     return normalize_bi_rows(decode_dsr_rows(data))
-
-
-_REDE_EQUIPE_RE = re.compile(r"\bREDE\b")
-
-
-def is_rede_row(row: dict[str, Any]) -> bool:
-    """Mesma regra do getEquipeTipo (src/lib/transform.ts): REDE vem do nome da
-    equipe, não do serviço. As duas telas precisam esconder o mesmo conjunto."""
-    return bool(_REDE_EQUIPE_RE.search(str(row.get("nomedaequipe") or "").upper()))
-
-
-def drop_rede(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [row for row in rows if not is_rede_row(row)]
 
 
 def filter_bi_period(rows: list[dict[str, Any]], inicio: str, fim: str) -> list[dict[str, Any]]:

@@ -2,11 +2,9 @@ import { lazy } from 'react'
 
 export const ERPRelatoriosPage    = lazy(() => import('../features/erp/relatorios/RelatoriosPage'))
 export const ERPAlertasPage       = lazy(() => import('../features/erp/alertas/AlertasPage'))
-export const ERPQualidadePage     = lazy(() => import('../features/erp/qualidade/QualidadePage'))
 export const ERPPlannerPage          = lazy(() => import('../features/erp/planner/PlannerPage'))
 export const ERPFilaPage = lazy(() => import('../features/erp/fila/FilaPage'))
 export const ERPRankingTecnicosPage = lazy(() => import('../features/erp/ranking/RankingTecnicosPage'))
-export const ERPBiGestaoTecnicaPage = lazy(() => import('../features/erp/biGestaoTecnica/BiGestaoTecnicaPage'))
 export const UsuariosPage = lazy(() => import('../features/admin/UsuariosPage'))
 
 export const DashboardPage  = lazy(() => import('../features/dashboard/DashboardPage'))

@@ -20,7 +20,6 @@ export function useMotivoEncerramento(numos: string | undefined) {
     if (!numos) return
     await motivoEncerramento.save({ numos, motivo, ...extra })
     await qc.invalidateQueries({ queryKey: ['motivo-encerramento', numos] })
-    await qc.invalidateQueries({ queryKey: ['revisita-motivos'] })
   }
 
   return { ...query, classificar }
