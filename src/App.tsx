@@ -24,8 +24,8 @@ export default function App() {
     // é 'authed' e a verificação acontece em background sem bloquear a UI.
     api.auth.check()
       .then((res) => {
-        const { ok, role, modulos } = res
-        ok ? setAuthed((role ?? 'viewer') as 'gestor' | 'operador' | 'viewer' | 'fornecedor', modulos ?? []) : setUnauthed()
+        const { ok, role, modulos, fornecedor_key } = res
+        ok ? setAuthed((role ?? 'viewer') as 'gestor' | 'operador' | 'viewer' | 'fornecedor', modulos ?? [], fornecedor_key ?? null) : setUnauthed()
       })
       .catch(() => {
         // Erro de rede: só desloga se ainda estava em 'checking'

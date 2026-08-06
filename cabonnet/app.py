@@ -800,7 +800,7 @@ def _query_response(snapshot: dict, data_iso: str, compact: bool, fornecedor_key
             pendente,
             agendado,
             futuro,
-            cache_token=snapshot.get('ts', 0),
+            cache_token=(snapshot.get('ts', 0), fornecedor_key),
         )
         if compact
         else {'pendente': pendente, 'agendado': agendado, 'futuro': futuro}

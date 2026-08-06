@@ -69,6 +69,7 @@ export interface AuthResponse {
   ok:        boolean
   role?:     UserRole | null
   username?: string | null
+  fornecedor_key?: FornecedorAcesso | null
   modulos?:  string[]
   error?:    string
 }

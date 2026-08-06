@@ -6,6 +6,7 @@ import { useUIStore } from '../store/uiStore'
 import { useAlertStore } from '../store/alertStore'
 import { persistSave, persistLoad, broadcastData, subscribeSync } from '../lib/queryPersist'
 import { useMemo } from 'react'
+import { useAuthStore } from '../store/authStore'
 
 const STALE_MS = 1000 * 60 * 5   // 5 minutos
 const GC_MS    = 1000 * 60 * 30  // 30 minutos
@@ -14,23 +15,25 @@ export function useOSData() {
   const { dateFilter } = useUIStore()
   const { slaLimits }  = useAlertStore()
   const queryClient    = useQueryClient()
+  const fornecedorKey = useAuthStore(s => s.fornecedorKey)
+  const dataScope      = fornecedorKey ? `fornecedor:${fornecedorKey}` : 'interno'
 
   // Recebe dados frescos de outras abas via BroadcastChannel.
   // Só quem recebe do servidor faz broadcast — sem loops.
   useEffect(() => {
-    return subscribeSync((payload, ts) => {
-      queryClient.setQueryData(['os-query'], payload)
-      queryClient.setQueryDefaults(['os-query'], { initialDataUpdatedAt: ts })
-      persistSave(payload)
+    return subscribeSync(dataScope, (payload, ts) => {
+      queryClient.setQueryData(['os-query', dataScope], payload)
+      queryClient.setQueryDefaults(['os-query', dataScope], { initialDataUpdatedAt: ts })
+      persistSave(dataScope, payload)
     })
-  }, [queryClient])
+  }, [queryClient, dataScope])
 
   const { data, isLoading, error, dataUpdatedAt } = useQuery({
-    queryKey:  ['os-query'],
+    queryKey:  ['os-query', dataScope],
     queryFn:   async () => {
       const result = await api.get(`${endpoints.query}?compact=1`) as Record<string, string>
-      persistSave(result)
-      broadcastData(result)
+      persistSave(dataScope, result)
+      broadcastData(dataScope, result)
       return result
     },
     staleTime: STALE_MS,
@@ -38,8 +41,8 @@ export function useOSData() {
     retry:     2,
     // Dados do localStorage servem como cache inicial — aba duplicada mostra
     // dados instantaneamente sem spinner. Se o dado tiver < 5 min não refetch.
-    initialData:          () => persistLoad()?.payload,
-    initialDataUpdatedAt: () => persistLoad()?.ts,
+    initialData:          () => persistLoad(dataScope)?.payload,
+    initialDataUpdatedAt: () => persistLoad(dataScope)?.ts,
   })
 
   const { allRows, discardedLixo, duplicadosLixo } = useMemo(() => {
@@ -49,8 +52,10 @@ export function useOSData() {
     const futuro   = parseCSV((data as Record<string, string>).futuro   || '')
     const discardedLixo  = (pendente._discarded  ?? 0) + (agendado._discarded  ?? 0) + (futuro._discarded  ?? 0)
     const duplicadosLixo = (pendente._duplicados ?? 0) + (agendado._duplicados ?? 0) + (futuro._duplicados ?? 0)
-    return { allRows: enrichRows([...pendente, ...agendado, ...futuro], slaLimits), discardedLixo, duplicadosLixo }
-  }, [data, slaLimits])
+    const enriched = enrichRows([...pendente, ...agendado, ...futuro], slaLimits)
+    const allRows = fornecedorKey ? enriched.filter(row => row._fornecedor === fornecedorKey) : enriched
+    return { allRows, discardedLixo, duplicadosLixo }
+  }, [data, slaLimits, fornecedorKey])
 
   const rows = useMemo(
     () => applyDateFilter(allRows, dateFilter),
