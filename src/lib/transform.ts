@@ -228,6 +228,22 @@ export function getVtPrazoHoras(servico: string | null | undefined): number | nu
 export const isCOPE    = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /COPE/i.test(r.nomedaequipe ?? '')
 export const isReagend = (r: Pick<OSRow, 'nomedaequipe'>): boolean => /REAGEND/i.test(r.nomedaequipe ?? '')
 
+const FORNECEDOR_CIDADES: Record<string, Set<string>> = {
+  WES: new Set(['PINDAMONHANGABA']),
+  THM: new Set(['TAUBATE', 'TREMEMBE']),
+  Instacable: new Set(['SAO JOSE', 'SAO JOSE DOS CAMPOS', 'SJCAMPOS', 'CACAPAVA', 'TAUBATE', 'TREMEMBE']),
+}
+
+/** Escopo externo: próprias equipes em qualquer cidade + fila compartilhada
+ * (pendente/reagendamento) nas cidades contratadas do fornecedor. */
+export function isFornecedorVisibleRow(row: Pick<OSRow, '_fornecedor' | 'nomedacidade' | 'nomedaequipe' | 'descsituacao' | '_situacaoEfetiva'>, fornecedor: string | null): boolean {
+  if (!fornecedor) return true
+  if (row._fornecedor === fornecedor) return true
+  const cidade = (row.nomedacidade ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim()
+  const filaCompartilhada = row.descsituacao === 'Pendente' || row._situacaoEfetiva === 'Reagendamento' || /REAGEND/i.test(row.nomedaequipe ?? '')
+  return filaCompartilhada && (FORNECEDOR_CIDADES[fornecedor]?.has(cidade) ?? false)
+}
+
 export type ReagendTipo = 'inviabilidade' | 'mobile' | 'futura'
 
 // Subtipo do reagendamento, lido do nomedaequipe (espelha _abrev_equipe do telegram.py):

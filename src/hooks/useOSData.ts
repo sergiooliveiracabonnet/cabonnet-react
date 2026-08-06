@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, endpoints } from '../lib/api'
-import { parseCSV, enrichRows, applyDateFilter } from '../lib/transform'
+import { parseCSV, enrichRows, applyDateFilter, isFornecedorVisibleRow } from '../lib/transform'
 import { useUIStore } from '../store/uiStore'
 import { useAlertStore } from '../store/alertStore'
 import { persistSave, persistLoad, broadcastData, subscribeSync } from '../lib/queryPersist'
@@ -53,7 +53,7 @@ export function useOSData() {
     const discardedLixo  = (pendente._discarded  ?? 0) + (agendado._discarded  ?? 0) + (futuro._discarded  ?? 0)
     const duplicadosLixo = (pendente._duplicados ?? 0) + (agendado._duplicados ?? 0) + (futuro._duplicados ?? 0)
     const enriched = enrichRows([...pendente, ...agendado, ...futuro], slaLimits)
-    const allRows = fornecedorKey ? enriched.filter(row => row._fornecedor === fornecedorKey) : enriched
+    const allRows = fornecedorKey ? enriched.filter(row => isFornecedorVisibleRow(row, fornecedorKey)) : enriched
     return { allRows, discardedLixo, duplicadosLixo }
   }, [data, slaLimits, fornecedorKey])
 

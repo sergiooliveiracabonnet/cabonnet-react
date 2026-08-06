@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { OSRow, DateFilter } from './types'
-import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, parseDateTime, isConcluida, isExecucaoReal, isFilaAtiva } from './transform.js'
+import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, parseDateTime, isConcluida, isExecucaoReal, isFilaAtiva, isFornecedorVisibleRow } from './transform.js'
 import { buildDashboard, buildSla, buildAnomalias, buildCidades } from './builders.js'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1015,5 +1015,18 @@ describe('buildCidades', () => {
     const empty = enrichRows([makeOS({ numos: 'E1', nomedacidade: '', descsituacao: 'Pendente' })])
     const result = buildCidades(empty)
     expect(result.saude.find(c => c.cidade === 'Sem cidade')?.fila).toBe(1)
+  })
+})
+
+describe('escopo de fornecedor por cidade', () => {
+  it('mantém próprias equipes e compartilha somente fila autorizada', () => {
+    const sharedPending = makeOS({ nomedacidade: 'TAUBATÉ', descsituacao: 'Pendente', nomedaequipe: 'EQUIPE F99', _fornecedor: 'Outro' })
+    const sharedDone = makeOS({ nomedacidade: 'TAUBATÉ', descsituacao: 'Concluída', nomedaequipe: 'EQUIPE F99', _fornecedor: 'Outro' })
+    const ownDone = makeOS({ nomedacidade: 'PINDAMONHANGABA', descsituacao: 'Concluída', nomedaequipe: 'EQUIPE F08', _fornecedor: 'WES' })
+
+    expect(isFornecedorVisibleRow(sharedPending, 'Instacable')).toBe(true)
+    expect(isFornecedorVisibleRow(sharedDone, 'Instacable')).toBe(false)
+    expect(isFornecedorVisibleRow(sharedPending, 'WES')).toBe(false)
+    expect(isFornecedorVisibleRow(ownDone, 'WES')).toBe(true)
   })
 })

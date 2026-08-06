@@ -17,6 +17,7 @@ import queue as _queue
 import re
 import threading
 import time as _time_mod
+import unicodedata
 from contextlib import asynccontextmanager
 from datetime import datetime, date
 from pathlib import Path
@@ -821,6 +822,28 @@ _FORNECEDOR_FRENTES = {
     "WES": set(_OPERADORA_GRUPOS["WES"]),
     "THM": set(_OPERADORA_GRUPOS["THM"]),
 }
+_FORNECEDOR_CIDADES = {
+    "WES": {"PINDAMONHANGABA"},
+    "THM": {"TAUBATE", "TREMEMBE"},
+    "Instacable": {"SAO JOSE", "SAO JOSE DOS CAMPOS", "SJCAMPOS", "CACAPAVA", "TAUBATE", "TREMEMBE"},
+}
+
+
+def _scope_key(value: str | None) -> str:
+    raw = unicodedata.normalize("NFD", value or "").encode("ascii", "ignore").decode("ascii")
+    return " ".join(raw.upper().split())
+
+
+def _csv_row_visible_fornecedor(row: dict, fornecedor_key: str) -> bool:
+    equipe = next((v for k, v in row.items() if (k or "").lower() == "nomedaequipe"), "") or ""
+    status = next((v for k, v in row.items() if (k or "").lower() == "descsituacao"), "") or ""
+    cidade = _scope_key(next((v for k, v in row.items() if (k or "").lower() == "nomedacidade"), ""))
+    codes = set(re.findall(r"\bF\d{2}\b", equipe.upper()))
+    if codes & _FORNECEDOR_FRENTES.get(fornecedor_key, set()):
+        return True
+    is_reagendamento = "REAGEND" in f"{equipe} {status}".upper()
+    is_fila_compartilhada = status.strip().lower() == "pendente" or is_reagendamento
+    return is_fila_compartilhada and cidade in _FORNECEDOR_CIDADES.get(fornecedor_key, set())
 
 
 def _filter_csv_fornecedor(csv_text: str, fornecedor_key: str | None) -> str:
@@ -838,8 +861,7 @@ def _filter_csv_fornecedor(csv_text: str, fornecedor_key: str | None) -> str:
     writer.writeheader()
     for row in reader:
         equipe = next((v for k, v in row.items() if (k or "").lower() == "nomedaequipe"), "") or ""
-        codes = set(re.findall(r"\bF\d{2}\b", equipe.upper()))
-        if codes & frentes:
+        if _csv_row_visible_fornecedor(row, fornecedor_key):
             writer.writerow(row)
     return output.getvalue()
 
@@ -1027,9 +1049,7 @@ def _assert_os_scope(numos: str, sess: dict) -> None:
             row_numos = next((v for k, v in row.items() if (k or "").lower() == "numos"), "")
             if str(row_numos).strip().lstrip("0") != numos.strip().lstrip("0"):
                 continue
-            equipe = next((v for k, v in row.items() if (k or "").lower() == "nomedaequipe"), "") or ""
-            codes = set(re.findall(r"\bF\d{2}\b", equipe.upper()))
-            if codes & _FORNECEDOR_FRENTES.get(fornecedor_key, set()):
+            if _csv_row_visible_fornecedor(row, fornecedor_key):
                 return
             raise HTTPException(403, "OS nao pertence ao fornecedor autenticado")
     raise HTTPException(403, "OS fora do escopo do fornecedor autenticado")

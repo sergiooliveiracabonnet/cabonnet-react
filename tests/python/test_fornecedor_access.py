@@ -8,6 +8,7 @@ from cabonnet.app import _filter_csv_fornecedor, _supplier_path_allowed
 
 
 CSV = "numos,nomedaequipe,cliente\n0000001,EQUIPE F08,A\n0000002,EQUIPE F01,B\n0000003,EQUIPE F12,C\n"
+CSV_SCOPE = "numos,nomedaequipe,descsituacao,nomedacidade\n1,EQUIPE F99,Pendente,TAUBATE\n2,EQUIPE F99,Concluida,TAUBATE\n3,EQUIPE F99,Reagendamento,TAUBATE\n4,EQUIPE F99,Pendente,PINDAMONHANGABA\n"
 
 
 def test_filtra_csv_por_fornecedor_sem_expor_outros():
@@ -15,6 +16,17 @@ def test_filtra_csv_por_fornecedor_sem_expor_outros():
     assert "0000001" in wes
     assert "0000002" not in wes
     assert "0000003" not in wes
+
+
+def test_fila_compartilhada_respeita_cidades_e_status():
+    thm = _filter_csv_fornecedor(CSV_SCOPE, "THM")
+    assert "1" in thm and "3" in thm
+    assert "2" not in thm
+    assert "4" not in thm
+
+    wes = _filter_csv_fornecedor(CSV_SCOPE, "WES")
+    assert "4" in wes
+    assert "1" not in wes
 
 
 def test_permissoes_de_fornecedor_sao_fixas():

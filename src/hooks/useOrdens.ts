@@ -186,7 +186,9 @@ export function useOrdens() {
 
   // Reagendamentos são excluídos do `ordens` base (buildOrdens), então o filtro de
   // Reagendamento usa a lista ao-vivo (allRows), espelhando os KPIs do Dashboard.
-  const reagendOrdens = useMemo(() => allRows.filter(r => isReagend(r)), [allRows])
+  const reagendOrdens = useMemo(() => allRows.filter(r =>
+    isReagend(r) || r._situacaoEfetiva === 'Reagendamento' || r.descsituacao === 'Reagendamento'
+  ), [allRows])
   const verReagend = status === 'Reagendamento' || !!reagendTipo
 
   // Mesma lógica: COPE também é excluída de `ordens`, então o filtro "Pendente"
