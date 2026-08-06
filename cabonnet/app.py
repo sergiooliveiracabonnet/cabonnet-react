@@ -8,10 +8,13 @@ nos módulos existentes (grafana, cache, builders, telegram, etc.).
 
 import asyncio
 import base64 as _base64
+import csv
+import io
 import json
 import logging
 import os
 import queue as _queue
+import re
 import threading
 import time as _time_mod
 from contextlib import asynccontextmanager
@@ -37,6 +40,7 @@ from cabonnet.builders import _build_status_text
 from cabonnet.cache import _dados_cache_update
 from cabonnet.config import (
     _ATE_CACHE_TTL,
+    _OPERADORA_GRUPOS,
     _load_env,
     _SCRIPT_DIR_ENV,
     _SLA_LIMITS,
@@ -476,7 +480,7 @@ async def login_form(request: Request):
     pwd  = body.get("password") or ""
     auth = _authenticate(user, pwd)
     if auth:
-        token = _create_session(auth["role"], auth["username"])
+        token = _create_session(auth["role"], auth["username"], auth.get("fornecedor_key"))
         log.info("[Auth] Login OK — usuario: %s role: %s", auth["username"], auth["role"])
         resp = RedirectResponse("/dashboard", status_code=302)
         resp.set_cookie("cbn_session", token, path="/", httponly=True, samesite="strict", secure=_COOKIE_SECURE, max_age=SESSION_DURATION)
@@ -494,10 +498,10 @@ async def api_login(request: Request):
     pwd  = body.get("password") or ""
     auth = _authenticate(user, pwd)
     if auth:
-        token   = _create_session(auth["role"], auth["username"])
+        token   = _create_session(auth["role"], auth["username"], auth.get("fornecedor_key"))
         modulos = _db_get_permissoes(auth["role"])
         log.info("[Auth] Login React OK — usuario: %s role: %s", auth["username"], auth["role"])
-        resp = JSONResponse({"ok": True, "role": auth["role"], "username": auth["username"], "modulos": modulos})
+        resp = JSONResponse({"ok": True, "role": auth["role"], "username": auth["username"], "modulos": modulos, "fornecedor_key": auth.get("fornecedor_key")})
         resp.set_cookie("cbn_session", token, path="/", httponly=True, samesite="strict", secure=_COOKIE_SECURE, max_age=SESSION_DURATION)
         return resp
     log.warning("[Auth] Login React FALHOU — usuario: %s", user)
@@ -515,6 +519,7 @@ async def api_session(request: Request):
         "role":         sess["role"],
         "username":     sess.get("username"),
         "modulos":      _db_get_permissoes(sess["role"]),
+        "fornecedor_key": sess.get("fornecedor_key"),
     }
 
 
@@ -554,7 +559,9 @@ _MODULO_LABELS = {
     "erp_fila":           "Fila de Prioridade",
     "erp_ranking":        "Ranking Técnicos",
 }
-_ROLES_VALIDOS = ("gestor", "operador", "viewer")
+_ROLES_VALIDOS = ("gestor", "operador", "viewer", "fornecedor")
+_ROLES_PERMISSOES_EDITAVEIS = ("gestor", "operador", "viewer")
+_FORNECEDORES_EXTERNOS = {"WES", "Instacable", "THM"}
 
 
 @app.get("/api/usuarios")
@@ -568,14 +575,19 @@ async def create_usuario(request: Request, _role: str = Depends(_require_gestor)
     username = str(body.get("username", "")).strip()
     password = body.get("password") or ""
     role     = body.get("role") or "viewer"
+    fornecedor_key = body.get("fornecedor_key")
     if not username:
         raise HTTPException(400, "username é obrigatório")
     if len(password) < 6:
         raise HTTPException(400, "senha deve ter ao menos 6 caracteres")
     if role not in _ROLES_VALIDOS:
         raise HTTPException(400, f"role inválida — use um de: {', '.join(_ROLES_VALIDOS)}")
+    if role == "fornecedor" and fornecedor_key not in _FORNECEDORES_EXTERNOS:
+        raise HTTPException(400, "fornecedor invalido")
+    if role != "fornecedor":
+        fornecedor_key = None
     try:
-        uid = _db_create_usuario(username, _hash_password(password), role)
+        uid = _db_create_usuario(username, _hash_password(password), role, fornecedor_key)
     except Exception:
         raise HTTPException(409, "Já existe um usuário com esse username")
     log.info("[Usuarios] Criado — username: %s role: %s", username, role)
@@ -591,6 +603,7 @@ async def update_usuario(uid: int, request: Request, _role: str = Depends(_requi
 
     role  = body.get("role")
     ativo = body.get("ativo")
+    fornecedor_key = body.get("fornecedor_key", ...)
     if role is not None and role not in _ROLES_VALIDOS:
         raise HTTPException(400, f"role inválida — use um de: {', '.join(_ROLES_VALIDOS)}")
 
@@ -601,7 +614,13 @@ async def update_usuario(uid: int, request: Request, _role: str = Depends(_requi
         if _db_count_ativos_por_role("gestor") <= 1:
             raise HTTPException(409, "Não é possível desativar/rebaixar o último gestor ativo")
 
-    updated = _db_update_usuario(uid, role=role, ativo=ativo)
+    effective_role = role or alvo["role"]
+    effective_forn = alvo.get("fornecedor_key") if fornecedor_key is ... else fornecedor_key
+    if effective_role == "fornecedor" and effective_forn not in _FORNECEDORES_EXTERNOS:
+        raise HTTPException(400, "fornecedor invalido")
+    if effective_role != "fornecedor":
+        effective_forn = None
+    updated = _db_update_usuario(uid, role=role, ativo=ativo, fornecedor_key=effective_forn)
     log.info("[Usuarios] Atualizado — id: %s role: %s ativo: %s", uid, role, ativo)
     return {"ok": True, "item": updated}
 
@@ -644,13 +663,15 @@ async def reset_usuario_senha(uid: int, request: Request, _role: str = Depends(_
 
 @app.get("/api/permissoes")
 async def get_permissoes(_role: str = Depends(_require_gestor)):
-    permissoes = {role: _db_get_permissoes(role) for role in _ROLES_VALIDOS}
+    permissoes = {role: _db_get_permissoes(role) for role in _ROLES_PERMISSOES_EDITAVEIS}
     modulos    = [{"key": k, "label": _MODULO_LABELS.get(k, k)} for k in ALL_MODULOS]
     return {"ok": True, "permissoes": permissoes, "modulos": modulos}
 
 
 @app.put("/api/permissoes/{role}")
 async def set_permissoes(role: str, request: Request, _role: str = Depends(_require_gestor)):
+    if role == "fornecedor":
+        raise HTTPException(400, "Permissoes de fornecedor sao fixas")
     if role == "gestor":
         raise HTTPException(400, "Permissões do papel gestor não são editáveis")
     if role not in _ROLES_VALIDOS:
@@ -742,10 +763,38 @@ _CACHE_FRESH_SEC  = 240   # < 4 min → retorna cache imediatamente
 _CACHE_STALE_SEC  = 120   # > 2 min → agenda refresh em background mesmo devolvendo cache
 
 
-def _query_response(snapshot: dict, data_iso: str, compact: bool, **metadata):
-    pendente = snapshot.get('pendente', '') or ''
-    agendado = snapshot.get('agendado', '') or ''
-    futuro = snapshot.get('futuro', '') or ''
+_FORNECEDOR_FRENTES = {
+    "Instacable": set(_OPERADORA_GRUPOS["INSTACABLE"]),
+    "WES": set(_OPERADORA_GRUPOS["WES"]),
+    "THM": set(_OPERADORA_GRUPOS["THM"]),
+}
+
+
+def _filter_csv_fornecedor(csv_text: str, fornecedor_key: str | None) -> str:
+    """Filtra no servidor antes de qualquer compactacao ou envio ao cliente."""
+    if not fornecedor_key or not csv_text:
+        return csv_text
+    frentes = _FORNECEDOR_FRENTES.get(fornecedor_key)
+    if not frentes:
+        return ""
+    reader = csv.DictReader(io.StringIO(csv_text))
+    if not reader.fieldnames:
+        return ""
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(output, fieldnames=reader.fieldnames, lineterminator="\n")
+    writer.writeheader()
+    for row in reader:
+        equipe = next((v for k, v in row.items() if (k or "").lower() == "nomedaequipe"), "") or ""
+        codes = set(re.findall(r"\bF\d{2}\b", equipe.upper()))
+        if codes & frentes:
+            writer.writerow(row)
+    return output.getvalue()
+
+
+def _query_response(snapshot: dict, data_iso: str, compact: bool, fornecedor_key: str | None = None, **metadata):
+    pendente = _filter_csv_fornecedor(snapshot.get('pendente', '') or '', fornecedor_key)
+    agendado = _filter_csv_fornecedor(snapshot.get('agendado', '') or '', fornecedor_key)
+    futuro = _filter_csv_fornecedor(snapshot.get('futuro', '') or '', fornecedor_key)
     parts = (
         compact_query_parts(
             pendente,
@@ -776,7 +825,7 @@ async def query(
     request: Request,
     date: str = "hoje",
     compact: bool = False,
-    _role: str = Depends(_require_auth),
+    sess: dict = Depends(_require_session),
 ):
     try:
         data_iso = parse_date_param(date)
@@ -798,6 +847,7 @@ async def query(
             cached,
             data_iso,
             compact,
+            fornecedor_key=sess.get("fornecedor_key"),
             cached=True,
             cache_age_sec=int(cache_age),
         )
@@ -810,7 +860,7 @@ async def query(
     if ok:
         with state._query_cache_lock:
             cached = dict(state._query_cache)
-        return _query_response(cached, data_iso, compact)
+        return _query_response(cached, data_iso, compact, fornecedor_key=sess.get("fornecedor_key"))
 
     # Fallback 1: cache em memória (expirado mas disponível)
     with state._query_cache_lock:
@@ -823,6 +873,7 @@ async def query(
             mem_copy,
             data_iso,
             compact,
+            fornecedor_key=sess.get("fornecedor_key"),
             cached=True,
             cache_age_min=cache_age,
         )
@@ -838,6 +889,7 @@ async def query(
             {'pendente': csv_p_db or '', 'agendado': csv_a_db, 'futuro': csv_f_db or '', 'ts': ts_db},
             data_iso,
             compact,
+            fornecedor_key=sess.get("fornecedor_key"),
             cached=True,
             cached_source='sqlite',
             cache_age_min=cache_age,
@@ -855,6 +907,7 @@ async def query(
                 {'pendente': csv_p_pg or '', 'agendado': csv_a_pg, 'futuro': csv_f_pg or '', 'ts': ts_pg},
                 data_iso,
                 compact,
+                fornecedor_key=sess.get("fornecedor_key"),
                 cached=True,
                 cached_source='postgresql',
                 cache_age_min=cache_age,
@@ -864,13 +917,15 @@ async def query(
 
 
 @router.get("/revisitas")
-async def revisitas(_role: str = Depends(_require_auth)):
+async def revisitas(sess: dict = Depends(_require_session)):
     try:
         csv_r = frames_to_csv(grafana_post(SQL_REVISITAS))
-        n = len(csv_r.splitlines()) - 1 if csv_r else 0
+        filtered = _filter_csv_fornecedor(csv_r or "", sess.get("fornecedor_key"))
+        n = len(filtered.splitlines()) - 1 if filtered else 0
+        raw_n = len(csv_r.splitlines()) - 1 if csv_r else 0
         with state._revisitas_cache_lock:
-            state._revisitas_cache.update({"csv": csv_r or "", "n": n, "ts": _time_mod.time()})
-        return {"concluidas": csv_r or "", "n": n}
+            state._revisitas_cache.update({"csv": csv_r or "", "n": raw_n, "ts": _time_mod.time()})
+        return {"concluidas": filtered, "n": n}
     except Exception as ex:
         log.warning("[/revisitas] Grafana indisponível — tentando cache")
         with state._revisitas_cache_lock:
@@ -878,7 +933,8 @@ async def revisitas(_role: str = Depends(_require_auth)):
         if cached["ts"] > 0:
             cache_age = int((_time_mod.time() - cached["ts"]) / 60)
             log.warning("[/revisitas] Servindo cache de %d min atrás", cache_age)
-            return {"concluidas": cached["csv"], "n": cached["n"], "cached": True, "cache_age_min": cache_age}
+            filtered = _filter_csv_fornecedor(cached["csv"], sess.get("fornecedor_key"))
+            return {"concluidas": filtered, "n": max(0, len(filtered.splitlines()) - 1), "cached": True, "cache_age_min": cache_age}
         log.exception("Erro /revisitas sem cache disponível")
         raise HTTPException(502, str(ex))
 
@@ -906,11 +962,32 @@ async def atendimento():
         raise HTTPException(502, str(ex))
 
 
+def _assert_os_scope(numos: str, sess: dict) -> None:
+    fornecedor_key = sess.get("fornecedor_key")
+    if not fornecedor_key:
+        return
+    with state._query_cache_lock:
+        snapshot = dict(state._query_cache)
+    for key in ("pendente", "agendado", "futuro"):
+        reader = csv.DictReader(io.StringIO(snapshot.get(key, "") or ""))
+        for row in reader:
+            row_numos = next((v for k, v in row.items() if (k or "").lower() == "numos"), "")
+            if str(row_numos).strip().lstrip("0") != numos.strip().lstrip("0"):
+                continue
+            equipe = next((v for k, v in row.items() if (k or "").lower() == "nomedaequipe"), "") or ""
+            codes = set(re.findall(r"\bF\d{2}\b", equipe.upper()))
+            if codes & _FORNECEDOR_FRENTES.get(fornecedor_key, set()):
+                return
+            raise HTTPException(403, "OS nao pertence ao fornecedor autenticado")
+    raise HTTPException(403, "OS fora do escopo do fornecedor autenticado")
+
+
 @router.get("/detalhes")
-async def detalhes(numos: str = ""):
+async def detalhes(numos: str = "", sess: dict = Depends(_require_session)):
     if not numos.strip().isdigit():
         raise HTTPException(400, "Parâmetro 'numos' inválido.")
     numos_int = int(numos.strip())
+    _assert_os_scope(numos, sess)
     try:
         rows = frames_to_dict_list(grafana_post(sql_detalhes(numos_int)))
         if not rows:
@@ -964,10 +1041,11 @@ _FOTO_EXT_PERMITIDAS = {"jpg", "jpeg", "png", "gif", "webp", "bmp"}
 
 
 @router.get("/detalhes/foto")
-async def detalhes_foto(numos: str = "", codfoto: str = ""):
+async def detalhes_foto(numos: str = "", codfoto: str = "", sess: dict = Depends(_require_session)):
     if not numos.strip().isdigit() or not codfoto.strip().isdigit():
         raise HTTPException(400, "Parâmetros 'numos'/'codfoto' inválidos.")
     numos_int   = int(numos.strip())
+    _assert_os_scope(numos, sess)
     codfoto_int = int(codfoto.strip())
     try:
         rows = frames_to_dict_list(grafana_post(SQL_FOTO_BLOB_TEMPLATE.format(numos=numos_int, codfoto=codfoto_int)))
@@ -1001,11 +1079,12 @@ async def os_execucao_geo():
 
 
 @router.get("/detalhes/agendamentos")
-async def detalhes_agendamentos(numos: str = ""):
+async def detalhes_agendamentos(numos: str = "", sess: dict = Depends(_require_session)):
     """Histórico de equipes/datas de agendamento de uma OS, capturado pelo
     polling em cache.py — não vem do Grafana, que só guarda o estado atual."""
     if not numos.strip().isdigit():
         raise HTTPException(400, "Parâmetro 'numos' inválido.")
+    _assert_os_scope(numos, sess)
     return {"historico": _db_get_agendamento_history(numos.strip())}
 
 
@@ -1213,13 +1292,21 @@ def _valida_forn_key(body):
 @router.get("/api/fornecedor/config")
 async def get_fornecedor_config(
     data_ref: str | None = None,
-    _role: str = Depends(_require_modulo("fornecedor")),
+    sess: dict = Depends(_require_session),
 ):
     """Custo vigente na data de referência + metas de SLA. Sem `data_ref`, usa
     hoje — o custo por OS de um período passado precisa do custo daquela época."""
     from cabonnet.db import _db_get_fornecedor_custo, _db_get_fornecedor_meta
     ref = data_ref or datetime.now().strftime("%Y-%m-%d")
-    return {"ok": True, "custo": _db_get_fornecedor_custo(ref), "meta": _db_get_fornecedor_meta()}
+    if sess["role"] != "gestor" and "fornecedor" not in _db_get_permissoes(sess["role"]):
+        raise HTTPException(403, "Modulo fornecedor nao permitido")
+    custo = _db_get_fornecedor_custo(ref)
+    meta = _db_get_fornecedor_meta()
+    own = sess.get("fornecedor_key")
+    if own:
+        custo = {own: custo[own]} if own in custo else {}
+        meta = {own: meta[own]} if own in meta else {}
+    return {"ok": True, "custo": custo, "meta": meta}
 
 
 @router.post("/api/fornecedor/custo")

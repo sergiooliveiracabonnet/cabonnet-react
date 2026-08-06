@@ -25,7 +25,7 @@ export default function App() {
     api.auth.check()
       .then((res) => {
         const { ok, role, modulos } = res
-        ok ? setAuthed((role ?? 'viewer') as 'gestor' | 'operador' | 'viewer', modulos ?? []) : setUnauthed()
+        ok ? setAuthed((role ?? 'viewer') as 'gestor' | 'operador' | 'viewer' | 'fornecedor', modulos ?? []) : setUnauthed()
       })
       .catch(() => {
         // Erro de rede: só desloga se ainda estava em 'checking'

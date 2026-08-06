@@ -13,6 +13,7 @@ const ROLE_LABELS: Record<string, string> = {
   gestor:   'Gestor',
   operador: 'Operador',
   viewer:   'Viewer',
+  fornecedor: 'Fornecedor',
 }
 
 type StatusKey = 'loading' | 'error' | 'stale' | 'online'

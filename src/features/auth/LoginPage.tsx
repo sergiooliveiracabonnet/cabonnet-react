@@ -27,7 +27,7 @@ export function LoginPage() {
       if (res.ok) {
         logAudit(`Login realizado`, `role: ${res.role ?? 'gestor'}`, 'auth')
         setSuccess(true)
-        setTimeout(() => setAuthed((res.role ?? 'gestor') as 'gestor' | 'operador' | 'viewer', res.modulos ?? []), 600)
+        setTimeout(() => setAuthed((res.role ?? 'gestor') as 'gestor' | 'operador' | 'viewer' | 'fornecedor', res.modulos ?? []), 600)
         return
       } else {
         setError(res.error || 'Credenciais inválidas')

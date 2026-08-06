@@ -135,12 +135,14 @@ export const fornecedorConfig = {
     ),
 }
 
-export type UserRole = 'gestor' | 'operador' | 'viewer'
+export type UserRole = 'gestor' | 'operador' | 'viewer' | 'fornecedor'
+export type FornecedorAcesso = 'WES' | 'Instacable' | 'THM'
 
 export interface UsuarioItem {
   id:            number
   username:      string
   role:          UserRole
+  fornecedor_key: FornecedorAcesso | null
   ativo:         boolean
   criado_em:     string
   atualizado_em: string
@@ -148,9 +150,9 @@ export interface UsuarioItem {
 
 export const usuarios = {
   list: () => request<{ ok: boolean; items: UsuarioItem[] }>('/api/usuarios'),
-  create: (body: { username: string; password: string; role: UserRole }) =>
+  create: (body: { username: string; password: string; role: UserRole; fornecedor_key?: FornecedorAcesso | null }) =>
     request<{ ok: boolean; id: number }>('/api/usuarios', { method: 'POST', body: JSON.stringify(body) }),
-  update: (id: number, body: { role?: UserRole; ativo?: boolean }) =>
+  update: (id: number, body: { role?: UserRole; ativo?: boolean; fornecedor_key?: FornecedorAcesso | null }) =>
     request<{ ok: boolean; item: UsuarioItem }>(`/api/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   resetPassword: (id: number, password: string) =>
     request<{ ok: boolean }>(`/api/usuarios/${id}/senha`, { method: 'POST', body: JSON.stringify({ password }) }),

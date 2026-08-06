@@ -5,10 +5,11 @@ import { usePermissoes, usePermissoesActions } from '../../hooks/usePermissoes'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
-import type { UserRole, UsuarioItem } from '../../lib/api'
+import type { UserRole, UsuarioItem, FornecedorAcesso } from '../../lib/api'
 import { PageHeader } from '../../components/ui/PageHeader'
 
-const ROLE_LABEL: Record<UserRole, string> = { gestor: 'Gestor', operador: 'Operador', viewer: 'Viewer' }
+const ROLE_LABEL: Record<UserRole, string> = { gestor: 'Gestor', operador: 'Operador', viewer: 'Viewer', fornecedor: 'Fornecedor' }
+const FORNECEDORES: FornecedorAcesso[] = ['WES', 'Instacable', 'THM']
 
 const inputCls = 'w-full rounded-lg px-3 py-2 text-body bg-surface/40 border border-white/[0.08] ' +
   'text-text outline-none focus:border-primary/40 transition-colors'
@@ -22,11 +23,12 @@ function NovoUsuarioModal({ open, onClose }: { open: boolean; onClose: () => voi
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<UserRole>('viewer')
+  const [fornecedor, setFornecedor] = useState<FornecedorAcesso>('WES')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
   function reset() {
-    setUsername(''); setPassword(''); setRole('viewer'); setError('')
+    setUsername(''); setPassword(''); setRole('viewer'); setFornecedor('WES'); setError('')
   }
 
   async function handleSave() {
@@ -37,7 +39,7 @@ function NovoUsuarioModal({ open, onClose }: { open: boolean; onClose: () => voi
     setSaving(true)
     setError('')
     try {
-      await create({ username: username.trim(), password, role })
+      await create({ username: username.trim(), password, role, fornecedor_key: role === 'fornecedor' ? fornecedor : null })
       reset()
       onClose()
     } catch (e) {
@@ -54,6 +56,15 @@ function NovoUsuarioModal({ open, onClose }: { open: boolean; onClose: () => voi
           <label className="block text-caption font-medium text-secondary mb-1">Usuário</label>
           <input autoFocus value={username} onChange={e => setUsername(e.target.value)} className={inputCls} />
         </div>
+        {role === 'fornecedor' && (
+          <div>
+            <label className="block text-caption font-medium text-secondary mb-1">Fornecedor vinculado</label>
+            <select value={fornecedor} onChange={e => setFornecedor(e.target.value as FornecedorAcesso)} className={inputCls}>
+              {FORNECEDORES.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+            <p className="mt-1 text-caption text-muted">Este acesso receberá somente as ordens e relatórios desse fornecedor.</p>
+          </div>
+        )}
         <div>
           <label className="block text-caption font-medium text-secondary mb-1">Senha</label>
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} className={inputCls} />
@@ -188,7 +199,7 @@ export default function UsuariosPage() {
   const [resetUser, setResetUser] = useState<UsuarioItem | null>(null)
   const [rowError, setRowError] = useState<{ id: number; msg: string } | null>(null)
 
-  async function handleUpdate(u: UsuarioItem, body: { role?: UserRole; ativo?: boolean }) {
+  async function handleUpdate(u: UsuarioItem, body: { role?: UserRole; ativo?: boolean; fornecedor_key?: FornecedorAcesso | null }) {
     setRowError(null)
     try {
       await update(u.id, body)
@@ -221,6 +232,7 @@ export default function UsuariosPage() {
               <tr className="border-b-2 border-white/[0.08]">
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Usuário</th>
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Papel</th>
+                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Fornecedor</th>
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Status</th>
                 <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.6px] text-muted">Ações</th>
               </tr>
@@ -233,11 +245,22 @@ export default function UsuariosPage() {
                     <td className="px-3 py-2.5">
                       <select
                         value={u.role}
-                        onChange={e => handleUpdate(u, { role: e.target.value as UserRole })}
+                        onChange={e => {
+                          const role = e.target.value as UserRole
+                          handleUpdate(u, { role, fornecedor_key: role === 'fornecedor' ? (u.fornecedor_key ?? 'WES') : null })
+                        }}
                         className="bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40"
                       >
                         {(Object.keys(ROLE_LABEL) as UserRole[]).map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
                       </select>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {u.role === 'fornecedor' ? (
+                        <select value={u.fornecedor_key ?? 'WES'} onChange={e => handleUpdate(u, { fornecedor_key: e.target.value as FornecedorAcesso })}
+                          className="bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40">
+                          {FORNECEDORES.map(f => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                      ) : <span className="text-muted">—</span>}
                     </td>
                     <td className="px-3 py-2.5">
                       <Badge variant={u.ativo ? 'green' : 'red'}>{u.ativo ? 'Ativo' : 'Inativo'}</Badge>
@@ -265,7 +288,7 @@ export default function UsuariosPage() {
                   </tr>
                   {rowError?.id === u.id && (
                     <tr>
-                      <td colSpan={4} className="px-3 pb-2.5">
+                      <td colSpan={5} className="px-3 pb-2.5">
                         <p className="text-caption text-red flex items-center gap-1.5">
                           <Warning size={11} /> {rowError.msg}
                         </p>

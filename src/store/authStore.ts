@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
 export type AuthStatus = 'checking' | 'authed' | 'unauthed'
-export type UserRole   = 'gestor' | 'operador' | 'viewer' | null
+export type UserRole   = 'gestor' | 'operador' | 'viewer' | 'fornecedor' | null
 
 interface AuthState {
   status:  AuthStatus

@@ -38,7 +38,7 @@ def _authenticate(username: str, password: str) -> dict | None:
         return None
     if not db._verify_password(password, user["senha_hash"]):
         return None
-    return {"id": user["id"], "username": user["username"], "role": user["role"]}
+    return {"id": user["id"], "username": user["username"], "role": user["role"], "fornecedor_key": user.get("fornecedor_key")}
 
 
 def _role_from_cookie(cookie_str: str | None) -> str | None:
@@ -69,11 +69,11 @@ def _session_from_cookie(cookie_str: str | None) -> dict | None:
                 with state._sessions_lock:
                     state._sessions.pop(token, None)
                 return None
-            return {"role": sess.get("role", "gestor"), "username": sess.get("username")}
+            return {"role": sess.get("role", "gestor"), "username": sess.get("username"), "fornecedor_key": sess.get("fornecedor_key")}
     return None
 
 
-def _create_session(role: str = "gestor", username: str | None = None) -> str:
+def _create_session(role: str = "gestor", username: str | None = None, fornecedor_key: str | None = None) -> str:
     """Cria uma sessão persistida com role (+ username, quando aplicável) e
     retorna o token. `username=None` é usado por sessões internas do sistema
     (ex: geração de PDF headless via Playwright em builders.py), que não
@@ -84,5 +84,6 @@ def _create_session(role: str = "gestor", username: str | None = None) -> str:
             "exp":      _time_mod.time() + SESSION_DURATION,
             "role":     role,
             "username": username,
+            "fornecedor_key": fornecedor_key,
         }
     return token

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { usuarios, type UsuarioItem, type UserRole } from '../lib/api'
+import { usuarios, type UsuarioItem, type UserRole, type FornecedorAcesso } from '../lib/api'
 
 const QK = ['usuarios']
 
@@ -16,12 +16,12 @@ export function useUsuarios() {
 export function useUsuariosActions() {
   const qc = useQueryClient()
 
-  const create = async (body: { username: string; password: string; role: UserRole }) => {
+  const create = async (body: { username: string; password: string; role: UserRole; fornecedor_key?: FornecedorAcesso | null }) => {
     await usuarios.create(body)
     await qc.invalidateQueries({ queryKey: QK })
   }
 
-  const update = async (id: number, body: { role?: UserRole; ativo?: boolean }) => {
+  const update = async (id: number, body: { role?: UserRole; ativo?: boolean; fornecedor_key?: FornecedorAcesso | null }) => {
     await usuarios.update(id, body)
     await qc.invalidateQueries({ queryKey: QK })
   }
