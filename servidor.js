@@ -341,7 +341,9 @@ async function zabbixProxy(req, res, method, params, mapFn) {
   jsonReply(res, 502, { ok: false, error: 'Zabbix indisponível' })
 }
 
-async function routeGrafana(req, res) {
+// Mantido temporariamente como fallback de implementação, mas não roteado:
+// toda chamada precisa passar pela autorização central do FastAPI.
+async function routeGrafana(req, res) { // eslint-disable-line no-unused-vars
   const p = req.url.split('?')[0]
   if (p === '/grafana/os-totais')  return handleOsTotais(req, res)
   if (p === '/grafana/os-cidades') return handleOsCidades(req, res)
@@ -446,8 +448,9 @@ async function startPython() {
 function makeRequestHandler(getViteMiddlewares) {
   return (req, res) => {
     res.setHeader('X-Powered-By', 'Cabonnet')
+    // /grafana tambem passa pelo FastAPI: ali ficam a sessao e o escopo por fornecedor.
     if (req.url.split('?')[0].startsWith('/grafana/'))
-      return routeGrafana(req, res).catch(e => jsonReply(res, 500, { ok: false, error: e.message }))
+      return proxyRequest(req, res)
     if (isApiRoute(req.url))
       return proxyRequest(req, res)
     const vite = getViteMiddlewares()

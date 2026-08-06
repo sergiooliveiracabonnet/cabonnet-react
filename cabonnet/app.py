@@ -410,6 +410,52 @@ async def _rate_limit_middleware(request: Request, call_next):
     return await call_next(request)
 
 
+_PUBLIC_PATHS = {
+    "/", "/login", "/logout", "/api/login", "/api/session", "/api/logout",
+    "/health", "/api/v1/health", "/docs", "/openapi.json", "/redoc",
+}
+_PROTECTED_PREFIXES = (
+    "/query", "/stats", "/revisitas", "/pendente", "/agendado", "/futuro",
+    "/atendimento", "/detalhes", "/erp", "/notify", "/juniper", "/ai",
+    "/grafana", "/events", "/api/v1", "/api/fornecedor", "/api/motivo",
+    "/api/justificativas", "/api/pico-alertas", "/api/tecnicos", "/api/usuarios",
+    "/api/permissoes",
+)
+_FORNECEDOR_GET_PATHS = (
+    "/query", "/stats", "/revisitas", "/detalhes", "/events",
+    "/api/fornecedor/config", "/api/session", "/api/logout", "/api/sla-limits",
+)
+
+
+def _normalized_api_path(path: str) -> str:
+    return (path[7:] or "/") if path.startswith("/api/v1") else path
+
+
+def _supplier_path_allowed(path: str, method: str) -> bool:
+    path = _normalized_api_path(path)
+    if method == "GET":
+        return any(path == prefix or path.startswith(prefix + "/") for prefix in _FORNECEDOR_GET_PATHS)
+    return method == "POST" and path == "/api/usuarios/me/senha"
+
+
+@app.middleware("http")
+async def _access_boundary_middleware(request: Request, call_next):
+    """APIs operacionais exigem sessao; fornecedor e deny-by-default."""
+    path = request.url.path
+    if request.method == "OPTIONS" or path in _PUBLIC_PATHS or path.startswith(("/assets/", "/favicon")):
+        return await call_next(request)
+    protected = any(path == prefix or path.startswith(prefix + "/") for prefix in _PROTECTED_PREFIXES)
+    if not protected or not _auth_enabled():
+        return await call_next(request)
+    sess = _session_from_cookie(request.headers.get("cookie", ""))
+    if sess is None:
+        return JSONResponse({"detail": "Nao autenticado"}, status_code=401)
+    if sess.get("role") == "fornecedor" and not _supplier_path_allowed(path, request.method):
+        log.warning("[AuthZ] fornecedor bloqueado: %s %s user=%s", request.method, path, sess.get("username"))
+        return JSONResponse({"detail": "Recurso nao permitido para fornecedor"}, status_code=403)
+    return await call_next(request)
+
+
 # ── API Router (v1) ───────────────────────────────────────────────────────────
 # Business-logic routes are defined on this router and mounted at /api/v1.
 # Legacy unversioned paths (e.g. /query, /health) are kept via a second include
@@ -727,17 +773,18 @@ async def health():
 # ── Stats (KPIs server-side) ──────────────────────────────────────────────────
 
 @router.get("/stats")
-def get_stats():
+def get_stats(sess: dict = Depends(_require_session)):
     """KPIs da fila operacional computados server-side a partir do cache de OS.
     Retorna JSON compacto sem enviar CSV completo ao cliente."""
     from cabonnet.stats import compute_stats
     with state._query_cache_lock:
         cached = dict(state._query_cache)
     ts = cached.get("ts", 0)
+    fornecedor_key = sess.get("fornecedor_key")
     result = compute_stats(
-        cached.get("pendente", ""),
-        cached.get("agendado",  ""),
-        cached.get("futuro",    ""),
+        _filter_csv_fornecedor(cached.get("pendente", ""), fornecedor_key),
+        _filter_csv_fornecedor(cached.get("agendado",  ""), fornecedor_key),
+        _filter_csv_fornecedor(cached.get("futuro",    ""), fornecedor_key),
     )
     return JSONResponse({"ts": ts, "cached": bool(ts), **result})
 
@@ -745,16 +792,22 @@ def get_stats():
 # ── CSV exports ───────────────────────────────────────────────────────────────
 
 @router.get("/pendente")
-async def pendente():
-    return _csv_response(SQL_PENDENTE, "PENDENTE")
+async def pendente(sess: dict = Depends(_require_session)):
+    response = _csv_response(SQL_PENDENTE, "PENDENTE")
+    csv_text = response.body.decode("utf-8-sig")
+    return RawResponse(content=_filter_csv_fornecedor(csv_text, sess.get("fornecedor_key")), media_type="text/csv; charset=utf-8")
 
 @router.get("/agendado")
-async def agendado():
-    return _csv_response(SQL_AGENDADO, "AGENDADO")
+async def agendado(sess: dict = Depends(_require_session)):
+    response = _csv_response(SQL_AGENDADO, "AGENDADO")
+    csv_text = response.body.decode("utf-8-sig")
+    return RawResponse(content=_filter_csv_fornecedor(csv_text, sess.get("fornecedor_key")), media_type="text/csv; charset=utf-8")
 
 @router.get("/futuro")
-async def futuro():
-    return _csv_response(SQL_FUTURO, "FUTURO")
+async def futuro(sess: dict = Depends(_require_session)):
+    response = _csv_response(SQL_FUTURO, "FUTURO")
+    csv_text = response.body.decode("utf-8-sig")
+    return RawResponse(content=_filter_csv_fornecedor(csv_text, sess.get("fornecedor_key")), media_type="text/csv; charset=utf-8")
 
 
 # ── Query principal ───────────────────────────────────────────────────────────
@@ -1304,7 +1357,7 @@ async def get_fornecedor_config(
     meta = _db_get_fornecedor_meta()
     own = sess.get("fornecedor_key")
     if own:
-        custo = {own: custo[own]} if own in custo else {}
+        custo = {}
         meta = {own: meta[own]} if own in meta else {}
     return {"ok": True, "custo": custo, "meta": meta}
 

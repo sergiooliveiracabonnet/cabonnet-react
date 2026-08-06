@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api, endpoints } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
 
 export interface StatsFila {
   pendente:        number
@@ -33,8 +34,10 @@ export interface StatsData {
 }
 
 export function useStats() {
+  const fornecedorKey = useAuthStore(s => s.fornecedorKey)
+  const dataScope = fornecedorKey ? `fornecedor:${fornecedorKey}` : 'interno'
   return useQuery<StatsData>({
-    queryKey:  ['stats'],
+    queryKey:  ['stats', dataScope],
     queryFn:   () => api.get<StatsData>(endpoints.stats),
     staleTime: 30_000,
     gcTime:    5 * 60_000,

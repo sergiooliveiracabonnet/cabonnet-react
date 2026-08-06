@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "summary_kind": "evaluation-worker",
+  "run_id": "ln-621-global-20260806",
+  "identifier": "global",
+  "producer_skill": "ln-621",
+  "produced_at": "2026-08-06T15:25:00-03:00",
+  "payload": {
+    "worker": "ln-621",
+    "status": "completed",
+    "operation": "auditing",
+    "warnings": [],
+    "audit": {
+      "category": "Security Boundary",
+      "report_path": ".hex-skills/runtime-artifacts/runs/ln-621-global-20260806/audit-report/ln-621--global.md",
+      "score": 3.0,
+      "issues_total": 5,
+      "severity_counts": { "critical": 2, "high": 3, "medium": 0, "low": 0 }
+    }
+  }
+}

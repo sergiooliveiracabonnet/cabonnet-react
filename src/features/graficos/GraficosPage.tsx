@@ -6,6 +6,7 @@ import { buildGraficos } from '../../lib/builders'
 import { TabBar }        from '../../components/ui/TabBar'
 import { useUIStore, PRESETS } from '../../store/uiStore'
 import OSDrawer from '../ordens/OSDrawer'
+import { useIsFornecedor } from '../../hooks/useRole'
 import {
   FORN_PILLS, TABS,
   DrillModal, TabDistribuicao, TabTendencia, TabEstatistica, TabCohort,
@@ -18,6 +19,7 @@ export default function GraficosPage() {
   const [drill,      setDrill]      = useState<DrillState | null>(null)
   const [drawerOS,   setDrawerOS]   = useState<OSRow | null>(null)
   const { dateFilter } = useUIStore()
+  const isFornecedor = useIsFornecedor()
 
   const { rows, derived: { graficos: graficosCtx } } = useOSDerived()
 
@@ -49,7 +51,7 @@ export default function GraficosPage() {
             <span>Clique nos gráficos para ver as OS detalhadas</span>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
+        {!isFornecedor && <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-caption font-medium text-muted/60 mr-0.5">Frente:</span>
           {FORN_PILLS.map(f => (
             <button key={f.value} onClick={() => setFornecedor(f.value)}
@@ -60,7 +62,7 @@ export default function GraficosPage() {
               {f.label}
             </button>
           ))}
-        </div>
+        </div>}
       </div>
 
       <TabBar tabs={TABS} active={tab} onChange={setTab} className="mb-2" />
@@ -69,7 +71,7 @@ export default function GraficosPage() {
         <div className="flex flex-wrap items-center gap-1.5 text-caption text-muted" aria-label="Escopo dos gráficos">
           <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Período: {periodoLabel}</span>
           <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Data de {campoLabel}</span>
-          <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Frente: {FORN_PILLS.find(f => f.value === fornecedor)?.label ?? 'Todos'}</span>
+          <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Escopo: {isFornecedor ? 'Seu fornecedor' : (FORN_PILLS.find(f => f.value === fornecedor)?.label ?? 'Todos')}</span>
           <span className="rounded-full border border-primary/20 bg-primary/[0.06] px-2 py-1 text-primary">{activeRows.length.toLocaleString('pt-BR')} OS</span>
         </div>
       )}

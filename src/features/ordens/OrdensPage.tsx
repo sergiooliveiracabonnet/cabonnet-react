@@ -24,6 +24,7 @@ import { TelegramOrdensModal } from './TelegramOrdensModal'
 import { PeriodoGroupedTable } from './PeriodoGroupedTable'
 import { ClienteGroupedTable } from './ClienteGroupedTable'
 import { ORDENS_CARD_ICONS } from './ordensCardIcons'
+import { useIsFornecedor } from '../../hooks/useRole'
 
 
 const statusOptions = [
@@ -120,6 +121,7 @@ const columns: { key?: string; label: string; render?: ColRender }[] = [
 
 
 export default function OrdensPage() {
+  const isFornecedor = useIsFornecedor()
   const os       = useOrdens()
   const logAudit = useAuditStore(s => s.log)
   const location = useLocation()
@@ -271,13 +273,13 @@ export default function OrdensPage() {
                 <button onClick={handleExportPDF} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text"><FileText size={14} /> Baixar PDF</button>
               </div>
             </details>
-            <Button
+            {!isFornecedor && <Button
               variant="outline" size="sm"
               className="gap-1.5 min-h-9 border-primary/30 text-primary hover:bg-primary/10"
               onClick={() => setTgModal(true)}
             >
               <PaperPlaneTilt size={11} /> Telegram
-            </Button>
+            </Button>}
           </>
         }
       />
@@ -414,7 +416,7 @@ export default function OrdensPage() {
         <FilterSelect value={os.tipo}       onChange={os.setTipo}       options={tipoOpts}          placeholder="Tipo"        className="w-36" />
         <FilterSelect value={os.bairro}     onChange={os.setBairro}     options={bairroOpts}        placeholder="Bairro"      className="w-32" />
         <FilterSelect value={os.aging}      onChange={os.setAging}      options={agingOptions}      placeholder="Aging"       className="w-32" />
-        <FilterSelect value={os.fornecedor} onChange={os.setFornecedor} options={fornecedorOptions} placeholder="Fornecedor"  className="w-36" />
+        {!isFornecedor && <FilterSelect value={os.fornecedor} onChange={os.setFornecedor} options={fornecedorOptions} placeholder="Fornecedor" className="w-36" />}
         <FilterSelect value={os.periodo}   onChange={os.setPeriodo}   options={periodoOpts}       placeholder="Período"     className="w-32" />
 
         </div>}
@@ -525,11 +527,11 @@ export default function OrdensPage() {
       <OSDrawer os={drawerOS} onClose={() => setDrawerOS(null)} />
 
       {/* ── Modal Telegram ─────────────────────────────────────────── */}
-      <TelegramOrdensModal
+      {!isFornecedor && <TelegramOrdensModal
         open={tgModal}
         onClose={() => setTgModal(false)}
         ordens={os.filtered}
-      />
+      />}
     </div>
   )
 }

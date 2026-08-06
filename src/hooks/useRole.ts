@@ -7,3 +7,5 @@ export const useIsGestor = (): boolean => useAuthStore(s => s.role === 'gestor')
 
 export const useIsOperador = (): boolean =>
   useAuthStore(s => s.role === 'gestor' || s.role === 'operador')
+
+export const useIsFornecedor = (): boolean => useAuthStore(s => s.role === 'fornecedor')

@@ -12,7 +12,7 @@ import { SectionTitle } from '../../components/ui/SectionTitle'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Badge } from '../../components/ui/Badge'
 import { KPIGridSkeleton } from '../../components/ui/Skeleton'
-import { useIsGestor } from '../../hooks/useRole'
+import { useIsFornecedor, useIsGestor } from '../../hooks/useRole'
 import { useAIFornecedor } from '../../hooks/useAIFornecedor'
 
 const FORNECEDORES = [
@@ -36,6 +36,7 @@ export default function FornecedorPage() {
   const { rows, prevRows, derived, isLoading } = useOSDerived()
   const porFornecedorRevisita = derived.revisitas.porFornecedor
   const isGestor = useIsGestor()
+  const isFornecedor = useIsFornecedor()
 
   const { from, to } = useUIStore(s => s.dateFilter)
   const dias = useMemo(() => diasNoPeriodo(from, to), [from, to])
@@ -88,7 +89,7 @@ export default function FornecedorPage() {
       <PageHeader title="Análise por Fornecedor" icon={House} />
 
       {/* Filtro */}
-      <div className="flex flex-wrap gap-2">
+      {!isFornecedor && <div className="flex flex-wrap gap-2">
         {FORNECEDORES.map((f) => (
           <button key={f.value} onClick={() => setFiltro(f.value)}
             className={`flex items-center gap-1.5 text-caption font-bold px-3 py-1.5 rounded-pill border transition-all duration-fast cursor-pointer
@@ -98,7 +99,7 @@ export default function FornecedorPage() {
             {f.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {erroConfig && (
         <div className="rounded-xl border border-red/20 bg-red/[0.06] px-4 py-3 text-caption text-red/90">
@@ -110,7 +111,7 @@ export default function FornecedorPage() {
       {isLoading ? <KPIGridSkeleton count={6} /> : (
         <>
           {/* Ranking por SLA */}
-          {ranking.length > 1 && (
+          {!isFornecedor && ranking.length > 1 && (
             <div className="bg-card border border-white/[0.08] rounded-xl p-4">
               <SectionTitle icon={Trophy} className="mb-3">Ranking por SLA</SectionTitle>
               <p className="text-caption text-muted mb-4">
@@ -199,7 +200,7 @@ export default function FornecedorPage() {
           )}
 
           {/* ── AI Fornecedor ─────────────────────────────────────────── */}
-          {!aiEnabled ? (
+          {!isFornecedor && (!aiEnabled ? (
             <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkle size={12} className="text-primary/40" />
@@ -255,7 +256,7 @@ export default function FornecedorPage() {
                 </>
               )}
             </div>
-          )}
+          ))}
 
           {/* Painéis por fornecedor */}
           <div className="space-y-4">
@@ -265,6 +266,7 @@ export default function FornecedorPage() {
                 onCustoChange={(v) => void salvarCusto(p.fornKey, v)}
                 meta={metaSla[p.fornKey] ?? null}
                 isGestor={isGestor}
+                showFinancial={isGestor}
                 dias={dias}
                 revisitas={porFornecedorRevisita.find(f => f.fornecedor === p.fornKey)?.total ?? null}
               />
@@ -285,7 +287,7 @@ interface PanelKpis { total: number; concluidas: number; criticas: number; sla: 
 interface PanelEquipe { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }
 interface PanelChart  { labels: unknown[]; total: unknown[]; concluidas: unknown[] }
 
-function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCustoChange, meta, isGestor, dias, revisitas }: {
+function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCustoChange, meta, isGestor, showFinancial, dias, revisitas }: {
   nome: string; cor: string
   equipes: PanelEquipe[]
   kpis:    PanelKpis | null
@@ -294,6 +296,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
   onCustoChange: (v: number) => void
   meta:    number | null
   isGestor: boolean
+  showFinancial: boolean
   dias:    number
   /** Nº de revisitas deste fornecedor no período, ou null quando não há dado —
    *  ausência real (nenhuma revisita) e "sistema não consegue enxergar" (caso
@@ -324,12 +327,12 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
     // O caso ruim, não o típico: é dele que vem reclamação de cliente e multa.
     { label: 'MTTR P90',       value: `${kpis.mttrP90}d`, accent: kpis.mttrP90 <= 5 ? 'green' : kpis.mttrP90 <= 10 ? 'yellow' : 'red' },
     { label: 'Taxa Conclusão', value: `${kpis.conclPct}%`, accent: kpis.conclPct >= 80 ? 'green' : kpis.conclPct >= 60 ? 'primary' : 'yellow' },
-    { label: 'Custo / OS',     value: fmtCusto(kpis.custoPorOs), accent: 'orange' },
+    ...(showFinancial ? [{ label: 'Custo / OS', value: fmtCusto(kpis.custoPorOs), accent: 'orange' }] : []),
     // Só entra quando há revisita detectada E custo configurado — sem isso o
     // card mostraria R$0 pra quem tem retrabalho invisível ao sistema (Rede
     // hoje) ou pra quem não configurou custo, os dois lidos como "zero
     // revisita" por quem só olha o número.
-    ...(custoRevisita != null ? [{
+    ...(showFinancial && custoRevisita != null ? [{
       label: 'Custo Revisita', value: fmtCusto(custoRevisita), accent: 'red',
       title: `${revisitas} revisita${revisitas === 1 ? '' : 's'} × ${fmtCusto(kpis!.custoPorOs)}/OS`,
     }] : []),
@@ -371,7 +374,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
         <div className="px-5 pb-5 space-y-4 animate-slide-down">
 
           {/* Custo mensal — input */}
-          <div className="flex items-center gap-2 py-2 border-t border-white/[0.05]">
+          {showFinancial && <div className="flex items-center gap-2 py-2 border-t border-white/[0.05]">
             <CurrencyDollar size={12} className="text-muted flex-shrink-0" />
             <span className="text-caption text-muted">Custo mensal desta operadora (R$):</span>
             <input
@@ -390,7 +393,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                 {' '}<span className="text-muted/60">(custo rateado para os {dias}d do período)</span>
               </span>
             )}
-          </div>
+          </div>}
 
           {/* KPI Cards */}
           {kpis && (
