@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { WarningCircle, DownloadSimple, ChartBar, ArrowRight } from '@phosphor-icons/react'
+import { WarningCircle, DownloadSimple, ChartBar, ArrowRight, Lightning, Gauge } from '@phosphor-icons/react'
 import type { OSRow, KPI, AccentColor } from '../../lib/types'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useAINarrative } from '../../hooks/useAINarrative'
@@ -26,6 +26,7 @@ import { KpiModalTable } from './DashboardKpiModal'
 import { CoortePanel } from './CoortePanel'
 import { CapacidadePanel } from './CapacidadePanel'
 import { ChurnPanel } from './ChurnPanel'
+import { DashboardInvestigation } from './DashboardInvestigation'
 import {
   KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS, FOCO_NAVEGAVEL,
   type ModalState, type TypedDashboard, type CampoProjecaoReal,
@@ -170,7 +171,18 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ═══ NÍVEL 1 — Estado geral (<2s) ═══ */}
+        <section aria-labelledby="dashboard-now-title" className="space-y-3">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-orange/20 bg-orange/[0.08] text-orange">
+              <Lightning size={16} weight="fill" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-caption font-bold uppercase tracking-[0.09em] text-orange">Nível 1</p>
+              <h1 id="dashboard-now-title" className="text-title font-bold text-text">Agir agora</h1>
+              <p className="mt-0.5 text-caption text-muted">Exceções e riscos que precisam de decisão imediata.</p>
+            </div>
+          </div>
+
         <AlertaTopoBanner
           clustersCount={clustersAtivos.length}
           anomaliasCount={anomalias?.total ?? 0}
@@ -197,8 +209,36 @@ export default function DashboardPage() {
 
         <MudancasStrip mudancas={mudancas} />
 
-        {/* ═══ NÍVEL 2 — capacidade operacional ═══ */}
-        <section>
+        <div ref={clustersRef}>
+          <ClustersBairroPanel clusters={clustersAtivos} />
+        </div>
+
+        {anomalias?.total > 0 && (
+          <div ref={anomaliasRef}>
+            <AnomaliaSection
+              anomalias={anomalias}
+              contexto={{
+                total:     (kpis.find(k => k.id === 'total')?.value as number) ?? 0,
+                sla_pct:   pulso.slaFila ?? 0,
+                criticas:  pulso.criticasTotal ?? 0,
+                aging_med: pulso.agingMed ?? 0,
+              }}
+            />
+          </div>
+        )}
+        </section>
+
+        <section aria-labelledby="dashboard-control-title" className="space-y-3 border-t border-border pt-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/[0.08] text-primary">
+              <Gauge size={16} aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-caption font-bold uppercase tracking-[0.09em] text-primary">Nível 2</p>
+              <h2 id="dashboard-control-title" className="text-title font-bold text-text">Controlar a operação de hoje</h2>
+              <p className="mt-0.5 text-caption text-muted">Entrega, volume e prazo da fila no ritmo atual.</p>
+            </div>
+          </div>
           <SectionLabel icon={ChartBar} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
           <div className="grid grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
             {perfKpis.map((k, i) => (
@@ -218,27 +258,6 @@ export default function DashboardPage() {
               />
             ))}
           </div>
-        </section>
-
-        <div ref={clustersRef}>
-          <ClustersBairroPanel clusters={clustersAtivos} />
-        </div>
-
-        {anomalias?.total > 0 && (
-          <div ref={anomaliasRef}>
-            <AnomaliaSection
-              anomalias={anomalias}
-              contexto={{
-                total:     (kpis.find(k => k.id === 'total')?.value    as number) ?? 0,
-                sla_pct:   pulso.slaFila    ?? 0,
-                criticas:  pulso.criticasTotal ?? 0,
-                aging_med: pulso.agingMed   ?? 0,
-              }}
-            />
-          </div>
-        )}
-
-        {/* ═══ NÍVEL 4 — Detalhamento operacional ═══ */}
         <ExecutadasHeroBlock
           rows={allRows}
           projecao={projecaoHoje}
@@ -253,31 +272,38 @@ export default function DashboardPage() {
           <AgingPanel pulso={pulso} filaAtiva={filaAtiva}
                       onOpen={(title, rows) => setModal({ title, rows })} />
         </div>
+        </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-          <CapacidadePanel horizonte={capacidade.horizonte} cidades={capacidade.cidades} />
-          <RitmoEquipesPanel semaforo={campo.semaforo} onOpen={openEquipe} />
-          <CidadesValePanel filaAtiva={filaAtiva}
-                            onOpen={(title, rows) => setModal({ title, rows })} />
-          <ParetoServicoPanel filaAtiva={filaAtiva}
-                              onOpen={(title, rows) => setModal({ title, rows })} />
-        </div>
-
-        {/* ═══ NÍVEL 5 — Análises secundárias ═══ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-          <CoortePanel buckets={coorte.buckets} linhas={coorte.linhas} />
-          <ChurnPanel
-            janelaDias={churn.janelaDias}
-            clientes={churn.clientes}
-            totalReincidentes={churn.totalReincidentes}
-            totalBase={churn.totalBase}
-            pctReincidencia={churn.pctReincidencia}
-            onOpen={(title, filtered) => setModal({ title, rows: filtered })}
-          />
-          <MetaMesCard meta={pulso.metaMes} />
-          <FornecedoresPanel fornecedores={fornecedores} onOpen={openFornecedor} />
-          <QualidadePeriodoCard pulso={pulso} taxaRevisitas={taxaRevisitas} />
-        </div>
+        <DashboardInvestigation
+          operation={(
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <CapacidadePanel horizonte={capacidade.horizonte} cidades={capacidade.cidades} />
+              <RitmoEquipesPanel semaforo={campo.semaforo} onOpen={openEquipe} />
+            </div>
+          )}
+          territory={(
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <CidadesValePanel filaAtiva={filaAtiva} onOpen={(title, filtered) => setModal({ title, rows: filtered })} />
+              <ParetoServicoPanel filaAtiva={filaAtiva} onOpen={(title, filtered) => setModal({ title, rows: filtered })} />
+            </div>
+          )}
+          quality={(
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <CoortePanel buckets={coorte.buckets} linhas={coorte.linhas} />
+              <ChurnPanel
+                janelaDias={churn.janelaDias}
+                clientes={churn.clientes}
+                totalReincidentes={churn.totalReincidentes}
+                totalBase={churn.totalBase}
+                pctReincidencia={churn.pctReincidencia}
+                onOpen={(title, filtered) => setModal({ title, rows: filtered })}
+              />
+              <MetaMesCard meta={pulso.metaMes} />
+              <FornecedoresPanel fornecedores={fornecedores} onOpen={openFornecedor} />
+              <QualidadePeriodoCard pulso={pulso} taxaRevisitas={taxaRevisitas} />
+            </div>
+          )}
+        />
 
       </div>
 
