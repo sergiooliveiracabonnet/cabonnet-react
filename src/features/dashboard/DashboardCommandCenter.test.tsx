@@ -23,6 +23,26 @@ describe('DashboardCommandCenter', () => {
 
     expect(screen.getByRole('heading', { level: 2, name: 'Prioridades agora' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Pulso operacional' })).not.toBeInTheDocument()
+    expect(screen.getAllByTestId('priority-card')).toHaveLength(3)
+  })
+
+  it('coloca prioridades ativas antes das zeradas e desabilita cards sem ocorrências', () => {
+    render(
+      <DashboardCommandCenter
+        priorities={[
+          { id: 'zerada', title: 'Sem equipe', value: 0, sub: 'sem atribuição', accent: 'orange' },
+          { id: 'ativa', title: 'OS Críticas', value: 4, sub: 'SLA 2× excedido', accent: 'red' },
+        ]}
+        projection={{ proj24h: 0, proj48h: 0, amostra: [] }}
+        criticalNow={4}
+        onPriority={() => {}}
+        onProjection={() => {}}
+      />,
+    )
+
+    const cards = screen.getAllByTestId('priority-card')
+    expect(cards[0]).toHaveTextContent('OS Críticas')
+    expect(screen.getByRole('button', { name: /Sem equipe.*sem ocorrências/i })).toBeDisabled()
   })
 
   it('abre a prioridade e a projeção usando os callbacks do container', () => {
