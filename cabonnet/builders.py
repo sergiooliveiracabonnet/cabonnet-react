@@ -6,6 +6,7 @@ cabonnet/builders.py — Todas as funções _build_* de mensagens Telegram.
 import logging
 import threading
 import os
+import re
 import time as _time_mod
 from collections import defaultdict
 from datetime import datetime, date, timedelta
@@ -200,28 +201,36 @@ def _build_listatendimento(operadora=None):
     atuais  = [r for r in atend if not _is_futura(r)]
     futuras = [r for r in atend if _is_futura(r)]
 
-    def _bloco_por_equipe(lista, titulo, icone):
+    def _bloco_por_cidade_equipe(lista, titulo, icone):
         if not lista: return []
-        por_eq = {}
+        por_cidade = {}
         for r in lista:
-            eq = (r.get("nomedaequipe") or "Sem equipe").strip()
-            por_eq.setdefault(eq, []).append(r)
+            cidade = (r.get("nomedacidade") or "Sem cidade").strip().upper()
+            por_cidade.setdefault(cidade, []).append(r)
         ls = [f"\n{icone} <b>{titulo} — {len(lista)} OS</b>"]
-        for eq in sorted(por_eq.keys(), key=lambda e: (1 if "COPE" in e.upper() else 0, e)):
-            grupo = sorted(por_eq[eq], key=lambda r: _data_ord(r.get("dataagendamento") or r.get("dataatendimento") or ""))
-            ls.append(f"\n👤 <b>{eq}</b> — {len(grupo)} OS")
-            for r in grupo:
-                numos  = r.get("numos", "?")
-                cliente = _tg_esc((r.get("nomecliente") or "Cliente não informado")[:32])
-                cidade = _tg_esc((r.get("nomedacidade") or "").upper())
-                ts     = _tg_esc((r.get("tiposervico") or "").replace("INSTALACAO","Inst").replace("MANUTENCAO","Manut"))
-                dt     = _tg_esc(r.get("dataagendamento") or r.get("dataatendimento") or "Sem data")
-                ls.append(f"  /os{numos} · {cliente} · {cidade} · {ts} · {dt}")
+        for cidade in sorted(por_cidade, key=_normalizar_busca):
+            cidade_rows = por_cidade[cidade]
+            ls.append(f"\n📍 <b>{_tg_esc(cidade)}</b> — {len(cidade_rows)} OS")
+            por_eq = {}
+            for r in cidade_rows:
+                eq = (r.get("nomedaequipe") or "Sem equipe").strip()
+                por_eq.setdefault(eq, []).append(r)
+            for eq in sorted(por_eq, key=lambda e: (1 if "COPE" in e.upper() else 0, _normalizar_busca(e))):
+                grupo = sorted(por_eq[eq], key=lambda r: _data_ord(r.get("dataagendamento") or r.get("dataatendimento") or ""))
+                frente = re.search(r"\bF\s*(\d{2})\b", eq.upper())
+                eq_label = f"F{frente.group(1)}" if frente else (_abrev_equipe(eq) or eq)
+                ls.append(f"  👤 <b>{_tg_esc(eq_label)}</b> — {len(grupo)} OS")
+                for r in grupo:
+                    numos  = _tg_esc(str(r.get("numos", "?")))
+                    cliente = _tg_esc((r.get("nomecliente") or "Cliente não informado")[:32])
+                    ts     = _tg_esc((r.get("tiposervico") or "").replace("INSTALACAO","Inst").replace("MANUTENCAO","Manut"))
+                    dt     = _tg_esc(r.get("dataagendamento") or r.get("dataatendimento") or "Sem data")
+                    ls.append(f"    /os{numos} · {cliente} · {ts} · {dt}")
         return ls
 
     linhas = _tg_header("🔵", "EM ATENDIMENTO", operadora, f"{len(atend)} OS no total")
-    linhas += _bloco_por_equipe(atuais,  "Em Atendimento", "🔵")
-    linhas += _bloco_por_equipe(futuras, "Reagendadas (datas futuras)", "📅")
+    linhas += _bloco_por_cidade_equipe(atuais,  "Em Atendimento", "🔵")
+    linhas += _bloco_por_cidade_equipe(futuras, "Reagendadas (datas futuras)", "📅")
     return "\n".join(linhas)
 
 
