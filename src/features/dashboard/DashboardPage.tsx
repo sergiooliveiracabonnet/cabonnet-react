@@ -6,6 +6,7 @@ import { useOSDerived } from '../../contexts/OSDataContext'
 import { useAINarrative } from '../../hooks/useAINarrative'
 import { useStats } from '../../hooks/useStats'
 import { exportCSV } from '../../lib/export'
+import { isCOPE, isReagend, parseDateTime } from '../../lib/transform'
 import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import { Modal } from '../../components/ui/Modal'
 import OSDrawer from '../ordens/OSDrawer'
@@ -51,6 +52,22 @@ export default function DashboardPage() {
 
   // Fila ativa ao vivo — mesmo predicado do KPI "Fila Total" e do agingDist do builder
   const filaAtiva = useMemo(() => allRows.filter(KPI_FILTERS.total), [allRows])
+  const fluxoHojeRows = useMemo(() => {
+    const now = new Date()
+    const hoje = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
+    const validas = allRows.filter(row => !isCOPE(row) && !isReagend(row))
+    const byNewest = (field: (row: OSRow) => string | null | undefined) => (a: OSRow, b: OSRow) =>
+      (parseDateTime(field(b))?.getTime() ?? 0) - (parseDateTime(field(a))?.getTime() ?? 0)
+
+    return {
+      entradas: validas
+        .filter(row => (row.datacadastro || '').split(' ')[0] === hoje)
+        .sort(byNewest(row => row.datacadastro)),
+      saidas: validas
+        .filter(row => row._executadaHoje)
+        .sort(byNewest(row => row.dataexecucao || row.databaixa)),
+    }
+  }, [allRows])
 
   function openKpi(kpi: KPI) {
     const filter = KPI_FILTERS[kpi.id]
@@ -190,22 +207,13 @@ export default function DashboardPage() {
           onScrollAnomalias={() => anomaliasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
         />
 
-        <DashboardCommandCenter
-          priorities={riskKpis}
-          projection={projecaoRisco}
-          criticalNow={pulso.criticasTotal ?? 0}
-          onPriority={openKpi}
-          onProjection={(riskRows) => setModal({ title: 'Risco de violação · próximas 48h', rows: riskRows })}
-          pulse={(
-            <PulsoHero
-              pulso={pulso}
-              mudancas={mudancas}
-              aiData={aiData}
-              isLoadingAI={isLoadingAI}
-              onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
-            />
-          )}
-        />
+          <DashboardCommandCenter
+            priorities={riskKpis}
+            projection={projecaoRisco}
+            criticalNow={pulso.criticasTotal ?? 0}
+            onPriority={openKpi}
+            onProjection={(riskRows) => setModal({ title: 'Risco de violação · próximas 48h', rows: riskRows })}
+          />
 
         <MudancasStrip mudancas={mudancas} />
 
@@ -239,6 +247,19 @@ export default function DashboardPage() {
               <p className="mt-0.5 text-caption text-muted">Entrega, volume e prazo da fila no ritmo atual.</p>
             </div>
           </div>
+
+          <PulsoHero
+            pulso={pulso}
+            mudancas={mudancas}
+            aiData={aiData}
+            isLoadingAI={isLoadingAI}
+            onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
+            onOpenFlow={(kind) => setModal({
+              title: kind === 'entradas' ? 'Entradas Hoje · mais recentes primeiro' : 'Concluídas Hoje · mais recentes primeiro',
+              rows: fluxoHojeRows[kind],
+            })}
+          />
+
           <SectionLabel icon={ChartBar} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
           <div className="grid grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
             {perfKpis.map((k, i) => (

@@ -10,7 +10,7 @@ const priorities: KPI[] = [
 ]
 
 describe('DashboardCommandCenter', () => {
-  it('coloca prioridades antes do pulso na ordem de leitura', () => {
+  it('mantém a primeira dobra dedicada somente às prioridades', () => {
     render(
       <DashboardCommandCenter
         priorities={priorities}
@@ -18,13 +18,11 @@ describe('DashboardCommandCenter', () => {
         criticalNow={3}
         onPriority={() => {}}
         onProjection={() => {}}
-        pulse={<section><h2>Pulso operacional</h2></section>}
       />,
     )
 
-    const prioritiesHeading = screen.getByRole('heading', { level: 2, name: 'Prioridades agora' })
-    const pulseHeading = screen.getByRole('heading', { level: 2, name: 'Pulso operacional' })
-    expect(prioritiesHeading.compareDocumentPosition(pulseHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'Prioridades agora' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Pulso operacional' })).not.toBeInTheDocument()
   })
 
   it('abre a prioridade e a projeção usando os callbacks do container', () => {
@@ -39,7 +37,6 @@ describe('DashboardCommandCenter', () => {
         criticalNow={3}
         onPriority={onPriority}
         onProjection={onProjection}
-        pulse={<section><h2>Pulso operacional</h2></section>}
       />,
     )
 
@@ -50,4 +47,3 @@ describe('DashboardCommandCenter', () => {
     expect(onProjection).toHaveBeenCalledWith([riskRow])
   })
 })
-

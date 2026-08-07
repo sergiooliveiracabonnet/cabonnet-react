@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { fireEvent, render, screen, cleanup, within } from '@testing-library/react'
 import { PulsoHero } from './PulsoHero'
 import type { Pulso } from '../../lib/types'
@@ -109,6 +109,17 @@ describe('PulsoHero', () => {
     // marcava os seus com class="lucide"; o Phosphor não usa classe, mas todo
     // ícone dele vem no grid 256 — é esse o marcador equivalente.
     expect(container.querySelectorAll('svg[aria-hidden="true"]:not([viewBox="0 0 256 256"]) path')).toHaveLength(0)
+  })
+
+  it('abre as ordens de entradas e concluídas de hoje pelo fluxo do dia', () => {
+    const onOpenFlow = vi.fn()
+    render(<PulsoHero pulso={makePulso()} aiData={null} isLoadingAI={false} onOpenFlow={onOpenFlow} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Entradas hoje.*46.*Ver ordens/i }))
+    expect(onOpenFlow).toHaveBeenCalledWith('entradas')
+
+    fireEvent.click(screen.getByRole('button', { name: /Concluídas hoje.*51.*Ver ordens/i }))
+    expect(onOpenFlow).toHaveBeenCalledWith('saidas')
   })
 
   it('mini-stats de qualidade continuam fora daqui (vivem no QualidadePeriodoCard)', () => {

@@ -212,10 +212,11 @@ def _build_listatendimento(operadora=None):
             ls.append(f"\n👤 <b>{eq}</b> — {len(grupo)} OS")
             for r in grupo:
                 numos  = r.get("numos", "?")
-                cidade = (r.get("nomedacidade") or "").upper()
-                ts     = (r.get("tiposervico") or "").replace("INSTALACAO","Inst").replace("MANUTENCAO","Manut")
-                dt     = r.get("dataagendamento") or r.get("dataatendimento") or "Sem data"
-                ls.append(f"  /os{numos} · {cidade} · {ts} · {dt}")
+                cliente = _tg_esc((r.get("nomecliente") or "Cliente não informado")[:32])
+                cidade = _tg_esc((r.get("nomedacidade") or "").upper())
+                ts     = _tg_esc((r.get("tiposervico") or "").replace("INSTALACAO","Inst").replace("MANUTENCAO","Manut"))
+                dt     = _tg_esc(r.get("dataagendamento") or r.get("dataatendimento") or "Sem data")
+                ls.append(f"  /os{numos} · {cliente} · {cidade} · {ts} · {dt}")
         return ls
 
     linhas = _tg_header("🔵", "EM ATENDIMENTO", operadora, f"{len(atend)} OS no total")

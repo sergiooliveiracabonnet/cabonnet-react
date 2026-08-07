@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pulse, Sparkle, TrendDown, TrendUp, Lightning } from '@phosphor-icons/react'
+import { Pulse, Sparkle, TrendDown, TrendUp, Lightning, ArrowUpRight } from '@phosphor-icons/react'
 import type { Pulso } from '../../lib/types'
 import type { AINarrativeResult } from '../../hooks/useAINarrative'
 import type { DashMover } from './DashboardTypes'
@@ -68,7 +68,7 @@ function VitalTrack({ pct, alvoPct, tone }: { pct: number; alvoPct: number; tone
  *  - `excedenteDe`: quando esta barra é a maior, o trecho que passa da outra
  *    ganha a cor do saldo. 46 vs 51 são barras quase iguais; o que decide é a
  *    diferença, então é a diferença que fica visível. */
-function FluxoBar({ label, value, max, barClass, refPct, excedenteDe, excedenteClass }: {
+function FluxoBar({ label, value, max, barClass, refPct, excedenteDe, excedenteClass, onClick }: {
   label: string
   value: number
   max: number
@@ -76,11 +76,12 @@ function FluxoBar({ label, value, max, barClass, refPct, excedenteDe, excedenteC
   refPct?: number | null
   excedenteDe?: number | null
   excedenteClass?: string
+  onClick?: () => void
 }) {
   const pct = clampPct(max > 0 ? (value / max) * 100 : 0)
   const basePct = excedenteDe != null ? clampPct(max > 0 ? (excedenteDe / max) * 100 : 0) : pct
-  return (
-    <div className="flex items-center gap-2 sm:gap-3">
+  const content = (
+    <>
       <span className="w-[92px] flex-shrink-0 truncate text-caption text-secondary sm:w-[110px]">{label}</span>
       <span className="relative h-2 min-w-0 flex-1 overflow-hidden rounded-pill bg-white/[0.07]" aria-hidden="true">
         <span className={`absolute inset-y-0 left-0 rounded-pill transition-[width] duration-slow ${barClass}`} style={{ width: `${basePct}%` }} />
@@ -90,8 +91,20 @@ function FluxoBar({ label, value, max, barClass, refPct, excedenteDe, excedenteC
         {refPct != null && <span className="absolute inset-y-0 w-[2px] rounded-pill bg-text/55" style={{ left: `${refPct}%` }} />}
       </span>
       <span className="w-9 flex-shrink-0 text-right text-title font-black tabular-nums text-text">{value}</span>
-    </div>
+      {onClick && <ArrowUpRight size={13} className="flex-shrink-0 text-muted transition-colors group-hover:text-primary" aria-hidden="true" />}
+    </>
   )
+  return onClick ? (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${label}: ${value}. Ver ordens`}
+      className="group flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-1 text-left transition-colors duration-200 hover:bg-white/[0.04]
+                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:gap-3"
+    >
+      {content}
+    </button>
+  ) : <div className="flex items-center gap-2 sm:gap-3">{content}</div>
 }
 
 function SaldoCell({ label, valor, descricao, tone, icon: Icon }: {
@@ -113,11 +126,12 @@ function SaldoCell({ label, valor, descricao, tone, icon: Icon }: {
   )
 }
 
-export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = [] }: {
+export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow, mudancas = [] }: {
   pulso: Pulso
   aiData: AINarrativeResult | null | undefined
   isLoadingAI: boolean
   onRequestAI?: (obs: string) => void
+  onOpenFlow?: (kind: 'entradas' | 'saidas') => void
   mudancas?: DashMover[]
 }) {
   const [draftObs, setDraftObs] = useState('')
@@ -280,10 +294,12 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, mudancas = 
             <FluxoBar
               label="Entradas hoje" value={entradasHoje} max={fluxoMax} barClass="bg-muted/70" refPct={mediaRefPct}
               excedenteDe={entradasHoje > saidasHoje ? saidasHoje : null} excedenteClass={TONE_BAR.warn}
+              onClick={onOpenFlow ? () => onOpenFlow('entradas') : undefined}
             />
             <FluxoBar
               label="Concluídas hoje" value={saidasHoje} max={fluxoMax} barClass="bg-text/60"
               excedenteDe={saidasHoje > entradasHoje ? entradasHoje : null} excedenteClass={TONE_BAR.ok}
+              onClick={onOpenFlow ? () => onOpenFlow('saidas') : undefined}
             />
           </div>
 

@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { Warning, ArrowUpRight, CheckCircle, Broadcast } from '@phosphor-icons/react'
 import type { KPI, OSRow } from '../../lib/types'
 import type { ProjecaoRisco } from '../../lib/builders/dashboard'
@@ -9,7 +8,6 @@ interface DashboardCommandCenterProps {
   criticalNow: number
   onPriority: (priority: KPI) => void
   onProjection: (rows: OSRow[]) => void
-  pulse: ReactNode
 }
 
 const TONE_CLASSES: Record<string, string> = {
@@ -35,20 +33,16 @@ export function DashboardCommandCenter({
   criticalNow,
   onPriority,
   onProjection,
-  pulse,
 }: DashboardCommandCenterProps) {
   const activeCount = priorities.filter(priority => numericValue(priority.value) > 0).length
   const projectedTotal = projection.proj24h + projection.proj48h
 
   return (
-    <div
+    <section
       data-testid="dashboard-command-center"
-      className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.85fr)]"
+      aria-labelledby="dashboard-priorities-title"
+      className="flex min-w-0 flex-col rounded-lg border border-border bg-card"
     >
-      <section
-        aria-labelledby="dashboard-priorities-title"
-        className="order-1 flex h-full min-w-0 flex-col rounded-lg border border-border bg-card xl:order-2"
-      >
         <header className="flex min-h-11 items-center justify-between gap-3 border-b border-white/[0.06] px-3 py-2 sm:min-h-12 sm:px-4 sm:py-2.5">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-red/20 bg-red/[0.07] text-red">
@@ -123,9 +117,6 @@ export function DashboardCommandCenter({
             </span>
           </button>
         )}
-      </section>
-
-      <div className="order-2 min-w-0 xl:order-1">{pulse}</div>
-    </div>
+    </section>
   )
 }
