@@ -20,7 +20,7 @@ log_db = logging.getLogger("CaboNetServer.DB")
 # ── Módulos do app togleáveis por papel (gestor/operador/viewer) ──────────────
 # Mapeados 1:1 com as rotas do Sidebar (src/components/layout/Sidebar.tsx).
 ALL_MODULOS = [
-    "dashboard", "ordens", "graficos", "cidades", "fornecedor", "juniper",
+    "dashboard", "ordens", "graficos", "cidades", "fornecedor", "juniper", "nivel_sinal",
     "fechamento", "mapa", "noc",
     "erp_relatorios", "erp_alertas",
     "erp_planner", "erp_fila", "erp_ranking",
@@ -29,7 +29,7 @@ ALL_MODULOS = [
 # Defaults semeados no bootstrap — só o ponto de partida, ajustável depois pela
 # própria tela de permissões.
 _DEFAULT_OPERADOR_MODULOS = [
-    "dashboard", "ordens", "cidades", "mapa", "juniper",
+    "dashboard", "ordens", "cidades", "mapa", "juniper", "nivel_sinal",
     "erp_relatorios", "erp_alertas",
     "erp_planner", "erp_fila", "erp_ranking",
 ]

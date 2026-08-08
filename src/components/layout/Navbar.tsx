@@ -23,6 +23,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/cidades':    'Cidades & Categorias',
   '/fornecedor': 'Fornecedor',
   '/juniper':    'Juniper',
+  '/nivel-sinal': 'Nível de Sinal',
 }
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────

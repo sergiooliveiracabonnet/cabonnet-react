@@ -11,7 +11,7 @@ import {
   ERPPlannerPage, ERPFilaPage, ERPRankingTecnicosPage,
   DashboardPage, OrdensPage,
   GraficosPage, CidadesGerencialPage,
-  FornecedorPage, JuniperPage, NotFoundPage, NocPage, FechamentoPage,
+  FornecedorPage, JuniperPage, NivelSinalPage, NotFoundPage, NocPage, FechamentoPage,
   MapaPage, UsuariosPage,
 } from './pages/index'
 
@@ -76,6 +76,7 @@ export default function App() {
         <Route path="cidades"    element={<RequireModulo modulo="cidades">   <CidadesGerencialPage />    </RequireModulo>} />
         <Route path="fornecedor" element={<RequireModulo modulo="fornecedor"><FornecedorPage />          </RequireModulo>} />
         <Route path="juniper"    element={<RequireModulo modulo="juniper">   <JuniperPage />              </RequireModulo>} />
+        <Route path="nivel-sinal" element={<RequireModulo modulo="nivel_sinal"><NivelSinalPage />         </RequireModulo>} />
         <Route path="fechamento" element={<RequireModulo modulo="fechamento"><FechamentoPage />          </RequireModulo>} />
         <Route path="mapa"       element={<RequireModulo modulo="mapa">      <MapaPage />                </RequireModulo>} />
         {/* /gerencial virou a aba "Por Categoria" dentro de /cidades */}

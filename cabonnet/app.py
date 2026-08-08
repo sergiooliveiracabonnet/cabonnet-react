@@ -597,6 +597,7 @@ _MODULO_LABELS = {
     "cidades":            "Cidades",
     "fornecedor":         "Fornecedor",
     "juniper":            "Juniper",
+    "nivel_sinal":        "Nível de Sinal",
     "fechamento":         "Fechamento",
     "mapa":               "Mapa",
     "noc":                "NOC",

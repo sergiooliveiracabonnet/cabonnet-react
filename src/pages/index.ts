@@ -13,6 +13,7 @@ export const GraficosPage   = lazy(() => import('../features/graficos/GraficosPa
 export const CidadesGerencialPage = lazy(() => import('../features/cidades/CidadesGerencialPage'))
 export const FornecedorPage = lazy(() => import('../features/fornecedor/FornecedorPage'))
 export const JuniperPage    = lazy(() => import('../features/juniper/JuniperPage'))
+export const NivelSinalPage = lazy(() => import('../features/nivel-sinal/NivelSinalPage'))
 export const NotFoundPage   = lazy(() => import('./NotFound'))
 export const NocPage        = lazy(() => import('../features/noc/NocPage'))
 export const FechamentoPage = lazy(() => import('../features/fechamento/FechamentoPage'))

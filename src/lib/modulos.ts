@@ -9,6 +9,7 @@ export const MODULO_ROTA: Record<string, string> = {
   cidades:           '/cidades',
   fornecedor:        '/fornecedor',
   juniper:           '/juniper',
+  nivel_sinal:       '/nivel-sinal',
   fechamento:        '/fechamento',
   mapa:              '/mapa',
   noc:               '/noc',

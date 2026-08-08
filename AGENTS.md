@@ -135,6 +135,7 @@ All pages are lazy-loaded via `src/pages/index.jsx`. Route structure:
 /campo              → field ops (MTTR, ritmo, projeção)
 /fornecedor         → supplier SLA
 /juniper            → PPPoE/Juniper monitoring
+/nivel-sinal        → optical signal analysis (local CSV import)
 /fechamento         → invoice closing (PDF export)
 /mapa               → geographic heat map (Leaflet)
 /noc                → NOC mode (no auth required, full-screen)

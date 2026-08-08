@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { CaretDown, CaretRight, CaretUp, CaretUpDown, Users, ArrowCounterClockwise, Copy, Check, ClipboardText, MapPin, Spinner } from '@phosphor-icons/react'
+import { CaretDown, CaretRight, CaretUp, CaretUpDown, Users, ArrowCounterClockwise, Copy, Check, ClipboardText, MapPin, Spinner, MagnifyingGlass, X } from '@phosphor-icons/react'
 import { Badge } from '../../components/ui/Badge'
 import { shortEquipe, situacaoVariant, buildOSWhatsApp, CATEGORIA_LABEL, CATEGORIA_COLOR } from '../../lib/osFormat'
 import { useOSDetails, parseOSDetails, osDetailsQuery } from '../../hooks/useOSDetails'
@@ -97,7 +97,25 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
   const [copied,   setCopied]   = useState<string | null>(null)
   const [sortKey,  setSortKey]  = useState<SortKey>('aging')
   const [sortDir,  setSortDir]  = useState<'asc' | 'desc'>('desc')
+  const [query, setQuery] = useState('')
+  const [city, setCity] = useState('')
+  const [status, setStatus] = useState('')
   const queryClient = useQueryClient()
+
+  const cities = useMemo(() => [...new Set(rows.map(row => (row.nomedacidade || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [rows])
+  const statuses = useMemo(() => [...new Set(rows.map(row => (row._situacaoEfetiva || row.descsituacao || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [rows])
+  const filteredRows = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase('pt-BR')
+    return rows.filter(row => {
+      const searchable = [row.numos, row.nomecliente, row.codigocontrato, row.nomedaequipe, row.bairro]
+        .filter(Boolean).join(' ').toLocaleLowerCase('pt-BR')
+      const rowStatus = (row._situacaoEfetiva || row.descsituacao || '').trim()
+      return (!needle || searchable.includes(needle))
+        && (!city || (row.nomedacidade || '').trim() === city)
+        && (!status || rowStatus === status)
+    })
+  }, [rows, query, city, status])
+  const hasFilters = Boolean(query || city || status)
 
   function toggleSort(key: SortKey) {
     if (key === sortKey) { setSortDir(d => d === 'desc' ? 'asc' : 'desc'); return }
@@ -131,7 +149,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
   // Agrupa por cidade (volume desc); dentro de cada cidade, ordena pela coluna selecionada
   const grupos = useMemo(() => {
     const map = new Map<string, OSRow[]>()
-    for (const os of rows) {
+    for (const os of filteredRows) {
       const c = (os.nomedacidade || '').trim() || '—'
       if (!map.has(c)) map.set(c, [])
       map.get(c)!.push(os)
@@ -139,12 +157,57 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
     const dir = sortDir === 'asc' ? 1 : -1
     for (const list of map.values()) list.sort((a, b) => dir * compareRows(a, b, sortKey))
     return [...map.entries()].sort((a, b) => b[1].length - a[1].length)
-  }, [rows, sortKey, sortDir])
+  }, [filteredRows, sortKey, sortDir])
 
   if (!rows.length) return <p className="text-center text-muted text-label py-10">Nenhuma OS encontrada.</p>
 
   return (
     <div className="overflow-auto max-h-[72vh]">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-3 sm:px-5">
+        <label className="relative min-w-[180px] flex-1">
+          <span className="sr-only">Buscar nas ordens</span>
+          <MagnifyingGlass size={14} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            type="search"
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            placeholder="Buscar OS, cliente, contrato, equipe…"
+            className="h-11 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-body text-text outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/25 sm:h-9"
+          />
+        </label>
+        <label>
+          <span className="sr-only">Filtrar por cidade</span>
+          <select value={city} onChange={event => setCity(event.target.value)} className="h-11 min-w-[132px] rounded-lg border border-border bg-surface px-3 text-label text-secondary outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 sm:h-9">
+            <option value="">Todas as cidades</option>
+            {cities.map(item => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </label>
+        <label>
+          <span className="sr-only">Filtrar por situação</span>
+          <select value={status} onChange={event => setStatus(event.target.value)} className="h-11 min-w-[132px] rounded-lg border border-border bg-surface px-3 text-label text-secondary outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 sm:h-9">
+            <option value="">Todas as situações</option>
+            {statuses.map(item => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </label>
+        <span className="ml-auto whitespace-nowrap text-caption font-semibold tabular-nums text-muted">{filteredRows.length} de {rows.length} OS</span>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={() => { setQuery(''); setCity(''); setStatus('') }}
+            className="inline-flex h-11 items-center gap-1.5 rounded-lg px-3 text-caption font-semibold text-muted transition-colors hover:bg-surface hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:h-9"
+          >
+            <X size={13} aria-hidden="true" /> Limpar filtros
+          </button>
+        )}
+      </div>
+      {filteredRows.length === 0 && (
+        <div className="flex min-h-40 flex-col items-center justify-center gap-2 px-5 text-center">
+          <MagnifyingGlass size={22} className="text-muted" aria-hidden="true" />
+          <p className="text-body font-semibold text-text">Nenhuma OS corresponde aos filtros</p>
+          <button type="button" onClick={() => { setQuery(''); setCity(''); setStatus('') }} className="min-h-11 px-3 text-label font-semibold text-primary hover:underline">Limpar filtros</button>
+        </div>
+      )}
+      {filteredRows.length > 0 && <>
       {/* Cabeçalho de colunas — clique para ordenar */}
       <div className="sticky top-0 z-20 h-9 flex items-center gap-3 bg-card px-5 border-b border-white/[0.12]">
         <span className={`${COL_W.chevron} flex-shrink-0`} />
@@ -230,6 +293,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
           </div>
         </div>
       ))}
+      </>}
     </div>
   )
 }

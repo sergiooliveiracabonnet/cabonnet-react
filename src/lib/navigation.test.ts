@@ -17,6 +17,13 @@ describe('visibleNavGroups', () => {
     expect(allLinks).not.toContain('/erp/usuarios')
   })
 
+  it('exibe nivel de sinal quando o modulo esta liberado', () => {
+    const groups = visibleNavGroups('operador', ['nivel_sinal'])
+    const links = groups.flatMap(group => group.links.map(link => link.to))
+
+    expect(links).toEqual(['/nivel-sinal'])
+  })
+
   it('remove grupos sem nenhum link visivel', () => {
     const groups = visibleNavGroups('viewer', ['dashboard'])
     expect(groups.every(g => g.links.length > 0)).toBe(true)
