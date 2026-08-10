@@ -25,6 +25,19 @@ describe('parseSignalCsv', () => {
     expect(buildHotspots(rows)[0]).toMatchObject({ criticos: 8, total: 10, concentracao: 0.8, nivel: 'alto' })
   })
 
+  it('prioriza hotspots pela maior quantidade absoluta de casos críticos', () => {
+    const base = parseSignalCsv(csv)[0]
+    const maiorVolume = Array.from({ length: 30 }, (_, index) => ({
+      ...base, pon: '1/1', onu: `volume-${index}`,
+      classificacao: (index < 10 ? 'Crítico' : 'Atenção') as SignalSeverity,
+    }))
+    const maiorConcentracao = Array.from({ length: 8 }, (_, index) => ({
+      ...base, pon: '1/2', onu: `concentracao-${index}`, classificacao: 'Crítico' as SignalSeverity,
+    }))
+
+    expect(buildHotspots([...maiorConcentracao, ...maiorVolume]).map(item => item.pon)).toEqual(['1/1', '1/2'])
+  })
+
   it('gera histograma de 0,5 dBm e agrupamentos por severidade', () => {
     const rows = parseSignalCsv(csv)
     expect(buildHistogram(rows).reduce((sum, bin) => sum + bin.total, 0)).toBe(2)

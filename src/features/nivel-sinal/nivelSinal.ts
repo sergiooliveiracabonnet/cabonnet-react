@@ -208,7 +208,7 @@ export function buildHotspots(rows: SignalRow[]): SignalHotspot[] {
       piorRx: rxs[0] ?? null, nivel: criticos >= 8 && concentracao >= 0.45 ? 'alto' : 'medio',
       score: criticos * concentracao,
     } satisfies SignalHotspot]
-  }).sort((a, b) => b.score - a.score || b.criticos - a.criticos)
+  }).sort((a, b) => b.criticos - a.criticos || b.concentracao - a.concentracao || b.total - a.total)
 }
 
 export function buildHistogram(rows: SignalRow[], min = -34, max = -24, step = 0.5) {

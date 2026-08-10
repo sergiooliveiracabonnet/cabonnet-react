@@ -28,4 +28,23 @@ describe('NivelSinalPage', () => {
     expect(screen.getByText('Classificação “Atenção” no CSV · 0.0%')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /apoio à decisão/i })).toBeInTheDocument()
   })
+
+  it('pagina os hotspots em uma matriz de doze PONs', async () => {
+    const { container } = render(<NivelSinalPage />)
+    const header = 'Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo'
+    const data = Array.from({ length: 13 }, (_, ponIndex) =>
+      Array.from({ length: 4 }, (_, onuIndex) =>
+        `Taubaté;Centro;OLT TBT;Huawei;1;1/${ponIndex + 1};${onuIndex};Cliente;Conectado;Online;Crítico;-31,5;HG8145`,
+      ).join('\n'),
+    ).join('\n')
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement
+
+    fireEvent.change(input, { target: { files: [new File([`${header}\n${data}`], 'sinais.csv', { type: 'text/csv' })] } })
+
+    expect(await screen.findByText('Página 1 de 2')).toBeInTheDocument()
+    expect(screen.getByText('1–12 de 13 PONs')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima página de hotspots' }))
+    expect(screen.getByText('Página 2 de 2')).toBeInTheDocument()
+    expect(screen.getByText('13–13 de 13 PONs')).toBeInTheDocument()
+  })
 })
