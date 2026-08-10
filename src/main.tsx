@@ -5,11 +5,14 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { IconContext } from '@phosphor-icons/react'
 import { queryClient } from './lib/queryClient'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { installChunkRecovery } from './lib/chunkRecovery'
 import './index.css'
 import 'leaflet/dist/leaflet.css'
 import App from './App'
 
 const rootEl = document.getElementById('root')!
+
+installChunkRecovery()
 
 // A UI foi desenhada em cima do traço do lucide (2 num grid 24 = 8,3% do
 // viewBox). O padrão do Phosphor, "regular", é 16/256 = 6,25% — visivelmente

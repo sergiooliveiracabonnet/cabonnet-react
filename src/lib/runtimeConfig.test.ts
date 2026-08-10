@@ -25,6 +25,13 @@ describe('configuração P0 do shell', () => {
     expect(css).not.toContain('fonts.googleapis.com')
   })
 
+  it('não devolve o SPA para chunks removidos e reconhece hashes do Vite', () => {
+    const nodeServer = read('../../servidor.js')
+
+    expect(nodeServer).toContain("if (ext) { res.writeHead(404, { 'Cache-Control': 'no-store' })")
+    expect(nodeServer).toContain('/\\.[A-Za-z0-9_-]{8,}\\.\\w+$/')
+  })
+
   it('mantém recuo lateral apenas no desktop e drawer fora da tela no mobile', () => {
     const layout = read('../components/layout/AppLayout.tsx')
     const sidebar = read('../components/layout/Sidebar.tsx')

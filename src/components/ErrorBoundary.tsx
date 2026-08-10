@@ -43,13 +43,13 @@ export class ErrorBoundary extends Component<Props, State> {
             {this.state.error?.stack?.split('\n').slice(1, 6).join('\n')}
           </pre>
           <button
-            onClick={() => this.setState({ error: null })}
+            onClick={() => window.location.reload()}
             style={{
               background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6,
               padding: '8px 20px', fontSize: 12, cursor: 'pointer', fontWeight: 600,
             }}
           >
-            Tentar novamente
+            Atualizar aplicação
           </button>
         </div>
       )

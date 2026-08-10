@@ -142,16 +142,17 @@ function serveStatic(req, res) {
 
   fs.readFile(target, (err, data) => {
     if (err) {
+      if (ext) { res.writeHead(404, { 'Cache-Control': 'no-store' }); res.end('404'); return }
       fs.readFile(path.join(DIST_DIR, 'index.html'), (err2, data2) => {
         if (err2) { res.writeHead(404); res.end('404'); return }
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' })
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store, no-cache, must-revalidate' })
         res.end(data2)
       })
       return
     }
     const mime      = MIME[path.extname(target)] || 'application/octet-stream'
-    const isHashed  = /\.[a-f0-9]{8,}\.\w+$/.test(target)
-    const cacheCtrl = isHashed ? 'public, max-age=31536000, immutable' : 'no-cache'
+    const isHashed  = /\.[A-Za-z0-9_-]{8,}\.\w+$/.test(target)
+    const cacheCtrl = isHashed ? 'public, max-age=31536000, immutable' : 'no-store, no-cache, must-revalidate'
     res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': cacheCtrl })
     res.end(data)
   })
