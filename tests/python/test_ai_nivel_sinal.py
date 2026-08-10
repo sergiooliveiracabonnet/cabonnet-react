@@ -17,6 +17,19 @@ class _Response:
         }
 
 
+class _TextResponse(_Response):
+    def __init__(self, text, stop_reason="end_turn"):
+        self.text = text
+        self.stop_reason = stop_reason
+
+    def json(self):
+        return {
+            "content": [{"text": self.text}],
+            "stop_reason": self.stop_reason,
+            "usage": {"input_tokens": 10, "output_tokens": 10},
+        }
+
+
 def test_ai_nivel_sinal_gera_plano_e_remove_pii(monkeypatch):
     captured = {}
     result = {
@@ -60,3 +73,22 @@ def test_ai_nivel_sinal_responde_pergunta_com_contexto(monkeypatch):
     })
 
     assert response == {"resposta": "Priorize a OLT TBT.", "cached": False}
+
+
+def test_ai_nivel_sinal_repete_quando_json_e_truncado(monkeypatch):
+    valid = json.dumps({
+        "diagnostico": "Falha coletiva.",
+        "prioridades": ["OLT TBT"],
+        "plano_acao": [],
+        "riscos": [],
+    })
+    responses = iter([
+        _TextResponse('{"diagnostico":"resposta interrompida', "max_tokens"),
+        _TextResponse(valid),
+    ])
+    monkeypatch.setattr(ai, "ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setattr(ai.requests, "post", lambda *_args, **_kwargs: next(responses))
+
+    response = ai._ai_nivel_sinal({"contexto": {"resumo": {"total": 100, "criticos": 50}}})
+
+    assert response["diagnostico"] == "Falha coletiva."

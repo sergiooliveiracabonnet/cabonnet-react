@@ -1573,26 +1573,35 @@ def _ai_nivel_sinal(payload: dict) -> dict | None:
             '"responsavel":"NOC|Campo|Engenharia","criterio":"como validar conclusão"}],'
             '"riscos":["até 3 riscos ou limitações dos dados"]}'
         )
-        max_tokens = 1100
+        max_tokens = 2000
 
     try:
-        resp = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
-            json={"model": "claude-haiku-4-5-20251001", "max_tokens": max_tokens, "system": system,
-                  "messages": [{"role": "user", "content": prompt}]},
-            timeout=30, verify=False,
-        )
-        if not resp.ok:
-            log.warning("[AI] nivel-sinal %s: %s", resp.status_code, resp.text[:200])
+        result = None
+        for attempt in range(2):
+            retry_note = "\n\nSeja mais conciso e garanta que o JSON seja completo e válido." if attempt else ""
+            resp = requests.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+                json={"model": "claude-haiku-4-5-20251001", "max_tokens": max_tokens, "system": system,
+                      "messages": [{"role": "user", "content": prompt + retry_note}]},
+                timeout=45, verify=False,
+            )
+            if not resp.ok:
+                log.warning("[AI] nivel-sinal %s: %s", resp.status_code, resp.text[:200])
+                return None
+            response_data = resp.json()
+            _register_usage(response_data)
+            raw = response_data["content"][0]["text"].strip()
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"): raw = raw[4:]
+            try:
+                result = json.loads(raw)
+                break
+            except json.JSONDecodeError:
+                log.warning("[AI] nivel-sinal JSON inválido (tentativa %d, stop_reason=%s)", attempt + 1, response_data.get("stop_reason"))
+        if result is None:
             return None
-        response_data = resp.json()
-        _register_usage(response_data)
-        raw = response_data["content"][0]["text"].strip()
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"): raw = raw[4:]
-        result = json.loads(raw)
         if pergunta:
             return {"resposta": str(result.get("resposta", "")), "cached": False}
         out = {
