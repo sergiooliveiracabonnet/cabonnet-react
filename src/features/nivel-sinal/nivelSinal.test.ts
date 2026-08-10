@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildHistogram, buildHotspots, filterSignals, groupBySeverity, parseSignalCsv, signalSummary, sortSignals, type SignalSeverity } from './nivelSinal'
+import { buildAIContext, buildHistogram, buildHotspots, filterSignals, groupBySeverity, parseSignalCsv, signalSummary, sortSignals, type SignalSeverity } from './nivelSinal'
 
 const csv = `Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Serial
 Taubaté;Centro;OLT Taubaté;Huawei;1;1/2;7;Cliente A;Conectado;Online;Crítico;-31,5;ABC
@@ -43,5 +43,15 @@ describe('parseSignalCsv', () => {
     const rows = parseSignalCsv(input)
     expect(rows[1].bairro).toBe('Centro')
     expect(rows.map(row => row.distancia)).toEqual([9216, 2499])
+  })
+
+  it('monta contexto agregado para IA sem dados pessoais ou identificadores', () => {
+    const context = buildAIContext(parseSignalCsv(csv), { cidade: 'Taubaté' })
+    const serialized = JSON.stringify(context)
+    expect(context.resumo.total).toBe(2)
+    expect(serialized).not.toContain('Cliente A')
+    expect(serialized).not.toContain('ABC')
+    expect(serialized).not.toContain('pppoe')
+    expect(context.por_cidade).toContainEqual(expect.objectContaining({ nome: 'Caçapava', total: 1 }))
   })
 })

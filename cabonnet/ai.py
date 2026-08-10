@@ -1486,7 +1486,131 @@ def _ai_juniper_correlacao(payload):
 
     if not ANTHROPIC_API_KEY:
         return None
+    return _ai_juniper_correlacao_impl(payload, data_hash, now)
 
+
+def _sanitize_signal_context(raw: dict) -> dict:
+    """Aceita apenas métricas agregadas; identificadores de assinantes nunca entram no prompt."""
+    raw = raw if isinstance(raw, dict) else {}
+    scalar_keys = {
+        "filtros": ("cidade", "olt", "pon", "slot", "fabricante", "situacao", "severidades", "offline", "apenas_hotspots"),
+        "resumo": ("total", "criticos", "atencao", "offline", "pons"),
+        "rx": ("medio", "pior"),
+    }
+    clean = {}
+    for section, keys in scalar_keys.items():
+        value = raw.get(section, {})
+        if isinstance(value, dict):
+            clean[section] = {key: value[key] for key in keys if key in value}
+
+    distribution = raw.get("rx", {}).get("distribuicao", []) if isinstance(raw.get("rx"), dict) else []
+    if isinstance(distribution, list):
+        clean.setdefault("rx", {})["distribuicao"] = [
+            {key: item[key] for key in ("faixa", "total") if key in item}
+            for item in distribution[:20] if isinstance(item, dict)
+        ]
+
+    list_keys = {
+        "por_cidade": ("nome", "total", "criticos", "atencao"),
+        "por_olt": ("nome", "total", "criticos", "atencao"),
+        "hotspots": ("olt", "pon", "cidade", "bairro", "total", "criticos", "concentracao_pct", "rx_mediano", "pior_rx"),
+        "causas": ("nome", "total", "pct"),
+        "modelos": ("nome", "total", "pct"),
+    }
+    for section, keys in list_keys.items():
+        values = raw.get(section, [])
+        if isinstance(values, list):
+            clean[section] = [
+                {key: item[key] for key in keys if key in item}
+                for item in values[:20] if isinstance(item, dict)
+            ]
+    return clean
+
+
+def _ai_nivel_sinal(payload: dict) -> dict | None:
+    """Analisa métricas ópticas agregadas ou responde perguntas sobre o relatório filtrado."""
+    if not ANTHROPIC_API_KEY:
+        return None
+    contexto = _sanitize_signal_context(payload.get("contexto", {}))
+    pergunta = str(payload.get("pergunta", "")).strip()[:1000]
+    historico = [
+        {"role": item.get("role"), "content": str(item.get("content", ""))[:1200]}
+        for item in payload.get("historico", [])[-6:]
+        if isinstance(item, dict) and item.get("role") in ("user", "assistant")
+    ]
+    data_hash = hashlib.md5(json.dumps(contexto, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    now = _time_mod.time()
+
+    if not pergunta:
+        with state._ai_nivel_sinal_lock:
+            cached = state._ai_nivel_sinal_cache
+            if cached.get("hash") == data_hash and now - cached.get("ts", 0) < _AI_CACHE_TTL:
+                return {**{k: v for k, v in cached.items() if k not in ("hash", "ts")}, "cached": True}
+
+    context_json = json.dumps(contexto, ensure_ascii=False, separators=(",", ":"))
+    system = (
+        "Você é um engenheiro NOC especialista em redes GPON de um ISP regional. "
+        "Analise somente as métricas agregadas fornecidas. Não invente medições, causas ou clientes. "
+        "Crítico e Atenção vêm da coluna Classificação do CSV; hotspots têm >=4 críticas e >=30% de concentração. "
+        "Priorize falhas coletivas (PON/OLT/bairro) antes de casos isolados. Responda em português brasileiro."
+    )
+    if pergunta:
+        prompt = (
+            f"RELATÓRIO AGREGADO:\n{context_json}\n\n"
+            f"HISTÓRICO DA CONVERSA:\n{json.dumps(historico, ensure_ascii=False)}\n\n"
+            f"PERGUNTA DO OPERADOR:\n<pergunta>{pergunta}</pergunta>\n\n"
+            "Responda objetivamente, cite números do relatório e deixe explícito quando os dados não permitirem concluir. "
+            "Retorne SOMENTE JSON válido: {\"resposta\": \"texto em markdown\"}."
+        )
+        max_tokens = 700
+    else:
+        prompt = (
+            f"RELATÓRIO AGREGADO:\n{context_json}\n\n"
+            "Produza diagnóstico operacional e plano executável. Diferencie ação imediata, curto prazo e prevenção. "
+            "Retorne SOMENTE JSON válido, sem markdown: "
+            '{"diagnostico":"2-3 frases com números","prioridades":["até 4 prioridades"],'
+            '"plano_acao":[{"prazo":"Imediato|24 horas|7 dias","acao":"ação concreta",'
+            '"responsavel":"NOC|Campo|Engenharia","criterio":"como validar conclusão"}],'
+            '"riscos":["até 3 riscos ou limitações dos dados"]}'
+        )
+        max_tokens = 1100
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": max_tokens, "system": system,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=30, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] nivel-sinal %s: %s", resp.status_code, resp.text[:200])
+            return None
+        response_data = resp.json()
+        _register_usage(response_data)
+        raw = response_data["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        result = json.loads(raw)
+        if pergunta:
+            return {"resposta": str(result.get("resposta", "")), "cached": False}
+        out = {
+            "diagnostico": str(result.get("diagnostico", "")),
+            "prioridades": result.get("prioridades", [])[:4],
+            "plano_acao": result.get("plano_acao", [])[:6],
+            "riscos": result.get("riscos", [])[:3],
+        }
+        with state._ai_nivel_sinal_lock:
+            state._ai_nivel_sinal_cache.clear()
+            state._ai_nivel_sinal_cache.update({"hash": data_hash, "ts": now, **out})
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] nivel-sinal erro: %s", str(ex)[:200])
+        return None
+
+
+def _ai_juniper_correlacao_impl(payload, data_hash, now):
     conexoes_ativas = payload.get("conexoes_ativas", payload.get("inativos", []))
     os_ativas       = payload.get("os_ativas", [])
 

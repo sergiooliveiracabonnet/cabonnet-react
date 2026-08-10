@@ -26,5 +26,6 @@ describe('NivelSinalPage', () => {
     expect(screen.getByText('Crítico + Atenção no filtro')).toBeInTheDocument()
     expect(screen.getByText('Classificação “Crítico” no CSV · 100.0%')).toBeInTheDocument()
     expect(screen.getByText('Classificação “Atenção” no CSV · 0.0%')).toBeInTheDocument()
+    expect(screen.getByText('Agente IA · análise óptica')).toBeInTheDocument()
   })
 })

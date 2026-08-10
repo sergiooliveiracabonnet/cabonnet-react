@@ -259,3 +259,33 @@ export function sortSignals(rows: SignalRow[], key: SignalSortKey, direction: So
     return String(left).localeCompare(String(right), 'pt-BR', { numeric: true, sensitivity: 'base' }) * multiplier
   })
 }
+
+export function buildAIContext(rows: SignalRow[], filters: SignalFilters) {
+  const resumo = signalSummary(rows)
+  const validRx = rows.map(row => row.rx).filter((value): value is number => value != null)
+  const aggregate = (groups: ReturnType<typeof groupBySeverity>) => groups.map(group => ({
+    nome: group.key, total: group.total, criticos: group.criticos, atencao: group.atencao,
+  }))
+  return {
+    filtros: {
+      cidade: filters.cidade || 'todas', olt: filters.olt || 'todas', pon: filters.pon || 'todas',
+      slot: filters.slot || 'todos', fabricante: filters.tipo || 'todos', situacao: filters.situacao || 'todas',
+      severidades: filters.severities ?? [], offline: Boolean(filters.offline), apenas_hotspots: Boolean(filters.hotspotsOnly),
+    },
+    resumo,
+    rx: {
+      medio: validRx.length ? Number((validRx.reduce((sum, value) => sum + value, 0) / validRx.length).toFixed(2)) : null,
+      pior: validRx.length ? Math.min(...validRx) : null,
+      distribuicao: buildHistogram(rows).filter(bin => bin.total).map(bin => ({ faixa: `${bin.start.toFixed(1)} a ${bin.end.toFixed(1)}`, total: bin.total })),
+    },
+    por_cidade: aggregate(groupBySeverity(rows, row => row.cidade, 5)),
+    por_olt: aggregate(groupBySeverity(rows, row => row.olt, 12)),
+    hotspots: buildHotspots(rows).slice(0, 12).map(item => ({
+      olt: item.olt, pon: item.pon, cidade: item.cidade, bairro: item.bairro, total: item.total,
+      criticos: item.criticos, concentracao_pct: Number((item.concentracao * 100).toFixed(1)), rx_mediano: item.rxMediano, pior_rx: item.piorRx,
+    })),
+    causas: rankedCounts(rows, row => row.status.toLocaleLowerCase('pt-BR') !== 'online' ? row.status : row.causa, 6)
+      .map(item => ({ nome: item.key, total: item.total, pct: Number(item.pct.toFixed(1)) })),
+    modelos: rankedCounts(rows, row => row.modelo, 6, ['—']).map(item => ({ nome: item.key, total: item.total, pct: Number(item.pct.toFixed(1)) })),
+  }
+}

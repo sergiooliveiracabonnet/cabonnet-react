@@ -7,6 +7,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { buildHotspots, filterSignals, groupBySeverity, parseSignalCsv, rankedCounts, signalPonKey, signalSummary, type SignalFilters, type SignalHotspot, type SignalRow, type SignalSeverity } from './nivelSinal'
 import { HotspotGrid, KpiAction, Panel, RankedList, SeverityBars, SignalDetailModal, SignalHistogram, SignalTable, type DetailState } from './NivelSinalComponents'
+import { NivelSinalAI } from './NivelSinalAI'
 
 const optionList = (values: string[]) => [...new Set(values.filter(value => value && value !== '—'))]
   .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true })).map(value => ({ value, label: value }))
@@ -100,6 +101,8 @@ export default function NivelSinalPage() {
         <KpiAction onClick={() => show('RX médio', 'Medições utilizadas no cálculo da potência RX média.', filtered.filter(row => row.rx != null))}><StatCard title="RX médio" value={rxAverage == null ? '—' : rxAverage.toFixed(2)} sub={`pior: ${worstRx?.toFixed(2) ?? '—'} dBm`} tone="info" icon={WaveSine} /></KpiAction>
         <KpiAction onClick={() => show('Alcance', 'Cobertura dos registros: PONs, OLTs, bairros e equipamentos offline.', filtered)}><StatCard title="Alcance" value={summary.pons} sub={`${reach.olts} OLT · ${reach.bairros} bairros · ${summary.offline} offline`} icon={Radio} /></KpiAction>
       </div>
+
+      <NivelSinalAI rows={filtered} filters={filters} />
 
       <div className="grid gap-4 xl:grid-cols-2"><Panel title="Distribuição de potência RX" hint="faixas de 0,5 dBm"><SignalHistogram rows={filtered} onOpen={setDetail} /></Panel><Panel title="Ranking de OLTs" hint="crítico / atenção"><SeverityBars groups={groupBySeverity(filtered, row => row.olt, 12)} label="OLT" onOpen={setDetail} /></Panel></div>
       <div className="grid gap-4 xl:grid-cols-[1.25fr_.75fr]"><Panel title="Distribuição por cidade" hint="crítico / atenção"><SeverityBars groups={groupBySeverity(filtered, row => row.cidade, 8)} label="Cidade" onOpen={setDetail} /></Panel><Panel title="Causa / status"><RankedList items={rankedCounts(filtered, row => row.status.toLocaleLowerCase('pt-BR') !== 'online' ? `⚠ ${row.status}` : row.causa !== '—' ? row.causa : 'sem causa reportada', 6)} label="Causa/status" onOpen={setDetail} /></Panel></div>

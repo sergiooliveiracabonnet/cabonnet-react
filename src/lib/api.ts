@@ -203,6 +203,7 @@ export const ai = {
   cidadesCluster:    (payload: unknown) => request('/ai/cidades-cluster',      { method: 'POST', body: JSON.stringify(payload) }),
   planner:           (payload: unknown) => request('/ai/planner',              { method: 'POST', body: JSON.stringify(payload) }),
   juniperCorrelacao:     (payload: unknown) => request('/ai/juniper-correlacao',    { method: 'POST', body: JSON.stringify(payload) }),
+  nivelSinal:            (payload: unknown) => request('/ai/nivel-sinal',           { method: 'POST', body: JSON.stringify(payload) }),
   revisitasCausa:        (payload: unknown) => request('/ai/revisitas-causa',       { method: 'POST', body: JSON.stringify(payload) }),
   justificativaBacklog:  (payload: unknown) => request('/ai/justificativa-backlog', { method: 'POST', body: JSON.stringify(payload) }),
   chat: (messages: { role: string; content: string }[]) => request<{ ok: boolean; response: string; tool_calls: string[] }>('/ai/chat', { method: 'POST', body: JSON.stringify({ messages }) }),

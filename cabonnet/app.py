@@ -1708,6 +1708,21 @@ async def ai_juniper_correlacao(request: Request):
     return {"ok": True, **result}
 
 
+@router.post("/ai/nivel-sinal")
+async def ai_nivel_sinal(request: Request, _role: str = Depends(_require_auth)):
+    from cabonnet.ai import _ai_nivel_sinal
+    body = await request.json()
+    if not isinstance(body.get("contexto"), dict):
+        raise HTTPException(400, "contexto é obrigatório")
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _ai_nivel_sinal, body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg = "ANTHROPIC_API_KEY não configurada" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
 @router.post("/ai/chat")
 async def ai_chat(request: Request, _role: str = Depends(_require_auth)):
     from cabonnet.ai import _ai_chat_with_tools
