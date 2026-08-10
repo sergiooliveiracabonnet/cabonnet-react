@@ -3,12 +3,10 @@ import { describe, expect, it } from 'vitest'
 import NivelSinalPage from './NivelSinalPage'
 
 describe('NivelSinalPage', () => {
-  it('incorpora o console óptico sanitizado em um frame identificado e isolado', () => {
+  it('usa a estrutura nativa do projeto sem documento incorporado', () => {
     render(<NivelSinalPage />)
-
-    const frame = screen.getByTitle('Console óptico — nível de sinal das ONUs')
-    expect(frame).toHaveAttribute('src', '/nivel-de-sinal.html')
-    expect(frame).not.toHaveAttribute('srcdoc')
-    expect(frame).toHaveAttribute('sandbox', 'allow-scripts allow-forms allow-downloads')
+    expect(screen.getByRole('heading', { name: 'Nível de Sinal' })).toBeInTheDocument()
+    expect(screen.getByText('Carregue o relatório de sinais das ONUs')).toBeInTheDocument()
+    expect(screen.queryByTitle(/console óptico/i)).not.toBeInTheDocument()
   })
 })
