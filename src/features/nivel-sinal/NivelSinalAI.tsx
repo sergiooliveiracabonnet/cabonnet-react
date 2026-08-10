@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Brain, CheckCircle, CircleNotch, PaperPlaneTilt, Robot, ShieldCheck, Sparkle, User, WarningCircle } from '@phosphor-icons/react'
+import { CaretDown, CaretUp, ChartLineUp, CheckCircle, CircleNotch, LockSimple, PaperPlaneTilt, User, WarningCircle } from '@phosphor-icons/react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Button } from '../../components/ui/Button'
@@ -20,12 +20,13 @@ export function NivelSinalAI({ rows, filters }: { rows: SignalRow[]; filters: Si
   const [analyzing, setAnalyzing] = useState(false)
   const [answering, setAnswering] = useState(false)
   const [error, setError] = useState('')
+  const [open, setOpen] = useState(false)
 
   async function analyze() {
     setAnalyzing(true); setError('')
     try {
       const result = await ai.nivelSinal({ contexto: context }) as { ok: boolean } & Analysis
-      if (!result.ok) throw new Error('A IA não retornou uma análise válida.')
+      if (!result.ok) throw new Error('O serviço não retornou uma análise válida.')
       setAnalysis(result)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Não foi possível analisar o relatório.')
@@ -40,24 +41,31 @@ export function NivelSinalAI({ rows, filters }: { rows: SignalRow[]; filters: Si
     setMessages(history); setQuestion(''); setAnswering(true); setError('')
     try {
       const result = await ai.nivelSinal({ contexto: context, pergunta: value, historico: messages.slice(-6) }) as { ok: boolean; resposta?: string }
-      if (!result.ok || !result.resposta) throw new Error('A IA não retornou uma resposta válida.')
+      if (!result.ok || !result.resposta) throw new Error('O serviço não retornou uma resposta válida.')
       setMessages(current => [...current, { role: 'assistant', content: result.resposta! }])
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Não foi possível responder à pergunta.')
     } finally { setAnswering(false) }
   }
 
-  return <section className="overflow-hidden rounded-xl border border-primary/20 bg-card shadow-lg">
-    <div className="flex flex-wrap items-center gap-3 border-b border-border bg-primary/[0.04] px-5 py-4">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/10"><Brain size={18} className="text-primary" /></div>
-      <div className="min-w-0 flex-1"><h2 className="flex items-center gap-2 text-body font-bold text-text">Agente IA · análise óptica <span className="rounded-full bg-primary/10 px-2 py-0.5 text-caption font-semibold text-primary">Claude</span></h2><p className="mt-0.5 text-caption text-muted">Diagnóstico, prioridades e plano de ação baseados no recorte atual do relatório.</p></div>
-      <div className="flex items-center gap-2 text-caption text-muted"><ShieldCheck size={13} className="text-green" /> Somente métricas agregadas</div>
-      <Button onClick={analyze} disabled={analyzing}>{analyzing ? <CircleNotch size={14} className="animate-spin" /> : <Sparkle size={14} />}{analysis ? 'Reanalisar' : 'Analisar relatório'}</Button>
+  if (!open) return <button type="button" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-surface/40" aria-label="Abrir apoio à decisão">
+    <ChartLineUp size={17} className="text-muted" />
+    <span className="min-w-0 flex-1"><span className="block text-label font-semibold text-text">Apoio à decisão</span><span className="block text-caption text-muted">Diagnóstico e plano de ação do relatório</span></span>
+    <CaretDown size={15} className="text-muted" />
+  </button>
+
+  return <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface"><ChartLineUp size={18} className="text-secondary" /></div>
+      <div className="min-w-0 flex-1"><h2 className="text-body font-bold text-text">Análise operacional</h2><p className="mt-0.5 text-caption text-muted">Diagnóstico, prioridades e plano de ação baseados no recorte atual.</p></div>
+      <div className="flex items-center gap-2 text-caption text-muted"><LockSimple size={13} /> Dados agregados</div>
+      <Button variant="ghost" onClick={() => setOpen(false)} aria-label="Fechar apoio à decisão"><CaretUp size={15} /></Button>
+      <Button onClick={analyze} disabled={analyzing}>{analyzing ? <CircleNotch size={14} className="animate-spin" /> : <ChartLineUp size={14} />}{analysis ? 'Reanalisar' : 'Analisar relatório'}</Button>
     </div>
 
     {error && <div role="alert" className="m-4 flex items-center gap-2 rounded-lg border border-red/20 bg-red/[0.07] px-3 py-2 text-label text-red"><WarningCircle size={14} />{error}</div>}
 
-    {!analysis && !analyzing ? <div className="grid gap-4 p-5 lg:grid-cols-[1fr_1.2fr]"><div className="rounded-xl border border-border bg-surface/20 p-5"><Robot size={24} className="text-primary" /><p className="mt-3 text-body font-semibold text-text">Transforme o relatório em decisão operacional</p><p className="mt-1 text-label leading-relaxed text-muted">A IA cruza severidade, RX, OLTs, PONs, cidades, hotspots, causas e modelos. Nenhum nome, PPPoE, código ou serial é enviado.</p></div><div><Conversation messages={messages} /><QuestionBox question={question} setQuestion={setQuestion} ask={ask} answering={answering} suggestions={SUGGESTIONS} /></div></div> : null}
+    {!analysis && !analyzing ? <div className="grid gap-4 p-5 lg:grid-cols-[1fr_1.2fr]"><div className="rounded-xl border border-border bg-surface/20 p-5"><ChartLineUp size={24} className="text-secondary" /><p className="mt-3 text-body font-semibold text-text">Transforme o relatório em decisão operacional</p><p className="mt-1 text-label leading-relaxed text-muted">A análise cruza severidade, RX, OLTs, PONs, cidades, hotspots, causas e modelos. Nenhum nome, PPPoE, código ou serial é enviado.</p></div><div><Conversation messages={messages} /><QuestionBox question={question} setQuestion={setQuestion} ask={ask} answering={answering} suggestions={SUGGESTIONS} /></div></div> : null}
 
     {analyzing && <div className="flex items-center justify-center gap-3 px-5 py-12 text-label text-muted"><CircleNotch size={18} className="animate-spin text-primary" />Analisando padrões e montando plano de ação…</div>}
 
@@ -75,9 +83,9 @@ export function NivelSinalAI({ rows, filters }: { rows: SignalRow[]; filters: Si
 
 function Conversation({ messages }: { messages: Message[] }) {
   if (!messages.length) return null
-  return <div className="mb-4 max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-bg/40 p-4">{messages.map((message, index) => <div key={index} className={`flex gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}><span className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${message.role === 'user' ? 'order-2 bg-primary/10 text-primary' : 'bg-surface text-secondary'}`}>{message.role === 'user' ? <User size={11} /> : <Robot size={11} />}</span><div className={`max-w-[85%] rounded-xl border px-3 py-2 text-label leading-relaxed ${message.role === 'user' ? 'border-primary/15 bg-primary/[0.07] text-text' : 'border-border bg-card text-secondary'}`}>{message.role === 'assistant' ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown> : message.content}</div></div>)}</div>
+  return <div className="mb-4 max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-bg/40 p-4">{messages.map((message, index) => <div key={index} className={`flex gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}><span className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${message.role === 'user' ? 'order-2 bg-primary/10 text-primary' : 'bg-surface text-secondary'}`}>{message.role === 'user' ? <User size={11} /> : <ChartLineUp size={11} />}</span><div className={`max-w-[85%] rounded-xl border px-3 py-2 text-label leading-relaxed ${message.role === 'user' ? 'border-primary/15 bg-primary/[0.07] text-text' : 'border-border bg-card text-secondary'}`}>{message.role === 'assistant' ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown> : message.content}</div></div>)}</div>
 }
 
 function QuestionBox({ question, setQuestion, ask, answering, suggestions }: { question: string; setQuestion: (value: string) => void; ask: (value?: string) => void; answering: boolean; suggestions: string[] }) {
-  return <div><div className="mb-3 flex flex-wrap gap-2">{suggestions.map(item => <button key={item} onClick={() => ask(item)} disabled={answering} className="rounded-full border border-border px-3 py-1 text-caption text-muted hover:border-primary/30 hover:text-primary disabled:opacity-40">{item}</button>)}</div><div className="flex items-end gap-2"><label className="flex-1"><span className="sr-only">Pergunta para a IA</span><textarea value={question} onChange={event => setQuestion(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); ask() } }} rows={2} placeholder="Pergunte sobre riscos, prioridades, cidades, OLTs ou PONs…" className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-body text-text outline-none placeholder:text-muted focus:border-primary/50" /></label><Button aria-label="Enviar pergunta" onClick={() => ask()} disabled={!question.trim() || answering} className="h-11 w-11 px-0">{answering ? <CircleNotch size={15} className="animate-spin" /> : <PaperPlaneTilt size={15} />}</Button></div></div>
+  return <div><div className="mb-3 flex flex-wrap gap-2">{suggestions.map(item => <button key={item} onClick={() => ask(item)} disabled={answering} className="rounded-full border border-border px-3 py-1 text-caption text-muted hover:border-primary/30 hover:text-primary disabled:opacity-40">{item}</button>)}</div><div className="flex items-end gap-2"><label className="flex-1"><span className="sr-only">Pergunta sobre o relatório</span><textarea value={question} onChange={event => setQuestion(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); ask() } }} rows={2} placeholder="Pergunte sobre riscos, prioridades, cidades, OLTs ou PONs…" className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-body text-text outline-none placeholder:text-muted focus:border-primary/50" /></label><Button aria-label="Enviar pergunta" onClick={() => ask()} disabled={!question.trim() || answering} className="h-11 w-11 px-0">{answering ? <CircleNotch size={15} className="animate-spin" /> : <PaperPlaneTilt size={15} />}</Button></div></div>
 }

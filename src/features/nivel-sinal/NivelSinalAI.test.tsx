@@ -15,9 +15,18 @@ const row = {
 describe('NivelSinalAI', () => {
   beforeEach(() => vi.mocked(ai.nivelSinal).mockReset())
 
+  it('permanece discreto e fechado por padrão', () => {
+    render(<NivelSinalAI rows={[row]} filters={{}} />)
+
+    expect(screen.getByRole('button', { name: /apoio à decisão/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /analisar relatório/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Claude|Agente IA/i)).not.toBeInTheDocument()
+  })
+
   it('gera diagnóstico e plano de ação usando somente contexto agregado', async () => {
     vi.mocked(ai.nivelSinal).mockResolvedValue({ ok: true, diagnostico: 'Falha concentrada.', prioridades: ['OLT TBT'], plano_acao: [{ prazo: 'Imediato', acao: 'Inspecionar PON', responsavel: 'Campo', criterio: 'RX normalizado' }], riscos: [] })
     render(<NivelSinalAI rows={[row]} filters={{}} />)
+    fireEvent.click(screen.getByRole('button', { name: /apoio à decisão/i }))
     fireEvent.click(screen.getByRole('button', { name: /analisar relatório/i }))
 
     expect(await screen.findByText('Falha concentrada.')).toBeInTheDocument()
@@ -30,6 +39,7 @@ describe('NivelSinalAI', () => {
   it('responde perguntas sobre o relatório', async () => {
     vi.mocked(ai.nivelSinal).mockResolvedValue({ ok: true, resposta: 'Comece pela OLT TBT.' })
     render(<NivelSinalAI rows={[row]} filters={{}} />)
+    fireEvent.click(screen.getByRole('button', { name: /apoio à decisão/i }))
     fireEvent.click(screen.getByRole('button', { name: 'Por qual PON devemos começar?' }))
 
     await waitFor(() => expect(ai.nivelSinal).toHaveBeenCalled())
