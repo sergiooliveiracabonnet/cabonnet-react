@@ -45,6 +45,24 @@ describe('parseSignalCsv', () => {
     expect(rows.map(row => row.distancia)).toEqual([9216, 2499])
   })
 
+  it('importa o relatório geral com resumo antes do cabeçalho e mantém apenas alertas RX', () => {
+    const report = `"Relatório Geral de ONUs"
+"Gerado em";"10/08/2026, 16:26:12"
+"Total de ONUs";"3"
+
+"Detalhes das ONUs"
+"Cidade";"OLT";"Tipo";"PON";"Setor/Bairro";"ONU ID";"Status";"Cliente ONU";"RX dBm";"Distância m";"Alerta RX"
+"Taubate";"OLT Belém 2";"FiberHome";"3/10";"BORDA DA MATA";"1";"Online";"Cliente 1";"-27,20";"2.499";"Sim"
+"Taubate";"OLT Belém 2";"FiberHome";"3/10";"BORDA DA MATA";"2";"Online";"Cliente 2";"-25,08";"1.381";"Sim"
+"Taubate";"OLT Belém 2";"FiberHome";"3/10";"BORDA DA MATA";"3";"Online";"Cliente 3";"-20,00";"1.000";"Não"`
+
+    const rows = parseSignalCsv(report)
+
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toMatchObject({ bairro: 'BORDA DA MATA', slot: '3', pon: '3/10', distancia: 2499, classificacao: 'Crítico' })
+    expect(rows[1]).toMatchObject({ distancia: 1381, classificacao: 'Atenção' })
+  })
+
   it('monta contexto agregado para IA sem dados pessoais ou identificadores', () => {
     const context = buildAIContext(parseSignalCsv(csv), { cidade: 'Taubaté' })
     const serialized = JSON.stringify(context)

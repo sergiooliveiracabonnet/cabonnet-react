@@ -80,8 +80,10 @@ function clientName(client: string, onuClient: string) {
 
 function parseCsvRows(text: string): string[][] {
   const rows: string[][] = []
-  const firstLine = text.slice(0, Math.max(0, text.search(/\r?\n/))) || text
-  const separator = firstLine.includes(';') ? ';' : ','
+  const sampleLines = text.split(/\r?\n/, 100)
+  const maxSemicolons = Math.max(0, ...sampleLines.map(line => (line.match(/;/g) ?? []).length))
+  const maxCommas = Math.max(0, ...sampleLines.map(line => (line.match(/,/g) ?? []).length))
+  const separator = maxSemicolons > maxCommas ? ';' : ','
   let row: string[] = [], cell = '', quoted = false
   for (let i = 0; i < text.length; i++) {
     const char = text[i]
@@ -103,34 +105,51 @@ function parseCsvRows(text: string): string[][] {
   return rows
 }
 
-function severity(value: string, rx: number | null): SignalSeverity {
+function severity(value: string, rx: number | null, isRxAlert = false): SignalSeverity {
   const normalized = normalizeText(value)
   if (normalized.includes('CRIT')) return 'Crítico'
   if (normalized.includes('ATEN')) return 'Atenção'
   if (normalized.includes('NORMAL')) return 'Normal'
-  if (rx != null && rx <= -30) return 'Crítico'
+  if (rx != null && rx <= -27) return 'Crítico'
   if (rx != null && rx <= -25) return 'Atenção'
+  if (isRxAlert) return 'Atenção'
   return '—'
 }
 
 export function parseSignalCsv(text: string): SignalRow[] {
-  const [header = [], ...rows] = parseCsvRows(text.replace(/^\uFEFF/, ''))
+  const parsedRows = parseCsvRows(text.replace(/^\uFEFF/, ''))
+  const headerIndex = parsedRows.findIndex(row => {
+    const names = new Set(row.map(normalizeText))
+    return names.has('CIDADE') && names.has('OLT') && names.has('RX DBM')
+  })
+  if (headerIndex < 0) return []
+  const header = parsedRows[headerIndex] ?? []
+  let rows = parsedRows.slice(headerIndex + 1)
   if (!header.length || !rows.length) return []
   const indexes = new Map(header.map((name, index) => [normalizeText(name), index]))
   const get = (row: string[], name: string) => (row[indexes.get(normalizeText(name)) ?? -1] ?? '').trim()
+  const getAny = (row: string[], ...names: string[]) => {
+    for (const name of names) {
+      if (indexes.has(normalizeText(name))) return get(row, name)
+    }
+    return ''
+  }
+  const hasRxAlert = indexes.has('ALERTA RX')
+  if (hasRxAlert) rows = rows.filter(row => normalizeText(get(row, 'Alerta RX')) === 'SIM')
 
   const scopedRows = rows.filter(row => VALID_CITIES.has(normalizeText(get(row, 'Cidade'))))
   const neighborhoods = new Map<string, Map<string, number>>()
-  const knownNeighborhoods = [...new Set(scopedRows.map(row => get(row, 'Bairro')).filter(value => value && value !== '-' && value !== '--'))]
+  const knownNeighborhoods = [...new Set(scopedRows.map(row => getAny(row, 'Bairro', 'Setor/Bairro')).filter(value => value && value !== '-' && value !== '--'))]
     .sort((a, b) => b.length - a.length)
   scopedRows.forEach(row => {
-    const rawBairro = get(row, 'Bairro')
+    const rawBairro = getAny(row, 'Bairro', 'Setor/Bairro')
     const address = normalizeText(get(row, 'Cliente ONU')).replace(/[^A-Z0-9]+/g, ' ')
     const bairro = rawBairro && rawBairro !== '-' && rawBairro !== '--'
       ? rawBairro
       : knownNeighborhoods.find(value => address.includes(normalizeText(value).replace(/[^A-Z0-9]+/g, ' ')))
     if (!bairro) return
-    const key = `${get(row, 'OLT')}|${get(row, 'Slot')}|${get(row, 'PON')}`
+    const pon = get(row, 'PON')
+    const key = `${get(row, 'OLT')}|${get(row, 'Slot') || pon.split('/')[0] || ''}|${pon}`
     const counts = neighborhoods.get(key) ?? new Map<string, number>()
     counts.set(bairro, (counts.get(bairro) ?? 0) + 1); neighborhoods.set(key, counts)
   })
@@ -138,17 +157,19 @@ export function parseSignalCsv(text: string): SignalRow[] {
   return scopedRows.map(row => {
     const cidade = get(row, 'Cidade')
     const rx = parseNumber(get(row, 'RX dBm'))
-    const ponLocation = `${get(row, 'OLT')}|${get(row, 'Slot')}|${get(row, 'PON')}`
+    const pon = get(row, 'PON')
+    const slot = get(row, 'Slot') || pon.split('/')[0] || ''
+    const ponLocation = `${get(row, 'OLT')}|${slot}|${pon}`
     const inferredBairro = [...(neighborhoods.get(ponLocation)?.entries() ?? [])].sort((a, b) => b[1] - a[1])[0]?.[0]
-    const bairro = get(row, 'Bairro')
+    const bairro = getAny(row, 'Bairro', 'Setor/Bairro')
     return {
       cidade, bairro: bairro && bairro !== '-' && bairro !== '--' ? bairro : inferredBairro || '—', olt: get(row, 'OLT') || '—', tipo: get(row, 'Tipo') || '—',
-      slot: get(row, 'Slot'), pon: get(row, 'PON') || '—', onu: get(row, 'ONU ID'),
-      cliente: clientName(get(row, 'Cliente'), get(row, 'Cliente ONU')), codigo: get(row, 'Código'),
+      slot, pon: pon || '—', onu: get(row, 'ONU ID'),
+      cliente: clientName(getAny(row, 'Cliente', 'Cliente iManager'), get(row, 'Cliente ONU')), codigo: get(row, 'Código'),
       situacao: get(row, 'Situação') || '—', pppoe: get(row, 'PPPoE'), serial: get(row, 'Serial'),
       modelo: get(row, 'Modelo') || '—', status: get(row, 'Status') || '—',
-      classificacao: severity(get(row, 'Classificação'), rx), rx, tx: parseNumber(get(row, 'TX dBm')),
-      oltRx: parseNumber(get(row, 'OLT RX dBm')), distancia: parseDistance(get(row, 'Distância')),
+      classificacao: severity(get(row, 'Classificação'), rx, hasRxAlert), rx, tx: parseNumber(get(row, 'TX dBm')),
+      oltRx: parseNumber(get(row, 'OLT RX dBm')), distancia: parseDistance(getAny(row, 'Distância', 'Distância m')),
       causa: get(row, 'Down Cause') || '—',
     }
   })
