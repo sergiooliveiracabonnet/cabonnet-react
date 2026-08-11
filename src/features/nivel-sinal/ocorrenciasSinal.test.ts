@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { signalOccurrenceKey, syncSignalOccurrences } from './signalOccurrenceModel'
+import { createOccurrenceId, signalOccurrenceKey, syncSignalOccurrences } from './signalOccurrenceModel'
 import type { SignalRow } from './nivelSinal'
 
 const row = (overrides: Partial<SignalRow> = {}): SignalRow => ({
@@ -10,6 +10,16 @@ const row = (overrides: Partial<SignalRow> = {}): SignalRow => ({
 })
 
 describe('syncSignalOccurrences', () => {
+  it('gera id mesmo quando randomUUID nao esta disponivel no navegador', () => {
+    const original = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', { configurable: true, value: {} })
+    try {
+      expect(createOccurrenceId()).toMatch(/^occ-/)
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { configurable: true, value: original })
+    }
+  })
+
   it('cria uma única ocorrência para o mesmo equipamento em importações repetidas', () => {
     const first = syncSignalOccurrences([], [row()], '2026-08-11')
     const second = syncSignalOccurrences(first, [row({ rx: -30 })], '2026-08-12')

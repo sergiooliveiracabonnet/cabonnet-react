@@ -50,6 +50,11 @@ export function signalOccurrenceKey(row: SignalRow) {
 
 const isAlert = (row: SignalRow) => row.classificacao === 'Crítico' || row.classificacao === 'Atenção'
 
+export function createOccurrenceId() {
+  if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID()
+  return `occ-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`
+}
+
 export function syncSignalOccurrences(current: SignalOccurrence[], rows: SignalRow[], importedAt: string): SignalOccurrence[] {
   const snapshot = new Map(rows.map(row => [signalOccurrenceKey(row), row]))
   const alerts = new Map(rows.filter(row => isAlert(row) && row.rx != null).map(row => [signalOccurrenceKey(row), row]))
@@ -69,7 +74,7 @@ export function syncSignalOccurrences(current: SignalOccurrence[], rows: SignalR
   alerts.forEach((row, sourceKey) => {
     if (activeKeys.has(sourceKey)) return
     next.unshift({
-      id: crypto.randomUUID(), sourceKey, source: 'csv', date: importedAt, updatedAt: importedAt,
+      id: createOccurrenceId(), sourceKey, source: 'csv', date: importedAt, updatedAt: importedAt,
       client: row.cliente, city: row.cidade, region: row.bairro, before: row.rx as number, current: row.rx as number,
       after: null, team: '', status: 'Aberto', note: '', resolution: '',
       severity: row.classificacao as 'Crítico' | 'Atenção', olt: row.olt, slot: row.slot, pon: row.pon, onu: row.onu,

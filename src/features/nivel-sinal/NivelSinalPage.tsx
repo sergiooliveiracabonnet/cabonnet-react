@@ -75,23 +75,24 @@ export default function NivelSinalPage() {
     if (!file) return
     const reader = new FileReader()
     reader.onload = async () => {
-      const content = String(reader.result ?? '')
-      const parsed = parseSignalCsv(content)
-      const snapshot = parseSignalCsv(content, { includeNonAlerts: true })
-      if (!snapshot.length) { setError('O CSV não contém registros reconhecidos nas cinco cidades atendidas.'); return }
-      const synced = syncSignalOccurrences(occurrences, snapshot, new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date()))
-      const previousIds = new Set(occurrences.map(item => item.id))
-      const newCount = synced.filter(item => !previousIds.has(item.id)).length
-      const resolvedCount = synced.filter(item => occurrences.some(previous => previous.id === item.id && previous.status !== 'Concluído') && item.status === 'Concluído').length
-      const updatedCount = synced.filter(item => previousIds.has(item.id) && item.status !== 'Concluído' && item.missedSnapshots === 0).length
-      const missingCount = synced.filter(item => item.status !== 'Concluído' && item.missedSnapshots > 0).length
       try {
+        const content = String(reader.result ?? '')
+        const parsed = parseSignalCsv(content)
+        const snapshot = parseSignalCsv(content, { includeNonAlerts: true })
+        if (!snapshot.length) { setError('O CSV não contém registros reconhecidos nas cinco cidades atendidas.'); return }
+        const synced = syncSignalOccurrences(occurrences, snapshot, new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date()))
+        const previousIds = new Set(occurrences.map(item => item.id))
+        const newCount = synced.filter(item => !previousIds.has(item.id)).length
+        const resolvedCount = synced.filter(item => occurrences.some(previous => previous.id === item.id && previous.status !== 'Concluído') && item.status === 'Concluído').length
+        const updatedCount = synced.filter(item => previousIds.has(item.id) && item.status !== 'Concluído' && item.missedSnapshots === 0).length
+        const missingCount = synced.filter(item => item.status !== 'Concluído' && item.missedSnapshots > 0).length
         const saved = await signalOccurrencesApi.sync<SignalOccurrence>({ file_name: file.name, csv_text: content, occurrences: synced })
         setOccurrences(saved.items)
         setImportResult(`${newCount} nova(s) · ${updatedCount} atualizada(s) · ${resolvedCount} normalizada(s) · ${missingCount} não localizada(s) · salvo no banco`)
         setRows(parsed); setFileName(file.name); setError(''); setFilters(EMPTY_FILTERS); setHotspotPage(0)
-      } catch {
-        setError('Não foi possível salvar a importação no banco de dados. Nenhuma alteração foi aplicada.')
+      } catch (cause) {
+        const detail = cause instanceof Error ? ` Motivo: ${cause.message}` : ''
+        setError(`Não foi possível processar e salvar a importação.${detail}`)
       }
     }
     reader.onerror = () => setError('Não foi possível ler o arquivo selecionado.')

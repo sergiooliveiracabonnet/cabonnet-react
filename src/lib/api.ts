@@ -10,6 +10,11 @@ const BASE = resolveApiBase(
 )
 const TIMEOUT_MS = 35_000
 
+export function createRequestId() {
+  if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID()
+  return `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+}
+
 function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
   const ctrl = new AbortController()
   const tid  = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
@@ -27,7 +32,7 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
       ...requestOptions,
       headers: {
         'Content-Type':  'application/json',
-        'X-Request-ID':  crypto.randomUUID(),
+        'X-Request-ID':  createRequestId(),
         ...optionHeaders,
       },
     })
