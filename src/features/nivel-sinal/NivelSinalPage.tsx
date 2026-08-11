@@ -5,9 +5,11 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
+import { TabBar } from '../../components/ui/TabBar'
 import { buildHotspots, filterSignals, groupBySeverity, parseSignalCsv, rankedCounts, signalPonKey, signalSummary, type SignalFilters, type SignalHotspot, type SignalRow, type SignalSeverity } from './nivelSinal'
 import { HotspotGrid, KpiAction, Panel, RankedList, SeverityBars, SignalDetailModal, SignalHistogram, SignalTable, type DetailState } from './NivelSinalComponents'
 import { NivelSinalAI } from './NivelSinalAI'
+import { OcorrenciasSinal } from './OcorrenciasSinal'
 
 const optionList = (values: string[]) => [...new Set(values.filter(value => value && value !== '—'))]
   .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true })).map(value => ({ value, label: value }))
@@ -18,6 +20,7 @@ const HOTSPOTS_PER_PAGE = 12
 function csvCell(value: unknown) { return `"${String(value ?? '').replace(/"/g, '""')}"` }
 
 export default function NivelSinalPage() {
+  const [activeTab, setActiveTab] = useState('analise')
   const fileRef = useRef<HTMLInputElement>(null)
   const [rows, setRows] = useState<SignalRow[]>([])
   const [fileName, setFileName] = useState('')
@@ -79,6 +82,8 @@ export default function NivelSinalPage() {
   }
 
   return <div className="space-y-4 animate-fade-in">
+    <TabBar tabs={[{ id: 'analise', label: 'Análise de sinal', icon: WaveSine }, { id: 'ocorrencias', label: 'Controle de ocorrências', icon: WarningCircle }]} active={activeTab} onChange={setActiveTab} />
+    {activeTab === 'ocorrencias' ? <OcorrenciasSinal /> : <>
     <PageHeader title="Nível de Sinal" description="Supervisão óptica das ONUs nas cinco cidades atendidas" icon={WaveSine}
       titleExtra={fileName && <span className="text-caption font-normal text-muted">{fileName}</span>} actions={<><input ref={fileRef} className="hidden" type="file" accept=".csv,text/csv" onChange={handleFile} />{rows.length > 0 && <Button variant="ghost" onClick={exportFiltered}><DownloadSimple size={15} /> Exportar filtro</Button>}<Button onClick={() => fileRef.current?.click()}><UploadSimple size={15} /> {rows.length ? 'Trocar CSV' : 'Carregar CSV'}</Button></>} />
 
@@ -125,5 +130,6 @@ export default function NivelSinalPage() {
       <SignalTable rows={filtered} onOpen={setDetail} />
     </>}
     <SignalDetailModal detail={detail} onClose={() => setDetail(null)} />
+    </>}
   </div>
 }

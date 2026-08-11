@@ -15,10 +15,14 @@ interface TabBarProps {
 
 export function TabBar({ tabs, active, onChange, className = '' }: TabBarProps) {
   return (
-    <div className={`flex border-b border-white/[0.08] overflow-x-auto ${className}`}>
+    <div role="tablist" className={`flex border-b border-white/[0.08] overflow-x-auto ${className}`}>
       {tabs.map((tab) => (
         <button
           key={tab.id}
+          type="button"
+          role="tab"
+          aria-selected={active === tab.id}
+          tabIndex={active === tab.id ? 0 : -1}
           onClick={() => onChange(tab.id)}
           className={`flex items-center gap-1.5 px-4 py-2.5 text-label font-semibold
                       whitespace-nowrap border-b-2 transition-all duration-fast

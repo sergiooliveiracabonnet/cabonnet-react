@@ -3,6 +3,35 @@ import { describe, expect, it } from 'vitest'
 import NivelSinalPage from './NivelSinalPage'
 
 describe('NivelSinalPage', () => {
+  it('mantém a análise como aba principal e abre o controle de ocorrências', () => {
+    render(<NivelSinalPage />)
+
+    expect(screen.getByRole('tab', { name: 'Análise de sinal' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByText('Carregue o relatório de sinais das ONUs')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Controle de ocorrências' }))
+
+    expect(screen.getByRole('tab', { name: 'Controle de ocorrências' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('heading', { name: 'Controle de Ocorrências de Sinal' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /nova ocorrência/i })).toBeInTheDocument()
+  })
+
+  it('cadastra e filtra uma ocorrência de sinal', () => {
+    render(<NivelSinalPage />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Controle de ocorrências' }))
+    fireEvent.click(screen.getByRole('button', { name: /nova ocorrência/i }))
+
+    fireEvent.change(screen.getByLabelText('Cliente / ponto'), { target: { value: 'Cliente Teste — CTO 09' } })
+    fireEvent.change(screen.getByLabelText('Cidade'), { target: { value: 'Taubaté' } })
+    fireEvent.change(screen.getByLabelText('Bairro'), { target: { value: 'Centro' } })
+    fireEvent.change(screen.getByLabelText('Sinal antes (dBm)'), { target: { value: '-29.5' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar ocorrência' }))
+
+    expect(screen.getByText('Cliente Teste — CTO 09')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Filtrar por status'), { target: { value: 'Concluído' } })
+    expect(screen.queryByText('Cliente Teste — CTO 09')).not.toBeInTheDocument()
+  })
+
   it('usa a estrutura nativa do projeto sem documento incorporado', () => {
     render(<NivelSinalPage />)
     expect(screen.getByRole('heading', { name: 'Nível de Sinal' })).toBeInTheDocument()
