@@ -224,6 +224,17 @@ def _db_init():
             )
         """)
         con.execute("CREATE INDEX IF NOT EXISTS idx_signal_occ_updated ON signal_occurrences(updated_at) WHERE deleted_at IS NULL")
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS signal_import_chunks (
+                upload_id TEXT NOT NULL,
+                chunk_index INTEGER NOT NULL,
+                chunk_total INTEGER NOT NULL,
+                payload BLOB NOT NULL,
+                created_at TEXT NOT NULL,
+                created_by TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY(upload_id, chunk_index)
+            )
+        """)
         con.commit()
         con.close()
 
@@ -258,6 +269,40 @@ def _db_sync_signal_occurrences(file_name, csv_text, occurrences, username=""):
             raise
         finally:
             con.close()
+
+
+def _db_store_signal_import_chunk(upload_id, chunk_index, chunk_total, payload, username=""):
+    """Guarda um bloco e devolve o payload completo quando todos chegaram."""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        try:
+            con.execute("DELETE FROM signal_import_chunks WHERE created_at < datetime('now', '-1 day')")
+            con.execute("""
+                INSERT INTO signal_import_chunks(upload_id,chunk_index,chunk_total,payload,created_at,created_by)
+                VALUES(?,?,?,?,?,?)
+                ON CONFLICT(upload_id,chunk_index) DO UPDATE SET
+                    chunk_total=excluded.chunk_total, payload=excluded.payload,
+                    created_at=excluded.created_at, created_by=excluded.created_by
+            """, (upload_id, chunk_index, chunk_total, payload, now, username))
+            rows = con.execute(
+                "SELECT chunk_index,chunk_total,payload FROM signal_import_chunks WHERE upload_id=? ORDER BY chunk_index",
+                (upload_id,),
+            ).fetchall()
+            con.commit()
+        finally:
+            con.close()
+    if len(rows) != chunk_total or any(row[0] != index or row[1] != chunk_total for index, row in enumerate(rows)):
+        return None
+    return b"".join(row[2] for row in rows)
+
+
+def _db_delete_signal_import_chunks(upload_id):
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        con.execute("DELETE FROM signal_import_chunks WHERE upload_id=?", (upload_id,))
+        con.commit()
+        con.close()
 
 
 def _db_list_signal_occurrences():

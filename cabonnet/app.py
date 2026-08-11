@@ -1489,6 +1489,54 @@ async def sync_signal_occurrences(
     return {"ok": True, "import_id": import_id, "items": _db_list_signal_occurrences()}
 
 
+@router.post("/api/nivel-sinal/ocorrencias/sync/chunk")
+async def sync_signal_occurrences_chunk(
+    request: Request,
+    _role: str = Depends(_require_modulo("nivel_sinal")),
+    sess: dict = Depends(_require_session),
+):
+    from cabonnet.db import (
+        _db_delete_signal_import_chunks, _db_list_signal_occurrences,
+        _db_store_signal_import_chunk, _db_sync_signal_occurrences,
+    )
+    upload_id = request.headers.get("x-upload-id", "").strip()
+    try:
+        chunk_index = int(request.headers.get("x-chunk-index", ""))
+        chunk_total = int(request.headers.get("x-chunk-total", ""))
+    except ValueError as ex:
+        raise HTTPException(400, "Índice de bloco inválido") from ex
+    if not upload_id or len(upload_id) > 100 or not (0 <= chunk_index < chunk_total <= 100):
+        raise HTTPException(400, "Metadados de bloco inválidos")
+    chunk = await request.body()
+    if not chunk or len(chunk) > 512 * 1024:
+        raise HTTPException(413, "Bloco vazio ou maior que 512 KB")
+    complete = _db_store_signal_import_chunk(upload_id, chunk_index, chunk_total, chunk, sess.get("username") or "")
+    if complete is None:
+        return {"ok": True, "complete": False, "received": chunk_index + 1}
+    if len(complete) > 5 * 1024 * 1024:
+        _db_delete_signal_import_chunks(upload_id)
+        raise HTTPException(413, "Payload comprimido excede o limite")
+    try:
+        if request.headers.get("x-payload-encoding", "").lower() == "gzip":
+            complete = gzip.decompress(complete)
+        if len(complete) > 25 * 1024 * 1024:
+            raise HTTPException(413, "Payload descomprimido excede o limite")
+        body = json.loads(complete)
+        file_name = str(body.get("file_name", "")).strip()
+        csv_text = body.get("csv_text")
+        occurrences = body.get("occurrences")
+        if not file_name or not isinstance(csv_text, str) or not isinstance(occurrences, list):
+            raise HTTPException(400, "file_name, csv_text e occurrences são obrigatórios")
+        import_id = _db_sync_signal_occurrences(file_name, csv_text, occurrences, sess.get("username") or "")
+    except HTTPException:
+        raise
+    except (gzip.BadGzipFile, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as ex:
+        raise HTTPException(400, str(ex) or "Payload de importação inválido") from ex
+    finally:
+        _db_delete_signal_import_chunks(upload_id)
+    return {"ok": True, "complete": True, "import_id": import_id, "items": _db_list_signal_occurrences()}
+
+
 @router.post("/api/nivel-sinal/ocorrencia/update")
 async def update_signal_occurrence(
     request: Request,

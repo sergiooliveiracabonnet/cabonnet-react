@@ -41,3 +41,30 @@ def test_api_aceita_importacao_comprimida(client, tmp_path):
         )
     assert response.status_code == 200
     assert response.json()["items"][0]["id"] == "occ-gzip"
+
+
+def test_api_monta_importacao_comprimida_em_blocos(client, tmp_path):
+    db_path = str(tmp_path / "cabonnet_signal_chunks.db")
+    payload = {"file_name": "grande.csv", "csv_text": "x" * 1_000_000, "occurrences": [
+        {"id": "occ-chunk", "sourceKey": "serial:CHUNK", "status": "Aberto"},
+    ]}
+    compressed = gzip.compress(json.dumps(payload).encode("utf-8"))
+    chunks = [compressed[index:index + 100] for index in range(0, len(compressed), 100)]
+    with patch("cabonnet.db._DB_PATH", db_path):
+        db._db_init()
+        responses = [client.post(
+            "/api/nivel-sinal/ocorrencias/sync/chunk",
+            content=chunk,
+            headers={
+                "Content-Type": "application/octet-stream",
+                "X-Upload-ID": "upload-teste-123",
+                "X-Chunk-Index": str(index),
+                "X-Chunk-Total": str(len(chunks)),
+                "X-Payload-Encoding": "gzip",
+            },
+        ) for index, chunk in enumerate(chunks)]
+
+    assert all(response.status_code == 200 for response in responses)
+    assert all(response.json().get("complete") is False for response in responses[:-1])
+    assert responses[-1].json()["complete"] is True
+    assert responses[-1].json()["items"][0]["id"] == "occ-chunk"

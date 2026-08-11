@@ -143,10 +143,30 @@ export const fornecedorConfig = {
 }
 
 async function compressedRequest<T>(path: string, body: unknown): Promise<T> {
-  if (typeof CompressionStream === 'undefined') return request<T>(path, { method: 'POST', body: JSON.stringify(body) })
   const source = new Blob([JSON.stringify(body)], { type: 'application/json' })
-  const compressed = await new Response(source.stream().pipeThrough(new CompressionStream('gzip'))).blob()
-  return request<T>(path, { method: 'POST', headers: { 'Content-Encoding': 'gzip' }, body: compressed })
+  const gzip = typeof CompressionStream !== 'undefined'
+  const payload = gzip
+    ? await new Response(source.stream().pipeThrough(new CompressionStream('gzip'))).blob()
+    : source
+  const chunkSize = 256 * 1024
+  const chunkTotal = Math.ceil(payload.size / chunkSize)
+  const uploadId = createRequestId()
+  let result: T | undefined
+  for (let index = 0; index < chunkTotal; index += 1) {
+    result = await request<T>(`${path}/chunk`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'X-Upload-ID': uploadId,
+        'X-Chunk-Index': String(index),
+        'X-Chunk-Total': String(chunkTotal),
+        'X-Payload-Encoding': gzip ? 'gzip' : 'identity',
+      },
+      body: payload.slice(index * chunkSize, (index + 1) * chunkSize),
+    })
+  }
+  if (!result) throw new Error('A importação não gerou blocos para envio')
+  return result
 }
 
 export const signalOccurrencesApi = {

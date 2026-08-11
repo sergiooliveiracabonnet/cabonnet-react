@@ -25,6 +25,13 @@ describe('configuração P0 do shell', () => {
     expect(css).not.toContain('fonts.googleapis.com')
   })
 
+  it('permite somente os endpoints necessarios do Cloudflare Web Analytics', () => {
+    const html = read('../../index.html')
+
+    expect(html).toContain("script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com")
+    expect(html).toContain('connect-src \'self\' ws: wss: https://nominatim.openstreetmap.org https://cloudflareinsights.com')
+  })
+
   it('não devolve o SPA para chunks removidos e reconhece hashes do Vite', () => {
     const nodeServer = read('../../servidor.js')
 

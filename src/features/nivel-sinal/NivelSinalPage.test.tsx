@@ -5,8 +5,17 @@ import NivelSinalPage from './NivelSinalPage'
 describe('NivelSinalPage', () => {
   beforeEach(() => {
     vi.stubGlobal('CompressionStream', undefined)
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, options?: RequestInit) => {
-      const body = options?.body ? JSON.parse(String(options.body)) : null
+    vi.stubGlobal('fetch', vi.fn(async (url: string, options?: RequestInit) => {
+      let rawBody = options?.body ? String(options.body) : ''
+      if (url.endsWith('/sync/chunk') && options?.body instanceof Blob) {
+        rawBody = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(String(reader.result ?? ''))
+          reader.onerror = () => reject(reader.error)
+          reader.readAsText(options.body as Blob)
+        })
+      }
+      const body = rawBody ? JSON.parse(rawBody) : null
       return { ok: true, status: 200, headers: new Headers({ 'content-type': 'application/json' }), json: async () => ({ ok: true, items: body?.occurrences ?? (body?.id ? [body] : []), import_id: 1 }) } as Response
     }))
   })
