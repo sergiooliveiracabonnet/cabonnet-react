@@ -1,8 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import NivelSinalPage from './NivelSinalPage'
 
 describe('NivelSinalPage', () => {
+  beforeEach(() => localStorage.removeItem('cabonnet-sinal-ocorrencias-v2'))
+
   it('mantém a análise como aba principal e abre o controle de ocorrências', () => {
     render(<NivelSinalPage />)
 
@@ -13,23 +15,28 @@ describe('NivelSinalPage', () => {
 
     expect(screen.getByRole('tab', { name: 'Controle de ocorrências' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('heading', { name: 'Controle de Ocorrências de Sinal' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /nova ocorrência/i })).toBeInTheDocument()
+    expect(screen.getByText(/criadas automaticamente a partir do CSV/i)).toBeInTheDocument()
   })
 
-  it('cadastra e filtra uma ocorrência de sinal', () => {
-    render(<NivelSinalPage />)
+  it('começa sem ocorrências e cria uma ocorrência automaticamente pelo CSV', async () => {
+    const { container } = render(<NivelSinalPage />)
     fireEvent.click(screen.getByRole('tab', { name: 'Controle de ocorrências' }))
-    fireEvent.click(screen.getByRole('button', { name: /nova ocorrência/i }))
+    expect(screen.getByText('Nenhuma ocorrência registrada.')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Cliente / ponto'), { target: { value: 'Cliente Teste — CTO 09' } })
-    fireEvent.change(screen.getByLabelText('Cidade'), { target: { value: 'Taubaté' } })
-    fireEvent.change(screen.getByLabelText('Bairro'), { target: { value: 'Centro' } })
-    fireEvent.change(screen.getByLabelText('Sinal antes (dBm)'), { target: { value: '-29.5' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar ocorrência' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Análise de sinal' }))
+    const csv = `Cidade;Bairro;OLT;Slot;PON;ONU ID;Cliente;Código;Serial;Status;Classificação;RX dBm
+Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5`
+    fireEvent.change(container.querySelector('input[type="file"]') as HTMLInputElement, { target: { files: [new File([csv], 'sinais.csv', { type: 'text/csv' })] } })
 
-    expect(screen.getByText('Cliente Teste — CTO 09')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Controle de ocorrências' }))
+    expect(await screen.findByText('Cliente Teste')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /registrar tratativa de cliente teste/i }))
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'Concluído' } })
+    fireEvent.change(screen.getByLabelText('Tratativa realizada'), { target: { value: 'Conector substituído' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar tratativa' }))
+
     fireEvent.change(screen.getByLabelText('Filtrar por status'), { target: { value: 'Concluído' } })
-    expect(screen.queryByText('Cliente Teste — CTO 09')).not.toBeInTheDocument()
+    expect(screen.getByText('Cliente Teste')).toBeInTheDocument()
   })
 
   it('usa a estrutura nativa do projeto sem documento incorporado', () => {

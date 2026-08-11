@@ -1,38 +1,12 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { ChartBar, CheckCircle, ClipboardText, Plus, Wrench } from '@phosphor-icons/react'
+import { ChartBar, CheckCircle, ClipboardText, Wrench } from '@phosphor-icons/react'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
-import { storage } from '../../lib/storage'
-
-const STORAGE_KEY = 'cabonnet-sinal-ocorrencias'
-const CITIES = ['São José dos Campos', 'Caçapava', 'Taubaté', 'Tremembé', 'Pindamonhangaba'] as const
-const STATUSES = ['Aberto', 'Em atendimento', 'Aguardando material', 'Concluído'] as const
-type OccurrenceStatus = typeof STATUSES[number]
-
-interface SignalOccurrence {
-  id: string
-  date: string
-  client: string
-  city: typeof CITIES[number]
-  region: string
-  before: number
-  after: number | null
-  team: string
-  status: OccurrenceStatus
-  note: string
-}
-
-const today = () => new Date().toISOString().slice(0, 10)
-const INITIAL: SignalOccurrence[] = [
-  { id: 'demo-1', date: '2026-08-11', client: 'Cliente Marcos — CTO 12', city: 'São José dos Campos', region: 'Jardim Europa', before: -28.5, after: -20.1, team: 'Equipe 03', status: 'Em atendimento', note: '' },
-  { id: 'demo-2', date: '2026-08-10', client: 'Residencial Horizonte — CTO 04', city: 'Taubaté', region: 'Centro', before: -30.2, after: -21.4, team: 'Equipe 01', status: 'Concluído', note: '' },
-  { id: 'demo-3', date: '2026-08-10', client: 'Cliente Ana — CTO 07', city: 'Caçapava', region: 'Vila Nova', before: -27.8, after: null, team: 'Equipe 02', status: 'Aberto', note: '' },
-  { id: 'demo-4', date: '2026-08-09', client: 'Condomínio Ipê — CTO 21', city: 'Pindamonhangaba', region: 'Centro', before: -29.1, after: -22.2, team: 'Equipe 04', status: 'Concluído', note: '' },
-]
+import { OCCURRENCE_STATUSES as STATUSES, type OccurrenceStatus, type SignalOccurrence } from './signalOccurrenceModel'
 
 const STATUS_STYLE: Record<OccurrenceStatus, string> = {
   'Aberto': 'border-red/25 bg-red/10 text-red',
@@ -51,13 +25,15 @@ function Field({ label, children, full = false }: { label: string; children: Rea
 
 const inputClass = 'h-10 w-full rounded-lg border border-border bg-surface px-3 text-body text-text outline-none transition-colors focus:border-primary/60 focus:ring-2 focus:ring-primary/15'
 
-export function OcorrenciasSinal() {
-  const [occurrences, setOccurrences] = useState<SignalOccurrence[]>(() => storage.getJSON(STORAGE_KEY, INITIAL))
+interface OcorrenciasSinalProps { occurrences: SignalOccurrence[]; onChange: (occurrences: SignalOccurrence[]) => void }
+
+export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProps) {
   const [filter, setFilter] = useState('Todos')
-  const [modalOpen, setModalOpen] = useState(false)
+  const [selected, setSelected] = useState<SignalOccurrence | null>(null)
   const sorted = useMemo(() => [...occurrences].sort((a, b) => b.date.localeCompare(a.date)), [occurrences])
   const visible = filter === 'Todos' ? sorted : sorted.filter(item => item.status === filter)
   const concluded = occurrences.filter(item => item.status === 'Concluído').length
+  const open = occurrences.length - concluded
   const inWork = occurrences.filter(item => item.status === 'Em atendimento').length
   const improvements = occurrences.filter(item => item.after != null).map(item => (item.after as number) - item.before)
   const average = improvements.length ? improvements.reduce((sum, item) => sum + item, 0) / improvements.length : null
@@ -71,24 +47,23 @@ export function OcorrenciasSinal() {
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const next: SignalOccurrence = {
-      id: crypto.randomUUID(), date: String(form.get('date')), client: String(form.get('client')).trim(),
-      city: String(form.get('city')) as SignalOccurrence['city'], region: String(form.get('region')).trim(),
-      before: Number(form.get('before')), after: form.get('after') === '' ? null : Number(form.get('after')),
-      team: String(form.get('team')).trim(), status: String(form.get('status')) as OccurrenceStatus, note: String(form.get('note')).trim(),
-    }
-    const updated = [next, ...occurrences]
-    setOccurrences(updated); storage.setJSON(STORAGE_KEY, updated); setModalOpen(false)
+    if (!selected) return
+    const status = String(form.get('status')) as OccurrenceStatus
+    const updated = occurrences.map(item => item.id === selected.id ? {
+      ...item, status, after: form.get('after') === '' ? null : Number(form.get('after')),
+      team: String(form.get('team')).trim(), note: String(form.get('note')).trim(),
+      updatedAt: new Date().toISOString().slice(0, 10), resolution: status === 'Concluído' ? 'Tratativa manual' : '',
+    } : item)
+    onChange(updated); setSelected(null)
   }
 
   return <div className="space-y-4">
-    <PageHeader title="Controle de Ocorrências de Sinal" description="Registro e acompanhamento das tratativas de potência óptica" icon={ClipboardText}
-      actions={<Button onClick={() => setModalOpen(true)}><Plus size={15} /> Nova ocorrência</Button>} />
+    <PageHeader title="Controle de Ocorrências de Sinal" description="Ocorrências criadas automaticamente a partir do CSV e mantidas até a normalização" icon={ClipboardText} />
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatCard title="Ocorrências registradas" value={occurrences.length} sub="no histórico local" icon={ClipboardText} />
+      <StatCard title="Backlog ativo" value={open} sub={`${occurrences.filter(item => item.severity === 'Crítico' && item.status !== 'Concluído').length} críticas`} tone={open ? 'critical' : 'neutral'} icon={ClipboardText} />
       <StatCard title="Em atendimento" value={inWork} sub="aguardando conclusão" tone="warning" icon={Wrench} />
-      <StatCard title="Concluídas" value={concluded} sub={`${occurrences.length ? Math.round(concluded / occurrences.length * 100) : 0}% de resolução`} tone="success" icon={CheckCircle} />
+      <StatCard title="Concluídas" value={concluded} sub={`${occurrences.length ? Math.round(concluded / occurrences.length * 100) : 0}% de resolução`} tone="ok" icon={CheckCircle} />
       <StatCard title="Melhora média" value={average == null ? '—' : `${average.toFixed(1)} dB`} sub="após a tratativa" tone="info" icon={ChartBar} />
     </div>
 
@@ -100,19 +75,14 @@ export function OcorrenciasSinal() {
     </div>
 
     <Card className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><h2 className="text-body font-semibold text-text">Ocorrências recentes</h2><p className="mt-0.5 text-caption text-muted">Dados armazenados somente neste navegador</p></div><FilterSelect ariaLabel="Filtrar por status" value={filter === 'Todos' ? '' : filter} onChange={value => setFilter(value || 'Todos')} placeholder="Todos os status" options={STATUSES.map(status => ({ value: status, label: status }))} className="min-w-48" /></div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left text-label"><thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>{['Data', 'Cliente / ponto', 'Cidade / bairro', 'Sinal', 'Equipe', 'Status'].map(label => <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}</tr></thead><tbody>{visible.map(item => <tr key={item.id} className="border-t border-border transition-colors hover:bg-surface/50"><td className="px-4 py-3 text-muted">{new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR')}</td><td className="px-4 py-3 font-semibold text-text">{item.client}</td><td className="px-4 py-3"><span className="block text-text">{item.city}</span><span className="text-caption text-muted">{item.region}</span></td><td className="px-4 py-3 font-mono text-text">{item.before.toFixed(1)}{item.after != null && <span className="text-green"> → {item.after.toFixed(1)}</span>}</td><td className="px-4 py-3 text-secondary">{item.team || '—'}</td><td className="px-4 py-3"><SignalBadge status={item.status} /></td></tr>)}{!visible.length && <tr><td colSpan={6} className="px-4 py-12 text-center text-muted">Nenhuma ocorrência encontrada para este status.</td></tr>}</tbody></table></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[1080px] text-left text-label"><thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>{['Detecção', 'Cliente / ponto', 'OLT / PON / ONU', 'Cidade / bairro', 'Severidade', 'Sinal', 'Equipe', 'Status', 'Ação'].map(label => <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}</tr></thead><tbody>{visible.map(item => <tr key={item.id} className="border-t border-border transition-colors hover:bg-surface/50"><td className="px-4 py-3 text-muted"><span className="block">{new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR')}</span><span className="text-caption">{item.detections} leitura(s){item.missedSnapshots ? ` · ${item.missedSnapshots} ausente(s)` : ''}</span></td><td className="px-4 py-3 font-semibold text-text">{item.client}</td><td className="px-4 py-3 font-mono text-caption text-secondary"><span className="block">{item.olt}</span><span>{item.pon} · ONU {item.onu || '—'}</span></td><td className="px-4 py-3"><span className="block text-text">{item.city}</span><span className="text-caption text-muted">{item.region}</span></td><td className={`px-4 py-3 font-semibold ${item.severity === 'Crítico' ? 'text-red' : 'text-orange'}`}>{item.severity}</td><td className="px-4 py-3 font-mono text-text">{item.before.toFixed(1)}{item.after != null ? <span className="text-green"> → {item.after.toFixed(1)}</span> : item.current !== item.before ? <span className="text-orange"> → {item.current.toFixed(1)}</span> : null}</td><td className="px-4 py-3 text-secondary">{item.team || '—'}</td><td className="px-4 py-3"><SignalBadge status={item.status} /></td><td className="px-4 py-3"><Button variant="ghost" size="sm" aria-label={`Registrar tratativa de ${item.client}`} onClick={() => setSelected(item)}>Tratar</Button></td></tr>)}{!visible.length && <tr><td colSpan={9} className="px-4 py-12 text-center text-muted">{occurrences.length ? 'Nenhuma ocorrência encontrada para este status.' : 'Nenhuma ocorrência registrada.'}</td></tr>}</tbody></table></div>
     </Card>
 
-    <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Registrar ocorrência" subtitle="Informe a leitura e a tratativa do ponto" maxWidth="680px"><form onSubmit={save} className="p-6"><div className="grid gap-4 sm:grid-cols-2">
-      <Field label="Data"><input className={inputClass} required type="date" name="date" defaultValue={today()} /></Field>
-      <Field label="Status"><select className={inputClass} name="status" defaultValue="Aberto">{STATUSES.map(status => <option key={status}>{status}</option>)}</select></Field>
-      <Field label="Cliente / ponto"><input className={inputClass} required name="client" placeholder="Ex.: Cliente João — CTO 04" /></Field>
-      <Field label="Cidade"><select className={inputClass} required name="city" defaultValue=""><option value="" disabled>Selecione a cidade</option>{CITIES.map(city => <option key={city}>{city}</option>)}</select></Field>
-      <Field label="Bairro"><input className={inputClass} required name="region" placeholder="Ex.: Centro" /></Field>
-      <Field label="Equipe responsável"><input className={inputClass} name="team" placeholder="Ex.: Equipe 02" /></Field>
-      <Field label="Sinal antes (dBm)"><input className={inputClass} required type="number" step="0.01" name="before" placeholder="-27.50" /></Field>
-      <Field label="Sinal depois (dBm)"><input className={inputClass} type="number" step="0.01" name="after" placeholder="-20.00" /></Field>
-      <Field label="Tratativa realizada" full><textarea className={`${inputClass} h-24 resize-y py-2`} name="note" placeholder="Descreva brevemente a correção." /></Field>
-    </div><div className="mt-6 flex justify-end gap-2 border-t border-border pt-4"><Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>Cancelar</Button><Button type="submit">Salvar ocorrência</Button></div></form></Modal>
+    <Modal open={!!selected} onClose={() => setSelected(null)} title="Registrar tratativa" subtitle={selected ? `${selected.client} · leitura inicial ${selected.before.toFixed(1)} dBm` : ''} maxWidth="620px">{selected && <form key={selected.id} onSubmit={save} className="p-6"><div className="grid gap-4 sm:grid-cols-2">
+      <Field label="Status"><select className={inputClass} name="status" defaultValue={selected.status}>{STATUSES.map(status => <option key={status}>{status}</option>)}</select></Field>
+      <Field label="Equipe responsável"><input className={inputClass} name="team" defaultValue={selected.team} placeholder="Ex.: Equipe 02" /></Field>
+      <Field label="Sinal após tratativa (dBm)"><input className={inputClass} type="number" step="0.01" name="after" defaultValue={selected.after ?? ''} placeholder="-20.00" /></Field>
+      <Field label="Tratativa realizada" full><textarea className={`${inputClass} h-24 resize-y py-2`} name="note" defaultValue={selected.note} required placeholder="Descreva a correção realizada." /></Field>
+    </div><div className="mt-6 flex justify-end gap-2 border-t border-border pt-4"><Button type="button" variant="ghost" onClick={() => setSelected(null)}>Cancelar</Button><Button type="submit">Salvar tratativa</Button></div></form>}</Modal>
   </div>
 }

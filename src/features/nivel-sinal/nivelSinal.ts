@@ -116,7 +116,7 @@ function severity(value: string, rx: number | null, isRxAlert = false): SignalSe
   return '—'
 }
 
-export function parseSignalCsv(text: string): SignalRow[] {
+export function parseSignalCsv(text: string, options: { includeNonAlerts?: boolean } = {}): SignalRow[] {
   const parsedRows = parseCsvRows(text.replace(/^\uFEFF/, ''))
   const headerIndex = parsedRows.findIndex(row => {
     const names = new Set(row.map(normalizeText))
@@ -135,7 +135,7 @@ export function parseSignalCsv(text: string): SignalRow[] {
     return ''
   }
   const hasRxAlert = indexes.has('ALERTA RX')
-  if (hasRxAlert) rows = rows.filter(row => normalizeText(get(row, 'Alerta RX')) === 'SIM')
+  if (hasRxAlert && !options.includeNonAlerts) rows = rows.filter(row => normalizeText(get(row, 'Alerta RX')) === 'SIM')
 
   const scopedRows = rows.filter(row => VALID_CITIES.has(normalizeText(get(row, 'Cidade'))))
   const neighborhoods = new Map<string, Map<string, number>>()
