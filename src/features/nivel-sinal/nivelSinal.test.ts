@@ -76,6 +76,18 @@ describe('parseSignalCsv', () => {
     expect(rows[1]).toMatchObject({ distancia: 1381, classificacao: 'Atenção' })
   })
 
+  it('não transforma linhas sem Alerta RX em ocorrências ao montar o snapshot completo', () => {
+    const report = `Cidade;OLT;PON;ONU ID;Cliente ONU;RX dBm;Alerta RX
+Taubaté;OLT TBT;1/1;1;Cliente Alerta;-27,20;Sim
+Taubaté;OLT TBT;1/1;2;Cliente Normal;-20,00;Não`
+
+    const snapshot = parseSignalCsv(report, { includeNonAlerts: true })
+
+    expect(snapshot).toHaveLength(2)
+    expect(snapshot[0].classificacao).toBe('Crítico')
+    expect(snapshot[1].classificacao).toBe('—')
+  })
+
   it('monta contexto agregado para IA sem dados pessoais ou identificadores', () => {
     const context = buildAIContext(parseSignalCsv(csv), { cidade: 'Taubaté' })
     const serialized = JSON.stringify(context)

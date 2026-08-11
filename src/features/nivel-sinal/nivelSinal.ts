@@ -157,6 +157,7 @@ export function parseSignalCsv(text: string, options: { includeNonAlerts?: boole
   return scopedRows.map(row => {
     const cidade = get(row, 'Cidade')
     const rx = parseNumber(get(row, 'RX dBm'))
+    const rowHasRxAlert = hasRxAlert && normalizeText(get(row, 'Alerta RX')) === 'SIM'
     const pon = get(row, 'PON')
     const slot = get(row, 'Slot') || pon.split('/')[0] || ''
     const ponLocation = `${get(row, 'OLT')}|${slot}|${pon}`
@@ -168,7 +169,7 @@ export function parseSignalCsv(text: string, options: { includeNonAlerts?: boole
       cliente: clientName(getAny(row, 'Cliente', 'Cliente iManager'), get(row, 'Cliente ONU')), codigo: get(row, 'Código'),
       situacao: get(row, 'Situação') || '—', pppoe: get(row, 'PPPoE'), serial: get(row, 'Serial'),
       modelo: get(row, 'Modelo') || '—', status: get(row, 'Status') || '—',
-      classificacao: severity(get(row, 'Classificação'), rx, hasRxAlert), rx, tx: parseNumber(get(row, 'TX dBm')),
+      classificacao: severity(get(row, 'Classificação'), rx, rowHasRxAlert), rx, tx: parseNumber(get(row, 'TX dBm')),
       oltRx: parseNumber(get(row, 'OLT RX dBm')), distancia: parseDistance(getAny(row, 'Distância', 'Distância m')),
       causa: get(row, 'Down Cause') || '—',
     }
