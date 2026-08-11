@@ -10,8 +10,8 @@ import { buildHotspots, filterSignals, groupBySeverity, parseSignalCsv, rankedCo
 import { HotspotGrid, KpiAction, Panel, RankedList, SeverityBars, SignalDetailModal, SignalHistogram, SignalTable, type DetailState } from './NivelSinalComponents'
 import { NivelSinalAI } from './NivelSinalAI'
 import { OcorrenciasSinal } from './OcorrenciasSinal'
-import { SIGNAL_OCCURRENCES_STORAGE_KEY, syncSignalOccurrences, type SignalOccurrence } from './signalOccurrenceModel'
-import { storage } from '../../lib/storage'
+import { syncSignalOccurrences, type SignalOccurrence } from './signalOccurrenceModel'
+import { signalOccurrencesApi } from '../../lib/api'
 
 const optionList = (values: string[]) => [...new Set(values.filter(value => value && value !== '—'))]
   .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true })).map(value => ({ value, label: value }))
@@ -23,7 +23,7 @@ function csvCell(value: unknown) { return `"${String(value ?? '').replace(/"/g, 
 
 export default function NivelSinalPage() {
   const [activeTab, setActiveTab] = useState('analise')
-  const [occurrences, setOccurrences] = useState<SignalOccurrence[]>(() => storage.getJSON(SIGNAL_OCCURRENCES_STORAGE_KEY, []))
+  const [occurrences, setOccurrences] = useState<SignalOccurrence[]>([])
   const [importResult, setImportResult] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const [rows, setRows] = useState<SignalRow[]>([])
@@ -50,6 +50,11 @@ export default function NivelSinalPage() {
   const hasFilters = Boolean(filters.query || filters.cidade || filters.olt || filters.pon || filters.slot || filters.tipo || filters.situacao || filters.severities?.length || filters.offline || filters.hotspotsOnly)
 
   useEffect(() => setHotspotPage(0), [filters.cidade, filters.olt, filters.pon])
+  useEffect(() => {
+    signalOccurrencesApi.list<SignalOccurrence>()
+      .then(response => setOccurrences(response.items))
+      .catch(() => setError('Não foi possível carregar as ocorrências salvas no servidor.'))
+  }, [])
 
   const setFilter = <K extends keyof SignalFilters>(key: K, value: SignalFilters[K]) => setFilters(current => ({ ...current, [key]: value }))
   const show = (title: string, subtitle: string, detailRows: SignalRow[]) => setDetail({ title, subtitle, rows: detailRows })
@@ -69,7 +74,7 @@ export default function NivelSinalPage() {
     const file = event.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => {
+    reader.onload = async () => {
       const content = String(reader.result ?? '')
       const parsed = parseSignalCsv(content)
       const snapshot = parseSignalCsv(content, { includeNonAlerts: true })
@@ -80,9 +85,14 @@ export default function NivelSinalPage() {
       const resolvedCount = synced.filter(item => occurrences.some(previous => previous.id === item.id && previous.status !== 'Concluído') && item.status === 'Concluído').length
       const updatedCount = synced.filter(item => previousIds.has(item.id) && item.status !== 'Concluído' && item.missedSnapshots === 0).length
       const missingCount = synced.filter(item => item.status !== 'Concluído' && item.missedSnapshots > 0).length
-      setOccurrences(synced); storage.setJSON(SIGNAL_OCCURRENCES_STORAGE_KEY, synced)
-      setImportResult(`${newCount} nova(s) · ${updatedCount} atualizada(s) · ${resolvedCount} normalizada(s) · ${missingCount} não localizada(s)`)
-      setRows(parsed); setFileName(file.name); setError(''); setFilters(EMPTY_FILTERS); setHotspotPage(0)
+      try {
+        const saved = await signalOccurrencesApi.sync<SignalOccurrence>({ file_name: file.name, csv_text: content, occurrences: synced })
+        setOccurrences(saved.items)
+        setImportResult(`${newCount} nova(s) · ${updatedCount} atualizada(s) · ${resolvedCount} normalizada(s) · ${missingCount} não localizada(s) · salvo no banco`)
+        setRows(parsed); setFileName(file.name); setError(''); setFilters(EMPTY_FILTERS); setHotspotPage(0)
+      } catch {
+        setError('Não foi possível salvar a importação no banco de dados. Nenhuma alteração foi aplicada.')
+      }
     }
     reader.onerror = () => setError('Não foi possível ler o arquivo selecionado.')
     reader.readAsText(file, 'utf-8'); event.target.value = ''
@@ -97,14 +107,24 @@ export default function NivelSinalPage() {
 
   return <div className="space-y-4 animate-fade-in">
     <TabBar tabs={[{ id: 'analise', label: 'Análise de sinal', icon: WaveSine }, { id: 'ocorrencias', label: 'Controle de ocorrências', icon: WarningCircle }]} active={activeTab} onChange={setActiveTab} />
-    {activeTab === 'ocorrencias' ? <OcorrenciasSinal occurrences={occurrences} onChange={updated => { setOccurrences(updated); storage.setJSON(SIGNAL_OCCURRENCES_STORAGE_KEY, updated) }} /> : <>
+    {activeTab === 'ocorrencias' ? <OcorrenciasSinal occurrences={occurrences} onChange={async updated => {
+      const changed = updated.find(item => occurrences.find(previous => previous.id === item.id) !== item)
+      if (!changed) return
+      try {
+        const saved = await signalOccurrencesApi.update<SignalOccurrence>(changed)
+        setOccurrences(saved.items); setError('')
+      } catch (cause) {
+        setError('Não foi possível salvar a tratativa no banco de dados.')
+        throw cause
+      }
+    }} /> : <>
     <PageHeader title="Nível de Sinal" description="Supervisão óptica das ONUs nas cinco cidades atendidas" icon={WaveSine}
       titleExtra={fileName && <span className="text-caption font-normal text-muted">{fileName}</span>} actions={<><input ref={fileRef} className="hidden" type="file" accept=".csv,text/csv" onChange={handleFile} />{rows.length > 0 && <Button variant="ghost" onClick={exportFiltered}><DownloadSimple size={15} /> Exportar filtro</Button>}<Button onClick={() => fileRef.current?.click()}><UploadSimple size={15} /> {rows.length ? 'Trocar CSV' : 'Carregar CSV'}</Button></>} />
 
     {error && <div role="alert" className="flex items-center gap-3 rounded-xl border border-red/30 bg-red/[0.07] px-4 py-3 text-label text-red"><WarningCircle size={17} /><span className="flex-1">{error}</span><button aria-label="Fechar aviso" onClick={() => setError('')}><X size={15} /></button></div>}
     {importResult && <div role="status" className="rounded-xl border border-primary/25 bg-primary/[0.07] px-4 py-3 text-label text-secondary"><strong className="text-primary">Importação concluída:</strong> {importResult}</div>}
 
-    {!rows.length ? <div className="rounded-xl border border-border bg-card"><EmptyState icon={FileCsv} title="Carregue o relatório de sinais das ONUs" description="O arquivo é processado somente neste navegador e não é enviado ao servidor. Aceita CSV separado por vírgula ou ponto e vírgula." action={{ label: 'Selecionar arquivo CSV', onClick: () => fileRef.current?.click() }} /></div> : <>
+    {!rows.length ? <div className="rounded-xl border border-border bg-card"><EmptyState icon={FileCsv} title="Carregue o relatório de sinais das ONUs" description="O arquivo é processado e salvo no banco de dados do projeto. Aceita CSV separado por vírgula ou ponto e vírgula." action={{ label: 'Selecionar arquivo CSV', onClick: () => fileRef.current?.click() }} /></div> : <>
       <section className="rounded-xl border border-border bg-card p-3"><div className="flex flex-wrap items-center gap-2">
         <FilterSelect value={filters.cidade ?? ''} onChange={value => setFilters(current => ({ ...current, cidade: value, olt: '', pon: '', slot: '' }))} options={optionList(rows.map(row => row.cidade))} placeholder="Todas as cidades" className="min-w-40" />
         <FilterSelect value={filters.olt ?? ''} onChange={value => setFilters(current => ({ ...current, olt: value, pon: '', slot: '' }))} options={optionList(cityRows.map(row => row.olt))} placeholder="Todas as OLTs" className="min-w-40" />

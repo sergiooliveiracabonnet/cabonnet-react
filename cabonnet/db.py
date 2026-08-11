@@ -5,6 +5,7 @@ cabonnet/db.py — SQLite: persistência de cache e histórico de status.
 
 import hashlib
 import hmac
+import json
 import secrets
 import sqlite3
 import logging
@@ -203,10 +204,94 @@ def _db_init():
                 atualizado_por TEXT NOT NULL DEFAULT ''
             )
         """)
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS signal_imports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_name TEXT NOT NULL,
+                csv_text TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                created_by TEXT NOT NULL DEFAULT ''
+            )
+        """)
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS signal_occurrences (
+                id TEXT PRIMARY KEY,
+                payload TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                updated_by TEXT NOT NULL DEFAULT '',
+                deleted_at TEXT
+            )
+        """)
+        con.execute("CREATE INDEX IF NOT EXISTS idx_signal_occ_updated ON signal_occurrences(updated_at) WHERE deleted_at IS NULL")
         con.commit()
         con.close()
 
     _db_migrate_onda3a_modulos()
+
+
+def _db_sync_signal_occurrences(file_name, csv_text, occurrences, username=""):
+    """Persiste o CSV original e o estado sincronizado da fila na mesma transação."""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        try:
+            cur = con.execute(
+                "INSERT INTO signal_imports(file_name,csv_text,created_at,created_by) VALUES(?,?,?,?)",
+                (str(file_name)[:255], csv_text, now, username),
+            )
+            for item in occurrences:
+                occurrence_id = str(item.get("id", "")).strip()
+                if not occurrence_id:
+                    raise ValueError("Ocorrência sem id")
+                payload = json.dumps(item, ensure_ascii=False, separators=(",", ":"))
+                con.execute("""
+                    INSERT INTO signal_occurrences(id,payload,created_at,updated_at,updated_by,deleted_at)
+                    VALUES(?,?,?,?,?,NULL)
+                    ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,
+                        updated_at=excluded.updated_at, updated_by=excluded.updated_by, deleted_at=NULL
+                """, (occurrence_id, payload, now, now, username))
+            con.commit()
+            return cur.lastrowid
+        except Exception:
+            con.rollback()
+            raise
+        finally:
+            con.close()
+
+
+def _db_list_signal_occurrences():
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        rows = con.execute("SELECT payload FROM signal_occurrences WHERE deleted_at IS NULL ORDER BY created_at, id").fetchall()
+        con.close()
+    return [json.loads(row[0]) for row in rows]
+
+
+def _db_update_signal_occurrence(item, username=""):
+    occurrence_id = str(item.get("id", "")).strip()
+    if not occurrence_id:
+        return False
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    payload = json.dumps(item, ensure_ascii=False, separators=(",", ":"))
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        cur = con.execute(
+            "UPDATE signal_occurrences SET payload=?,updated_at=?,updated_by=? WHERE id=? AND deleted_at IS NULL",
+            (payload, now, username, occurrence_id),
+        )
+        con.commit(); con.close()
+    return cur.rowcount > 0
+
+
+def _db_get_signal_import(import_id):
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        row = con.execute("SELECT id,file_name,csv_text,created_at,created_by FROM signal_imports WHERE id=?", (import_id,)).fetchone()
+        con.close()
+    if not row:
+        return None
+    return {"id": row[0], "file_name": row[1], "csv_text": row[2], "created_at": row[3], "created_by": row[4]}
 
 
 def _db_migrate_onda3a_modulos():

@@ -1442,6 +1442,47 @@ async def get_fornecedor_custo_historico(
     return {"ok": True, "items": _db_list_fornecedor_custo_historico(forn_key)}
 
 
+@router.get("/api/nivel-sinal/ocorrencias")
+async def list_signal_occurrences(_role: str = Depends(_require_modulo("nivel_sinal"))):
+    from cabonnet.db import _db_list_signal_occurrences
+    return {"ok": True, "items": _db_list_signal_occurrences()}
+
+
+@router.post("/api/nivel-sinal/ocorrencias/sync")
+async def sync_signal_occurrences(
+    request: Request,
+    _role: str = Depends(_require_modulo("nivel_sinal")),
+    sess: dict = Depends(_require_session),
+):
+    from cabonnet.db import _db_list_signal_occurrences, _db_sync_signal_occurrences
+    body = await request.json()
+    file_name = str(body.get("file_name", "")).strip()
+    csv_text = body.get("csv_text")
+    occurrences = body.get("occurrences")
+    if not file_name or not isinstance(csv_text, str) or not isinstance(occurrences, list):
+        raise HTTPException(400, "file_name, csv_text e occurrences são obrigatórios")
+    if len(csv_text.encode("utf-8")) > 25 * 1024 * 1024 or len(occurrences) > 100_000:
+        raise HTTPException(413, "Arquivo ou quantidade de ocorrências excede o limite")
+    try:
+        import_id = _db_sync_signal_occurrences(file_name, csv_text, occurrences, sess.get("username") or "")
+    except (TypeError, ValueError) as ex:
+        raise HTTPException(400, str(ex)) from ex
+    return {"ok": True, "import_id": import_id, "items": _db_list_signal_occurrences()}
+
+
+@router.post("/api/nivel-sinal/ocorrencia/update")
+async def update_signal_occurrence(
+    request: Request,
+    _role: str = Depends(_require_modulo("nivel_sinal")),
+    sess: dict = Depends(_require_session),
+):
+    from cabonnet.db import _db_list_signal_occurrences, _db_update_signal_occurrence
+    item = await request.json()
+    if not isinstance(item, dict) or not _db_update_signal_occurrence(item, sess.get("username") or ""):
+        raise HTTPException(404, "Ocorrência não encontrada")
+    return {"ok": True, "items": _db_list_signal_occurrences()}
+
+
 @router.get("/api/justificativas")
 async def list_justificativas(limit: int = 100, _role: str = Depends(_require_auth)):
     from cabonnet.db import _db_list_justificativas

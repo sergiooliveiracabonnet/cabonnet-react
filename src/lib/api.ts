@@ -136,6 +136,14 @@ export const fornecedorConfig = {
     ),
 }
 
+export const signalOccurrencesApi = {
+  list: <T>() => request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/ocorrencias'),
+  sync: <T>(body: { file_name: string; csv_text: string; occurrences: T[] }) =>
+    request<{ ok: boolean; import_id: number; items: T[] }>('/api/nivel-sinal/ocorrencias/sync', { method: 'POST', body: JSON.stringify(body) }),
+  update: <T>(item: T) =>
+    request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/ocorrencia/update', { method: 'POST', body: JSON.stringify(item) }),
+}
+
 export type UserRole = 'gestor' | 'operador' | 'viewer' | 'fornecedor'
 export type FornecedorAcesso = 'WES' | 'Instacable' | 'THM'
 

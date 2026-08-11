@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { ChartBar, CheckCircle, ClipboardText, Wrench } from '@phosphor-icons/react'
+import { ChartBar, CheckCircle, ClipboardText, Funnel, MagnifyingGlass, Wrench, X } from '@phosphor-icons/react'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { FilterSelect } from '../../components/ui/FilterSelect'
@@ -25,13 +25,41 @@ function Field({ label, children, full = false }: { label: string; children: Rea
 
 const inputClass = 'h-10 w-full rounded-lg border border-border bg-surface px-3 text-body text-text outline-none transition-colors focus:border-primary/60 focus:ring-2 focus:ring-primary/15'
 
-interface OcorrenciasSinalProps { occurrences: SignalOccurrence[]; onChange: (occurrences: SignalOccurrence[]) => void }
+interface OcorrenciasSinalProps { occurrences: SignalOccurrence[]; onChange: (occurrences: SignalOccurrence[]) => void | Promise<void> }
 
 export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProps) {
-  const [filter, setFilter] = useState('Todos')
+  const [statusFilter, setStatusFilter] = useState('Ativas')
+  const [severityFilter, setSeverityFilter] = useState('')
+  const [cityFilter, setCityFilter] = useState('')
+  const [oltFilter, setOltFilter] = useState('')
+  const [ponFilter, setPonFilter] = useState('')
+  const [teamFilter, setTeamFilter] = useState('')
+  const [query, setQuery] = useState('')
+  const [order, setOrder] = useState('prioridade')
   const [selected, setSelected] = useState<SignalOccurrence | null>(null)
-  const sorted = useMemo(() => [...occurrences].sort((a, b) => b.date.localeCompare(a.date)), [occurrences])
-  const visible = filter === 'Todos' ? sorted : sorted.filter(item => item.status === filter)
+  const options = (values: string[]) => [...new Set(values.filter(value => value && value !== '—'))]
+    .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true })).map(value => ({ value, label: value }))
+  const visible = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
+    return occurrences.filter(item => {
+      if (statusFilter === 'Ativas' && item.status === 'Concluído') return false
+      if (statusFilter !== 'Ativas' && statusFilter !== 'Todos' && item.status !== statusFilter) return false
+      if (severityFilter && item.severity !== severityFilter) return false
+      if (cityFilter && item.city !== cityFilter) return false
+      if (oltFilter && item.olt !== oltFilter) return false
+      if (ponFilter && item.pon !== ponFilter) return false
+      if (teamFilter && item.team !== teamFilter) return false
+      if (normalizedQuery && ![item.client, item.serial, item.code, item.pppoe, item.region, item.onu].join(' ').toLocaleLowerCase('pt-BR').includes(normalizedQuery)) return false
+      return true
+    }).sort((a, b) => {
+      if (order === 'antigas') return a.date.localeCompare(b.date)
+      if (order === 'recentes') return b.date.localeCompare(a.date)
+      if (order === 'pior-sinal') return a.current - b.current
+      const severity = Number(b.severity === 'Crítico') - Number(a.severity === 'Crítico')
+      return severity || a.date.localeCompare(b.date) || a.current - b.current
+    })
+  }, [occurrences, statusFilter, severityFilter, cityFilter, oltFilter, ponFilter, teamFilter, query, order])
+  const hasCustomFilters = Boolean(severityFilter || cityFilter || oltFilter || ponFilter || teamFilter || query || statusFilter !== 'Ativas' || order !== 'prioridade')
   const concluded = occurrences.filter(item => item.status === 'Concluído').length
   const open = occurrences.length - concluded
   const inWork = occurrences.filter(item => item.status === 'Em atendimento').length
@@ -44,7 +72,11 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
   }), [occurrences])
   const maxDay = Math.max(1, ...days.map(day => day.count))
 
-  function save(event: FormEvent<HTMLFormElement>) {
+  function clearFilters() {
+    setStatusFilter('Ativas'); setSeverityFilter(''); setCityFilter(''); setOltFilter(''); setPonFilter(''); setTeamFilter(''); setQuery(''); setOrder('prioridade')
+  }
+
+  async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     if (!selected) return
@@ -54,7 +86,7 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
       team: String(form.get('team')).trim(), note: String(form.get('note')).trim(),
       updatedAt: new Date().toISOString().slice(0, 10), resolution: status === 'Concluído' ? 'Tratativa manual' : '',
     } : item)
-    onChange(updated); setSelected(null)
+    await onChange(updated); setSelected(null)
   }
 
   return <div className="space-y-4">
@@ -74,8 +106,20 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
       <Card className="p-5"><div className="mb-3 flex items-center justify-between"><h2 className="text-body font-semibold text-text">Situação atual</h2><span className="text-caption text-muted">ao vivo</span></div>{STATUSES.map(status => <div key={status} className="flex items-center justify-between border-b border-border py-3 last:border-0"><SignalBadge status={status} /><strong className="text-subtitle text-text">{occurrences.filter(item => item.status === status).length}</strong></div>)}</Card>
     </div>
 
-    <Card className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><h2 className="text-body font-semibold text-text">Ocorrências recentes</h2><p className="mt-0.5 text-caption text-muted">Dados armazenados somente neste navegador</p></div><FilterSelect ariaLabel="Filtrar por status" value={filter === 'Todos' ? '' : filter} onChange={value => setFilter(value || 'Todos')} placeholder="Todos os status" options={STATUSES.map(status => ({ value: status, label: status }))} className="min-w-48" /></div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[1080px] text-left text-label"><thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>{['Detecção', 'Cliente / ponto', 'OLT / PON / ONU', 'Cidade / bairro', 'Severidade', 'Sinal', 'Equipe', 'Status', 'Ação'].map(label => <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}</tr></thead><tbody>{visible.map(item => <tr key={item.id} className="border-t border-border transition-colors hover:bg-surface/50"><td className="px-4 py-3 text-muted"><span className="block">{new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR')}</span><span className="text-caption">{item.detections} leitura(s){item.missedSnapshots ? ` · ${item.missedSnapshots} ausente(s)` : ''}</span></td><td className="px-4 py-3 font-semibold text-text">{item.client}</td><td className="px-4 py-3 font-mono text-caption text-secondary"><span className="block">{item.olt}</span><span>{item.pon} · ONU {item.onu || '—'}</span></td><td className="px-4 py-3"><span className="block text-text">{item.city}</span><span className="text-caption text-muted">{item.region}</span></td><td className={`px-4 py-3 font-semibold ${item.severity === 'Crítico' ? 'text-red' : 'text-orange'}`}>{item.severity}</td><td className="px-4 py-3 font-mono text-text">{item.before.toFixed(1)}{item.after != null ? <span className="text-green"> → {item.after.toFixed(1)}</span> : item.current !== item.before ? <span className="text-orange"> → {item.current.toFixed(1)}</span> : null}</td><td className="px-4 py-3 text-secondary">{item.team || '—'}</td><td className="px-4 py-3"><SignalBadge status={item.status} /></td><td className="px-4 py-3"><Button variant="ghost" size="sm" aria-label={`Registrar tratativa de ${item.client}`} onClick={() => setSelected(item)}>Tratar</Button></td></tr>)}{!visible.length && <tr><td colSpan={9} className="px-4 py-12 text-center text-muted">{occurrences.length ? 'Nenhuma ocorrência encontrada para este status.' : 'Nenhuma ocorrência registrada.'}</td></tr>}</tbody></table></div>
+    <Card className="p-4"><div className="mb-3 flex flex-wrap items-center gap-2"><div className="flex items-center gap-2 text-label font-semibold text-text"><Funnel size={15} className="text-primary" /> Priorizar tratativas</div><span className="text-caption text-muted">Combine os filtros para montar a próxima frente de trabalho.</span></div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+        <label className="relative sm:col-span-2 xl:col-span-2"><span className="sr-only">Buscar ocorrências</span><MagnifyingGlass size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="search" aria-label="Buscar ocorrências" value={query} onChange={event => setQuery(event.target.value)} placeholder="Cliente, serial, código, PPPoE, bairro…" className="h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-label text-text outline-none placeholder:text-muted focus:border-primary/50" /></label>
+        <FilterSelect ariaLabel="Filtrar por status" value={statusFilter} onChange={setStatusFilter} options={[{ value: 'Ativas', label: 'Somente ativas' }, { value: 'Todos', label: 'Todos os status' }, ...STATUSES.map(status => ({ value: status, label: status }))]} />
+        <FilterSelect ariaLabel="Filtrar por severidade" value={severityFilter} onChange={setSeverityFilter} placeholder="Severidade" options={[{ value: 'Crítico', label: 'Crítico' }, { value: 'Atenção', label: 'Atenção' }]} />
+        <FilterSelect ariaLabel="Filtrar por cidade" value={cityFilter} onChange={value => { setCityFilter(value); setOltFilter(''); setPonFilter('') }} placeholder="Todas as cidades" options={options(occurrences.map(item => item.city))} />
+        <FilterSelect ariaLabel="Filtrar por OLT" value={oltFilter} onChange={value => { setOltFilter(value); setPonFilter('') }} placeholder="Todas as OLTs" options={options(occurrences.filter(item => !cityFilter || item.city === cityFilter).map(item => item.olt))} />
+        <FilterSelect ariaLabel="Filtrar por PON" value={ponFilter} onChange={setPonFilter} placeholder="Todas as PONs" options={options(occurrences.filter(item => (!cityFilter || item.city === cityFilter) && (!oltFilter || item.olt === oltFilter)).map(item => item.pon))} />
+        <FilterSelect ariaLabel="Filtrar por equipe" value={teamFilter} onChange={setTeamFilter} placeholder="Todas as equipes" options={options(occurrences.map(item => item.team))} />
+      </div><div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border pt-3"><FilterSelect ariaLabel="Ordenar ocorrências" value={order} onChange={setOrder} options={[{ value: 'prioridade', label: 'Críticas primeiro' }, { value: 'antigas', label: 'Mais antigas' }, { value: 'recentes', label: 'Mais recentes' }, { value: 'pior-sinal', label: 'Pior sinal' }]} className="min-w-44" /><span className="text-caption text-muted">{visible.length} de {occurrences.length} ocorrências</span>{hasCustomFilters && <Button variant="ghost" size="sm" onClick={clearFilters}><X size={13} /> Limpar filtros</Button>}</div>
+    </Card>
+
+    <Card className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><h2 className="text-body font-semibold text-text">Fila de tratativas</h2><p className="mt-0.5 text-caption text-muted">Ordenada conforme os filtros de priorização</p></div></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[1080px] text-left text-label"><thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>{['Detecção', 'Cliente / ponto', 'OLT / PON / ONU', 'Cidade / bairro', 'Severidade', 'Sinal', 'Equipe', 'Status', 'Ação'].map(label => <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}</tr></thead><tbody>{visible.map(item => <tr key={item.id} className="border-t border-border transition-colors hover:bg-surface/50"><td className="px-4 py-3 text-muted"><span className="block">{new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR')}</span><span className="text-caption">{item.detections} leitura(s){item.missedSnapshots ? ` · ${item.missedSnapshots} ausente(s)` : ''}</span></td><td className="px-4 py-3 font-semibold text-text">{item.client}</td><td className="px-4 py-3 font-mono text-caption text-secondary"><span className="block">{item.olt}</span><span>{item.pon} · ONU {item.onu || '—'}</span></td><td className="px-4 py-3"><span className="block text-text">{item.city}</span><span className="text-caption text-muted">{item.region}</span></td><td className={`px-4 py-3 font-semibold ${item.severity === 'Crítico' ? 'text-red' : 'text-orange'}`}>{item.severity}</td><td className="px-4 py-3 font-mono text-text">{item.before.toFixed(1)}{item.after != null ? <span className="text-green"> → {item.after.toFixed(1)}</span> : item.current !== item.before ? <span className="text-orange"> → {item.current.toFixed(1)}</span> : null}</td><td className="px-4 py-3 text-secondary">{item.team || '—'}</td><td className="px-4 py-3"><SignalBadge status={item.status} /></td><td className="px-4 py-3"><Button variant="ghost" size="sm" aria-label={`Registrar tratativa de ${item.client}`} onClick={() => setSelected(item)}>Tratar</Button></td></tr>)}{!visible.length && <tr><td colSpan={9} className="px-4 py-12 text-center text-muted">{occurrences.length ? 'Nenhuma ocorrência corresponde aos filtros.' : 'Nenhuma ocorrência registrada.'}</td></tr>}</tbody></table></div>
     </Card>
 
     <Modal open={!!selected} onClose={() => setSelected(null)} title="Registrar tratativa" subtitle={selected ? `${selected.client} · leitura inicial ${selected.before.toFixed(1)} dBm` : ''} maxWidth="620px">{selected && <form key={selected.id} onSubmit={save} className="p-6"><div className="grid gap-4 sm:grid-cols-2">

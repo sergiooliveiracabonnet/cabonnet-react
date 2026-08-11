@@ -1,9 +1,14 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import NivelSinalPage from './NivelSinalPage'
 
 describe('NivelSinalPage', () => {
-  beforeEach(() => localStorage.removeItem('cabonnet-sinal-ocorrencias-v2'))
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, options?: RequestInit) => {
+      const body = options?.body ? JSON.parse(String(options.body)) : null
+      return { ok: true, status: 200, headers: new Headers({ 'content-type': 'application/json' }), json: async () => ({ ok: true, items: body?.occurrences ?? (body?.id ? [body] : []), import_id: 1 }) } as Response
+    }))
+  })
 
   it('mantém a análise como aba principal e abre o controle de ocorrências', () => {
     render(<NivelSinalPage />)
@@ -34,6 +39,7 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
     fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'Concluído' } })
     fireEvent.change(screen.getByLabelText('Tratativa realizada'), { target: { value: 'Conector substituído' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar tratativa' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Salvar tratativa' })).not.toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText('Filtrar por status'), { target: { value: 'Concluído' } })
     expect(screen.getByText('Cliente Teste')).toBeInTheDocument()
