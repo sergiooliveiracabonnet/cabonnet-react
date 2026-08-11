@@ -4,6 +4,7 @@ import NivelSinalPage from './NivelSinalPage'
 
 describe('NivelSinalPage', () => {
   beforeEach(() => {
+    vi.stubGlobal('CompressionStream', undefined)
     vi.stubGlobal('fetch', vi.fn(async (_url: string, options?: RequestInit) => {
       const body = options?.body ? JSON.parse(String(options.body)) : null
       return { ok: true, status: 200, headers: new Headers({ 'content-type': 'application/json' }), json: async () => ({ ok: true, items: body?.occurrences ?? (body?.id ? [body] : []), import_id: 1 }) } as Response

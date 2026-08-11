@@ -9,6 +9,7 @@ nos módulos existentes (grafana, cache, builders, telegram, etc.).
 import asyncio
 import base64 as _base64
 import csv
+import gzip
 import io
 import json
 import logging
@@ -463,6 +464,24 @@ async def _access_boundary_middleware(request: Request, call_next):
 # hidden from OpenAPI so existing clients keep working without changes.
 
 router = APIRouter(tags=["v1"])
+
+
+async def _json_body(request: Request, max_bytes: int = 25 * 1024 * 1024):
+    """Lê JSON comum ou gzip com limites antes/depois da descompressão."""
+    if request.headers.get("content-encoding", "").lower() != "gzip":
+        return await request.json()
+    compressed = await request.body()
+    if len(compressed) > 5 * 1024 * 1024:
+        raise HTTPException(413, "Payload comprimido excede o limite")
+    try:
+        raw = gzip.decompress(compressed)
+        if len(raw) > max_bytes:
+            raise HTTPException(413, "Payload descomprimido excede o limite")
+        return json.loads(raw)
+    except HTTPException:
+        raise
+    except (gzip.BadGzipFile, UnicodeDecodeError, json.JSONDecodeError) as ex:
+        raise HTTPException(400, "Payload gzip/JSON inválido") from ex
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -1455,7 +1474,7 @@ async def sync_signal_occurrences(
     sess: dict = Depends(_require_session),
 ):
     from cabonnet.db import _db_list_signal_occurrences, _db_sync_signal_occurrences
-    body = await request.json()
+    body = await _json_body(request)
     file_name = str(body.get("file_name", "")).strip()
     csv_text = body.get("csv_text")
     occurrences = body.get("occurrences")

@@ -20,15 +20,16 @@ function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> 
 
 async function request<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   let res: Response
+  const { headers: optionHeaders, ...requestOptions } = options
   try {
     res = await fetchWithTimeout(`${BASE}${path}`, {
       credentials: 'same-origin',
+      ...requestOptions,
       headers: {
         'Content-Type':  'application/json',
         'X-Request-ID':  crypto.randomUUID(),
-        ...options.headers,
+        ...optionHeaders,
       },
-      ...options,
     })
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
@@ -47,7 +48,7 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
   if (!res.ok) {
     const ct   = res.headers.get('content-type') ?? ''
     const body = ct.includes('application/json') ? await res.json().catch(() => null) : null
-    throw new Error((body as { error?: string; message?: string } | null)?.error ?? (body as { error?: string; message?: string } | null)?.message ?? `${res.status} ${res.statusText}`)
+    throw new Error((body as { error?: string; message?: string; detail?: string } | null)?.error ?? (body as { error?: string; message?: string; detail?: string } | null)?.message ?? (body as { detail?: string } | null)?.detail ?? `${res.status} ${res.statusText}`)
   }
   return res.json() as Promise<T>
 }
@@ -136,10 +137,17 @@ export const fornecedorConfig = {
     ),
 }
 
+async function compressedRequest<T>(path: string, body: unknown): Promise<T> {
+  if (typeof CompressionStream === 'undefined') return request<T>(path, { method: 'POST', body: JSON.stringify(body) })
+  const source = new Blob([JSON.stringify(body)], { type: 'application/json' })
+  const compressed = await new Response(source.stream().pipeThrough(new CompressionStream('gzip'))).blob()
+  return request<T>(path, { method: 'POST', headers: { 'Content-Encoding': 'gzip' }, body: compressed })
+}
+
 export const signalOccurrencesApi = {
   list: <T>() => request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/ocorrencias'),
   sync: <T>(body: { file_name: string; csv_text: string; occurrences: T[] }) =>
-    request<{ ok: boolean; import_id: number; items: T[] }>('/api/nivel-sinal/ocorrencias/sync', { method: 'POST', body: JSON.stringify(body) }),
+    compressedRequest<{ ok: boolean; import_id: number; items: T[] }>('/api/nivel-sinal/ocorrencias/sync', body),
   update: <T>(item: T) =>
     request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/ocorrencia/update', { method: 'POST', body: JSON.stringify(item) }),
 }
