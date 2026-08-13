@@ -30,7 +30,23 @@ def test_fila_compartilhada_respeita_cidades_e_status():
 
 
 def test_permissoes_de_fornecedor_sao_fixas():
-    assert db._db_get_permissoes("fornecedor") == ["dashboard", "ordens", "graficos", "fornecedor"]
+    assert db._db_get_permissoes("fornecedor") == ["dashboard", "ordens", "graficos", "cidades", "fornecedor"]
+
+
+def test_filtro_do_fornecedor_expoe_apenas_cidades_em_que_atua():
+    csv_text = (
+        "numos,nomedaequipe,descsituacao,nomedacidade\n"
+        "0000001,EQUIPE F08,Agendado,PINDAMONHANGABA\n"
+        "0000002,EQUIPE F01,Agendado,SAO JOSE DOS CAMPOS\n"
+        "0000003,EQUIPE F99,Pendente,PINDAMONHANGABA\n"
+        "0000004,EQUIPE F99,Pendente,TAUBATE\n"
+    )
+
+    wes = _filter_csv_fornecedor(csv_text, "WES")
+
+    assert "PINDAMONHANGABA" in wes
+    assert "SAO JOSE DOS CAMPOS" not in wes
+    assert "TAUBATE" not in wes
 
 
 def test_fornecedor_e_bloqueado_por_padrao_em_rotas_internas():
