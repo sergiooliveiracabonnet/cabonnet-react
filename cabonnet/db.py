@@ -35,7 +35,7 @@ _DEFAULT_OPERADOR_MODULOS = [
     "erp_planner", "erp_fila", "erp_ranking",
 ]
 _DEFAULT_VIEWER_MODULOS = ["dashboard", "graficos", "cidades", "mapa"]
-_FORNECEDOR_MODULOS = ["dashboard", "ordens", "graficos", "fornecedor"]
+_FORNECEDOR_MODULOS = ["dashboard", "ordens", "graficos", "cidades", "fornecedor"]
 
 # Onda 3a (2026-07): erp_produtividade fundido em erp_planner, erp_acao removido
 # (redirect pra dashboard). Mapa usado por _db_migrate_onda3a_modulos() pra
