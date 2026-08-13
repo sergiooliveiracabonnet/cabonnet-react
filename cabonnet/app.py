@@ -19,6 +19,7 @@ import re
 import threading
 import time as _time_mod
 import unicodedata
+import zlib
 from contextlib import asynccontextmanager
 from datetime import datetime, date
 from pathlib import Path
@@ -1486,6 +1487,9 @@ async def sync_signal_occurrences(
         import_id = _db_sync_signal_occurrences(file_name, csv_text, occurrences, sess.get("username") or "")
     except (TypeError, ValueError) as ex:
         raise HTTPException(400, str(ex)) from ex
+    except Exception as ex:
+        log.exception("[NívelSinal] Falha ao persistir importação (arquivo=%s)", file_name)
+        raise HTTPException(500, f"Falha ao salvar a importação: {ex}") from ex
     return {"ok": True, "import_id": import_id, "items": _db_list_signal_occurrences()}
 
 
@@ -1510,12 +1514,17 @@ async def sync_signal_occurrences_chunk(
     chunk = await request.body()
     if not chunk or len(chunk) > 512 * 1024:
         raise HTTPException(413, "Bloco vazio ou maior que 512 KB")
-    complete = _db_store_signal_import_chunk(upload_id, chunk_index, chunk_total, chunk, sess.get("username") or "")
+    try:
+        complete = _db_store_signal_import_chunk(upload_id, chunk_index, chunk_total, chunk, sess.get("username") or "")
+    except Exception as ex:
+        log.exception("[NívelSinal] Falha ao guardar bloco %d/%d (upload=%s)", chunk_index + 1, chunk_total, upload_id)
+        raise HTTPException(500, f"Falha ao guardar o bloco da importação: {ex}") from ex
     if complete is None:
         return {"ok": True, "complete": False, "received": chunk_index + 1}
     if len(complete) > 5 * 1024 * 1024:
         _db_delete_signal_import_chunks(upload_id)
         raise HTTPException(413, "Payload comprimido excede o limite")
+    file_name = ""
     try:
         if request.headers.get("x-payload-encoding", "").lower() == "gzip":
             complete = gzip.decompress(complete)
@@ -1530,10 +1539,17 @@ async def sync_signal_occurrences_chunk(
         import_id = _db_sync_signal_occurrences(file_name, csv_text, occurrences, sess.get("username") or "")
     except HTTPException:
         raise
-    except (gzip.BadGzipFile, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as ex:
+    except (gzip.BadGzipFile, EOFError, zlib.error, UnicodeDecodeError,
+            json.JSONDecodeError, TypeError, ValueError) as ex:
         raise HTTPException(400, str(ex) or "Payload de importação inválido") from ex
+    except Exception as ex:
+        log.exception("[NívelSinal] Falha ao persistir importação (upload=%s arquivo=%s)", upload_id, file_name)
+        raise HTTPException(500, f"Falha ao salvar a importação: {ex}") from ex
     finally:
-        _db_delete_signal_import_chunks(upload_id)
+        try:
+            _db_delete_signal_import_chunks(upload_id)
+        except Exception:
+            log.exception("[NívelSinal] Falha ao limpar blocos do upload %s", upload_id)
     return {"ok": True, "complete": True, "import_id": import_id, "items": _db_list_signal_occurrences()}
 
 

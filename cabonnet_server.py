@@ -39,9 +39,16 @@ from cabonnet.backup_app import backup_app
 import uvicorn
 
 
+# log_config=None: sem isso o uvicorn instala os próprios handlers com
+# propagate=False, e todo traceback de exceção não tratada (logger
+# "uvicorn.error") sai só no stderr — que o modo produção do servidor.js
+# descarta (stdio: 'ignore'). O 500 vira mudo e não sobra rastro no log.
+# access_log fica desligado de propósito: o volume de /events e polling
+# encheria os 10 MB de rotação e empurraria o histórico útil pra fora.
 def _run_backup_server():
     try:
-        uvicorn.run(backup_app, host="localhost", port=PORT_BACKUP, log_level="warning")
+        uvicorn.run(backup_app, host="localhost", port=PORT_BACKUP, log_level="warning",
+                    log_config=None, access_log=False)
     except OSError as ex:
         if "10048" in str(ex) or "Address already in use" in str(ex):
             log.error("[Backup] ERRO: porta %d já em uso.", PORT_BACKUP)
@@ -81,7 +88,8 @@ if __name__ == "__main__":
         else:
             log.info("  Telegram      : não configurado (defina TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID no .env)")
 
-        uvicorn.run(app, host="localhost", port=PORT, log_level="info")
+        uvicorn.run(app, host="localhost", port=PORT, log_level="info",
+                    log_config=None, access_log=False)
 
     except KeyboardInterrupt:
         log.info("Servidor encerrado.")

@@ -1,6 +1,8 @@
 from unittest.mock import patch
 import gzip
 import json
+import logging
+import sqlite3
 
 from cabonnet import db
 
@@ -68,3 +70,57 @@ def test_api_monta_importacao_comprimida_em_blocos(client, tmp_path):
     assert all(response.json().get("complete") is False for response in responses[:-1])
     assert responses[-1].json()["complete"] is True
     assert responses[-1].json()["items"][0]["id"] == "occ-chunk"
+
+
+def test_api_explica_falha_de_banco_ao_guardar_bloco(client, tmp_path, caplog):
+    """Erro de infraestrutura ao guardar o bloco não pode virar 500 mudo: o
+    usuário precisa de uma mensagem e o traceback precisa cair no log."""
+    db_path = str(tmp_path / "cabonnet_signal_chunk_falha.db")
+    with patch("cabonnet.db._DB_PATH", db_path):
+        db._db_init()
+        with patch("cabonnet.db._db_store_signal_import_chunk",
+                   side_effect=sqlite3.OperationalError("no such table: signal_import_chunks")):
+            with caplog.at_level(logging.ERROR):
+                response = client.post(
+                    "/api/nivel-sinal/ocorrencias/sync/chunk",
+                    content=b"bloco",
+                    headers={
+                        "Content-Type": "application/octet-stream",
+                        "X-Upload-ID": "upload-falha-1",
+                        "X-Chunk-Index": "0",
+                        "X-Chunk-Total": "1",
+                        "X-Payload-Encoding": "gzip",
+                    },
+                )
+
+    assert response.status_code == 500
+    assert "signal_import_chunks" in response.json()["detail"]
+    assert any("upload-falha-1" in record.getMessage() for record in caplog.records)
+
+
+def test_api_explica_falha_de_banco_ao_persistir_ocorrencias(client, tmp_path):
+    """Mesma garantia no fim do fluxo: falha ao gravar as ocorrências deve
+    chegar ao frontend como mensagem, não como 500 sem corpo."""
+    db_path = str(tmp_path / "cabonnet_signal_persist_falha.db")
+    payload = {"file_name": "s.csv", "csv_text": "Cidade;RX dBm\nTaubaté;-30", "occurrences": [
+        {"id": "occ-falha", "status": "Aberto"},
+    ]}
+    compressed = gzip.compress(json.dumps(payload).encode("utf-8"))
+    with patch("cabonnet.db._DB_PATH", db_path):
+        db._db_init()
+        with patch("cabonnet.db._db_sync_signal_occurrences",
+                   side_effect=sqlite3.OperationalError("database is locked")):
+            response = client.post(
+                "/api/nivel-sinal/ocorrencias/sync/chunk",
+                content=compressed,
+                headers={
+                    "Content-Type": "application/octet-stream",
+                    "X-Upload-ID": "upload-falha-2",
+                    "X-Chunk-Index": "0",
+                    "X-Chunk-Total": "1",
+                    "X-Payload-Encoding": "gzip",
+                },
+            )
+
+    assert response.status_code == 500
+    assert "database is locked" in response.json()["detail"]
