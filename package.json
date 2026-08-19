@@ -37,6 +37,7 @@
     "react-router-dom": "7.11.0",
     "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1",
+    "three": "^0.180.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -51,6 +52,7 @@
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.180.0",
     "@typescript-eslint/eslint-plugin": "^8.65.0",
     "@typescript-eslint/parser": "^8.65.0",
     "@vitejs/plugin-react": "^6.0.1",

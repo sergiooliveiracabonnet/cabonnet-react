@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Lightning, ShieldCheck, ArrowsClockwise, Users, Stack, Clipboard, GitMerge, Trash, Pulse, Clock, WarningCircle, Sparkle } from '@phosphor-icons/react'
+import { Lightning, ShieldCheck, ArrowsClockwise, Users, Stack, Clipboard, GitMerge, Trash, Pulse, Clock, WarningCircle, Sparkle, CubeTransparent } from '@phosphor-icons/react'
 import type { OSRow } from '../../lib/types'
 import { AreaChart, Area, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/line-chart'
 import { api, endpoints } from '../../lib/api'
@@ -21,6 +21,10 @@ import {
   type HistoricoSnap, type JuniperKpis, type JuniperHero,
 } from './JuniperComponents'
 
+// Three.js entra so quando o operador abre a topologia — mantem o bundle
+// das demais rotas intacto.
+const JuniperTopology3D = lazy(() => import('./topology/JuniperTopology3D'))
+
 const HISTORY_KEY = 'juniper_historico'
 const MAX_SNAPS   = 500
 
@@ -30,6 +34,7 @@ export default function JuniperPage() {
   const cluster = 'Vale'
   const [expandedSnap, setExpandedSnap] = useState<string | null>(null)
   const [aiEnabled,    setAiEnabled]    = useState(false)
+  const [show3D,       setShow3D]       = useState(false)
   const [historico,    setHistorico]    = useState<HistoricoSnap[]>(
     () => storage.getJSON<HistoricoSnap[]>(HISTORY_KEY, [])
   )
@@ -307,10 +312,26 @@ export default function JuniperPage() {
       {/* ── Distribuição por interface ── */}
       {interfaces.length > 0 && (
         <>
-          <SectionTitle icon={Stack}>Origem das Conexões Ativas</SectionTitle>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <SectionTitle icon={Stack} className="mb-0">Origem das Conexões Ativas</SectionTitle>
+            <Button variant="outline" size="sm" onClick={() => setShow3D(v => !v)} className="mt-6 mb-3">
+              <CubeTransparent size={11} /> {show3D ? 'Ocultar topologia 3D' : 'Ver topologia 3D'}
+            </Button>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {interfaces.map(iface => <InterfaceCard key={iface.nome} iface={iface} maxIface={maxIface} />)}
           </div>
+
+          {show3D && (
+            <Suspense fallback={
+              <div className="h-[520px] rounded-xl bg-card border border-white/[0.08]
+                              flex items-center justify-center text-caption text-muted">
+                Carregando renderizador 3D…
+              </div>
+            }>
+              <JuniperTopology3D clientes={clientes} cluster={cluster} />
+            </Suspense>
+          )}
         </>
       )}
 
