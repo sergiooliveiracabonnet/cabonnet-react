@@ -107,12 +107,13 @@ export function StatCard({
   if (size === 'sm') {
     return (
       <div
+        data-ui="stat-card"
         {...interactive}
         style={{
           animationDelay: `${delay}ms`,
           borderLeft: outlined && statusColor ? `2px solid ${statusColor}` : undefined,
         }}
-        className={`relative rounded-lg p-3 text-center animate-card-enter
+        className={`metric-panel relative min-h-[104px] rounded-lg p-3 text-center animate-card-enter flex flex-col justify-center
                     ${outlined
                       ? 'border border-border bg-card shadow-[0_8px_24px_rgba(0,0,0,0.14)] transition-colors duration-200 hover:border-primary/30'
                       : 'bg-bg'}
@@ -132,10 +133,11 @@ export function StatCard({
 
   return (
     <div
+      data-ui="stat-card"
       {...interactive}
       style={{ animationDelay: `${delay}ms`,
                borderLeft: statusColor ? `2px solid ${statusColor}` : undefined }}
-      className={`relative rounded-md border border-border bg-card p-4 animate-card-enter
+      className={`metric-panel relative min-h-[148px] rounded-xl border border-border bg-card p-4 animate-card-enter
                   transition-colors duration-150 hover:border-muted/40
                   ${onClick ? `cursor-pointer ${FOCUS_RING}` : ''} ${className}`}
     >

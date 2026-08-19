@@ -8,8 +8,10 @@ afterEach(cleanup)
 
 describe('Card interativo', () => {
   it('sem onClick não é botão', () => {
-    render(<Card>conteúdo</Card>)
+    const { container } = render(<Card>conteúdo</Card>)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(container.firstChild).toHaveAttribute('data-ui', 'card')
+    expect(container.firstChild).toHaveClass('surface-panel')
   })
   it('com onClick é botão acessível', () => {
     const onClick = vi.fn()

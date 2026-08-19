@@ -22,9 +22,10 @@ export function Card({ children, className = '', onClick }: CardProps) {
     : {}
   return (
     <div
+      data-ui="card"
       onClick={onClick}
       {...a11y}
-      className={`rounded-xl bg-card border border-white/[0.08] card-premium
+      className={`surface-panel rounded-xl bg-card border border-border card-premium
                   ${interactive
                     ? `cursor-pointer hover:bg-card-high hover:border-muted/30 hover:shadow-md active:scale-[.995]
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40`

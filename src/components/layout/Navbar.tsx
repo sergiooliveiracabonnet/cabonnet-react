@@ -29,7 +29,7 @@ const ROUTE_LABELS: Record<string, string> = {
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
 export function Navbar() {
-  const { toggleSidebar } = useUIStore()
+  const { sidebarOpen, toggleSidebar } = useUIStore()
   const location = useLocation()
   const { allRows, rows } = useOSDerived()
 
@@ -70,7 +70,8 @@ export function Navbar() {
 
   return (
     <>
-    <header className="navbar-premium fixed left-0 right-0 top-0 z-header flex h-14 max-w-full items-center gap-1.5 px-2 sm:gap-3 sm:px-4">
+    <header className={`navbar-premium fixed left-0 right-0 top-0 z-header flex h-16 max-w-full items-center gap-1.5 px-2 transition-[left] duration-200 sm:gap-3 sm:px-4
+                        ${sidebarOpen ? 'md:left-[248px]' : 'md:left-[64px]'}`}>
       <button
         onClick={toggleSidebar}
         className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg sm:h-8 sm:w-8
@@ -82,7 +83,8 @@ export function Navbar() {
       </button>
       <div className="hidden h-5 w-px flex-shrink-0 bg-border sm:block" />
       <div className="flex-1 min-w-0">
-        <h1 className="font-headline font-bold text-text text-title leading-none tracking-tight truncate">
+        <p className="mb-0.5 hidden text-[10px] font-bold uppercase tracking-[0.14em] text-muted sm:block">Cabonnet · Operações</p>
+        <h1 className="font-headline font-bold text-text text-title leading-none tracking-[-0.015em] truncate">
           {title}
         </h1>
       </div>

@@ -45,7 +45,7 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onN
   return (
     <div
       ref={ref}
-      className="relative mx-2 my-px"
+      className="relative mx-2.5 my-0.5"
       onMouseEnter={() => {
         if (sidebarOpen || !ref.current) return
         const r = ref.current.getBoundingClientRect()
@@ -58,10 +58,10 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onN
         end={to === '/'}
         onClick={onNavigate}
         className={({ isActive }) =>
-          `nav-link-${groupKey} flex min-h-11 items-center gap-3 rounded-lg border-l-2 py-3 pl-3 pr-2.5
-           md:min-h-0 md:py-[7px]
+          `nav-link-${groupKey} flex min-h-11 items-center gap-3 rounded-lg border py-3 pl-3 pr-2.5
+           md:min-h-0 md:py-2
            transition-colors duration-150 text-label font-medium
-           ${isActive ? 'active' : 'border-transparent text-muted hover:text-secondary'}`
+           ${isActive ? 'active' : 'border-transparent text-muted hover:text-text'}`
         }
       >
         {({ isActive }) => (
@@ -146,50 +146,49 @@ export function Sidebar() {
   return (
     <aside
       aria-label="Navegação principal"
-      className={`sidebar-premium fixed left-0 top-0 z-[400] flex h-full w-[min(86vw,280px)]
+      className={`sidebar-premium fixed left-0 top-0 z-[400] flex h-full w-[min(88vw,300px)]
                   select-none flex-col overflow-hidden transition-[width,transform] duration-200 md:z-sidebar
                   ${sidebarOpen
-                    ? 'translate-x-0 md:w-[224px]'
-                    : '-translate-x-full md:w-[52px] md:translate-x-0'}`}
+                    ? 'translate-x-0 md:w-[248px]'
+                    : '-translate-x-full md:w-[64px] md:translate-x-0'}`}
     >
       {/* ── Logo / Branding ── */}
-      <div className={`relative flex-shrink-0 flex items-center h-[56px]
-                       border-b border-white/[0.08]
+      <div className={`relative flex-shrink-0 flex items-center h-[64px]
+                       border-b border-border
                        ${sidebarOpen ? 'gap-3 px-4' : 'justify-center'}`}>
         <div
-          className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
+          className="brand-mark w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center"
           style={{
-            background: 'linear-gradient(135deg, #3b82f6 0%, #22d3ee 100%)',
-            boxShadow:  '0 0 0 1px rgba(59,130,246,0.4), 0 2px 8px rgba(59,130,246,0.25)',
+            background: 'linear-gradient(145deg, #2563eb 0%, #1d4ed8 100%)',
+            boxShadow:  '0 0 0 1px rgba(96,165,250,0.28), 0 8px 24px rgba(29,78,216,0.24)',
           }}
         >
           <LogoIcon className="w-[17px] h-[17px]" style={{ filter: 'brightness(0) invert(1)' }} />
         </div>
         {sidebarOpen && (
           <div className="flex flex-col leading-none min-w-0">
-            <span className="font-headline font-bold text-title tracking-wide text-text">
+            <span className="font-headline font-extrabold text-title tracking-[0.08em] text-text">
               CABONNET
             </span>
             <span className="text-caption font-medium text-muted mt-0.5">
-              ISP Operations
+              Central de operações
             </span>
           </div>
         )}
       </div>
 
       {/* ── Navigation ── */}
-      <nav className="flex-1 py-2 overflow-y-auto overflow-x-hidden">
+      <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden">
         {groups.map((group, gi) => (
           <div key={group.key} className={gi > 0 ? 'mt-1' : ''}>
             {sidebarOpen ? (
-              <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
+              <div className="flex items-center gap-2 px-4 pt-4 pb-1.5">
                 <div
-                  className="w-1 h-3 rounded-full flex-shrink-0"
-                  style={{ background: group.color }}
+                  className="w-1 h-1 rounded-full flex-shrink-0 bg-primary"
                 />
                 <span
                   className="text-caption font-semibold uppercase tracking-[0.07em]"
-                  style={{ color: group.color + 'aa' }}
+                  style={{ color: 'rgb(var(--c-muted))' }}
                 >
                   {group.label}
                 </span>

@@ -5,13 +5,16 @@ import { PageHeader } from './PageHeader'
 
 describe('PageHeader', () => {
   it('renderiza título como heading e descrição', () => {
-    render(<PageHeader title="Ordens de Serviço" description="Fila ativa do período" />)
+    const { container } = render(<PageHeader title="Ordens de Serviço" description="Fila ativa do período" />)
     expect(screen.getByRole('heading', { name: 'Ordens de Serviço' })).toBeInTheDocument()
     expect(screen.getByText('Fila ativa do período')).toBeInTheDocument()
+    expect(container.firstChild).toHaveAttribute('data-ui', 'page-header')
+    expect(container.firstChild).toHaveClass('page-header')
   })
   it('renderiza slot de ações', () => {
-    render(<PageHeader title="X" actions={<button>Exportar</button>} />)
+    const { container } = render(<PageHeader title="X" actions={<button>Exportar</button>} />)
     expect(screen.getByRole('button', { name: 'Exportar' })).toBeInTheDocument()
+    expect(container.querySelector('[data-ui="page-header-actions"]')).toHaveClass('w-full', 'sm:w-auto')
   })
   it('renderiza o ícone antes do título quando fornecido', () => {
     const { container } = render(<PageHeader title="Ranking de Técnicos" icon={Trophy} />)

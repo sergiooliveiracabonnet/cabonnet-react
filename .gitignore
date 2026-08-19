@@ -17,6 +17,7 @@ dist-ssr
 .env
 .env.production
 coverage/
+test-results/
 
 # Python server
 __pycache__/

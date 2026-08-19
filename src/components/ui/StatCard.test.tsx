@@ -24,10 +24,13 @@ describe('accentToTone', () => {
 
 describe('StatCard', () => {
   it('renderiza título, valor e sub', () => {
-    render(<StatCard title="Total OS" value={42} sub="no período" />)
+    const { container } = render(<StatCard title="Total OS" value={42} sub="no período" />)
     expect(screen.getByText('Total OS')).toBeInTheDocument()
     expect(screen.getByText('42')).toBeInTheDocument()
     expect(screen.getByText('no período')).toBeInTheDocument()
+    expect(container.firstChild).toHaveAttribute('data-ui', 'stat-card')
+    expect(container.firstChild).toHaveClass('metric-panel')
+    expect(container.firstChild).toHaveClass('min-h-[148px]')
   })
 
   it('renderiza ícone quando fornecido', () => {
@@ -85,8 +88,9 @@ describe('StatCard', () => {
   })
 
   it('size sm renderiza tile compacto', () => {
-    render(<StatCard title="Total" value={99} size="sm" />)
+    const { container } = render(<StatCard title="Total" value={99} size="sm" />)
     expect(screen.getByText('99')).toBeInTheDocument()
+    expect(container.firstChild).toHaveClass('min-h-[104px]')
   })
 
   it('size sm outlined mantém superfície e borda visíveis', () => {
