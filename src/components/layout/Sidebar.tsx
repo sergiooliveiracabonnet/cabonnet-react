@@ -159,7 +159,7 @@ export function Sidebar() {
         <div
           className="brand-mark w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center"
           style={{
-            background: 'linear-gradient(145deg, #2563eb 0%, #1d4ed8 100%)',
+            background: 'linear-gradient(145deg, rgb(var(--c-primary)) 0%, rgb(var(--c-primary-dark)) 100%)',
             boxShadow:  '0 0 0 1px rgba(96,165,250,0.28), 0 8px 24px rgba(29,78,216,0.24)',
           }}
         >
