@@ -14,7 +14,8 @@ export interface AIReincidenciaAnalysis {
 export function useAIReincidencias(pares: ReincidenciaPair[], enabled: boolean) {
   const batches = useMemo(() => {
     const result: ReincidenciaPair[][] = []
-    for (let i = 0; i < pares.length; i += 25) result.push(pares.slice(i, i + 25))
+    // Dez pares mantêm a resposta JSON dentro do limite de tokens do endpoint.
+    for (let i = 0; i < pares.length; i += 10) result.push(pares.slice(i, i + 10))
     return result
   }, [pares])
   const queries = useQueries({
@@ -44,5 +45,6 @@ export function useAIReincidencias(pares: ReincidenciaPair[], enabled: boolean) 
     data,
     isFetching: queries.some(q => q.isFetching),
     isError: queries.some(q => q.isError),
+    errorMessage: queries.find(q => q.error)?.error?.message ?? null,
   }
 }

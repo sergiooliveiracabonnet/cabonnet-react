@@ -5,7 +5,8 @@ import { useOSDerived } from '../../contexts/OSDataContext'
 import { buildChurn } from '../../lib/builders/churn'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { useAIReincidencias } from '../../hooks/useAIReincidencias'
-import { buildReincidenciaPairs, filterReincidentes, getOSObservation, sortedClientRows } from './reincidenciasReport'
+import { useReincidenciaDetails } from '../../hooks/useReincidenciaDetails'
+import { buildReincidenciaPairs, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
 import { exportReincidenciasPDF } from './reincidenciasPDF'
 
 const FORNECEDORES = ['WES', 'Instacable', 'THM', 'REDE', 'MANUTENCAO', 'INTERNO', 'OUTRO']
@@ -17,10 +18,13 @@ export default function ReincidenciasPage() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [aiEnabled, setAIEnabled] = useState(false)
   const churn = useMemo(() => buildChurn(allRows, Number.POSITIVE_INFINITY), [allRows])
+  const reportOSNumbers = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => r.numos)))], [churn.clientes])
+  const { data: observations, isLoading: observationsLoading, isError: observationsError } = useReincidenciaDetails(reportOSNumbers)
+  const detailedClients = useMemo(() => mergeOSObservations(churn.clientes, observations), [churn.clientes, observations])
   const equipes = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => shortEquipe(r.nomedaequipe).split(' - ')[0])))].filter(v => v && v !== '—').sort(), [churn.clientes])
-  const clientes = useMemo(() => filterReincidentes(churn.clientes, { fornecedor, equipe }), [churn.clientes, fornecedor, equipe])
+  const clientes = useMemo(() => filterReincidentes(detailedClients, { fornecedor, equipe }), [detailedClients, fornecedor, equipe])
   const pares = useMemo(() => buildReincidenciaPairs(clientes), [clientes])
-  const { data: analysis, isFetching: aiLoading, isError: aiError } = useAIReincidencias(pares, aiEnabled)
+  const { data: analysis, isFetching: aiLoading, isError: aiError, errorMessage } = useAIReincidencias(pares, aiEnabled)
   const osCount = clientes.reduce((sum, c) => sum + c.rows.length, 0)
   const avgGap = clientes.length ? Math.round(clientes.reduce((sum, c) => sum + c.intervaloMedio, 0) / clientes.length * 10) / 10 : 0
   const resetAI = (setter: (value: string) => void) => (value: string) => { setter(value); setAIEnabled(false) }
@@ -52,12 +56,13 @@ export default function ReincidenciasPage() {
       <section className="rounded-xl border border-primary/25 bg-primary/5 p-4 sm:p-5" aria-labelledby="ai-title">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><h2 id="ai-title" className="flex items-center gap-2 text-body font-bold text-text"><Brain size={18} className="text-primary" /> Diagnóstico objetivo da IA</h2><p className="mt-1 text-caption text-secondary">Compara cada atendimento com a visita seguinte e aponta causa provável e pendência.</p></div>
-          <button type="button" disabled={!pares.length || aiLoading} onClick={() => setAIEnabled(true)} className="min-h-11 cursor-pointer rounded-lg border border-primary/30 bg-primary/10 px-4 text-label font-semibold text-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
-            {aiLoading ? 'Analisando…' : analysis ? 'Atualizar análise' : 'Gerar análise com IA'}
+          <button type="button" disabled={!pares.length || aiLoading || observationsLoading || observationsError} onClick={() => setAIEnabled(true)} className="min-h-11 cursor-pointer rounded-lg border border-primary/30 bg-primary/10 px-4 text-label font-semibold text-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+            {observationsLoading ? 'Carregando observações…' : aiLoading ? 'Analisando…' : analysis ? 'Atualizar análise' : 'Gerar análise com IA'}
           </button>
         </div>
         {analysis && <div className="mt-4 space-y-3"><p className="text-body leading-relaxed text-text">{analysis.narrativa}</p><div className="flex flex-wrap gap-2">{analysis.causas_distribuicao.map(c => <span key={c.causa} className="rounded-full border border-border bg-card px-3 py-1 text-caption text-secondary">{c.causa}: <b className="text-text">{c.count}</b> ({c.pct}%)</span>)}</div></div>}
-        {aiError && <p className="mt-3 text-label text-red">A IA não respondeu. O relatório detalhado e o PDF continuam disponíveis com os dados objetivos.</p>}
+        {observationsError && <p className="mt-3 text-label text-red">Não foi possível carregar as observações das OS. Atualize a página e tente novamente.</p>}
+        {aiError && <p className="mt-3 text-label text-red">A IA não respondeu: {errorMessage || 'erro desconhecido'}. O relatório detalhado e o PDF continuam disponíveis.</p>}
       </section>
 
       <section className="space-y-3" aria-label="Clientes e ordens reincidentes">

@@ -15,17 +15,19 @@ export function createRequestId() {
   return `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
 }
 
-function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = TIMEOUT_MS): Promise<Response> {
   const ctrl = new AbortController()
-  const tid  = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
+  const tid  = setTimeout(() => ctrl.abort(), timeoutMs)
   return fetch(url, { ...options, signal: ctrl.signal })
     .then(res  => { clearTimeout(tid); return res })
     .catch(err => { clearTimeout(tid); throw err })
 }
 
-async function request<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+interface RequestOptions extends RequestInit { timeoutMs?: number }
+
+async function request<T = unknown>(path: string, options: RequestOptions = {}): Promise<T> {
   let res: Response
-  const { headers: optionHeaders, ...requestOptions } = options
+  const { headers: optionHeaders, timeoutMs, ...requestOptions } = options
   try {
     res = await fetchWithTimeout(`${BASE}${path}`, {
       credentials: 'same-origin',
@@ -35,12 +37,13 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
         'X-Request-ID':  createRequestId(),
         ...optionHeaders,
       },
-    })
+    }, timeoutMs)
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
-      const msg = `Timeout (${path}): servidor não respondeu em 35s`
+      const seconds = Math.round((timeoutMs ?? TIMEOUT_MS) / 1000)
+      const msg = `Timeout (${path}): servidor não respondeu em ${seconds}s`
       console.error('[api]', msg)
-      throw new Error('Timeout: o servidor não respondeu em 35 segundos', { cause: err })
+      throw new Error(`Timeout: o servidor não respondeu em ${seconds} segundos`, { cause: err })
     }
     console.error('[api] Erro de rede:', path, err)
     throw err
@@ -245,7 +248,7 @@ export const ai = {
   planner:           (payload: unknown) => request('/ai/planner',              { method: 'POST', body: JSON.stringify(payload) }),
   juniperCorrelacao:     (payload: unknown) => request('/ai/juniper-correlacao',    { method: 'POST', body: JSON.stringify(payload) }),
   nivelSinal:            (payload: unknown) => request('/ai/nivel-sinal',           { method: 'POST', body: JSON.stringify(payload) }),
-  revisitasCausa:        (payload: unknown) => request('/ai/revisitas-causa',       { method: 'POST', body: JSON.stringify(payload) }),
+  revisitasCausa:        (payload: unknown) => request('/ai/revisitas-causa',       { method: 'POST', body: JSON.stringify(payload), timeoutMs: 75_000 }),
   justificativaBacklog:  (payload: unknown) => request('/ai/justificativa-backlog', { method: 'POST', body: JSON.stringify(payload) }),
   chat: (messages: { role: string; content: string }[]) => request<{ ok: boolean; response: string; tool_calls: string[] }>('/ai/chat', { method: 'POST', body: JSON.stringify({ messages }) }),
 }

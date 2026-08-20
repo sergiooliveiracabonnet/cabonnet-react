@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ClienteReincidente } from '../../lib/builders/churn'
 import type { OSRow } from '../../lib/types'
-import { buildReincidenciaPairs, filterReincidentes, getOSObservation } from './reincidenciasReport'
+import { buildReincidenciaPairs, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
 
 const row = (numos: string, equipe: string, fornecedor: OSRow['_fornecedor'], data: string, obs = '') => ({
   numos, nomedaequipe: equipe, _fornecedor: fornecedor, dataexecucao: data, databaixa: '', obs,
@@ -34,6 +34,14 @@ describe('relatório de reincidências', () => {
 
   it('usa todos os campos conhecidos de observação com fallback objetivo', () => {
     expect(getOSObservation({ observacoes: 'texto principal', obs: 'legado' } as unknown as OSRow)).toBe('texto principal')
+    expect(getOSObservation({ observacaocritica: 'texto crítico' } as unknown as OSRow)).toBe('texto crítico')
     expect(getOSObservation({ obs: '' } as unknown as OSRow)).toBe('Sem observação registrada')
+  })
+
+  it('incorpora as observações pesadas retornadas pelo endpoint em lote', () => {
+    const original = cliente([row('1', 'INST F08', 'WES', '01/08/2026')])
+    const [merged] = mergeOSObservations([original], { '1': { observacoes: 'Executado em campo', observacaocritica: 'Atenção' } })
+    expect(getOSObservation(merged.rows[0])).toBe('Executado em campo')
+    expect(original.rows[0].observacoes).toBeUndefined()
   })
 })

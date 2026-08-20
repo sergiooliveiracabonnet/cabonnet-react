@@ -6,7 +6,7 @@ import { shortEquipe } from '../../lib/osFormat'
 export interface ReincidenciaFilters { fornecedor: string; equipe: string }
 
 export function getOSObservation(row: OSRow): string {
-  const value = row.observacoes || row.obs || row.observacao || row.nota || row.descricaoobs || row.descricao_obs
+  const value = row.observacoes || row.observacaocritica || row.obs || row.observacao || row.nota || row.descricaoobs || row.descricao_obs
   return String(value || '').trim() || 'Sem observação registrada'
 }
 
@@ -24,6 +24,13 @@ export function filterReincidentes(clientes: ClienteReincidente[], filters: Rein
     const equipeOk = !filters.equipe || cliente.rows.some(row => shortEquipe(row.nomedaequipe).startsWith(filters.equipe))
     return fornecedorOk && equipeOk
   })
+}
+
+export function mergeOSObservations(clientes: ClienteReincidente[], details: Record<string, { observacoes: string; observacaocritica: string }> = {}): ClienteReincidente[] {
+  return clientes.map(cliente => ({
+    ...cliente,
+    rows: cliente.rows.map(row => ({ ...row, ...(details[row.numos] || {}) })),
+  }))
 }
 
 export interface ReincidenciaPair {

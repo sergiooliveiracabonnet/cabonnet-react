@@ -69,3 +69,21 @@ def compact_query_parts(
         _compact_cache_key = key
         _compact_cache_value = compacted
     return dict(compacted)
+
+
+def extract_os_details(csv_parts: list[str], requested: set[str]) -> dict[str, dict[str, str]]:
+    """Extrai observações do snapshot completo sem reenviar os CSVs pesados."""
+    normalized = {value.strip().lstrip("0") for value in requested if value.strip().isdigit()}
+    if not normalized:
+        return {}
+    result: dict[str, dict[str, str]] = {}
+    for csv_text in csv_parts:
+        for row in csv.DictReader(io.StringIO(csv_text or "")):
+            numos = str(row.get("numos") or "").strip()
+            if numos.lstrip("0") not in normalized:
+                continue
+            result[numos] = {
+                "observacoes": str(row.get("observacoes") or ""),
+                "observacaocritica": str(row.get("observacaocritica") or ""),
+            }
+    return result

@@ -79,7 +79,7 @@ from cabonnet.db import (
     _verify_password,
 )
 from cabonnet.postgres import pg_init, pg_is_available, pg_load_snapshot, pg_sync_grafana
-from cabonnet.query_payload import compact_query_parts
+from cabonnet.query_payload import compact_query_parts, extract_os_details
 from cabonnet.grafana import (
     SQL_AGENDADO,
     SQL_ATENDIMENTO,
@@ -973,6 +973,7 @@ async def query(
             cache_age_min=cache_age,
         )
 
+
     # Fallback 2: SQLite
     csv_a_db, ts_db = _db_load_cache("agendado")
     if csv_a_db:
@@ -1009,6 +1010,23 @@ async def query(
             )
 
     raise HTTPException(502, "Grafana indisponível e sem cache persistido")
+
+
+@router.post("/api/os-observacoes")
+async def os_observacoes(request: Request, sess: dict = Depends(_require_session)):
+    body = await request.json()
+    raw_numos = body.get("numos", [])
+    if not isinstance(raw_numos, list):
+        raise HTTPException(400, "numos deve ser uma lista")
+    requested = {str(value).strip() for value in raw_numos[:500]}
+    with state._query_cache_lock:
+        cached = dict(state._query_cache)
+    fornecedor_key = sess.get("fornecedor_key") if isinstance(sess, dict) else None
+    parts = [
+        _filter_csv_fornecedor(cached.get(key, ""), fornecedor_key)
+        for key in ("pendente", "agendado", "futuro")
+    ]
+    return {"ok": True, "items": extract_os_details(parts, requested)}
 
 
 @router.get("/revisitas")
