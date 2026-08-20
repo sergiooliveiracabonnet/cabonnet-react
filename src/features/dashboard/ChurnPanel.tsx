@@ -1,4 +1,4 @@
-import { UserMinus } from '@phosphor-icons/react'
+import { ArrowRight, UserMinus } from '@phosphor-icons/react'
 import type { OSRow } from '../../lib/types'
 import { DashboardPanelHeader } from './DashboardKpiPrimitives'
 
@@ -18,13 +18,14 @@ export interface ClienteReincidenteView {
  * cancelamento que um ISP tem. A taxa agregada de revisita diz que existe
  * retrabalho; aqui aparece QUEM, para dar tratativa antes de perder o cliente.
  */
-export function ChurnPanel({ janelaDias, clientes, totalReincidentes, totalBase, pctReincidencia, onOpen }: {
+export function ChurnPanel({ janelaDias, clientes, totalReincidentes, totalBase, pctReincidencia, onOpen, onOpenReport }: {
   janelaDias:        number
   clientes:          ClienteReincidenteView[]
   totalReincidentes: number
   totalBase:         number
   pctReincidencia:   number
   onOpen: (title: string, rows: OSRow[]) => void
+  onOpenReport?: () => void
 }) {
   if (!clientes.length) {
     return (
@@ -86,6 +87,12 @@ export function ChurnPanel({ janelaDias, clientes, totalReincidentes, totalBase,
           </button>
         ))}
       </div>
+      {onOpenReport && (
+        <button type="button" onClick={onOpenReport}
+          className="mt-3 flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 text-label font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
+          Ver relatório completo <ArrowRight size={15} aria-hidden="true" />
+        </button>
+      )}
     </div>
   )
 }

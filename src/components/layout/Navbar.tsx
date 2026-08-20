@@ -83,7 +83,6 @@ export function Navbar() {
       </button>
       <div className="hidden h-5 w-px flex-shrink-0 bg-border sm:block" />
       <div className="flex-1 min-w-0">
-        <p className="mb-0.5 hidden text-caption font-bold uppercase tracking-[0.14em] text-muted sm:block">Cabonnet · Operações</p>
         <h1 className="font-headline font-bold text-text text-title leading-none tracking-[-0.015em] truncate">
           {title}
         </h1>

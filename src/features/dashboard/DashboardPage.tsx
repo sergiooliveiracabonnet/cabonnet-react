@@ -318,6 +318,7 @@ export default function DashboardPage() {
                 totalBase={churn.totalBase}
                 pctReincidencia={churn.pctReincidencia}
                 onOpen={(title, filtered) => setModal({ title, rows: filtered })}
+                onOpenReport={() => navigate('/relatorio-reincidencias')}
               />
               <MetaMesCard meta={pulso.metaMes} />
               <FornecedoresPanel fornecedores={fornecedores} onOpen={openFornecedor} />
