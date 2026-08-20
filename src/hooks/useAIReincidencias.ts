@@ -1,5 +1,5 @@
 import { ai } from '../lib/api'
-import { useQueries } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import type { ReincidenciaPair } from '../features/reincidencias/reincidenciasReport'
 
@@ -11,6 +11,19 @@ export interface AIReincidenciaAnalysis {
   causas_distribuicao: Array<{ causa: string; count: number; pct: number }>
 }
 
+export function mergeAIReincidenciaBatches(items: AIReincidenciaAnalysis[]): AIReincidenciaAnalysis {
+  const causeCounts = new Map<string, number>()
+  items.flatMap(item => item.causas_distribuicao || []).forEach(c => causeCounts.set(c.causa, (causeCounts.get(c.causa) || 0) + c.count))
+  const total = [...causeCounts.values()].reduce((sum, count) => sum + count, 0)
+  return {
+    ok: true,
+    cached: items.every(item => item.cached),
+    narrativa: items.map(item => item.narrativa).filter(Boolean).join(' '),
+    analises: items.flatMap(item => item.analises || []),
+    causas_distribuicao: [...causeCounts].sort((a, b) => b[1] - a[1]).map(([causa, count]) => ({ causa, count, pct: total ? Math.round(count / total * 100) : 0 })),
+  }
+}
+
 export function useAIReincidencias(pares: ReincidenciaPair[], enabled: boolean) {
   const batches = useMemo(() => {
     const result: ReincidenciaPair[][] = []
@@ -18,33 +31,24 @@ export function useAIReincidencias(pares: ReincidenciaPair[], enabled: boolean) 
     for (let i = 0; i < pares.length; i += 10) result.push(pares.slice(i, i + 10))
     return result
   }, [pares])
-  const queries = useQueries({
-    queries: batches.map((batch, index) => ({
-      queryKey: ['ai-reincidencias-relatorio', index, batch],
-      queryFn: () => ai.revisitasCausa({ pares: batch }) as Promise<AIReincidenciaAnalysis>,
-      enabled: enabled && batch.length > 0,
-      staleTime: 10 * 60_000,
-      retry: false,
-    })),
+  const query = useQuery({
+    queryKey: ['ai-reincidencias-relatorio', batches],
+    queryFn: async () => {
+      const results: AIReincidenciaAnalysis[] = []
+      // Sequencial de propósito: evita bloquear o backend e atingir rate limit.
+      for (const batch of batches) {
+        results.push(await ai.revisitasCausa({ pares: batch }) as AIReincidenciaAnalysis)
+      }
+      return mergeAIReincidenciaBatches(results)
+    },
+    enabled: enabled && batches.length > 0,
+    staleTime: 10 * 60_000,
+    retry: false,
   })
-  const data = useMemo<AIReincidenciaAnalysis | null>(() => {
-    const ready = queries.map(q => q.data).filter((item): item is AIReincidenciaAnalysis => !!item?.ok)
-    if (!ready.length || ready.length !== batches.length) return null
-    const causeCounts = new Map<string, number>()
-    ready.flatMap(item => item.causas_distribuicao || []).forEach(c => causeCounts.set(c.causa, (causeCounts.get(c.causa) || 0) + c.count))
-    const total = [...causeCounts.values()].reduce((sum, count) => sum + count, 0)
-    return {
-      ok: true,
-      cached: ready.every(item => item.cached),
-      narrativa: ready.map(item => item.narrativa).filter(Boolean).join(' '),
-      analises: ready.flatMap(item => item.analises || []),
-      causas_distribuicao: [...causeCounts].sort((a, b) => b[1] - a[1]).map(([causa, count]) => ({ causa, count, pct: total ? Math.round(count / total * 100) : 0 })),
-    }
-  }, [batches.length, queries])
   return {
-    data,
-    isFetching: queries.some(q => q.isFetching),
-    isError: queries.some(q => q.isError),
-    errorMessage: queries.find(q => q.error)?.error?.message ?? null,
+    data: query.data ?? null,
+    isFetching: query.isFetching,
+    isError: query.isError,
+    errorMessage: query.error?.message ?? null,
   }
 }

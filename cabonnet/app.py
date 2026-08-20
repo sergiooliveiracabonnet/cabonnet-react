@@ -1320,7 +1320,8 @@ async def juniper_historico_post(request: Request):
 async def ai_revisitas_causa(request: Request):
     from cabonnet.ai import _ai_revisitas_causa
     body   = await request.json()
-    result = _ai_revisitas_causa(body)
+    loop   = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _ai_revisitas_causa, body)
     if result is None:
         code = 503 if not _ANTHROPIC_API_KEY else 502
         msg  = "ANTHROPIC_API_KEY não configurada no .env" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
