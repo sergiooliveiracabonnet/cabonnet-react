@@ -33,7 +33,7 @@ describe('relatório de reincidências', () => {
   })
 
   it('usa todos os campos conhecidos de observação com fallback objetivo', () => {
-    expect(getOSObservation({ observacoes: 'texto principal', obs: 'legado' } as OSRow)).toBe('texto principal')
-    expect(getOSObservation({ obs: '' } as OSRow)).toBe('Sem observação registrada')
+    expect(getOSObservation({ observacoes: 'texto principal', obs: 'legado' } as unknown as OSRow)).toBe('texto principal')
+    expect(getOSObservation({ obs: '' } as unknown as OSRow)).toBe('Sem observação registrada')
   })
 })
