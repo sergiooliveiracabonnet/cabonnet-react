@@ -38,6 +38,39 @@ describe('relatório de reincidências', () => {
     expect(getOSObservation({ obs: '' } as unknown as OSRow)).toBe('Sem observação registrada')
   })
 
+  it('reduz a observação estruturada ao motivo da abertura e ao que foi feito', () => {
+    const structured = `entra em contato informando que está sem sinal
+
+( ) CNC
+
+Luzes e como estão (piscando, fixa ou apagada):LOS/REG piscando vermelho
+
+Procedimentos:
+(X) Verificado os cabos
+(X) Equipamentos reiniciados, MAC Limpo
+
+Melhor número para contato:12) 98197-4638
+Protocolo: 99580196-71
+
+Informações da Execução:
+Obs:TROCA DE ONU
+Cliente\\Responsável: WELLINGTON
+RG: .
+Nome Executante: T-MAYKON RODRIGO
+
+LOCALIZAÇÃO
+Latitude Inicio: -22.9589369`
+
+    expect(getOSObservation({ observacoes: structured } as unknown as OSRow)).toBe(
+      'Motivo da abertura: entra em contato informando que está sem sinal\nO que foi feito: TROCA DE ONU',
+    )
+  })
+
+  it('mantém observações livres que não seguem o formulário estruturado', () => {
+    expect(getOSObservation({ observacoes: 'Cliente ausente; retorno agendado.' } as unknown as OSRow))
+      .toBe('Cliente ausente; retorno agendado.')
+  })
+
   it('incorpora as observações pesadas retornadas pelo endpoint em lote', () => {
     const original = cliente([row('1', 'INST F08', 'WES', '01/08/2026')])
     const [merged] = mergeOSObservations([original], { '1': { observacoes: 'Executado em campo', observacaocritica: 'Atenção' } })

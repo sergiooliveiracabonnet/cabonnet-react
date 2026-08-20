@@ -5,9 +5,24 @@ import { shortEquipe } from '../../lib/osFormat'
 
 export interface ReincidenciaFilters { fornecedor: string; equipe: string }
 
+export function summarizeOSObservation(raw: string): string {
+  const text = raw.replace(/\r\n?/g, '\n').trim()
+  if (!text) return ''
+
+  const isStructured = /Informações da Execução:|\bProcedimentos:|\bLOCALIZAÇÃO\b|\([X ]\)/i.test(text)
+  if (!isStructured) return text
+
+  const firstBlock = text.split(/\n\s*\n/).map(block => block.trim()).find(Boolean) || ''
+  const execution = text.match(/Informações da Execução:\s*[\s\S]*?\bObs:\s*([^\n]*)(?:\n|$)/i)?.[1]?.trim() || ''
+  const parts = []
+  if (firstBlock) parts.push(`Motivo da abertura: ${firstBlock.replace(/\s+/g, ' ')}`)
+  if (execution) parts.push(`O que foi feito: ${execution}`)
+  return parts.join('\n') || 'Sem informação essencial registrada'
+}
+
 export function getOSObservation(row: OSRow): string {
   const value = row.observacoes || row.observacaocritica || row.obs || row.observacao || row.nota || row.descricaoobs || row.descricao_obs
-  return String(value || '').trim() || 'Sem observação registrada'
+  return summarizeOSObservation(String(value || '')) || 'Sem observação registrada'
 }
 
 export function executionDate(row: OSRow): Date | null {
