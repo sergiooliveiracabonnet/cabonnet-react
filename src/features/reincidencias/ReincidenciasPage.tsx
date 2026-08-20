@@ -6,8 +6,9 @@ import { buildChurn } from '../../lib/builders/churn'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { useAIReincidencias } from '../../hooks/useAIReincidencias'
 import { useReincidenciaDetails } from '../../hooks/useReincidenciaDetails'
-import { buildReincidenciaPairs, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
+import { buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
 import { exportReincidenciasPDF } from './reincidenciasPDF'
+import { ReincidenciasCharts } from './ReincidenciasCharts'
 
 const FORNECEDORES = ['WES', 'Instacable', 'THM', 'REDE', 'MANUTENCAO', 'INTERNO', 'OUTRO']
 
@@ -24,6 +25,12 @@ export default function ReincidenciasPage() {
   const equipes = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => shortEquipe(r.nomedaequipe).split(' - ')[0])))].filter(v => v && v !== '—').sort(), [churn.clientes])
   const clientes = useMemo(() => filterReincidentes(detailedClients, { fornecedor, equipe }), [detailedClients, fornecedor, equipe])
   const pares = useMemo(() => buildReincidenciaPairs(clientes), [clientes])
+  const filteredBaseRows = useMemo(() => allRows.filter(row =>
+    (!fornecedor || row._fornecedor === fornecedor) &&
+    (!equipe || shortEquipe(row.nomedaequipe).startsWith(equipe)),
+  ), [allRows, fornecedor, equipe])
+  const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows), [clientes, filteredBaseRows])
+  const intervals = useMemo(() => buildIntervalDistribution(pares), [pares])
   const { data: analysis, isFetching: aiLoading, isError: aiError, errorMessage } = useAIReincidencias(pares, aiEnabled)
   const osCount = clientes.reduce((sum, c) => sum + c.rows.length, 0)
   const avgGap = clientes.length ? Math.round(clientes.reduce((sum, c) => sum + c.intervaloMedio, 0) / clientes.length * 10) / 10 : 0
@@ -52,6 +59,8 @@ export default function ReincidenciasPage() {
         <KPI label="Intervalo médio" value={`${avgGap.toLocaleString('pt-BR')}d`} detail="entre atendimentos" />
         <KPI label="Taxa geral" value={`${churn.pctReincidencia}%`} detail="da base atendida" />
       </div>
+
+      <ReincidenciasCharts ranking={teamRanking} intervals={intervals} analysis={analysis} />
 
       <section className="rounded-xl border border-primary/25 bg-primary/5 p-4 sm:p-5" aria-labelledby="ai-title">
         <div className="flex flex-wrap items-center justify-between gap-3">

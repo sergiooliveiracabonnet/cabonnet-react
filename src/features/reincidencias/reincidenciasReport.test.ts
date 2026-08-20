@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ClienteReincidente } from '../../lib/builders/churn'
 import type { OSRow } from '../../lib/types'
-import { buildReincidenciaPairs, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
+import { buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
 
 const row = (numos: string, equipe: string, fornecedor: OSRow['_fornecedor'], data: string, obs = '') => ({
   numos, nomedaequipe: equipe, _fornecedor: fornecedor, dataexecucao: data, databaixa: '', obs,
@@ -29,6 +29,31 @@ describe('relatório de reincidências', () => {
     ])])
     expect(pairs.map(p => [p.numos_orig, p.numos_rev, p.dias_entre])).toEqual([
       ['1', '2', 5], ['2', '3', 4],
+    ])
+  })
+
+  it('atribui a reincidência à equipe da OS anterior e calcula a taxa sobre sua base', () => {
+    const cases = [
+      cliente([row('1', 'INST F08', 'WES', '01/08/2026'), row('2', 'INST F11', 'WES', '05/08/2026')]),
+      { ...cliente([row('3', 'INST F08', 'WES', '02/08/2026'), row('4', 'INST F12', 'THM', '08/08/2026')]), chave: '2' },
+    ]
+    const base = [
+      ...cases.flatMap(c => c.rows),
+      { ...row('5', 'INST F08', 'WES', '03/08/2026'), codigocliente: 'sem-retorno', _tipo: 'MANUTENCAO', descsituacao: 'Concluída' },
+    ] as OSRow[]
+    cases.flatMap(c => c.rows).forEach((r, i) => Object.assign(r, { codigocliente: i < 2 ? '1' : '2', _tipo: 'MANUTENCAO', descsituacao: 'Concluída' }))
+
+    expect(buildTeamRecurrenceRanking(cases, base, new Date(2026, 7, 20))[0]).toMatchObject({
+      equipe: 'INST F08', reincidentes: 2, revisitas: 2, base: 3, taxa: 67,
+    })
+  })
+
+  it('distribui o intervalo entre visitas em faixas operacionais', () => {
+    expect(buildIntervalDistribution([
+      { dias_entre: 2 }, { dias_entre: 7 }, { dias_entre: 12 }, { dias_entre: 25 }, { dias_entre: 45 },
+    ] as ReturnType<typeof buildReincidenciaPairs>)).toEqual([
+      { faixa: '0–3d', total: 1 }, { faixa: '4–7d', total: 1 }, { faixa: '8–15d', total: 1 },
+      { faixa: '16–30d', total: 1 }, { faixa: '31–60d', total: 1 },
     ])
   })
 
