@@ -7,6 +7,12 @@ import type { ReincidenciaPair } from '../features/reincidencias/reincidenciasRe
 export const AI_BATCH_SIZE = 10
 
 const SEM_INFO = 'Sem Informação'
+const REVISITA_RAPIDA_DIAS = 7
+
+function media(values: number[]): number {
+  if (!values.length) return 0
+  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 10) / 10
+}
 
 interface AIRawAnalise { par?: number; numos_orig?: string; numos_rev?: string; causa?: string; feito_primeira?: string; o_que_faltou?: string }
 export interface AIReincidenciaBatch {
@@ -34,6 +40,13 @@ export interface AICausaGrupo { causa: string; count: number; pct: number; pares
 
 export interface AIAcao { titulo: string; detalhe: string; causa: string }
 
+export type AISeveridade = 'alta' | 'media' | 'baixa'
+
+export interface AIPonto { titulo: string; detalhe: string; metrica: string; causa: string; severidade: AISeveridade }
+
+/** Numeros do conjunto que sustentam a sintese — exibidos ao lado dela, nao dentro do texto. */
+export interface AIMetricas { clientes: number; intervaloMedio: number; revisitasRapidas: number }
+
 export interface ReincidenciaContexto { janelaDias: number; filtros: string }
 
 export interface AIReincidenciaAnalysis {
@@ -46,8 +59,11 @@ export interface AIReincidenciaAnalysis {
   paresAnalisados: number
   causas: AICausaGrupo[]
   porPar: Record<string, AIPairDiagnosis>
-  /** Segundo passo: leitura unica sobre o conjunto ja consolidado. Vazia se a chamada falhar. */
+  metricas: AIMetricas
+  /** Segundo passo: manchete de uma frase sobre o conjunto. Vazia se a chamada falhar. */
   sintese: string
+  /** Achados separados, cada um com metrica e severidade — substitui o paragrafo corrido. */
+  pontos: AIPonto[]
   acoes: AIAcao[]
   sinteseErro: boolean
 }
@@ -138,7 +154,13 @@ export function mergeAIReincidenciaBatches(
     paresAnalisados: total,
     causas,
     porPar,
+    metricas: {
+      clientes: new Set(diagnoses.map(item => item.chaveCliente)).size,
+      intervaloMedio: media(diagnoses.map(item => item.diasEntre)),
+      revisitasRapidas: diagnoses.filter(item => item.diasEntre <= REVISITA_RAPIDA_DIAS).length,
+    },
     sintese: '',
+    pontos: [],
     acoes: [],
     sinteseErro: false,
   }
@@ -155,22 +177,14 @@ export interface AISintesePayload {
   notas: string[]
 }
 
-const REVISITA_RAPIDA_DIAS = 7
-
-function media(values: number[]): number {
-  if (!values.length) return 0
-  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 10) / 10
-}
-
 /** Agregado enviado ao passo 2 — o unico ponto em que a IA enxerga todos os pares de uma vez. */
 export function buildSintesePayload(analysis: AIReincidenciaAnalysis, contexto: ReincidenciaContexto): AISintesePayload {
-  const diagnoses = Object.values(analysis.porPar)
   return {
     total_pares: analysis.paresAnalisados,
-    total_clientes: new Set(diagnoses.map(item => item.chaveCliente)).size,
+    total_clientes: analysis.metricas.clientes,
     janela_dias: contexto.janelaDias,
-    intervalo_medio: media(diagnoses.map(item => item.diasEntre)),
-    revisitas_rapidas: diagnoses.filter(item => item.diasEntre <= REVISITA_RAPIDA_DIAS).length,
+    intervalo_medio: analysis.metricas.intervaloMedio,
+    revisitas_rapidas: analysis.metricas.revisitasRapidas,
     filtros: contexto.filtros,
     causas: analysis.causas.map(grupo => {
       const porEquipe = new Map<string, number>()
@@ -210,8 +224,8 @@ export function useAIReincidencias(pares: ReincidenciaPair[], enabled: boolean, 
       if (!merged.paresAnalisados) return merged
       // Passo 2 — sintese do conjunto. Se falhar, o relatorio segue com a classificacao par a par.
       try {
-        const sintese = await ai.revisitasSintese(buildSintesePayload(merged, contexto)) as { sintese?: string; acoes?: AIAcao[] }
-        return { ...merged, sintese: String(sintese?.sintese || ''), acoes: sintese?.acoes || [] }
+        const sintese = await ai.revisitasSintese(buildSintesePayload(merged, contexto)) as { sintese?: string; pontos?: AIPonto[]; acoes?: AIAcao[] }
+        return { ...merged, sintese: String(sintese?.sintese || ''), pontos: sintese?.pontos || [], acoes: sintese?.acoes || [] }
       } catch (error) {
         console.warn('[reincidencias] sintese do conjunto indisponivel:', error)
         return { ...merged, sinteseErro: true }

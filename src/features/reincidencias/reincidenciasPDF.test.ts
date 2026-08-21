@@ -34,7 +34,12 @@ const analysis: AIReincidenciaAnalysis = {
   notas: ['Leitura do lote 1.'], paresAnalisados: 4,
   causas: [{ causa: 'Conectorização/Sinal', count: 3, pct: 75, pares: [] }],
   porPar: {}, sinteseErro: false,
+  metricas: { clientes: 3, intervaloMedio: 6.5, revisitasRapidas: 2 },
   sintese: 'As revisitas se concentram na F04 e voltam rápido demais.',
+  pontos: [
+    { titulo: 'F04 concentra as revisitas', detalhe: 'Sete dos dezenove pares saíram da mesma frente.', metrica: '7 de 19 pares', causa: 'Conectorização/Sinal', severidade: 'alta' },
+    { titulo: 'Retorno em menos de uma semana', detalhe: 'Metade volta antes do sétimo dia.', metrica: '5 dias', causa: '', severidade: 'media' },
+  ],
   acoes: [{ titulo: 'Auditar o fechamento da F04', detalhe: 'Exigir foto do conector.', causa: 'Conectorização/Sinal' }],
 }
 
@@ -52,14 +57,32 @@ describe('exportReincidenciasPDF', () => {
     expect(posicao('Detalhamento por cliente')).toBeLessThan(posicao('Maria S. Oliveira'))
   })
 
-  it('põe a síntese da IA acima dos números consolidados', () => {
+  it('põe a manchete acima da faixa de números do conjunto', () => {
     exportReincidenciasPDF([cliente], ['Todas as terceiras'], analysis)
-    expect(posicao('As revisitas se concentram na F04')).toBeLessThan(posicao('4 pares de revisita classificados'))
+    expect(posicao('As revisitas se concentram na F04')).toBeLessThan(posicao('4 pares  ·  3 clientes'))
+    expect(posicao('2 revisitas em até 7d (50%)')).toBeGreaterThanOrEqual(0)
+    expect(posicao('intervalo médio 6.5d')).toBeGreaterThanOrEqual(0)
+  })
+
+  it('quebra os pontos de atenção em linhas rotuladas por severidade', () => {
+    exportReincidenciasPDF([cliente], ['Todas as terceiras'], analysis)
+    expect(posicao('PONTOS DE ATENÇÃO')).toBeGreaterThanOrEqual(0)
+    expect(posicao('ALTA')).toBeLessThan(posicao('MÉDIA'))
+    expect(posicao('F04 concentra as revisitas — 7 de 19 pares')).toBeGreaterThanOrEqual(0)
+    expect(posicao('Sete dos dezenove pares saíram da mesma frente.')).toBeGreaterThanOrEqual(0)
+    expect(posicao('PONTOS DE ATENÇÃO')).toBeLessThan(posicao('AÇÕES RECOMENDADAS'))
+    expect(posicao('AÇÕES RECOMENDADAS')).toBeLessThan(posicao('CAUSAS CLASSIFICADAS'))
+  })
+
+  it('usa o resumo determinístico como manchete quando a síntese falhou', () => {
+    exportReincidenciasPDF([cliente], ['Todas as terceiras'], { ...analysis, sintese: '', pontos: [], sinteseErro: true })
+    expect(posicao('4 pares de revisita classificados')).toBeLessThan(posicao('Detalhamento por cliente'))
+    expect(posicao('PONTOS DE ATENÇÃO')).toBe(-1)
   })
 
   it('leva as ações recomendadas para o topo, junto da síntese', () => {
     exportReincidenciasPDF([cliente], ['Todas as terceiras'], analysis)
-    expect(posicao('Ações recomendadas')).toBeLessThan(posicao('Detalhamento por cliente'))
+    expect(posicao('AÇÕES RECOMENDADAS')).toBeLessThan(posicao('Detalhamento por cliente'))
     expect(posicao('1. Auditar o fechamento da F04 (Conectorização/Sinal)')).toBeGreaterThanOrEqual(0)
   })
 

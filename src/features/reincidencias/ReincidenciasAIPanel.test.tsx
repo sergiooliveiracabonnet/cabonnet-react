@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { ReincidenciasAIPanel } from './ReincidenciasAIPanel'
-import type { AIPairDiagnosis, AIReincidenciaAnalysis } from '../../hooks/useAIReincidencias'
+import type { AIPairDiagnosis, AIPonto, AIReincidenciaAnalysis } from '../../hooks/useAIReincidencias'
 
 afterEach(cleanup)
 
@@ -21,7 +21,14 @@ const analysis = (over: Partial<AIReincidenciaAnalysis> = {}): AIReincidenciaAna
     { causa: 'Configuração', count: 1, pct: 25, pares: [] },
   ],
   porPar: { '9069512>9069513': diagnostico() },
-  sintese: '', acoes: [], sinteseErro: false,
+  metricas: { clientes: 3, intervaloMedio: 6.5, revisitasRapidas: 2 },
+  sintese: '', pontos: [], acoes: [], sinteseErro: false,
+  ...over,
+})
+
+const ponto = (over: Partial<AIPonto> = {}): AIPonto => ({
+  titulo: 'F04 concentra as revisitas', detalhe: 'Sete dos dezenove pares saíram da mesma frente.',
+  metrica: '7 de 19 pares', causa: 'Conectorização/Sinal', severidade: 'alta',
   ...over,
 })
 
@@ -31,9 +38,8 @@ const base = {
 }
 
 describe('ReincidenciasAIPanel', () => {
-  it('mostra o resumo consolidado e as causas ranqueadas', () => {
+  it('mostra as causas ranqueadas com contagem e percentual', () => {
     render(<ReincidenciasAIPanel {...base} analysis={analysis()} />)
-    expect(screen.getByText(/Causa dominante: Conectorização\/Sinal — 3 pares \(75%\)/)).toBeInTheDocument()
     expect(screen.getByText('Conectorização/Sinal')).toBeInTheDocument()
     expect(screen.getByText('75%')).toBeInTheDocument()
     expect(screen.getByText('25%')).toBeInTheDocument()
@@ -60,6 +66,36 @@ describe('ReincidenciasAIPanel', () => {
     expect(screen.getByText(/2 lotes de até 10 pares/)).toBeInTheDocument()
     expect(screen.getByText('Lote um.')).toBeInTheDocument()
     expect(screen.getByText('Lote dois.')).toBeInTheDocument()
+  })
+
+  it('quebra os achados em linhas de tabela, com severidade e indicador', () => {
+    render(<ReincidenciasAIPanel {...base} analysis={analysis({
+      sintese: 'Metade das revisitas sai da F04.',
+      pontos: [ponto(), ponto({ titulo: 'Retorno em menos de uma semana', detalhe: 'Metade volta antes do sétimo dia.', severidade: 'media', metrica: '5 dias', causa: '' })],
+    })} />)
+
+    expect(screen.getByRole('table')).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Severidade' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Indicador' })).toBeInTheDocument()
+    expect(screen.getByText('F04 concentra as revisitas')).toBeInTheDocument()
+    expect(screen.getByText('Sete dos dezenove pares saíram da mesma frente.')).toBeInTheDocument()
+    expect(screen.getByText('7 de 19 pares')).toBeInTheDocument()
+    expect(screen.getByText('Alta')).toBeInTheDocument()
+    expect(screen.getByText('Média')).toBeInTheDocument()
+  })
+
+  it('mostra os números do conjunto ao lado da manchete, fora do texto', () => {
+    render(<ReincidenciasAIPanel {...base} analysis={analysis({ sintese: 'Manchete.' })} />)
+    expect(screen.getByText('Pares analisados')).toBeInTheDocument()
+    expect(screen.getByText('Clientes distintos')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(screen.getByText('2 (50%)')).toBeInTheDocument()
+    expect(screen.getByText('6,5d')).toBeInTheDocument()
+  })
+
+  it('cai para o resumo determinístico quando a manchete da IA não veio', () => {
+    render(<ReincidenciasAIPanel {...base} analysis={analysis()} />)
+    expect(screen.getByText(/Causa dominante: Conectorização\/Sinal — 3 pares \(75%\)/)).toBeInTheDocument()
   })
 
   it('mostra a síntese do conjunto e as ações recomendadas', () => {

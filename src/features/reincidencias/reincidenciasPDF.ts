@@ -5,6 +5,14 @@ import { aiPairKey, type AIReincidenciaAnalysis } from '../../hooks/useAIReincid
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { getOSObservation, sortedClientRows } from './reincidenciasReport'
 
+// Severidade é status: as únicas cores do relatório que não são neutras.
+const SEVERIDADE_COR: Record<string, [number, number, number]> = {
+  alta:  [185, 28, 28],
+  media: [161, 98, 7],
+  baixa: [107, 114, 128],
+}
+const SEVERIDADE_LABEL: Record<string, string> = { alta: 'ALTA', media: 'MÉDIA', baixa: 'BAIXA' }
+
 export function exportReincidenciasPDF(clientes: ClienteReincidente[], filters: string[], analysis?: AIReincidenciaAnalysis | null) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const width = 210, margin = 15, usable = width - margin * 2
@@ -15,6 +23,10 @@ export function exportReincidenciasPDF(clientes: ClienteReincidente[], filters: 
   const paragraph = (text: string, size = 9, color: [number, number, number] = [55, 65, 81]) => {
     doc.setFontSize(size); doc.setTextColor(...color); const lines = doc.splitTextToSize(text, usable); ensure(lines.length * 4.3); doc.text(lines, margin, y); y += lines.length * 4.3 + 2
   }
+  const sectionTitle = (text: string) => {
+    ensure(8); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(107, 114, 128)
+    doc.text(text.toUpperCase(), margin, y + 3); y += 6; doc.setFont('helvetica', 'normal')
+  }
 
   addHeader()
   // Escopo em uma linha compacta: o diagnóstico da IA lidera o relatório.
@@ -24,16 +36,48 @@ export function exportReincidenciasPDF(clientes: ClienteReincidente[], filters: 
     ensure(30); doc.setFillColor(239, 246, 255); doc.roundedRect(margin, y, usable, 8, 2, 2, 'F')
     doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 64, 175); doc.setFontSize(10.5); doc.text('Diagnóstico da IA', margin + 3, y + 5.6); y += 12
 
-    if (analysis.sintese) {
-      doc.setFont('helvetica', 'normal'); paragraph(analysis.sintese, 10, [17, 24, 39])
+    doc.setFont('helvetica', 'bold'); paragraph(analysis.sintese || analysis.resumo, 11, [17, 24, 39]); doc.setFont('helvetica', 'normal')
+
+    const rapidasPct = analysis.paresAnalisados ? Math.round(analysis.metricas.revisitasRapidas / analysis.paresAnalisados * 100) : 0
+    paragraph([
+      `${analysis.paresAnalisados} pares`,
+      `${analysis.metricas.clientes} clientes`,
+      `${analysis.metricas.revisitasRapidas} revisitas em até 7d (${rapidasPct}%)`,
+      `intervalo médio ${analysis.metricas.intervaloMedio}d`,
+    ].join('  ·  '), 8, [107, 114, 128])
+
+    if (analysis.pontos.length) {
+      y += 2; sectionTitle('Pontos de atenção')
+      analysis.pontos.forEach(ponto => {
+        const detalhe = doc.splitTextToSize(ponto.detalhe, usable - 34)
+        ensure(detalhe.length * 4 + 7)
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...SEVERIDADE_COR[ponto.severidade] ?? SEVERIDADE_COR.media)
+        doc.text(SEVERIDADE_LABEL[ponto.severidade] ?? SEVERIDADE_LABEL.media, margin, y + 3)
+        doc.setFontSize(8.5); doc.setTextColor(17, 24, 39)
+        doc.text(`${ponto.titulo}${ponto.metrica ? ` — ${ponto.metrica}` : ''}`, margin + 16, y + 3)
+        y += 4
+        if (detalhe.length) {
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(75, 85, 99)
+          doc.text(detalhe, margin + 16, y + 3); y += detalhe.length * 4
+        }
+        if (ponto.causa) {
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(107, 114, 128)
+          doc.text(ponto.causa, margin + 16, y + 3); y += 4
+        }
+        y += 2.5
+        if (y + 4 < 282) { doc.setDrawColor(237, 240, 244); doc.line(margin, y, width - margin, y); y += 2.5 }
+      })
+      doc.setFont('helvetica', 'normal')
     }
-    paragraph(analysis.resumo, 8, [107, 114, 128])
-    analysis.causas.forEach(causa => paragraph(`• ${causa.causa} — ${causa.count} ${causa.count === 1 ? 'par' : 'pares'} (${causa.pct}%)`, 8))
 
     if (analysis.acoes.length) {
-      y += 1; doc.setFont('helvetica', 'bold'); paragraph('Ações recomendadas', 9, [17, 24, 39]); doc.setFont('helvetica', 'normal')
+      y += 2; sectionTitle('Ações recomendadas')
       analysis.acoes.forEach((acao, index) => paragraph(`${index + 1}. ${acao.titulo}${acao.causa ? ` (${acao.causa})` : ''}${acao.detalhe ? ` — ${acao.detalhe}` : ''}`, 8))
     }
+
+    y += 2; sectionTitle('Causas classificadas')
+    analysis.causas.forEach(causa => paragraph(`• ${causa.causa} — ${causa.count} ${causa.count === 1 ? 'par' : 'pares'} (${causa.pct}%)`, 8))
+
     if (!analysis.sintese) analysis.notas.forEach(nota => paragraph(nota, 8, [107, 114, 128]))
 
     // Só desenha o fio separador se ele couber: quebrar página por causa dele deixaria um traço solto no topo.

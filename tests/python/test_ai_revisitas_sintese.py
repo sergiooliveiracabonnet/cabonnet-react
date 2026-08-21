@@ -38,6 +38,12 @@ PAYLOAD = {
 
 RESULT = {
     "sintese": "As revisitas se concentram na F04 e voltam rapido demais.",
+    "pontos": [
+        {"titulo": "F04 concentra as revisitas", "detalhe": "Sete dos dezenove pares.", "metrica": "7 de 19 pares",
+         "causa": "Conectorizacao/Sinal", "severidade": "alta"},
+        {"titulo": "Retorno em menos de uma semana", "detalhe": "Metade volta antes do setimo dia.",
+         "metrica": "5 dias", "causa": "", "severidade": "media"},
+    ],
     "acoes": [{"titulo": "Auditar fechamento da F04", "detalhe": "Exigir foto do conector.", "causa": "Conectorizacao/Sinal"}],
 }
 
@@ -61,6 +67,7 @@ def test_sintese_recebe_o_agregado_inteiro_e_as_leituras_parciais(monkeypatch):
     response = ai._ai_revisitas_sintese(PAYLOAD)
 
     assert response["sintese"] == RESULT["sintese"]
+    assert response["pontos"] == RESULT["pontos"]
     assert response["acoes"] == RESULT["acoes"]
     assert response["cached"] is False
 
@@ -74,6 +81,10 @@ def test_sintese_recebe_o_agregado_inteiro_e_as_leituras_parciais(monkeypatch):
     assert "ex: Cliente A (SJC, F04, 5d)" in prompt
     assert "- Leitura do lote 1." in prompt
     assert "- Leitura do lote 2." in prompt
+    # O passo 2 tem que devolver estrutura, nao um paragrafo corrido.
+    assert "NAO escreva um texto corrido" in prompt
+    assert "no maximo 160 caracteres" in prompt
+    assert '"severidade": "alta"' in prompt
 
 
 def test_sintese_reaproveita_o_cache_para_o_mesmo_agregado(monkeypatch):
@@ -107,19 +118,48 @@ def test_sintese_sem_causas_nao_chama_a_api(monkeypatch):
     assert ai._ai_revisitas_sintese({"total_pares": 0, "causas": []}) is None
 
 
-def test_sintese_vazia_e_tratada_como_falha(monkeypatch):
+def test_resposta_sem_sintese_e_sem_pontos_e_tratada_como_falha(monkeypatch):
     _reset_cache()
     monkeypatch.setattr(ai, "ANTHROPIC_API_KEY", "test-key")
-    monkeypatch.setattr(ai.requests, "post", lambda *_a, **_k: _Response({"sintese": "   ", "acoes": []}))
+    monkeypatch.setattr(ai.requests, "post", lambda *_a, **_k: _Response({"sintese": "   ", "pontos": [], "acoes": []}))
 
     assert ai._ai_revisitas_sintese(PAYLOAD) is None
+
+
+def test_pontos_sao_ordenados_por_severidade_e_limitados_a_cinco(monkeypatch):
+    _reset_cache()
+    pontos = [
+        {"titulo": "baixa 1", "severidade": "baixa"},
+        {"titulo": "alta 1", "severidade": "alta"},
+        {"titulo": "media 1", "severidade": "media"},
+        {"titulo": "alta 2", "severidade": "ALTA"},
+        {"titulo": "baixa 2", "severidade": "baixa"},
+        {"titulo": "sexto ponto", "severidade": "alta"},
+    ]
+    monkeypatch.setattr(ai, "ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setattr(ai.requests, "post", lambda *_a, **_k: _Response({"sintese": "ok.", "pontos": pontos, "acoes": []}))
+
+    response = ai._ai_revisitas_sintese(PAYLOAD)
+
+    assert [p["titulo"] for p in response["pontos"]] == ["alta 1", "alta 2", "media 1", "baixa 1", "baixa 2"]
+
+
+def test_ponto_sem_titulo_sai_e_severidade_invalida_vira_media(monkeypatch):
+    _reset_cache()
+    pontos = [{"titulo": "", "severidade": "alta"}, {"titulo": "valido", "severidade": "urgentissimo"}]
+    monkeypatch.setattr(ai, "ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setattr(ai.requests, "post", lambda *_a, **_k: _Response({"sintese": "ok.", "pontos": pontos, "acoes": []}))
+
+    response = ai._ai_revisitas_sintese(PAYLOAD)
+
+    assert response["pontos"] == [{"titulo": "valido", "detalhe": "", "metrica": "", "causa": "", "severidade": "media"}]
 
 
 def test_sintese_descarta_acao_sem_titulo_e_limita_a_quatro(monkeypatch):
     _reset_cache()
     acoes = [{"titulo": "", "detalhe": "x"}] + [{"titulo": f"Acao {i}", "detalhe": "d", "causa": "Configuracao"} for i in range(6)]
     monkeypatch.setattr(ai, "ANTHROPIC_API_KEY", "test-key")
-    monkeypatch.setattr(ai.requests, "post", lambda *_a, **_k: _Response({"sintese": "ok.", "acoes": acoes}))
+    monkeypatch.setattr(ai.requests, "post", lambda *_a, **_k: _Response({"sintese": "ok.", "pontos": [], "acoes": acoes}))
 
     response = ai._ai_revisitas_sintese(PAYLOAD)
 

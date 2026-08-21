@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Brain, CaretDown, CaretRight, Target } from '@phosphor-icons/react'
-import type { AICausaGrupo, AIReincidenciaAnalysis } from '../../hooks/useAIReincidencias'
+import { Brain, CaretDown, CaretRight, Target, WarningCircle } from '@phosphor-icons/react'
+import type { AICausaGrupo, AIPonto, AIReincidenciaAnalysis, AISeveridade } from '../../hooks/useAIReincidencias'
 
 interface Props {
   analysis: AIReincidenciaAnalysis | null
@@ -13,9 +13,16 @@ interface Props {
   onGenerate: () => void
 }
 
+const SEVERIDADE: Record<AISeveridade, { label: string; dot: string; text: string }> = {
+  alta:  { label: 'Alta',  dot: 'bg-red',    text: 'text-red' },
+  media: { label: 'Média', dot: 'bg-yellow', text: 'text-yellow' },
+  baixa: { label: 'Baixa', dot: 'bg-muted',  text: 'text-muted' },
+}
+
 export function ReincidenciasAIPanel({ analysis, parCount, aiLoading, observationsLoading, observationsError, aiError, errorMessage, onGenerate }: Props) {
   const [openCausa, setOpenCausa] = useState<string | null>(null)
   const label = observationsLoading ? 'Carregando observações…' : aiLoading ? 'Analisando…' : analysis ? 'Atualizar análise' : 'Gerar análise com IA'
+  const rapidasPct = analysis?.paresAnalisados ? Math.round(analysis.metricas.revisitasRapidas / analysis.paresAnalisados * 100) : 0
 
   return (
     <section className="rounded-xl border border-primary/25 bg-primary/5" aria-labelledby="ai-title">
@@ -34,9 +41,30 @@ export function ReincidenciasAIPanel({ analysis, parCount, aiLoading, observatio
       {aiError && <p className="px-4 pb-4 text-label text-red sm:px-5">A IA não respondeu: {errorMessage || 'erro desconhecido'}. O relatório detalhado e o PDF continuam disponíveis.</p>}
 
       {analysis && <div className="border-t border-primary/20 p-4 sm:p-5">
-        <p className="text-label tabular-nums text-secondary">{analysis.resumo}</p>
+        <p className="text-title font-semibold leading-snug text-text">{analysis.sintese || analysis.resumo}</p>
 
-        {analysis.sintese && <p className="mt-3 border-l-2 border-primary/40 pl-3 text-body leading-relaxed text-text">{analysis.sintese}</p>}
+        <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Metrica label="Pares analisados" value={analysis.paresAnalisados} />
+          <Metrica label="Clientes distintos" value={analysis.metricas.clientes} />
+          <Metrica label="Revisita em até 7d" value={`${analysis.metricas.revisitasRapidas} (${rapidasPct}%)`} />
+          <Metrica label="Intervalo médio" value={`${analysis.metricas.intervaloMedio.toLocaleString('pt-BR')}d`} />
+        </dl>
+
+        {analysis.pontos.length > 0 && <div className="mt-4">
+          <h3 className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wide text-muted"><WarningCircle size={13} /> Pontos de atenção</h3>
+          <div className="mt-2 overflow-x-auto rounded-lg border border-border bg-card">
+            <table className="w-full min-w-[560px] border-collapse text-left text-label">
+              <thead>
+                <tr className="text-caption uppercase tracking-wide text-muted">
+                  {['Severidade', 'Ponto', 'Indicador', 'Causa'].map(head => (
+                    <th key={head} className="border-b border-border px-3 py-2 font-semibold">{head}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>{analysis.pontos.map(ponto => <PontoRow key={ponto.titulo} ponto={ponto} />)}</tbody>
+            </table>
+          </div>
+        </div>}
 
         {analysis.acoes.length > 0 && <div className="mt-4">
           <h3 className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wide text-muted"><Target size={13} /> Ações recomendadas</h3>
@@ -80,6 +108,32 @@ export function ReincidenciasAIPanel({ analysis, parCount, aiLoading, observatio
         </div>}
       </div>}
     </section>
+  )
+}
+
+function Metrica({ label, value }: { label: string; value: string | number }) {
+  return <div className="rounded-lg border border-border bg-card px-3 py-2">
+    <dt className="text-caption text-muted">{label}</dt>
+    <dd className="text-body font-bold tabular-nums text-text">{value}</dd>
+  </div>
+}
+
+function PontoRow({ ponto }: { ponto: AIPonto }) {
+  const severidade = SEVERIDADE[ponto.severidade] ?? SEVERIDADE.media
+  return (
+    <tr className="align-top">
+      <td className="whitespace-nowrap border-b border-border/60 px-3 py-3">
+        <span className={`flex items-center gap-1.5 text-caption font-semibold ${severidade.text}`}>
+          <span className={`h-2 w-2 flex-shrink-0 rounded-pill ${severidade.dot}`} aria-hidden="true" />{severidade.label}
+        </span>
+      </td>
+      <td className="max-w-[380px] border-b border-border/60 px-3 py-3">
+        <b className="text-label text-text">{ponto.titulo}</b>
+        {ponto.detalhe && <span className="mt-0.5 block text-caption leading-relaxed text-secondary">{ponto.detalhe}</span>}
+      </td>
+      <td className="whitespace-nowrap border-b border-border/60 px-3 py-3 text-label font-semibold tabular-nums text-text">{ponto.metrica || '—'}</td>
+      <td className="border-b border-border/60 px-3 py-3 text-caption text-secondary">{ponto.causa || '—'}</td>
+    </tr>
   )
 }
 

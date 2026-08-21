@@ -1419,15 +1419,24 @@ def _ai_revisitas_sintese(payload):
         + "=== CAUSAS CONSOLIDADAS ===\n" + causas_txt + "\n\n"
         + "=== LEITURAS PARCIAIS (cada lote viu no maximo 10 pares, nenhuma viu o conjunto) ===\n"
         + notas_txt + "\n\n"
-        + "Escreva a sintese do conjunto INTEIRO. Regras:\n"
-        + "- Nao recite os percentuais da tabela acima: o relatorio ja os mostra ao lado. Interprete-os.\n"
-        + "- Diga o que so aparece olhando tudo junto: concentracao numa equipe, causas que se retroalimentam, "
-        + "execucao incompleta disfarcada de outra causa, o que o intervalo curto revela sobre a qualidade do fechamento.\n"
-        + "- Se as observacoes forem majoritariamente 'Sem Informacao', diga que o gargalo e o registro, nao o campo.\n"
-        + "- 3 a 5 frases, diretas, sem jargao de consultoria e sem elogio.\n"
-        + "Depois liste 2 a 4 acoes objetivas e verificaveis, cada uma ligada a uma causa da tabela.\n\n"
+        + "Leia o conjunto INTEIRO e devolva os pontos que merecem atencao, ja separados. Regras:\n"
+        + "- NAO escreva um texto corrido. Cada achado e um item proprio, curto, que o gestor le em 3 segundos.\n"
+        + "- 'sintese' e UMA frase de no maximo 160 caracteres: o achado principal do conjunto.\n"
+        + "- 'pontos': 3 a 5 achados que so aparecem olhando tudo junto - concentracao numa equipe, "
+        + "causas que se retroalimentam, execucao incompleta disfarcada de outra causa, "
+        + "o que o intervalo curto revela sobre a qualidade do fechamento.\n"
+        + "- Cada ponto: 'titulo' com no maximo 6 palavras, 'detalhe' com UMA frase, "
+        + "'metrica' com o dado curto que sustenta o ponto (ex: '7 de 19 pares', 'F04', '5 dias'), "
+        + "'causa' com o rotulo exato da tabela (ou vazio se o ponto for transversal), "
+        + "'severidade' entre alta, media e baixa.\n"
+        + "- Ordene os pontos da maior para a menor severidade.\n"
+        + "- Se as observacoes forem majoritariamente 'Sem Informacao', o gargalo e o registro, nao o campo: diga isso.\n"
+        + "- Sem jargao de consultoria, sem elogio, sem repetir o mesmo achado em dois pontos.\n"
+        + "- 2 a 4 acoes objetivas e verificaveis, cada uma ligada a uma causa da tabela.\n\n"
         + "Responda SOMENTE com JSON valido, sem markdown:\n"
-        + '{"sintese": "3 a 5 frases", '
+        + '{"sintese": "uma frase, ate 160 caracteres", '
+        + '"pontos": [{"titulo": "rotulo curto", "detalhe": "uma frase", "metrica": "dado curto", '
+        + '"causa": "rotulo exato da causa", "severidade": "alta"}], '
         + '"acoes": [{"titulo": "acao curta no imperativo", "detalhe": "1 frase de como e por que", '
         + '"causa": "rotulo exato da causa da tabela"}]}'
     )
@@ -1461,12 +1470,26 @@ def _ai_revisitas_sintese(payload):
             for a in (result.get("acoes") or [])[:4]
             if str(a.get("titulo", "")).strip()
         ]
-        out = {"sintese": str(result.get("sintese", "")).strip(), "acoes": acoes}
-        if not out["sintese"]:
+        ordem = {"alta": 0, "media": 1, "baixa": 2}
+        pontos = [
+            {
+                "titulo":     str(p_.get("titulo", "")).strip(),
+                "detalhe":    str(p_.get("detalhe", "")).strip(),
+                "metrica":    str(p_.get("metrica", "")).strip(),
+                "causa":      str(p_.get("causa", "")).strip(),
+                "severidade": str(p_.get("severidade", "")).strip().lower()
+                              if str(p_.get("severidade", "")).strip().lower() in ordem else "media",
+            }
+            for p_ in (result.get("pontos") or [])[:5]
+            if str(p_.get("titulo", "")).strip()
+        ]
+        pontos.sort(key=lambda p_: ordem[p_["severidade"]])
+        out = {"sintese": str(result.get("sintese", "")).strip(), "pontos": pontos, "acoes": acoes}
+        if not out["sintese"] and not pontos:
             return None
         with state._ai_revisitas_sintese_lock:
             state._ai_revisitas_sintese_cache.update({"hash": data_hash, "ts": now, **out})
-        log.info("[AI] revisitas-sintese gerado - %d pares consolidados, %d acoes", total, len(acoes))
+        log.info("[AI] revisitas-sintese gerado - %d pares, %d pontos, %d acoes", total, len(pontos), len(acoes))
         return {**out, "cached": False}
     except Exception as ex:
         log.warning("[AI] revisitas-sintese erro: %s", str(ex)[:200])
