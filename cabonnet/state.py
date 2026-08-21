@@ -117,6 +117,8 @@ _ai_nivel_sinal_cache  = {"hash": "", "ts": 0.0}
 _ai_nivel_sinal_lock   = threading.Lock()
 _ai_revisitas_causa_cache = {"hash": "", "ts": 0.0}
 _ai_revisitas_causa_lock  = threading.Lock()
+_ai_revisitas_sintese_cache = {"hash": "", "ts": 0.0}
+_ai_revisitas_sintese_lock  = threading.Lock()
 _ai_justificativa_cache   = {"hash": "", "ts": 0.0}
 _ai_justificativa_lock    = threading.Lock()
 

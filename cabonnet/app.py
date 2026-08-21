@@ -1329,6 +1329,19 @@ async def ai_revisitas_causa(request: Request):
     return {"ok": True, **result}
 
 
+@router.post("/ai/revisitas-sintese")
+async def ai_revisitas_sintese(request: Request):
+    from cabonnet.ai import _ai_revisitas_sintese
+    body   = await request.json()
+    loop   = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _ai_revisitas_sintese, body)
+    if result is None:
+        code = 503 if not _ANTHROPIC_API_KEY else 502
+        msg  = "ANTHROPIC_API_KEY nao configurada no .env" if not _ANTHROPIC_API_KEY else "Erro ao chamar Claude API"
+        raise HTTPException(code, msg)
+    return {"ok": True, **result}
+
+
 @router.get("/api/motivo-encerramento")
 async def get_motivo_encerramento(numos: str, _role: str = Depends(_require_auth)):
     from cabonnet.db import _db_get_motivo_encerramento

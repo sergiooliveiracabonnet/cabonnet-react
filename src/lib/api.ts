@@ -249,6 +249,7 @@ export const ai = {
   juniperCorrelacao:     (payload: unknown) => request('/ai/juniper-correlacao',    { method: 'POST', body: JSON.stringify(payload) }),
   nivelSinal:            (payload: unknown) => request('/ai/nivel-sinal',           { method: 'POST', body: JSON.stringify(payload) }),
   revisitasCausa:        (payload: unknown) => request('/ai/revisitas-causa',       { method: 'POST', body: JSON.stringify(payload), timeoutMs: 75_000 }),
+  revisitasSintese:      (payload: unknown) => request('/ai/revisitas-sintese',     { method: 'POST', body: JSON.stringify(payload), timeoutMs: 75_000 }),
   justificativaBacklog:  (payload: unknown) => request('/ai/justificativa-backlog', { method: 'POST', body: JSON.stringify(payload) }),
   chat: (messages: { role: string; content: string }[]) => request<{ ok: boolean; response: string; tool_calls: string[] }>('/ai/chat', { method: 'POST', body: JSON.stringify({ messages }) }),
 }
