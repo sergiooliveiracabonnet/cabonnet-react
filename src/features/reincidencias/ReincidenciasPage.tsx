@@ -4,11 +4,12 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { buildChurn } from '../../lib/builders/churn'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
-import { useAIReincidencias } from '../../hooks/useAIReincidencias'
+import { aiPairKey, useAIReincidencias } from '../../hooks/useAIReincidencias'
 import { useReincidenciaDetails } from '../../hooks/useReincidenciaDetails'
 import { buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
 import { exportReincidenciasPDF } from './reincidenciasPDF'
 import { ReincidenciasCharts } from './ReincidenciasCharts'
+import { ReincidenciasAIPanel } from './ReincidenciasAIPanel'
 
 const FORNECEDORES = ['WES', 'Instacable', 'THM', 'REDE', 'MANUTENCAO', 'INTERNO', 'OUTRO']
 
@@ -31,7 +32,9 @@ export default function ReincidenciasPage() {
   ), [allRows, fornecedor, equipe])
   const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows), [clientes, filteredBaseRows])
   const intervals = useMemo(() => buildIntervalDistribution(pares), [pares])
-  const { data: analysis, isFetching: aiLoading, isError: aiError, errorMessage } = useAIReincidencias(pares, aiEnabled)
+  const filtros = useMemo(() => [fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras', equipe ? `Equipe: ${equipe}` : 'Todas as equipes'], [fornecedor, equipe])
+  const contexto = useMemo(() => ({ janelaDias: churn.janelaDias, filtros: filtros.join(' · ') }), [churn.janelaDias, filtros])
+  const { data: analysis, isFetching: aiLoading, isError: aiError, errorMessage } = useAIReincidencias(pares, aiEnabled, contexto)
   const osCount = clientes.reduce((sum, c) => sum + c.rows.length, 0)
   const avgGap = clientes.length ? Math.round(clientes.reduce((sum, c) => sum + c.intervaloMedio, 0) / clientes.length * 10) / 10 : 0
   const resetAI = (setter: (value: string) => void) => (value: string) => { setter(value); setAIEnabled(false) }
@@ -40,7 +43,7 @@ export default function ReincidenciasPage() {
     <div className="flex flex-col gap-5 p-4 sm:p-6">
       <PageHeader title="Relatório de Reincidências" icon={UserMinus}
         description={`Manutenções repetidas nos últimos ${churn.janelaDias} dias · análise auditável por cliente`}
-        actions={<button type="button" disabled={!clientes.length} onClick={() => exportReincidenciasPDF(clientes, [fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras', equipe ? `Equipe: ${equipe}` : 'Todas as equipes'], analysis)}
+        actions={<button type="button" disabled={!clientes.length} onClick={() => exportReincidenciasPDF(clientes, filtros, analysis)}
           className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 text-label font-semibold text-white transition-colors hover:bg-primary/85 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
           <FilePdf size={17} /> Exportar PDF
         </button>}
@@ -62,17 +65,9 @@ export default function ReincidenciasPage() {
 
       <ReincidenciasCharts ranking={teamRanking} intervals={intervals} analysis={analysis} />
 
-      <section className="rounded-xl border border-primary/25 bg-primary/5 p-4 sm:p-5" aria-labelledby="ai-title">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><h2 id="ai-title" className="flex items-center gap-2 text-body font-bold text-text"><Brain size={18} className="text-primary" /> Diagnóstico objetivo da IA</h2><p className="mt-1 text-caption text-secondary">Compara cada atendimento com a visita seguinte e aponta causa provável e pendência.</p></div>
-          <button type="button" disabled={!pares.length || aiLoading || observationsLoading || observationsError} onClick={() => setAIEnabled(true)} className="min-h-11 cursor-pointer rounded-lg border border-primary/30 bg-primary/10 px-4 text-label font-semibold text-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
-            {observationsLoading ? 'Carregando observações…' : aiLoading ? 'Analisando…' : analysis ? 'Atualizar análise' : 'Gerar análise com IA'}
-          </button>
-        </div>
-        {analysis && <div className="mt-4 space-y-3"><p className="text-body leading-relaxed text-text">{analysis.narrativa}</p><div className="flex flex-wrap gap-2">{analysis.causas_distribuicao.map(c => <span key={c.causa} className="rounded-full border border-border bg-card px-3 py-1 text-caption text-secondary">{c.causa}: <b className="text-text">{c.count}</b> ({c.pct}%)</span>)}</div></div>}
-        {observationsError && <p className="mt-3 text-label text-red">Não foi possível carregar as observações das OS. Atualize a página e tente novamente.</p>}
-        {aiError && <p className="mt-3 text-label text-red">A IA não respondeu: {errorMessage || 'erro desconhecido'}. O relatório detalhado e o PDF continuam disponíveis.</p>}
-      </section>
+      <ReincidenciasAIPanel analysis={analysis} parCount={pares.length} aiLoading={aiLoading}
+        observationsLoading={observationsLoading} observationsError={observationsError}
+        aiError={aiError} errorMessage={errorMessage} onGenerate={() => setAIEnabled(true)} />
 
       <section className="space-y-3" aria-label="Clientes e ordens reincidentes">
         {isLoading && <p className="rounded-xl border border-border bg-card p-6 text-secondary">Carregando ordens…</p>}
@@ -83,7 +78,21 @@ export default function ReincidenciasPage() {
             <button type="button" aria-expanded={open} onClick={() => setExpanded(open ? null : cliente.chave)} className="grid min-h-14 w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60">
               {open ? <CaretDown size={17} /> : <CaretRight size={17} />}<span className="min-w-0"><b className="block truncate text-body text-text">{cliente.cliente}</b><span className="block truncate text-caption text-secondary">{cliente.cidade}{cliente.bairro ? ` · ${cliente.bairro}` : ''}</span></span><span className="text-right tabular-nums"><b className="block text-orange">{cliente.visitas} visitas</b><span className="text-caption text-muted">média {cliente.intervaloMedio.toLocaleString('pt-BR')}d</span></span>
             </button>
-            {open && <div className="border-t border-border p-3 sm:p-4"><div className="overflow-x-auto"><table className="w-full min-w-[820px] border-collapse text-left text-label"><thead><tr className="text-caption uppercase tracking-wide text-muted">{['Data da OS', 'OS', 'Terceira', 'Equipe', 'Serviço', 'Observação da OS'].map(h => <th key={h} className="border-b border-border px-3 py-2 font-semibold">{h}</th>)}</tr></thead><tbody>{sortedClientRows(cliente.rows).map(row => <tr key={row.numos} className="align-top hover:bg-elevated/60"><td className="whitespace-nowrap border-b border-border/60 px-3 py-3 tabular-nums">{fmtDate(row.dataexecucao || row.databaixa) || '—'}</td><td className="border-b border-border/60 px-3 py-3 font-semibold text-primary">{row.numos}</td><td className="border-b border-border/60 px-3 py-3">{row._fornecedor || '—'}</td><td className="whitespace-nowrap border-b border-border/60 px-3 py-3">{shortEquipe(row.nomedaequipe)}</td><td className="max-w-[220px] border-b border-border/60 px-3 py-3">{String(row.servico || row.tiposervico || '—')}</td><td className="max-w-[360px] whitespace-pre-wrap border-b border-border/60 px-3 py-3 leading-relaxed text-secondary">{getOSObservation(row)}</td></tr>)}</tbody></table></div></div>}
+            {open && <div className="border-t border-border p-3 sm:p-4"><div className="overflow-x-auto"><table className="w-full min-w-[820px] border-collapse text-left text-label"><thead><tr className="text-caption uppercase tracking-wide text-muted">{['Data da OS', 'OS', 'Terceira', 'Equipe', 'Serviço', 'Observação da OS'].map(h => <th key={h} className="border-b border-border px-3 py-2 font-semibold">{h}</th>)}</tr></thead><tbody>{sortedClientRows(cliente.rows).flatMap((row, index, rows) => {
+              const next = rows[index + 1]
+              const diagnostico = next ? analysis?.porPar[aiPairKey(row.numos, next.numos)] : undefined
+              return [
+                <tr key={row.numos} className="align-top hover:bg-elevated/60"><td className="whitespace-nowrap border-b border-border/60 px-3 py-3 tabular-nums">{fmtDate(row.dataexecucao || row.databaixa) || '—'}</td><td className="border-b border-border/60 px-3 py-3 font-semibold text-primary">{row.numos}</td><td className="border-b border-border/60 px-3 py-3">{row._fornecedor || '—'}</td><td className="whitespace-nowrap border-b border-border/60 px-3 py-3">{shortEquipe(row.nomedaequipe)}</td><td className="max-w-[220px] border-b border-border/60 px-3 py-3">{String(row.servico || row.tiposervico || '—')}</td><td className="max-w-[360px] whitespace-pre-wrap border-b border-border/60 px-3 py-3 leading-relaxed text-secondary">{getOSObservation(row)}</td></tr>,
+                diagnostico ? <tr key={`${row.numos}-ia`} className="bg-primary/5"><td colSpan={6} className="border-b border-border/60 px-3 py-2">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="inline-flex items-center gap-1 rounded-pill border border-primary/30 bg-primary/10 px-2 py-0.5 text-caption font-semibold text-primary"><Brain size={12} /> {diagnostico.causa}</span>
+                    <span className="text-caption tabular-nums text-muted">revisita {diagnostico.diasEntre}d depois · OS {diagnostico.numosRev}</span>
+                  </div>
+                  {diagnostico.feitoPrimeira && <p className="mt-1 text-caption leading-relaxed text-secondary"><span className="font-semibold text-muted">Feito nesta OS:</span> {diagnostico.feitoPrimeira}</p>}
+                  {diagnostico.oQueFaltou && <p className="mt-0.5 text-caption leading-relaxed text-secondary"><span className="font-semibold text-muted">Faltou:</span> {diagnostico.oQueFaltou}</p>}
+                </td></tr> : null,
+              ]
+            })}</tbody></table></div></div>}
           </article>
         })}
       </section>

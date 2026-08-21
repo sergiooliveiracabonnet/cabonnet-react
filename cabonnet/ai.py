@@ -1361,6 +1361,119 @@ def _ai_revisitas_causa(payload):
         return None
 
 
+def _ai_revisitas_sintese(payload):
+    """Segundo passo: le a classificacao ja consolidada de TODOS os pares e devolve uma leitura unica.
+
+    O passo 1 (_ai_revisitas_causa) roda em lotes de 10 pares e nunca enxerga o conjunto inteiro,
+    entao nenhuma daquelas narrativas pode falar do todo. Esta chamada recebe so o agregado.
+    """
+    data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    now = _time_mod.time()
+
+    with state._ai_revisitas_sintese_lock:
+        c = state._ai_revisitas_sintese_cache
+        if c["hash"] == data_hash and (now - c["ts"]) < _AI_CACHE_TTL:
+            return {**{k: v for k, v in c.items() if k not in ("hash", "ts")}, "cached": True}
+
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    causas = payload.get("causas", [])[:10]
+    if not causas:
+        return None
+
+    total     = int(payload.get("total_pares") or 0)
+    clientes  = int(payload.get("total_clientes") or 0)
+    janela    = int(payload.get("janela_dias") or 60)
+    medio     = payload.get("intervalo_medio") or 0
+    rapidas   = int(payload.get("revisitas_rapidas") or 0)
+    rapidas_p = round(rapidas / total * 100) if total else 0
+    filtros   = str(payload.get("filtros") or "sem filtro")
+
+    def _linha_causa(i, c):
+        equipes = ", ".join(
+            "{} ({})".format(e.get("equipe", "?"), e.get("count", 0))
+            for e in (c.get("equipes") or [])[:3]
+        )
+        linha = "{}. {} - {} pares ({}%), intervalo medio {}d".format(
+            i + 1, c.get("causa", "?"), c.get("count", 0), c.get("pct", 0), c.get("intervalo_medio", 0),
+        )
+        if equipes:
+            linha += ", concentrado em " + equipes
+        for ex in (c.get("exemplos") or [])[:3]:
+            linha += "\n   ex: " + str(ex)[:220]
+        return linha
+
+    causas_txt = "\n".join(_linha_causa(i, c) for i, c in enumerate(causas))
+    notas      = [str(n)[:300] for n in (payload.get("notas") or [])[:8]]
+    notas_txt  = "\n".join("- " + n for n in notas) or "- (nenhuma)"
+
+    prompt = (
+        "Voce e um especialista em qualidade de campo de ISP regional com 15 anos de experiencia, "
+        "escrevendo para o gestor de operacoes.\n\n"
+        "A classificacao par a par ja foi feita e consolidada. "
+        "Recorte: {}. Janela: {} dias.\n\n".format(filtros, janela)
+        + "=== PANORAMA ===\n"
+        + "{} pares de revisita | {} clientes distintos | intervalo medio {} dias\n".format(total, clientes, medio)
+        + "Revisitas em ate 7 dias: {} ({}%)\n\n".format(rapidas, rapidas_p)
+        + "=== CAUSAS CONSOLIDADAS ===\n" + causas_txt + "\n\n"
+        + "=== LEITURAS PARCIAIS (cada lote viu no maximo 10 pares, nenhuma viu o conjunto) ===\n"
+        + notas_txt + "\n\n"
+        + "Escreva a sintese do conjunto INTEIRO. Regras:\n"
+        + "- Nao recite os percentuais da tabela acima: o relatorio ja os mostra ao lado. Interprete-os.\n"
+        + "- Diga o que so aparece olhando tudo junto: concentracao numa equipe, causas que se retroalimentam, "
+        + "execucao incompleta disfarcada de outra causa, o que o intervalo curto revela sobre a qualidade do fechamento.\n"
+        + "- Se as observacoes forem majoritariamente 'Sem Informacao', diga que o gargalo e o registro, nao o campo.\n"
+        + "- 3 a 5 frases, diretas, sem jargao de consultoria e sem elogio.\n"
+        + "Depois liste 2 a 4 acoes objetivas e verificaveis, cada uma ligada a uma causa da tabela.\n\n"
+        + "Responda SOMENTE com JSON valido, sem markdown:\n"
+        + '{"sintese": "3 a 5 frases", '
+        + '"acoes": [{"titulo": "acao curta no imperativo", "detalhe": "1 frase de como e por que", '
+        + '"causa": "rotulo exato da causa da tabela"}]}'
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-haiku-4-5-20251001", "max_tokens": 1500,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=60, verify=False,
+        )
+        if not resp.ok:
+            log.warning("[AI] revisitas-sintese %s: %s", resp.status_code, resp.text[:200])
+            _register_usage({}, error=True)
+            return None
+        resp_data = resp.json()
+        _register_usage(resp_data)
+        raw = resp_data["content"][0]["text"].strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        result = json.loads(raw)
+        acoes = [
+            {
+                "titulo":  str(a.get("titulo", "")).strip(),
+                "detalhe": str(a.get("detalhe", "")).strip(),
+                "causa":   str(a.get("causa", "")).strip(),
+            }
+            for a in (result.get("acoes") or [])[:4]
+            if str(a.get("titulo", "")).strip()
+        ]
+        out = {"sintese": str(result.get("sintese", "")).strip(), "acoes": acoes}
+        if not out["sintese"]:
+            return None
+        with state._ai_revisitas_sintese_lock:
+            state._ai_revisitas_sintese_cache.update({"hash": data_hash, "ts": now, **out})
+        log.info("[AI] revisitas-sintese gerado - %d pares consolidados, %d acoes", total, len(acoes))
+        return {**out, "cached": False}
+    except Exception as ex:
+        log.warning("[AI] revisitas-sintese erro: %s", str(ex)[:200])
+        _register_usage({}, error=True)
+        return None
+
+
 def _ai_justificativa_backlog(payload):
     """Gera narrativa de justificativa de atrasos/backlog para apresentar à gestão."""
     data_hash = hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()

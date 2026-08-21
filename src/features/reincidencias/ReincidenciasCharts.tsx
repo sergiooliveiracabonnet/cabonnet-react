@@ -10,7 +10,8 @@ export function ReincidenciasCharts({ ranking, intervals, analysis }: {
   intervals: IntervalItem[]
   analysis?: AIReincidenciaAnalysis | null
 }) {
-  const causes = [...(analysis?.causas_distribuicao || [])].sort((a, b) => b.count - a.count).slice(0, 7)
+  // Já vem ordenada por volume no merge dos lotes.
+  const causes = (analysis?.causas || []).slice(0, 7)
   return (
     <section aria-label="Análises gráficas de reincidência" className="grid grid-cols-1 gap-3 xl:grid-cols-3">
       <ChartCard icon={ChartBar} title="Equipes com maior reincidência" subtitle="Taxa atribuída à equipe do atendimento anterior">

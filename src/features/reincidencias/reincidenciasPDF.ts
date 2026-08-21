@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf'
 import { drawPDFHeader } from '../../lib/pdfBrand'
 import type { ClienteReincidente } from '../../lib/builders/churn'
-import type { AIReincidenciaAnalysis } from '../../hooks/useAIReincidencias'
+import { aiPairKey, type AIReincidenciaAnalysis } from '../../hooks/useAIReincidencias'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { getOSObservation, sortedClientRows } from './reincidenciasReport'
 
@@ -17,23 +17,48 @@ export function exportReincidenciasPDF(clientes: ClienteReincidente[], filters: 
   }
 
   addHeader()
-  doc.setFont('helvetica', 'bold'); paragraph(`${clientes.length} clientes · ${clientes.reduce((sum, c) => sum + c.rows.length, 0)} ordens`, 14, [17, 24, 39])
-  doc.setFont('helvetica', 'normal'); paragraph(filters.join(' · '), 9)
-  if (analysis?.narrativa) {
-    ensure(22); doc.setFillColor(239, 246, 255); doc.roundedRect(margin, y, usable, 7, 2, 2, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 64, 175); doc.setFontSize(10); doc.text('Síntese da IA', margin + 3, y + 5); y += 11
-    doc.setFont('helvetica', 'normal'); paragraph(analysis.narrativa)
-    if (analysis.causas_distribuicao?.length) paragraph(`Causas: ${analysis.causas_distribuicao.map(c => `${c.causa} ${c.count} (${c.pct}%)`).join(' · ')}`, 8)
+  // Escopo em uma linha compacta: o diagnóstico da IA lidera o relatório.
+  paragraph(`${clientes.length} clientes · ${clientes.reduce((sum, c) => sum + c.rows.length, 0)} ordens · ${filters.join(' · ')}`, 9, [75, 85, 99])
+
+  if (analysis) {
+    ensure(30); doc.setFillColor(239, 246, 255); doc.roundedRect(margin, y, usable, 8, 2, 2, 'F')
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 64, 175); doc.setFontSize(10.5); doc.text('Diagnóstico da IA', margin + 3, y + 5.6); y += 12
+
+    if (analysis.sintese) {
+      doc.setFont('helvetica', 'normal'); paragraph(analysis.sintese, 10, [17, 24, 39])
+    }
+    paragraph(analysis.resumo, 8, [107, 114, 128])
+    analysis.causas.forEach(causa => paragraph(`• ${causa.causa} — ${causa.count} ${causa.count === 1 ? 'par' : 'pares'} (${causa.pct}%)`, 8))
+
+    if (analysis.acoes.length) {
+      y += 1; doc.setFont('helvetica', 'bold'); paragraph('Ações recomendadas', 9, [17, 24, 39]); doc.setFont('helvetica', 'normal')
+      analysis.acoes.forEach((acao, index) => paragraph(`${index + 1}. ${acao.titulo}${acao.causa ? ` (${acao.causa})` : ''}${acao.detalhe ? ` — ${acao.detalhe}` : ''}`, 8))
+    }
+    if (!analysis.sintese) analysis.notas.forEach(nota => paragraph(nota, 8, [107, 114, 128]))
+
+    // Só desenha o fio separador se ele couber: quebrar página por causa dele deixaria um traço solto no topo.
+    if (y + 8 < 282) { doc.setDrawColor(226, 232, 240); doc.line(margin, y + 1, width - margin, y + 1); y += 6 }
   }
+
+  ensure(14); doc.setFont('helvetica', 'bold'); paragraph('Detalhamento por cliente', 11, [17, 24, 39]); doc.setFont('helvetica', 'normal')
 
   clientes.forEach(cliente => {
     ensure(18); doc.setFillColor(245, 247, 250); doc.roundedRect(margin, y, usable, 10, 2, 2, 'F')
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(17, 24, 39); doc.text(`${cliente.cliente} · ${cliente.visitas} visitas`, margin + 3, y + 4)
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(75, 85, 99); doc.text(`${cliente.cidade} / ${cliente.bairro || 'Bairro não informado'} · intervalo médio ${cliente.intervaloMedio}d`, margin + 3, y + 8); y += 14
-    sortedClientRows(cliente.rows).forEach(row => {
+    const rows = sortedClientRows(cliente.rows)
+    rows.forEach((row, index) => {
       ensure(22); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(17, 24, 39)
       doc.text(`${fmtDate(row.dataexecucao || row.databaixa) || 'Sem data'} · OS ${row.numos} · ${shortEquipe(row.nomedaequipe)} · ${row._fornecedor || 'Outra'}`, margin + 2, y)
       y += 4; doc.setFont('helvetica', 'normal'); paragraph(`${row.servico || row.tiposervico || 'Serviço não informado'} — ${getOSObservation(row)}`, 8)
+      const next = rows[index + 1]
+      const diagnostico = next && analysis?.porPar[aiPairKey(row.numos, next.numos)]
+      if (!diagnostico) return
+      const detalhe = [
+        diagnostico.feitoPrimeira && `Feito: ${diagnostico.feitoPrimeira}`,
+        diagnostico.oQueFaltou && `Faltou: ${diagnostico.oQueFaltou}`,
+      ].filter(Boolean).join(' · ')
+      paragraph(`IA → ${diagnostico.causa} (revisita ${diagnostico.diasEntre}d depois, OS ${diagnostico.numosRev})${detalhe ? `. ${detalhe}` : ''}`, 8, [30, 64, 175])
     })
   })
   footer()
