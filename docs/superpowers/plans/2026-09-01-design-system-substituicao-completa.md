@@ -746,6 +746,84 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
+## Task 4b: Migrar as referências `--c-*` inline nos `.tsx`
+
+**Files:**
+- Modify: `src/features/dashboard/FluxoOSPanel.tsx` (15 ocorrências)
+- Modify: `src/features/juniper/topology/JuniperTopology3D.tsx` (7)
+- Modify: `src/components/ui/StatCard.tsx` (7)
+- Modify: `src/components/layout/Sidebar.tsx` (3)
+- Modify: `src/features/dashboard/DashboardPaineis.tsx` (2)
+- Modify: `src/components/ui/StatCard.test.tsx` (2)
+
+**Task acrescentada durante a execução.** A regra `--c-*` criada na Task 4 revelou uma lacuna do plano: a Task 1 removeu essas variáveis do `index.css`, mas 31 referências continuaram vivas em estilos inline dentro de `.tsx`. Esse código está quebrado desde a Task 1 — `rgb(var(--c-muted))` resolve para vazio. Três dos seis arquivos não pertenciam a nenhuma task.
+
+Sem esta task, `npm run audit:ds` fica vermelho da Task 5 até a 16, e o portão de verificação vira ruído em vez de sinal.
+
+**Interfaces:**
+- Consumes: os tokens da Task 1.
+- Produces: `npm run audit:ds` verde de novo, restaurando o portão para as tasks seguintes.
+
+- [ ] **Step 1: Registrar o estado inicial**
+
+```bash
+grep -rno -- "--c-[a-z-]*" src | wc -l
+```
+
+Esperado: `31`.
+
+- [ ] **Step 2: Aplicar o mapa de nomes**
+
+O mesmo mapa da Task 1 Step 3, agora em `.tsx`:
+
+| Antigo | Novo |
+|---|---|
+| `--c-bg` | `--bg` |
+| `--c-card` | `--surface-2` |
+| `--c-border` | `--border` |
+| `--c-text` | `--text` |
+| `--c-secondary` | `--text-secondary` |
+| `--c-muted` | `--text-muted` |
+| `--c-primary` | `--blue` |
+| `--c-primary-dark` | `--blue` |
+| `--c-cyan` | `--blue` |
+| `--c-orange` | `--orange` |
+| `--c-green` | `--green` |
+| `--c-red` | `--red` |
+
+`--c-primary` vira `--blue`, não `--orange`, pelo mesmo motivo da Task 2: a troca da cor de marca é isolada na Task 9. As três ocorrências em `Sidebar.tsx` marcam o item ativo e passam a laranja na Task 16 — aqui elas só voltam a funcionar.
+
+Cuidado com colisão de substring: substitua `--c-primary-dark` **antes** de `--c-primary`, e `--c-secondary` antes de qualquer coisa que case com `--c-s`.
+
+- [ ] **Step 3: Confirmar que zerou**
+
+```bash
+grep -rn -- "--c-" src | wc -l     # esperado: 0
+```
+
+- [ ] **Step 4: Verificar**
+
+```bash
+npx tsc --noEmit && npm run lint && npm test && npm run audit:ds
+```
+
+Esperado: os quatro passam. Este é o primeiro ponto da migração em que `audit:ds` volta ao verde depois da Task 4.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add -A src
+git commit -m "fix(ds): migra as 31 referencias --c-* inline nos .tsx
+
+A Task 1 removeu essas variaveis do index.css mas nao os consumidores em
+estilo inline, que resolviam para vazio desde entao. Tres dos seis arquivos
+nao pertenciam a nenhuma task do plano original.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+```
+
+---
+
 # FASE 2 — Utilitários alpha
 
 Levantamento: 405 ocorrências em 60 arquivos, mas a distribuição é muito concentrada. `border-white/[0.08]` sozinho responde por **307**. Por isso a fase é dividida em duas tasks: o substituto em massa e a cauda.
@@ -1830,6 +1908,24 @@ grep -rn "card-premium\|number-display\|glass\b\|mesh-bg\|aurora-bg\|text-gradie
 ```
 
 Esperado: nenhuma saída nos três.
+
+**Resíduo `.light` no CSS.** A Task 3 renomeou a classe de tema para `.dark`, o que torna **toda regra prefixada com `.light `** código morto — o seletor deixa de casar com qualquer elemento. Isso não é erro de build nem de tipo: a regra simplesmente para de aplicar, em silêncio.
+
+```bash
+grep -n "\.light" src/index.css
+```
+
+Esperado: nenhuma saída. A maior parte já saiu nas tasks anteriores (o remendo `[class*=]` na Task 6, `.light .badge-*` na 12, `.light .navbar-premium` na 15, `.light .sidebar-premium` na 16). O que restar é de duas naturezas:
+
+- Variante clara de classe **que sobrevive** (`.light .card-premium`) — o par de regras `.x` / `.light .x` colapsa em uma só, porque os tokens já mudam com o tema. Se o valor claro for genuinamente diferente do escuro, a regra vira `.dark .x`.
+- Variante clara de classe **morta** (`.light .glass`, `.light .border-glow`, `.light .border-ghost`) — sai junto com a classe base no Step 3.
+
+Um segundo bloco de tokens navy rotulado `/* Cabonnet Control Surface — fundação visual 2026 */`, resíduo do restyle rejeitado em 2026-07-22, foi encontrado e removido durante a Task 1. Confirme que não voltou:
+
+```bash
+grep -c "^:root" src/index.css        # tem que ser 1
+grep -n "Control Surface" src/index.css   # não pode retornar nada
+```
 
 - [ ] **Step 3: Apagar as classes mortas restantes do `index.css`**
 
