@@ -16,7 +16,7 @@ const FONT = '"Inter", system-ui, sans-serif'
 const TICK = '#71717a'  /* zinc-500 — legível em ambos os temas */
 
 function isLight(): boolean {
-  return document.documentElement.classList.contains('light')
+  return !document.documentElement.classList.contains('dark')
 }
 
 function tipStyle() {

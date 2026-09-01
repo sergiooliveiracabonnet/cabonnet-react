@@ -14,7 +14,7 @@ const FONT = '"Inter", system-ui, sans-serif'
 const TICK = '#71717a'
 
 function isLight(): boolean {
-  return document.documentElement.classList.contains('light')
+  return !document.documentElement.classList.contains('dark')
 }
 
 function Tip({ active, payload }: any) {

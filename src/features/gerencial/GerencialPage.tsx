@@ -103,7 +103,7 @@ export default function GerencialPage() {
     const el = produtividadeRef.current
     if (!el) return
     try {
-      const isDark     = !document.documentElement.classList.contains('light')
+      const isDark     = document.documentElement.classList.contains('dark')
       const bg         = isDark ? '#0d1117' : '#ffffff'
       const bgHdr      = isDark ? '#111827' : '#f0f4ff'
       const colorText  = isDark ? '#e2e8f0' : '#0f172a'

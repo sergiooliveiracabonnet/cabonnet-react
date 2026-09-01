@@ -80,7 +80,7 @@ const LIGHT = {
 let C = DARK
 
 function getTheme() {
-  return document.documentElement.classList.contains('light') ? LIGHT : DARK
+  return document.documentElement.classList.contains('dark') ? DARK : LIGHT
 }
 
 // Definição das colunas

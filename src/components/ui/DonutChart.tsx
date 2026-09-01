@@ -7,7 +7,7 @@ const C  = 2 * Math.PI * R
 const FONT = '"Inter", system-ui, sans-serif'
 
 function isLight(): boolean {
-  return document.documentElement.classList.contains('light')
+  return !document.documentElement.classList.contains('dark')
 }
 
 interface DataPoint {

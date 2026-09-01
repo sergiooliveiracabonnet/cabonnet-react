@@ -29,7 +29,7 @@ function stripOverflow(el: HTMLElement): void {
 export async function captureTableAsImage(opts: CaptureTableImageOptions): Promise<Blob> {
   const { tableEl, title, subtitle, accentColor, itemCount } = opts
 
-  const isDark     = !document.documentElement.classList.contains('light')
+  const isDark     = document.documentElement.classList.contains('dark')
   const bg         = isDark ? '#0d1117' : '#ffffff'
   const bgHdr      = isDark ? '#111827' : '#f0f4ff'
   const colorText  = isDark ? '#e2e8f0' : '#0f172a'
