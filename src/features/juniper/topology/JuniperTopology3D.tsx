@@ -33,7 +33,7 @@ interface HoverInfo {
   y:      number
 }
 
-/** Le `--c-*` (formato "59 130 246") e devolve o inteiro 0xRRGGBB que o Three.js espera. */
+/** Le uma custom property de cor (formato "59 130 246") e devolve o inteiro 0xRRGGBB que o Three.js espera. */
 function readToken(name: string, fallback: number): number {
   if (typeof window === 'undefined') return fallback
   const raw   = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
@@ -101,13 +101,13 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
         const height = mount.clientHeight || 520
 
         const colors = {
-          bg:      readToken('--c-card',    0x18181b),
-          cluster: readToken('--c-primary', 0x3b82f6),
-          iface:   readToken('--c-cyan',    0x22d3ee),
-          active:  readToken('--c-red',     0xf87171),
-          idle:    readToken('--c-muted',   0x71717a),
-          link:    readToken('--c-border',  0x3f3f46),
-          text:    readTokenCss('--c-text', 'rgb(244, 244, 245)'),
+          bg:      readToken('--surface-2',    0x18181b),
+          cluster: readToken('--blue', 0x3b82f6),
+          iface:   readToken('--blue',    0x22d3ee),
+          active:  readToken('--red',     0xf87171),
+          idle:    readToken('--text-muted',   0x71717a),
+          link:    readToken('--border',  0x3f3f46),
+          text:    readTokenCss('--text', 'rgb(244, 244, 245)'),
         }
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })

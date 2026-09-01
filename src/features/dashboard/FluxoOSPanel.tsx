@@ -122,7 +122,7 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
         <span><span className="font-semibold text-text">{totEntradas}</span> entradas no período</span>
         <span><span className="font-semibold text-text">{totConcl}</span> concluídas</span>
         <span className="font-semibold"
-              style={{ color: saldoJanela > 0 ? 'rgb(var(--c-green))' : saldoJanela < 0 ? 'rgb(var(--c-orange))' : 'rgb(var(--c-muted))' }}>
+              style={{ color: saldoJanela > 0 ? 'rgb(var(--green))' : saldoJanela < 0 ? 'rgb(var(--orange))' : 'rgb(var(--text-muted))' }}>
           {saldoJanela > 0 ? `fila −${saldoJanela} (encolhendo)` : saldoJanela < 0 ? `fila +${-saldoJanela} (crescendo)` : 'fila estável'}
         </span>
       </div>
@@ -154,15 +154,15 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
           {Array.from({ length: 5 }, (_, k) => k * yStep).map(v => (
             <g key={v}>
               <line x1={PAD_L} x2={W - PAD_R} y1={y(v)} y2={y(v)}
-                    stroke="rgb(var(--c-border) / 0.6)" strokeWidth={1} />
+                    stroke="rgb(var(--border) / 0.6)" strokeWidth={1} />
               <text x={PAD_L - 7} y={y(v) + 3.5} textAnchor="end"
-                    style={{ fill: 'rgb(var(--c-muted))', fontSize: 10 }}>{v}</text>
+                    style={{ fill: 'rgb(var(--text-muted))', fontSize: 10 }}>{v}</text>
             </g>
           ))}
           {/* eixo X — dias alternados */}
           {serie.dias.map((d, i) => (i % 2 === 0
             ? <text key={d} x={x(i)} y={H - 4} textAnchor="middle"
-                    style={{ fill: 'rgb(var(--c-muted))', fontSize: 10 }}>{fmtDia(d).slice(0, 2)}</text>
+                    style={{ fill: 'rgb(var(--text-muted))', fontSize: 10 }}>{fmtDia(d).slice(0, 2)}</text>
             : null
           ))}
 
@@ -176,15 +176,15 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
 
           {/* pontos finais + rótulo direto */}
           <circle cx={x(len - 1)} cy={y(ultAbertas)} r={3.5} fill={BLUE}
-                  stroke="rgb(var(--c-card))" strokeWidth={2} />
+                  stroke="rgb(var(--surface-2))" strokeWidth={2} />
           <circle cx={x(len - 1)} cy={y(ultConcl)} r={3.5} fill={PURPLE}
-                  stroke="rgb(var(--c-card))" strokeWidth={2} />
+                  stroke="rgb(var(--surface-2))" strokeWidth={2} />
           <text x={x(len - 1) + 8} y={y(ultAbertas) + (ultAbertas <= ultConcl ? 12 : -6)}
-                style={{ fill: 'rgb(var(--c-secondary))', fontSize: 10, fontWeight: 600 }}>
+                style={{ fill: 'rgb(var(--text-secondary))', fontSize: 10, fontWeight: 600 }}>
             {ultAbertas} entradas
           </text>
           <text x={x(len - 1) + 8} y={y(ultConcl) + (ultConcl < ultAbertas ? 12 : -6)}
-                style={{ fill: 'rgb(var(--c-secondary))', fontSize: 10, fontWeight: 600 }}>
+                style={{ fill: 'rgb(var(--text-secondary))', fontSize: 10, fontWeight: 600 }}>
             {ultConcl} concluídas
           </text>
 
@@ -192,11 +192,11 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
           {hover != null && (
             <g pointerEvents="none">
               <line x1={x(hover)} x2={x(hover)} y1={PAD_T} y2={PAD_T + IH}
-                    stroke="rgb(var(--c-muted) / 0.5)" strokeWidth={1} strokeDasharray="3 3" />
+                    stroke="rgb(var(--text-muted) / 0.5)" strokeWidth={1} strokeDasharray="3 3" />
               <circle cx={x(hover)} cy={y(serie.abertas[hover])} r={4} fill={BLUE}
-                      stroke="rgb(var(--c-bg))" strokeWidth={2} />
+                      stroke="rgb(var(--bg))" strokeWidth={2} />
               <circle cx={x(hover)} cy={y(serie.concl[hover])} r={4} fill={PURPLE}
-                      stroke="rgb(var(--c-bg))" strokeWidth={2} />
+                      stroke="rgb(var(--bg))" strokeWidth={2} />
             </g>
           )}
         </svg>
@@ -227,7 +227,7 @@ export function FluxoOSPanel({ evolucao }: { evolucao: FluxoEvolucao }) {
             <div className="flex items-center justify-between gap-4 text-secondary border-t border-border mt-1 pt-1">
               <span>Saldo da fila</span>
               <span className="font-semibold tabular-nums"
-                    style={{ color: saldoHover >= 0 ? 'rgb(var(--c-green))' : 'rgb(var(--c-orange))' }}>
+                    style={{ color: saldoHover >= 0 ? 'rgb(var(--green))' : 'rgb(var(--orange))' }}>
                 {saldoHover > 0 ? '−' : saldoHover < 0 ? '+' : ''}{Math.abs(saldoHover)}
               </span>
             </div>

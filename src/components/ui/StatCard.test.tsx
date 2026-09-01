@@ -66,12 +66,12 @@ describe('StatCard', () => {
 
   it('tone critical coloriza o valor', () => {
     render(<StatCard title="KPI" value={7} tone="critical" />)
-    expect(screen.getByText('7')).toHaveStyle({ color: 'rgb(var(--c-red))' })
+    expect(screen.getByText('7')).toHaveStyle({ color: 'rgb(var(--red))' })
   })
 
   it('tone neutral não coloriza o valor', () => {
     render(<StatCard title="KPI" value={7} />)
-    expect(screen.getByText('7')).toHaveStyle({ color: 'rgb(var(--c-text))' })
+    expect(screen.getByText('7')).toHaveStyle({ color: 'rgb(var(--text))' })
   })
 
   it('size inline renderiza par label/valor', () => {

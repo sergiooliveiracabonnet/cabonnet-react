@@ -23,10 +23,10 @@ export interface StatTrend { delta: number; pct?: number; higherIsBetter?: boole
 
 // Cor só para status: tons semânticos apontam para os tokens de index.css.
 const TONE_COLOR: Record<Exclude<StatTone, 'neutral'>, string> = {
-  critical: 'rgb(var(--c-red))',
-  warning:  'rgb(var(--c-orange))',
-  ok:       'rgb(var(--c-green))',
-  info:     'rgb(var(--c-primary))',
+  critical: 'rgb(var(--red))',
+  warning:  'rgb(var(--orange))',
+  ok:       'rgb(var(--green))',
+  info:     'rgb(var(--blue))',
 }
 
 /** Converte o AccentColor legado para tone. Accents decorativos viram neutral. */
@@ -45,7 +45,7 @@ export function TrendPill({ trend }: { trend?: StatTrend | null }) {
   const { delta, pct, higherIsBetter } = trend ?? {}
   if (delta == null) return null
   const positive = (delta > 0) === (higherIsBetter !== false)
-  const color    = positive ? 'rgb(var(--c-green))' : 'rgb(var(--c-red))'
+  const color    = positive ? 'rgb(var(--green))' : 'rgb(var(--red))'
   const Icon     = delta === 0 ? Minus : delta > 0 ? TrendUp : TrendDown
   return (
     <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-caption font-bold flex-shrink-0"
@@ -82,7 +82,7 @@ export function StatCard({
   const statusColor = tone !== 'neutral' ? TONE_COLOR[tone] : undefined
   // ok mantém o valor neutro (padrão aprovado do dashboard): a borda já sinaliza.
   const valColor = (tone === 'critical' || tone === 'warning' || tone === 'info')
-    ? statusColor! : 'rgb(var(--c-text))'
+    ? statusColor! : 'rgb(var(--text))'
 
   const interactive = onClick
     ? {
