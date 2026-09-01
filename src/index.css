@@ -540,46 +540,6 @@ body {
   }
 }
 
-/* Cabonnet Control Surface — fundação visual 2026 */
-:root {
-  --bg: 7 12 22;
-  --surface-3: 11 18 31;
-  --surface-hover: 16 25 42;
-  --surface-2: 12 20 35;
-  --surface-hover: 19 30 49;
-  --surface-active: 27 41 65;
-  --border: 36 50 72;
-  --text: 241 245 249;
-  --text-secondary: 174 187 204;
-  --text-muted: 112 129 151;
-  --text-disabled: 56 71 92;
-  --blue: 59 130 246;
-  --blue: 96 165 250;
-  --blue: 29 78 216;
-  --blue: 56 189 248;
-}
-
-.light {
-  --bg: 243 246 250;
-  --surface-3: 255 255 255;
-  --surface-hover: 239 244 250;
-  --surface-2: 255 255 255;
-  --surface-hover: 245 248 252;
-  --surface-active: 232 238 246;
-  --border: 210 220 232;
-  --text: 15 27 45;
-  --text-secondary: 61 78 100;
-  --text-muted: 91 108 129;
-}
-
-body,
-.light body {
-  background-image:
-    radial-gradient(circle at 92% -10%, rgb(var(--blue) / 0.10), transparent 30rem),
-    linear-gradient(180deg, rgb(var(--surface-3) / 0.35), transparent 18rem);
-  background-attachment: fixed;
-}
-
 .app-content {
   width: 100%;
   max-width: 1600px;
