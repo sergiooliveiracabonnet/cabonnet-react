@@ -1,0 +1,315 @@
+import { isExecucaoReal } from '../transform'
+import type { OSRow, Fornecedor } from '../types'
+import { avg, calcMTTR, mttrStats, slaPeriodoPct, shortName } from './_helpers'
+
+const FORN_DISPLAY: Partial<Record<Fornecedor, { label: string; cor: string }>> = {
+  WES:        { label: 'WES (Instalação)', cor: '#c4b5fd' },
+  Instacable: { label: 'Instacable',       cor: '#facc15' },
+  THM:        { label: 'THM (Instalação)', cor: '#22d3ee' },
+  REDE:       { label: 'Rede',             cor: '#4ade80' },
+  MANUTENCAO: { label: 'Manutenção',       cor: '#f97316' },
+  INTERNO:    { label: 'Interno (COPE)',   cor: '#94a3b8' },
+}
+
+// Custo é contratado por mês; o painel é lido em qualquer recorte de data. Sem
+// converter um no outro, "custo / OS" divide um mês inteiro de custo pelas OS de
+// uma semana e sai ~4x inflado — e esse número alimenta a recomendação de contrato.
+const DIAS_MES_REFERENCIA = 30
+
+/** Piso de OS para o ranking valer. Abaixo disso a proporção é ruído: 100% em 3
+ *  OS liderava sobre 96% em 500, e o desempate era MTTR, não volume. */
+export const MIN_OS_RANKING = 10
+
+/** Dias no intervalo, contando os dois extremos. Sem intervalo, assume o mês. */
+export function diasNoPeriodo(from: Date | null, to: Date | null): number {
+  if (!from || !to) return DIAS_MES_REFERENCIA
+  const dias = Math.round((to.getTime() - from.getTime()) / 86400000) + 1
+  return dias > 0 ? dias : DIAS_MES_REFERENCIA
+}
+
+export function buildFornecedor(
+  rows: OSRow[],
+  filtro = '',
+  custoConfig: Record<string, number> = {},
+  diasPeriodo: number = DIAS_MES_REFERENCIA
+) {
+  const base = filtro
+    ? rows.filter(r => {
+        if (filtro === 'REDE')       return r._tipo === 'REDE'
+        if (filtro === 'MANUTENCAO') return r._tipo === 'MANUTENCAO'
+        return r._fornecedor === filtro
+      })
+    : rows
+
+  const fornGrp = new Map<string, OSRow[]>()
+  for (const r of base) {
+    const k = r._fornecedor || 'OUTRO'
+    if (k === 'OUTRO') continue
+    if (!fornGrp.has(k)) fornGrp.set(k, [])
+    fornGrp.get(k)!.push(r)
+  }
+
+  const paineis = [...fornGrp.entries()].map(([key, gr]) => {
+    const total      = gr.length
+    const concluidas = gr.filter(r => isExecucaoReal(r.descsituacao)).length
+    const criticas   = gr.filter(r => r._slaCritico).length
+    const conclPct   = total > 0 ? Math.round(concluidas / total * 100) : 0
+    // SLA de prazo real — antes era um alias de conclPct, o que contava a mesma
+    // métrica duas vezes no score (65% do peso numa variável só)
+    const sla        = slaPeriodoPct(gr)
+    // P50 responde "quanto demora o caso típico"; P90 responde "quanto demora o
+    // caso ruim". É o P90 que vira reclamação de cliente e discussão de contrato,
+    // e a mediana o esconde por construção.
+    const mttrs      = mttrStats(gr)
+    const mttr       = mttrs.p50
+    const mttrP90    = mttrs.p90
+
+    const eqMap = new Map<string, { rows: OSRow[]; concluidas: number; criticas: number; agingArr: number[]; mttrRows: OSRow[] }>()
+    for (const r of gr) {
+      const eq = (r.nomedaequipe || '').trim() || 'Sem equipe'
+      if (!eqMap.has(eq)) eqMap.set(eq, { rows: [], concluidas: 0, criticas: 0, agingArr: [], mttrRows: [] })
+      const e = eqMap.get(eq)!
+      e.rows.push(r)
+      if (isExecucaoReal(r.descsituacao)) { e.concluidas++; e.mttrRows.push(r) }
+      if (r._slaCritico) e.criticas++
+      if (r._aging != null) e.agingArr.push(r._aging)
+    }
+
+    const equipes = [...eqMap.entries()].map(([nome, e]) => ({
+      nome, total: e.rows.length, concluidas: e.concluidas, criticas: e.criticas,
+      sla:  slaPeriodoPct(e.rows),   // % dentro do prazo — não taxa de conclusão
+      aging: avg(e.agingArr),
+      mttr: calcMTTR(e.mttrRows),
+    })).sort((a, b) => b.total - a.total)
+
+    const topEq = equipes.slice(0, 8)
+    const chart = {
+      labels:     topEq.map(e => shortName(e.nome)),
+      total:      topEq.map(e => e.total),
+      concluidas: topEq.map(e => e.concluidas),
+    }
+
+    const custoMensal  = custoConfig[key] ?? 0
+    const custoPeriodo = custoMensal * (diasPeriodo / DIAS_MES_REFERENCIA)
+    const custoPorOs   = custoMensal > 0 && concluidas > 0 ? Math.round(custoPeriodo / concluidas) : null
+
+    return {
+      nome:    FORN_DISPLAY[key as Fornecedor]?.label ?? key,
+      cor:     FORN_DISPLAY[key as Fornecedor]?.cor   ?? '#64748b',
+      fornKey: key,
+      kpis:    { total, concluidas, criticas, sla, conclPct, mttr, mttrP90, custoMensal, custoPorOs },
+      equipes, chart,
+    }
+  })
+
+  // Ordena por SLA — o número contratual, que é do que se cobra um fornecedor.
+  // Antes era um score composto (SLA 45% + conclusão 35% + MTTR 20%): pesos sem
+  // base empírica que misturavam cumprimento de prazo com volume entregue, então
+  // um fornecedor podia subir no ranking entregando mais e cumprindo menos.
+  //
+  // Quem está abaixo do piso de volume não disputa as primeiras posições: a
+  // proporção sobre poucas OS não distingue competência de sorte na amostra.
+  const ranking = [...paineis]
+    .filter(p => p.kpis.total > 0)
+    .map(p => ({
+      nome: p.nome, cor: p.cor, fornKey: p.fornKey,
+      sla: p.kpis.sla, conclPct: p.kpis.conclPct, mttr: p.kpis.mttr, total: p.kpis.total,
+      amostraInsuficiente: p.kpis.total < MIN_OS_RANKING,
+    }))
+    .sort((a, b) =>
+      Number(a.amostraInsuficiente) - Number(b.amostraInsuficiente) ||
+      b.sla - a.sla ||
+      a.mttr - b.mttr
+    )
+
+  return { paineis, ranking }
+}
+
+// ─── Atendimento ──────────────────────────────────────────────────────────────
+
+ 
+export function transformAtendimento(serverData: any, opts: { period?: string; cidade?: string; canal?: string } = {}) {
+  if (!serverData) return null
+  const { period = 'mes', cidade: cidFilter = '', canal: canalFilter = '' } = opts
+  const { meta, atendentes = [], cidades = [], canais = [], datas = [], dias = [], registros = [] } = serverData
+
+  const hoje   = new Date()
+  const cutoff: Date | null = ({
+    all:   null,
+    mes:   new Date(hoje.getFullYear(), hoje.getMonth(), 1),
+    qz:    new Date(hoje.getTime() - 15 * 86400000),
+    sem:   new Date(hoje.getTime() - 7  * 86400000),
+    ontem: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 1),
+    hoje:  new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()),
+  } as Record<string, Date | null>)[period] ?? null
+
+   
+  const filteredDias = dias.filter((d: any) => {
+    if (cutoff && new Date(d.d) < cutoff) return false
+    if (cidFilter) {
+      const idx = cidades.indexOf(cidFilter.toUpperCase())
+      if (idx < 0) return false
+      const hasCid = Object.keys(d.ci || {}).includes(String(idx)) || d.ci?.[String(idx)] > 0
+      if (!hasCid) return false
+    }
+    if (canalFilter) {
+      const idx = canais.indexOf(canalFilter)
+      const has = d.ch?.[String(idx)] > 0
+      if (!has) return false
+    }
+    return true
+  })
+
+   
+  const filteredLabels = filteredDias.map((d: any) => d.d)
+   
+  const filteredTotal  = filteredDias.map((d: any) => d.tot)
+   
+  const filteredPresc  = filteredDias.map((d: any) => d.pre)
+
+   
+  const totalFilt = filteredDias.reduce((s: number, d: any) => s + d.tot, 0)
+   
+  const prescFilt = filteredDias.reduce((s: number, d: any) => s + d.pre, 0)
+   
+  const fidFilt   = filteredDias.reduce((s: number, d: any) => s + d.fid, 0)
+  const diasCnt   = filteredDias.length || 1
+
+  const canalTot: Record<string, number> = {}
+  const tipTot:   Record<string, number> = {}
+  const ateTot:   Record<string, number> = {}
+  const cidTot:   Record<string, number> = {}
+  for (const d of filteredDias) {
+    for (const [k, v] of Object.entries(d.ch || {})) canalTot[k] = (canalTot[k] ?? 0) + (v as number)
+    for (const [k, v] of Object.entries(d.tp || {})) tipTot[k]   = (tipTot[k]   ?? 0) + (v as number)
+    for (const [k, v] of Object.entries(d.a  || {})) ateTot[k]   = (ateTot[k]   ?? 0) + (v as number)
+    for (const [k, v] of Object.entries(d.ci || {})) cidTot[k]   = (cidTot[k]   ?? 0) + (v as number)
+  }
+
+  const canalLabels = (canais as string[]).filter((_: string, i: number) => canalTot[i] > 0)
+  const canalVals   = canalLabels.map((_: string, i: number) => {
+    const origIdx = (canais as string[]).indexOf(canalLabels[i])
+    return canalTot[origIdx] ?? 0
+  })
+
+  const tipLabels = (serverData.tipos as string[] | undefined)?.filter((_: string, i: number) => tipTot[i] > 0) ?? []
+  const tipVals   = tipLabels.map((_: string, i: number) => {
+    const origIdx = (serverData.tipos as string[] || []).indexOf(tipLabels[i])
+    return tipTot[origIdx] ?? 0
+  })
+
+  const topAte = Object.entries(ateTot)
+    .sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 10)
+    .map(([idx, total]) => ({ nome: (atendentes as string[])[Number(idx)] ?? idx, total }))
+
+  const byCidade = Object.entries(cidTot)
+    .sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 10)
+    .map(([idx, total]) => ({ cidade: (cidades as string[])[Number(idx)] ?? idx, total }))
+
+   
+  const rawRegs = (registros as Array<[number, ...unknown[]]>).filter((reg) => {
+    if (!cutoff) return true
+    const d = (datas as string[])[reg[0]] ?? ''
+    return d >= cutoff.toISOString().slice(0, 10)
+  })
+
+  void meta
+  return {
+    kpis: { total: totalFilt, presencial: prescFilt, fidelizados: fidFilt, atendentes: (atendentes as string[]).length, media: Math.round(totalFilt / diasCnt) },
+    timeline:      { labels: filteredLabels, total: filteredTotal, presencial: filteredPresc },
+    canal:         { labels: canalLabels,    values: canalVals },
+    tipo:          { labels: tipLabels,      values: tipVals },
+    top_atendentes: topAte,
+    by_cidade:     byCidade,
+    registros:     rawRegs,
+    atendentes, cidades, canais, datas,
+  }
+}
+
+// ─── Juniper ──────────────────────────────────────────────────────────────────
+
+// Converte formato brasileiro "dd/mm/yyyy HH:MM:SS" para timestamp UTC.
+// new Date("02/06/2026 ...") é interpretado como 2 de fevereiro (mm/dd) — incorreto.
+function parseBRDate(s: string): number {
+  if (!s) return NaN
+  const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/)
+  if (!m) return NaN
+  const [, dd, mm, yyyy, HH, MM, SS] = m
+  return new Date(`${yyyy}-${mm}-${dd}T${HH}:${MM}:${SS}`).getTime()
+}
+
+type JuniperClient = Record<string, string | undefined>
+type JuniperData = { total?: number; alerta?: boolean; clientes?: JuniperClient[]; cluster?: string; ultima_coleta?: string }
+
+export function transformJuniper(serverData: unknown) {
+  if (!serverData) return null
+  const { total = 0, alerta = false, clientes = [], cluster = '', ultima_coleta = '' } = serverData as JuniperData
+
+  const online    = (clientes as JuniperClient[]).filter((c: JuniperClient) => c.state !== 'inactive').length
+  const offline   = total - online
+  const uniqueIPs = [...new Set((clientes as JuniperClient[]).map((c: JuniperClient) => c.ip_address || c.ip).filter(Boolean))].length
+
+  const hasData     = Boolean(ultima_coleta)
+  // A quantidade observada é a fonte de verdade. Isso mantém a tela segura
+  // durante uma implantação em que backend e frontend estejam em versões diferentes.
+  const hasAlert    = total > 0 || online > 0 || (alerta && hasData)
+  const nivel       = !hasData ? 'warn' : hasAlert ? 'alert' : 'ok'
+  const nivel_label = nivel === 'ok'
+    ? 'Nenhuma conexão ativa detectada'
+    : nivel === 'warn'
+      ? 'Aguardando dados da coleta'
+      : `${total} ${total === 1 ? 'conexão ativa exige' : 'conexões ativas exigem'} verificação`
+  const statusTxt   = nivel === 'ok' ? 'Operação normal' : nivel === 'warn' ? 'Sem confirmação' : 'Incidente ativo'
+
+  const fmtTime = (iso: string) => {
+    if (!iso) return '—'
+    const d = new Date(iso)
+    return isNaN(d.getTime()) ? iso : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  }
+  const ultimaHora  = fmtTime(ultima_coleta)
+  const baseMs      = ultima_coleta ? new Date(ultima_coleta).getTime() : NaN
+  const proximaHora = !isNaN(baseMs)
+    ? fmtTime(new Date(baseMs + 5 * 60000).toISOString())
+    : '—'
+
+  const ifaceMap = new Map<string, { total: number; online: number }>()
+  for (const c of (clientes as JuniperClient[])) {
+    const iface = (c.interface_name || c.interface || 'unknown').split('.')[0]
+    if (!ifaceMap.has(iface)) ifaceMap.set(iface, { total: 0, online: 0 })
+    ifaceMap.get(iface)!.total++
+    if (c.state !== 'inactive') ifaceMap.get(iface)!.online++
+  }
+  const interfaces = [...ifaceMap.entries()].map(([nome, { total: t, online: o }]) => ({ nome, total: t, online: o }))
+
+  return {
+    hero: {
+      nivel,
+      nivel_label,
+      statusTxt,
+      desc: nivel === 'ok'
+        ? `Coleta concluída no cluster ${cluster || '—'} sem ocorrências`
+        : nivel === 'warn'
+          ? 'Não foi possível confirmar o estado do cluster'
+          : `${online} sessões ativas · ${interfaces.length} interfaces afetadas · cluster ${cluster || '—'}`,
+      meta: ultima_coleta ? `Última coleta válida: ${ultima_coleta}` : 'Nenhuma coleta realizada ainda',
+    },
+    kpis: { total, online, offline, interfaces: interfaces.length, ips: uniqueIPs, ultima: ultimaHora, proximo: proximaHora },
+    interfaces,
+    historico: { labels: [] as string[], values: [] as number[] },
+    clientes: (clientes as JuniperClient[]).map((c: any) => ({
+      usuario:   (c.user_name    || '—').toUpperCase(),
+      ip:        (c.ip_address   || c.ip    || '—').toUpperCase(),
+      mac:       (c.mac_address  || c.mac   || '—').toUpperCase(),
+      iface:     (c.interface_name || c.interface || '—').toUpperCase(),
+      state:     c.state || 'unknown',
+      loginTime: (c.login_time   || c.session_time     || '—').toUpperCase(),
+      uptime:    (c.uptime       || c.session_duration  || '—').toUpperCase(),
+    })),
+    log:       [] as unknown[],
+    osCidades: [] as unknown[],
+    isStale:   ultima_coleta ? (Date.now() - parseBRDate(ultima_coleta)) > 15 * 60 * 1000 : false,
+    hasAlert,
+    hasData,
+  }
+}
+

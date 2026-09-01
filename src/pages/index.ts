@@ -1,0 +1,22 @@
+import { lazy } from 'react'
+
+export const ERPRelatoriosPage    = lazy(() => import('../features/erp/relatorios/RelatoriosPage'))
+export const ERPAlertasPage       = lazy(() => import('../features/erp/alertas/AlertasPage'))
+export const ERPPlannerPage          = lazy(() => import('../features/erp/planner/PlannerPage'))
+export const ERPFilaPage = lazy(() => import('../features/erp/fila/FilaPage'))
+export const ERPRankingTecnicosPage = lazy(() => import('../features/erp/ranking/RankingTecnicosPage'))
+export const UsuariosPage = lazy(() => import('../features/admin/UsuariosPage'))
+
+export const DashboardPage  = lazy(() => import('../features/dashboard/DashboardPage'))
+export const OrdensPage     = lazy(() => import('../features/ordens/OrdensPage'))
+export const GraficosPage   = lazy(() => import('../features/graficos/GraficosPage'))
+export const CidadesGerencialPage = lazy(() => import('../features/cidades/CidadesGerencialPage'))
+export const FornecedorPage = lazy(() => import('../features/fornecedor/FornecedorPage'))
+export const JuniperPage    = lazy(() => import('../features/juniper/JuniperPage'))
+export const NivelSinalPage = lazy(() => import('../features/nivel-sinal/NivelSinalPage'))
+export const NotFoundPage   = lazy(() => import('./NotFound'))
+export const NocPage        = lazy(() => import('../features/noc/NocPage'))
+export const FechamentoPage = lazy(() => import('../features/fechamento/FechamentoPage'))
+export const MapaPage      = lazy(() => import('../features/mapa/MapaPage'))
+export const GerencialPage = lazy(() => import('../features/gerencial/GerencialPage'))
+export const ReincidenciasPage = lazy(() => import('../features/reincidencias/ReincidenciasPage'))

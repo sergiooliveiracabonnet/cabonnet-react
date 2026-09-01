@@ -1,0 +1,560 @@
+import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Lightning, ShieldCheck, ArrowsClockwise, Users, Stack, Clipboard, GitMerge, Trash, Pulse, Clock, WarningCircle, Sparkle, CubeTransparent } from '@phosphor-icons/react'
+import type { OSRow } from '../../lib/types'
+import { AreaChart, Area, XAxis, YAxis, ChartTooltip, Grid } from '../../components/ui/line-chart'
+import { api, endpoints } from '../../lib/api'
+import { useAIJuniper } from '../../hooks/useAIJuniper'
+import { storage } from '../../lib/storage'
+import { transformJuniper } from '../../lib/builders'
+import { useOSDerived } from '../../contexts/OSDataContext'
+import { StatCard } from '../../components/ui/StatCard'
+import { SectionTitle } from '../../components/ui/SectionTitle'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { ChartCard } from '../../components/ui/ChartCard'
+import { Button } from '../../components/ui/Button'
+import { SearchBox } from '../../components/ui/SearchBox'
+import { KPIGridSkeleton } from '../../components/ui/Skeleton'
+import {
+  StatusPill, ClientCard, InterfaceCard, SnapshotRow, OsCityCard,
+  getHeroStyle,
+  type HistoricoSnap, type JuniperKpis, type JuniperHero,
+} from './JuniperComponents'
+
+// Three.js entra so quando o operador abre a topologia — mantem o bundle
+// das demais rotas intacto.
+const JuniperTopology3D = lazy(() => import('./topology/JuniperTopology3D'))
+
+const HISTORY_KEY = 'juniper_historico'
+const MAX_SNAPS   = 500
+
+export default function JuniperPage() {
+  const [searchTable,  setSearchTable]  = useState('')
+  const [viewMode,     setViewMode]     = useState('card')
+  const cluster = 'Vale'
+  const [expandedSnap, setExpandedSnap] = useState<string | null>(null)
+  const [aiEnabled,    setAiEnabled]    = useState(false)
+  const [show3D,       setShow3D]       = useState(false)
+  const [historico,    setHistorico]    = useState<HistoricoSnap[]>(
+    () => storage.getJSON<HistoricoSnap[]>(HISTORY_KEY, [])
+  )
+
+  const { data: raw, isLoading, isError, refetch } = useQuery({
+    queryKey: ['juniper', cluster],
+    queryFn:  () => api.get(`${endpoints.juniper}?cluster=${encodeURIComponent(cluster)}`),
+    staleTime: 1000 * 60 * 5,
+    refetchInterval: 1000 * 60 * 5,
+    retry: false,
+  })
+
+  const { data: serverHistData } = useQuery({
+    queryKey: ['juniper-historico'],
+    queryFn:  () => api.get(endpoints.juniperHist),
+    staleTime: Infinity,
+    retry: false,
+  })
+
+  const { allRows } = useOSDerived()
+  const data       = useMemo(() => transformJuniper(raw), [raw])
+  const hero       = (data?.hero       ?? {}) as Partial<JuniperHero>
+  const kpis       = (data?.kpis       ?? {}) as Partial<JuniperKpis>
+  const interfaces = data?.interfaces ?? []
+  const clientes   = useMemo(() => data?.clientes ?? [], [data])
+  const isStale    = data?.isStale  ?? false
+  const hasAlert   = data?.hasAlert ?? false
+
+  // Neste monitor, as sessões ativas são as ocorrências que exigem análise.
+  const conexoesAtivasPayload = useMemo(() =>
+    clientes
+      .filter((c: Record<string, string | undefined>) => c.state !== 'inactive')
+      .map((c: Record<string, string | undefined>) => ({
+        nome:   c.usuario ?? '',
+        cidade: c.cidade  ?? '',
+      }))
+  , [clientes])
+
+  const osAtivasPayload = useMemo(() =>
+    allRows
+      .filter(r => ['Pendente', 'Atendimento'].includes((r._situacaoEfetiva ?? r.descsituacao) as string))
+      .map(r => ({
+        numos:  r.numos,
+        cidade: (r.nomedacidade ?? '') as string,
+        tipo:   (r._tipo ?? '') as string,
+      }))
+  , [allRows])
+
+  const { data: aiJuniper, isLoading: aiLoading } = useAIJuniper({
+    conexoes_ativas: conexoesAtivasPayload,
+    os_ativas: osAtivasPayload,
+    enabled:   aiEnabled,
+  })
+
+  const hist = useMemo(() => {
+    if (!historico.length) return { labels: [], values: [] }
+    const sorted = [...historico].reverse()
+    return {
+      labels: sorted.map(s => `${s.data} ${s.hora}`),
+      values: sorted.map(s => s.total),
+    }
+  }, [historico])
+
+  const osCidades = useMemo(() => {
+    const hoje    = new Date().toISOString().slice(0, 10)
+    const isAtivo = (r: OSRow) => ['Pendente', 'Atendimento'].includes((r._situacaoEfetiva ?? r.descsituacao) as string)
+    const isHoje  = (r: OSRow) => (r.datacadastro || '').slice(0, 10) === hoje
+    const cityMap = new Map<string, number>()
+    for (const r of allRows) {
+      if (!isAtivo(r) || !isHoje(r)) continue
+      const c = (r.nomedacidade || '').trim()
+      if (c) cityMap.set(c, (cityMap.get(c) ?? 0) + 1)
+    }
+    return [...cityMap.entries()].sort((a, b) => b[1] - a[1]).map(([cidade, total]) => ({ cidade, total }))
+  }, [allRows])
+
+  useEffect(() => {
+    if (!raw) return
+    const now   = new Date()
+    const entry = {
+      ts:       now.toISOString(),
+      hora:     now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      data:     now.toLocaleDateString('pt-BR'),
+      total:    kpis.total  ?? clientes.length,
+      online:   kpis.online ?? clientes.filter(c => c.state !== 'inactive').length,
+      clientes: clientes,
+    }
+    setHistorico(prev => {
+      if (prev[0]?.ts === entry.ts) return prev
+      const next = [entry, ...prev].slice(0, MAX_SNAPS)
+      storage.setJSON(HISTORY_KEY, next)
+      return next
+    })
+  }, [raw]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const serverHistMergedRef = useRef(false)
+  const histSaveRef         = useRef(false)
+
+  useEffect(() => {
+    if (serverHistMergedRef.current || !serverHistData) return
+    serverHistMergedRef.current = true
+    const raw2        = serverHistData as { historico?: HistoricoSnap[] } | HistoricoSnap[] | unknown
+    const serverSnaps = Array.isArray(raw2)
+      ? (raw2 as HistoricoSnap[])
+      : Array.isArray((raw2 as { historico?: HistoricoSnap[] })?.historico)
+        ? (raw2 as { historico: HistoricoSnap[] }).historico
+        : []
+    if (!serverSnaps.length) return
+    setHistorico(prev => {
+      const tsSet  = new Set(prev.map(s => s.ts))
+      const extras = serverSnaps.filter(s => s.ts && !tsSet.has(s.ts))
+      if (!extras.length) return prev
+      const merged = [...prev, ...extras]
+        .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
+        .slice(0, MAX_SNAPS)
+      storage.setJSON(HISTORY_KEY, merged)
+      return merged
+    })
+  }, [serverHistData])
+
+  useEffect(() => {
+    if (!histSaveRef.current) { histSaveRef.current = true; return }
+    if (!historico.length) return
+    api.post(endpoints.juniperHist, historico).catch(() => {})
+  }, [historico])
+
+  function limparHistorico() {
+    storage.remove(HISTORY_KEY)
+    api.post(endpoints.juniperHist, []).catch(() => {})
+    setHistorico([])
+  }
+
+  const clientesFiltrados = clientes.filter(c => {
+    const q = searchTable.toLowerCase()
+    return !q
+      || (c.usuario ?? '').toLowerCase().includes(q)
+      || (c.ip      ?? '').toLowerCase().includes(q)
+      || (c.mac     ?? '').toLowerCase().includes(q)
+      || (c.iface   ?? '').toLowerCase().includes(q)
+  })
+
+  const heroStyle    = getHeroStyle(hero.nivel ?? '')
+  const onlineCount  = kpis.online  ?? 0
+  const offlineCount = kpis.offline ?? 0
+  const maxIface     = interfaces.length ? Math.max(...interfaces.map(i => i.total), 1) : 1
+  const maxOsCity    = osCidades.length  ? Math.max(...osCidades.map(c => c.total), 1)  : 1
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+
+      {/* ── Header ── */}
+      <PageHeader
+        title="Juniper PPPoE — Validação de Clientes"
+        icon={Lightning}
+        titleExtra={
+          <span className="flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+            </span>
+            <span className="text-caption text-muted">atualiza a cada 5 min</span>
+          </span>
+        }
+        actions={
+          cluster && (
+            <span className="text-caption font-bold uppercase tracking-[0.06em] px-2.5 py-0.5
+                             rounded-full bg-primary/10 text-primary border border-primary/20">
+              {cluster}
+            </span>
+          )
+        }
+      />
+
+      {/* ── Banner dados desatualizados ── */}
+      {isStale && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-yellow/[0.08] border border-yellow/30 rounded-xl">
+          <Clock size={16} className="text-yellow flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-label font-semibold text-yellow">Dados desatualizados</p>
+            <p className="text-caption text-muted mt-0.5">A última coleta está defasada — verifique a conexão com o servidor.</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <ArrowsClockwise size={11} /> Atualizar agora
+          </Button>
+        </div>
+      )}
+
+      {/* ── Falha de coleta: não confundir com zero conexões ── */}
+      {isError && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-yellow/[0.08] border border-yellow/30 rounded-xl">
+          <WarningCircle size={16} className="text-yellow flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-label font-semibold text-yellow">Não foi possível validar o estado do Juniper</p>
+            <p className="text-caption text-muted mt-0.5">A ausência de resposta não significa que não existam conexões ativas.</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()}><ArrowsClockwise size={11} /> Tentar novamente</Button>
+        </div>
+      )}
+
+      {/* ── Banner alerta crítico ── */}
+      {hasAlert && (
+        <div className="flex items-center gap-4 px-5 py-4 bg-red/[0.08] border-[1.5px] border-red/50 rounded-xl">
+          <div className="relative flex-shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red opacity-40" />
+            <WarningCircle size={22} className="text-red relative" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-body text-red">ALERTA — {kpis.total ?? 0} {(kpis.total ?? 0) === 1 ? 'conexão ativa detectada' : 'conexões ativas detectadas'}</p>
+            <p className="text-caption text-muted mt-0.5">Última verificação: {kpis.ultima ?? '—'}</p>
+          </div>
+          <Button variant="danger" size="sm" onClick={() => refetch()}>
+            <ArrowsClockwise size={11} /> Verificar
+          </Button>
+        </div>
+      )}
+
+      {/* ── Origem segura da coleta ── */}
+      <div className="bg-card border border-white/[0.08] border-l-[4px] border-l-primary rounded-xl p-5">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
+            <ShieldCheck size={13} /> Coleta protegida pelo servidor · Cluster {cluster}
+          </p>
+          <StatusPill nivel={hero.nivel ?? ''} txt={hero.statusTxt ?? 'Não verificado'} />
+        </div>
+      </div>
+
+      {/* ── Hero status ── */}
+      <div className={`${heroStyle.bg} border-2 ${heroStyle.border} rounded-xl p-6 transition-colors duration-normal`}>
+        <div className="flex items-center gap-5 flex-wrap">
+          <div className={`relative flex-shrink-0 p-3 rounded-2xl ${heroStyle.icon}`}>
+            {hero.nivel === 'alert' && <span className="absolute inset-0 rounded-2xl animate-ping bg-red/20" />}
+            <Lightning size={40} className={`${heroStyle.text} relative`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`font-headline font-bold text-[22px] ${heroStyle.text}`}>
+              {hero.nivel_label ?? 'Aguardando validação'}
+            </p>
+            <p className="text-label text-muted mt-1">{hero.desc ?? 'Configure a fonte acima para exibir clientes PPPoE'}</p>
+            <p className="text-caption text-muted mt-1 font-mono">{hero.meta ?? 'Nenhuma coleta realizada ainda'}</p>
+            {(onlineCount > 0 || offlineCount > 0) && (
+              <div className="flex items-center gap-4 mt-3">
+                <span className="flex items-center gap-1.5 text-caption font-semibold text-red">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red animate-pulse inline-block" />
+                  {onlineCount} ativas
+                </span>
+                {offlineCount > 0 && (
+                  <span className="flex items-center gap-1.5 text-caption font-semibold text-muted">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red/50 inline-block" />
+                    {offlineCount} offline
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="text-right">
+            <p className={`font-headline font-bold text-[52px] leading-none tabular-nums ${heroStyle.text}`}>
+              {kpis.total ?? '—'}
+            </p>
+            <p className="text-caption text-muted mt-1">conexões indevidas</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── KPIs ── */}
+      {isLoading ? <KPIGridSkeleton count={5} /> : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <StatCard title="Conexões Indevidas" value={kpis.total}      sub={(kpis.total ?? 0) === 0 ? 'situação saudável' : 'exigem verificação'} delay={0} />
+          <StatCard title="Interfaces Afetadas" value={kpis.interfaces} sub="portas / VLANs com ocorrência" delay={40} />
+          <StatCard title="IPs Únicos"         value={kpis.ips}        sub="endereços distintos"     delay={80}  />
+          <StatCard title="Última Coleta"      value={kpis.ultima}     sub="horário da verificação"  delay={120} />
+          <StatCard title="Próx. Atualização"  value={kpis.proximo}    sub="inicia após 1ª coleta"   delay={160} />
+        </div>
+      )}
+
+      {/* ── Distribuição por interface ── */}
+      {interfaces.length > 0 && (
+        <>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <SectionTitle icon={Stack} className="mb-0">Origem das Conexões Ativas</SectionTitle>
+            <Button variant="outline" size="sm" onClick={() => setShow3D(v => !v)} className="mt-6 mb-3">
+              <CubeTransparent size={11} /> {show3D ? 'Ocultar topologia 3D' : 'Ver topologia 3D'}
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {interfaces.map(iface => <InterfaceCard key={iface.nome} iface={iface} maxIface={maxIface} />)}
+          </div>
+
+          {show3D && (
+            <Suspense fallback={
+              <div className="h-[520px] rounded-xl bg-card border border-white/[0.08]
+                              flex items-center justify-center text-caption text-muted">
+                Carregando renderizador 3D…
+              </div>
+            }>
+              <JuniperTopology3D clientes={clientes} cluster={cluster} />
+            </Suspense>
+          )}
+        </>
+      )}
+
+      {/* ── Histórico gráfico ── */}
+      <ChartCard title="Histórico de Ocorrências — meta: zero" dot="#f87171" height="h-44">
+        <AreaChart data={hist.labels.map((name, i) => ({ name, value: hist.values[i] ?? 0 }))}>
+          <Area dataKey="value" stroke="#f87171" fill="rgba(248,113,113,.14)" strokeWidth={2.5} />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Grid />
+          <ChartTooltip />
+        </AreaChart>
+      </ChartCard>
+
+      {/* ── Tabela de clientes ── */}
+      <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden shadow-lg">
+        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/[0.08] bg-surface/20 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Users size={15} className="text-primary" />
+            <span className="text-body font-bold text-text">Conexões Ativas Detectadas</span>
+          </div>
+          <div className="flex items-center gap-3 ml-1">
+            {(() => {
+              const online  = clientesFiltrados.filter(c => c.state !== 'inactive').length
+              const offline = clientesFiltrados.length - online
+              return (
+                <>
+                  <span className="flex items-center gap-1.5 text-caption font-semibold text-red">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red animate-pulse inline-block" />
+                    {online} ativas
+                  </span>
+                  {offline > 0 && (
+                    <span className="flex items-center gap-1.5 text-caption font-semibold text-muted">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red/60 inline-block" />
+                      {offline} offline
+                    </span>
+                  )}
+                </>
+              )
+            })()}
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <SearchBox value={searchTable} onChange={setSearchTable}
+                       placeholder="Buscar usuário, IP, MAC, interface…" className="max-w-[260px]" />
+            <div className="flex bg-surface/30 border border-white/[0.08] rounded-md p-0.5 gap-0.5">
+              {[['card', 'Cards'], ['table', 'Tabela']].map(([v, l]) => (
+                <button key={v} onClick={() => setViewMode(v)}
+                  className={`text-caption px-3 py-1 rounded transition-all
+                              ${viewMode === v ? 'bg-primary text-white' : 'text-muted hover:text-secondary'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {clientesFiltrados.length === 0 ? (
+          <div className="py-16 text-center text-muted">
+            <Lightning size={40} className="mx-auto mb-4 opacity-20" />
+            <p className={`text-title font-semibold mb-2 ${isLoading || isError || (searchTable && clientes.length) ? 'text-secondary' : 'text-green'}`}>
+              {isLoading
+                ? 'Validando conexões…'
+                : isError
+                  ? 'Estado não confirmado'
+                  : searchTable && clientes.length
+                    ? 'Nenhuma conexão corresponde à pesquisa'
+                    : 'Nenhuma conexão ativa detectada'}
+            </p>
+            <p className="text-label">
+              {isLoading
+                ? 'Aguarde a conclusão da coleta.'
+                : isError
+                  ? 'Tente atualizar novamente para confirmar a situação.'
+                  : searchTable && clientes.length
+                    ? 'Revise os termos informados.'
+                    : 'A última coleta não encontrou ocorrências. Situação normal.'}
+            </p>
+          </div>
+        ) : viewMode === 'card' ? (
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {clientesFiltrados.map((c, i) => (
+              <ClientCard key={i} c={c as Record<string, string | undefined>} />
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-body">
+              <thead>
+                <tr className="border-b-2 border-white/[0.08]">
+                  <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em] w-8" />
+                  {['Usuário', 'IP', 'MAC', 'Interface', 'Uptime'].map(h => (
+                    <th key={h} className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {clientesFiltrados.map((c, i) => {
+                  const isOnline = c.state !== 'inactive'
+                  return (
+                    <tr key={i} className="text-secondary hover:bg-surface/20 transition-colors">
+                      <td className="px-4 py-2.5">
+                        <span className={`w-1.5 h-1.5 rounded-full inline-block
+                                         ${isOnline ? 'bg-red animate-pulse' : 'bg-muted/50'}`} />
+                      </td>
+                      <td className="px-4 py-2.5 font-bold text-text antialiased uppercase">{c.usuario}</td>
+                      <td className="px-4 py-2.5 font-mono font-semibold text-red antialiased uppercase">{c.ip}</td>
+                      <td className="px-4 py-2.5 font-mono text-label uppercase">{c.mac}</td>
+                      <td className="px-4 py-2.5 uppercase">{c.iface}</td>
+                      <td className="px-4 py-2.5 uppercase">{c.uptime}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ── Histórico de snapshots ── */}
+      <SectionTitle icon={Clipboard}>Histórico de Conexões PPPoE</SectionTitle>
+      <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] bg-surface/20">
+          <div className="flex items-center gap-2">
+            <Pulse size={12} className="text-muted" />
+            <span className="text-caption font-bold uppercase tracking-[0.06em] text-muted">
+              {historico.length} snapshots
+            </span>
+            <span className="text-caption text-muted/40">· máx {MAX_SNAPS}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-caption text-muted/60">Sincronizado com o servidor</span>
+            {historico.length > 0 && (
+              <button onClick={limparHistorico}
+                className="flex items-center gap-1 text-caption text-red/60 hover:text-red transition-colors"
+                title="Limpar histórico">
+                <Trash size={10} /> Limpar
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="divide-y divide-white/[0.04] min-h-[120px] max-h-[600px] overflow-y-auto">
+          {historico.length === 0 ? (
+            <p className="text-center text-muted text-label py-10">
+              O histórico será salvo automaticamente a cada coleta (5 min).
+            </p>
+          ) : (
+            historico.map((snap, i) => (
+              <SnapshotRow
+                key={i}
+                snap={snap}
+                isOpen={expandedSnap === snap.ts}
+                onToggle={() => setExpandedSnap(expandedSnap === snap.ts ? null : snap.ts)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── Correlação OS × Cidade ── */}
+      <SectionTitle icon={GitMerge}>Correlação — OS Técnicas Abertas por Cidade</SectionTitle>
+      <div className="bg-card border border-white/[0.08] rounded-xl p-4">
+        <p className="text-caption text-muted mb-4 leading-relaxed">
+          Alta concentração de OS em uma cidade pode indicar degradação de infraestrutura — correlacione com alertas PPPoE.
+        </p>
+        {osCidades.length === 0 ? (
+          <p className="text-center text-muted text-label py-6">Nenhuma OS ativa hoje.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {osCidades.map(c => <OsCityCard key={c.cidade} cidade={c.cidade} total={c.total} maxOsCity={maxOsCity} />)}
+          </div>
+        )}
+      </div>
+
+      {/* ── Correlação IA — Inativos × OS ── */}
+      <>
+        <SectionTitle icon={Sparkle}>Correlação IA — Conexões ativas × OS</SectionTitle>
+        {!aiEnabled ? (
+          <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkle size={12} className="text-primary/40" />
+              <span className="text-caption font-bold text-muted uppercase tracking-wide">Conexões ativas × OS · IA</span>
+            </div>
+            <button
+              onClick={() => setAiEnabled(true)}
+              className="flex items-center gap-1.5 text-caption font-semibold text-primary/70 hover:text-primary
+                         px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/40 hover:bg-primary/[0.08]
+                         transition-all duration-fast"
+            >
+              <Sparkle size={11} /> Analisar com IA
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+            {aiLoading && !aiJuniper ? (
+              <p className="text-label text-muted animate-pulse">Consultando IA…</p>
+            ) : aiJuniper ? (
+              <>
+                {aiJuniper.narrativa && (
+                  <p className="text-label text-secondary leading-relaxed">{aiJuniper.narrativa}</p>
+                )}
+                {aiJuniper.sem_os.length === 0 ? (
+                  <p className="text-label text-green font-semibold">Nenhuma conexão ativa sem OS relacionada foi identificada.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {aiJuniper.sem_os.map((item, i) => (
+                      <div key={i}
+                           className="flex items-start gap-3 bg-card border border-orange/20 rounded-lg px-3 py-2.5">
+                        <span className="w-2 h-2 rounded-full bg-orange mt-1.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-label font-semibold text-text">{item.nome}</p>
+                          <p className="text-caption text-muted">{item.cidade}</p>
+                        </div>
+                        <p className="text-caption text-orange text-right max-w-[200px] flex-shrink-0">{item.alerta}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : null}
+          </div>
+        )}
+      </>
+
+    </div>
+  )
+}

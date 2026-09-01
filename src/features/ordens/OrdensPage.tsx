@@ -1,0 +1,583 @@
+import { useState, useRef, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { ChartBar, CaretUp, DownloadSimple, PaperPlaneTilt, CheckCircle, FileText, WifiHigh, Wrench, HardHat, Copy, Users, SlidersHorizontal, ArrowsClockwise, Warning } from '@phosphor-icons/react'
+import type { OSRow } from '../../lib/types'
+type ColRender = (value: unknown, row: OSRow) => React.ReactNode
+import { useOrdens } from '../../hooks/useOrdens'
+import { StatCard } from '../../components/ui/StatCard'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { SearchBox } from '../../components/ui/SearchBox'
+import { FilterSelect } from '../../components/ui/FilterSelect'
+import { DataTable } from '../../components/ui/DataTable'
+import { Badge } from '../../components/ui/Badge'
+import { Button } from '../../components/ui/Button'
+import { TableSkeleton } from '../../components/ui/Skeleton'
+import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
+import { exportCSV } from '../../lib/export'
+import { exportOrdensPDF } from '../../lib/exportOrdensPDF'
+import { captureTableAsImage } from '../../lib/captureTableImage'
+import { captureOSPorPeriodo, type CaptureOSRow } from '../../lib/captureOSTable'
+import { useAuditStore } from '../../store/auditStore'
+import OSDrawer from './OSDrawer'
+import { OSHoverCard } from './OSHoverCard'
+import { TelegramOrdensModal } from './TelegramOrdensModal'
+import { PeriodoGroupedTable } from './PeriodoGroupedTable'
+import { ClienteGroupedTable } from './ClienteGroupedTable'
+import { ORDENS_CARD_ICONS } from './ordensCardIcons'
+import { useIsFornecedor } from '../../hooks/useRole'
+
+
+const statusOptions = [
+  { value: 'Pendente',                label: 'Pendente'             },
+  { value: 'Atendimento',             label: 'Atendimento'          },
+  { value: 'Reagendamento',           label: 'Reagendamento'        },
+  { value: 'Atendimento/Finalizadas', label: 'Atend. Finalizada'    },
+  { value: 'Concluída',               label: 'Concluída'            },
+  { value: 'Concluída/Sem Execução',  label: 'Concluída/Sem Exec.'  },
+]
+
+const reagendTipoOptions = [
+  { value: 'inviabilidade', label: 'Inviabilidade' },
+  { value: 'mobile',        label: 'OS Mobile'     },
+  { value: 'futura',        label: 'Data Futura'   },
+]
+
+const agingOptions = [
+  { value: '1',  label: 'Hoje (0-1 dia)' },
+  { value: '2',  label: 'Até 2 dias' },
+  { value: '3',  label: '3-5 dias' },
+  { value: '6',  label: '≥6 dias' },
+  { value: '11', label: '11+ dias' },
+]
+
+const fornecedorOptions = [
+  { value: 'WES',        label: 'WES' },
+  { value: 'Instacable', label: 'Instacable' },
+  { value: 'THM',        label: 'THM' },
+  { value: 'REDE',       label: 'Rede' },
+  { value: 'MANUTENCAO', label: 'Manutenção' },
+  { value: 'INSTALACAO', label: 'Instalação' },
+  { value: 'INTERNO',    label: 'COPE Interno' },
+]
+
+const densityOptions = [
+  { value: 'normal',  label: 'Normal' },
+  { value: 'compact', label: 'Compacto' },
+  { value: 'mini',    label: 'Mini' },
+]
+
+const columns: { key?: string; label: string; render?: ColRender }[] = [
+  { key: 'numos',           label: 'Nº OS' },
+  { key: '_aging',          label: 'Aging',
+    render: (v, row) => {
+      const active = v as number | null
+      const n = active ?? (row._agingAbertura ?? 0)
+      // Régua relativa ao SLA da OS: manutenção com 2d (limite 1d) já estourou
+      const ratio = row._slaLimite > 0 ? n / row._slaLimite : n
+      const c = active == null ? 'teal' : ratio > 2 ? 'red' : ratio > 1 ? 'yellow' : 'cyan'
+      return <Badge variant={c}>{n}d</Badge>
+    }
+  },
+  { key: '_riskScore',      label: 'Risco',
+    render: (v, row) => {
+      const score = (v as number) ?? 0
+      const [variant, label] =
+        score >= 70 ? ['red',    'Crítico'] :
+        score >= 40 ? ['orange', 'Alto']    :
+        score >= 20 ? ['yellow', 'Médio']   :
+                      ['green',  'Baixo']
+      const dias = row?._diasAteViolacao
+      const pulse = score >= 70
+      const diasLabel = dias != null && dias <= 5 ? ` · ${dias}d` : ''
+      return (
+        <div className="relative inline-flex">
+          {pulse && <span className="absolute inset-0 rounded-[10px] bg-red/20 animate-ping pointer-events-none" />}
+          <Badge variant={variant as 'red' | 'orange' | 'yellow' | 'green'}>
+            {label} {score}{diasLabel}
+          </Badge>
+        </div>
+      )
+    }
+  },
+  { key: 'nomecliente',     label: 'Cliente',
+    render: (v, row) => v
+      ? (v as string)
+      : <span className="text-muted italic text-caption">
+          {row?.codigocliente ? `Cód. ${row.codigocliente}` : '(Sem nome)'}
+        </span>
+  },
+  { key: 'nomedacidade',    label: 'Cidade' },
+  { key: 'bairro',          label: 'Bairro' },
+  { key: 'logradouro',      label: 'Endereço' },
+  { key: 'tiposervico',     label: 'Tipo' },
+  { key: 'nomedaequipe',    label: 'Equipe', render: (v) => shortEquipe(v as string) },
+  { key: '_situacaoEfetiva', label: 'Situação',
+    render: (v) => <Badge variant={situacaoVariant(v as string)}>{v as string}</Badge>
+  },
+  { key: 'dataagendamento', label: 'Agend.',
+    render: (v) => v ? (v as string).slice(0, 10) : '—'
+  },
+]
+
+
+export default function OrdensPage() {
+  const isFornecedor = useIsFornecedor()
+  const os       = useOrdens()
+  const logAudit = useAuditStore(s => s.log)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [drawerOS,        setDrawerOS]        = useState<OSRow | null>(null)
+  const [kpiVisible,      setKpiVisible]      = useState(true)
+  const [groupBy,         setGroupBy]         = useState<'none' | 'cliente'>('none')
+  const [hoverOS,         setHoverOS]         = useState<OSRow | null>(null)
+  const [hoverRect,       setHoverRect]       = useState<DOMRect | null>(null)
+  const [tgModal,         setTgModal]         = useState(false)
+  const [copied,          setCopied]          = useState(false)
+  const [moreFilters,     setMoreFilters]     = useState(false)
+  const [actionError,     setActionError]     = useState('')
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tableRef   = useRef<HTMLDivElement>(null)
+
+  // Recebe equipe pré-selecionada via React Router state (OSDrawer → "Ver Equipe")
+  // ou um "foco" deep-link vindo dos KPIs de risco do Dashboard
+  useEffect(() => {
+    const eq = location.state?.filterEquipe
+    if (eq) {
+      os.setEquipe(eq)
+      navigate(location.pathname, { replace: true, state: null })
+      setTimeout(scrollToTable, 150)
+      return
+    }
+    const foco = location.state?.foco as string | undefined
+    if (foco) {
+      os.clearFilters()
+      if      (foco === 'criticas') os.setCritico(true)
+      else if (foco === 'criticasDesassist') os.setCritico(true)
+      else if (foco === 'semEq')    os.setSemEquipe(true)
+      else if (foco === 'pend')     os.setStatus('Pendente')
+      else if (foco === 'copeAguardando') os.setStatus('Pendente')
+      else if (foco === 'atend')    os.setStatus('Atendimento')
+      else if (foco === 'atendHoje' || foco === 'atendAmanha' || foco === 'atendFutura') os.setStatus('Atendimento')
+      else if (foco === 'reagendInviab') { os.setStatus('Reagendamento'); os.setReagendTipo('inviabilidade') }
+      else if (foco === 'reagendMobile') { os.setStatus('Reagendamento'); os.setReagendTipo('mobile') }
+      else if (foco === 'reagendFutura') { os.setStatus('Reagendamento'); os.setReagendTipo('futura') }
+      navigate(location.pathname, { replace: true, state: null })
+      setTimeout(scrollToTable, 150)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state])
+
+  function scrollToTable() {
+    tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function handleRowHover(row: OSRow, rect: DOMRect) {
+    clearTimeout(hoverTimer.current ?? undefined)
+    hoverTimer.current = setTimeout(() => {
+      setHoverOS(row)
+      setHoverRect(rect)
+    }, 180)
+  }
+
+  function handleRowLeave() {
+    clearTimeout(hoverTimer.current ?? undefined)
+    setHoverOS(null)
+    setHoverRect(null)
+  }
+
+  function handleRowClick(row: OSRow) {
+    clearTimeout(hoverTimer.current ?? undefined)
+    setHoverOS(null)
+    setHoverRect(null)
+    setDrawerOS(row)
+  }
+
+  async function handleCopyImage() {
+    setActionError('')
+    try {
+      // ── Equipe selecionada: canvas puro (sem captura de DOM) ──────────────
+      if (os.equipe) {
+        const canvas = captureOSPorPeriodo(os.filtered as CaptureOSRow[], shortEquipe(os.equipe))
+        const blob   = await new Promise<Blob>((resolve, reject) =>
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png')
+        )
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2500)
+        return
+      }
+
+      // ── Tabela flat/cliente ────────────────────────────────────────────
+      if (!tableRef.current) return
+      const blob = await captureTableAsImage({
+        tableEl:     tableRef.current,
+        title:       'CABONNET · Ordens de Serviço',
+        subtitle:    'Todas as Equipes',
+        accentColor: '#3b82f6',
+        itemCount:   os.filtered.length,
+      })
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch (e) {
+      console.error('Clipboard error:', e)
+      setActionError('Não foi possível copiar a imagem. Verifique a permissão da área de transferência.')
+    }
+  }
+
+  function handleExport() {
+    setActionError('')
+    const date = new Date().toISOString().slice(0, 10)
+    logAudit('CSV exportado', `${os.filtered.length} OS · ordens_${date}.csv`, 'export')
+    exportCSV(os.filtered, `ordens_${date}.csv`)
+  }
+
+  function handleExportPDF() {
+    setActionError('')
+    const date = new Date().toISOString().slice(0, 10)
+    logAudit('PDF exportado', `${os.filtered.length} OS · ordens_${date}.pdf`, 'export')
+    exportOrdensPDF(os.filtered, `ordens_${date}.pdf`)
+  }
+
+
+  const opts = os.options
+  const tipoOpts    = (opts.tipos    ?? []).map(t => ({ value: t, label: t }))
+  const cidadeOpts  = (opts.cidades  ?? []).map(c => ({ value: c, label: c }))
+  const bairroOpts  = (opts.bairros  ?? []).map(b => ({ value: b, label: b }))
+  const equipeOpts  = (opts.equipes  ?? []).map(e => ({ value: e, label: shortEquipe(e) }))
+  const periodoOpts = (opts.periodos ?? []).map(p => ({ value: p, label: p }))
+
+  function clearAllFilters() {
+    os.clearFilters()
+    setGroupBy('none')
+  }
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+
+      {/* ── Header ── */}
+      <PageHeader
+        title="Ordens de Serviço"
+        className="items-center"
+        actions={
+          <>
+            <details className="relative group">
+              <summary className="list-none cursor-pointer min-h-9 inline-flex items-center gap-2 px-3 rounded-md border border-primary/30 text-primary text-label font-semibold hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+                <DownloadSimple size={13} /> Exportar <span className="text-muted">({os.filtered.length})</span>
+              </summary>
+              <div className="absolute right-0 top-full mt-2 z-dropdown w-48 rounded-xl border border-white/[0.10] bg-card-high shadow-xl p-1.5">
+                <button onClick={handleCopyImage} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text">
+                  {copied ? <CheckCircle size={14} className="text-green" /> : <Copy size={14} />} {copied ? 'Imagem copiada' : 'Copiar imagem'}
+                </button>
+                <button onClick={handleExport} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text"><DownloadSimple size={14} /> Baixar CSV</button>
+                <button onClick={handleExportPDF} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text"><FileText size={14} /> Baixar PDF</button>
+              </div>
+            </details>
+            {!isFornecedor && <Button
+              variant="outline" size="sm"
+              className="gap-1.5 min-h-9 border-primary/30 text-primary hover:bg-primary/10"
+              onClick={() => setTgModal(true)}
+            >
+              <PaperPlaneTilt size={11} /> Telegram
+            </Button>}
+          </>
+        }
+      />
+
+      {actionError && (
+        <div role="alert" className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red/25 bg-red/[0.07] text-label text-red">
+          <Warning size={15} /> {actionError}
+        </div>
+      )}
+
+      {/* ── Opções de visualização ── */}
+      <div className="flex items-center justify-between gap-3 flex-wrap border-b border-white/[0.06] pb-2">
+        <p className="text-caption font-bold uppercase tracking-[0.08em] text-muted">
+          Indicadores do resultado atual
+        </p>
+        <div className="flex items-center justify-end gap-2 flex-wrap">
+        {/* KPI toggle */}
+        <button
+          onClick={() => setKpiVisible(v => !v)}
+          className="flex items-center gap-1.5 min-h-9 text-caption font-semibold text-secondary hover:text-text
+                     border border-white/[0.08] rounded-xl px-3 transition-all duration-fast"
+        >
+          <ChartBar size={12} /> KPIs
+          <CaretUp size={11} className={`transition-transform ${kpiVisible ? '' : 'rotate-180'}`} />
+        </button>
+
+        {/* GroupBy toggle */}
+        <button
+          onClick={() => setGroupBy(g => g === 'cliente' ? 'none' : 'cliente')}
+          className={`flex items-center gap-1.5 text-caption font-semibold
+                     border rounded-xl px-3 min-h-9 transition-all duration-fast
+                     ${groupBy === 'cliente'
+                       ? 'bg-primary/15 border-primary/40 text-primary'
+                       : 'border-white/[0.08] text-secondary hover:text-text'}`}
+        >
+          <Users size={12} /> Por Cliente
+        </button>
+
+        {/* Density toggle */}
+        <div className="flex items-center gap-0.5 bg-card border border-white/[0.08] rounded-xl p-1">
+          {densityOptions.map((d) => (
+            <button
+              key={d.value}
+              onClick={() => os.setDensity(d.value)}
+              className={`px-2.5 min-h-8 rounded-lg text-caption font-semibold transition-all duration-fast
+                          ${os.density === d.value
+                            ? 'bg-primary/15 text-primary'
+                            : 'text-muted hover:text-secondary'}`}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+        </div>
+      </div>
+
+      {/* ── KPI cards ── */}
+      {kpiVisible && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <StatCard
+            title="Total OS" value={os.kpis.total} icon={ORDENS_CARD_ICONS.total}
+            sub="limpar filtros" delay={0}
+            onClick={() => { clearAllFilters(); scrollToTable() }}
+          />
+          <StatCard
+            title="Críticas" value={os.kpis.criticas} tone="critical" icon={ORDENS_CARD_ICONS.criticas}
+            sub="SLA 2× excedido" delay={40}
+            onClick={() => { os.setCritico(!os.critico); scrollToTable() }}
+          />
+          <StatCard
+            title="Sem equipe" value={os.kpis.semEquipe} tone="warning" icon={ORDENS_CARD_ICONS.semEquipe}
+            sub="sem alocação" delay={80}
+            onClick={() => { os.setSemEquipe(!os.semEquipe); scrollToTable() }}
+          />
+          <StatCard
+            title="Agend. hoje" value={os.kpis.agendHoje} tone="ok" icon={ORDENS_CARD_ICONS.agendHoje}
+            sub="para hoje" delay={120}
+            onClick={() => { os.setAgendaFoco('hoje'); scrollToTable() }}
+          />
+          <StatCard
+            title="Amanhã" value={os.kpis.agendAmanha} icon={ORDENS_CARD_ICONS.agendAmanha}
+            sub="agendadas para amanhã" delay={160}
+            onClick={() => { os.setAgendaFoco('amanha'); scrollToTable() }}
+          />
+          <StatCard
+            title="Após amanhã" value={os.kpis.agendFuturo} tone="warning" icon={ORDENS_CARD_ICONS.agendFuturo}
+            sub="de depois de amanhã em diante" delay={200}
+            onClick={() => { os.setAgendaFoco('posAmanha'); scrollToTable() }}
+          />
+        </div>
+      )}
+
+      {/* ── Resumo por Tipo ── */}
+      <div className="flex items-center justify-center gap-2 flex-wrap">
+        <TipoPill
+          label="Instalação" icone={WifiHigh} cor="cyan" total={os.kpis.instalacao}
+          ativo={os.tipoOs === 'INSTALACAO'}
+          onClick={() => { os.setTipoOs(os.tipoOs === 'INSTALACAO' ? '' : 'INSTALACAO'); scrollToTable() }}
+        />
+        <TipoPill
+          label="Manutenção" icone={Wrench} cor="orange" total={os.kpis.manutencao}
+          ativo={os.tipoOs === 'MANUTENCAO'}
+          onClick={() => { os.setTipoOs(os.tipoOs === 'MANUTENCAO' ? '' : 'MANUTENCAO'); scrollToTable() }}
+        />
+        <TipoPill
+          label="Serviço" icone={HardHat} cor="purple" total={os.kpis.servico}
+          ativo={os.tipoOs === 'OUTRO'}
+          onClick={() => { os.setTipoOs(os.tipoOs === 'OUTRO' ? '' : 'OUTRO'); scrollToTable() }}
+        />
+      </div>
+
+      {/* ── Barra de filtros ── */}
+      <div className="bg-card border border-white/[0.08] rounded-xl p-3 space-y-2">
+        <div className="flex flex-wrap gap-2 items-center">
+        <SearchBox
+          value={os.search}
+          onChange={os.setSearch}
+          placeholder="Buscar OS, cliente, CPF, contrato, endereço…"
+          className="w-full sm:w-80"
+        />
+        <FilterSelect value={os.status}     onChange={os.setStatus}     options={statusOptions}     placeholder="Status"      className="w-44" />
+        <FilterSelect value={os.cidade}     onChange={os.setCidade}     options={cidadeOpts}        placeholder="Cidade"      className="w-36" />
+        <FilterSelect value={os.equipe}     onChange={os.setEquipe}     options={equipeOpts}        placeholder="Equipe"      className="w-36" />
+        <button onClick={() => setMoreFilters(v => !v)} className={`min-h-9 px-3 inline-flex items-center gap-2 rounded-lg border text-caption font-semibold ${moreFilters ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/[0.08] text-secondary hover:text-text'}`}>
+          <SlidersHorizontal size={13} /> Mais filtros <CaretUp size={11} className={`transition-transform ${moreFilters ? '' : 'rotate-180'}`} />
+        </button>
+        {os.filtersActive && <Button variant="ghost" size="sm" className="min-h-9" onClick={clearAllFilters}>Limpar tudo</Button>}
+        </div>
+
+        {moreFilters && <div className="pt-2 border-t border-white/[0.06] flex flex-wrap gap-2 items-center animate-slide-down">
+        {(os.status === 'Reagendamento' || os.reagendTipo) && (
+          <FilterSelect value={os.reagendTipo} onChange={os.setReagendTipo} options={reagendTipoOptions} placeholder="Subtipo reag." className="w-40" />
+        )}
+        <FilterSelect value={os.tipo}       onChange={os.setTipo}       options={tipoOpts}          placeholder="Tipo"        className="w-36" />
+        <FilterSelect value={os.bairro}     onChange={os.setBairro}     options={bairroOpts}        placeholder="Bairro"      className="w-32" />
+        <FilterSelect value={os.aging}      onChange={os.setAging}      options={agingOptions}      placeholder="Aging"       className="w-32" />
+        {!isFornecedor && <FilterSelect value={os.fornecedor} onChange={os.setFornecedor} options={fornecedorOptions} placeholder="Fornecedor" className="w-36" />}
+        <FilterSelect value={os.periodo}   onChange={os.setPeriodo}   options={periodoOpts}       placeholder="Período"     className="w-32" />
+
+        </div>}
+      </div>
+
+      {/* Banner filtros ativos */}
+      {os.filtersActive && (
+        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl
+                        bg-primary/[0.06] border border-primary/20 text-label text-secondary">
+          <span className="flex items-center gap-2 flex-wrap">
+            Exibindo <strong className="text-text">{os.filtered.length}</strong> de{' '}
+            <strong className="text-text">{os.ordens.length}</strong> OS
+            {os.critico      && <span className="rounded-full px-2 py-0.5 text-caption font-bold bg-red/10 text-red border border-red/20">Críticas · SLA 2×</span>}
+            {os.semEquipe    && <span className="badge-yellow  rounded-full px-2 py-0.5 text-caption font-bold">Sem equipe</span>}
+            {os.agendHoje    && <span className="badge-green   rounded-full px-2 py-0.5 text-caption font-bold">Agend. hoje</span>}
+            {os.agendAmanha  && <span className="badge-cyan    rounded-full px-2 py-0.5 text-caption font-bold">Amanhã</span>}
+            {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-caption font-bold">Após amanhã</span>}
+            {os.periodo      && <span className="badge-purple  rounded-full px-2 py-0.5 text-caption font-bold">{os.periodo}</span>}
+          </span>
+          <button onClick={clearAllFilters} className="text-muted hover:text-red transition-colors text-caption font-semibold">
+            Limpar filtros
+          </button>
+        </div>
+      )}
+
+      {/* Tabela */}
+      <div ref={tableRef} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+        {os.isLoading ? (
+          <div className="p-4"><TableSkeleton rows={8} cols={8} /></div>
+        ) : os.error ? (
+          <div role="alert" className="py-14 px-6 text-center">
+            <Warning size={28} className="mx-auto text-red mb-3" />
+            <p className="text-title font-semibold text-text">Não foi possível carregar as ordens</p>
+            <p className="text-label text-muted mt-1">Verifique a conexão com o servidor e tente novamente.</p>
+            <Button variant="outline" size="sm" className="mt-4 min-h-9" onClick={() => window.location.reload()}><ArrowsClockwise size={12} /> Tentar novamente</Button>
+          </div>
+        ) : os.equipe ? (
+          /* ── Vista agrupada por período (quando equipe está selecionada) ── */
+          <PeriodoGroupedTable
+            rows={os.filtered}
+            density={os.density as "normal" | "compact" | "mini"}
+            onRowClick={handleRowClick}
+            equipe={os.equipe}
+          />
+        ) : groupBy === 'cliente' ? (
+          /* ── Vista agrupada por cliente ── */
+          <ClienteGroupedTable
+            rows={os.filtered}
+            density={os.density as "normal" | "compact" | "mini"}
+            onRowClick={handleRowClick}
+          />
+        ) : (
+          /* ── Tabela flat padrão — sort controlado ordena o conjunto inteiro ── */
+          <DataTable
+            columns={columns}
+            rows={os.paginated}
+            density={os.density as "normal" | "compact" | "mini"}
+            onRowClick={handleRowClick}
+            onRowHover={handleRowHover}
+            onRowLeave={handleRowLeave}
+            sort={os.tableSort}
+            onSort={os.toggleTableSort}
+            emptyTitle={os.filtersActive ? 'Nenhuma OS corresponde aos filtros' : 'Nenhuma OS no período selecionado'}
+            emptyDescription={os.filtersActive ? 'Remova ou ajuste os filtros para ampliar o resultado.' : 'Não há ordens disponíveis para a seleção atual.'}
+          />
+        )}
+
+        {/* Paginação — apenas no modo flat */}
+        {!os.equipe && groupBy === 'none' && os.filtered.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3
+                          border-t border-white/[0.05] text-caption text-muted">
+            <div className="flex items-center gap-3">
+              <span>{(os.page - 1) * os.pageSize + 1}–{Math.min(os.page * os.pageSize, os.filtered.length)} de {os.filtered.length} OS</span>
+              <label className="flex items-center gap-1.5">Por página
+                <select value={os.pageSize} onChange={e => { os.setPageSize(Number(e.target.value)); os.setPage(1) }} className="bg-surface border border-white/[0.08] rounded-md px-2 py-1 text-text">
+                  {[25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </label>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" aria-label="Primeira página" onClick={() => os.setPage(1)} disabled={os.page === 1}>«</Button>
+              <Button
+                variant="ghost" size="sm"
+                aria-label="Página anterior"
+                onClick={() => os.setPage(p => Math.max(1, p - 1))}
+                disabled={os.page === 1}
+              >
+                ‹
+              </Button>
+              <Button
+                variant="ghost" size="sm"
+                aria-label="Próxima página"
+                onClick={() => os.setPage(p => Math.min(os.totalPages, p + 1))}
+                disabled={os.page === os.totalPages}
+              >
+                ›
+              </Button>
+              <Button variant="ghost" size="sm" aria-label="Última página" onClick={() => os.setPage(os.totalPages)} disabled={os.page === os.totalPages}>»</Button>
+              <span className="ml-2">Página {os.page} de {Math.max(1, os.totalPages)}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Hover card — only when drawer is closed */}
+      {!drawerOS && <OSHoverCard os={hoverOS} anchorRect={hoverRect} />}
+
+      <OSDrawer os={drawerOS} onClose={() => setDrawerOS(null)} />
+
+      {/* ── Modal Telegram ─────────────────────────────────────────── */}
+      {!isFornecedor && <TelegramOrdensModal
+        open={tgModal}
+        onClose={() => setTgModal(false)}
+        ordens={os.filtered}
+      />}
+    </div>
+  )
+}
+
+// Classes literais por cor — o Tailwind faz varredura estática do código-fonte,
+// então `bg-${cor}/25` seria purgado do CSS e a pílula sairia sem cor.
+const TIPO_PILL_CLASSES = {
+  cyan: {
+    ativo: 'bg-cyan/25 border-cyan/50 text-cyan',
+    idle:  'bg-cyan/10 border-cyan/20 text-cyan hover:bg-cyan/20',
+    badge: 'bg-cyan/20 text-cyan',
+  },
+  orange: {
+    ativo: 'bg-orange/25 border-orange/50 text-orange',
+    idle:  'bg-orange/10 border-orange/20 text-orange hover:bg-orange/20',
+    badge: 'bg-orange/20 text-orange',
+  },
+  purple: {
+    ativo: 'bg-purple/25 border-purple/50 text-purple',
+    idle:  'bg-purple/10 border-purple/20 text-purple hover:bg-purple/20',
+    badge: 'bg-purple/20 text-purple',
+  },
+} as const
+
+function TipoPill({ label, icone: Icone, cor, total, ativo, onClick }: {
+  label:   string
+  icone:   React.ComponentType<{ size?: number }>
+  cor:     keyof typeof TIPO_PILL_CLASSES
+  total:   number
+  ativo:   boolean
+  onClick: () => void
+}) {
+  const c = TIPO_PILL_CLASSES[cor]
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={ativo}
+      className={`flex items-center gap-1.5 px-3 py-1 rounded-full border
+                  text-label font-semibold transition-all duration-fast
+                  ${ativo ? c.ativo : c.idle}`}
+    >
+      <Icone size={12} /> {label}
+      <span className={`${c.badge} rounded-full px-1.5 py-0 text-caption font-bold tabular-nums`}>
+        {total}
+      </span>
+    </button>
+  )
+}

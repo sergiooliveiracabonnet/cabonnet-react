@@ -1,0 +1,512 @@
+import {
+  isExecucaoReal, isCOPE, isReagend, getReagendTipo, getAtendimentoBucket,
+  isAgendamentoDesassistido, parseDate,
+} from '../transform'
+import type { OSRow, KPI } from '../types'
+import {
+  avg, calcMTTR, mttrStats, estourouSLA,
+  type FornCard, FORN_CFG,
+} from './_helpers'
+
+// ─── Saúde do período (comparável entre janelas) ──────────────────────────────
+// Diferente do slaFila "ao vivo" (fila atual), mede a saúde das OS do PERÍODO,
+// permitindo comparar período atual vs anterior.
+//
+// Não há score composto aqui de propósito: um número sintético (SLA×0,45 +
+// taxa×0,35 + MTTR×0,20) misturava estoque com fluxo e ninguém agia sobre ele.
+// As três componentes são reportadas diretamente, cada uma com sua unidade.
+
+export interface PeriodHealth {
+  total:  number
+  slaPct: number
+  taxa:   number
+  mttr:   number
+}
+
+export function periodHealth(set: OSRow[]): PeriodHealth {
+  let total = 0, concl = 0, breach = 0, maduro = 0
+  for (const r of set) {
+    if (isCOPE(r) || isReagend(r) || r._tipo === 'REDE') continue
+    total++
+    const concluida = isExecucaoReal(r.descsituacao)
+    if (concluida) concl++
+    if (isCoorteMadura(r, concluida)) maduro++
+    if (estourouSLA(r)) breach++
+  }
+  const slaPct = total > 0 ? Math.round((total - breach) / total * 100) : 100
+  const taxa   = maduro > 0 ? Math.round(concl / maduro * 100) : 0
+  const mttr   = calcMTTR(set)
+  return { total, slaPct, taxa, mttr }
+}
+
+// ─── Projeção de risco (preditivo) ────────────────────────────────────────────
+// OS ativas que ainda NÃO são críticas mas vão estourar o SLA (2× limite) em breve,
+// usando _diasAteViolacao já calculado no enrichRows. Olha a fila ao vivo (allRows).
+
+export interface ProjecaoRisco {
+  proj24h: number       // viram críticas em ≤ 24h
+  proj48h: number       // viram críticas em ≤ 48h (além das de 24h)
+  amostra: OSRow[]      // as mais iminentes primeiro (para drill-down)
+}
+
+export function buildProjecaoRisco(allRows: OSRow[]): ProjecaoRisco {
+  let proj24h = 0, proj48h = 0
+  const risco: OSRow[] = []
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r) || r._tipo === 'REDE') continue
+    if (!['Pendente', 'Atendimento'].includes(r.descsituacao)) continue
+    if (r._slaCritico) continue
+    const d = r._diasAteViolacao
+    if (d == null) continue
+    if (d <= 1)      { proj24h++; risco.push(r) }
+    else if (d === 2) { proj48h++; risco.push(r) }
+  }
+  const amostra = risco
+    .sort((a, b) => (a._diasAteViolacao ?? 99) - (b._diasAteViolacao ?? 99))
+    .slice(0, 50)
+  return { proj24h, proj48h, amostra }
+}
+
+// Média diária de entradas (OS criadas) — baseline fixo dos últimos N dias,
+// independente do filtro de data do usuário (senão filtro "hoje" compararia hoje com hoje).
+export function entradaMediaDia(rows: OSRow[], janelaDias = 28): number {
+  const corte = new Date()
+  corte.setHours(0, 0, 0, 0)
+  corte.setDate(corte.getDate() - janelaDias)
+  const perDay = new Map<string, number>()
+  for (const r of rows) {
+    if (isCOPE(r) || isReagend(r)) continue
+    const day = (r.datacadastro || '').split(' ')[0]
+    if (!day) continue
+    const dt = parseDate(day)
+    if (!dt || dt < corte) continue
+    perDay.set(day, (perDay.get(day) ?? 0) + 1)
+  }
+  if (perDay.size === 0) return 0
+  const total = [...perDay.values()].reduce((a, b) => a + b, 0)
+  return Math.round(total / perDay.size)
+}
+
+export interface DashboardMover {
+  id:       string
+  label:    string
+  atual:    number
+  anterior: number
+  delta:    number
+  unidade:  string
+  melhorou: boolean
+  variacao: number   // |Δ| relativo ao valor anterior, em % — ordena o que mais mexeu
+}
+
+// Ordena por variação relativa, não por impacto num score sintético: 2 pontos de
+// MTTR e 2 pontos de SLA não são comparáveis em valor absoluto, mas a variação
+// percentual de cada um contra si mesmo é.
+export function buildMudancas(cur: PeriodHealth, prev: PeriodHealth): DashboardMover[] {
+  const defs = [
+    { id: 'sla',  label: 'SLA do período',    atual: cur.slaPct, anterior: prev.slaPct, unidade: '%', maiorEhMelhor: true  },
+    { id: 'taxa', label: 'Taxa de conclusão', atual: cur.taxa,   anterior: prev.taxa,   unidade: '%', maiorEhMelhor: true  },
+    { id: 'mttr', label: 'MTTR',              atual: cur.mttr,   anterior: prev.mttr,   unidade: 'd', maiorEhMelhor: false },
+  ]
+  return defs
+    .map(d => {
+      const delta    = Math.round((d.atual - d.anterior) * 10) / 10
+      const variacao = d.anterior !== 0 ? Math.abs(delta / d.anterior) * 100 : 100
+      return {
+        id: d.id, label: d.label, atual: d.atual, anterior: d.anterior, delta,
+        unidade: d.unidade,
+        melhorou: d.maiorEhMelhor ? delta > 0 : delta < 0,
+        variacao: Math.round(variacao * 10) / 10,
+      }
+    })
+    .filter(m => m.delta !== 0)
+    .sort((a, b) => b.variacao - a.variacao)
+}
+
+// Uma OS entra na taxa de conclusão só quando seu desfecho já é conhecível:
+// ou ela foi concluída, ou já esgotou a janela de SLA sem fechar. Uma OS aberta
+// há 2h ainda não teve chance de fechar — contá-la como "não concluída" mede
+// imaturidade da coorte, não desempenho.
+export function isCoorteMadura(r: OSRow, concluida: boolean): boolean {
+  if (concluida) return true
+  return r._aging != null && r._aging >= r._slaLimite
+}
+
+export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows: OSRow[] = []) {
+  const isAtivo = (r: OSRow) => ['Pendente','Atendimento'].includes(r.descsituacao)
+  const isRede  = (r: OSRow) => r._tipo === 'REDE'
+
+  // Data de hoje em DD/MM/YYYY para comparar com dataagendamento (mesmo formato do CSV)
+  const _now = new Date()
+  const _hojeStr = `${String(_now.getDate()).padStart(2, '0')}/${String(_now.getMonth() + 1).padStart(2, '0')}/${_now.getFullYear()}`
+  const isAgendadaHoje = (r: OSRow) => (r.dataagendamento || '').split(' ')[0] === _hojeStr
+
+  let pend = 0, atend = 0, atendHoje = 0, atendAmanha = 0, atendFutura = 0, redeCount = 0
+  let criticas = 0, criticasHoje = 0, criticasDesassist = 0, semEquipe = 0
+  let reagendInviab = 0, reagendMobile = 0, reagendFutura = 0
+  let copeAguardando = 0
+  let slaExcFila = 0, semAgendamento = 0
+  const agingArr: number[] = []
+  const agingDist = { ok: 0, limite: 0, estourado: 0, critico: 0 }
+  const cidCritMap = new Map<string, number>()
+
+  for (const r of allRows) {
+    if (isReagend(r)) {
+      if (isAtivo(r)) {
+        const t = getReagendTipo(r)
+        if      (t === 'inviabilidade') reagendInviab++
+        else if (t === 'mobile')        reagendMobile++
+        else                            reagendFutura++
+      }
+      continue
+    }
+    if (isCOPE(r)) {
+      if (isAtivo(r)) copeAguardando++
+      continue
+    }
+    if (!isAtivo(r)) continue
+    if (isRede(r)) { redeCount++; continue }
+    if (r._situacaoEfetiva === 'Pendente')    pend++
+    if (r._situacaoEfetiva === 'Atendimento') {
+      atend++
+      const bucket = getAtendimentoBucket(r)
+      if      (bucket === 'hoje')   atendHoje++
+      else if (bucket === 'amanha') atendAmanha++
+      else                          atendFutura++
+    }
+    if (!r.nomedaequipe?.trim()) semEquipe++
+    if (r._slaCritico) {
+      criticas++
+      if (isAgendadaHoje(r)) criticasHoje++
+      else if (isAgendamentoDesassistido(r)) criticasDesassist++
+      const c = (r.nomedacidade || '').trim()
+      if (c) cidCritMap.set(c, (cidCritMap.get(c) ?? 0) + 1)
+    }
+    if (r._slaExcedido || r._slaSemAgend) slaExcFila++
+    if (!r.dataagendamento?.trim()) semAgendamento++
+    if (r._aging != null) {
+      agingArr.push(r._aging)
+      // Bucket relativo ao SLA da OS: manutenção com 2d (limite 1) já estourou;
+      // instalação com 2d (limite 2) está no limite. Dias absolutos escondem isso.
+      const ratio = r._slaLimite > 0 ? r._aging / r._slaLimite : r._aging
+      if      (ratio < 0.5) agingDist.ok++
+      else if (ratio <= 1)  agingDist.limite++
+      else if (ratio <= 2)  agingDist.estourado++
+      else                  agingDist.critico++
+    }
+  }
+  const total    = pend + atend
+  const rede     = redeCount
+  const agingMed = avg(agingArr)
+  const slaFila  = total > 0 ? Math.round((total - slaExcFila) / total * 100) : 100
+  // Não renderizado na tela — alimenta o payload da narrativa de IA (useAINarrative)
+  const topCidadesCriticas = [...cidCritMap.entries()]
+    .sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([cidade, count]) => ({ cidade, count }))
+
+  // ─── Fluxo do dia: entradas vs saídas — ao vivo, ignora filtro de data ────
+  const now     = new Date()
+  const hojeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
+  let entradasHoje = 0, saidasHoje = 0
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r)) continue
+    if ((r.datacadastro || '').split(' ')[0] === hojeStr) entradasHoje++
+    if (r._executadaHoje) saidasHoje++
+  }
+  const fluxoHoje = entradasHoje - saidasHoje
+
+  // ─── Backlog em dias de capacidade: fila ÷ média de saídas/dia (14 dias) ──
+  // "120 OS na fila" não diz nada; "3,2 dias de fila no ritmo atual" decide
+  // se precisa de frente extra. Exclui hoje (dia incompleto) e domingos
+  // (plantão de 2–4 técnicos não representa a capacidade real) do baseline.
+  const saidasPorDia = new Map<string, number>()
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r) || isRede(r)) continue
+    if (!isExecucaoReal(r.descsituacao)) continue
+    const day = (r.dataexecucao || r.databaixa || '').split(' ')[0]
+    if (!day || day === hojeStr) continue
+    const dt = parseDate(day)
+    if (!dt || dt.getDay() === 0 || (now.getTime() - dt.getTime()) > 14 * 86400000) continue
+    saidasPorDia.set(day, (saidasPorDia.get(day) ?? 0) + 1)
+  }
+  const mediaSaidasDia = saidasPorDia.size > 0
+    ? [...saidasPorDia.values()].reduce((a, b) => a + b, 0) / saidasPorDia.size
+    : 0
+  const backlogDias = mediaSaidasDia > 0 ? Math.round(total / mediaSaidasDia * 10) / 10 : null
+
+  // ─── Ritmo intradiário: conclusões de hoje por turno (manhã/tarde) ────────
+  let manhaHoje = 0, tardeHoje = 0, semPeriodoHoje = 0
+  for (const r of allRows) {
+    if (!r._executadaHoje) continue
+    const p = (r.periodo || '').toLowerCase()
+    if      (p.includes('manh'))  manhaHoje++
+    else if (p.includes('tarde')) tardeHoje++
+    else                           semPeriodoHoje++
+  }
+  // Normaliza pela fração do turno decorrida: às 13h30 a tarde mal começou —
+  // comparar com a manhã completa geraria falso positivo estrutural.
+  const TARDE_INI_H = 13, TARDE_FIM_H = 18.5
+  const horaAtual   = now.getHours() + now.getMinutes() / 60
+  const fracTarde   = Math.max(0, Math.min(1, (horaAtual - TARDE_INI_H) / (TARDE_FIM_H - TARDE_INI_H)))
+  const esperadoTarde = Math.round(manhaHoje * fracTarde)
+  const ritmoIntradiario = {
+    manha: manhaHoje, tarde: tardeHoje, semPeriodo: semPeriodoHoje,
+    tardeIniciada: fracTarde > 0,
+    fracTarde: Math.round(fracTarde * 100) / 100,
+    esperadoTarde,
+    // Só alerta com ≥35% do turno decorrido e produção < metade do esperado
+    alerta: fracTarde >= 0.35 && manhaHoje >= 5 && tardeHoje < esperadoTarde * 0.5,
+  }
+
+  // ─── Concluídas do mês corrente ──────────────────────────────────────────
+  const monthKey   = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  const curMonthKey = monthKey(now)
+  const concluPorMes = new Map<string, number>()
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r) || isRede(r)) continue
+    if (!isExecucaoReal(r.descsituacao)) continue
+    const dt = parseDate(r.databaixa) || parseDate(r.dataexecucao)
+    if (!dt) continue
+    const k = monthKey(dt)
+    concluPorMes.set(k, (concluPorMes.get(k) ?? 0) + 1)
+  }
+  const concluidasMesAtual = concluPorMes.get(curMonthKey) ?? 0
+
+  // Operação Cabonnet: equipes atuam sábado normalmente; domingo é só plantão
+  // (2–4 técnicos) — dia útil = seg–sáb, domingo fora da meta e da projeção.
+  const diasUteisAte = (ano: number, mes: number, diaFinal: number): number => {
+    let n = 0
+    for (let d = 1; d <= diaFinal; d++) {
+      if (new Date(ano, mes, d).getDay() !== 0) n++
+    }
+    return n
+  }
+  const ultimoDiaMes      = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const diasUteisTotal    = diasUteisAte(now.getFullYear(), now.getMonth(), ultimoDiaMes)
+  // Hoje conta como fração do expediente decorrido (7h–18h30), não como dia
+  // inteiro — senão a projeção fica subestimada toda manhã.
+  const EXP_INI_H = 7, EXP_FIM_H = 18.5
+  const horaExp     = now.getHours() + now.getMinutes() / 60
+  const fracaoHoje  = Math.max(0, Math.min(1, (horaExp - EXP_INI_H) / (EXP_FIM_H - EXP_INI_H)))
+  const hojeEhUtil  = now.getDay() !== 0
+  const diasUteisInteiros = diasUteisAte(now.getFullYear(), now.getMonth(), now.getDate()) - (hojeEhUtil ? 1 : 0)
+  const diasUteisDecorr   = diasUteisInteiros + (hojeEhUtil ? fracaoHoje : 0)
+  const diasUteisRestantes = Math.max(0, diasUteisTotal - Math.ceil(diasUteisDecorr))
+
+  // ─── Meta por capacidade ──────────────────────────────────────────────────
+  // meta = frentes ativas × produtividade mediana por frente/dia × dias úteis.
+  // Ancorada no que a operação CONSEGUE entregar. O modelo anterior (média dos
+  // 3 meses) perseguia o resultado: 3 meses ruins baixavam a meta e a operação
+  // seguia aparecendo "no ritmo". Aqui, perder uma frente baixa a meta; render
+  // menos por frente, não — isso vira desvio visível contra a meta.
+  const REF_PROD_DIAS = 60, REF_FRENTES_DIAS = 7
+  const diaChave = (r: OSRow) => (r.dataexecucao || r.databaixa || '').split(' ')[0]
+  const corteDe = (dias: number) => {
+    const d = new Date(now)
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() - dias)
+    return d
+  }
+  const corteProd = corteDe(REF_PROD_DIAS), corteFrentes = corteDe(REF_FRENTES_DIAS)
+  const porDiaEquipe = new Map<string, { concl: number; frentes: Set<string> }>()
+  const frentesAtivas = new Set<string>()
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r) || isRede(r)) continue
+    if (!isExecucaoReal(r.descsituacao)) continue
+    const equipe = (r.nomedaequipe || '').trim()
+    if (!equipe) continue
+    const day = diaChave(r)
+    const dt  = day ? parseDate(day) : null
+    if (!dt) continue
+    if (dt >= corteFrentes) frentesAtivas.add(equipe)
+    // Domingo é plantão de 2–4 técnicos: não representa capacidade real.
+    // Hoje fica fora porque o dia ainda está em curso.
+    if (day === hojeStr || dt.getDay() === 0 || dt < corteProd) continue
+    let e = porDiaEquipe.get(day)
+    if (!e) { e = { concl: 0, frentes: new Set() }; porDiaEquipe.set(day, e) }
+    e.concl++
+    e.frentes.add(equipe)
+  }
+  // Mediana, não média: um dia de mutirão não deve inflar a meta do mês inteiro.
+  const prodDiaria = [...porDiaEquipe.values()]
+    .filter(e => e.frentes.size > 0)
+    .map(e => e.concl / e.frentes.size)
+    .sort((a, b) => a - b)
+  // Arredonda só para exibir: multiplicar o valor já arredondado por frentes ×
+  // dias amplifica o erro (4,66→4,7 vira ~12 OS de diferença no mês).
+  const prodExata     = prodDiaria.length > 0 ? prodDiaria[Math.floor(prodDiaria.length / 2)] : 0
+  const prodFrenteDia = Math.round(prodExata * 10) / 10
+  const metaMesAtual  = Math.round(frentesAtivas.size * prodExata * diasUteisTotal)
+
+  const pctMetaMes      = metaMesAtual > 0 ? Math.round(concluidasMesAtual / metaMesAtual * 100) : null
+  const projecaoMesFinal = diasUteisDecorr >= 0.25
+    ? Math.round(concluidasMesAtual / diasUteisDecorr * diasUteisTotal)
+    : null
+  const metaMesStatus: 'acima' | 'abaixo' | 'neutro' =
+    metaMesAtual === 0 || projecaoMesFinal == null ? 'neutro'
+    : projecaoMesFinal >= metaMesAtual ? 'acima' : 'abaixo'
+  const metaMes = {
+    concluidas: concluidasMesAtual, meta: metaMesAtual, pct: pctMetaMes,
+    diasUteisRestantes, diasUteisTotal, projecaoFinal: projecaoMesFinal,
+    status: metaMesStatus,
+    frentes: frentesAtivas.size, prodFrenteDia,
+  }
+
+  let concl = 0, totalMaduro = 0, conclNoPrazo = 0
+  const fornMap = new Map<string, { total: number; concluidas: number; noPrazo: number }>()
+  for (const r of rows) {
+    if (isCOPE(r) || isReagend(r)) continue
+    const k = r._fornecedor === 'OUTRO' ? null : r._fornecedor
+    if (k) {
+      if (!fornMap.has(k)) fornMap.set(k, { total: 0, concluidas: 0, noPrazo: 0 })
+      const f = fornMap.get(k)!
+      f.total++
+      if (isExecucaoReal(r.descsituacao)) f.concluidas++
+      if (!estourouSLA(r)) f.noPrazo++
+    }
+    if (isRede(r)) continue
+    const concluida = isExecucaoReal(r.descsituacao)
+    if (concluida) {
+      concl++
+      // Atingimento: entregue dentro do SLA (aging congelado na baixa)
+      if (r._agingAbertura != null && r._agingAbertura <= r._slaLimite) conclNoPrazo++
+    }
+    if (isCoorteMadura(r, concluida)) totalMaduro++
+  }
+  // Denominador = só coortes maduras. Incluir OS aberta há 2h faz a taxa
+  // despencar em filtros curtos por imaturidade da coorte, não por piora real.
+  const taxa = totalMaduro > 0 ? Math.round(concl / totalMaduro * 100) : 0
+  // SLA de atingimento (fluxo): % das CONCLUÍDAS do período entregues no prazo.
+  // Complementa o slaFila (estoque), que só enxerga o que ainda está na fila.
+  const slaAtingimento = concl > 0 ? Math.round(conclNoPrazo / concl * 100) : null
+
+  let prevConcl = 0, prevMaduro = 0
+  const prevFornMap = new Map<string, { total: number; noPrazo: number }>()
+  for (const r of prevRows) {
+    const k = r._fornecedor === 'OUTRO' ? null : r._fornecedor
+    if (k && !isCOPE(r) && !isReagend(r)) {
+      if (!prevFornMap.has(k)) prevFornMap.set(k, { total: 0, noPrazo: 0 })
+      const f = prevFornMap.get(k)!
+      f.total++
+      if (!estourouSLA(r)) f.noPrazo++
+    }
+    if (isCOPE(r) || isReagend(r) || isRede(r)) continue
+    const prevConcluida = isExecucaoReal(r.descsituacao)
+    if (prevConcluida) prevConcl++
+    if (isCoorteMadura(r, prevConcluida)) prevMaduro++
+  }
+  // Mesma régua do período atual — senão a tendência compara denominadores diferentes
+  const prevTaxa = prevMaduro > 0 ? Math.round(prevConcl / prevMaduro * 100) : 0
+
+  const mttrS = mttrStats(rows)
+  const mttr  = mttrS.p50
+
+  type InsightLevel = 'red' | 'orange' | 'yellow' | 'green'
+  const quickInsights: { level: InsightLevel; text: string }[] = []
+  if (criticas > 0)
+    quickInsights.push({ level: 'red',    text: `${criticas} OS crítica${criticas !== 1 ? 's' : ''} — SLA 2× excedido` })
+  else
+    quickInsights.push({ level: 'green',  text: 'Nenhuma OS com SLA crítico' })
+  if (slaFila < 75)
+    quickInsights.push({ level: 'red',    text: `SLA da fila: ${slaFila}% — abaixo da meta` })
+  else if (slaFila < 90)
+    quickInsights.push({ level: 'yellow', text: `SLA da fila: ${slaFila}% — atenção` })
+  else
+    quickInsights.push({ level: 'green',  text: `SLA da fila: ${slaFila}%` })
+  if (semEquipe > 0)
+    quickInsights.push({ level: 'orange', text: `${semEquipe} OS sem equipe atribuída` })
+  if (semAgendamento > 5)
+    quickInsights.push({ level: 'yellow', text: `${semAgendamento} OS sem agendamento` })
+  if (slaAtingimento != null && slaAtingimento < 75)
+    quickInsights.push({ level: 'red', text: `Só ${slaAtingimento}% das concluídas saíram dentro do prazo` })
+  if (backlogDias != null && backlogDias > 3)
+    quickInsights.push({ level: 'orange', text: `Fila equivale a ${backlogDias.toLocaleString('pt-BR')} dias de trabalho no ritmo atual` })
+
+  const narrativaPulso = [
+    `${total} OS ativa${total !== 1 ? 's' : ''}`,
+    `${criticas} crítica${criticas !== 1 ? 's' : ''}`,
+    `SLA ${slaFila}%`,
+    mttr > 0 ? `MTTR ${mttr}d` : null,
+    `${taxa}% de conclusão`,
+  ].filter(Boolean).join(' · ')
+
+  // Instalação e Serviço em massa no mesmo bairro são prática comercial normal (arrastão do
+  // PAP, demanda de serviço), não indício de falha de infraestrutura — só conta OS de
+  // Manutenção para "Cluster de Falha".
+  const clusterBairroMap = new Map<string, { bairro: string; cidade: string; total: number }>()
+  for (const r of allRows) {
+    if (isCOPE(r) || isReagend(r) || isRede(r) || r._tipo === 'INSTALACAO' || r._tipo === 'OUTRO') continue
+    if (!isAtivo(r)) continue
+    if (r._agingAbertura == null || r._agingAbertura > 1) continue
+    const b = (r.bairro || '').trim()
+    const c = (r.nomedacidade || '').trim()
+    if (!b) continue
+    const key = `${b}|${c}`
+    if (!clusterBairroMap.has(key)) clusterBairroMap.set(key, { bairro: b, cidade: c, total: 0 })
+    clusterBairroMap.get(key)!.total++
+  }
+  const clustersAtivos = [...clusterBairroMap.values()]
+    .filter(cl => cl.total >= 4)
+    .sort((a, b) => b.total - a.total)
+
+  const pulso = {
+    narrativa: narrativaPulso, quickInsights,
+    agingMed, agingDist, slaFila, taxa, slaAtingimento, semAgendamento,
+    mttr, mttrP90: mttrS.p90, backlogDias,
+    topCidadesCriticas, clustersAtivos, criticasTotal: criticas,
+    entradasHoje, saidasHoje, fluxoHoje, entradaMediaDia: entradaMediaDia(allRows), metaMes, ritmoIntradiario,
+  }
+
+  const mkTrend = (cur: number, prev: number, higherIsBetter = true) => {
+    if (!prev) return null
+    const delta = cur - prev
+    const pct   = Math.round(Math.abs(delta) / prev * 100)
+    return { delta, pct, higherIsBetter }
+  }
+
+  const kpis: KPI[] = [
+    { id: 'criticas', title: 'OS Críticas',      value: criticasHoje, sub: 'SLA 2× · agend. hoje',          accent: 'red'    },
+    { id: 'criticasDesassist', title: 'Críticas s/ Agenda', value: criticasDesassist, sub: 'SLA 2× · sem agenda ou vencida', accent: 'red' },
+    { id: 'semEq',    title: 'Sem Equipe',        value: semEquipe,  sub: 'pendente atribuição',            accent: 'orange' },
+    { id: 'pend',     title: 'Pendentes',         value: pend,       sub: 'aguardando campo',               accent: 'yellow' },
+    { id: 'atend',    title: 'Em Atendimento',    value: atend,      sub: 'em campo + agend. futuro',       accent: 'cyan'   },
+    { id: 'atendHoje',   title: 'Em Campo (Hoje)',    value: atendHoje,   sub: 'agend. para hoje',           accent: 'cyan'    },
+    { id: 'atendAmanha', title: 'Em Campo (Amanhã)',  value: atendAmanha, sub: 'agend. para amanhã',         accent: 'primary' },
+    { id: 'atendFutura', title: 'Agendamento Futuro', value: atendFutura, sub: 'equipe já designada',        accent: 'purple'  },
+    { id: 'copeAguardando', title: 'Aguard. Roteirização', value: copeAguardando, sub: 'parado no COPE',   accent: 'orange' },
+    { id: 'reagendInviab', title: 'Reag. Inviab.', value: reagendInviab, sub: 'reagend. por inviabilidade',  accent: 'orange' },
+    { id: 'reagendMobile', title: 'Reag. Mobile',  value: reagendMobile, sub: 'reagend. via OS mobile',      accent: 'orange' },
+    { id: 'reagendFutura', title: 'Reag. Futura',  value: reagendFutura, sub: 'reagend. p/ data futura',     accent: 'orange' },
+    { id: 'total',    title: 'Total OS',          value: total,      sub: 'fila ativa (pend. + atend.)',    accent: 'primary'},
+    { id: 'rede',     title: 'OS Rede',           value: rede,       sub: 'fila ativa de rede',             accent: 'purple' },
+    { id: 'concl',    title: 'Concluídas',        value: concl,      sub: `${taxa}% de conclusão`,          accent: 'green', trend: mkTrend(concl, prevConcl, true) },
+    { id: 'taxa',     title: 'Taxa Conclusão',    value: `${taxa}%`, sub: 'das OS já vencidas ou fechadas',  accent: 'green', trend: mkTrend(taxa, prevTaxa, true) },
+  ]
+
+  // ─── Trajetória: cada componente vs período anterior, sem score sintético ──
+  const temPrev   = prevRows.length > 0
+  const mudancas  = temPrev ? buildMudancas(periodHealth(rows), periodHealth(prevRows)) : []
+  const projecaoRisco = buildProjecaoRisco(allRows)
+
+  const fornecedores: FornCard[] = [...fornMap.entries()]
+    .map(([k, { total: t, concluidas: c, noPrazo }]) => {
+      // SLA = % dentro do prazo (estourouSLA); conclPct = throughput. São coisas
+      // diferentes — o rótulo "SLA" já induziu leitura errada quando era conclusão.
+      const sla      = t > 0 ? Math.round(noPrazo / t * 100) : 100
+      const conclPct = t > 0 ? Math.round(c / t * 100) : 0
+      const prevF    = prevFornMap.get(k)
+      const prevSla  = prevF && prevF.total > 0 ? Math.round(prevF.noPrazo / prevF.total * 100) : 0
+      return {
+        nome: FORN_CFG[k]?.label ?? k, total: t, concluidas: c, sla, conclPct,
+        cor: FORN_CFG[k]?.cor ?? '#64748b',
+        slaTrend: mkTrend(sla, prevSla, true),
+      }
+    })
+    .filter(f => f.total > 0)
+    .sort((a, b) => b.total - a.total)
+
+  return { kpis, fornecedores, pulso, mudancas, projecaoRisco }
+}
+
+// ─── SLA ──────────────────────────────────────────────────────────────────────
+
+

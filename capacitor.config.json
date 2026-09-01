@@ -1,0 +1,9 @@
+{
+  "appId": "com.cabonnet.dashboard",
+  "appName": "Cabonnet",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#0f1117"
+  }
+}

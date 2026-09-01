@@ -1,0 +1,374 @@
+import { useState, useRef, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { WarningCircle, DownloadSimple, ChartBar, ArrowRight, Lightning, Gauge } from '@phosphor-icons/react'
+import type { OSRow, KPI, AccentColor } from '../../lib/types'
+import { useOSDerived } from '../../contexts/OSDataContext'
+import { useAINarrative } from '../../hooks/useAINarrative'
+import { useStats } from '../../hooks/useStats'
+import { exportCSV } from '../../lib/export'
+import { isCOPE, isReagend, parseDateTime } from '../../lib/transform'
+import { KPIGridSkeleton } from '../../components/ui/Skeleton'
+import { Modal } from '../../components/ui/Modal'
+import OSDrawer from '../ordens/OSDrawer'
+import { PulsoHero } from './PulsoHero'
+import { DashboardCommandCenter } from './DashboardCommandCenter'
+import { FluxoOSPanel } from './FluxoOSPanel'
+import { filterRowsByEquipe, filterRowsByFornecedor } from './DashboardDrilldowns'
+import { AnomaliaSection } from './AnomaliaSection'
+import { StatCard, accentToTone } from '../../components/ui/StatCard'
+import { SectionLabel } from './DashboardKpiPrimitives'
+import { ExecutadasHeroBlock } from './DashboardHeroBlock'
+import {
+  MetaMesCard, AlertaTopoBanner, ClustersBairroPanel, AgingPanel,
+  RitmoEquipesPanel, MudancasStrip,
+  ParetoServicoPanel, CidadesValePanel, FornecedoresPanel, QualidadePeriodoCard,
+} from './DashboardPaineis'
+import { KpiModalTable } from './DashboardKpiModal'
+import { CoortePanel } from './CoortePanel'
+import { CapacidadePanel } from './CapacidadePanel'
+import { ChurnPanel } from './ChurnPanel'
+import { DashboardInvestigation } from './DashboardInvestigation'
+import {
+  KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS, FOCO_NAVEGAVEL,
+  type ModalState, type TypedDashboard, type CampoProjecaoReal,
+} from './DashboardTypes'
+
+export default function DashboardPage() {
+  const { derived: { dashboard, anomalias, campo, graficos, revisitas, coorte, capacidade, churn }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
+  const { kpis, fornecedores, pulso, mudancas, projecaoRisco } = dashboard as unknown as TypedDashboard
+  const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
+  const taxaRevisitas = (revisitas as { taxa?: { geral?: number } } | null)?.taxa?.geral ?? null
+  const { clustersAtivos = [] } = pulso
+  const clustersRef  = useRef<HTMLDivElement>(null)
+  const anomaliasRef = useRef<HTMLDivElement>(null)
+  const [aiEnabled, setAiEnabled] = useState(false)
+  const [observacao, setObservacao] = useState('')
+  const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso: pulso as unknown as Record<string, unknown>, fornecedores, anomalias, observacao, enabled: aiEnabled })
+  const { data: stats } = useStats()
+  const navigate = useNavigate()
+
+  const [modal,    setModal]    = useState<ModalState | null>(null)
+  const [drawerOS, setDrawerOS] = useState<OSRow | null>(null)
+
+  // Fila ativa ao vivo — mesmo predicado do KPI "Fila Total" e do agingDist do builder
+  const filaAtiva = useMemo(() => allRows.filter(KPI_FILTERS.total), [allRows])
+  const fluxoHojeRows = useMemo(() => {
+    const now = new Date()
+    const hoje = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
+    const validas = allRows.filter(row => !isCOPE(row) && !isReagend(row))
+    const byNewest = (field: (row: OSRow) => string | null | undefined) => (a: OSRow, b: OSRow) =>
+      (parseDateTime(field(b))?.getTime() ?? 0) - (parseDateTime(field(a))?.getTime() ?? 0)
+
+    return {
+      entradas: validas
+        .filter(row => (row.datacadastro || '').split(' ')[0] === hoje)
+        .sort(byNewest(row => row.datacadastro)),
+      saidas: validas
+        .filter(row => row._executadaHoje)
+        .sort(byNewest(row => row.dataexecucao || row.databaixa)),
+    }
+  }, [allRows])
+
+  function openKpi(kpi: KPI) {
+    const filter = KPI_FILTERS[kpi.id]
+    if (!filter) return
+    const source   = ALLROWS_KPIS.has(kpi.id) ? allRows : rows
+    const filtered = source.filter(filter)
+    setModal({ title: kpi.title, rows: filtered, foco: kpi.id })
+  }
+
+  function openEquipe(equipe: string) {
+    setModal({
+      title: `Equipe ${equipe} — OS do período`,
+      rows: filterRowsByEquipe(rows, equipe),
+    })
+  }
+
+  function openFornecedor(fornecedor: string) {
+    setModal({
+      title: `Fornecedor ${fornecedor} — OS do período`,
+      rows: filterRowsByFornecedor(rows, fornecedor),
+    })
+  }
+
+  if (error && !rows.length) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <div className="w-14 h-14 rounded-full bg-red/10 border border-red/20 flex items-center justify-center">
+          <WarningCircle size={24} className="text-red" />
+        </div>
+        <p className="text-title font-semibold text-text">Servidor indisponível</p>
+        <p className="text-label text-muted text-center max-w-xs leading-relaxed">
+          {(error as Error)?.message ?? String(error)}
+        </p>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    const f = stats?.fila
+    if (f) {
+      const slaAccent: AccentColor = f.sla_pct >= 90 ? 'green' : f.sla_pct >= 75 ? 'yellow' : 'red'
+      const riskStats: KPI[] = [
+        { id: 'criticas', title: 'OS Críticas',   value: f.criticas,        sub: 'SLA 2× excedido',  accent: 'red'     },
+        { id: 'semEq',    title: 'Sem Equipe',     value: f.sem_equipe,      sub: 'sem atribuição',   accent: 'orange'  },
+        { id: 'pend',     title: 'Pendentes',      value: f.pendente,        sub: 'aguardando',       accent: 'yellow'  },
+        { id: 'copeAguardando', title: 'Aguard. Roteirização', value: f.cope_aguardando ?? 0, sub: 'parado no COPE', accent: 'orange' },
+        { id: 'reagendInviab', title: 'Reag. Inviab.', value: f.reagend_inviab ?? 0, sub: 'reagend. por inviabilidade', accent: 'orange' },
+        { id: 'reagendMobile', title: 'Reag. Mobile',  value: f.reagend_mobile ?? 0, sub: 'reagend. via OS mobile',     accent: 'orange' },
+        { id: 'reagendFutura', title: 'Reag. Futura',  value: f.reagend_futura ?? 0, sub: 'reagend. p/ data futura',    accent: 'orange' },
+      ]
+      const perfStats: KPI[] = [
+        { id: 'atend',    title: 'Em Atendimento', value: f.atendimento,     sub: 'em campo',         accent: 'cyan'    },
+        { id: 'total',    title: 'Fila Total',     value: f.total,           sub: 'OS ativas',        accent: 'primary' },
+        { id: 'rede',     title: 'Rede',           value: f.rede,            sub: 'OS de rede',       accent: 'green'   },
+        { id: 'sla',      title: 'SLA da Fila',    value: `${f.sla_pct}%`,  sub: 'dentro do prazo',  accent: slaAccent },
+        { id: 'aging',    title: 'Aging Médio',    value: `${f.aging_med}d`, sub: 'dias em aberto',  accent: 'purple'  },
+      ]
+      return (
+        <div className="space-y-4 max-w-[1600px]">
+          <section>
+            <SectionLabel icon={WarningCircle} color="#f87171">Prioridades agora</SectionLabel>
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
+              {riskStats.map((k, i) => (
+                <StatCard
+                  key={k.id}
+                  title={k.title}
+                  value={k.value}
+                  sub={k.sub}
+                  tone={accentToTone(k.accent)}
+                  trend={k.trend ?? undefined}
+                  icon={KPI_ICONS[k.id]}
+                  delay={i * 60}
+                  scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
+                />
+              ))}
+            </div>
+          </section>
+          <section>
+            <SectionLabel icon={ChartBar} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
+              {perfStats.map((k, i) => (
+                <StatCard
+                  key={k.id}
+                  size="sm"
+                  outlined
+                  title={k.title}
+                  value={k.value}
+                  sub={k.sub}
+                  tone={accentToTone(k.accent)}
+                  trend={k.trend ?? undefined}
+                  icon={KPI_ICONS[k.id]}
+                  delay={i * 60}
+                  scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
+                />
+              ))}
+            </div>
+          </section>
+        </div>
+      )
+    }
+    return <KPIGridSkeleton count={8} />
+  }
+
+  const kpiById = new Map(kpis.map(k => [k.id, k]))
+  const pick    = (ids: string[]) => ids.map(id => kpiById.get(id)).filter((k): k is KPI => k != null)
+  const riskKpis = pick(['criticas', 'criticasDesassist', 'semEq', 'pend', 'copeAguardando', 'reagendInviab', 'reagendMobile', 'reagendFutura'])
+  const perfKpis = pick(['atendHoje', 'atendAmanha', 'atendFutura', 'total', 'rede', 'concl', 'taxa'])
+
+  return (
+    <>
+      <div className="space-y-4 max-w-[1600px]">
+
+        {/* ── Aviso de falha interna de builder (visível só em erro real) ── */}
+        {builderErrors.length > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow/10 border border-yellow/20 text-caption text-yellow">
+            <WarningCircle size={13} />
+            <span>Erro interno em: <strong>{builderErrors.join(', ')}</strong> — dados parciais. Verifique o console.</span>
+          </div>
+        )}
+
+        <section aria-labelledby="dashboard-now-title" className="space-y-3">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-orange/20 bg-orange/[0.08] text-orange">
+              <Lightning size={16} weight="fill" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-caption font-bold uppercase tracking-[0.09em] text-orange">Nível 1</p>
+              <h1 id="dashboard-now-title" className="text-title font-bold text-text">Agir agora</h1>
+              <p className="mt-0.5 text-caption text-muted">Exceções e riscos que precisam de decisão imediata.</p>
+            </div>
+          </div>
+
+        <AlertaTopoBanner
+          clustersCount={clustersAtivos.length}
+          anomaliasCount={anomalias?.total ?? 0}
+          onScrollClusters={() => clustersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onScrollAnomalias={() => anomaliasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        />
+
+          <DashboardCommandCenter
+            priorities={riskKpis}
+            projection={projecaoRisco}
+            criticalNow={pulso.criticasTotal ?? 0}
+            onPriority={openKpi}
+            onProjection={(riskRows) => setModal({ title: 'Risco de violação · próximas 48h', rows: riskRows })}
+          />
+
+        <MudancasStrip mudancas={mudancas} />
+
+        <div ref={clustersRef}>
+          <ClustersBairroPanel clusters={clustersAtivos} />
+        </div>
+
+        {anomalias?.total > 0 && (
+          <div ref={anomaliasRef}>
+            <AnomaliaSection
+              anomalias={anomalias}
+              contexto={{
+                total:     (kpis.find(k => k.id === 'total')?.value as number) ?? 0,
+                sla_pct:   pulso.slaFila ?? 0,
+                criticas:  pulso.criticasTotal ?? 0,
+                aging_med: pulso.agingMed ?? 0,
+              }}
+            />
+          </div>
+        )}
+        </section>
+
+        <section aria-labelledby="dashboard-control-title" className="space-y-3 border-t border-border pt-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/[0.08] text-primary">
+              <Gauge size={16} aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-caption font-bold uppercase tracking-[0.09em] text-primary">Nível 2</p>
+              <h2 id="dashboard-control-title" className="text-title font-bold text-text">Controlar a operação de hoje</h2>
+              <p className="mt-0.5 text-caption text-muted">Entrega, volume e prazo da fila no ritmo atual.</p>
+            </div>
+          </div>
+
+          <PulsoHero
+            pulso={pulso}
+            mudancas={mudancas}
+            aiData={aiData}
+            isLoadingAI={isLoadingAI}
+            onRequestAI={(obs: string) => { setObservacao(obs); setAiEnabled(true) }}
+            onOpenFlow={(kind) => setModal({
+              title: kind === 'entradas' ? 'Entradas Hoje · mais recentes primeiro' : 'Concluídas Hoje · mais recentes primeiro',
+              rows: fluxoHojeRows[kind],
+            })}
+          />
+
+          <SectionLabel icon={ChartBar} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
+            {perfKpis.map((k, i) => (
+              <StatCard
+                key={k.id}
+                size="sm"
+                outlined
+                title={k.title}
+                value={k.value}
+                sub={k.sub}
+                tone={accentToTone(k.accent)}
+                trend={k.trend ?? undefined}
+                icon={KPI_ICONS[k.id]}
+                delay={i * 60}
+                onClick={KPI_FILTERS[k.id] ? () => openKpi(k) : undefined}
+                scope={ALLROWS_KPIS.has(k.id) ? 'aovivo' : 'periodo'}
+              />
+            ))}
+          </div>
+        <ExecutadasHeroBlock
+          rows={allRows}
+          projecao={projecaoHoje}
+          ritmoIntradiario={pulso.ritmoIntradiario}
+          onOpenModal={(title, filtered) => setModal({ title, rows: filtered })}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
+          <div className="lg:col-span-2">
+            <FluxoOSPanel evolucao={graficos.evolucao} />
+          </div>
+          <AgingPanel pulso={pulso} filaAtiva={filaAtiva}
+                      onOpen={(title, rows) => setModal({ title, rows })} />
+        </div>
+        </section>
+
+        <DashboardInvestigation
+          operation={(
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <CapacidadePanel horizonte={capacidade.horizonte} cidades={capacidade.cidades} />
+              <RitmoEquipesPanel semaforo={campo.semaforo} onOpen={openEquipe} />
+            </div>
+          )}
+          territory={(
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <CidadesValePanel filaAtiva={filaAtiva} onOpen={(title, filtered) => setModal({ title, rows: filtered })} />
+              <ParetoServicoPanel filaAtiva={filaAtiva} onOpen={(title, filtered) => setModal({ title, rows: filtered })} />
+            </div>
+          )}
+          quality={(
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <CoortePanel buckets={coorte.buckets} linhas={coorte.linhas} />
+              <ChurnPanel
+                janelaDias={churn.janelaDias}
+                clientes={churn.clientes}
+                totalReincidentes={churn.totalReincidentes}
+                totalBase={churn.totalBase}
+                pctReincidencia={churn.pctReincidencia}
+                onOpen={(title, filtered) => setModal({ title, rows: filtered })}
+                onOpenReport={() => navigate('/relatorio-reincidencias')}
+              />
+              <MetaMesCard meta={pulso.metaMes} />
+              <FornecedoresPanel fornecedores={fornecedores} onOpen={openFornecedor} />
+              <QualidadePeriodoCard pulso={pulso} taxaRevisitas={taxaRevisitas} />
+            </div>
+          )}
+        />
+
+      </div>
+
+      {/* Modal */}
+      <Modal
+        open={!!modal}
+        onClose={() => setModal(null)}
+        title={modal?.title ?? ''}
+        subtitle={`${modal?.rows?.length ?? 0} ordens de serviço`}
+        maxWidth="1120px"
+        headerAction={
+          (modal?.rows?.length ?? 0) > 0 && (
+            <div className="flex items-center gap-2">
+              {modal?.foco && FOCO_NAVEGAVEL.has(modal.foco) && (
+                <button
+                  onClick={() => { const foco = modal!.foco; setModal(null); navigate('/ordens', { state: { foco } }) }}
+                  className="flex items-center gap-1.5 text-caption font-semibold text-primary
+                             border border-primary/30 hover:bg-primary/10 rounded-md px-2.5 py-1
+                             transition-all duration-fast"
+                >
+                  Abrir na fila <ArrowRight size={11} />
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  const date = new Date().toISOString().slice(0, 10)
+                  exportCSV(modal!.rows, `os_${modal!.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
+                }}
+                className="flex items-center gap-1.5 text-caption text-muted hover:text-primary
+                           border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
+                           transition-all duration-fast"
+              >
+                <DownloadSimple size={11} /> CSV
+              </button>
+            </div>
+          )
+        }
+      >
+        <KpiModalTable key={modal?.title} rows={modal?.rows ?? []} onOS={os => { setModal(null); setDrawerOS(os) }} />
+      </Modal>
+
+      <OSDrawer os={drawerOS} onClose={() => setDrawerOS(null)} />
+    </>
+  )
+}
+

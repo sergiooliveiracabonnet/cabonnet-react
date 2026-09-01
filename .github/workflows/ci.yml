@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  frontend:
+    name: Type-check · Lint · Test · Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Design system audit
+        run: npm run audit:ds
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  backend:
+    name: Python integration tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Security audit
+        run: |
+          pip install pip-audit
+          pip-audit --requirement requirements.txt --ignore-vuln PYSEC-2022-43012
+
+      - name: Check imports
+        run: |
+          python -c "from cabonnet.config import CONFIG; print('config OK')"
+          python -c "from cabonnet.app import app; print('app OK, routes:', len(app.routes))"
+          python -c "from cabonnet.backup_app import backup_app; print('backup_app OK')"
+
+      - name: Run pytest
+        run: pytest tests/python -v --tb=long

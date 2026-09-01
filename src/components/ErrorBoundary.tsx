@@ -1,0 +1,59 @@
+import { Component, type ReactNode, type ErrorInfo } from 'react'
+import { Warning } from '@phosphor-icons/react'
+
+interface Props {
+  children: ReactNode
+}
+
+interface State {
+  error: Error | null
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props)
+    this.state = { error: null }
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { error }
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[ErrorBoundary]', error, info.componentStack)
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{
+          minHeight: '100vh', background: '#07090f', color: '#e2eeff',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'monospace', padding: '2rem', gap: '1rem',
+        }}>
+          <Warning size={32} color="#f87171" />
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#f87171' }}>Erro de renderização</p>
+          <pre style={{
+            background: '#0d1220', border: '1px solid rgba(248,113,113,.3)', borderRadius: 8,
+            padding: '1rem', maxWidth: 640, width: '100%', overflowX: 'auto',
+            fontSize: 11, color: '#fca5a5', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          }}>
+            {this.state.error?.message ?? String(this.state.error)}
+            {'\n\n'}
+            {this.state.error?.stack?.split('\n').slice(1, 6).join('\n')}
+          </pre>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6,
+              padding: '8px 20px', fontSize: 12, cursor: 'pointer', fontWeight: 600,
+            }}
+          >
+            Atualizar aplicação
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
