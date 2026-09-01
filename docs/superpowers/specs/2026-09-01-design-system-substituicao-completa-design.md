@@ -113,7 +113,26 @@ Nomenclatura adotada: a da especificação do usuário. O prefixo `--c-*` é rem
 | `--yellow` | `#FBCB12` | `#F5C915` |
 | `--red` (extensão) | `#E03131` | `#FF6B6B` |
 
-Contraste de todos os pares texto/superfície é verificado contra WCAG AA (4.5:1 texto normal, 3:1 texto grande) na Fase 1; valores que reprovarem são ajustados e a tabela acima é atualizada no mesmo commit.
+**Correção aplicada em 2026-09-01, durante a escrita do plano.** O contraste WCAG AA foi calculado e **quatro valores reprovaram**. A tabela acima já reflete três correções; a quarta está logo abaixo.
+
+| Token | Valor da especificação | Contraste | Valor adotado | Contraste |
+|---|---|---|---|---|
+| `--text-muted` claro | `#777777` | 4.48:1 ✗ | `#6E6E6E` | 5.10:1 ✓ |
+| `--text-muted` escuro | `#777777` | 4.37:1 ✗ | `#8A8A8A` | 5.67:1 ✓ |
+| `--blue` escuro | `#2864E8` | 3.80:1 ✗ | `#4A80F0` | 5.25:1 ✓ |
+
+`--text-disabled` reprova nos dois temas (2.46:1 e 2.43:1) e **fica como está**: a WCAG 1.4.3 dispensa explicitamente componentes desabilitados.
+
+**Tinta do KPI preenchido no tema claro.** A especificação assume texto branco sobre os quatro KPIs; branco reprova em dois deles:
+
+| Fundo | Branco | `#171717` | Adotado |
+|---|---|---|---|
+| laranja `#FF5A1F` | 3.12:1 ✗ | 5.75:1 ✓ | `#171717` |
+| azul `#2864E8` | 5.15:1 ✓ | 3.48:1 ✗ | `#FFFFFF` |
+| verde `#12C4AE` | 2.20:1 ✗ | 8.14:1 ✓ | `#171717` |
+| amarelo `#FBCB12` | 1.54:1 ✗ | 11.66:1 ✓ | `#171717` |
+
+Implementado como tokens `--kpi-ink-orange|blue|green|yellow`. No tema escuro o KPI é tint + borda sobre superfície escura, então a tinta é sempre `--text`.
 
 ### 4.1 Cores removidas
 
@@ -233,9 +252,19 @@ Linha fina, grid discreto, sem legenda decorativa.
 
 ## 7. `index.css` e `tailwind.config.js`
 
-`index.css` encolhe. Das ~150 classes custom atuais sobrevivem apenas as que o DS novo pede: o gradiente ambiental do fundo escuro, o glass discreto da sidebar e os quatro glows de acento. Saem `glass` (na forma atual), `card-premium`, `mesh-bg`, `aurora-bg`, `glow-text-*`, `card-glow-*`, `text-gradient-*`, `icon-container-*`, `badge-*`, `number-display`, `shimmer-bg`, `tilt-card`, `hover-lift`, `card-shine`, `sidebar-premium`, `navbar-premium`, `logo-glow`, `pulse-glow*`.
+`index.css` encolhe. **Correção aplicada em 2026-09-01:** o levantamento de uso real mostrou que a maior parte dessas classes é código morto, e que duas afirmações desta seção estavam erradas.
 
-`tailwind.config.js`: safelist correspondente removida; as 18 animações caem para as 5 efetivamente usadas (`fade-in`, `slide-up`, `slide-down`, `scale-in`, `pop-in`).
+**Saem — zero usos no código:** `glass`, `stagger`, `nav-active`, `hover-lift`, `float-hover`, `shimmer-bg`, `section-enter`, `g-tab-enter`, `logo-glow`, `border-glow`, `border-ghost`, `donut-root`, `gradient-sep`, `gradient-sep-subtle`, `text-gradient*`, `icon-container-*`, `pulse-glow*`, `map-tiles-dark`, `animate-slide-left`, `animate-count-up`, mais os keyframes que só elas consumiam.
+
+**Saem — substituídas:** `nav-link-*`, `grp-*-line`, `grp-*-text`, `grp-dot-*` (a Fase 4 remove as cores de grupo da sidebar).
+
+**Ficam:** `breathe` (7 usos), `card-premium` (1), `navbar-premium` (1), `sidebar-premium` (1), `number-display` (1), `app-content` (1), `surface-panel` (2), `metric-panel` (3), `page-header` (7), `page-header-icon` (1), `map-tooltip` (4), e todo o bloco `.leaflet-*`, que estiliza o mapa e não pertence ao design system.
+
+**`badge-*` NÃO é removida.** Esta seção afirmava que sim, e estava errada: são 20 usos reais (`green` 4, `red` 4, `cyan` 3, `orange` 3, `yellow` 3, `purple` 2, `teal` 1). A classe é **remapeada** para a paleta nova — `cyan` e `purple` viram `blue`, `teal` vira `green` — e as 14 regras atuais (com variante `.light`) viram 5, sem variante de tema, porque os tokens já mudam sozinhos.
+
+**A lista de animações preservadas também estava errada.** As 5 efetivamente usadas são `fade-in` (14), `card-enter` (12), `slide-down` (2), `scale-in` (1) e `page-enter` (1) — não `slide-up` nem `pop-in`, que têm zero usos. `animate-pulse`, `animate-spin` e `animate-ping` são nativas do Tailwind e não precisam de declaração.
+
+`tailwind.config.js`: safelist reduzida às classes que sobrevivem; as 18 animações caem para essas 5.
 
 `scripts/audit-ds.mjs` é **reescrito, não desligado**. Ele roda no CI e barra hex fora de uma baseline que hoje é inteiramente da paleta zinc/blue — reprovaria tudo. Nova baseline: os 18 tokens da seção 4 mais as 6 cores de gráfico.
 
