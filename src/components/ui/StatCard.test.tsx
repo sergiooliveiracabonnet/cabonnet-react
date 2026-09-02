@@ -29,8 +29,8 @@ describe('StatCard', () => {
     expect(screen.getByText('42')).toBeInTheDocument()
     expect(screen.getByText('no período')).toBeInTheDocument()
     expect(container.firstChild).toHaveAttribute('data-ui', 'stat-card')
-    expect(container.firstChild).toHaveClass('metric-panel')
-    expect(container.firstChild).toHaveClass('min-h-[148px]')
+    expect(container.firstChild).toHaveClass('min-h-[112px]')
+    expect(container.firstChild).toHaveClass('bg-surface-2')
   })
 
   it('renderiza ícone quando fornecido', () => {
@@ -64,14 +64,14 @@ describe('StatCard', () => {
     expect(screen.getByText(/30%/)).toBeInTheDocument()
   })
 
-  it('tone critical coloriza o valor', () => {
+  it('tone não colore mais o valor diretamente (vira badge)', () => {
     render(<StatCard title="KPI" value={7} tone="critical" />)
-    expect(screen.getByText('7')).toHaveStyle({ color: 'rgb(var(--red))' })
+    expect(screen.getByText('7')).not.toHaveStyle({ color: 'rgb(var(--red))' })
   })
 
-  it('tone neutral não coloriza o valor', () => {
+  it('tone neutral não adiciona estilo de cor ao valor', () => {
     render(<StatCard title="KPI" value={7} />)
-    expect(screen.getByText('7')).toHaveStyle({ color: 'rgb(var(--text))' })
+    expect(screen.getByText('7')).not.toHaveAttribute('style')
   })
 
   it('size inline renderiza par label/valor', () => {
@@ -102,6 +102,37 @@ describe('StatCard', () => {
       'transition-colors',
       'hover:border-primary/30',
     )
+  })
+
+  it('colore o card pela posicao no grid', () => {
+    const { container: c0 } = render(<StatCard title="A" value={1} index={0} />)
+    expect((c0.firstChild as HTMLElement).className).toContain('bg-orange')
+
+    const { container: c1 } = render(<StatCard title="B" value={2} index={1} />)
+    expect((c1.firstChild as HTMLElement).className).toContain('bg-blue')
+
+    const { container: c3 } = render(<StatCard title="C" value={3} index={3} />)
+    expect((c3.firstChild as HTMLElement).className).toContain('bg-yellow')
+  })
+
+  it('a quinta posicao volta para a primeira cor', () => {
+    const { container } = render(<StatCard title="E" value={5} index={4} />)
+    expect((container.firstChild as HTMLElement).className).toContain('bg-orange')
+  })
+
+  it('sem index o card fica neutro', () => {
+    const { container } = render(<StatCard title="N" value={0} />)
+    const cls = (container.firstChild as HTMLElement).className
+    expect(cls).toContain('bg-surface-2')
+    expect(cls).not.toContain('bg-orange')
+  })
+
+  it('o tone vira badge em vez de pintar o card', () => {
+    const { container, getByText } = render(
+      <StatCard title="X" value={9} index={0} tone="critical" />,
+    )
+    expect(getByText('Crítico')).toBeInTheDocument()
+    expect((container.firstChild as HTMLElement).className).toContain('bg-orange')
   })
 
   it('aceita className adicional', () => {

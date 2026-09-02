@@ -133,6 +133,7 @@ export default function DashboardPage() {
               {riskStats.map((k, i) => (
                 <StatCard
                   key={k.id}
+                  index={i}
                   title={k.title}
                   value={k.value}
                   sub={k.sub}

@@ -210,10 +210,10 @@ export default function RankingTecnicosPage() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard title="Técnicos ativos" value={kpis.total} />
-        <StatCard title="SLA médio" value={kpis.slaMedio != null ? `${kpis.slaMedio}%` : '—'} />
-        <StatCard title="Retrabalho médio" value={kpis.revMedia != null ? `${kpis.revMedia}%` : '—'} tone="warning" />
-        <StatCard title="Com OS crítica" value={kpis.criticos} tone="critical" />
+        <StatCard index={0} title="Técnicos ativos" value={kpis.total} />
+        <StatCard index={1} title="SLA médio" value={kpis.slaMedio != null ? `${kpis.slaMedio}%` : '—'} />
+        <StatCard index={2} title="Retrabalho médio" value={kpis.revMedia != null ? `${kpis.revMedia}%` : '—'} tone="warning" />
+        <StatCard index={3} title="Com OS crítica" value={kpis.criticos} tone="critical" />
       </div>
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">

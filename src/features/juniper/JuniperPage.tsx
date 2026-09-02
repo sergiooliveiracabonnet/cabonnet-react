@@ -301,11 +301,11 @@ export default function JuniperPage() {
       {/* ── KPIs ── */}
       {isLoading ? <KPIGridSkeleton count={5} /> : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          <StatCard title="Conexões Indevidas" value={kpis.total}      sub={(kpis.total ?? 0) === 0 ? 'situação saudável' : 'exigem verificação'} delay={0} />
-          <StatCard title="Interfaces Afetadas" value={kpis.interfaces} sub="portas / VLANs com ocorrência" delay={40} />
-          <StatCard title="IPs Únicos"         value={kpis.ips}        sub="endereços distintos"     delay={80}  />
-          <StatCard title="Última Coleta"      value={kpis.ultima}     sub="horário da verificação"  delay={120} />
-          <StatCard title="Próx. Atualização"  value={kpis.proximo}    sub="inicia após 1ª coleta"   delay={160} />
+          <StatCard index={0} title="Conexões Indevidas" value={kpis.total}      sub={(kpis.total ?? 0) === 0 ? 'situação saudável' : 'exigem verificação'} delay={0} />
+          <StatCard index={1} title="Interfaces Afetadas" value={kpis.interfaces} sub="portas / VLANs com ocorrência" delay={40} />
+          <StatCard index={2} title="IPs Únicos"         value={kpis.ips}        sub="endereços distintos"     delay={80}  />
+          <StatCard index={3} title="Última Coleta"      value={kpis.ultima}     sub="horário da verificação"  delay={120} />
+          <StatCard index={4} title="Próx. Atualização"  value={kpis.proximo}    sub="inicia após 1ª coleta"   delay={160} />
         </div>
       )}
 

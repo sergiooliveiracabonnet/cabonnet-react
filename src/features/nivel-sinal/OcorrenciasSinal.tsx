@@ -93,10 +93,10 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
     <PageHeader title="Controle de Ocorrências de Sinal" description="Ocorrências criadas automaticamente a partir do CSV e mantidas até a normalização" icon={ClipboardText} />
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatCard title="Backlog ativo" value={open} sub={`${occurrences.filter(item => item.severity === 'Crítico' && item.status !== 'Concluído').length} críticas`} tone={open ? 'critical' : 'neutral'} icon={ClipboardText} />
-      <StatCard title="Em atendimento" value={inWork} sub="aguardando conclusão" tone="warning" icon={Wrench} />
-      <StatCard title="Concluídas" value={concluded} sub={`${occurrences.length ? Math.round(concluded / occurrences.length * 100) : 0}% de resolução`} tone="ok" icon={CheckCircle} />
-      <StatCard title="Melhora média" value={average == null ? '—' : `${average.toFixed(1)} dB`} sub="após a tratativa" tone="info" icon={ChartBar} />
+      <StatCard index={0} title="Backlog ativo" value={open} sub={`${occurrences.filter(item => item.severity === 'Crítico' && item.status !== 'Concluído').length} críticas`} tone={open ? 'critical' : 'neutral'} icon={ClipboardText} />
+      <StatCard index={1} title="Em atendimento" value={inWork} sub="aguardando conclusão" tone="warning" icon={Wrench} />
+      <StatCard index={2} title="Concluídas" value={concluded} sub={`${occurrences.length ? Math.round(concluded / occurrences.length * 100) : 0}% de resolução`} tone="ok" icon={CheckCircle} />
+      <StatCard index={3} title="Melhora média" value={average == null ? '—' : `${average.toFixed(1)} dB`} sub="após a tratativa" tone="info" icon={ChartBar} />
     </div>
 
     <div className="grid gap-4 xl:grid-cols-[1.45fr_.8fr]">

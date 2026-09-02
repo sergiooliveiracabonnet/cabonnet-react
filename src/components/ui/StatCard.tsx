@@ -29,6 +29,38 @@ const TONE_COLOR: Record<Exclude<StatTone, 'neutral'>, string> = {
   info:     'rgb(var(--blue))',
 }
 
+type KpiCategory = 'orange' | 'blue' | 'green' | 'yellow'
+
+const KPI_ORDER: KpiCategory[] = ['orange', 'blue', 'green', 'yellow']
+
+// Claro: preenchimento sólido, com a tinta que passa no WCAG (branco reprova em
+// verde e amarelo). Escuro: tint + borda + glow, tinta sempre --text.
+const KPI_FILL: Record<KpiCategory, string> = {
+  orange: 'bg-orange text-kpi-ink-orange dark:bg-orange/25 dark:text-text dark:border dark:border-orange dark:shadow-[0_0_20px_rgb(var(--orange)/.08)]',
+  blue:   'bg-blue   text-kpi-ink-blue   dark:bg-blue/25   dark:text-text dark:border dark:border-blue   dark:shadow-[0_0_20px_rgb(var(--blue)/.08)]',
+  green:  'bg-green  text-kpi-ink-green  dark:bg-green/25  dark:text-text dark:border dark:border-green  dark:shadow-[0_0_20px_rgb(var(--green)/.08)]',
+  yellow: 'bg-yellow text-kpi-ink-yellow dark:bg-yellow/25 dark:text-text dark:border dark:border-yellow dark:shadow-[0_0_20px_rgb(var(--yellow)/.06)]',
+}
+
+const KPI_NEUTRAL = 'bg-surface-2 text-text border border-border'
+
+const TONE_BADGE: Record<Exclude<StatTone, 'neutral'>, { label: string; cls: string }> = {
+  critical: { label: 'Crítico', cls: 'bg-red/15    text-red    border-red/30'    },
+  warning:  { label: 'Atenção', cls: 'bg-yellow/15 text-yellow border-yellow/30' },
+  ok:       { label: 'OK',      cls: 'bg-green/15  text-green  border-green/30'  },
+  info:     { label: 'Info',    cls: 'bg-blue/15   text-blue   border-blue/30'   },
+}
+
+function ToneBadge({ tone }: { tone: StatTone }) {
+  if (tone === 'neutral') return null
+  const { label, cls } = TONE_BADGE[tone]
+  return (
+    <span className={`rounded-pill border px-1.5 py-0.5 text-caption font-semibold ${cls}`}>
+      {label}
+    </span>
+  )
+}
+
 /** Converte o AccentColor legado para tone. Accents decorativos viram neutral. */
 // eslint-disable-next-line react-refresh/only-export-components -- helper de mapeamento faz parte do contrato público do StatCard (usado pelas Tasks 4-6)
 export function accentToTone(accent?: string): StatTone {
@@ -71,13 +103,16 @@ export interface StatCardProps {
   delay?:     number
   className?: string
   sparkline?: number[]
+  /** Posição no grid de KPIs. Define a cor do card (laranja→azul→verde→amarelo,
+   *  ciclando). Sem index, o card fica neutro. */
+  index?:     number
 }
 
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
 
 export function StatCard({
   title, value, sub, icon: Icon, tone = 'neutral', trend, scope,
-  size = 'md', outlined = false, onClick, delay = 0, className = '', sparkline,
+  size = 'md', outlined = false, onClick, delay = 0, className = '', sparkline, index,
 }: StatCardProps) {
   const statusColor = tone !== 'neutral' ? TONE_COLOR[tone] : undefined
   // ok mantém o valor neutro (padrão aprovado do dashboard): a borda já sinaliza.
@@ -131,41 +166,43 @@ export function StatCard({
     )
   }
 
+  const fill = index == null ? KPI_NEUTRAL : KPI_FILL[KPI_ORDER[index % KPI_ORDER.length]]
+
   return (
     <div
       data-ui="stat-card"
       {...interactive}
-      style={{ animationDelay: `${delay}ms`,
-               borderLeft: statusColor ? `2px solid ${statusColor}` : undefined }}
-      className={`metric-panel relative min-h-[148px] rounded-xl border border-border bg-card p-4 animate-card-enter
-                  transition-colors duration-150 hover:border-muted/40
+      style={{ animationDelay: `${delay}ms` }}
+      className={`relative min-h-[112px] rounded-xl p-4 animate-card-enter ${fill}
+                  transition-colors duration-150
                   ${onClick ? `cursor-pointer ${FOCUS_RING}` : ''} ${className}`}
     >
       <div className="flex items-center justify-between gap-2 mb-3.5">
-        <span className="flex items-center gap-1.5 text-caption font-semibold text-secondary min-w-0">
-          {Icon && <Icon size={12} className="text-muted flex-shrink-0" />}
+        <span className="flex items-center gap-1.5 text-label font-medium opacity-80 min-w-0">
+          {Icon && <Icon size={12} className="flex-shrink-0" />}
           <span className="truncate">{title}</span>
         </span>
-        {trend
-          ? <TrendPill trend={trend} />
-          : scope && (
-            <span className="flex items-center gap-1 text-caption uppercase tracking-wide text-muted flex-shrink-0">
-              {scope === 'aovivo'
-                ? <><span className="w-1 h-1 rounded-full bg-green flex-shrink-0" /> Ao vivo</>
-                : <><Calendar size={8} className="flex-shrink-0" /> Período</>}
-            </span>
-          )}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <ToneBadge tone={tone} />
+          {trend
+            ? <TrendPill trend={trend} />
+            : scope && (
+              <span className="flex items-center gap-1 text-caption uppercase tracking-wide opacity-80 flex-shrink-0">
+                {scope === 'aovivo'
+                  ? <><span className="w-1 h-1 rounded-full bg-green flex-shrink-0" /> Ao vivo</>
+                  : <><Calendar size={8} className="flex-shrink-0" /> Período</>}
+              </span>
+            )}
+        </div>
       </div>
 
-      <p className="tabular-nums leading-none"
-         style={{ fontSize: String(value).length > 4 ? '28px' : '34px',
-                  fontWeight: 700, letterSpacing: '-0.03em', color: valColor }}>
+      <p className="text-display font-bold tabular-nums leading-none">
         {value ?? '—'}
       </p>
 
-      {sub && <p className="text-caption text-muted leading-snug mt-2">{sub}</p>}
+      {sub && <p className="text-caption opacity-70 leading-snug mt-2">{sub}</p>}
 
-      {sparkline && sparkline.length > 1 && <Sparkline data={sparkline} color={valColor} />}
+      {sparkline && sparkline.length > 1 && <Sparkline data={sparkline} color="currentColor" />}
     </div>
   )
 }

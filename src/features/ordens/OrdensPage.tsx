@@ -340,31 +340,37 @@ export default function OrdensPage() {
       {kpiVisible && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard
+            index={0}
             title="Total OS" value={os.kpis.total} icon={ORDENS_CARD_ICONS.total}
             sub="limpar filtros" delay={0}
             onClick={() => { clearAllFilters(); scrollToTable() }}
           />
           <StatCard
+            index={1}
             title="Críticas" value={os.kpis.criticas} tone="critical" icon={ORDENS_CARD_ICONS.criticas}
             sub="SLA 2× excedido" delay={40}
             onClick={() => { os.setCritico(!os.critico); scrollToTable() }}
           />
           <StatCard
+            index={2}
             title="Sem equipe" value={os.kpis.semEquipe} tone="warning" icon={ORDENS_CARD_ICONS.semEquipe}
             sub="sem alocação" delay={80}
             onClick={() => { os.setSemEquipe(!os.semEquipe); scrollToTable() }}
           />
           <StatCard
+            index={3}
             title="Agend. hoje" value={os.kpis.agendHoje} tone="ok" icon={ORDENS_CARD_ICONS.agendHoje}
             sub="para hoje" delay={120}
             onClick={() => { os.setAgendaFoco('hoje'); scrollToTable() }}
           />
           <StatCard
+            index={4}
             title="Amanhã" value={os.kpis.agendAmanha} icon={ORDENS_CARD_ICONS.agendAmanha}
             sub="agendadas para amanhã" delay={160}
             onClick={() => { os.setAgendaFoco('amanha'); scrollToTable() }}
           />
           <StatCard
+            index={5}
             title="Após amanhã" value={os.kpis.agendFuturo} tone="warning" icon={ORDENS_CARD_ICONS.agendFuturo}
             sub="de depois de amanhã em diante" delay={200}
             onClick={() => { os.setAgendaFoco('posAmanha'); scrollToTable() }}
