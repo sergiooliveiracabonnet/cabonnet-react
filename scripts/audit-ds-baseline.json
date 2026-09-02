@@ -210,22 +210,6 @@
       "#f87171",
       "#f97316"
     ],
-    "src/features/gerencial/GerencialPage.tsx": [
-      "#0d1117",
-      "#0f172a",
-      "#111827",
-      "#22d3ee",
-      "#3b82f6",
-      "#4ade80",
-      "#64748b",
-      "#94a3b8",
-      "#c4b5fd",
-      "#e2e8f0",
-      "#f0f4ff",
-      "#f97316",
-      "#facc15",
-      "#ffffff"
-    ],
     "src/features/graficos/GraficosComponents.tsx": [
       "#22d3ee",
       "#3b82f6",
@@ -323,6 +307,14 @@
       "#60a5fa",
       "#a78bfa",
       "#fb923c"
+    ],
+    "src/features/gerencial/GerencialPage.tsx": [
+      "#22d3ee",
+      "#3b82f6",
+      "#4ade80",
+      "#c4b5fd",
+      "#f97316",
+      "#facc15"
     ]
   }
 }

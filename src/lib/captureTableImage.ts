@@ -30,10 +30,10 @@ export async function captureTableAsImage(opts: CaptureTableImageOptions): Promi
   const { tableEl, title, subtitle, accentColor, itemCount } = opts
 
   const isDark     = document.documentElement.classList.contains('dark')
-  const bg         = isDark ? '#0d1117' : '#ffffff'
-  const bgHdr      = isDark ? '#111827' : '#f0f4ff'
-  const colorText  = isDark ? '#e2e8f0' : '#0f172a'
-  const colorMuted = isDark ? '#94a3b8' : '#64748b'
+  const bg         = isDark ? '#020202' : '#ffffff'
+  const bgHdr      = isDark ? '#121212' : '#f3f4f6'
+  const colorText  = isDark ? '#ffffff' : '#171717'
+  const colorMuted = isDark ? '#8a8a8a' : '#6e6e6e'
   const borderClr  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
   const now        = new Date()
   const ts         = now.toLocaleDateString('pt-BR') + ' · ' +
