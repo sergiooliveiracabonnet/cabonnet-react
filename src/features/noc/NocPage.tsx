@@ -479,7 +479,7 @@ function NocInner() {
                 className={`rounded-full transition-all duration-normal
                             ${slide === i
                               ? 'w-4 h-2 bg-primary'
-                              : 'w-2 h-2 bg-surface-active hover:bg-surface-active'}`}
+                              : 'w-2 h-2 bg-surface-hover hover:bg-surface-active'}`}
               />
             ))}
           </div>
