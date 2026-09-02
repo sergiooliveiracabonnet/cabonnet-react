@@ -192,8 +192,8 @@ export default function JuniperPage() {
         titleExtra={
           <span className="flex items-center gap-1.5">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue opacity-60" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue" />
             </span>
             <span className="text-caption text-muted">atualiza a cada 5 min</span>
           </span>
@@ -201,7 +201,7 @@ export default function JuniperPage() {
         actions={
           cluster && (
             <span className="text-caption font-bold uppercase tracking-[0.06em] px-2.5 py-0.5
-                             rounded-full bg-primary/10 text-primary border border-primary/20">
+                             rounded-full bg-blue/10 text-blue border border-blue/20">
               {cluster}
             </span>
           )
@@ -254,7 +254,7 @@ export default function JuniperPage() {
       {/* ── Origem segura da coleta ── */}
       <div className="bg-card border border-border border-l-[4px] border-l-primary rounded-xl p-5">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
+          <p className="text-caption font-bold uppercase tracking-[0.08em] text-blue/80 flex items-center gap-1.5">
             <ShieldCheck size={13} /> Coleta protegida pelo servidor · Cluster {cluster}
           </p>
           <StatusPill nivel={hero.nivel ?? ''} txt={hero.statusTxt ?? 'Não verificado'} />
@@ -350,7 +350,7 @@ export default function JuniperPage() {
       <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg">
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-surface/20 flex-wrap">
           <div className="flex items-center gap-2">
-            <Users size={15} className="text-primary" />
+            <Users size={15} className="text-blue" />
             <span className="text-body font-bold text-text">Conexões Ativas Detectadas</span>
           </div>
           <div className="flex items-center gap-3 ml-1">
@@ -511,7 +511,7 @@ export default function JuniperPage() {
         {!aiEnabled ? (
           <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkle size={12} className="text-primary/40" />
+              <Sparkle size={12} className="text-blue/40" />
               <span className="text-caption font-bold text-muted uppercase tracking-wide">Conexões ativas × OS · IA</span>
             </div>
             <button
@@ -524,7 +524,7 @@ export default function JuniperPage() {
             </button>
           </div>
         ) : (
-          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+          <div className="rounded-xl border border-blue/20 bg-blue/[0.03] p-4 space-y-3">
             {aiLoading && !aiJuniper ? (
               <p className="text-label text-muted animate-pulse">Consultando IA…</p>
             ) : aiJuniper ? (

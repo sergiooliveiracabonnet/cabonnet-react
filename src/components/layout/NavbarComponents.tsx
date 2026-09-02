@@ -222,7 +222,7 @@ export function AIStatusBadge() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <Sparkle size={13} className="text-primary" />
+                <Sparkle size={13} className="text-blue" />
                 <span className="text-label font-bold text-text">Anthropic API</span>
               </div>
               <button onClick={() => setOpen(false)} className="text-muted hover:text-text transition-colors">
@@ -531,7 +531,7 @@ export function AuditLogBadge() {
       >
         <ClockCounterClockwise size={14} />
         {auditEntries.length > 0 && (
-          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary" />
+          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue" />
         )}
       </button>
 
@@ -561,7 +561,7 @@ export function AuditLogBadge() {
                   export:    'bg-green/10 text-green',
                   telegram:  'bg-cyan/10 text-cyan',
                   fechamento:'bg-yellow/10 text-yellow',
-                  auth:      'bg-primary/10 text-primary',
+                  auth:      'bg-blue/10 text-blue',
                   other:     'bg-surface text-muted',
                 }
                 return (

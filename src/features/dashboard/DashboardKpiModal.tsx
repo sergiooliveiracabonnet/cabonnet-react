@@ -228,8 +228,8 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
           {/* Cabeçalho da cidade */}
           <div className="sticky top-9 z-10 flex items-center justify-between gap-2 bg-surface px-5 py-2.5 border-b border-border">
             <span className="flex items-center gap-1.5 text-caption font-bold text-text uppercase tracking-[0.03em]">
-              <MapPin size={11} className="text-primary/70" /> {cidade}
-              <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-caption font-bold tabular-nums">
+              <MapPin size={11} className="text-blue/70" /> {cidade}
+              <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-blue/15 text-blue text-caption font-bold tabular-nums">
                 {list.length} OS
               </span>
             </span>
@@ -256,7 +256,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                       {isOpen ? <CaretDown size={13} /> : <CaretRight size={13} />}
                     </button>
                     <button onClick={() => onOS(os)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-                      <span className={`font-mono text-primary ${COL_W.numos} flex-shrink-0`}>{os.numos}</span>
+                      <span className={`font-mono text-blue ${COL_W.numos} flex-shrink-0`}>{os.numos}</span>
                       <span className="text-text truncate flex-1 min-w-[160px]">{os.nomecliente ?? '—'}</span>
                       <span className={`hidden sm:flex ${COL_W.tipo} flex-shrink-0`}>
                         <span

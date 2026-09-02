@@ -341,7 +341,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     os._agingAbertura     != null && { label: 'Aging desde abertura', value: `${os._agingAbertura}d`,     color: agingCls },
-                    os._slaLimite         != null && { label: 'Limite do SLA',         value: `${os._slaLimite}d`,         color: 'text-primary' },
+                    os._slaLimite         != null && { label: 'Limite do SLA',         value: `${os._slaLimite}d`,         color: 'text-blue' },
                     os._diasAteAgendamento!= null && { label: 'Dias até agend.',        value: `${os._diasAteAgendamento}d`, color: 'text-secondary' },
                   ].filter(Boolean).map((item) => { const { label, value, color } = item as { label: string; value: string; color: string }; return (
                     <div key={label} className="bg-surface/30 border border-border rounded-xl p-3 text-center">
@@ -463,12 +463,12 @@ function InfoCard({ icon: Icon, label, value, prominent = false, action = null }
   return (
     <div className={`rounded-xl border p-3.5 flex flex-col gap-2 min-w-0
                      ${prominent
-                       ? 'bg-primary/[0.06] border-primary/20'
+                       ? 'bg-blue/[0.06] border-blue/20'
                        : 'bg-surface/30 border-border'}`}>
       <div className="flex items-center gap-1.5">
-        <Icon size={12} className={prominent ? 'text-primary/60' : 'text-muted'} />
+        <Icon size={12} className={prominent ? 'text-blue/60' : 'text-muted'} />
         <p className={`text-caption font-bold uppercase tracking-[0.05em] leading-none
-                       ${prominent ? 'text-primary/70' : 'text-muted'}`}>
+                       ${prominent ? 'text-blue/70' : 'text-muted'}`}>
           {label}
         </p>
       </div>

@@ -164,7 +164,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
                     <div className="flex items-center gap-2 mb-0.5">
                       <Badge variant={cor}>{a.nivel}</Badge>
                       <span className="text-caption font-semibold text-text truncate">{a.titulo}</span>
-                      {!a.lido && <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />}
+                      {!a.lido && <span className="w-1.5 h-1.5 rounded-full bg-blue flex-shrink-0" />}
                     </div>
                     <p className="text-caption text-muted">{a.msg}</p>
                   </div>
@@ -243,12 +243,12 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
           {/* Briefing Executivo */}
           <div>
             <label className="text-caption font-bold uppercase tracking-[0.06em] text-muted block mb-2">
-              <Sparkle size={9} className="inline mr-1 text-primary" /> Briefing Executivo IA
+              <Sparkle size={9} className="inline mr-1 text-blue" /> Briefing Executivo IA
             </label>
             {briefing?.texto ? (
-              <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4 space-y-3 mb-2">
+              <div className="rounded-xl border border-blue/20 bg-blue/[0.04] p-4 space-y-3 mb-2">
                 <div className="flex items-center gap-2">
-                  <Sparkle size={11} className="text-primary flex-shrink-0" />
+                  <Sparkle size={11} className="text-blue flex-shrink-0" />
                   <span className="text-caption text-muted">{briefing.data || 'Hoje'}</span>
                 </div>
                 <p className="text-caption text-text leading-relaxed">{briefing.texto}</p>
@@ -256,7 +256,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
                   <div className="space-y-1 pt-1 border-t border-border">
                     {briefing.acoes.map((a, i) => (
                       <p key={i} className="text-caption text-secondary">
-                        <span className="text-primary font-bold mr-1">{i + 1}.</span>{a}
+                        <span className="text-blue font-bold mr-1">{i + 1}.</span>{a}
                       </p>
                     ))}
                   </div>

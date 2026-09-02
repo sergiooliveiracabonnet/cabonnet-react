@@ -72,7 +72,7 @@ export default function GraficosPage() {
           <span className="rounded-full border border-border bg-surface/40 px-2 py-1">Período: {periodoLabel}</span>
           <span className="rounded-full border border-border bg-surface/40 px-2 py-1">Data de {campoLabel}</span>
           <span className="rounded-full border border-border bg-surface/40 px-2 py-1">Escopo: {isFornecedor ? 'Seu fornecedor' : (FORN_PILLS.find(f => f.value === fornecedor)?.label ?? 'Todos')}</span>
-          <span className="rounded-full border border-primary/20 bg-primary/[0.06] px-2 py-1 text-primary">{activeRows.length.toLocaleString('pt-BR')} OS</span>
+          <span className="rounded-full border border-blue/20 bg-blue/[0.06] px-2 py-1 text-blue">{activeRows.length.toLocaleString('pt-BR')} OS</span>
         </div>
       )}
 

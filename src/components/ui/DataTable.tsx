@@ -152,7 +152,7 @@ export function DataTable<T extends Record<string, unknown>>({
               }}
               className={`border-b border-subtle ${textSize[density]}
                           transition-colors duration-fast text-secondary
-                          hover:bg-primary/[0.07] hover:text-text
+                          hover:bg-blue/[0.07] hover:text-text
                           ${onRowClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50' : ''}
                           ${row._critical ? 'bg-red/[0.04]' : ''}`}
             >

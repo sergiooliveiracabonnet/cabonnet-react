@@ -293,7 +293,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                           className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors
                                       ${isActive ? 'bg-surface' : 'hover:bg-surface/30'}`}
                         >
-                          <span className="font-mono text-label text-primary font-bold w-[68px] flex-shrink-0 pt-0.5">
+                          <span className="font-mono text-label text-blue font-bold w-[68px] flex-shrink-0 pt-0.5">
                             {os.numos as string}
                           </span>
                           <div className="flex-1 min-w-0">

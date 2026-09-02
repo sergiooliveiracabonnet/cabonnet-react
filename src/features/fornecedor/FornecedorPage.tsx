@@ -203,7 +203,7 @@ export default function FornecedorPage() {
           {!isFornecedor && (!aiEnabled ? (
             <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkle size={12} className="text-primary/40" />
+                <Sparkle size={12} className="text-blue/40" />
                 <span className="text-caption font-bold text-muted uppercase tracking-wide">Recomendações por Fornecedor · IA</span>
               </div>
               <button
@@ -216,10 +216,10 @@ export default function FornecedorPage() {
               </button>
             </div>
           ) : (aiLoading || aiFornecedor) && (
-            <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+            <div className="rounded-xl border border-blue/20 bg-blue/[0.03] p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Sparkle size={12} className="text-primary" />
-                <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
+                <Sparkle size={12} className="text-blue" />
+                <span className="text-caption font-bold text-blue/80 uppercase tracking-wide">
                   Recomendações por Fornecedor · IA
                 </span>
                 {aiLoading && (
@@ -315,8 +315,8 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
     ? revisitas * kpis.custoPorOs
     : null
 
-  const FROM: Record<string, string> = { primary: 'from-primary/[0.07]', green: 'from-green/[0.07]', red: 'from-red/[0.07]', yellow: 'from-yellow/[0.07]', orange: 'from-orange/[0.07]' }
-  const TEXT: Record<string, string> = { primary: 'text-primary', green: 'text-green', red: 'text-red', yellow: 'text-yellow', orange: 'text-orange' }
+  const FROM: Record<string, string> = { primary: 'from-blue/[0.07]', green: 'from-green/[0.07]', red: 'from-red/[0.07]', yellow: 'from-yellow/[0.07]', orange: 'from-orange/[0.07]' }
+  const TEXT: Record<string, string> = { primary: 'text-blue', green: 'text-green', red: 'text-red', yellow: 'text-yellow', orange: 'text-orange' }
 
   const kpiCards = kpis ? [
     { label: 'Total OS',       value: kpis.total,      accent: 'primary' },
@@ -422,7 +422,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                 </thead>
                 <tbody className="divide-y divide-subtle">
                   {(equipes as { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }[]).map((eq) => (
-                    <tr key={eq.nome} className="text-secondary hover:bg-primary/[0.05] transition-colors">
+                    <tr key={eq.nome} className="text-secondary hover:bg-blue/[0.05] transition-colors">
                       <td className="px-3 py-2 font-semibold text-text max-w-[180px] truncate">{eq.nome}</td>
                       <td className="px-3 py-2 font-mono">{eq.total}</td>
                       <td className="px-3 py-2 font-mono text-green">{eq.concluidas}</td>

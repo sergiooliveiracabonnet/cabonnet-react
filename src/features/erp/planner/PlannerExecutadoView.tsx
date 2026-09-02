@@ -209,7 +209,7 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
                 <tr key={r.numos} className="hover:bg-surface/20 transition-colors">
                   {/* OS */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
-                    <span className="font-mono font-bold text-primary">{r.numos}</span>
+                    <span className="font-mono font-bold text-blue">{r.numos}</span>
                   </td>
                   {/* Cliente */}
                   <td className="px-3 py-2.5 max-w-[160px]">
@@ -381,7 +381,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                     } as React.CSSProperties}
                     title={clickable ? (isActive ? 'Fechar' : `Ver ${val} OS de ${d.label}`) : undefined}
                   >
-                    <span className={`text-caption font-bold ${d.isToday ? 'text-primary' : 'text-muted'}`}>
+                    <span className={`text-caption font-bold ${d.isToday ? 'text-blue' : 'text-muted'}`}>
                       {d.dow}
                     </span>
                     <span className="text-caption text-muted">{d.label}</span>
@@ -485,7 +485,7 @@ export default function PlannerExecutadoView() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center py-24 gap-3 text-secondary text-sm">
-      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="w-5 h-5 border-2 border-blue border-t-transparent rounded-full animate-spin" />
       Carregando…
     </div>
   )
@@ -542,7 +542,7 @@ export default function PlannerExecutadoView() {
               <div className="flex flex-1 gap-[2px] min-w-0">
                 {days.map(d => (
                   <div key={d.key} className="flex-1 text-center">
-                    <span className={`text-caption font-bold ${d.isToday ? 'text-primary' : 'text-muted/50'}`}>
+                    <span className={`text-caption font-bold ${d.isToday ? 'text-blue' : 'text-muted/50'}`}>
                       {d.dow}
                     </span>
                   </div>
@@ -596,7 +596,7 @@ export default function PlannerExecutadoView() {
       {!aiEnabled ? (
         <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkle size={12} className="text-primary/40" />
+            <Sparkle size={12} className="text-blue/40" />
             <span className="text-caption font-bold text-muted uppercase tracking-wide">Análise de Quedas de Produtividade · IA</span>
           </div>
           <button
@@ -609,10 +609,10 @@ export default function PlannerExecutadoView() {
           </button>
         </div>
       ) : (aiLoading || aiProdutividade) && (
-        <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+        <div className="rounded-xl border border-blue/20 bg-blue/[0.03] p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkle size={12} className="text-primary" />
-            <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
+            <Sparkle size={12} className="text-blue" />
+            <span className="text-caption font-bold text-blue/80 uppercase tracking-wide">
               Análise de Quedas de Produtividade · IA
             </span>
             {aiLoading && (
@@ -637,7 +637,7 @@ export default function PlannerExecutadoView() {
                         {a.causa}
                       </p>
                       <p className="text-caption text-muted pl-5">
-                        <span className="font-semibold text-primary/70">Recomendação: </span>
+                        <span className="font-semibold text-blue/70">Recomendação: </span>
                         {a.recomendacao}
                       </p>
                     </div>

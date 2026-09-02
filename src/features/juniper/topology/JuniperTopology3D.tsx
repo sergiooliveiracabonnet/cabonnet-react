@@ -364,7 +364,7 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-subtle flex-wrap">
-        <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
+        <p className="text-caption font-bold uppercase tracking-[0.08em] text-blue/80 flex items-center gap-1.5">
           <CubeTransparent size={13} /> Topologia PPPoE · cluster → interface → cliente
         </p>
         <div className="flex items-center gap-2">
@@ -386,7 +386,7 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
             <p className="text-caption text-muted">Carregando texturas da topologia…</p>
             <div className="h-1 w-48 rounded-full bg-surface-active overflow-hidden">
               <div
-                className="h-full bg-primary transition-[width] duration-normal"
+                className="h-full bg-blue transition-[width] duration-normal"
                 style={{ width: `${Math.round(progress * 100)}%` }}
               />
             </div>
@@ -414,7 +414,7 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
 
       <div className="flex items-center gap-4 px-5 py-3 border-t border-subtle flex-wrap">
         <span className="flex items-center gap-1.5 text-caption text-muted">
-          <span className="w-2 h-2 rounded-full bg-primary inline-block" /> Cluster
+          <span className="w-2 h-2 rounded-full bg-blue inline-block" /> Cluster
         </span>
         <span className="flex items-center gap-1.5 text-caption text-muted">
           <span className="w-2 h-2 rounded-full bg-cyan inline-block" /> Interface sem sessão

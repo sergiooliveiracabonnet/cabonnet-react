@@ -385,7 +385,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
               <div className="min-w-0">
                 <p className="text-label font-semibold text-text truncate">{e.equipe}</p>
                 <div className="mt-1 h-1 bg-surface/40 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full bg-primary/60 transition-all duration-700"
+                  <div className="h-full rounded-full bg-blue/60 transition-all duration-700"
                        style={{ width: `${pct}%` }} />
                 </div>
               </div>

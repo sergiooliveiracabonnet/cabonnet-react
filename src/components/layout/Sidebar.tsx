@@ -18,7 +18,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 type StatusKey = 'loading' | 'error' | 'stale' | 'online'
 const STATUS_CFG: Record<StatusKey, { color: string; dot: string; label: string; breathe: boolean }> = {
-  loading: { color: 'text-primary', dot: 'bg-primary', label: 'Carregando',     breathe: false },
+  loading: { color: 'text-blue', dot: 'bg-blue', label: 'Carregando',     breathe: false },
   error:   { color: 'text-red',     dot: 'bg-red',     label: 'Sem conexão',     breathe: false },
   stale:   { color: 'text-yellow',  dot: 'bg-yellow',  label: 'Desatualizado',   breathe: false },
   online:  { color: 'text-green',   dot: 'bg-green',   label: 'Online',          breathe: true  },
@@ -184,7 +184,7 @@ export function Sidebar() {
             {sidebarOpen ? (
               <div className="flex items-center gap-2 px-4 pt-4 pb-1.5">
                 <div
-                  className="w-1 h-1 rounded-full flex-shrink-0 bg-primary"
+                  className="w-1 h-1 rounded-full flex-shrink-0 bg-blue"
                 />
                 <span
                   className="text-caption font-semibold uppercase tracking-[0.07em]"
@@ -237,7 +237,7 @@ export function Sidebar() {
                           bg-card-high border border-border hover:border-muted/30
                           transition-colors duration-150 cursor-default">
             <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center
-                            font-semibold text-caption bg-primary/20 border border-primary/30 text-primary">
+                            font-semibold text-caption bg-blue/20 border border-blue/30 text-blue">
               A
             </div>
             <div className="flex-1 min-w-0">
@@ -259,7 +259,7 @@ export function Sidebar() {
         ) : (
           <div className="flex flex-col items-center gap-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-caption font-semibold
-                            bg-primary/20 border border-primary/30 text-primary">
+                            bg-blue/20 border border-blue/30 text-blue">
               A
             </div>
             <button

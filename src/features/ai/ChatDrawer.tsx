@@ -17,7 +17,7 @@ const MARKDOWN_COMPONENTS = {
   h3:         ({ children }: { children?: React.ReactNode }) => <h3 className="text-body font-semibold text-text mb-1 mt-2 first:mt-0">{children}</h3>,
   hr:         () => <hr className="border-border my-2" />,
   a:          ({ children, href }: { children?: React.ReactNode; href?: string }) => (
-    <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">{children}</a>
+    <a href={href} target="_blank" rel="noreferrer" className="text-blue underline underline-offset-2 hover:text-blue/80">{children}</a>
   ),
   code:       ({ children }: { children?: React.ReactNode }) => (
     <code className="px-1 py-0.5 rounded bg-surface border border-border text-caption font-mono">{children}</code>
@@ -154,8 +154,8 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
       <div className="flex flex-col gap-3 p-4 pb-2">
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center gap-4 py-10 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <Robot size={22} className="text-primary" />
+            <div className="w-12 h-12 rounded-2xl bg-blue/10 border border-blue/20 flex items-center justify-center">
+              <Robot size={22} className="text-blue" />
             </div>
             <div>
               <p className="text-sm font-semibold text-text">Assistente operacional</p>
@@ -182,7 +182,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
           <div key={i} className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
             <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
                             ${msg.role === 'user'
-                              ? 'bg-primary/15 text-primary border border-primary/20'
+                              ? 'bg-blue/15 text-blue border border-blue/20'
                               : 'bg-surface border border-border text-secondary'}`}>
               {msg.role === 'user' ? <User size={12} /> : <Robot size={12} />}
             </div>
@@ -202,7 +202,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
               )}
               <div className={`rounded-2xl px-3.5 py-2.5 text-body leading-relaxed break-words min-w-0
                               ${msg.role === 'user'
-                                ? 'bg-primary/12 text-text border border-primary/15 rounded-tr-sm whitespace-pre-wrap'
+                                ? 'bg-blue/12 text-text border border-blue/15 rounded-tr-sm whitespace-pre-wrap'
                                 : 'bg-card border border-border text-text rounded-tl-sm'}`}>
                 {msg.role === 'assistant' ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>

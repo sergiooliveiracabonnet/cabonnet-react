@@ -425,7 +425,7 @@ export default function OrdensPage() {
       {/* Banner filtros ativos */}
       {os.filtersActive && (
         <div className="flex items-center justify-between px-4 py-2.5 rounded-xl
-                        bg-primary/[0.06] border border-primary/20 text-label text-secondary">
+                        bg-blue/[0.06] border border-blue/20 text-label text-secondary">
           <span className="flex items-center gap-2 flex-wrap">
             Exibindo <strong className="text-text">{os.filtered.length}</strong> de{' '}
             <strong className="text-text">{os.ordens.length}</strong> OS

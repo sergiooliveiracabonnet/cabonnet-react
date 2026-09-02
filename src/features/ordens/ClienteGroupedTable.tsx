@@ -121,7 +121,7 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
                 onClick={() => onRowClick?.(g.sorted[0])}
               >
                 <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${_dotColor(g.sorted[0]._situacaoEfetiva)}`} />
-                <span className="font-mono text-primary w-20 flex-shrink-0">{g.sorted[0].numos}</span>
+                <span className="font-mono text-blue w-20 flex-shrink-0">{g.sorted[0].numos}</span>
                 <span className="text-muted w-28 flex-shrink-0">{g.sorted[0].datacadastro?.split(' ')[0] ?? '—'}</span>
                 <span className="text-secondary truncate flex-1 min-w-0">{g.sorted[0].tiposervico ?? '—'}</span>
                 <span className="text-muted flex-shrink-0">{shortEquipe(g.sorted[0].nomedaequipe) || '—'}</span>
@@ -172,7 +172,7 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
                                           w-3 h-3 rounded-full ring-2 ring-card flex-shrink-0
                                           ${dotCls} ${isLast && ativo ? 'animate-pulse' : ''}`} />
 
-                        <span className="font-mono text-primary w-20 flex-shrink-0">{r.numos}</span>
+                        <span className="font-mono text-blue w-20 flex-shrink-0">{r.numos}</span>
                         <span className="text-muted w-28 flex-shrink-0 text-caption">
                           {r.datacadastro?.split(' ')[0] ?? '—'}
                         </span>

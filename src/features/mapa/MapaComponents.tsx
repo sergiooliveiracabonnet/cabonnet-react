@@ -357,7 +357,7 @@ export function EquipeGeocodeStatus({ resolved, total, capped, totalEquipe }: {
     <div className="absolute left-1/2 top-40 z-[500] max-w-[calc(100%-1rem)] -translate-x-1/2 sm:top-20">
       <div className="flex items-center gap-2 bg-elevated/95 backdrop-blur-md border border-border
                        rounded-full px-3.5 py-1.5 shadow-2xl">
-        {!done && <CircleNotch size={11} className="animate-spin text-primary" />}
+        {!done && <CircleNotch size={11} className="animate-spin text-blue" />}
         <span className="text-caption font-semibold text-secondary">
           {done ? `${total} OS localizadas` : `Localizando ${resolved}/${total}…`}
         </span>
@@ -381,7 +381,7 @@ export function RankingPanel({ cidades, onSelect, selected }: {
     <div className="absolute right-2 top-40 z-[500] w-[min(15rem,calc(100%-1rem))] sm:right-4 sm:top-4 sm:w-60">
       <div className="bg-elevated/90 backdrop-blur-md border border-border rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-border">
-          <TrendUp size={12} className="text-primary" />
+          <TrendUp size={12} className="text-blue" />
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking de cidades</p>
         </div>
         <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-subtle">
@@ -528,7 +528,7 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
                     onClick={() => onOS(os)}
                     className="w-full min-h-11 flex items-start gap-2 px-3 py-2 text-left hover:bg-primary/[0.05] transition-colors"
                   >
-                    <span className="text-caption font-mono font-bold text-primary flex-shrink-0 w-14 pt-0.5">{os.numos}</span>
+                    <span className="text-caption font-mono font-bold text-blue flex-shrink-0 w-14 pt-0.5">{os.numos}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-caption text-text truncate leading-tight">{os.nomecliente || '—'}</p>
                       <p className={`text-caption truncate ${semEq ? 'text-orange font-semibold' : 'text-muted'}`}>
@@ -560,7 +560,7 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
     <div className="absolute right-2 top-40 z-[500] w-[min(16rem,calc(100%-1rem))] sm:right-4 sm:top-4 sm:w-64">
       <div className="bg-elevated/90 backdrop-blur-md border border-border rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-border">
-          <TrendUp size={12} className="text-primary" />
+          <TrendUp size={12} className="text-blue" />
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking por bairro</p>
         </div>
         <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-subtle">

@@ -141,7 +141,7 @@ export default function CidadesPage() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <MapPin size={16} className="text-primary" />
+              <MapPin size={16} className="text-blue" />
               <h2 className="font-headline text-xl font-semibold text-text">Centro Operacional por Cidade</h2>
             </div>
             <div className="mt-1.5 flex flex-wrap gap-1.5 text-caption text-muted">
@@ -173,7 +173,7 @@ export default function CidadesPage() {
         </div>
 
         {cidadeFilter && (
-          <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/[0.05] px-3 py-2">
+          <div className="flex items-center justify-between rounded-lg border border-blue/20 bg-blue/[0.05] px-3 py-2">
             <p className="text-label text-secondary">Detalhando <strong className="text-text">{cidadeFilter}</strong></p>
             <button onClick={() => setCidadeFilter('')} aria-label="Remover filtro de cidade"
                     className="inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-caption font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-8">
@@ -206,7 +206,7 @@ export default function CidadesPage() {
         {!aiEnabled ? (
           <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkle size={12} className="text-primary/40" />
+              <Sparkle size={12} className="text-blue/40" />
               <span className="text-caption font-bold text-muted uppercase tracking-wide">Clusters de Pendências · IA</span>
             </div>
             <button
@@ -219,10 +219,10 @@ export default function CidadesPage() {
             </button>
           </div>
         ) : aiClusters && aiClusters.clusters.length > 0 && (
-          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+          <div className="rounded-xl border border-blue/20 bg-blue/[0.03] p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <Sparkle size={13} className="text-primary" />
-              <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
+              <Sparkle size={13} className="text-blue" />
+              <span className="text-caption font-bold text-blue/80 uppercase tracking-wide">
                 Clusters de pendencias detectados
               </span>
             </div>
@@ -235,7 +235,7 @@ export default function CidadesPage() {
                      className="flex-1 min-w-[200px] bg-card border border-border rounded-lg px-3 py-2.5 space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-label font-semibold text-text truncate">{cl.bairro}</p>
-                    <span className="font-mono text-body font-bold text-primary tabular-nums flex-shrink-0">{cl.count}</span>
+                    <span className="font-mono text-body font-bold text-blue tabular-nums flex-shrink-0">{cl.count}</span>
                   </div>
                   <p className="text-caption text-muted">{cl.cidade}</p>
                   {cl.tipos.length > 0 && (

@@ -202,7 +202,7 @@ export default function MapaPage() {
 
         {/* Ícone + título */}
         <div className="flex items-center gap-2">
-          <MapIcon size={15} className="text-primary" />
+          <MapIcon size={15} className="text-blue" />
           <div>
             <h1 className="text-body font-bold text-text">Mapa Operacional</h1>
             <p className="text-caption text-muted">Distribuição e risco da fila em campo</p>

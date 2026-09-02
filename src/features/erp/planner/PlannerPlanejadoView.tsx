@@ -84,7 +84,7 @@ export default function PlannerPlanejadoView() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center py-24 gap-3 text-secondary text-sm">
-      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="w-5 h-5 border-2 border-blue border-t-transparent rounded-full animate-spin" />
       Carregando…
     </div>
   )
@@ -163,7 +163,7 @@ export default function PlannerPlanejadoView() {
                   <div className="w-full rounded-sm transition-all duration-700"
                        style={{ height: `${Math.max(d.total > 0 ? 8 : 2, pct * 0.4)}px`, background: d.total > 0 ? color : 'rgba(255,255,255,0.04)' }} />
                 </div>
-                <span className={`text-caption font-bold mt-1 ${d.isToday ? 'text-primary' : 'text-muted'}`}>{d.dow}</span>
+                <span className={`text-caption font-bold mt-1 ${d.isToday ? 'text-blue' : 'text-muted'}`}>{d.dow}</span>
                 <span className="text-caption text-muted/70">{d.label}</span>
               </div>
             )
@@ -203,11 +203,11 @@ export default function PlannerPlanejadoView() {
                     {days.map(d => (
                       <th key={d.key}
                           className={`px-2 py-3 text-center text-caption font-bold border-r border-subtle last:border-r-0 w-[100px]
-                                      ${d.isToday ? 'text-primary' : d.isWeekend ? 'text-muted/70' : 'text-muted'}
+                                      ${d.isToday ? 'text-blue' : d.isWeekend ? 'text-muted/70' : 'text-muted'}
                                       ${d.isWeekend ? 'bg-surface/10' : ''}`}>
                         <div>{d.dow}</div>
-                        <div className={`text-caption font-normal mt-0.5 ${d.isToday ? 'text-primary/70' : ''}`}>{d.label}</div>
-                        {d.isToday && <div className="w-1 h-1 rounded-full bg-primary mx-auto mt-0.5" />}
+                        <div className={`text-caption font-normal mt-0.5 ${d.isToday ? 'text-blue/70' : ''}`}>{d.label}</div>
+                        {d.isToday && <div className="w-1 h-1 rounded-full bg-blue mx-auto mt-0.5" />}
                       </th>
                     ))}
                     {editMeta && (
@@ -295,7 +295,7 @@ export default function PlannerPlanejadoView() {
               <div key={cidade} className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2">
                 <MapPin size={10} className="text-muted" />
                 <span className="text-[11.5px] font-semibold text-text">{cidade}</span>
-                <span className="font-mono text-caption text-primary font-bold">{cnt}</span>
+                <span className="font-mono text-caption text-blue font-bold">{cnt}</span>
               </div>
             ))}
           </div>
@@ -307,8 +307,8 @@ export default function PlannerPlanejadoView() {
         <section className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Sparkle size={13} className="text-primary/70" />
-              <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
+              <Sparkle size={13} className="text-blue/70" />
+              <span className="text-caption font-bold text-blue/80 uppercase tracking-wide">
                 Sugestao de balanceamento
               </span>
             </div>
@@ -323,7 +323,7 @@ export default function PlannerPlanejadoView() {
               </button>
             )}
           </div>
-          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4">
+          <div className="rounded-xl border border-blue/20 bg-blue/[0.03] p-4">
             {!aiEnabled ? (
               <p className="text-label text-muted/50 italic">Clique em "Analisar com IA" para gerar sugestão de balanceamento.</p>
             ) : aiLoading && !aiData ? (
@@ -343,8 +343,8 @@ export default function PlannerPlanejadoView() {
                   <div className="space-y-2">
                     {aiData.sugestoes.map((s, i) => (
                       <div key={i} className="flex items-start gap-3 bg-card border border-border rounded-lg px-3 py-2.5">
-                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <span className="text-caption font-bold text-primary">{i + 1}</span>
+                        <div className="w-5 h-5 rounded-full bg-blue/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-caption font-bold text-blue">{i + 1}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-label font-semibold text-text">{s.equipe}</p>

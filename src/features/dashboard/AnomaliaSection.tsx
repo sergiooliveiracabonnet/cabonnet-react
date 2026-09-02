@@ -88,7 +88,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
               <div className="space-y-2">
                 {picosDia.map(p => (
                   <div key={p.date} className="flex items-center gap-3 text-label bg-surface/20 rounded-lg px-3 py-2">
-                    <span className="font-mono text-primary w-22 flex-shrink-0">{p.date}</span>
+                    <span className="font-mono text-blue w-22 flex-shrink-0">{p.date}</span>
                     <span className="font-mono font-bold text-text">{p.count} OS</span>
                     <span className="text-muted ml-auto">Z: <span className="text-yellow font-mono">{p.zScore}σ</span></span>
                   </div>
@@ -139,7 +139,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
           <div className="border-t border-border pt-4">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
-                <Sparkle size={12} className="text-primary/70" />
+                <Sparkle size={12} className="text-blue/70" />
                 <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted">Análise de Causa Raiz</p>
               </div>
               {!rcaLoading && (
@@ -183,7 +183,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
                   <div className="space-y-1.5">
                     {rcaData.acoes.map((acao, i) => (
                       <div key={i} className="flex items-start gap-2 text-caption text-text/70">
-                        <span className="text-primary/60 font-mono flex-shrink-0 mt-0.5">{i + 1}.</span>
+                        <span className="text-blue/60 font-mono flex-shrink-0 mt-0.5">{i + 1}.</span>
                         <span>{acao}</span>
                       </div>
                     ))}

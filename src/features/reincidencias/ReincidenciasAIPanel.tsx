@@ -25,10 +25,10 @@ export function ReincidenciasAIPanel({ analysis, parCount, aiLoading, observatio
   const rapidasPct = analysis?.paresAnalisados ? Math.round(analysis.metricas.revisitasRapidas / analysis.paresAnalisados * 100) : 0
 
   return (
-    <section className="rounded-xl border border-primary/25 bg-primary/5" aria-labelledby="ai-title">
+    <section className="rounded-xl border border-blue/25 bg-blue/5" aria-labelledby="ai-title">
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
         <div>
-          <h2 id="ai-title" className="flex items-center gap-2 text-body font-bold text-text"><Brain size={18} className="text-primary" /> Diagnóstico objetivo da IA</h2>
+          <h2 id="ai-title" className="flex items-center gap-2 text-body font-bold text-text"><Brain size={18} className="text-blue" /> Diagnóstico objetivo da IA</h2>
           <p className="mt-1 text-caption text-secondary">Compara cada atendimento com a visita seguinte e aponta causa provável e pendência.</p>
         </div>
         <button type="button" disabled={!parCount || aiLoading || observationsLoading || observationsError} onClick={onGenerate}
@@ -40,7 +40,7 @@ export function ReincidenciasAIPanel({ analysis, parCount, aiLoading, observatio
       {observationsError && <p className="px-4 pb-4 text-label text-red sm:px-5">Não foi possível carregar as observações das OS. Atualize a página e tente novamente.</p>}
       {aiError && <p className="px-4 pb-4 text-label text-red sm:px-5">A IA não respondeu: {errorMessage || 'erro desconhecido'}. O relatório detalhado e o PDF continuam disponíveis.</p>}
 
-      {analysis && <div className="border-t border-primary/20 p-4 sm:p-5">
+      {analysis && <div className="border-t border-blue/20 p-4 sm:p-5">
         <p className="text-title font-semibold leading-snug text-text">{analysis.sintese || analysis.resumo}</p>
 
         <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -71,7 +71,7 @@ export function ReincidenciasAIPanel({ analysis, parCount, aiLoading, observatio
           <ol className="mt-2 space-y-2">
             {analysis.acoes.map((acao, index) => (
               <li key={acao.titulo} className="grid grid-cols-[auto_minmax(0,1fr)] gap-2 rounded-lg border border-border bg-card p-3">
-                <span className="text-label font-bold tabular-nums text-primary">{index + 1}</span>
+                <span className="text-label font-bold tabular-nums text-blue">{index + 1}</span>
                 <span>
                   <b className="text-label text-text">{acao.titulo}</b>
                   {acao.causa && <span className="ml-2 rounded-pill border border-border bg-elevated px-2 py-0.5 text-caption text-secondary">{acao.causa}</span>}
@@ -147,7 +147,7 @@ function CausaRow({ grupo, open, onToggle }: { grupo: AICausaGrupo; open: boolea
         <span className="min-w-0">
           <span className="block truncate text-label font-semibold text-text">{grupo.causa}</span>
           <span className="mt-1 block h-1 w-full max-w-[220px] overflow-hidden rounded-pill bg-border" aria-hidden="true">
-            <span className="block h-full rounded-pill bg-primary" style={{ width: `${Math.max(grupo.pct, 2)}%` }} />
+            <span className="block h-full rounded-pill bg-blue" style={{ width: `${Math.max(grupo.pct, 2)}%` }} />
           </span>
         </span>
         <span className="whitespace-nowrap text-right text-caption tabular-nums text-secondary">

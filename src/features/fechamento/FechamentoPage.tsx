@@ -25,8 +25,8 @@ const PERIODOS = [
   { key: 'personalizado', label: 'Personalizado' },
 ]
 
-const TIPO_COR:    Record<string, string> = { Instalação: 'text-primary', Manutenção: 'text-green', Serviço: 'text-purple', Outros: 'text-muted' }
-const TIPO_BORDER: Record<string, string> = { Instalação: 'border-primary', Manutenção: 'border-green', Serviço: 'border-purple', Outros: 'border-muted' }
+const TIPO_COR:    Record<string, string> = { Instalação: 'text-blue', Manutenção: 'text-green', Serviço: 'text-purple', Outros: 'text-muted' }
+const TIPO_BORDER: Record<string, string> = { Instalação: 'border-blue', Manutenção: 'border-green', Serviço: 'border-purple', Outros: 'border-muted' }
 
 function taxaCor(taxa: number): string {
   if (taxa >= SLA_MIN)      return 'text-green'
@@ -93,7 +93,7 @@ export default function FechamentoPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-blue border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }

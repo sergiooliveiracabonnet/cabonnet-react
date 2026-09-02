@@ -381,7 +381,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
                 <div key={f.key} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label htmlFor={`alert-setting-${f.key}`} className="text-label text-secondary font-medium">{f.label}</label>
-                    <span className="text-[16px] font-bold text-primary tabular-nums font-mono">
+                    <span className="text-[16px] font-bold text-blue tabular-nums font-mono">
                       {(draft as unknown as Record<string, number>)[f.key]}{f.suffix}
                     </span>
                   </div>

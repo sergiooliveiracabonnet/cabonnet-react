@@ -129,7 +129,7 @@ export function OsRowItem({ r }: { r: OSRow }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-caption font-bold text-primary">{r.numos}</span>
+          <span className="font-mono text-caption font-bold text-blue">{r.numos}</span>
           <span className="text-caption text-text truncate flex-1">{r.nomecliente || '—'}</span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
@@ -167,7 +167,7 @@ export function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null
             <p className="text-title font-bold text-text leading-tight">{team}</p>
             <p className="text-caption text-muted mt-0.5">
               {day.dow}, {day.label}
-              {day.isToday && <span className="ml-2 text-primary font-semibold">· Hoje</span>}
+              {day.isToday && <span className="ml-2 text-blue font-semibold">· Hoje</span>}
             </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -303,7 +303,7 @@ export function PlannerCell({ rows = [] as OSRow[], isPast, _isToday: _isToday =
               )
             })}
             {rows.length > 5  && <p className="text-caption text-muted/60 pt-0.5">+{rows.length - 5} OS · clique para ver todas</p>}
-            {rows.length <= 5 && <p className="text-caption text-primary/60 pt-1 text-center">Clique para ver detalhes</p>}
+            {rows.length <= 5 && <p className="text-caption text-blue/60 pt-1 text-center">Clique para ver detalhes</p>}
           </div>
         </div>
       )}

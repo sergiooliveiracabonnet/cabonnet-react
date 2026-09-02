@@ -236,7 +236,7 @@ export default function AlertasPage() {
       {!aiEnabled ? (
         <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkle size={12} className="text-primary/40" />
+            <Sparkle size={12} className="text-blue/40" />
             <span className="text-caption font-bold text-muted uppercase tracking-wide">Análise de Alertas · IA</span>
           </div>
           <button
@@ -249,10 +249,10 @@ export default function AlertasPage() {
           </button>
         </div>
       ) : (aiLoading || aiAlertas) && (
-        <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
+        <div className="rounded-xl border border-blue/20 bg-blue/[0.03] p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkle size={12} className="text-primary" />
-            <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
+            <Sparkle size={12} className="text-blue" />
+            <span className="text-caption font-bold text-blue/80 uppercase tracking-wide">
               Análise de Alertas · IA
             </span>
             {aiLoading && (
@@ -293,7 +293,7 @@ export default function AlertasPage() {
                   {aiAlertas.insights.map((ins, i) => (
                     <span
                       key={i}
-                      className="text-caption px-2.5 py-1 rounded-full border border-primary/20 bg-primary/[0.06] text-primary/80"
+                      className="text-caption px-2.5 py-1 rounded-full border border-blue/20 bg-blue/[0.06] text-blue/80"
                     >
                       {ins}
                     </span>

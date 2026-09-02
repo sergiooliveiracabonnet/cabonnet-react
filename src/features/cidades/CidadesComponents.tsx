@@ -130,7 +130,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
   return (
     <div id="city-health" className="bg-card border border-border rounded-xl overflow-hidden scroll-mt-4">
       <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border flex-wrap">
-        <Pulse size={13} className="text-primary flex-shrink-0" />
+        <Pulse size={13} className="text-blue flex-shrink-0" />
         <span className="font-bold text-body text-text">Saúde por Cidade</span>
         <span className="text-caption text-muted">
           — fila ao vivo vs capacidade dos últimos 14 dias · ordenado por backlog
@@ -165,7 +165,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
               const deltaCls = c.deltaShare >= 5 ? 'text-orange' : c.deltaShare <= -5 ? 'text-green' : 'text-muted'
               const reinc = reincDe.get(c.cidade.toUpperCase())
               return (
-                <tr key={c.cidade} className={`text-secondary transition-colors hover:bg-primary/[0.04] ${selectedCity === c.cidade ? 'bg-primary/[0.07]' : ''}`}>
+                <tr key={c.cidade} className={`text-secondary transition-colors hover:bg-blue/[0.04] ${selectedCity === c.cidade ? 'bg-primary/[0.07]' : ''}`}>
                   <td className="sticky left-0 z-[1] whitespace-nowrap bg-card px-2 py-1.5">
                     <button type="button" onClick={() => onSelectCity?.(c.cidade)}
                             aria-pressed={selectedCity === c.cidade}
@@ -513,7 +513,7 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
               <tr key={os.numos} onClick={() => onOS(os)}
                   className={`cursor-pointer transition-colors
                     ${semEquipe ? 'bg-orange/[0.04] hover:bg-orange/[0.08]' : 'hover:bg-primary/[0.04]'}`}>
-                <td className="px-4 py-1.5 font-mono text-primary">{os.numos}</td>
+                <td className="px-4 py-1.5 font-mono text-blue">{os.numos}</td>
                 <td className="px-4 py-1.5 text-text max-w-[140px] truncate">{os.nomecliente ?? '—'}</td>
                 <td className="px-4 py-1.5 text-muted">{tipoLabel}</td>
                 <td className="px-4 py-1.5 max-w-[130px]">

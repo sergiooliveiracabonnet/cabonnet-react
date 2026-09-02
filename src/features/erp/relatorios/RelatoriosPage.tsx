@@ -287,7 +287,7 @@ export default function RelatoriosPage() {
       {/* ── KPIs ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total de OS',  value: kpis.total,                     Icon: ChartBar,     colorCls: 'text-primary',     bgCls: 'bg-primary/10',    rows: drillTotal,   color: '#3b82f6' },
+          { label: 'Total de OS',  value: kpis.total,                     Icon: ChartBar,     colorCls: 'text-blue',     bgCls: 'bg-blue/10',    rows: drillTotal,   color: '#3b82f6' },
           { label: 'SLA Vencido',  value: kpis.criticas,                  Icon: Warning, colorCls: 'text-red',     bgCls: 'bg-red/10',    rows: drillSlaVenc, color: '#f87171' },
           { label: 'Sem Equipe',   value: kpis.semEquipe,                 Icon: Clock,         colorCls: 'text-orange',  bgCls: 'bg-orange/10', rows: drillSemEq,   color: '#f97316' },
           { label: 'Aging Médio',  value: `${kpis.avgAging.toFixed(1)}d`, Icon: TrendUp,    colorCls: 'text-green', bgCls: 'bg-green/10',rows: drillAging,   color: '#4ade80' },
@@ -313,7 +313,7 @@ export default function RelatoriosPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-24 gap-3 text-secondary text-sm">
-          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-blue border-t-transparent rounded-full animate-spin" />
           Carregando dados…
         </div>
       ) : (
@@ -469,7 +469,7 @@ export default function RelatoriosPage() {
           <div className="overflow-hidden rounded-xl border border-border bg-elevated">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-4">
               <div><p className="text-body font-semibold text-text">Prévia do relatório por equipe</p><p className="mt-0.5 text-caption text-muted">Inclui equipes não cadastradas e OS sem equipe · clique para detalhar</p></div>
-              <span className="rounded-full border border-primary/20 bg-primary/[0.06] px-2 py-1 text-caption font-semibold text-primary">{ranking.length} linhas</span>
+              <span className="rounded-full border border-blue/20 bg-blue/[0.06] px-2 py-1 text-caption font-semibold text-blue">{ranking.length} linhas</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[860px] text-label">

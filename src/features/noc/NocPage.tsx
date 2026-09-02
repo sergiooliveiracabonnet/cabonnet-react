@@ -55,7 +55,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
       </div>
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-2 border-blue border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="flex-1 grid grid-cols-3 gap-4">
@@ -154,7 +154,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
                               ${veryOld ? 'bg-red/[0.07] border-red/25' : 'bg-card border-red/15'}`}
                 >
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 bg-red ${veryOld ? 'animate-pulse' : ''}`} />
-                  <span className="font-mono text-label text-primary font-bold w-20 flex-shrink-0">
+                  <span className="font-mono text-label text-blue font-bold w-20 flex-shrink-0">
                     {os.numos}
                   </span>
                   <span className="text-label text-text flex-1 truncate">{os.nomecliente}</span>
@@ -350,13 +350,13 @@ function NocInner() {
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green" />
         </span>
 
-        <Monitor size={17} className="text-primary flex-shrink-0" />
+        <Monitor size={17} className="text-blue flex-shrink-0" />
         <span className="font-headline font-bold text-base tracking-wide">NOC — Cabonnet</span>
 
         <div className="w-px h-5 bg-border mx-1 flex-shrink-0" />
 
         {/* Current slide label */}
-        <SlideIcon size={13} className="text-primary flex-shrink-0" />
+        <SlideIcon size={13} className="text-blue flex-shrink-0" />
         <span className="text-label font-semibold text-secondary">{slideName}</span>
         <span className="text-caption text-muted/50 font-mono">{slide + 1}/{TOTAL_SLIDES}</span>
 
@@ -501,7 +501,7 @@ function NocInner() {
 
         <div className="h-[3px] bg-surface rounded-full overflow-hidden">
           <div
-            className="h-full bg-primary rounded-full"
+            className="h-full bg-blue rounded-full"
             style={{ width: `${progress}%`, transition: 'width 100ms linear' }}
           />
         </div>
@@ -527,7 +527,7 @@ function NocAuthGuard({ children }: { children: React.ReactNode }) {
   if (!checked) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-bg">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-blue border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }

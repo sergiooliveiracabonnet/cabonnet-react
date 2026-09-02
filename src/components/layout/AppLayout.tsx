@@ -91,7 +91,7 @@ export function AppLayout() {
           <div className="app-content animate-page-enter px-3 pb-10 pt-4 sm:px-5 lg:px-7 lg:pt-6">
             <Suspense fallback={
               <div className="flex items-center justify-center py-20">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-blue border-t-transparent rounded-full animate-spin" />
               </div>
             }>
               <Outlet />

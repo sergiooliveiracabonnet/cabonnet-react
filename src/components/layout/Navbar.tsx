@@ -119,7 +119,7 @@ export function Navbar() {
           <PaperPlaneTilt size={13} />
           {naoLidos > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
-                             bg-primary text-caption font-bold text-white flex items-center justify-center leading-none">
+                             bg-blue text-caption font-bold text-white flex items-center justify-center leading-none">
               {naoLidos > 9 ? '9+' : naoLidos}
             </span>
           )}

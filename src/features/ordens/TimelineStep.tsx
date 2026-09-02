@@ -62,7 +62,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
       <div className="flex flex-col items-center">
         <TimelineNode icon={icon} color={color} filled={done} />
         {!isLast && (
-          <div className={`w-px flex-1 my-1 min-h-[20px] ${done ? 'bg-primary/25' : 'bg-surface'}`} />
+          <div className={`w-px flex-1 my-1 min-h-[20px] ${done ? 'bg-blue/25' : 'bg-surface'}`} />
         )}
       </div>
 

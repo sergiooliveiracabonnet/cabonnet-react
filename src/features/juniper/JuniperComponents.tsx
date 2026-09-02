@@ -38,7 +38,7 @@ const OS_URGENCY = [
 ]
 export function getOsStyle(total: number): { text: string; bg: string; bar: string } {
   for (const u of OS_URGENCY) if (total >= u.min) return u
-  return { text: 'text-primary', bg: '', bar: 'bg-primary' }
+  return { text: 'text-blue', bg: '', bar: 'bg-blue' }
 }
 
 export function relTime(ts: string | null | undefined): string {
@@ -210,9 +210,9 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
               {(snap.clientes ?? []).map((c, ci) => {
                 const cl = c as Record<string, string>
                 return (
-                  <tr key={ci} className="hover:bg-primary/[0.04]">
+                  <tr key={ci} className="hover:bg-blue/[0.04]">
                     <td className="px-4 py-2 font-bold text-text uppercase antialiased">{cl.usuario}</td>
-                    <td className="px-4 py-2 font-mono font-semibold text-primary uppercase antialiased">{cl.ip}</td>
+                    <td className="px-4 py-2 font-mono font-semibold text-blue uppercase antialiased">{cl.ip}</td>
                     <td className="px-4 py-2 font-mono text-label font-semibold text-text uppercase antialiased">{cl.mac}</td>
                     <td className="px-4 py-2 text-secondary uppercase">{cl.iface}</td>
                     <td className="px-4 py-2 text-muted uppercase">{cl.uptime}</td>

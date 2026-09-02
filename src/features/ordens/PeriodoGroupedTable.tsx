@@ -44,9 +44,9 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
 
         {/* Nome da equipe filtrada */}
         {equipe && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-primary/[0.05] border-b border-primary/20">
+          <div className="flex items-center gap-2 px-4 py-2 bg-blue/[0.05] border-b border-blue/20">
             <span className="text-caption font-bold uppercase tracking-wider text-muted">Equipe</span>
-            <span className="text-label font-bold text-primary">{shortEquipe(equipe)}</span>
+            <span className="text-label font-bold text-blue">{shortEquipe(equipe)}</span>
             <span className="text-caption text-muted">— {rows.length} OS</span>
           </div>
         )}

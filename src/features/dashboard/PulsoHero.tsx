@@ -216,7 +216,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
     >
       <header className="flex min-h-12 items-center justify-between gap-3 border-b border-subtle px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/[0.07] text-primary">
+          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-blue/20 bg-blue/[0.07] text-blue">
             <Pulse size={14} aria-hidden="true" />
           </span>
           <div className="min-w-0">
@@ -327,7 +327,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
           <div className="mb-2 flex items-center gap-2">
             <span className={MICRO}>Leitura operacional</span>
             {aiData && (
-              <span className="inline-flex items-center gap-1 rounded-pill border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-caption font-bold text-primary/80">
+              <span className="inline-flex items-center gap-1 rounded-pill border border-blue/20 bg-blue/10 px-1.5 py-0.5 text-caption font-bold text-blue/80">
                 <Sparkle size={8} aria-hidden="true" /> IA
               </span>
             )}

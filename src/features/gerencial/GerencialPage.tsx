@@ -208,7 +208,7 @@ export default function GerencialPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24 gap-3 text-secondary text-sm">
-        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-blue border-t-transparent rounded-full animate-spin" />
         Carregando…
       </div>
     )

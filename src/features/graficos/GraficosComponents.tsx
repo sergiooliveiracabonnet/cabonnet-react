@@ -159,7 +159,7 @@ export function DrillModal({ drill, onClose, onOS }: { drill: DrillState | null;
                 <tr key={r.numos} className="hover:bg-surface/20 transition-colors">
                   <td className="px-1 py-1 font-mono whitespace-nowrap">
                     <button type="button" onClick={() => onOS?.(r)}
-                            className="min-h-11 rounded-md px-2 text-primary transition-colors hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                            className="min-h-11 rounded-md px-2 text-blue transition-colors hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                             aria-label={`Abrir detalhes da OS ${r.numos}`}>
                       {r.numos}
                     </button>
@@ -229,9 +229,9 @@ export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown
   if ((ev?.labels?.length ?? 0) < 7 || !forecast) return null
 
   return (
-    <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-5 space-y-4">
+    <div className="rounded-xl border border-blue/20 bg-blue/[0.03] p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <Sparkle size={14} className="text-primary" />
+        <Sparkle size={14} className="text-blue" />
         <span className="text-body font-bold text-text">Previsão de Demanda — próximos 7 dias</span>
         <span className="text-caption text-muted/60 ml-1">regressão linear + sazonalidade · R²={forecast.r2}</span>
         {isFetching && <span className="text-caption text-muted animate-pulse ml-auto">Analisando…</span>}
@@ -646,7 +646,7 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
                       className="cursor-pointer transition-colors hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50"
                       onClick={() => onDrill(`Coorte ${item.name}`, rows.filter(r => toISOMonth(r.datacadastro) === item.name))}
                       onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onDrill(`Coorte ${item.name}`, rows.filter(r => toISOMonth(r.datacadastro) === item.name)) } }}>
-                    <td className="px-4 py-2.5 font-mono text-primary">{item.name}{item.emFormacao && <span className="ml-2 rounded-full border border-orange/25 bg-orange/10 px-1.5 py-0.5 font-sans text-caption text-orange">em formação</span>}</td>
+                    <td className="px-4 py-2.5 font-mono text-blue">{item.name}{item.emFormacao && <span className="ml-2 rounded-full border border-orange/25 bg-orange/10 px-1.5 py-0.5 font-sans text-caption text-orange">em formação</span>}</td>
                     <td className="px-4 py-2.5 font-mono">{item.total}</td>
                     <td className="px-4 py-2.5 font-mono text-green">{item.encerradas}</td>
                     <td className="px-4 py-2.5 font-mono text-orange">{item.abertas}</td>
