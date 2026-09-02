@@ -92,7 +92,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
           {total > 0 && (
             <button
               onClick={() => onOpenModal('Executadas Hoje', hojeRows)}
-              className="text-caption text-muted hover:text-green border border-white/[0.08]
+              className="text-caption text-muted hover:text-green border border-border
                          hover:border-green/30 rounded-lg px-2.5 py-1 transition-all duration-fast"
             >
               Ver todas <ArrowRight size={11} weight="bold" className="inline-block align-[-1px]" />
@@ -131,7 +131,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
                   <button
                     key={g.cat}
                     onClick={() => onOpenModal(`Hoje — ${g.label}`, g.rows)}
-                    className="bg-surface/30 hover:bg-surface border border-white/[0.08]
+                    className="bg-surface/30 hover:bg-surface border border-border
                                hover:border-muted/30 rounded-md p-3 text-left
                                transition-all duration-150 cursor-pointer group"
                   >

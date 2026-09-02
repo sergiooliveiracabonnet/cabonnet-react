@@ -300,7 +300,7 @@ export default function OrdensPage() {
         <button
           onClick={() => setKpiVisible(v => !v)}
           className="flex items-center gap-1.5 min-h-9 text-caption font-semibold text-secondary hover:text-text
-                     border border-white/[0.08] rounded-xl px-3 transition-all duration-fast"
+                     border border-border rounded-xl px-3 transition-all duration-fast"
         >
           <ChartBar size={12} /> KPIs
           <CaretUp size={11} className={`transition-transform ${kpiVisible ? '' : 'rotate-180'}`} />
@@ -313,13 +313,13 @@ export default function OrdensPage() {
                      border rounded-xl px-3 min-h-9 transition-all duration-fast
                      ${groupBy === 'cliente'
                        ? 'bg-primary/15 border-primary/40 text-primary'
-                       : 'border-white/[0.08] text-secondary hover:text-text'}`}
+                       : 'border-border text-secondary hover:text-text'}`}
         >
           <Users size={12} /> Por Cliente
         </button>
 
         {/* Density toggle */}
-        <div className="flex items-center gap-0.5 bg-card border border-white/[0.08] rounded-xl p-1">
+        <div className="flex items-center gap-0.5 bg-card border border-border rounded-xl p-1">
           {densityOptions.map((d) => (
             <button
               key={d.value}
@@ -392,7 +392,7 @@ export default function OrdensPage() {
       </div>
 
       {/* ── Barra de filtros ── */}
-      <div className="bg-card border border-white/[0.08] rounded-xl p-3 space-y-2">
+      <div className="bg-card border border-border rounded-xl p-3 space-y-2">
         <div className="flex flex-wrap gap-2 items-center">
         <SearchBox
           value={os.search}
@@ -403,7 +403,7 @@ export default function OrdensPage() {
         <FilterSelect value={os.status}     onChange={os.setStatus}     options={statusOptions}     placeholder="Status"      className="w-44" />
         <FilterSelect value={os.cidade}     onChange={os.setCidade}     options={cidadeOpts}        placeholder="Cidade"      className="w-36" />
         <FilterSelect value={os.equipe}     onChange={os.setEquipe}     options={equipeOpts}        placeholder="Equipe"      className="w-36" />
-        <button onClick={() => setMoreFilters(v => !v)} className={`min-h-9 px-3 inline-flex items-center gap-2 rounded-lg border text-caption font-semibold ${moreFilters ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/[0.08] text-secondary hover:text-text'}`}>
+        <button onClick={() => setMoreFilters(v => !v)} className={`min-h-9 px-3 inline-flex items-center gap-2 rounded-lg border text-caption font-semibold ${moreFilters ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border text-secondary hover:text-text'}`}>
           <SlidersHorizontal size={13} /> Mais filtros <CaretUp size={11} className={`transition-transform ${moreFilters ? '' : 'rotate-180'}`} />
         </button>
         {os.filtersActive && <Button variant="ghost" size="sm" className="min-h-9" onClick={clearAllFilters}>Limpar tudo</Button>}
@@ -443,7 +443,7 @@ export default function OrdensPage() {
       )}
 
       {/* Tabela */}
-      <div ref={tableRef} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+      <div ref={tableRef} className="bg-card border border-border rounded-xl overflow-hidden">
         {os.isLoading ? (
           <div className="p-4"><TableSkeleton rows={8} cols={8} /></div>
         ) : os.error ? (
@@ -491,7 +491,7 @@ export default function OrdensPage() {
             <div className="flex items-center gap-3">
               <span>{(os.page - 1) * os.pageSize + 1}–{Math.min(os.page * os.pageSize, os.filtered.length)} de {os.filtered.length} OS</span>
               <label className="flex items-center gap-1.5">Por página
-                <select value={os.pageSize} onChange={e => { os.setPageSize(Number(e.target.value)); os.setPage(1) }} className="bg-surface border border-white/[0.08] rounded-md px-2 py-1 text-text">
+                <select value={os.pageSize} onChange={e => { os.setPageSize(Number(e.target.value)); os.setPage(1) }} className="bg-surface border border-border rounded-md px-2 py-1 text-text">
                   {[25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </label>

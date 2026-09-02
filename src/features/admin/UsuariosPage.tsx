@@ -11,7 +11,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 const ROLE_LABEL: Record<UserRole, string> = { gestor: 'Gestor', operador: 'Operador', viewer: 'Viewer', fornecedor: 'Fornecedor' }
 const FORNECEDORES: FornecedorAcesso[] = ['WES', 'Instacable', 'THM']
 
-const inputCls = 'w-full rounded-lg px-3 py-2 text-body bg-surface/40 border border-white/[0.08] ' +
+const inputCls = 'w-full rounded-lg px-3 py-2 text-body bg-surface/40 border border-border ' +
   'text-text outline-none focus:border-primary/40 transition-colors'
 
 function errMsg(e: unknown): string {
@@ -155,7 +155,7 @@ function PermissoesMatrix() {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-label">
           <thead>
-            <tr className="border-b-2 border-white/[0.08]">
+            <tr className="border-b-2 border-border">
               <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Módulo</th>
               {roles.map(r => (
                 <th key={r} className="px-3 py-2 text-center text-caption font-bold uppercase tracking-[0.6px] text-muted">
@@ -221,7 +221,7 @@ export default function UsuariosPage() {
         }
       />
 
-      <div className="rounded-xl bg-card border border-white/[0.08] overflow-hidden">
+      <div className="rounded-xl bg-card border border-border overflow-hidden">
         {isLoading ? (
           <p className="text-label text-muted p-4">Carregando…</p>
         ) : usuariosList.length === 0 ? (
@@ -229,7 +229,7 @@ export default function UsuariosPage() {
         ) : (
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b-2 border-white/[0.08]">
+              <tr className="border-b-2 border-border">
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Usuário</th>
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Papel</th>
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Fornecedor</th>
@@ -249,7 +249,7 @@ export default function UsuariosPage() {
                           const role = e.target.value as UserRole
                           handleUpdate(u, { role, fornecedor_key: role === 'fornecedor' ? (u.fornecedor_key ?? 'WES') : null })
                         }}
-                        className="bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40"
+                        className="bg-transparent border border-border rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40"
                       >
                         {(Object.keys(ROLE_LABEL) as UserRole[]).map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
                       </select>
@@ -257,7 +257,7 @@ export default function UsuariosPage() {
                     <td className="px-3 py-2.5">
                       {u.role === 'fornecedor' ? (
                         <select value={u.fornecedor_key ?? 'WES'} onChange={e => handleUpdate(u, { fornecedor_key: e.target.value as FornecedorAcesso })}
-                          className="bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40">
+                          className="bg-transparent border border-border rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40">
                           {FORNECEDORES.map(f => <option key={f} value={f}>{f}</option>)}
                         </select>
                       ) : <span className="text-muted">—</span>}
@@ -302,7 +302,7 @@ export default function UsuariosPage() {
         )}
       </div>
 
-      <div className="rounded-xl bg-card border border-white/[0.08] p-4">
+      <div className="rounded-xl bg-card border border-border p-4">
         <h2 className="text-body font-semibold text-text mb-1">Permissões por papel</h2>
         <p className="text-caption text-muted mb-3">Gestor sempre tem acesso total a todos os módulos. Operador e Viewer são configuráveis abaixo.</p>
         <PermissoesMatrix />

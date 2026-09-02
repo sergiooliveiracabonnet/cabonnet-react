@@ -217,7 +217,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
           <div className="px-5 py-4 space-y-4">
 
             {/* ── 1. Hero Status ───────────────────────────────────────── */}
-            <div className="bg-surface/30 border border-white/[0.08] rounded-xl overflow-hidden">
+            <div className="bg-surface/30 border border-border rounded-xl overflow-hidden">
               <div className="flex items-stretch divide-x divide-white/[0.06]">
 
                 {/* Situação */}
@@ -268,7 +268,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                 </div>
               )}
               {obsGeral ? (
-                <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
+                <div className="bg-surface/30 border border-border rounded-xl p-4">
                   <p className="text-label text-secondary leading-relaxed whitespace-pre-wrap">{obsGeral as string}</p>
                 </div>
               ) : !obsCrit && (
@@ -288,8 +288,8 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
               {/* Endereço */}
               <button
                 onClick={openMaps}
-                className="w-full bg-surface/30 border border-white/[0.08] rounded-xl px-4 py-3
-                           flex items-start gap-3 text-left hover:bg-surface/40 hover:border-white/[0.08]
+                className="w-full bg-surface/30 border border-border rounded-xl px-4 py-3
+                           flex items-start gap-3 text-left hover:bg-surface/40 hover:border-border
                            transition-all duration-fast group"
               >
                 <MapPin size={14} className="text-muted flex-shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
@@ -344,7 +344,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                     os._slaLimite         != null && { label: 'Limite do SLA',         value: `${os._slaLimite}d`,         color: 'text-primary' },
                     os._diasAteAgendamento!= null && { label: 'Dias até agend.',        value: `${os._diasAteAgendamento}d`, color: 'text-secondary' },
                   ].filter(Boolean).map((item) => { const { label, value, color } = item as { label: string; value: string; color: string }; return (
-                    <div key={label} className="bg-surface/30 border border-white/[0.08] rounded-xl p-3 text-center">
+                    <div key={label} className="bg-surface/30 border border-border rounded-xl p-3 text-center">
                       <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 leading-tight">{label}</p>
                       <p className={`font-mono text-[20px] font-black leading-none ${color}`}>{value}</p>
                     </div>
@@ -359,7 +359,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                 {loadingDetails ? (
                   <p className="text-label text-muted/60 italic px-1">Carregando dados do contrato…</p>
                 ) : (
-                  <div className="bg-surface/30 border border-white/[0.08] rounded-xl overflow-hidden">
+                  <div className="bg-surface/30 border border-border rounded-xl overflow-hidden">
                     <div className="grid grid-cols-2 divide-x divide-white/[0.06]">
                       {dataContratacao && (
                         <div className="px-4 py-3 flex flex-col gap-1">
@@ -464,7 +464,7 @@ function InfoCard({ icon: Icon, label, value, prominent = false, action = null }
     <div className={`rounded-xl border p-3.5 flex flex-col gap-2 min-w-0
                      ${prominent
                        ? 'bg-primary/[0.06] border-primary/20'
-                       : 'bg-surface/30 border-white/[0.08]'}`}>
+                       : 'bg-surface/30 border-border'}`}>
       <div className="flex items-center gap-1.5">
         <Icon size={12} className={prominent ? 'text-primary/60' : 'text-muted'} />
         <p className={`text-caption font-bold uppercase tracking-[0.05em] leading-none
@@ -508,7 +508,7 @@ function ActionBtn({ title, onClick, active = false, children }: {
       className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-fast
                   ${active
                     ? 'border-green/40 bg-green/15 text-green'
-                    : 'border-white/[0.08] text-muted hover:text-text hover:bg-surface'}`}
+                    : 'border-border text-muted hover:text-text hover:bg-surface'}`}
     >
       {children}
     </button>

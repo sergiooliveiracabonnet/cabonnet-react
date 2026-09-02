@@ -128,8 +128,8 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
   const comFila = saude.filter(c => c.fila > 0)
 
   return (
-    <div id="city-health" className="bg-card border border-white/[0.08] rounded-xl overflow-hidden scroll-mt-4">
-      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/[0.08] flex-wrap">
+    <div id="city-health" className="bg-card border border-border rounded-xl overflow-hidden scroll-mt-4">
+      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border flex-wrap">
         <Pulse size={13} className="text-primary flex-shrink-0" />
         <span className="font-bold text-body text-text">Saúde por Cidade</span>
         <span className="text-caption text-muted">
@@ -139,7 +139,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
       <div className="overflow-x-auto">
         <table className="w-full text-label">
           <thead>
-            <tr className="border-b border-white/[0.08] bg-surface">
+            <tr className="border-b border-border bg-surface">
               {[
                 { l: 'Cidade',      a: 'left',   t: '' },
                 { l: 'Fila',        a: 'right',  t: 'OS ativas (pendente + atendimento)' },
@@ -224,7 +224,7 @@ export function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, gro
     : cities.length === 0
 
   return (
-    <div id={`panel-${id}`} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+    <div id={`panel-${id}`} className="bg-card border border-border rounded-xl overflow-hidden">
 
       <button
         onClick={onToggle}
@@ -247,7 +247,7 @@ export function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, gro
       </button>
 
       {open && (
-        <div id={`panel-content-${id}`} className="border-t border-white/[0.08]">
+        <div id={`panel-content-${id}`} className="border-t border-border">
           {isLoading || isEmpty ? (
             <p className="text-center text-muted text-label py-8">Nenhuma OS nesta categoria.</p>
           ) : groups ? (
@@ -279,7 +279,7 @@ function GrupoFuturo({ group, color, onOS }: { group: FuturoGroup; color: string
 
   return (
     <div>
-      <div className={`flex items-center gap-2 px-5 py-2 border-y border-white/[0.08]
+      <div className={`flex items-center gap-2 px-5 py-2 border-y border-border
                        ${group.highlight ? hlBg : 'bg-surface/40'}`}>
         <span className={`text-caption font-bold uppercase tracking-[0.05em]
                           ${group.highlight ? hlText : 'text-muted'}`}>
@@ -319,7 +319,7 @@ function CidadeTable({ cities, tipos, maxTotal, color, expandedCity, setExpanded
     <div className="overflow-x-auto">
       <table className="w-full text-label">
         <thead>
-          <tr className="border-b border-white/[0.08] bg-surface">
+          <tr className="border-b border-border bg-surface">
             <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">
               Cidade
             </th>
@@ -475,7 +475,7 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
       )}
       <table className="w-full text-caption">
         <thead className="sticky top-0 bg-elevated z-10">
-          <tr className="border-b border-white/[0.08]">
+          <tr className="border-b border-border">
             {CITY_OS_COLS.map(col => (
               <th
                 key={col.key}

@@ -26,7 +26,7 @@ const TONE_BADGE: Record<Tone, string> = {
   ok: 'border-green/25 bg-green/[0.08] text-green',
   warn: 'border-yellow/25 bg-yellow/[0.08] text-yellow',
   bad: 'border-red/25 bg-red/[0.08] text-red',
-  idle: 'border-white/[0.08] bg-surface/50 text-secondary',
+  idle: 'border-border bg-surface/50 text-secondary',
 }
 
 const MICRO = 'text-caption font-bold uppercase tracking-[0.07em] text-muted'
@@ -394,7 +394,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
                     onChange={event => setDraftObs(event.target.value)}
                     placeholder="Contexto opcional para a IA: ex. tivemos queda de energia hoje, o que pode justificar menor fluxo de atendimentos."
                     rows={2}
-                    className="w-full resize-none rounded-md border border-white/[0.08] bg-surface/60 px-3 py-2 text-caption leading-relaxed text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
+                    className="w-full resize-none rounded-md border border-border bg-surface/60 px-3 py-2 text-caption leading-relaxed text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -425,7 +425,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
                     onChange={event => setDraftObs(event.target.value)}
                     placeholder="Novo contexto para a IA..."
                     rows={2}
-                    className="w-full resize-none rounded-md border border-white/[0.08] bg-surface/60 px-3 py-2 text-caption text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
+                    className="w-full resize-none rounded-md border border-border bg-surface/60 px-3 py-2 text-caption text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
                   />
                   <button
                     type="button"

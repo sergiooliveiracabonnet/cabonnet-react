@@ -355,7 +355,7 @@ export default function DashboardPage() {
                   exportCSV(modal!.rows, `os_${modal!.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
                 }}
                 className="flex items-center gap-1.5 text-caption text-muted hover:text-primary
-                           border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
+                           border border-border hover:border-primary/30 rounded-md px-2.5 py-1
                            transition-all duration-fast"
               >
                 <DownloadSimple size={11} /> CSV

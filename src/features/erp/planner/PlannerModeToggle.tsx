@@ -6,7 +6,7 @@ export function PlannerModeToggle({ modo, onChange }: { modo: PlannerModo; onCha
     { key: 'planejado', label: 'Planejado' },
   ]
   return (
-    <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
+    <div className="flex gap-1 bg-elevated border border-border rounded-lg p-0.5">
       {opcoes.map(o => (
         <button
           key={o.key}

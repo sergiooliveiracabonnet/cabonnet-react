@@ -281,7 +281,7 @@ export default function GerencialPage() {
                 { label: 'Total',     drillRows: instRows,   color: '#3b82f6' },
               ].map(s => (
                 <div key={s.label}
-                     className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
+                     className="rounded-xl border border-border bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill({ title: `Instalações ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
@@ -341,7 +341,7 @@ export default function GerencialPage() {
                 { label: 'Total',     drillRows: vtManutRows,   color: '#f97316' },
               ].map(s => (
                 <div key={s.label}
-                     className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
+                     className="rounded-xl border border-border bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill({ title: `VT/Manutenção ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
@@ -401,7 +401,7 @@ export default function GerencialPage() {
                 { label: 'Total',     drillRows: servRows,   color: '#c4b5fd' },
               ].map(s => (
                 <div key={s.label}
-                     className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
+                     className="rounded-xl border border-border bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill({ title: `Serviços ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
@@ -459,7 +459,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-3">
               {rotaInstSplit.futuras.length > 0 && (
                 <button
-                  className="text-caption font-semibold text-muted hover:text-secondary border border-white/[0.08]
+                  className="text-caption font-semibold text-muted hover:text-secondary border border-border
                              rounded-full px-2.5 py-1 transition-colors"
                   onClick={() => openDrill({ title: `Instalação atribuída p/ datas futuras — ${rotaInstSplit.futuras.length} ordens`, rows: rotaInstSplit.futuras, color: '#3b82f6' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
@@ -511,7 +511,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-3">
               {rotaVTManutSplit.futuras.length > 0 && (
                 <button
-                  className="text-caption font-semibold text-muted hover:text-secondary border border-white/[0.08]
+                  className="text-caption font-semibold text-muted hover:text-secondary border border-border
                              rounded-full px-2.5 py-1 transition-colors"
                   onClick={() => openDrill({ title: `VT/Manutenção atribuída p/ datas futuras — ${rotaVTManutSplit.futuras.length} ordens`, rows: rotaVTManutSplit.futuras, color: '#f97316' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
@@ -564,7 +564,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-3">
               {rotaServSplit.futuras.length > 0 && (
                 <button
-                  className="text-caption font-semibold text-muted hover:text-secondary border border-white/[0.08]
+                  className="text-caption font-semibold text-muted hover:text-secondary border border-border
                              rounded-full px-2.5 py-1 transition-colors"
                   onClick={() => openDrill({ title: `Serviço atribuído p/ datas futuras — ${rotaServSplit.futuras.length} ordens`, rows: rotaServSplit.futuras, color: '#c4b5fd' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">

@@ -102,7 +102,7 @@ function AlertaPainel({
           onChange={e => setContexto(e.target.value)}
           placeholder="Ex: Troca em massa de roteadores Zyxel contaminados…"
           rows={2}
-          className="w-full rounded-xl border border-white/[0.08] bg-surface/30 px-3 py-2.5
+          className="w-full rounded-xl border border-border bg-surface/30 px-3 py-2.5
                      text-label text-text placeholder:text-muted/40 resize-none
                      focus:outline-none focus:border-violet-500/40 transition-colors"
         />

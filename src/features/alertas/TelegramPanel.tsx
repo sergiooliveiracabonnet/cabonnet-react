@@ -93,10 +93,10 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
   const naoLidos = store.history.filter((a: any) => !a.lido).length
 
   return (
-    <div role="region" aria-label="Alertas e configurações do Telegram" className="bg-card border border-white/[0.08] rounded-xl shadow-2xl w-[min(480px,calc(100vw-24px))] max-h-[90vh] flex flex-col overflow-hidden">
+    <div role="region" aria-label="Alertas e configurações do Telegram" className="bg-card border border-border rounded-xl shadow-2xl w-[min(480px,calc(100vw-24px))] max-h-[90vh] flex flex-col overflow-hidden">
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.08]">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
         <PaperPlaneTilt size={15} className={store.enabled ? 'text-green' : 'text-muted'} />
         <div className="flex-1">
           <p className="font-bold text-title text-text">Alertas & Telegram</p>
@@ -107,7 +107,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
         </div>
         <button onClick={() => store.setAtivo(!store.ativo)}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-bold transition-all
-            ${store.ativo ? 'bg-green/15 text-green border border-green/30' : 'bg-surface/40 text-muted border border-white/[0.08] hover:text-secondary'}`}
+            ${store.ativo ? 'bg-green/15 text-green border border-green/30' : 'bg-surface/40 text-muted border border-border hover:text-secondary'}`}
         >
           {store.ativo ? <><Bell size={11} /> Ativo</> : <><BellSlash size={11} /> Inativo</>}
         </button>
@@ -118,7 +118,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-white/[0.08]" role="tablist" aria-label="Seções do Telegram">
+      <div className="flex border-b border-border" role="tablist" aria-label="Seções do Telegram">
         {[['alertas', `Histórico${naoLidos ? ` (${naoLidos})` : ''}`], ['config', 'Configurações']].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} role="tab" aria-selected={tab === id}
             className={`flex-1 py-2.5 text-caption font-bold transition-colors
@@ -183,7 +183,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
           {/* Status do bot */}
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${store.enabled ? 'bg-green/[0.07] border-green/25' : 'bg-surface/30 border-white/[0.08]'}`}>
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${store.enabled ? 'bg-green/[0.07] border-green/25' : 'bg-surface/30 border-border'}`}>
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${store.enabled ? 'bg-green' : 'bg-muted'}`} />
             <div className="flex-1">
               <p className="text-caption font-bold text-text">{store.enabled ? 'Bot Telegram configurado' : 'Bot não configurado'}</p>
@@ -200,7 +200,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
               {[['critico','Apenas críticos'],['atencao','Críticos + Atenção'],['todos','Todos']].map(([v, l]) => (
                 <button key={v} onClick={() => store.setNivel(v)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-caption transition-all
-                    ${store.nivel === v ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/[0.08] text-muted hover:text-secondary'}`}
+                    ${store.nivel === v ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border text-muted hover:text-secondary'}`}
                 >{l}</button>
               ))}
             </div>
@@ -209,7 +209,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
           {/* Alertas de aging individual */}
           <div>
             <label className="text-caption font-bold uppercase tracking-[0.06em] text-muted block mb-2">Alertas OS Individuais</label>
-            <div className="flex items-center justify-between px-3 py-2.5 bg-surface border border-white/[0.08] rounded-lg">
+            <div className="flex items-center justify-between px-3 py-2.5 bg-surface border border-border rounded-lg">
               <div>
                 <p className="text-caption font-semibold text-text">OS com SLA vencido</p>
                 <p className="text-caption text-muted">Até 3 OS por ciclo de verificação</p>
@@ -228,14 +228,14 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
               <label htmlFor="telegram-fila-threshold" className="text-caption font-bold uppercase tracking-wide text-muted block mb-1.5">Fila Alta (OS)</label>
               <input id="telegram-fila-threshold" type="number" min={5} max={500} value={store.filaThreshold}
                 onChange={e => store.setFilaThreshold(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-label bg-surface border border-white/[0.08] rounded-lg text-text outline-none focus:border-primary/40"
+                className="w-full px-3 py-1.5 text-label bg-surface border border-border rounded-lg text-text outline-none focus:border-primary/40"
               />
             </div>
             <div>
               <label htmlFor="telegram-poll-min" className="text-caption font-bold uppercase tracking-wide text-muted block mb-1.5">Intervalo (min)</label>
               <input id="telegram-poll-min" type="number" min={1} max={60} value={store.pollMin}
                 onChange={e => store.setPollMin(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-label bg-surface border border-white/[0.08] rounded-lg text-text outline-none focus:border-primary/40"
+                className="w-full px-3 py-1.5 text-label bg-surface border border-border rounded-lg text-text outline-none focus:border-primary/40"
               />
             </div>
           </div>
@@ -253,7 +253,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
                 </div>
                 <p className="text-caption text-text leading-relaxed">{briefing.texto}</p>
                 {briefing.acoes?.length > 0 && (
-                  <div className="space-y-1 pt-1 border-t border-white/[0.08]">
+                  <div className="space-y-1 pt-1 border-t border-border">
                     {briefing.acoes.map((a, i) => (
                       <p key={i} className="text-caption text-secondary">
                         <span className="text-primary font-bold mr-1">{i + 1}.</span>{a}
@@ -282,12 +282,12 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
               <Sparkle size={12} /> {enviando === 'briefing' ? 'Gerando…' : 'Gerar briefing executivo agora'}
             </button>
             <button onClick={testar} disabled={!!enviando}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface/40 border border-white/[0.08] text-secondary text-label font-bold hover:bg-surface transition-all disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface/40 border border-border text-secondary text-label font-bold hover:bg-surface transition-all disabled:opacity-50"
             >
               <PaperPlaneTilt size={12} /> {enviando === 'teste' ? 'Enviando…' : 'Enviar mensagem de teste'}
             </button>
             <button onClick={enviarStatusNow} disabled={!!enviando}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface/40 border border-white/[0.08] text-secondary text-label font-bold hover:bg-surface transition-all disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface/40 border border-border text-secondary text-label font-bold hover:bg-surface transition-all disabled:opacity-50"
             >
               <Bell size={12} /> {enviando === 'status' ? 'Enviando…' : 'Enviar status operacional agora'}
             </button>

@@ -30,7 +30,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
       <div className="flex flex-col" style={{ maxHeight: '72vh' }}>
 
         {/* Sub-header: count + legenda */}
-        <div className="flex items-center justify-between px-5 py-2.5 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-border">
           <span className="text-label font-semibold" style={{ color }}>
             {rows.length} {rows.length === 1 ? 'ordem' : 'ordens'}
           </span>
@@ -152,14 +152,14 @@ export function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no pe
 
   if (!cidades.length) {
     return (
-      <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
+      <div className="rounded-xl border border-border bg-card px-4 py-8 text-center">
         <p className="text-label text-muted">{emptyMsg}</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="divide-y divide-white/[0.04]">
         {cidades.map((c, i) => {
           const pct = Math.round((c.total / max) * 100)
@@ -204,14 +204,14 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
 
   if (!rows.length) {
     return (
-      <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
+      <div className="rounded-xl border border-border bg-card px-4 py-8 text-center">
         <p className="text-label text-muted">Nenhuma OS em rota agora</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_1fr_80px] gap-3 px-4 py-2 bg-surface/20
                       border-b border-white/[0.05] text-caption font-bold uppercase tracking-[0.05em] text-muted">
@@ -285,7 +285,7 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
           onChange={e => setQ(e.target.value)}
           placeholder="Buscar cliente em rota…"
           className="w-full pl-7 pr-7 py-1.5 rounded-lg text-caption bg-surface/30
-                     border border-white/[0.08] text-text placeholder:text-muted/50
+                     border border-border text-text placeholder:text-muted/50
                      focus:outline-none focus:border-muted/40 transition-colors"
         />
         {q && (
@@ -299,7 +299,7 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
 
       {/* Resultados */}
       {term && (
-        <div className="rounded-lg border border-white/[0.08] bg-card overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           {results.length === 0 ? (
             <p className="px-3 py-2.5 text-caption text-muted text-center">
               Nenhum cliente em rota
@@ -346,14 +346,14 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
 
   if (!equipes.length) {
     return (
-      <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
+      <div className="rounded-xl border border-border bg-card px-4 py-8 text-center">
         <p className="text-label text-muted">Sem dados de equipes no período</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_54px_54px_54px_54px_44px_50px_24px] gap-2 px-4 py-2.5 bg-surface/20
                       border-b border-white/[0.05] text-caption font-bold uppercase tracking-[0.05em] text-muted">

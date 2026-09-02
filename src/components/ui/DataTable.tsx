@@ -102,7 +102,7 @@ export function DataTable<T extends Record<string, unknown>>({
     <div ref={wrapRef} className={`overflow-x-auto ${className}`}>
       <table className="w-full border-collapse">
         <thead className={stickyHeader ? 'sticky top-24 z-sticky bg-card' : undefined}>
-          <tr className="border-b-2 border-white/[0.08]">
+          <tr className="border-b-2 border-border">
             {columns.map((col) => (
               <th
                 key={col.key ?? col.label}

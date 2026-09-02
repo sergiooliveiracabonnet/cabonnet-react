@@ -171,9 +171,9 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
   }).filter(c => c.count > 0)
 
   return (
-    <div className="mt-3 rounded-xl border border-white/[0.08] overflow-hidden bg-surface/50">
+    <div className="mt-3 rounded-xl border border-border overflow-hidden bg-surface/50">
       {/* Header com resumo por categoria */}
-      <div className="px-4 py-2.5 border-b border-white/[0.08] flex items-center gap-4 flex-wrap">
+      <div className="px-4 py-2.5 border-b border-border flex items-center gap-4 flex-wrap">
         <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted mr-1">
           {rows.length} OS · {dayLabel}
         </span>
@@ -305,7 +305,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                                 background: val > 0 ? color : 'rgba(255,255,255,0.06)' }} />
                   {val > 0 && (
                     <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2
-                                    bg-elevated border border-white/[0.08] text-text text-caption
+                                    bg-elevated border border-border text-text text-caption
                                     font-bold px-1.5 py-0.5 rounded whitespace-nowrap
                                     opacity-0 group-hover:opacity-100 pointer-events-none z-10">
                       {d.label}: {val}
@@ -530,11 +530,11 @@ export default function PlannerExecutadoView() {
         <SectionLabel icon={ChartBar} color="#3b82f6">Ranking — {teams.length} equipes · {days.length} dias</SectionLabel>
 
         {teams.length === 0 ? (
-          <div className="rounded-2xl border border-white/[0.08] bg-card px-4 py-12 text-center">
+          <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center">
             <p className="text-label text-muted">Nenhuma OS executada no período</p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
             {/* Day header strip */}
             <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.05] bg-surface/15">
               <div className="w-10 flex-shrink-0" />

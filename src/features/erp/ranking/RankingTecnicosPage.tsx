@@ -130,12 +130,12 @@ function TecnicoCell({ codigo, cadastro }: { codigo: string; cadastro: TecnicoIt
         <input
           autoFocus value={nome} onChange={e => setNome(e.target.value)}
           placeholder="Nome real"
-          className="w-28 text-caption bg-surface/40 border border-white/[0.08] rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
+          className="w-28 text-caption bg-surface/40 border border-border rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
         />
         <input
           value={contato} onChange={e => setContato(e.target.value)}
           placeholder="Contato"
-          className="w-24 text-caption bg-surface/40 border border-white/[0.08] rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
+          className="w-24 text-caption bg-surface/40 border border-border rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
         />
         <button onClick={() => { upsert({ codigo, nome_real: nome, contato }); setEditing(false) }}
                 className="text-green hover:text-green/80"><Check size={13} /></button>
@@ -216,7 +216,7 @@ export default function RankingTecnicosPage() {
         <StatCard title="Com OS crítica" value={kpis.criticos} tone="critical" />
       </div>
 
-      <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-label">
             <thead>

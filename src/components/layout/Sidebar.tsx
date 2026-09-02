@@ -84,7 +84,7 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onN
           className="fixed z-[201] -translate-y-1/2 pointer-events-none"
         >
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-lg
-                          bg-elevated border border-white/[0.08]">
+                          bg-elevated border border-border">
             <div className="w-[2px] h-3 rounded-full flex-shrink-0" style={{ background: groupColor }} />
             <span className="text-caption font-medium text-text whitespace-nowrap">{label}</span>
           </div>
@@ -221,7 +221,7 @@ export function Sidebar() {
 
       {/* ── Status ── */}
       {sidebarOpen && (
-        <div className="flex-shrink-0 mx-2 mb-2 rounded-lg px-3 py-2 bg-card-high border border-white/[0.08]">
+        <div className="flex-shrink-0 mx-2 mb-2 rounded-lg px-3 py-2 bg-card-high border border-border">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}${status.breathe ? ' breathe' : ''}`} />
             <span className={`text-caption font-semibold ${status.color}`}>{status.label}</span>
@@ -231,10 +231,10 @@ export function Sidebar() {
       )}
 
       {/* ── User / Logout ── */}
-      <div className="flex-shrink-0 px-2 pb-3 border-t border-white/[0.08] pt-2">
+      <div className="flex-shrink-0 px-2 pb-3 border-t border-border pt-2">
         {sidebarOpen ? (
           <div className="group flex items-center gap-2.5 rounded-lg px-3 py-2
-                          bg-card-high border border-white/[0.08] hover:border-muted/30
+                          bg-card-high border border-border hover:border-muted/30
                           transition-colors duration-150 cursor-default">
             <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center
                             font-semibold text-caption bg-primary/20 border border-primary/30 text-primary">

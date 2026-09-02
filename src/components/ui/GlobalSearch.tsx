@@ -147,8 +147,8 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
           className="fixed inset-0 bg-black/70 backdrop-blur-[2px] z-[200]
                      flex items-start justify-center pt-[12vh] px-4"
         >
-          <div className="w-full max-w-[600px] bg-elevated border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.08]">
+          <div className="w-full max-w-[600px] bg-elevated border border-border rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
               <MagnifyingGlass size={16} className="text-muted flex-shrink-0" />
               <input
                 ref={inputRef}
@@ -166,7 +166,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                   <X size={13} />
                 </button>
               )}
-              <kbd className="text-caption font-mono bg-surface border border-white/[0.08]
+              <kbd className="text-caption font-mono bg-surface border border-border
                               rounded px-1.5 py-0.5 text-muted flex-shrink-0 hidden sm:block leading-none">
                 ESC
               </kbd>
@@ -202,7 +202,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                               <Icon size={14} className="text-muted flex-shrink-0" />
                               <span className="text-body text-text font-medium flex-1">{link.label}</span>
                               {isActive && (
-                                <kbd className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 text-muted leading-none">
+                                <kbd className="text-caption font-mono bg-surface border border-border rounded px-1.5 py-0.5 flex-shrink-0 text-muted leading-none">
                                   <ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />
                                 </kbd>
                               )}
@@ -212,7 +212,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       </div>
                     </div>
                   ))}
-                  <div className="px-4 py-2.5 border-t border-white/[0.08] flex items-center gap-5 text-muted/50 mt-1">
+                  <div className="px-4 py-2.5 border-t border-border flex items-center gap-5 text-muted/50 mt-1">
                     {[
                       { keys: [<ArrowUp size={10} weight="bold" alt="seta para cima" />,
                                <ArrowDown size={10} weight="bold" alt="seta para baixo" />], label: 'navegar' },
@@ -222,7 +222,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       <div key={label} className="flex items-center gap-1.5">
                         <div className="flex gap-1">
                           {keys.map((k, ki) => (
-                            <kbd key={ki} className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted/70">
+                            <kbd key={ki} className="text-caption font-mono bg-surface border border-border rounded px-1.5 py-0.5 leading-none text-muted/70">
                               {k}
                             </kbd>
                           ))}
@@ -262,7 +262,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                           <Icon size={14} className="text-muted flex-shrink-0" />
                           <span className="text-body text-text font-medium flex-1">{page.label}</span>
                           {isActive && (
-                            <kbd className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 text-muted leading-none">
+                            <kbd className="text-caption font-mono bg-surface border border-border rounded px-1.5 py-0.5 flex-shrink-0 text-muted leading-none">
                               <ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />
                             </kbd>
                           )}
@@ -322,7 +322,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                             </div>
                           )}
                           {isActive && (
-                            <kbd className="text-caption font-mono bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 flex-shrink-0 self-center text-muted leading-none">
+                            <kbd className="text-caption font-mono bg-surface border border-border rounded px-1.5 py-0.5 flex-shrink-0 self-center text-muted leading-none">
                               <ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />
                             </kbd>
                           )}
@@ -330,7 +330,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       )
                     })}
                   </div>
-                  <div className="px-4 py-2.5 border-t border-white/[0.08] flex items-center justify-between">
+                  <div className="px-4 py-2.5 border-t border-border flex items-center justify-between">
                     <span className="text-caption text-muted">
                       {results.os.length} resultado{results.os.length !== 1 ? 's' : ''}
                     </span>

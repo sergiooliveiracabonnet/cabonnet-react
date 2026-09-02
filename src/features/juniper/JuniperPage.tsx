@@ -252,7 +252,7 @@ export default function JuniperPage() {
       )}
 
       {/* ── Origem segura da coleta ── */}
-      <div className="bg-card border border-white/[0.08] border-l-[4px] border-l-primary rounded-xl p-5">
+      <div className="bg-card border border-border border-l-[4px] border-l-primary rounded-xl p-5">
         <div className="flex items-center justify-between gap-4">
           <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
             <ShieldCheck size={13} /> Coleta protegida pelo servidor · Cluster {cluster}
@@ -324,7 +324,7 @@ export default function JuniperPage() {
 
           {show3D && (
             <Suspense fallback={
-              <div className="h-[520px] rounded-xl bg-card border border-white/[0.08]
+              <div className="h-[520px] rounded-xl bg-card border border-border
                               flex items-center justify-center text-caption text-muted">
                 Carregando renderizador 3D…
               </div>
@@ -347,8 +347,8 @@ export default function JuniperPage() {
       </ChartCard>
 
       {/* ── Tabela de clientes ── */}
-      <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden shadow-lg">
-        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/[0.08] bg-surface/20 flex-wrap">
+      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg">
+        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-surface/20 flex-wrap">
           <div className="flex items-center gap-2">
             <Users size={15} className="text-primary" />
             <span className="text-body font-bold text-text">Conexões Ativas Detectadas</span>
@@ -376,7 +376,7 @@ export default function JuniperPage() {
           <div className="flex items-center gap-2 ml-auto">
             <SearchBox value={searchTable} onChange={setSearchTable}
                        placeholder="Buscar usuário, IP, MAC, interface…" className="max-w-[260px]" />
-            <div className="flex bg-surface/30 border border-white/[0.08] rounded-md p-0.5 gap-0.5">
+            <div className="flex bg-surface/30 border border-border rounded-md p-0.5 gap-0.5">
               {[['card', 'Cards'], ['table', 'Tabela']].map(([v, l]) => (
                 <button key={v} onClick={() => setViewMode(v)}
                   className={`text-caption px-3 py-1 rounded transition-all
@@ -420,7 +420,7 @@ export default function JuniperPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-body">
               <thead>
-                <tr className="border-b-2 border-white/[0.08]">
+                <tr className="border-b-2 border-border">
                   <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em] w-8" />
                   {['Usuário', 'IP', 'MAC', 'Interface', 'Uptime'].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
@@ -452,8 +452,8 @@ export default function JuniperPage() {
 
       {/* ── Histórico de snapshots ── */}
       <SectionTitle icon={Clipboard}>Histórico de Conexões PPPoE</SectionTitle>
-      <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] bg-surface/20">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-surface/20">
           <div className="flex items-center gap-2">
             <Pulse size={12} className="text-muted" />
             <span className="text-caption font-bold uppercase tracking-[0.06em] text-muted">
@@ -492,7 +492,7 @@ export default function JuniperPage() {
 
       {/* ── Correlação OS × Cidade ── */}
       <SectionTitle icon={GitMerge}>Correlação — OS Técnicas Abertas por Cidade</SectionTitle>
-      <div className="bg-card border border-white/[0.08] rounded-xl p-4">
+      <div className="bg-card border border-border rounded-xl p-4">
         <p className="text-caption text-muted mb-4 leading-relaxed">
           Alta concentração de OS em uma cidade pode indicar degradação de infraestrutura — correlacione com alertas PPPoE.
         </p>

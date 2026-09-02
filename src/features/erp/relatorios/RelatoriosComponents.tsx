@@ -12,7 +12,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
   return (
     <Modal open={open} onClose={onClose} title={title} maxWidth="780px">
       <div className="flex flex-col" style={{ maxHeight: '72vh' }}>
-        <div className="flex items-center justify-between px-5 py-2.5 border-b border-white/[0.08] flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-border flex-shrink-0">
           <span className="text-label font-semibold" style={{ color }}>
             {rows.length} {rows.length === 1 ? 'ordem' : 'ordens'}
           </span>
@@ -63,8 +63,8 @@ export function Section({ title, subtitle, action, children, height = 'h-64' }: 
   title: string; subtitle?: string; action?: ReactNode; children: ReactNode; height?: string
 }) {
   return (
-    <div className="bg-elevated border border-white/[0.08] rounded-xl flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] flex-shrink-0">
+    <div className="bg-elevated border border-border rounded-xl flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
         <div>
           <p className="text-body font-semibold text-text">{title}</p>
           {subtitle && <p className="text-caption text-muted mt-0.5">{subtitle}</p>}

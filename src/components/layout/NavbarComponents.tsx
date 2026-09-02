@@ -111,7 +111,7 @@ export const RefreshControl = memo(function RefreshControl() {
                     transition-all duration-fast
                     ${urgent
                       ? 'border-yellow/40 text-yellow bg-yellow/5 hover:bg-yellow/10'
-                      : 'border-white/[0.08] text-secondary hover:border-muted/40 hover:text-text'}`}
+                      : 'border-border text-secondary hover:border-muted/40 hover:text-text'}`}
       >
         <ArrowsClockwise size={12} className={`flex-shrink-0 ${spinning ? 'animate-spin' : ''}`} />
         <span className="hidden w-[36px] text-center font-mono text-caption tabular-nums sm:block">{btnLabel}</span>
@@ -120,18 +120,18 @@ export const RefreshControl = memo(function RefreshControl() {
 
       {showMenu && (
         <div className="absolute right-0 top-10 z-50 w-52
-                        bg-elevated border border-white/[0.08] rounded-lg shadow-accent overflow-hidden">
+                        bg-elevated border border-border rounded-lg shadow-accent overflow-hidden">
           <button
             onClick={handleRefresh}
             disabled={isLoading}
             className="w-full flex items-center gap-2.5 px-3 py-2.5
                        text-caption font-semibold text-primary hover:bg-primary/10
-                       border-b border-white/[0.08] transition-colors disabled:opacity-50"
+                       border-b border-border transition-colors disabled:opacity-50"
           >
             <ArrowsClockwise size={12} className={isLoading ? 'animate-spin' : ''} />
             Atualizar agora
           </button>
-          <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.08]">
+          <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border">
             <div className="flex items-center gap-1.5">
               <Clock size={10} className="text-muted" />
               <span className="text-caption text-muted">
@@ -220,7 +220,7 @@ export function AIStatusBadge() {
           <div className="bg-elevated border border-white/[0.10] rounded-2xl shadow-2xl overflow-hidden">
 
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <Sparkle size={13} className="text-primary" />
                 <span className="text-label font-bold text-text">Anthropic API</span>
@@ -383,7 +383,7 @@ export function SlaCriticasBadge({ slaCriticas }: { slaCriticas: OSRow[] }) {
               </div>
             ))}
           </div>
-          <div className="px-3 py-2 border-t border-white/[0.08]">
+          <div className="px-3 py-2 border-t border-border">
             <button
               onClick={() => { navigate('/ordens'); setShowAlerta(false) }}
               className="w-full text-center text-caption font-semibold text-primary hover:text-primary/80 transition-colors"
@@ -441,15 +441,15 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
 
       {alertsOpen && (
         <div className="absolute right-0 top-10 z-50 w-80
-                        bg-elevated border border-white/[0.08] rounded-lg shadow-accent overflow-hidden">
-          <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-white/[0.08] bg-surface/30">
+                        bg-elevated border border-border rounded-lg shadow-accent overflow-hidden">
+          <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border bg-surface/30">
             <span className="text-label font-bold text-text">Motor de Alertas</span>
             <button onClick={resetRules} className="text-caption text-muted hover:text-secondary transition-colors">
               Restaurar padrões
             </button>
           </div>
           {alerts.length > 0 && (
-            <div className="border-b border-white/[0.08]">
+            <div className="border-b border-border">
               <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted px-3 pt-2.5 pb-1.5">
                 Ativos ({alerts.length})
               </p>
@@ -488,14 +488,14 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
                   value={rule.threshold}
                   onChange={e => updateRule(rule.id, { threshold: +e.target.value })}
                   className="w-12 text-caption font-mono text-right tabular-nums
-                             bg-card border border-white/[0.08] rounded px-1.5 py-0.5
+                             bg-card border border-border rounded px-1.5 py-0.5
                              outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 text-text"
                 />
               </div>
             ))}
           </div>
           {alerts.length === 0 && (
-            <p className="text-caption text-muted text-center px-3 py-2 border-t border-white/[0.08]">
+            <p className="text-caption text-muted text-center px-3 py-2 border-t border-border">
               Nenhuma regra disparada
             </p>
           )}
@@ -537,8 +537,8 @@ export function AuditLogBadge() {
 
       {auditOpen && (
         <div className="absolute right-0 top-10 z-50 w-80
-                        bg-elevated border border-white/[0.08] rounded-lg shadow-accent overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.08] bg-surface/30">
+                        bg-elevated border border-border rounded-lg shadow-accent overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2.5 border-b border-border bg-surface/30">
             <div className="flex items-center gap-2">
               <ClockCounterClockwise size={12} className="text-muted" />
               <span className="text-label font-bold text-text">Log de Atividade</span>
