@@ -11,32 +11,26 @@ import {
   Cell as RcCell,
 } from 'recharts'
 import type { ReactNode } from 'react'
+import { chartAxis, chartTooltip, token } from '../../lib/chartTheme'
 
 const FONT = '"Inter", system-ui, sans-serif'
-const TICK = '#71717a'  /* zinc-500 — legível em ambos os temas */
-
-function isLight(): boolean {
-  return !document.documentElement.classList.contains('dark')
-}
 
 function tipStyle() {
-  const light = isLight()
+  const t = chartTooltip()
   return {
-    background:   light ? 'rgba(255,255,255,0.98)' : 'rgba(19,19,21,0.97)',
-    border:       light ? '1px solid #E4E4E7'      : '1px solid #27272A',
-    borderRadius: 8,
+    background:   t.background,
+    border:       t.border,
+    borderRadius: t.borderRadius,
     padding:      '8px 12px',
     fontSize:     11,
     fontFamily:   FONT,
-    boxShadow:    light
-      ? '0 4px 16px rgba(0,0,0,.10)'
-      : '0 4px 16px rgba(0,0,0,.50)',
+    boxShadow:    t.boxShadow,
   }
 }
 
-function tipLabelColor() { return isLight() ? '#71717a' : '#71717a' }
-function tipValueColor() { return isLight() ? '#09090b' : '#fafafa' }
-function gridColor()     { return isLight() ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)' }
+function tipLabelColor() { return chartTooltip().labelColor }
+function tipValueColor() { return chartTooltip().valueColor }
+function gridColor()     { return chartAxis().grid }
 
 interface TipProps {
   active?:    boolean
@@ -79,14 +73,14 @@ export function Grid({ ...props }: any) {
   return <CartesianGrid stroke={gridColor()} strokeDasharray="0" vertical={false} {...props} />
 }
 
-const TICK_STYLE = { fill: TICK, fontSize: 11, fontFamily: FONT }
+function tickStyle() { return { fill: token('text-muted'), fontSize: 11, fontFamily: FONT } }
 
 export function XAxis({ ...props }: any) {
-  return <RcX tick={TICK_STYLE} axisLine={false} tickLine={false} {...props} />
+  return <RcX tick={tickStyle()} axisLine={false} tickLine={false} {...props} />
 }
 
 export function YAxis({ ...props }: any) {
-  return <RcY tick={TICK_STYLE} axisLine={false} tickLine={false} width={32} {...props} />
+  return <RcY tick={tickStyle()} axisLine={false} tickLine={false} width={32} {...props} />
 }
 
 export function ChartTooltip({ suffix, formatter, ...props }: any) {
@@ -96,7 +90,7 @@ export function ChartTooltip({ suffix, formatter, ...props }: any) {
 export function Legend({ ...props }: any) {
   return (
     <RcLegend
-      wrapperStyle={{ color: TICK, fontSize: 11, fontFamily: FONT }}
+      wrapperStyle={{ color: token('text-muted'), fontSize: 11, fontFamily: FONT }}
       iconSize={10}
       {...props}
     />

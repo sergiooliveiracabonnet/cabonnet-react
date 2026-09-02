@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { isDark, token } from '../../lib/chartTheme'
 
 const R  = 80
 const SW = 20
@@ -6,9 +7,7 @@ const C  = 2 * Math.PI * R
 
 const FONT = '"Inter", system-ui, sans-serif'
 
-function isLight(): boolean {
-  return !document.documentElement.classList.contains('dark')
-}
+
 
 interface DataPoint {
   name:  string
@@ -36,7 +35,7 @@ function buildSegments(data: DataPoint[], colors: string[], total: number): Segm
       pct:        Math.round(frac * 100),
       arc,
       dashoffset: C - (acc - allotted),
-      color:      colors[i % colors.length] ?? '#71717a',
+      color:      colors[i % colors.length] ?? token('text-muted'),
     }
   })
 }
@@ -68,9 +67,9 @@ export function DonutChart({ data = [], colors = [], onClick, centerLabel = 'Tot
   const cy = 110
   const hs = hovered != null ? segments[hovered] : null
 
-  const trackStroke  = isLight() ? 'rgba(0,0,0,0.06)'   : 'rgba(255,255,255,0.06)'
-  const centerVal    = isLight() ? '#09090b'              : '#fafafa'
-  const centerMuted  = '#71717a'
+  const trackStroke  = isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+  const centerVal    = token('text')
+  const centerMuted  = token('text-muted')
 
   return (
     <div className="flex h-full w-full min-h-0">
@@ -166,7 +165,7 @@ export function DonutChart({ data = [], colors = [], onClick, centerLabel = 'Tot
                 </span>
                 <span
                   className="flex-shrink-0 text-caption font-mono font-semibold tabular-nums"
-                  style={{ color: isHov ? s.color : '#71717a', transition: 'color 0.18s ease' }}
+                  style={{ color: isHov ? s.color : token('text-muted'), transition: 'color 0.18s ease' }}
                 >
                   {s.pct}%
                 </span>

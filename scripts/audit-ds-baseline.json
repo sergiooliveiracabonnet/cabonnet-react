@@ -47,20 +47,6 @@
       "#374151",
       "#ef4444"
     ],
-    "src/components/ui/bar-chart.tsx": [
-      "#09090b",
-      "#27272a",
-      "#71717a",
-      "#e4e4e7",
-      "#fafafa"
-    ],
-    "src/components/ui/pie-chart.tsx": [
-      "#09090b",
-      "#27272a",
-      "#71717a",
-      "#e4e4e7",
-      "#fafafa"
-    ],
     "src/features/auth/LoginPage.tsx": [
       "#010509",
       "#020810",
@@ -302,11 +288,6 @@
       "#c4b5fd",
       "#f97316",
       "#facc15"
-    ],
-    "src/components/ui/DonutChart.tsx": [
-      "#09090b",
-      "#71717a",
-      "#fafafa"
     ],
     "src/features/dashboard/AnomaliaSection.tsx": [
       "#4ade80",
