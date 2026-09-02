@@ -20,9 +20,9 @@ export function FilterSelect({ value, onChange, options, placeholder, className 
         value={value}
         aria-label={ariaLabel ?? placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none pl-3 pr-7 py-1.5 text-label rounded-md
-                   bg-surface border border-border text-text rounded-lg
-                   outline-none focus:border-primary/40 transition-colors duration-fast
+        className="w-full h-8 appearance-none pl-3 pr-7 text-label rounded-md text-text
+                   border border-border bg-surface-2 dark:bg-surface-1 hover:border-border-hover
+                   outline-none focus-visible:ring-2 focus-visible:ring-orange/40 transition-colors duration-fast
                    cursor-pointer"
       >
         {placeholder && <option value="">{placeholder}</option>}
@@ -32,7 +32,7 @@ export function FilterSelect({ value, onChange, options, placeholder, className 
       </select>
       <CaretDown
         size={11}
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary pointer-events-none"
       />
     </div>
   )

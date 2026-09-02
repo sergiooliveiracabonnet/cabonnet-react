@@ -141,16 +141,16 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             type="date"
             value={toInputVal(from)}
             onChange={e => setCustomRange(fromInputVal(e.target.value)!, to!)}
-            className="bg-surface border border-border rounded-md px-2 py-0.5 font-mono text-secondary
-                       outline-none focus:border-primary/50 w-[120px] text-caption"
+            className="bg-surface-2 dark:bg-surface-1 border border-border rounded-md px-2 py-0.5 font-mono text-secondary
+                       hover:border-border-hover outline-none focus-visible:ring-2 focus-visible:ring-orange/40 w-[120px] text-caption"
           />
           <ArrowRight size={12} weight="bold" className="text-muted flex-shrink-0" />
           <input
             type="date"
             value={toInputVal(to)}
             onChange={e => setCustomRange(from!, toEndOfDay(e.target.value)!)}
-            className="bg-surface border border-border rounded-md px-2 py-0.5 font-mono text-secondary
-                       outline-none focus:border-primary/50 w-[120px] text-caption"
+            className="bg-surface-2 dark:bg-surface-1 border border-border rounded-md px-2 py-0.5 font-mono text-secondary
+                       hover:border-border-hover outline-none focus-visible:ring-2 focus-visible:ring-orange/40 w-[120px] text-caption"
           />
         </div>
       )}

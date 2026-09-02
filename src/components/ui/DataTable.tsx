@@ -101,7 +101,7 @@ export function DataTable<T extends Record<string, unknown>>({
   return (
     <div ref={wrapRef} className={`overflow-x-auto ${className}`}>
       <table className="w-full border-collapse">
-        <thead className={stickyHeader ? 'sticky top-24 z-sticky bg-card' : undefined}>
+        <thead className={`bg-surface-hover ${stickyHeader ? 'sticky top-24 z-sticky' : ''}`}>
           <tr className="border-b-2 border-border">
             {columns.map((col) => (
               <th
@@ -118,7 +118,7 @@ export function DataTable<T extends Record<string, unknown>>({
                     type="button"
                     onClick={() => handleSort(col.key)}
                     className="inline-flex items-center gap-1 uppercase tracking-[0.6px] font-bold
-                               hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+                               hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange/40 rounded-sm"
                   >
                     {col.label}
                     {sortKey === col.key && (sortDir === 'asc' ? <CaretUp size={9} /> : <CaretDown size={9} />)}
@@ -152,8 +152,8 @@ export function DataTable<T extends Record<string, unknown>>({
               }}
               className={`border-b border-subtle ${textSize[density]}
                           transition-colors duration-fast text-secondary
-                          hover:bg-blue/[0.07] hover:text-text
-                          ${onRowClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50' : ''}
+                          hover:bg-surface-hover hover:text-text
+                          ${onRowClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange/40' : ''}
                           ${row._critical ? 'bg-red/[0.04]' : ''}`}
             >
               {columns.map((col) => (

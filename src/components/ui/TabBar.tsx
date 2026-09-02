@@ -26,8 +26,9 @@ export function TabBar({ tabs, active, onChange, className = '' }: TabBarProps) 
           onClick={() => onChange(tab.id)}
           className={`flex items-center gap-1.5 px-4 py-2.5 text-label font-semibold
                       whitespace-nowrap border-b-2 transition-all duration-fast
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange/40
                       ${active === tab.id
-                        ? 'border-primary text-primary'
+                        ? 'border-orange text-text'
                         : 'border-transparent text-muted hover:text-secondary'}`}
         >
           {tab.icon && <tab.icon size={12} />}

@@ -104,12 +104,12 @@ export function Drawer({ open, onClose, title, subtitle, width = '720px', childr
         aria-labelledby={titleId}
         style={{ width, maxWidth: '96vw' }}
         className={`fixed top-0 right-0 h-full flex flex-col z-drawer
-                    bg-surface border-l border-border overflow-hidden
+                    bg-surface-3 border-l border-border rounded-l-xl shadow-lg overflow-hidden
                     transition-transform duration-[380ms] ease-[cubic-bezier(.32,.72,0,1)]
                     will-change-transform
                     ${open ? 'translate-x-0' : 'translate-x-full'}`}
       >
-        <div className="flex items-start gap-3 px-5 py-4 border-b border-border bg-card flex-shrink-0">
+        <div className="flex items-start gap-3 px-5 py-4 border-b border-border bg-surface-3 flex-shrink-0">
           <div className="flex-1 min-w-0">
             <p id={titleId} className="text-sm font-bold text-text leading-snug">{title ?? ''}</p>
             {subtitle && <p className="text-xs text-muted mt-0.5 leading-snug">{subtitle}</p>}
@@ -120,7 +120,8 @@ export function Drawer({ open, onClose, title, subtitle, width = '720px', childr
               aria-label="Fechar painel"
               onClick={handleClose}
               className="w-9 h-9 rounded-md border border-border flex items-center justify-center
-                         text-muted hover:text-text hover:bg-surface transition-all duration-fast"
+                         text-muted hover:text-text hover:bg-surface-hover transition-all duration-fast
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange/40"
             >
               <X size={15} />
             </button>
@@ -128,7 +129,7 @@ export function Drawer({ open, onClose, title, subtitle, width = '720px', childr
         </div>
         <div className="flex-1 overflow-y-auto min-h-0">{children}</div>
         {footerActions && (
-          <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border bg-card flex-shrink-0">
+          <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border bg-surface-3 flex-shrink-0">
             {footerActions}
           </div>
         )}

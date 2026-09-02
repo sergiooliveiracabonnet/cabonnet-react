@@ -32,15 +32,15 @@ export function SearchBox({ value, onChange, placeholder = 'Buscar…', classNam
 
   return (
     <div className={`relative flex items-center ${className}`}>
-      <MagnifyingGlass size={12} className="absolute left-2.5 text-muted pointer-events-none" />
+      <MagnifyingGlass size={12} className="absolute left-2.5 text-secondary pointer-events-none" />
       <input
         type="text"
         value={local}
         onChange={(e) => handleChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-7 pr-7 py-1.5 text-label rounded-lg
-                   bg-surface border border-border text-text placeholder:text-muted
-                   outline-none focus:border-primary/40 transition-colors duration-fast"
+        className="w-full h-8 pl-7 pr-7 text-label rounded-md text-text placeholder:text-muted
+                   border border-border bg-surface-2 dark:bg-surface-1 hover:border-border-hover
+                   outline-none focus-visible:ring-2 focus-visible:ring-orange/40 transition-colors duration-fast"
       />
       {local && (
         <button
