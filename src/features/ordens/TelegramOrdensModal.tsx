@@ -113,8 +113,8 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-label font-semibold
                               transition-all duration-fast
                               ${active
-                                ? 'border-border0 bg-surface text-text'
-                                : 'border-border text-muted hover:text-secondary hover:border-border0'}`}
+                                ? 'border-border-hover bg-surface text-text'
+                                : 'border-border text-muted hover:text-secondary hover:border-border-hover'}`}
                 >
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: o.color }} />
                   {o.label}
