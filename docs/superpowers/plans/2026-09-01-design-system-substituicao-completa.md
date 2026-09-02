@@ -1912,10 +1912,10 @@ Esperado: nenhuma saída nos três.
 **Resíduo `.light` no CSS.** A Task 3 renomeou a classe de tema para `.dark`, o que torna **toda regra prefixada com `.light `** código morto — o seletor deixa de casar com qualquer elemento. Isso não é erro de build nem de tipo: a regra simplesmente para de aplicar, em silêncio.
 
 ```bash
-grep -n "\.light" src/index.css
+grep -rn "\.light" src/index.css src --include="*.tsx" --include="*.ts"
 ```
 
-Esperado: nenhuma saída. A maior parte já saiu nas tasks anteriores (o remendo `[class*=]` na Task 6, `.light .badge-*` na 12, `.light .navbar-premium` na 15, `.light .sidebar-premium` na 16). O que restar é de duas naturezas:
+Esperado: nenhuma saída. **Inclua os `.tsx`/`.ts` na varredura, não só o `index.css`** — componentes com `<style>` inline (CSS-in-JS) também carregam seletores `.light`, e um deles (`AnimatedThemeToggler`) já foi encontrado assim durante a Fase 1: o botão de tema ficava com tinta branca a 82% sobre superfície clara, praticamente invisível, sem erro de build, de lint ou de teste. A maior parte já saiu nas tasks anteriores (o remendo `[class*=]` na Task 6, `.light .badge-*` na 12, `.light .navbar-premium` na 15, `.light .sidebar-premium` na 16). O que restar é de duas naturezas:
 
 - Variante clara de classe **que sobrevive** (`.light .card-premium`) — o par de regras `.x` / `.light .x` colapsa em uma só, porque os tokens já mudam com o tema. Se o valor claro for genuinamente diferente do escuro, a regra vira `.dark .x`.
 - Variante clara de classe **morta** (`.light .glass`, `.light .border-glow`, `.light .border-ghost`) — sai junto com a classe base no Step 3.
