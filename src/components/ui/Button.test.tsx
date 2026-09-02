@@ -25,7 +25,8 @@ describe('Button', () => {
   it('aplica variante primary por padrão', () => {
     const { container } = render(<Button>OK</Button>)
     const btn = container.querySelector('button')
-    expect(btn?.className).toContain('bg-primary')
+    // O botão primário usa a cor de marca. Depois da troca do token, marca = laranja.
+    expect(btn?.className).toContain('bg-orange')
   })
 
   it('aplica variante ghost corretamente', () => {

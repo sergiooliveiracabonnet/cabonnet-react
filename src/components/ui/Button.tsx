@@ -11,9 +11,10 @@ const base = [
 
 const variants = {
   primary: [
-    'bg-primary text-white',
+    'bg-orange text-white',
     'shadow-sm',
-    'hover:bg-primary-dark',
+    // brightness em vez de um segundo token: o design system tem um só laranja de marca.
+    'hover:brightness-110 dark:hover:shadow-[0_0_18px_rgb(var(--orange)/.18)]',
   ].join(' '),
 
   ghost: [

@@ -38,12 +38,11 @@ export default {
         yellow: 'rgb(var(--yellow) / <alpha-value>)',
         red:    'rgb(var(--red) / <alpha-value>)',
 
-        // `primary` ainda aponta para azul. A Task 9 troca para --orange,
-        // depois que a Task 8 tiver migrado os usos de "informação".
-        primary:         'rgb(var(--blue) / <alpha-value>)',
-        // 2 usos de primary-dark ainda vivos; migrados na Task 19.
-        'primary-light': 'rgb(var(--blue) / <alpha-value>)',
-        'primary-dark':  'rgb(var(--blue) / <alpha-value>)',
+        // Cor de marca. Os usos que carregavam sentido de "informação/dado"
+        // foram reclassificados para `blue` antes desta troca.
+        primary:         'rgb(var(--orange) / <alpha-value>)',
+        'primary-light': 'rgb(var(--orange) / <alpha-value>)',
+        'primary-dark':  'rgb(var(--orange) / <alpha-value>)',
 
         // Aliases das cores aposentadas — resolvidos nas Fases 2-4
         cyan:   'rgb(var(--blue) / <alpha-value>)',
