@@ -1140,13 +1140,20 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 **Interfaces:**
 - Produces: `type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'` e `type ButtonTone = 'orange' | 'blue' | 'green' | 'yellow' | 'red'`. `<Button variant tone>` — `tone` só tem efeito em `outline` e `ghost`.
 
-- [ ] **Step 1: Listar os call sites com variants a remover**
+**Correção aplicada durante a execução.** Esta task partia de uma leitura errada do código: os variants de cor (`red`, `orange`, `green`, `yellow`, `purple`, `cyan`) **não são do `Button`** — são do `<Badge>`, e são tratados na Task 12. Confirmado por levantamento: as 20 ocorrências de variant de cor estão todas em `<Badge>`; as 30 de `ghost`/`outline`/`primary`/`danger` estão todas em `<Button>`.
+
+Consequências: **não há call site para migrar** nesta task, e a prop `tone` proposta abaixo não tem consumidor — ela sai do escopo por YAGNI. O `Button` hoje define `primary`, `ghost`, `danger`, `outline` e `success`; `success` tem **zero** usos e é removido.
+
+O trabalho real desta task é: acrescentar o variant `secondary` (o contraste invertido do DS), remover `success`, e ajustar forma e altura.
+
+- [ ] **Step 1: Confirmar o levantamento**
 
 ```bash
-grep -rn 'variant="\(red\|orange\|green\|yellow\|purple\|cyan\)"' src --include=*.tsx
+grep -rhoE "<[A-Za-z]+[^>]*variant=\"[a-z]+\"" src --include=*.tsx | grep -oE "^<[A-Za-z]+" | sort | uniq -c
+grep -rn 'variant="success"' src --include=*.tsx | wc -l
 ```
 
-Levantamento atual: `red` 8, `orange` 6, `cyan` 2, `yellow` 1, `purple` 1, `green` 1.
+Esperado: só `<Badge>` e `<Button>`; `success` com 0 usos.
 
 - [ ] **Step 2: Escrever o teste que falha**
 
@@ -1409,11 +1416,28 @@ Substitua as 14 regras (`.badge-green` … `.light .badge-teal`) por cinco, sem 
 .badge-red    { background: rgb(var(--red)    / .14); color: rgb(var(--red));    border-color: rgb(var(--red)    / .30); }
 ```
 
-- [ ] **Step 2: Migrar os call sites das cores aposentadas**
+- [ ] **Step 2: Remapear o mapa de variants do `Badge`**
+
+`src/components/ui/Badge.tsx` traduz `variant` numa classe `badge-*`. O mapa atual tem sete entradas (`green`, `red`, `yellow`, `orange`, `purple`, `cyan`, `teal`) e passa a ter cinco destinos:
+
+```tsx
+const VARIANTS = {
+  orange: 'badge-orange',
+  blue:   'badge-blue',
+  green:  'badge-green',
+  yellow: 'badge-yellow',
+  red:    'badge-red',
+  // aposentadas — mantidas como apelido para não quebrar os call sites existentes
+  cyan:   'badge-blue',
+  purple: 'badge-blue',
+  teal:   'badge-green',
+}
+```
+
+**Defeito latente a corrigir junto:** existe um `variant="desconhecida"` no código que **não consta do mapa** — ele cai em `undefined` e o badge sai sem estilo nenhum. Localize-o e decida o destino pelo contexto (provavelmente um estado "desconhecido", que pede o tom neutro). Se for neutro, acrescente um variant `neutral` com `bg-surface-active text-secondary border-border` e aponte o call site para ele.
 
 ```bash
-grep -rl "badge-cyan\|badge-teal\|badge-purple" src --include=*.tsx \
-  | xargs sed -i -e 's/badge-cyan/badge-blue/g' -e 's/badge-purple/badge-blue/g' -e 's/badge-teal/badge-green/g'
+grep -rn 'variant="desconhecida"' src --include=*.tsx
 ```
 
 - [ ] **Step 3: Atualizar o teste do `Card`**
