@@ -86,7 +86,9 @@ export function AppLayout() {
         <Navbar />
         <DateFilterBar sidebarOpen={sidebarOpen} />
 
-        <main className={`app-main min-w-0 max-w-full overflow-x-clip pt-[7.5rem] transition-[padding] duration-200 md:pt-[6.5rem]
+        {/* md+: navbar ocupa 12–76px e a barra de filtro 76–116px, ambas recuadas 12px.
+            O pt precisa acompanhar os dois, senão o conteúdo entra por baixo da barra. */}
+        <main className={`app-main min-w-0 max-w-full overflow-x-clip pt-[7.5rem] transition-[padding] duration-200 md:pt-[7.25rem]
                           ${sidebarOpen ? 'md:pl-[260px]' : 'md:pl-[76px]'}`}>
           <div className="app-content animate-page-enter rounded-2xl border border-border bg-surface-1 px-3 pb-10 pt-4 shadow-sm sm:px-5 lg:px-7 lg:pt-6">
             <Suspense fallback={

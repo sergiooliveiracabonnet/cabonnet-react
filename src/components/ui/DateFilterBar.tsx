@@ -75,7 +75,8 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
       className={`fixed right-0 top-16 z-[39] flex h-14 max-w-full items-center gap-0.5 overflow-hidden
                   bg-elevated/95 border-b border-border backdrop-blur-xl
                   left-0 px-1.5 transition-all duration-normal sm:gap-1.5 sm:px-3 md:h-10
-                  ${sidebarOpen ? 'md:left-[248px]' : 'md:left-[64px]'}`}
+                  md:right-3 md:top-[76px]
+                  ${sidebarOpen ? 'md:left-[260px]' : 'md:left-[76px]'}`}
     >
       <Calendar size={13} className="hidden flex-shrink-0 text-muted sm:block" />
 
