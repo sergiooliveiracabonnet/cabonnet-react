@@ -432,9 +432,9 @@ export default function OrdensPage() {
             {os.critico      && <span className="rounded-full px-2 py-0.5 text-caption font-bold bg-red/10 text-red border border-red/20">Críticas · SLA 2×</span>}
             {os.semEquipe    && <span className="badge-yellow  rounded-full px-2 py-0.5 text-caption font-bold">Sem equipe</span>}
             {os.agendHoje    && <span className="badge-green   rounded-full px-2 py-0.5 text-caption font-bold">Agend. hoje</span>}
-            {os.agendAmanha  && <span className="badge-cyan    rounded-full px-2 py-0.5 text-caption font-bold">Amanhã</span>}
+            {os.agendAmanha  && <span className="badge-blue    rounded-full px-2 py-0.5 text-caption font-bold">Amanhã</span>}
             {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-caption font-bold">Após amanhã</span>}
-            {os.periodo      && <span className="badge-purple  rounded-full px-2 py-0.5 text-caption font-bold">{os.periodo}</span>}
+            {os.periodo      && <span className="badge-blue    rounded-full px-2 py-0.5 text-caption font-bold">{os.periodo}</span>}
           </span>
           <button onClick={clearAllFilters} className="text-muted hover:text-red transition-colors text-caption font-semibold">
             Limpar filtros

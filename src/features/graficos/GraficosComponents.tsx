@@ -168,7 +168,7 @@ export function DrillModal({ drill, onClose, onOS }: { drill: DrillState | null;
                   <td className="px-3 py-2 whitespace-nowrap">
                     <span className={`text-caption font-bold px-1.5 py-0.5 rounded-full ${
                       r.descsituacao === 'Concluída'   ? 'badge-green'  :
-                      r.descsituacao === 'Atendimento' ? 'badge-cyan'   :
+                      r.descsituacao === 'Atendimento' ? 'badge-blue'   :
                       r.descsituacao === 'Pendente'    ? 'badge-yellow' :
                       'bg-surface/40 text-muted'
                     }`}>{r.descsituacao}</span>
