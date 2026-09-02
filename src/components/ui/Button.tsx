@@ -17,42 +17,38 @@ const variants = {
     'hover:brightness-110 dark:hover:shadow-[0_0_18px_rgb(var(--orange)/.18)]',
   ].join(' '),
 
+  // `bg-text`/`text-bg` dão o contraste invertido do DS: escuro sobre claro no
+  // tema claro, claro sobre escuro no escuro — sem precisar de variante `.dark`.
+  secondary: 'bg-text text-bg hover:opacity-90',
+
+  outline: [
+    'bg-transparent border border-border text-text',
+    'hover:border-border-hover hover:bg-surface-hover',
+  ].join(' '),
+
   ghost: [
     'bg-transparent text-secondary',
-    'border border-border',
-    'hover:bg-card-high hover:text-text hover:border-muted/40',
+    'hover:bg-surface-hover hover:text-text',
   ].join(' '),
 
   danger: [
-    'bg-red/[0.10] text-red',
-    'border border-red/25',
-    'hover:bg-red/[0.18] hover:border-red/45',
-  ].join(' '),
-
-  outline: [
-    'border border-primary/40 text-primary',
-    'hover:bg-primary/10 hover:border-primary/70',
-  ].join(' '),
-
-  success: [
-    'bg-green text-white',
-    'shadow-sm',
+    'bg-red text-white',
     'hover:brightness-110',
   ].join(' '),
 } as const
 
 const sizes = {
-  sm: 'h-7  px-3   text-label',
-  md: 'h-9  px-4   text-body',
-  lg: 'h-10 px-5   text-body',
+  sm: 'h-7  px-3 text-label',
+  md: 'h-9  px-3 text-label',
+  lg: 'h-10 px-5 text-body',
 } as const
 
-type Variant = keyof typeof variants
-type Size    = keyof typeof sizes
+export type ButtonVariant = keyof typeof variants
+type Size = keyof typeof sizes
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children:   ReactNode
-  variant?:   Variant
+  variant?:   ButtonVariant
   size?:      Size
   className?: string
 }
