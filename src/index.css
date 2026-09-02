@@ -255,17 +255,6 @@ body {
   background: rgb(255 255 255 / 0.92);
 }
 
-/* ── Navbar — sólida com borda sutil ── */
-.navbar-premium {
-  background: rgb(var(--surface-3));
-  border-bottom: 1px solid rgb(var(--border));
-  box-shadow: 0 1px 0 rgb(var(--border));
-}
-.light .navbar-premium {
-  background: rgb(var(--surface-2)); /* branco — coerente com sidebar */
-  box-shadow: 0 1px 0 rgb(var(--border));
-}
-
 /* ── Sidebar — sólida, borda direita ── */
 .sidebar-premium {
   background: rgb(var(--bg));
@@ -579,8 +568,8 @@ body {
 }
 
 .navbar-premium {
-  background: rgb(var(--surface-3) / 0.94);
-  backdrop-filter: blur(18px) saturate(130%);
+  background: rgb(var(--surface-1) / .82);
+  backdrop-filter: blur(12px);
 }
 
 .sidebar-premium {

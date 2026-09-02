@@ -73,7 +73,7 @@ export function AppLayout() {
       <FilterURLSync />
       <BuilderErrorBanner />
       <PicoAlertaModal />
-      <div className="app-shell min-h-screen max-w-full overflow-x-clip bg-bg text-text">
+      <div className="app-shell min-h-screen max-w-full overflow-x-clip bg-bg text-text md:p-3">
         <Sidebar />
         {sidebarOpen && (
           <button
@@ -87,8 +87,8 @@ export function AppLayout() {
         <DateFilterBar sidebarOpen={sidebarOpen} />
 
         <main className={`app-main min-w-0 max-w-full overflow-x-clip pt-[7.5rem] transition-[padding] duration-200 md:pt-[6.5rem]
-                          ${sidebarOpen ? 'md:pl-[248px]' : 'md:pl-[64px]'}`}>
-          <div className="app-content animate-page-enter px-3 pb-10 pt-4 sm:px-5 lg:px-7 lg:pt-6">
+                          ${sidebarOpen ? 'md:pl-[260px]' : 'md:pl-[76px]'}`}>
+          <div className="app-content animate-page-enter rounded-2xl border border-border bg-surface-1 px-3 pb-10 pt-4 shadow-sm sm:px-5 lg:px-7 lg:pt-6">
             <Suspense fallback={
               <div className="flex items-center justify-center py-20">
                 <div className="w-6 h-6 border-2 border-blue border-t-transparent rounded-full animate-spin" />

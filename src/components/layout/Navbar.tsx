@@ -71,7 +71,8 @@ export function Navbar() {
   return (
     <>
     <header className={`navbar-premium fixed left-0 right-0 top-0 z-header flex h-16 max-w-full items-center gap-1.5 px-2 transition-[left] duration-200 sm:gap-3 sm:px-4
-                        ${sidebarOpen ? 'md:left-[248px]' : 'md:left-[64px]'}`}>
+                        md:right-3 md:top-3 md:rounded-2xl md:border md:border-border
+                        ${sidebarOpen ? 'md:left-[260px]' : 'md:left-[76px]'}`}>
       <button
         onClick={toggleSidebar}
         className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg sm:h-8 sm:w-8
