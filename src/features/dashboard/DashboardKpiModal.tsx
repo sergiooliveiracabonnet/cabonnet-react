@@ -73,7 +73,7 @@ function OcorrenciasExpand({ numos }: { numos: string }) {
       )}
       {hist.map((e, i) => (
         <div key={i}
-             className={`rounded-xl px-3 py-2 border ${e.isReagend ? 'bg-orange/[0.08] border-orange/25' : 'bg-surface/30 border-white/[0.06]'}`}>
+             className={`rounded-xl px-3 py-2 border ${e.isReagend ? 'bg-orange/[0.08] border-orange/25' : 'bg-surface/30 border-subtle'}`}>
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             {e.isReagend && (
               <span className="flex items-center gap-1 text-caption font-bold uppercase tracking-wide text-orange/80">
@@ -209,7 +209,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
       )}
       {filteredRows.length > 0 && <>
       {/* Cabeçalho de colunas — clique para ordenar */}
-      <div className="sticky top-0 z-20 h-9 flex items-center gap-3 bg-card px-5 border-b border-white/[0.12]">
+      <div className="sticky top-0 z-20 h-9 flex items-center gap-3 bg-card px-5 border-b border-border-hover">
         <span className={`${COL_W.chevron} flex-shrink-0`} />
         <SortHeader label="Nº OS"    active={sortKey === 'numos'}    dir={sortDir} onClick={() => toggleSort('numos')}    className={COL_W.numos} />
         <SortHeader label="Cliente"  active={sortKey === 'cliente'}  dir={sortDir} onClick={() => toggleSort('cliente')}  className="flex-1 min-w-[160px]" />
@@ -218,13 +218,13 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
         <SortHeader label="Situação" active={sortKey === 'situacao'} dir={sortDir} onClick={() => toggleSort('situacao')} className={COL_W.situacao} />
         <SortHeader label="Aging"    active={sortKey === 'aging'}    dir={sortDir} onClick={() => toggleSort('aging')}    className={COL_W.aging} />
         <SortHeader label="Agend."   active={sortKey === 'data'}     dir={sortDir} onClick={() => toggleSort('data')}     className={`${COL_W.data} justify-end`} />
-        <span className="w-[1px] h-4 bg-white/[0.08] flex-shrink-0" />
+        <span className="w-[1px] h-4 bg-surface-active flex-shrink-0" />
         <span className={`${COL_W.action} flex-shrink-0`} />
         <span className={`${COL_W.action} flex-shrink-0`} />
       </div>
 
       {grupos.map(([cidade, list], gi) => (
-        <div key={cidade} className={gi > 0 ? 'border-t-2 border-white/[0.12]' : ''}>
+        <div key={cidade} className={gi > 0 ? 'border-t-2 border-border-hover' : ''}>
           {/* Cabeçalho da cidade */}
           <div className="sticky top-9 z-10 flex items-center justify-between gap-2 bg-surface px-5 py-2.5 border-b border-border">
             <span className="flex items-center gap-1.5 text-caption font-bold text-text uppercase tracking-[0.03em]">
@@ -240,7 +240,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
           </div>
 
           {/* Linhas da cidade */}
-          <div className="divide-y divide-white/[0.04]">
+          <div className="divide-y divide-subtle">
             {list.map(os => {
               const aging  = os._aging ?? 0
               const agVar  = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'
@@ -276,7 +276,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                       </span>
                       <span className={`font-mono text-muted ${COL_W.data} flex-shrink-0 text-right`}>{os.dataagendamento ? os.dataagendamento.slice(0, 10) : '—'}</span>
                     </button>
-                    <span className="w-[1px] h-4 bg-white/[0.06] flex-shrink-0" />
+                    <span className="w-[1px] h-4 bg-surface-active flex-shrink-0" />
                     <button onClick={() => copyResumo(os)} title="Copiar só a OS (resumo)"
                             className={`${COL_W.action} flex-shrink-0 text-muted/50 hover:text-primary transition-colors`}>
                       {copied === `${os.numos}:os` ? <Check size={13} className="text-green" /> : <Copy size={13} />}

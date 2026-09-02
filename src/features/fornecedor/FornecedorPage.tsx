@@ -201,7 +201,7 @@ export default function FornecedorPage() {
 
           {/* ── AI Fornecedor ─────────────────────────────────────────── */}
           {!isFornecedor && (!aiEnabled ? (
-            <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+            <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkle size={12} className="text-primary/40" />
                 <span className="text-caption font-bold text-muted uppercase tracking-wide">Recomendações por Fornecedor · IA</span>
@@ -236,7 +236,7 @@ export default function FornecedorPage() {
                       {aiFornecedor.ranking.map((r, i) => {
                         const tier = TIER_CFG[r.tier] ?? TIER_CFG.C
                         return (
-                          <div key={i} className="flex items-start gap-3 py-2 border-b border-white/[0.05] last:border-0">
+                          <div key={i} className="flex items-start gap-3 py-2 border-b border-subtle last:border-0">
                             <span className={`text-caption font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${tier.text} ${tier.bg} ${tier.border}`}>
                               Tier {r.tier}
                             </span>
@@ -374,7 +374,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
         <div className="px-5 pb-5 space-y-4 animate-slide-down">
 
           {/* Custo mensal — input */}
-          {showFinancial && <div className="flex items-center gap-2 py-2 border-t border-white/[0.05]">
+          {showFinancial && <div className="flex items-center gap-2 py-2 border-t border-subtle">
             <CurrencyDollar size={12} className="text-muted flex-shrink-0" />
             <span className="text-caption text-muted">Custo mensal desta operadora (R$):</span>
             <input
@@ -420,7 +420,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+                <tbody className="divide-y divide-subtle">
                   {(equipes as { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }[]).map((eq) => (
                     <tr key={eq.nome} className="text-secondary hover:bg-primary/[0.05] transition-colors">
                       <td className="px-3 py-2 font-semibold text-text max-w-[180px] truncate">{eq.nome}</td>

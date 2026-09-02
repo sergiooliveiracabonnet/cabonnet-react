@@ -218,7 +218,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
 
             {/* ── 1. Hero Status ───────────────────────────────────────── */}
             <div className="bg-surface/30 border border-border rounded-xl overflow-hidden">
-              <div className="flex items-stretch divide-x divide-white/[0.06]">
+              <div className="flex items-stretch divide-x divide-subtle">
 
                 {/* Situação */}
                 <div className="flex-1 px-4 py-3 flex flex-col gap-1.5">
@@ -360,7 +360,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                   <p className="text-label text-muted/60 italic px-1">Carregando dados do contrato…</p>
                 ) : (
                   <div className="bg-surface/30 border border-border rounded-xl overflow-hidden">
-                    <div className="grid grid-cols-2 divide-x divide-white/[0.06]">
+                    <div className="grid grid-cols-2 divide-x divide-subtle">
                       {dataContratacao && (
                         <div className="px-4 py-3 flex flex-col gap-1">
                           <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
@@ -383,7 +383,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                       )}
                     </div>
                     {(situacaoContratoLabel || (valorContrato != null && valorContrato > 0)) && (
-                      <div className="border-t border-white/[0.06] grid grid-cols-2 divide-x divide-white/[0.06]">
+                      <div className="border-t border-subtle grid grid-cols-2 divide-x divide-subtle">
                         {situacaoContratoLabel && (
                           <div className="px-4 py-3 flex flex-col gap-1">
                             <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Situação</span>

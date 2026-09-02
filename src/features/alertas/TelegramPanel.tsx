@@ -130,7 +130,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
       {/* Tab: Histórico */}
       {tab === 'alertas' && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.05]">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-subtle">
             <span className="text-caption text-muted uppercase tracking-wide">{store.history.length} alertas</span>
             <div className="flex gap-2">
               {naoLidos > 0 && (
@@ -146,7 +146,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
+          <div className="flex-1 overflow-y-auto divide-y divide-subtle">
             {store.history.length === 0 ? (
               <div className="py-12 text-center">
                 <Bell size={32} className="mx-auto text-muted/30 mb-3" />

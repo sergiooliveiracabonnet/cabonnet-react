@@ -32,7 +32,7 @@ function RitmoIntradiarioBar({ r }: { r: PulsoRitmoIntradiario }) {
   const pctManha = Math.round((r.manha / tot) * 100)
   const pctTarde = 100 - pctManha
   return (
-    <div className="mt-4 pt-3 border-t border-white/[0.05]">
+    <div className="mt-4 pt-3 border-t border-subtle">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ritmo por turno hoje</span>
         {r.alerta && (
@@ -101,7 +101,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
         </div>
 
         {projecao && (
-          <div className="flex items-center gap-4 flex-wrap mb-4 pb-3 border-b border-white/[0.05]">
+          <div className="flex items-center gap-4 flex-wrap mb-4 pb-3 border-b border-subtle">
             <RitmoIndicator p={projecao} />
           </div>
         )}

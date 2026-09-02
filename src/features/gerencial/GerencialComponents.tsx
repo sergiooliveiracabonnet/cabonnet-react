@@ -49,7 +49,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
 
         {/* Cabeçalho da tabela */}
         <div className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3 px-5 py-2
-                        bg-surface/20 border-b border-white/[0.05]
+                        bg-surface/20 border-b border-subtle
                         text-caption font-bold uppercase tracking-[0.05em] text-muted flex-shrink-0">
           <span>OS #</span>
           <span>Cliente</span>
@@ -65,7 +65,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
               Nenhuma OS encontrada
             </div>
           ) : (
-            <div className="divide-y divide-white/[0.04]">
+            <div className="divide-y divide-subtle">
               {rows.map(r => {
                 const aging = r._aging ?? 0
                 // Régua relativa ao SLA da OS: manutenção com 2d (limite 1d) já estourou
@@ -160,7 +160,7 @@ export function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no pe
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="divide-y divide-white/[0.04]">
+      <div className="divide-y divide-subtle">
         {cidades.map((c, i) => {
           const pct = Math.round((c.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)
@@ -214,12 +214,12 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_1fr_80px] gap-3 px-4 py-2 bg-surface/20
-                      border-b border-white/[0.05] text-caption font-bold uppercase tracking-[0.05em] text-muted">
+                      border-b border-subtle text-caption font-bold uppercase tracking-[0.05em] text-muted">
         <span>Cliente</span>
         <span>Cidade · Equipe</span>
         <span className="text-right">Aging</span>
       </div>
-      <div className="divide-y divide-white/[0.04] max-h-72 overflow-y-auto">
+      <div className="divide-y divide-subtle max-h-72 overflow-y-auto">
         {rows.slice(0, 50).map(r => {
           const aging = r._agingAbertura ?? 0
           const pct   = Math.round((aging / max) * 100)
@@ -305,7 +305,7 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
               Nenhum cliente em rota
             </p>
           ) : (
-            <div className="divide-y divide-white/[0.04]">
+            <div className="divide-y divide-subtle">
               {results.map(r => {
                 const aging = r._agingAbertura ?? 0
                 const ratio = r._slaLimite > 0 ? aging / r._slaLimite : aging
@@ -356,7 +356,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_54px_54px_54px_54px_44px_50px_24px] gap-2 px-4 py-2.5 bg-surface/20
-                      border-b border-white/[0.05] text-caption font-bold uppercase tracking-[0.05em] text-muted">
+                      border-b border-subtle text-caption font-bold uppercase tracking-[0.05em] text-muted">
         <span>Equipe</span>
         <span className="text-right">Total</span>
         <span className="text-right text-yellow">Pend.</span>
@@ -366,7 +366,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
         <span className="text-center" title="% das OS da equipe dentro do prazo de SLA">SLA</span>
         <span />
       </div>
-      <div className="divide-y divide-white/[0.04] max-h-96 overflow-y-auto">
+      <div className="divide-y divide-subtle max-h-96 overflow-y-auto">
         {equipes.map((e, _i) => {
           const pct = Math.round((e.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)
@@ -393,7 +393,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
               <span className="font-mono text-label text-yellow text-right">{e.pendente}</span>
               <span className="font-mono text-label text-cyan text-right">{e.atendimento}</span>
               <span className="font-mono text-label text-green text-right">{e.concluida}</span>
-              <span className={`font-mono text-label text-right ${e.criticas > 0 ? 'text-red font-bold' : 'text-white/20'}`}>
+              <span className={`font-mono text-label text-right ${e.criticas > 0 ? 'text-red font-bold' : 'text-disabled'}`}>
                 {e.criticas > 0 ? e.criticas : '—'}
               </span>
               <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums text-center ${slaCls}`}>

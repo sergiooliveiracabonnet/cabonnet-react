@@ -234,7 +234,7 @@ export default function AlertasPage() {
 
       {/* ── AI Alertas ───────────────────────────────────────────────────── */}
       {!aiEnabled ? (
-        <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkle size={12} className="text-primary/40" />
             <span className="text-caption font-bold text-muted uppercase tracking-wide">Análise de Alertas · IA</span>

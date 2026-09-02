@@ -158,7 +158,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.04]">
+          <tbody className="divide-y divide-subtle">
             {comFila.map(c => {
               const slaCls  = c.slaPct >= 90 ? 'text-green bg-green/10' : c.slaPct >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
               const backCls = c.backlogDias == null ? 'text-muted' : c.backlogDias > 5 ? 'text-red' : c.backlogDias > 3 ? 'text-yellow' : 'text-text'
@@ -177,7 +177,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
                   <td className="px-4 py-2.5 text-center">
                     {c.criticas > 0
                       ? <span className="font-mono font-bold text-red">{c.criticas}</span>
-                      : <span className="text-white/20">—</span>}
+                      : <span className="text-disabled">—</span>}
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums ${slaCls}`}>{c.slaPct}%</span>
@@ -196,7 +196,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
                   <td className="px-4 py-2.5 text-center">
                     {reinc != null
                       ? <span className={`font-mono tabular-nums ${reinc > 15 ? 'text-red font-bold' : reinc > 8 ? 'text-yellow' : 'text-muted'}`}>{reinc}%</span>
-                      : <span className="text-white/20">—</span>}
+                      : <span className="text-disabled">—</span>}
                   </td>
                 </tr>
               )
@@ -379,7 +379,7 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
 
   return (
     <>
-      <tr className="border-b border-white/[0.04] transition-colors">
+      <tr className="border-b border-subtle transition-colors">
         <td className="min-w-[160px] p-1">
           <button type="button" onClick={onToggle} aria-expanded={expanded}
                   className="min-h-11 w-full rounded-md px-3 py-1.5 text-left transition-colors hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
@@ -405,14 +405,14 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
                   >
                     {count}
                   </button>
-                : <span className="text-white/20">—</span>}
+                : <span className="text-disabled">—</span>}
             </td>
           )
         })}
         <td className="px-4 py-2.5 text-center">
           {c.criticas > 0
             ? <span className="font-mono font-bold text-red">{c.criticas}</span>
-            : <span className="text-white/20">—</span>}
+            : <span className="text-disabled">—</span>}
         </td>
         <td className="px-4 py-2.5 text-center">
           <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums
@@ -464,9 +464,9 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
   }, [rows, tipoFilter, sort])
 
   return (
-    <div className="max-h-72 overflow-y-auto bg-surface/60 border-y border-white/[0.05]">
+    <div className="max-h-72 overflow-y-auto bg-surface/60 border-y border-subtle">
       {tipoFilter && (
-        <div className="px-4 py-1.5 border-b border-white/[0.04] flex items-center gap-2 bg-surface/30">
+        <div className="px-4 py-1.5 border-b border-subtle flex items-center gap-2 bg-surface/30">
           <span className={`text-caption font-bold uppercase tracking-[0.05em] ${TIPO_COLOR[tipoFilter]}`}>
             {TIPO_LABEL[tipoFilter]}
           </span>
@@ -495,7 +495,7 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.03]">
+        <tbody className="divide-y divide-subtle">
           {sorted.map(os => {
             const aging  = os._aging ?? 0
             // Badge relativo ao SLA da OS: manutenção com 2d (limite 1d) já estourou

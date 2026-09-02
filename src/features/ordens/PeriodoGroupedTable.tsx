@@ -101,7 +101,7 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                     <div className="ml-auto flex items-center gap-2">
                       {tipoItems.map(({ n, label }, idx) => (
                         <span key={label} className="flex items-center gap-1.5 text-caption text-muted">
-                          {idx > 0 && <span className="text-white/20">|</span>}
+                          {idx > 0 && <span className="text-disabled">|</span>}
                           <span className="font-mono font-bold text-secondary">{n}</span>
                           <span>{label}</span>
                         </span>
@@ -131,7 +131,7 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                       onRowClick(row)
                     }}
                     className={`flex items-center gap-3 px-4 ${rowPy} cursor-pointer
-                                hover:bg-surface/30 transition-all border-b border-white/[0.03]
+                                hover:bg-surface/30 transition-all border-b border-subtle
                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50`}
                   >
                     <span className={`${C.aging} text-center`}>

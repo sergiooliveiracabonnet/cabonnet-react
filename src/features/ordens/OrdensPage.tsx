@@ -265,7 +265,7 @@ export default function OrdensPage() {
               <summary className="list-none cursor-pointer min-h-9 inline-flex items-center gap-2 px-3 rounded-md border border-primary/30 text-primary text-label font-semibold hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
                 <DownloadSimple size={13} /> Exportar <span className="text-muted">({os.filtered.length})</span>
               </summary>
-              <div className="absolute right-0 top-full mt-2 z-dropdown w-48 rounded-xl border border-white/[0.10] bg-card-high shadow-xl p-1.5">
+              <div className="absolute right-0 top-full mt-2 z-dropdown w-48 rounded-xl border border-border-hover bg-card-high shadow-xl p-1.5">
                 <button onClick={handleCopyImage} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text">
                   {copied ? <CheckCircle size={14} className="text-green" /> : <Copy size={14} />} {copied ? 'Imagem copiada' : 'Copiar imagem'}
                 </button>
@@ -291,7 +291,7 @@ export default function OrdensPage() {
       )}
 
       {/* ── Opções de visualização ── */}
-      <div className="flex items-center justify-between gap-3 flex-wrap border-b border-white/[0.06] pb-2">
+      <div className="flex items-center justify-between gap-3 flex-wrap border-b border-subtle pb-2">
         <p className="text-caption font-bold uppercase tracking-[0.08em] text-muted">
           Indicadores do resultado atual
         </p>
@@ -409,7 +409,7 @@ export default function OrdensPage() {
         {os.filtersActive && <Button variant="ghost" size="sm" className="min-h-9" onClick={clearAllFilters}>Limpar tudo</Button>}
         </div>
 
-        {moreFilters && <div className="pt-2 border-t border-white/[0.06] flex flex-wrap gap-2 items-center animate-slide-down">
+        {moreFilters && <div className="pt-2 border-t border-subtle flex flex-wrap gap-2 items-center animate-slide-down">
         {(os.status === 'Reagendamento' || os.reagendTipo) && (
           <FilterSelect value={os.reagendTipo} onChange={os.setReagendTipo} options={reagendTipoOptions} placeholder="Subtipo reag." className="w-40" />
         )}
@@ -487,7 +487,7 @@ export default function OrdensPage() {
         {/* Paginação — apenas no modo flat */}
         {!os.equipe && groupBy === 'none' && os.filtered.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3
-                          border-t border-white/[0.05] text-caption text-muted">
+                          border-t border-subtle text-caption text-muted">
             <div className="flex items-center gap-3">
               <span>{(os.page - 1) * os.pageSize + 1}–{Math.min(os.page * os.pageSize, os.filtered.length)} de {os.filtered.length} OS</span>
               <label className="flex items-center gap-1.5">Por página

@@ -29,7 +29,7 @@ const MARKDOWN_COMPONENTS = {
   ),
   thead:      ({ children }: { children?: React.ReactNode }) => <thead className="bg-surface">{children}</thead>,
   th:         ({ children }: { children?: React.ReactNode }) => <th className="text-left font-semibold text-text px-2 py-1.5 border-b border-border">{children}</th>,
-  td:         ({ children }: { children?: React.ReactNode }) => <td className="px-2 py-1.5 border-b border-white/[0.06] align-top">{children}</td>,
+  td:         ({ children }: { children?: React.ReactNode }) => <td className="px-2 py-1.5 border-b border-subtle align-top">{children}</td>,
 }
 
 interface Message {
@@ -167,8 +167,8 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                   key={q}
                   onClick={() => pickSuggestion(q)}
                   className="w-full text-left text-label text-secondary hover:text-text
-                             px-3 py-2 rounded-lg border border-white/[0.06]
-                             hover:border-white/[0.14] hover:bg-surface/40
+                             px-3 py-2 rounded-lg border border-subtle
+                             hover:border-border-hover hover:bg-surface/40
                              transition-all duration-150"
                 >
                   {q}
@@ -193,7 +193,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                   {[...new Set(msg.toolCalls)].map(t => (
                     <span key={t}
                       className="flex items-center gap-1 text-caption text-muted
-                                 bg-surface border border-white/[0.06] rounded-full px-2 py-0.5">
+                                 bg-surface border border-subtle rounded-full px-2 py-0.5">
                       <Wrench size={9} />
                       {TOOL_LABELS[t] ?? t}
                     </span>

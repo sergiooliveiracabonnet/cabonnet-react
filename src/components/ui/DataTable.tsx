@@ -150,7 +150,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 event.preventDefault()
                 onRowClick(row)
               }}
-              className={`border-b border-white/[0.04] ${textSize[density]}
+              className={`border-b border-subtle ${textSize[density]}
                           transition-colors duration-fast text-secondary
                           hover:bg-primary/[0.07] hover:text-text
                           ${onRowClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50' : ''}

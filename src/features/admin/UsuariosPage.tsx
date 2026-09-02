@@ -166,7 +166,7 @@ function PermissoesMatrix() {
           </thead>
           <tbody>
             {data.modulos.map(m => (
-              <tr key={m.key} className="border-b border-white/[0.05] hover:bg-white/[0.02]">
+              <tr key={m.key} className="border-b border-subtle hover:bg-surface-hover">
                 <td className="px-3 py-2 text-secondary">{m.label}</td>
                 {roles.map(r => {
                   const checked  = r === 'gestor' ? true : (data.permissoes[r] ?? []).includes(m.key)
@@ -240,7 +240,7 @@ export default function UsuariosPage() {
             <tbody>
               {usuariosList.map(u => (
                 <Fragment key={u.id}>
-                  <tr className="border-b border-white/[0.05] hover:bg-white/[0.02] text-label">
+                  <tr className="border-b border-subtle hover:bg-surface-hover text-label">
                     <td className="px-3 py-2.5 text-text font-medium">{u.username}</td>
                     <td className="px-3 py-2.5">
                       <select

@@ -18,7 +18,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
           </span>
         </div>
         <div className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3 px-5 py-2
-                        bg-surface/20 border-b border-white/[0.05] flex-shrink-0
+                        bg-surface/20 border-b border-subtle flex-shrink-0
                         text-caption font-bold uppercase tracking-[0.05em] text-muted">
           <span>OS #</span><span>Cliente</span><span>Cidade</span><span>Equipe</span>
           <span className="text-right">Aging</span>
@@ -26,7 +26,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
         <div className="overflow-y-auto flex-1">
           {rows.length === 0
             ? <div className="px-5 py-10 text-center text-label text-muted">Nenhuma OS encontrada</div>
-            : <div className="divide-y divide-white/[0.04]">
+            : <div className="divide-y divide-subtle">
                 {rows.map(r => {
                   const aging = r._agingAbertura ?? 0
                   const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : '#94a3b8'

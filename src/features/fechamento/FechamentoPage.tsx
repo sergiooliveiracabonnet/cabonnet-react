@@ -293,7 +293,7 @@ function EquipesTable({ byEquipe }: { byEquipe: Record<string, TeamStats> }) {
             <th className="px-2 py-2 text-center text-caption font-bold text-muted uppercase">Taxa</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.04]">
+        <tbody className="divide-y divide-subtle">
           {equipes.map((e, i) => (
             <tr key={e.eq} className="hover:bg-surface/20">
               <td className="px-2 py-2 text-center text-caption">

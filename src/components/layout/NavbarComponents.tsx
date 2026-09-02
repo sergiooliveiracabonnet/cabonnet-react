@@ -217,7 +217,7 @@ export function AIStatusBadge() {
 
       {open && (
         <div className="absolute right-0 top-full mt-2 z-[600] w-72 animate-fade-in">
-          <div className="bg-elevated border border-white/[0.10] rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-elevated border border-border-hover rounded-2xl shadow-2xl overflow-hidden">
 
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -231,7 +231,7 @@ export function AIStatusBadge() {
             </div>
 
             {/* Status */}
-            <div className="px-4 py-3 border-b border-white/[0.05]">
+            <div className="px-4 py-3 border-b border-subtle">
               {isLoading ? (
                 <p className="text-caption text-muted animate-pulse">Verificando chave…</p>
               ) : valid ? (
@@ -265,7 +265,7 @@ export function AIStatusBadge() {
 
             {/* Uso desta sessão */}
             {usage && (
-              <div className="px-4 py-3 border-b border-white/[0.05] space-y-2">
+              <div className="px-4 py-3 border-b border-subtle space-y-2">
                 <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted">Esta sessão do servidor</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                   <div>
@@ -360,7 +360,7 @@ export function SlaCriticasBadge({ slaCriticas }: { slaCriticas: OSRow[] }) {
               {slaCriticas.length} OS com SLA 2× excedido
             </p>
           </div>
-          <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.05]">
+          <div className="max-h-72 overflow-y-auto divide-y divide-subtle">
             {slaCriticas.map((os, i) => (
               <div key={(os.numos as string) ?? i} className="px-3 py-2.5">
                 <div className="flex items-center justify-between gap-2 mb-0.5">
@@ -454,7 +454,7 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
                 Ativos ({alerts.length})
               </p>
               {alerts.map(a => (
-                <div key={a.id} className="flex items-center gap-2 px-3 py-2 border-t border-white/[0.04]">
+                <div key={a.id} className="flex items-center gap-2 px-3 py-2 border-t border-subtle">
                   <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                     a.severity === 'critical' ? 'bg-red' :
                     a.severity === 'warning'  ? 'bg-yellow' : 'bg-cyan'
@@ -554,7 +554,7 @@ export function AuditLogBadge() {
               Nenhuma ação registrada nesta sessão.
             </p>
           ) : (
-            <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.04]">
+            <div className="max-h-72 overflow-y-auto divide-y divide-subtle">
               {auditEntries.map(e => {
                 const catCls: Record<string, string> = {
                   kanban:    'bg-purple/10 text-purple',

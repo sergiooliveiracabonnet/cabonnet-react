@@ -174,7 +174,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
             disabled={!!sending}
           >
             {sending === 'resumo'
-              ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Gerando…</>
+              ? <><span className="w-3 h-3 border-2 border-border-hover border-t-white rounded-full animate-spin" /> Gerando…</>
               : <><PaperPlaneTilt size={11} /> Resumo</>}
           </Button>
           <Button
@@ -183,7 +183,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
             disabled={!!sending}
           >
             {sending === 'detalhado'
-              ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Gerando…</>
+              ? <><span className="w-3 h-3 border-2 border-border-hover border-t-white rounded-full animate-spin" /> Gerando…</>
               : <><PaperPlaneTilt size={11} /> Detalhado</>}
           </Button>
         </div>

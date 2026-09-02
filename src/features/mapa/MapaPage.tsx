@@ -294,7 +294,7 @@ export default function MapaPage() {
       <div className="relative overflow-hidden overscroll-contain" style={{ flex: '1 1 0', minHeight: 0 }}
            role="region" aria-label="Mapa operacional das ordens de serviço">
         <div className="absolute left-2 top-2 z-[500] flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-2 sm:left-4 sm:top-4">
-          <div className="flex rounded-xl border border-white/[0.10] bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Agrupamento geográfico">
+          <div className="flex rounded-xl border border-border-hover bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Agrupamento geográfico">
             {([
               { val: 'cidade', icon: GridFour, label: 'Cidade' },
               { val: 'bairro', icon: Stack, label: 'Bairro' },
@@ -307,7 +307,7 @@ export default function MapaPage() {
             ))}
           </div>
 
-          <div className="flex rounded-xl border border-white/[0.10] bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Camada de visualização">
+          <div className="flex rounded-xl border border-border-hover bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Camada de visualização">
             {([
               { val: 'bolhas', icon: Circle, label: 'Bolhas' },
               { val: 'calor', icon: Fire, label: 'Concentração' },
@@ -325,7 +325,7 @@ export default function MapaPage() {
 
           <button type="button" onClick={() => setShowExecucao(v => !v)} aria-pressed={showExecucao}
                   className={`flex min-h-11 items-center gap-1.5 rounded-xl border bg-elevated/95 px-3 text-caption font-semibold shadow-lg backdrop-blur transition-colors
-                              ${showExecucao ? 'border-yellow/30 text-yellow' : 'border-white/[0.10] text-muted hover:bg-surface hover:text-text'}`}>
+                              ${showExecucao ? 'border-yellow/30 text-yellow' : 'border-border-hover text-muted hover:bg-surface hover:text-text'}`}>
             <Wrench size={13} aria-hidden="true" />
             Em campo{execucaoGeo.length > 0 ? ` (${execucaoGeo.length})` : ''}
           </button>

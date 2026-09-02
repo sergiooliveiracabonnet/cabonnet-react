@@ -131,7 +131,7 @@ export function MapLegend() {
   ]
   return (
     <section aria-label="Legenda do mapa" className="absolute bottom-2 right-2 z-[500] max-w-[calc(100%-1rem)] sm:bottom-4 sm:right-4">
-      <details className="group rounded-xl border border-white/[0.10] bg-elevated/95 shadow-xl backdrop-blur sm:open:min-w-56" open>
+      <details className="group rounded-xl border border-border-hover bg-elevated/95 shadow-xl backdrop-blur sm:open:min-w-56" open>
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-caption font-bold uppercase tracking-[0.05em] text-secondary">
           Legenda
           <CaretDown size={13} className="transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
@@ -187,12 +187,12 @@ export function CidadePanel({ cidade, onClose }: { cidade: CidadeAgg | null; onC
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-border">
+        <div className="grid grid-cols-3 divide-x divide-subtle border-b border-border">
           <Stat label="Total OS"   value={cidade.count}              color="text-text" />
           <Stat label="Críticas"   value={cidade.criticos}           color={cidade.criticos  > 0 ? 'text-red'    : 'text-muted'} />
           <Stat label="Excedidas"  value={cidade.excedidos}          color={cidade.excedidos > 0 ? 'text-orange' : 'text-muted'} />
         </div>
-        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-border">
+        <div className="grid grid-cols-3 divide-x divide-subtle border-b border-border">
           <Stat label="Aging med." value={`${cidade.avgAging.toFixed(1)}d`} color="text-cyan" />
           <Stat label="Pendentes"  value={cidade.pendentes}   color="text-yellow" />
           <Stat label="Sem equipe" value={cidade.semEquipe}   color={cidade.semEquipe > 0 ? 'text-orange' : 'text-muted'} />
@@ -384,7 +384,7 @@ export function RankingPanel({ cidades, onSelect, selected }: {
           <TrendUp size={12} className="text-primary" />
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking de cidades</p>
         </div>
-        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
+        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-subtle">
           {cidades.slice(0, 15).map((g: CidadeAgg, i: number) => {
             const { fill } = bubbleColor(g)
             const isSelected = selected?.cidade === g.cidade
@@ -486,12 +486,12 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-border flex-shrink-0">
+        <div className="grid grid-cols-3 divide-x divide-subtle border-b border-border flex-shrink-0">
           <Stat label="Total OS"  value={bairro.count}    color="text-text" />
           <Stat label="Críticas"  value={bairro.criticos} color={bairro.criticos  > 0 ? 'text-red'    : 'text-muted'} />
           <Stat label="Excedidas" value={bairro.excedidos} color={bairro.excedidos > 0 ? 'text-orange' : 'text-muted'} />
         </div>
-        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-border flex-shrink-0">
+        <div className="grid grid-cols-3 divide-x divide-subtle border-b border-border flex-shrink-0">
           <Stat label="Aging med." value={`${bairro.avgAging.toFixed(1)}d`} color="text-cyan" />
           <Stat label="Pendentes"  value={bairro.pendentes} color="text-yellow" />
           <Stat label="Sem equipe" value={bairro.semEquipe} color={bairro.semEquipe > 0 ? 'text-orange' : 'text-muted'} />
@@ -501,7 +501,7 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
         {sorted.length > 0 && (
           <>
             {/* Cabeçalho da tabela */}
-            <div className="flex items-center px-3 py-1.5 border-b border-white/[0.05] bg-surface/30 flex-shrink-0">
+            <div className="flex items-center px-3 py-1.5 border-b border-subtle bg-surface/30 flex-shrink-0">
               <button onClick={() => toggleSort('numos')} className="flex items-center gap-0.5 text-caption font-bold uppercase text-muted hover:text-secondary w-14 flex-shrink-0">
                 Nº OS <SortIcon k="numos" sortKey={sortKey} sortDir={sortDir} />
               </button>
@@ -515,7 +515,7 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
             </div>
 
             {/* Linhas */}
-            <div className="overflow-y-auto flex-1 divide-y divide-white/[0.04]">
+            <div className="overflow-y-auto flex-1 divide-y divide-subtle">
               {sorted.map(os => {
                 const aging  = os._aging ?? 0
                 const agVar  = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'
@@ -563,7 +563,7 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
           <TrendUp size={12} className="text-primary" />
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking por bairro</p>
         </div>
-        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
+        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-subtle">
           {bairros.slice(0, 20).map((b, i) => {
             const fill = b.criticos > 0 ? '#f87171' : b.excedidos > 0 ? '#f97316' : '#3b82f6'
             const isSelected = selected?.bairro === b.bairro && selected?.cidade === b.cidade

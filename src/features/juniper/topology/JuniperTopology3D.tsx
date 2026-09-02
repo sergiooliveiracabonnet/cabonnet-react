@@ -363,7 +363,7 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-white/[0.06] flex-wrap">
+      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-subtle flex-wrap">
         <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
           <CubeTransparent size={13} /> Topologia PPPoE · cluster → interface → cliente
         </p>
@@ -384,7 +384,7 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
         {!ready && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-card/80">
             <p className="text-caption text-muted">Carregando texturas da topologia…</p>
-            <div className="h-1 w-48 rounded-full bg-white/[0.08] overflow-hidden">
+            <div className="h-1 w-48 rounded-full bg-surface-active overflow-hidden">
               <div
                 className="h-full bg-primary transition-[width] duration-normal"
                 style={{ width: `${Math.round(progress * 100)}%` }}
@@ -395,7 +395,7 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
 
         {hover && (
           <div
-            className="pointer-events-none absolute z-10 min-w-[190px] rounded-lg border border-white/[0.12]
+            className="pointer-events-none absolute z-10 min-w-[190px] rounded-lg border border-border-hover
                        bg-elevated/95 px-3 py-2 shadow-xl backdrop-blur-sm"
             style={{ left: hover.x + 14, top: Math.max(hover.y - 12, 8) }}
           >
@@ -412,7 +412,7 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
         )}
       </div>
 
-      <div className="flex items-center gap-4 px-5 py-3 border-t border-white/[0.06] flex-wrap">
+      <div className="flex items-center gap-4 px-5 py-3 border-t border-subtle flex-wrap">
         <span className="flex items-center gap-1.5 text-caption text-muted">
           <span className="w-2 h-2 rounded-full bg-primary inline-block" /> Cluster
         </span>

@@ -40,7 +40,7 @@ function BuilderErrorBanner() {
         <div
           key={name}
           className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl
-                     bg-elevated border border-yellow/30 shadow-lg shadow-black/30"
+                     bg-elevated border border-yellow/30 shadow-lg"
           role="alert"
         >
           <Warning size={13} className="text-yellow flex-shrink-0 mt-0.5" />

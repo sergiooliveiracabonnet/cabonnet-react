@@ -427,7 +427,7 @@ export default function JuniperPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-subtle">
                 {clientesFiltrados.map((c, i) => {
                   const isOnline = c.state !== 'inactive'
                   return (
@@ -472,7 +472,7 @@ export default function JuniperPage() {
             )}
           </div>
         </div>
-        <div className="divide-y divide-white/[0.04] min-h-[120px] max-h-[600px] overflow-y-auto">
+        <div className="divide-y divide-subtle min-h-[120px] max-h-[600px] overflow-y-auto">
           {historico.length === 0 ? (
             <p className="text-center text-muted text-label py-10">
               O histórico será salvo automaticamente a cada coleta (5 min).
@@ -509,7 +509,7 @@ export default function JuniperPage() {
       <>
         <SectionTitle icon={Sparkle}>Correlação IA — Conexões ativas × OS</SectionTitle>
         {!aiEnabled ? (
-          <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+          <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkle size={12} className="text-primary/40" />
               <span className="text-caption font-bold text-muted uppercase tracking-wide">Conexões ativas × OS · IA</span>

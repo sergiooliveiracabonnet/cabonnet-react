@@ -246,7 +246,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                   {showSectionHeaders && (
                     <p className="px-4 pt-3 pb-1 text-caption font-semibold text-muted uppercase tracking-[0.06em]">Páginas</p>
                   )}
-                  <div className="divide-y divide-white/[0.04]">
+                  <div className="divide-y divide-subtle">
                     {results.pages.map(page => {
                       const globalIdx = navigableItems.findIndex(it => it.type === 'page' && it.data.to === page.to)
                       const isActive = globalIdx === activeIdx
@@ -278,7 +278,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                   {showSectionHeaders && (
                     <p className="px-4 pt-3 pb-1 text-caption font-semibold text-muted uppercase tracking-[0.06em]">Ordens de Serviço</p>
                   )}
-                  <div className="divide-y divide-white/[0.04]">
+                  <div className="divide-y divide-subtle">
                     {results.os.map(os => {
                       const aging = (os._aging as number | undefined) ?? (os._agingAbertura as number | undefined)
                       const agCls = (aging ?? 0) >= 6 ? 'text-red' : (aging ?? 0) >= 3 ? 'text-yellow' : 'text-muted'

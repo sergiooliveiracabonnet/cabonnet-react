@@ -154,7 +154,7 @@ export function DrillModal({ drill, onClose, onOS }: { drill: DrillState | null;
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.03]">
+            <tbody className="divide-y divide-subtle">
               {sorted.slice(0, 250).map(r => (
                 <tr key={r.numos} className="hover:bg-surface/20 transition-colors">
                   <td className="px-1 py-1 font-mono whitespace-nowrap">
@@ -542,7 +542,7 @@ export function TabEstatistica({ d, rows, onDrill }: { d: Record<string,unknown>
             <button key={city.name} type="button" role="listitem"
               onClick={() => onDrill(`OS ativas em ${city.name}`, rows.filter(r => ['Pendente', 'Atendimento'].includes(r.descsituacao) && (r.nomedacidade || '').trim() === city.name && r._aging != null))}
               aria-label={`${city.name}: ${city.total} OS, aging médio ${city.media} dias, mediana ${city.mediana} dias`}
-              className="grid min-h-11 w-full cursor-pointer grid-cols-[minmax(0,1fr)_72px_88px_88px] gap-2 border-b border-white/[0.05] px-4 py-2 text-left transition-colors last:border-0 hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50">
+              className="grid min-h-11 w-full cursor-pointer grid-cols-[minmax(0,1fr)_72px_88px_88px] gap-2 border-b border-subtle px-4 py-2 text-left transition-colors last:border-0 hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50">
               <span className="truncate text-label font-semibold text-secondary">{city.name}</span>
               <span className="text-right font-mono text-label tabular-nums text-text">{city.total}</span>
               <span className="text-right font-mono text-label font-bold tabular-nums text-orange">{city.media}d</span>
@@ -639,7 +639,7 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-subtle">
                 {cohort.rows.map(item => (
                   <tr key={item.name} tabIndex={0} role="button"
                       aria-label={`Abrir coorte ${item.name}, ${item.total} OS`}

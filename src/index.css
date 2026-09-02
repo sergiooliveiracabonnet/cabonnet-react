@@ -227,8 +227,7 @@ body {
 ═══════════════════════════════════════════════════════════════ */
 
 /* ── Card base ──
-   A borda é definida via Tailwind (border border-white/[0.08]) nos componentes.
-   O override .light [class*="border-white/"] cuida do light mode automaticamente.
+   A borda é definida via Tailwind (border border-border) nos componentes.
    .card-premium só adiciona hover e sombras — não sobrescreve a borda. */
 .card-premium {
   position: relative;
@@ -482,22 +481,6 @@ body {
 .card-glow-purple:hover    { border-color: rgba(167,139,250,0.28); box-shadow: 0 4px 20px rgba(167,139,250,.11); }
 .card-glow-teal:hover      { border-color: rgba(45,212,191,0.28);  box-shadow: 0 4px 20px rgba(45,212,191,.11);  }
 .card-glow-secondary:hover { border-color: rgb(var(--text-muted)/0.3);box-shadow: 0 4px 16px rgba(0,0,0,.18);       }
-
-/* ── Tema claro — overrides globais para border-white/* ── */
-.light [class*="bg-white/"]:not([class*="hover:bg-white/"]) {
-  background-color: rgba(0,0,0,0.025);
-}
-.light [class*="hover:bg-white/"]:hover { background-color: rgba(0,0,0,0.04); }
-.light [class*="border-white/"]         { border-color: rgb(var(--border)); }
-.light [class*="divide-white/"] > * + * { border-color: rgb(var(--border)); }
-
-/* Sombras Tailwind no tema claro */
-.light .shadow-xs  { box-shadow: 0 1px 2px rgba(0,0,0,.06); }
-.light .shadow-sm  { box-shadow: 0 1px 3px rgba(0,0,0,.08),  0 1px 2px rgba(0,0,0,.05); }
-.light .shadow-md  { box-shadow: 0 4px 12px rgba(0,0,0,.09), 0 2px 4px rgba(0,0,0,.05); }
-.light .shadow-lg  { box-shadow: 0 8px 24px rgba(0,0,0,.10), 0 4px 8px rgba(0,0,0,.06); }
-.light .shadow-xl  { box-shadow: 0 16px 40px rgba(0,0,0,.11),0 8px 16px rgba(0,0,0,.06);}
-.light .shadow-accent { box-shadow: 0 4px 16px rgba(37,99,235,.12), 0 2px 6px rgba(37,99,235,.08); }
 
 /* ═══════════════════════════════════════════════════════════════
    LEAFLET — dark theme

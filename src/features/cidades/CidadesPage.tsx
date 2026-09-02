@@ -154,7 +154,7 @@ export default function CidadesPage() {
             <label className="text-caption font-semibold text-muted">
               Cidade
               <select value={cidadeFilter} onChange={e => setCidadeFilter(e.target.value)}
-                      className="mt-1 min-h-11 w-full rounded-lg border border-white/[0.10] bg-card px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9">
+                      className="mt-1 min-h-11 w-full rounded-lg border border-border-hover bg-card px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9">
                 <option value="">Todas as cidades</option>
                 {cidadesOptions.map(cidade => <option key={cidade} value={cidade}>{cidade}</option>)}
               </select>
@@ -162,7 +162,7 @@ export default function CidadesPage() {
             <label className="text-caption font-semibold text-muted">
               Categoria
               <select value={tipoFilter} onChange={e => setTipoFilter(e.target.value as CidadeTipoFilter)}
-                      className="mt-1 min-h-11 w-full rounded-lg border border-white/[0.10] bg-card px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9">
+                      className="mt-1 min-h-11 w-full rounded-lg border border-border-hover bg-card px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9">
                 <option value="TODOS">Todas</option>
                 <option value="INSTALACAO">Instalação</option>
                 <option value="MANUTENCAO">Manutenção</option>
@@ -204,7 +204,7 @@ export default function CidadesPage() {
 
         {/* ── AI Clusters Panel ── */}
         {!aiEnabled ? (
-          <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+          <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkle size={12} className="text-primary/40" />
               <span className="text-caption font-bold text-muted uppercase tracking-wide">Clusters de Pendências · IA</span>

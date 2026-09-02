@@ -189,7 +189,7 @@ export function AlertCard({ alert, delay = 0, acknowledged = false, onToggleAckn
               +{extra} item{extra > 1 ? 's' : ''} adicionais
             </p>
           )}
-          <div className="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-white/[0.06]">
+          <div className="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-subtle">
             <button onClick={onToggleAcknowledged}
               className="min-h-10 inline-flex items-center gap-2 rounded-lg border border-border px-3 text-label text-secondary hover:text-text hover:bg-surface focus-visible:ring-2 focus-visible:ring-primary/50">
               <CheckCircle size={14} /> {acknowledged ? 'Marcar como pendente' : 'Reconhecer alerta'}

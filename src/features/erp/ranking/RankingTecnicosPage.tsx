@@ -220,7 +220,7 @@ export default function RankingTecnicosPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-label">
             <thead>
-              <tr className="border-b border-white/[0.05] bg-surface/10">
+              <tr className="border-b border-subtle bg-surface/10">
                 <th className="px-4 py-3 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Técnico</th>
                 <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('volume')}>
@@ -248,7 +248,7 @@ export default function RankingTecnicosPage() {
             </thead>
             <tbody>
               {sorted.map(r => (
-                <tr key={r.nome} className="border-b border-white/[0.03] hover:bg-surface/10 transition-colors">
+                <tr key={r.nome} className="border-b border-subtle hover:bg-surface/10 transition-colors">
                   <td className="px-4 py-2.5">
                     <TecnicoCell codigo={r.nome} cadastro={cadastroMap.get(r.nome)} />
                   </td>

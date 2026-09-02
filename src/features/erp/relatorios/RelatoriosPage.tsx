@@ -476,7 +476,7 @@ export default function RelatoriosPage() {
                 <thead className="bg-surface/30 text-caption font-bold uppercase tracking-wide text-muted">
                   <tr>{['Equipe / líder', 'Instalação', 'Manutenção', 'Serviço', 'Rede', 'Executadas', 'Fila', 'SLA fila', 'Vencidas', 'Aging'].map(label => <th key={label} className="px-4 py-3 text-left">{label}</th>)}</tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.05]">
+                <tbody className="divide-y divide-subtle">
                   {ranking.map(entry => {
                     const teamRows = filteredRows.filter(row => (shortEquipe(row.nomedaequipe).split(' - ')[0].trim() || 'Sem equipe') === entry.code)
                     const executed = entry.execInst + entry.execManut + entry.execServico + entry.execRede

@@ -191,7 +191,7 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
       <div className="overflow-x-auto">
         <table className="w-full text-caption">
           <thead>
-            <tr className="border-b border-white/[0.05] bg-surface/20">
+            <tr className="border-b border-subtle bg-surface/20">
               {OS_COLS.map(c => (
                 <th key={c.key}
                     className="px-3 py-2 text-left text-caption font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap">
@@ -200,7 +200,7 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.03]">
+          <tbody className="divide-y divide-subtle">
             {sorted.map(r => {
               const { color, Icon } = tipoIcon(r)
               const exec = (r.dataexecucao || r.databaixa || '').split(' ')
@@ -272,7 +272,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
       {/* ── Summary row ── */}
       <tr
         onClick={onToggle}
-        className="border-b border-white/[0.04] hover:bg-surface/20 cursor-pointer transition-colors"
+        className="border-b border-subtle hover:bg-surface/20 cursor-pointer transition-colors"
       >
         {/* Rank */}
         <td className="px-4 py-3 w-10">
@@ -346,7 +346,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
 
       {/* ── Mini cards + inline table ── */}
       {isExpanded && (
-        <tr className="border-b border-white/[0.04] bg-surface/15">
+        <tr className="border-b border-subtle bg-surface/15">
           <td colSpan={8} className="px-4 pt-3 pb-4">
 
             {/* Day cards */}
@@ -536,7 +536,7 @@ export default function PlannerExecutadoView() {
         ) : (
           <div className="rounded-2xl border border-border bg-card overflow-hidden">
             {/* Day header strip */}
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.05] bg-surface/15">
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-subtle bg-surface/15">
               <div className="w-10 flex-shrink-0" />
               <div className="w-[140px] flex-shrink-0" />
               <div className="flex flex-1 gap-[2px] min-w-0">
@@ -558,7 +558,7 @@ export default function PlannerExecutadoView() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-white/[0.05] bg-surface/10">
+                  <tr className="border-b border-subtle bg-surface/10">
                     <th className="px-4 py-2 text-left w-10" />
                     <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Equipe</th>
                     <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Últimos {days.length} dias</th>
@@ -594,7 +594,7 @@ export default function PlannerExecutadoView() {
 
       {/* ── AI Produtividade ──────────────────────────────────────────────── */}
       {!aiEnabled ? (
-        <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkle size={12} className="text-primary/40" />
             <span className="text-caption font-bold text-muted uppercase tracking-wide">Análise de Quedas de Produtividade · IA</span>
@@ -627,7 +627,7 @@ export default function PlannerExecutadoView() {
               {aiProdutividade.analises && aiProdutividade.analises.length > 0 && (
                 <div className="space-y-2">
                   {aiProdutividade.analises.map((a, i) => (
-                    <div key={i} className="rounded-lg border border-white/[0.06] bg-surface/30 p-3 space-y-1">
+                    <div key={i} className="rounded-lg border border-subtle bg-surface/30 p-3 space-y-1">
                       <div className="flex items-center gap-2">
                         <TrendDown size={12} className="text-red flex-shrink-0" />
                         <span className="text-label font-semibold text-text">{a.equipe}</span>

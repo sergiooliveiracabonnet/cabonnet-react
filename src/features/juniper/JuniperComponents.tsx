@@ -105,7 +105,7 @@ export function ClientCard({ c }: { c: JuniperClient }) {
 
         <div className={`rounded-xl px-3 py-2.5 mb-3 border ${isOnline
           ? 'bg-red/[0.06] border-red/[0.15]'
-          : 'bg-surface/20 border-white/[0.05]'}`}>
+          : 'bg-surface/20 border-subtle'}`}>
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-1">Endereço IP</p>
           <p className={`text-title font-mono font-bold uppercase antialiased leading-none tracking-wide
             ${isOnline ? 'text-red' : 'text-secondary'}`}>{c.ip}</p>
@@ -118,7 +118,7 @@ export function ClientCard({ c }: { c: JuniperClient }) {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.05] mt-1">
+        <div className="flex items-center justify-between pt-2.5 border-t border-subtle mt-1">
           <div className="flex items-center gap-1.5">
             {c.uptime !== '—' && (
               <>
@@ -172,7 +172,7 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
   const onlinePct = snap.total > 0 ? Math.round((snap.online / snap.total) * 100) : 0
   const relTxt    = relTime(snap.ts)
   return (
-    <div className="border-b border-white/[0.04] last:border-0">
+    <div className="border-b border-subtle last:border-0">
       <button
         onClick={onToggle}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/30 transition-colors text-left"
@@ -197,7 +197,7 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
       </button>
 
       {isOpen && (
-        <div className="overflow-x-auto border-t border-white/[0.04] bg-surface/15">
+        <div className="overflow-x-auto border-t border-subtle bg-surface/15">
           <table className="w-full text-label">
             <thead>
               <tr className="border-b border-border">
@@ -206,7 +206,7 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.03]">
+            <tbody className="divide-y divide-subtle">
               {(snap.clientes ?? []).map((c, ci) => {
                 const cl = c as Record<string, string>
                 return (

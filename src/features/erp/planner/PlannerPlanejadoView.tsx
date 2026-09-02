@@ -202,7 +202,7 @@ export default function PlannerPlanejadoView() {
                     </th>
                     {days.map(d => (
                       <th key={d.key}
-                          className={`px-2 py-3 text-center text-caption font-bold border-r border-white/[0.04] last:border-r-0 w-[100px]
+                          className={`px-2 py-3 text-center text-caption font-bold border-r border-subtle last:border-r-0 w-[100px]
                                       ${d.isToday ? 'text-primary' : d.isWeekend ? 'text-muted/70' : 'text-muted'}
                                       ${d.isWeekend ? 'bg-surface/10' : ''}`}>
                         <div>{d.dow}</div>

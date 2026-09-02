@@ -120,7 +120,7 @@ export function OsRowItem({ r }: { r: OSRow }) {
   const { color, Icon } = tipoIcon(r)
   const concl = isConcluida(r.descsituacao)
   return (
-    <div className={`flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04]
+    <div className={`flex items-center gap-3 px-4 py-2.5 border-b border-subtle
                      last:border-b-0 hover:bg-surface/20 transition-colors
                      ${concl ? 'opacity-80' : ''}`}>
       <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
