@@ -31,14 +31,12 @@ interface NavItemProps {
   label:       string
   icon:        ComponentType<{ size?: number; style?: CSSProperties }>
   sidebarOpen: boolean
-  groupKey:    string
-  groupColor:  string
   onNavigate:  () => void
 }
 
 interface Tip { top: number; left: number }
 
-function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onNavigate }: NavItemProps) {
+function NavItem({ to, label, icon: Icon, sidebarOpen, onNavigate }: NavItemProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [tip, setTip] = useState<Tip | null>(null)
 
@@ -58,20 +56,20 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onN
         end={to === '/'}
         onClick={onNavigate}
         className={({ isActive }) =>
-          `nav-link-${groupKey} flex min-h-11 items-center gap-3 rounded-lg border py-3 pl-3 pr-2.5
-           md:min-h-0 md:py-2
-           transition-colors duration-150 text-label font-medium
-           ${isActive ? 'active' : 'border-transparent text-muted hover:text-text'}`
+          `flex min-h-11 items-center gap-3 rounded-lg py-2.5 pl-3 pr-2.5 text-label transition-colors
+           ${isActive
+             ? 'border-r-2 border-orange bg-orange/10 font-semibold text-text dark:bg-orange/[.18]'
+             : 'text-secondary hover:bg-surface-hover hover:text-text'}`
         }
       >
         {({ isActive }) => (
           <>
-            <Icon size={16} style={isActive ? { color: groupColor } : {}} />
+            <Icon size={16} />
             {sidebarOpen && (
               <span className="truncate flex-1 leading-none">{label}</span>
             )}
             {sidebarOpen && isActive && (
-              <CaretRight size={10} className="flex-shrink-0 opacity-40" style={{ color: groupColor }} />
+              <CaretRight size={10} className="flex-shrink-0 text-orange opacity-40" />
             )}
           </>
         )}
@@ -85,7 +83,7 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onN
         >
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-lg
                           bg-elevated border border-border">
-            <div className="w-[2px] h-3 rounded-full flex-shrink-0" style={{ background: groupColor }} />
+            <div className="w-[2px] h-3 rounded-full flex-shrink-0 bg-border-hover" />
             <span className="text-caption font-medium text-text whitespace-nowrap">{label}</span>
           </div>
         </div>
@@ -147,7 +145,8 @@ export function Sidebar() {
     <aside
       aria-label="Navegação principal"
       className={`sidebar-premium fixed left-0 top-0 z-[400] flex h-full w-[min(88vw,300px)]
-                  select-none flex-col overflow-hidden transition-[width,transform] duration-200 md:z-sidebar
+                  select-none flex-col overflow-hidden transition-[width,transform] duration-200
+                  md:z-sidebar md:left-3 md:top-3 md:h-[calc(100vh-1.5rem)] md:rounded-xl md:border md:border-border
                   ${sidebarOpen
                     ? 'translate-x-0 md:w-[248px]'
                     : '-translate-x-full md:w-[64px] md:translate-x-0'}`}
@@ -163,7 +162,7 @@ export function Sidebar() {
             boxShadow:  '0 0 0 1px rgba(96,165,250,0.28), 0 8px 24px rgba(29,78,216,0.24)',
           }}
         >
-          <LogoIcon className="w-[17px] h-[17px]" style={{ filter: 'brightness(0) invert(1)' }} />
+          <LogoIcon className="w-[17px] h-[17px] [filter:brightness(0)] dark:[filter:brightness(0)_invert(1)]" />
         </div>
         {sidebarOpen && (
           <div className="flex flex-col leading-none min-w-0">
@@ -186,16 +185,13 @@ export function Sidebar() {
                 <div
                   className="w-1 h-1 rounded-full flex-shrink-0 bg-blue"
                 />
-                <span
-                  className="text-caption font-semibold uppercase tracking-[0.07em]"
-                  style={{ color: 'rgb(var(--text-muted))' }}
-                >
+                <span className="text-caption font-semibold uppercase tracking-wide text-muted">
                   {group.label}
                 </span>
               </div>
             ) : gi > 0 ? (
               <div className="flex justify-center py-2">
-                <div className="w-1 h-1 rounded-full" style={{ background: group.color + '99' }} />
+                <div className="w-1 h-1 rounded-full bg-border-hover" />
               </div>
             ) : (
               <div className="py-1.5" />
@@ -209,8 +205,6 @@ export function Sidebar() {
                   label={label}
                   icon={icon}
                   sidebarOpen={sidebarOpen}
-                  groupKey={group.key}
-                  groupColor={group.color}
                   onNavigate={closeAfterMobileNavigation}
                 />
               ))}

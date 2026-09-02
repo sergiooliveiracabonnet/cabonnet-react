@@ -255,55 +255,6 @@ body {
   background: rgb(255 255 255 / 0.92);
 }
 
-/* ── Sidebar — sólida, borda direita ── */
-.sidebar-premium {
-  background: rgb(var(--bg));
-  border-right: 1px solid rgb(var(--border));
-}
-.light .sidebar-premium {
-  background: rgb(var(--surface-2)); /* branco — destaca sobre o fundo zinc-100 */
-}
-
-/* ── Nav links por grupo ── */
-.nav-link-agora,
-.nav-link-operar,
-.nav-link-analisar,
-.nav-link-infra {
-  transition: background 150ms ease, color 150ms ease;
-}
-.nav-link-agora.active    { background: rgba(139,92,246,0.12); color: #c4b5fd; font-weight: 500; }
-.nav-link-operar.active   { background: rgba(34,211,238,0.10); color: #67e8f9; font-weight: 500; }
-.nav-link-analisar.active { background: rgba(74,222,128,0.10); color: #86efac; font-weight: 500; }
-.nav-link-infra.active    { background: rgba(251,146,60,0.11); color: #fdba74; font-weight: 500; }
-
-.nav-link-agora:hover:not(.active)    { background: rgba(139,92,246,0.07); color: #ddd6fe; }
-.nav-link-operar:hover:not(.active)   { background: rgba(34,211,238,0.07); color: #a5f3fc; }
-.nav-link-analisar:hover:not(.active) { background: rgba(74,222,128,0.07); color: #bbf7d0; }
-.nav-link-infra:hover:not(.active)    { background: rgba(251,146,60,0.08); color: #fed7aa; }
-
-/* Fallback active nav */
-.nav-active {
-  background: rgb(var(--surface-hover));
-  color: rgb(var(--text));
-  font-weight: 500;
-}
-
-/* Group decorators */
-.grp-erp-line   { background: rgba(139,92,246,0.4); }
-.grp-ops-line   { background: rgba(34,211,238,0.4); }
-.grp-anal-line  { background: rgba(74,222,128,0.4); }
-.grp-infra-line { background: rgba(251,146,60,0.4); }
-
-.grp-erp-text   { color: rgba(167,139,250,0.65); }
-.grp-ops-text   { color: rgba(34,211,238,0.65);  }
-.grp-anal-text  { color: rgba(74,222,128,0.65);  }
-.grp-infra-text { color: rgba(251,191,36,0.65);  }
-
-.grp-dot-erp   { background: rgb(139,92,246);  }
-.grp-dot-ops   { background: rgb(34,211,238);  }
-.grp-dot-anal  { background: rgb(74,222,128);  }
-.grp-dot-infra { background: rgb(251,146,60);  }
-
 /* ── Semantic badges ── */
 /* Os tokens --orange/--blue/--green/--yellow/--red já mudam sozinhos com o
    tema (.dark), então uma regra por cor basta — sem variante `.light`.
@@ -573,28 +524,8 @@ body {
 }
 
 .sidebar-premium {
-  background:
-    linear-gradient(180deg, rgb(var(--blue) / 0.045), transparent 13rem),
-    rgb(var(--surface-3));
-  box-shadow: 16px 0 40px rgb(0 0 0 / 0.12);
-}
-
-.nav-link-agora.active,
-.nav-link-operar.active,
-.nav-link-analisar.active,
-.nav-link-infra.active {
-  border-color: rgb(var(--blue) / 0.24);
-  background: rgb(var(--blue) / 0.12);
-  color: rgb(var(--text));
-  box-shadow: inset 3px 0 0 rgb(var(--blue));
-}
-
-.nav-link-agora:hover:not(.active),
-.nav-link-operar:hover:not(.active),
-.nav-link-analisar:hover:not(.active),
-.nav-link-infra:hover:not(.active) {
-  background: rgb(var(--surface-hover) / 0.78);
-  color: rgb(var(--text));
+  background: rgb(var(--surface-1) / .82);
+  backdrop-filter: blur(12px);
 }
 
 @media (max-width: 767px) {

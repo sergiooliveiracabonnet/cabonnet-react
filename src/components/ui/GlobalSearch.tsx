@@ -178,11 +178,8 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                   {groups.map(group => (
                     <div key={group.key} className="mb-1">
                       <div className="flex items-center gap-2 px-3 pt-2 pb-1">
-                        <div className="w-1 h-3 rounded-full flex-shrink-0" style={{ background: group.color }} />
-                        <span
-                          className="text-caption font-semibold uppercase tracking-[0.06em]"
-                          style={{ color: group.color + 'aa' }}
-                        >
+                        <div className="w-1 h-3 rounded-full flex-shrink-0 bg-blue" />
+                        <span className="text-caption font-semibold uppercase tracking-wide text-muted">
                           {group.label}
                         </span>
                       </div>
