@@ -1905,6 +1905,68 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
+## Task 18b: Migrar os 228 hex da paleta antiga nos arquivos de feature
+
+**Task acrescentada durante a execução.** A Task 19 tratava isso como um passo de limpeza ("remova cada entrada e rode a auditoria"). O levantamento real mostra outra escala: **228 literais hexadecimais em 40 arquivos**, todos da paleta antiga, hoje isentos por entrada no objeto `files` de `scripts/audit-ds-baseline.json`. Não é um passo de varredura; é uma task própria.
+
+**Files:** os 40 arquivos listados em `scripts/audit-ds-baseline.json` → `files`, menos os 6 já resolvidos nas Tasks 17 e 18.
+
+**Interfaces:**
+- Consumes: `token()`, `chartSeries()` e `chartAxis()` de `src/lib/chartTheme.ts`, criados na Task 17.
+- Produces: objeto `files` da baseline vazio ou quase, e `globalHex` como única fonte de cor.
+
+A dívida é concentrada: 61 hex distintos, dos quais os 10 mais repetidos cobrem 135 das 228 entradas (59%).
+
+- [ ] **Step 1: Aplicar o mapa dos hex frequentes**
+
+| Hex antigo | Origem | Vira |
+|---|---|---|
+| `#3b82f6` (21) | blue-500 | `--blue` · série: `--chart-2` |
+| `#f97316` (20) | orange-500 | `--orange` · série: `--chart-1` |
+| `#f87171` (18) | red-400 | `--red` · série: `--chart-5` |
+| `#4ade80` (18) | green-400 | `--green` · série: `--chart-3` |
+| `#facc15` (15) | yellow-400 | `--yellow` · série: `--chart-4` |
+| `#94a3b8` (13) | slate-400 | `--text-muted` |
+| `#c4b5fd` (10) | violet-300 | `--chart-6` |
+| `#22d3ee` (8) | cyan-400 | `--blue` |
+| `#64748b` (7) | slate-500 | `--text-muted` |
+| `#fb923c` (5) | orange-400 | `--orange` |
+
+Escolha entre o token semântico e o de série pelo papel: cor de status ou de rótulo usa o semântico; cor de série de gráfico usa `--chart-N`.
+
+- [ ] **Step 2: Resolver a cauda**
+
+Sobram 51 hex distintos em 93 ocorrências, quase todos de duas famílias:
+
+- **Superfícies escuras** (`#0d1117`, `#0f172a`, `#111827`, `#09090b`, `#07090f`) → `--bg`, `--surface-1`, `--surface-2` ou `--surface-3`, conforme a profundidade no empilhamento.
+- **Neutros claros** (`#e2e8f0`, `#f0f4ff`, `#ffffff`, `#e4e4e7`, `#71717a`) → `--text`, `--text-secondary`, `--text-muted`, `--border` ou `--surface-*`.
+
+O resto são cores decorativas de uma feature só (`#cd7c3c`, `#84cc16`, `#ec4899`, `#a855f7`). Cada uma vai para o token mais próximo em papel, nunca em matiz: uma cor que marcava "atenção" vira `--yellow` mesmo que o hex antigo fosse laranja.
+
+**Caso à parte — `src/features/auth/LoginPage.tsx`** tem 22 hex, de longe o maior bloco, e é uma tela com tratamento visual próprio (gradientes de fundo). Trate-a por último e de forma isolada: se o resultado ficar ruim, é a única tela que pode manter exceção declarada na baseline, com justificativa no commit.
+
+- [ ] **Step 3: Esvaziar a baseline por arquivo**
+
+A cada arquivo migrado, remova a entrada correspondente de `files` e rode `npm run audit:ds`. Se reprovar, sobrou hex no código.
+
+- [ ] **Step 4: Verificar**
+
+```bash
+npx tsc --noEmit && npm run lint && npm test && npm run audit:ds
+node -e "const b=require('./scripts/audit-ds-baseline.json');console.log('entradas restantes:',Object.values(b.files).flat().length)"
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add -A src scripts/audit-ds-baseline.json
+git commit -m "refactor(ds): migra os 228 hex da paleta antiga para tokens
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+```
+
+---
+
 # FASE 6 — Varredura
 
 ## Task 19: Rota a rota, nos dois temas
