@@ -39,3 +39,52 @@ describe('OcorrenciasSinal — filtros de priorização', () => {
     expect(screen.queryByText('Cliente Crítico')).not.toBeInTheDocument()
   })
 })
+
+describe('OcorrenciasSinal — confirmação rápida do sinal após manutenção', () => {
+  it('preenche o sinal, clica em OK e conclui a ocorrência sem exigir status ou observação', () => {
+    const onChange = vi.fn()
+    render(<OcorrenciasSinal occurrences={occurrences} onChange={onChange} />)
+
+    const input = screen.getByLabelText('Sinal após manutenção de Cliente Crítico')
+    const confirmButton = screen.getByRole('button', { name: 'Confirmar sinal de Cliente Crítico' })
+    expect(confirmButton).toBeDisabled()
+
+    fireEvent.change(input, { target: { value: '-19.5' } })
+    expect(confirmButton).toBeEnabled()
+    fireEvent.click(confirmButton)
+
+    expect(onChange).toHaveBeenCalledTimes(1)
+    const updated = onChange.mock.calls[0][0]
+    const confirmed = updated.find((item: { client: string }) => item.client === 'Cliente Crítico')
+    expect(confirmed.after).toBe(-19.5)
+    expect(confirmed.status).toBe('Concluído')
+  })
+
+  it('não mostra a confirmação rápida para ocorrências já concluídas', () => {
+    const concluded = occurrences.map(item => item.client === 'Cliente Crítico' ? { ...item, status: 'Concluído' as const } : item)
+    render(<OcorrenciasSinal occurrences={concluded} onChange={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('Filtrar por status'), { target: { value: 'Todos' } })
+    expect(screen.queryByLabelText('Sinal após manutenção de Cliente Crítico')).not.toBeInTheDocument()
+  })
+})
+
+describe('OcorrenciasSinal — evolução do sinal médio', () => {
+  it('exibe o gráfico de evolução com as barras de antes e depois quando há confirmações no dia', () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const withConfirmation = occurrences.map(item => item.client === 'Cliente Crítico'
+      ? { ...item, after: -18, status: 'Concluído' as const, updatedAt: today }
+      : item)
+    render(<OcorrenciasSinal occurrences={withConfirmation} onChange={vi.fn()} />)
+
+    expect(screen.getByText('Evolução do sinal médio')).toBeInTheDocument()
+    expect(screen.getByTitle(`Antes: ${(-30).toFixed(1)} dBm`)).toBeInTheDocument()
+    expect(screen.getByTitle('Depois: -18.0 dBm')).toBeInTheDocument()
+    expect(screen.getByText('1 confirmação(ões) no período')).toBeInTheDocument()
+  })
+
+  it('mostra travessão quando nenhum dia tem confirmação registrada', () => {
+    render(<OcorrenciasSinal occurrences={occurrences} onChange={vi.fn()} />)
+    expect(screen.getByText('0 confirmação(ões) no período')).toBeInTheDocument()
+  })
+})

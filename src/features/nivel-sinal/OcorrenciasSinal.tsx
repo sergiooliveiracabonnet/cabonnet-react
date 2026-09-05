@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { ChartBar, CheckCircle, ClipboardText, Funnel, MagnifyingGlass, Wrench, X } from '@phosphor-icons/react'
+import { ChartBar, Check, CheckCircle, ClipboardText, Funnel, MagnifyingGlass, Wrench, X } from '@phosphor-icons/react'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { FilterSelect } from '../../components/ui/FilterSelect'
@@ -7,6 +7,25 @@ import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { OCCURRENCE_STATUSES as STATUSES, type OccurrenceStatus, type SignalOccurrence } from './signalOccurrenceModel'
+
+// Domínio de RX usado só pra escalar as barras do gráfico de evolução —
+// cobre da faixa crítica (buildHistogram usa -34) até um sinal bom (-14).
+const SIGNAL_CHART_MIN = -34
+const SIGNAL_CHART_MAX = -14
+const barHeight = (value: number) => Math.max(4, Math.min(100, (value - SIGNAL_CHART_MIN) / (SIGNAL_CHART_MAX - SIGNAL_CHART_MIN) * 100))
+
+function QuickSignalConfirm({ client, onConfirm }: { client: string; onConfirm: (value: number) => void }) {
+  const [value, setValue] = useState('')
+  const parsed = Number(value.replace(',', '.'))
+  const isValid = value.trim() !== '' && Number.isFinite(parsed)
+  return <div className="mt-1.5 flex items-center gap-1">
+    <input type="number" step="0.01" inputMode="decimal" value={value} onChange={event => setValue(event.target.value)}
+      placeholder="após manutenção" aria-label={`Sinal após manutenção de ${client}`}
+      className="h-8 w-28 rounded-md border border-border bg-surface px-2 text-caption text-text outline-none transition-colors focus:border-primary/60 focus:ring-2 focus:ring-primary/15" />
+    <Button variant="ghost" size="sm" aria-label={`Confirmar sinal de ${client}`} disabled={!isValid}
+      onClick={() => { if (isValid) { onConfirm(parsed); setValue('') } }}><Check size={13} /> OK</Button>
+  </div>
+}
 
 const STATUS_STYLE: Record<OccurrenceStatus, string> = {
   'Aberto': 'border-red/25 bg-red/10 text-red',
@@ -72,8 +91,29 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
   }), [occurrences])
   const maxDay = Math.max(1, ...days.map(day => day.count))
 
+  // Compara o sinal medio antes x depois das confirmacoes feitas em cada dia
+  // (mesmo par de ocorrencias nos dois lados, pra a comparacao ser justa).
+  const progressDays = useMemo(() => Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(); date.setHours(12, 0, 0, 0); date.setDate(date.getDate() - (6 - index))
+    const key = date.toISOString().slice(0, 10)
+    const confirmed = occurrences.filter(item => item.after != null && item.updatedAt === key)
+    const avg = (pick: (item: SignalOccurrence) => number) => confirmed.length ? confirmed.reduce((sum, item) => sum + pick(item), 0) / confirmed.length : null
+    return {
+      key, label: new Intl.DateTimeFormat('pt-BR', { weekday: 'short' }).format(date).replace('.', ''),
+      count: confirmed.length, avgBefore: avg(item => item.before), avgAfter: avg(item => item.after as number),
+    }
+  }), [occurrences])
+
   function clearFilters() {
     setStatusFilter('Ativas'); setSeverityFilter(''); setCityFilter(''); setOltFilter(''); setPonFilter(''); setTeamFilter(''); setQuery(''); setOrder('prioridade')
+  }
+
+  async function confirmSignal(item: SignalOccurrence, after: number) {
+    const updated = occurrences.map(row => row.id === item.id ? {
+      ...row, after, status: 'Concluído' as const, updatedAt: new Date().toISOString().slice(0, 10),
+      resolution: row.resolution || 'Sinal confirmado após manutenção',
+    } : row)
+    await onChange(updated)
   }
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -106,6 +146,22 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
       <Card className="p-5"><div className="mb-3 flex items-center justify-between"><h2 className="text-body font-semibold text-text">Situação atual</h2><span className="text-caption text-muted">ao vivo</span></div>{STATUSES.map(status => <div key={status} className="flex items-center justify-between border-b border-border py-3 last:border-0"><SignalBadge status={status} /><strong className="text-subtitle text-text">{occurrences.filter(item => item.status === status).length}</strong></div>)}</Card>
     </div>
 
+    <Card className="p-5">
+      <div className="mb-5 flex items-center justify-between"><h2 className="text-body font-semibold text-text">Evolução do sinal médio</h2><span className="text-caption text-muted">antes × depois da manutenção, últimos 7 dias</span></div>
+      <div className="flex h-48 items-end gap-2 border-b border-border px-1 sm:gap-4">{progressDays.map(day => <div key={day.key} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+        {day.avgBefore != null && day.avgAfter != null ? <div className="flex h-full w-full items-end justify-center gap-1">
+          <div title={`Antes: ${day.avgBefore.toFixed(1)} dBm`} className="w-full max-w-5 rounded-t-md bg-red/40 transition-colors hover:bg-red/60" style={{ height: `${barHeight(day.avgBefore)}%` }} />
+          <div title={`Depois: ${day.avgAfter.toFixed(1)} dBm`} className="w-full max-w-5 rounded-t-md bg-green/70 transition-colors hover:bg-green" style={{ height: `${barHeight(day.avgAfter)}%` }} />
+        </div> : <span className="text-caption text-muted">—</span>}
+        <span className="mb-2 truncate text-caption capitalize text-muted">{day.label}</span>
+      </div>)}</div>
+      <div className="mt-3 flex items-center gap-4 text-caption text-muted">
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-red/40" /> Antes</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-green/70" /> Depois</span>
+        <span className="ml-auto">{progressDays.reduce((sum, day) => sum + day.count, 0)} confirmação(ões) no período</span>
+      </div>
+    </Card>
+
     <Card className="p-4"><div className="mb-3 flex flex-wrap items-center gap-2"><div className="flex items-center gap-2 text-label font-semibold text-text"><Funnel size={15} className="text-primary" /> Priorizar tratativas</div><span className="text-caption text-muted">Combine os filtros para montar a próxima frente de trabalho.</span></div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
         <label className="relative sm:col-span-2 xl:col-span-2"><span className="sr-only">Buscar ocorrências</span><MagnifyingGlass size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="search" aria-label="Buscar ocorrências" value={query} onChange={event => setQuery(event.target.value)} placeholder="Cliente, serial, código, PPPoE, bairro…" className="h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-label text-text outline-none placeholder:text-muted focus:border-primary/50" /></label>
@@ -119,7 +175,7 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
     </Card>
 
     <Card className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><h2 className="text-body font-semibold text-text">Fila de tratativas</h2><p className="mt-0.5 text-caption text-muted">Ordenada conforme os filtros de priorização</p></div></div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[1080px] text-left text-label"><thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>{['Detecção', 'Cliente / ponto', 'OLT / PON / ONU', 'Cidade / bairro', 'Severidade', 'Sinal', 'Equipe', 'Status', 'Ação'].map(label => <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}</tr></thead><tbody>{visible.map(item => <tr key={item.id} className="border-t border-border transition-colors hover:bg-surface/50"><td className="px-4 py-3 text-muted"><span className="block">{new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR')}</span><span className="text-caption">{item.detections} leitura(s){item.missedSnapshots ? ` · ${item.missedSnapshots} ausente(s)` : ''}</span></td><td className="px-4 py-3 font-semibold text-text">{item.client}</td><td className="px-4 py-3 font-mono text-caption text-secondary"><span className="block">{item.olt}</span><span>{item.pon} · ONU {item.onu || '—'}</span></td><td className="px-4 py-3"><span className="block text-text">{item.city}</span><span className="text-caption text-muted">{item.region}</span></td><td className={`px-4 py-3 font-semibold ${item.severity === 'Crítico' ? 'text-red' : 'text-orange'}`}>{item.severity}</td><td className="px-4 py-3 font-mono text-text">{item.before.toFixed(1)}{item.after != null ? <span className="text-green"> → {item.after.toFixed(1)}</span> : item.current !== item.before ? <span className="text-orange"> → {item.current.toFixed(1)}</span> : null}</td><td className="px-4 py-3 text-secondary">{item.team || '—'}</td><td className="px-4 py-3"><SignalBadge status={item.status} /></td><td className="px-4 py-3"><Button variant="ghost" size="sm" aria-label={`Registrar tratativa de ${item.client}`} onClick={() => setSelected(item)}>Tratar</Button></td></tr>)}{!visible.length && <tr><td colSpan={9} className="px-4 py-12 text-center text-muted">{occurrences.length ? 'Nenhuma ocorrência corresponde aos filtros.' : 'Nenhuma ocorrência registrada.'}</td></tr>}</tbody></table></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[1080px] text-left text-label"><thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>{['Detecção', 'Cliente / ponto', 'OLT / PON / ONU', 'Cidade / bairro', 'Severidade', 'Sinal', 'Equipe', 'Status', 'Ação'].map(label => <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}</tr></thead><tbody>{visible.map(item => <tr key={item.id} className="border-t border-border transition-colors hover:bg-surface/50"><td className="px-4 py-3 text-muted"><span className="block">{new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR')}</span><span className="text-caption">{item.detections} leitura(s){item.missedSnapshots ? ` · ${item.missedSnapshots} ausente(s)` : ''}</span></td><td className="px-4 py-3 font-semibold text-text">{item.client}</td><td className="px-4 py-3 font-mono text-caption text-secondary"><span className="block">{item.olt}</span><span>{item.pon} · ONU {item.onu || '—'}</span></td><td className="px-4 py-3"><span className="block text-text">{item.city}</span><span className="text-caption text-muted">{item.region}</span></td><td className={`px-4 py-3 font-semibold ${item.severity === 'Crítico' ? 'text-red' : 'text-orange'}`}>{item.severity}</td><td className="px-4 py-3 font-mono text-text"><div>{item.before.toFixed(1)}{item.after != null ? <span className="text-green"> → {item.after.toFixed(1)}</span> : item.current !== item.before ? <span className="text-orange"> → {item.current.toFixed(1)}</span> : null}</div>{item.status !== 'Concluído' && <QuickSignalConfirm client={item.client} onConfirm={value => confirmSignal(item, value)} />}</td><td className="px-4 py-3 text-secondary">{item.team || '—'}</td><td className="px-4 py-3"><SignalBadge status={item.status} /></td><td className="px-4 py-3"><Button variant="ghost" size="sm" aria-label={`Registrar tratativa de ${item.client}`} onClick={() => setSelected(item)}>Tratar</Button></td></tr>)}{!visible.length && <tr><td colSpan={9} className="px-4 py-12 text-center text-muted">{occurrences.length ? 'Nenhuma ocorrência corresponde aos filtros.' : 'Nenhuma ocorrência registrada.'}</td></tr>}</tbody></table></div>
     </Card>
 
     <Modal open={!!selected} onClose={() => setSelected(null)} title="Registrar tratativa" subtitle={selected ? `${selected.client} · leitura inicial ${selected.before.toFixed(1)} dBm` : ''} maxWidth="620px">{selected && <form key={selected.id} onSubmit={save} className="p-6"><div className="grid gap-4 sm:grid-cols-2">
