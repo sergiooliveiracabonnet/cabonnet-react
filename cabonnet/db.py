@@ -339,6 +339,19 @@ def _db_get_signal_import(import_id):
     return {"id": row[0], "file_name": row[1], "csv_text": row[2], "created_at": row[3], "created_by": row[4]}
 
 
+def _db_get_latest_signal_import():
+    """Última importação de CSV, para restaurar a análise ao recarregar a página."""
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        row = con.execute(
+            "SELECT id,file_name,csv_text,created_at,created_by FROM signal_imports ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        con.close()
+    if not row:
+        return None
+    return {"id": row[0], "file_name": row[1], "csv_text": row[2], "created_at": row[3], "created_by": row[4]}
+
+
 def _db_migrate_onda3a_modulos():
     """Migração idempotente: para cada papel que tinha um módulo removido na
     Onda 3a (erp_produtividade, erp_acao), garante que o módulo substituto
