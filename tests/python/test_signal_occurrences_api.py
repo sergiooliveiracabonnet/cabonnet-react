@@ -26,6 +26,26 @@ def test_api_sincroniza_lista_e_atualiza_tratativa(client, tmp_path):
         assert updated.json()["items"][0]["status"] == "Concluído"
 
 
+def test_api_devolve_ultima_importacao_para_restaurar_a_pagina(client, tmp_path):
+    db_path = str(tmp_path / "cabonnet_signal_latest.db")
+    with patch("cabonnet.db._DB_PATH", db_path):
+        db._db_init()
+
+        empty = client.get("/api/nivel-sinal/import/latest")
+        assert empty.status_code == 200
+        assert empty.json()["item"] is None
+
+        client.post("/api/nivel-sinal/ocorrencias/sync", json={
+            "file_name": "sinais.csv", "csv_text": "Cidade;RX dBm\nTaubaté;-30",
+            "occurrences": [{"id": "occ-latest", "sourceKey": "serial:LATEST", "status": "Aberto"}],
+        })
+
+        latest = client.get("/api/nivel-sinal/import/latest")
+        assert latest.status_code == 200
+        assert latest.json()["item"]["file_name"] == "sinais.csv"
+        assert "Taubaté" in latest.json()["item"]["csv_text"]
+
+
 def test_api_aceita_importacao_comprimida(client, tmp_path):
     db_path = str(tmp_path / "cabonnet_signal_gzip.db")
     payload = {"file_name": "grande.csv", "csv_text": "x" * 1_000_000, "occurrences": [

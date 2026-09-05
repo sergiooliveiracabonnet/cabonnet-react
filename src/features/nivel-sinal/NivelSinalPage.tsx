@@ -54,6 +54,13 @@ export default function NivelSinalPage() {
     signalOccurrencesApi.list<SignalOccurrence>()
       .then(response => setOccurrences(response.items))
       .catch(() => setError('Não foi possível carregar as ocorrências salvas no servidor.'))
+    signalOccurrencesApi.latestImport()
+      .then(response => {
+        if (!response.item) return
+        setRows(parseSignalCsv(response.item.csv_text))
+        setFileName(response.item.file_name)
+      })
+      .catch(() => setError('Não foi possível carregar o último CSV importado no servidor.'))
   }, [])
 
   const setFilter = <K extends keyof SignalFilters>(key: K, value: SignalFilters[K]) => setFilters(current => ({ ...current, [key]: value }))
