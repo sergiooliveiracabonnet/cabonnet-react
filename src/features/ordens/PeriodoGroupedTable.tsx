@@ -44,15 +44,15 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
 
         {/* Nome da equipe filtrada */}
         {equipe && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-blue/[0.05] border-b border-blue/20">
+          <div className="flex items-center gap-2 px-4 py-2 bg-primary/[0.05] border-b border-primary/20">
             <span className="text-caption font-bold uppercase tracking-wider text-muted">Equipe</span>
-            <span className="text-label font-bold text-blue">{shortEquipe(equipe)}</span>
+            <span className="text-label font-bold text-primary">{shortEquipe(equipe)}</span>
             <span className="text-caption text-muted">— {rows.length} OS</span>
           </div>
         )}
 
         {/* Cabeçalho de colunas */}
-        <div className="flex items-center gap-3 px-4 py-2 bg-elevated/40 border-b border-border
+        <div className="flex items-center gap-3 px-4 py-2 bg-elevated/40 border-b border-white/[0.08]
                         text-caption font-bold uppercase tracking-wide text-muted">
           <span className={`${C.aging}  text-center`}>Aging</span>
           <span className={C.numos}>Nº OS</span>
@@ -76,7 +76,7 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
           const color   = isManha ? 'text-yellow'          : isTarde ? 'text-indigo-400'          : 'text-secondary'
           const bg      = isManha ? 'bg-yellow/[0.06]'     : isTarde ? 'bg-purple/[0.06]'     : 'bg-surface/30'
           const dot     = isManha ? 'bg-yellow'            : isTarde ? 'bg-purple'            : 'bg-secondary'
-          const border  = isManha ? 'border-amber-400/[0.25]' : isTarde ? 'border-indigo-400/[0.25]' : 'border-border'
+          const border  = isManha ? 'border-amber-400/[0.25]' : isTarde ? 'border-indigo-400/[0.25]' : 'border-white/[0.08]'
 
           return (
             <div key={periodo}>
@@ -92,7 +92,7 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                 ].filter(Boolean) as { n: number; label: string }[]
                 return (
                   <div className={`flex items-center gap-2.5 px-4 py-2.5 border-b ${border}
-                                  ${gi > 0 ? 'border-t border-border' : ''} ${bg}`}>
+                                  ${gi > 0 ? 'border-t border-white/[0.08]' : ''} ${bg}`}>
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />
                     <span className={`text-caption font-bold uppercase tracking-[0.06em] ${color}`}>
                       Período: {periodo}
@@ -101,7 +101,7 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                     <div className="ml-auto flex items-center gap-2">
                       {tipoItems.map(({ n, label }, idx) => (
                         <span key={label} className="flex items-center gap-1.5 text-caption text-muted">
-                          {idx > 0 && <span className="text-disabled">|</span>}
+                          {idx > 0 && <span className="text-white/20">|</span>}
                           <span className="font-mono font-bold text-secondary">{n}</span>
                           <span>{label}</span>
                         </span>
@@ -131,7 +131,7 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                       onRowClick(row)
                     }}
                     className={`flex items-center gap-3 px-4 ${rowPy} cursor-pointer
-                                hover:bg-surface/30 transition-all border-b border-subtle
+                                hover:bg-surface/30 transition-all border-b border-white/[0.03]
                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50`}
                   >
                     <span className={`${C.aging} text-center`}>

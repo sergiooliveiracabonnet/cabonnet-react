@@ -10,7 +10,7 @@ function TimelineNode({ icon: Icon, color, filled }: TimelineNodeProps) {
   const base = 'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2'
   const cls  = filled
     ? `${base} border-${color} bg-${color}/15 text-${color}`
-    : `${base} border-border bg-surface/30 text-muted/50`
+    : `${base} border-white/[0.08] bg-surface/30 text-muted/50`
   return <div className={cls}><Icon size={14} /></div>
 }
 
@@ -62,7 +62,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
       <div className="flex flex-col items-center">
         <TimelineNode icon={icon} color={color} filled={done} />
         {!isLast && (
-          <div className={`w-px flex-1 my-1 min-h-[20px] ${done ? 'bg-blue/25' : 'bg-surface'}`} />
+          <div className={`w-px flex-1 my-1 min-h-[20px] ${done ? 'bg-primary/25' : 'bg-surface'}`} />
         )}
       </div>
 
@@ -106,7 +106,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
 
         {/* Obs inline quando fechado */}
         {obs && !open && (
-          <div className="mt-1.5 bg-surface/30 border border-border rounded-xl px-3 py-2">
+          <div className="mt-1.5 bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2">
             <p className="text-caption text-secondary leading-relaxed">{obs}</p>
           </div>
         )}
@@ -117,7 +117,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
 
             {/* Metadados em linha */}
             {(d.nomeTecnico || d.duracao || d.hora || d.periodo || d.contrato) && (
-              <div className="bg-surface/30 border border-border rounded-xl px-3 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
+              <div className="bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
                 {d.nomeTecnico && <Meta icon={Wrench}    label="Técnico"   value={d.nomeTecnico} />}
                 {d.duracao     && <Meta icon={Clock}     label="Duração"   value={d.duracao} />}
                 {d.hora        && <Meta icon={Clock}     label="Hora"      value={d.hora} />}
@@ -156,7 +156,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
                     className={`rounded-xl px-3 py-2.5 border ${
                       entry.isReagend
                         ? 'bg-orange/[0.08] border-orange/25'
-                        : 'bg-surface/30 border-border'
+                        : 'bg-surface/30 border-white/[0.08]'
                     }`}
                   >
                     {/* Cabeçalho da entrada */}
@@ -192,7 +192,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
 
             {/* Materiais utilizados */}
             {(d.materiais?.length ?? 0) > 0 && (
-              <div className="bg-surface/30 border border-border rounded-xl px-3 py-2.5">
+              <div className="bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2.5">
                 <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
                   <Package size={10} /> Materiais utilizados
                 </p>
@@ -246,7 +246,7 @@ function Meta({ icon: Icon, label, value, mono }: MetaProps) {
 
 function InfoBlock({ label, text }: { label: string; text: string }) {
   return (
-    <div className="bg-surface/30 border border-border rounded-xl px-3 py-2.5">
+    <div className="bg-surface/30 border border-white/[0.08] rounded-xl px-3 py-2.5">
       <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-1">{label}</p>
       <p className="text-caption text-secondary leading-relaxed whitespace-pre-wrap">{text}</p>
     </div>

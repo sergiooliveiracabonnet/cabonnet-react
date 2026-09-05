@@ -18,7 +18,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 type StatusKey = 'loading' | 'error' | 'stale' | 'online'
 const STATUS_CFG: Record<StatusKey, { color: string; dot: string; label: string; breathe: boolean }> = {
-  loading: { color: 'text-blue', dot: 'bg-blue', label: 'Carregando',     breathe: false },
+  loading: { color: 'text-primary', dot: 'bg-primary', label: 'Carregando',     breathe: false },
   error:   { color: 'text-red',     dot: 'bg-red',     label: 'Sem conexão',     breathe: false },
   stale:   { color: 'text-yellow',  dot: 'bg-yellow',  label: 'Desatualizado',   breathe: false },
   online:  { color: 'text-green',   dot: 'bg-green',   label: 'Online',          breathe: true  },
@@ -31,12 +31,14 @@ interface NavItemProps {
   label:       string
   icon:        ComponentType<{ size?: number; style?: CSSProperties }>
   sidebarOpen: boolean
+  groupKey:    string
+  groupColor:  string
   onNavigate:  () => void
 }
 
 interface Tip { top: number; left: number }
 
-function NavItem({ to, label, icon: Icon, sidebarOpen, onNavigate }: NavItemProps) {
+function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onNavigate }: NavItemProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [tip, setTip] = useState<Tip | null>(null)
 
@@ -56,20 +58,20 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, onNavigate }: NavItemProp
         end={to === '/'}
         onClick={onNavigate}
         className={({ isActive }) =>
-          `flex min-h-11 items-center gap-3 rounded-lg py-2.5 pl-3 pr-2.5 text-label transition-colors
-           ${isActive
-             ? 'border-r-2 border-orange bg-orange/10 font-semibold text-text dark:bg-orange/[.18]'
-             : 'text-secondary hover:bg-surface-hover hover:text-text'}`
+          `nav-link-${groupKey} flex min-h-11 items-center gap-3 rounded-lg border py-3 pl-3 pr-2.5
+           md:min-h-0 md:py-2
+           transition-colors duration-150 text-label font-medium
+           ${isActive ? 'active' : 'border-transparent text-muted hover:text-text'}`
         }
       >
         {({ isActive }) => (
           <>
-            <Icon size={16} />
+            <Icon size={16} style={isActive ? { color: groupColor } : {}} />
             {sidebarOpen && (
               <span className="truncate flex-1 leading-none">{label}</span>
             )}
             {sidebarOpen && isActive && (
-              <CaretRight size={10} className="flex-shrink-0 text-orange opacity-40" />
+              <CaretRight size={10} className="flex-shrink-0 opacity-40" style={{ color: groupColor }} />
             )}
           </>
         )}
@@ -82,8 +84,8 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, onNavigate }: NavItemProp
           className="fixed z-[201] -translate-y-1/2 pointer-events-none"
         >
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-lg
-                          bg-elevated border border-border">
-            <div className="w-[2px] h-3 rounded-full flex-shrink-0 bg-border-hover" />
+                          bg-elevated border border-white/[0.08]">
+            <div className="w-[2px] h-3 rounded-full flex-shrink-0" style={{ background: groupColor }} />
             <span className="text-caption font-medium text-text whitespace-nowrap">{label}</span>
           </div>
         </div>
@@ -145,8 +147,7 @@ export function Sidebar() {
     <aside
       aria-label="Navegação principal"
       className={`sidebar-premium fixed left-0 top-0 z-[400] flex h-full w-[min(88vw,300px)]
-                  select-none flex-col overflow-hidden transition-[width,transform] duration-200
-                  md:z-sidebar md:left-3 md:top-3 md:h-[calc(100vh-1.5rem)] md:rounded-xl md:border md:border-border
+                  select-none flex-col overflow-hidden transition-[width,transform] duration-200 md:z-sidebar
                   ${sidebarOpen
                     ? 'translate-x-0 md:w-[248px]'
                     : '-translate-x-full md:w-[64px] md:translate-x-0'}`}
@@ -158,11 +159,11 @@ export function Sidebar() {
         <div
           className="brand-mark w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center"
           style={{
-            background: 'linear-gradient(145deg, rgb(var(--blue)) 0%, rgb(var(--blue) / 0.62) 100%)',
+            background: 'linear-gradient(145deg, rgb(var(--c-primary)) 0%, rgb(var(--c-primary-dark)) 100%)',
             boxShadow:  '0 0 0 1px rgba(96,165,250,0.28), 0 8px 24px rgba(29,78,216,0.24)',
           }}
         >
-          <LogoIcon className="w-[17px] h-[17px] [filter:brightness(0)] dark:[filter:brightness(0)_invert(1)]" />
+          <LogoIcon className="w-[17px] h-[17px]" style={{ filter: 'brightness(0) invert(1)' }} />
         </div>
         {sidebarOpen && (
           <div className="flex flex-col leading-none min-w-0">
@@ -183,15 +184,18 @@ export function Sidebar() {
             {sidebarOpen ? (
               <div className="flex items-center gap-2 px-4 pt-4 pb-1.5">
                 <div
-                  className="w-1 h-1 rounded-full flex-shrink-0 bg-blue"
+                  className="w-1 h-1 rounded-full flex-shrink-0 bg-primary"
                 />
-                <span className="text-caption font-semibold uppercase tracking-wide text-muted">
+                <span
+                  className="text-caption font-semibold uppercase tracking-[0.07em]"
+                  style={{ color: 'rgb(var(--c-muted))' }}
+                >
                   {group.label}
                 </span>
               </div>
             ) : gi > 0 ? (
               <div className="flex justify-center py-2">
-                <div className="w-1 h-1 rounded-full bg-border-hover" />
+                <div className="w-1 h-1 rounded-full" style={{ background: group.color + '99' }} />
               </div>
             ) : (
               <div className="py-1.5" />
@@ -205,6 +209,8 @@ export function Sidebar() {
                   label={label}
                   icon={icon}
                   sidebarOpen={sidebarOpen}
+                  groupKey={group.key}
+                  groupColor={group.color}
                   onNavigate={closeAfterMobileNavigation}
                 />
               ))}
@@ -215,7 +221,7 @@ export function Sidebar() {
 
       {/* ── Status ── */}
       {sidebarOpen && (
-        <div className="flex-shrink-0 mx-2 mb-2 rounded-lg px-3 py-2 bg-card-high border border-border">
+        <div className="flex-shrink-0 mx-2 mb-2 rounded-lg px-3 py-2 bg-card-high border border-white/[0.08]">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}${status.breathe ? ' breathe' : ''}`} />
             <span className={`text-caption font-semibold ${status.color}`}>{status.label}</span>
@@ -225,13 +231,13 @@ export function Sidebar() {
       )}
 
       {/* ── User / Logout ── */}
-      <div className="flex-shrink-0 px-2 pb-3 border-t border-border pt-2">
+      <div className="flex-shrink-0 px-2 pb-3 border-t border-white/[0.08] pt-2">
         {sidebarOpen ? (
           <div className="group flex items-center gap-2.5 rounded-lg px-3 py-2
-                          bg-card-high border border-border hover:border-muted/30
+                          bg-card-high border border-white/[0.08] hover:border-muted/30
                           transition-colors duration-150 cursor-default">
             <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center
-                            font-semibold text-caption bg-blue/20 border border-blue/30 text-blue">
+                            font-semibold text-caption bg-primary/20 border border-primary/30 text-primary">
               A
             </div>
             <div className="flex-1 min-w-0">
@@ -253,7 +259,7 @@ export function Sidebar() {
         ) : (
           <div className="flex flex-col items-center gap-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-caption font-semibold
-                            bg-blue/20 border border-blue/30 text-blue">
+                            bg-primary/20 border border-primary/30 text-primary">
               A
             </div>
             <button

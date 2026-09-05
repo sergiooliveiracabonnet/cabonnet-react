@@ -113,8 +113,8 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-label font-semibold
                               transition-all duration-fast
                               ${active
-                                ? 'border-border-hover bg-surface text-text'
-                                : 'border-border text-muted hover:text-secondary hover:border-border-hover'}`}
+                                ? 'border-border0 bg-surface text-text'
+                                : 'border-white/[0.08] text-muted hover:text-secondary hover:border-border0'}`}
                 >
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: o.color }} />
                   {o.label}
@@ -126,7 +126,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
         </div>
 
         {/* Preview */}
-        <div className="rounded-lg bg-elevated border border-border px-4 py-3 text-label space-y-2">
+        <div className="rounded-lg bg-elevated border border-white/[0.08] px-4 py-3 text-label space-y-2">
           <div className="flex items-center justify-between">
             <p className="font-semibold text-text">{opt?.label}</p>
             <span className="text-caption text-muted">Alertas | Cabonnet</span>
@@ -174,7 +174,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
             disabled={!!sending}
           >
             {sending === 'resumo'
-              ? <><span className="w-3 h-3 border-2 border-border-hover border-t-white rounded-full animate-spin" /> Gerando…</>
+              ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Gerando…</>
               : <><PaperPlaneTilt size={11} /> Resumo</>}
           </Button>
           <Button
@@ -183,7 +183,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
             disabled={!!sending}
           >
             {sending === 'detalhado'
-              ? <><span className="w-3 h-3 border-2 border-border-hover border-t-white rounded-full animate-spin" /> Gerando…</>
+              ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Gerando…</>
               : <><PaperPlaneTilt size={11} /> Detalhado</>}
           </Button>
         </div>

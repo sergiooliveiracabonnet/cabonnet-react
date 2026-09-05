@@ -33,7 +33,7 @@ interface HoverInfo {
   y:      number
 }
 
-/** Le uma custom property de cor (formato "59 130 246") e devolve o inteiro 0xRRGGBB que o Three.js espera. */
+/** Le `--c-*` (formato "59 130 246") e devolve o inteiro 0xRRGGBB que o Three.js espera. */
 function readToken(name: string, fallback: number): number {
   if (typeof window === 'undefined') return fallback
   const raw   = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
@@ -101,13 +101,13 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
         const height = mount.clientHeight || 520
 
         const colors = {
-          bg:      readToken('--surface-2',    0x18181b),
-          cluster: readToken('--blue', 0x3b82f6),
-          iface:   readToken('--blue',    0x22d3ee),
-          active:  readToken('--red',     0xf87171),
-          idle:    readToken('--text-muted',   0x71717a),
-          link:    readToken('--border',  0x3f3f46),
-          text:    readTokenCss('--text', 'rgb(244, 244, 245)'),
+          bg:      readToken('--c-card',    0x18181b),
+          cluster: readToken('--c-primary', 0x3b82f6),
+          iface:   readToken('--c-cyan',    0x22d3ee),
+          active:  readToken('--c-red',     0xf87171),
+          idle:    readToken('--c-muted',   0x71717a),
+          link:    readToken('--c-border',  0x3f3f46),
+          text:    readTokenCss('--c-text', 'rgb(244, 244, 245)'),
         }
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
@@ -362,9 +362,9 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-subtle flex-wrap">
-        <p className="text-caption font-bold uppercase tracking-[0.08em] text-blue/80 flex items-center gap-1.5">
+    <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-white/[0.06] flex-wrap">
+        <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
           <CubeTransparent size={13} /> Topologia PPPoE · cluster → interface → cliente
         </p>
         <div className="flex items-center gap-2">
@@ -384,9 +384,9 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
         {!ready && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-card/80">
             <p className="text-caption text-muted">Carregando texturas da topologia…</p>
-            <div className="h-1 w-48 rounded-full bg-surface-active overflow-hidden">
+            <div className="h-1 w-48 rounded-full bg-white/[0.08] overflow-hidden">
               <div
-                className="h-full bg-blue transition-[width] duration-normal"
+                className="h-full bg-primary transition-[width] duration-normal"
                 style={{ width: `${Math.round(progress * 100)}%` }}
               />
             </div>
@@ -395,7 +395,7 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
 
         {hover && (
           <div
-            className="pointer-events-none absolute z-10 min-w-[190px] rounded-lg border border-border-hover
+            className="pointer-events-none absolute z-10 min-w-[190px] rounded-lg border border-white/[0.12]
                        bg-elevated/95 px-3 py-2 shadow-xl backdrop-blur-sm"
             style={{ left: hover.x + 14, top: Math.max(hover.y - 12, 8) }}
           >
@@ -412,9 +412,9 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
         )}
       </div>
 
-      <div className="flex items-center gap-4 px-5 py-3 border-t border-subtle flex-wrap">
+      <div className="flex items-center gap-4 px-5 py-3 border-t border-white/[0.06] flex-wrap">
         <span className="flex items-center gap-1.5 text-caption text-muted">
-          <span className="w-2 h-2 rounded-full bg-blue inline-block" /> Cluster
+          <span className="w-2 h-2 rounded-full bg-primary inline-block" /> Cluster
         </span>
         <span className="flex items-center gap-1.5 text-caption text-muted">
           <span className="w-2 h-2 rounded-full bg-cyan inline-block" /> Interface sem sessão

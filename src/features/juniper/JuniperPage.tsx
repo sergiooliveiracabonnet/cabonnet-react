@@ -192,8 +192,8 @@ export default function JuniperPage() {
         titleExtra={
           <span className="flex items-center gap-1.5">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue opacity-60" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
             </span>
             <span className="text-caption text-muted">atualiza a cada 5 min</span>
           </span>
@@ -201,7 +201,7 @@ export default function JuniperPage() {
         actions={
           cluster && (
             <span className="text-caption font-bold uppercase tracking-[0.06em] px-2.5 py-0.5
-                             rounded-full bg-blue/10 text-blue border border-blue/20">
+                             rounded-full bg-primary/10 text-primary border border-primary/20">
               {cluster}
             </span>
           )
@@ -252,9 +252,9 @@ export default function JuniperPage() {
       )}
 
       {/* ── Origem segura da coleta ── */}
-      <div className="bg-card border border-border border-l-[4px] border-l-primary rounded-xl p-5">
+      <div className="bg-card border border-white/[0.08] border-l-[4px] border-l-primary rounded-xl p-5">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-caption font-bold uppercase tracking-[0.08em] text-blue/80 flex items-center gap-1.5">
+          <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
             <ShieldCheck size={13} /> Coleta protegida pelo servidor · Cluster {cluster}
           </p>
           <StatusPill nivel={hero.nivel ?? ''} txt={hero.statusTxt ?? 'Não verificado'} />
@@ -301,11 +301,11 @@ export default function JuniperPage() {
       {/* ── KPIs ── */}
       {isLoading ? <KPIGridSkeleton count={5} /> : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          <StatCard index={0} title="Conexões Indevidas" value={kpis.total}      sub={(kpis.total ?? 0) === 0 ? 'situação saudável' : 'exigem verificação'} delay={0} />
-          <StatCard index={1} title="Interfaces Afetadas" value={kpis.interfaces} sub="portas / VLANs com ocorrência" delay={40} />
-          <StatCard index={2} title="IPs Únicos"         value={kpis.ips}        sub="endereços distintos"     delay={80}  />
-          <StatCard index={3} title="Última Coleta"      value={kpis.ultima}     sub="horário da verificação"  delay={120} />
-          <StatCard index={4} title="Próx. Atualização"  value={kpis.proximo}    sub="inicia após 1ª coleta"   delay={160} />
+          <StatCard title="Conexões Indevidas" value={kpis.total}      sub={(kpis.total ?? 0) === 0 ? 'situação saudável' : 'exigem verificação'} delay={0} />
+          <StatCard title="Interfaces Afetadas" value={kpis.interfaces} sub="portas / VLANs com ocorrência" delay={40} />
+          <StatCard title="IPs Únicos"         value={kpis.ips}        sub="endereços distintos"     delay={80}  />
+          <StatCard title="Última Coleta"      value={kpis.ultima}     sub="horário da verificação"  delay={120} />
+          <StatCard title="Próx. Atualização"  value={kpis.proximo}    sub="inicia após 1ª coleta"   delay={160} />
         </div>
       )}
 
@@ -324,7 +324,7 @@ export default function JuniperPage() {
 
           {show3D && (
             <Suspense fallback={
-              <div className="h-[520px] rounded-xl bg-card border border-border
+              <div className="h-[520px] rounded-xl bg-card border border-white/[0.08]
                               flex items-center justify-center text-caption text-muted">
                 Carregando renderizador 3D…
               </div>
@@ -347,10 +347,10 @@ export default function JuniperPage() {
       </ChartCard>
 
       {/* ── Tabela de clientes ── */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg">
-        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-surface/20 flex-wrap">
+      <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden shadow-lg">
+        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/[0.08] bg-surface/20 flex-wrap">
           <div className="flex items-center gap-2">
-            <Users size={15} className="text-blue" />
+            <Users size={15} className="text-primary" />
             <span className="text-body font-bold text-text">Conexões Ativas Detectadas</span>
           </div>
           <div className="flex items-center gap-3 ml-1">
@@ -376,7 +376,7 @@ export default function JuniperPage() {
           <div className="flex items-center gap-2 ml-auto">
             <SearchBox value={searchTable} onChange={setSearchTable}
                        placeholder="Buscar usuário, IP, MAC, interface…" className="max-w-[260px]" />
-            <div className="flex bg-surface/30 border border-border rounded-md p-0.5 gap-0.5">
+            <div className="flex bg-surface/30 border border-white/[0.08] rounded-md p-0.5 gap-0.5">
               {[['card', 'Cards'], ['table', 'Tabela']].map(([v, l]) => (
                 <button key={v} onClick={() => setViewMode(v)}
                   className={`text-caption px-3 py-1 rounded transition-all
@@ -420,14 +420,14 @@ export default function JuniperPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-body">
               <thead>
-                <tr className="border-b-2 border-border">
+                <tr className="border-b-2 border-white/[0.08]">
                   <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em] w-8" />
                   {['Usuário', 'IP', 'MAC', 'Interface', 'Uptime'].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-subtle">
+              <tbody className="divide-y divide-white/[0.04]">
                 {clientesFiltrados.map((c, i) => {
                   const isOnline = c.state !== 'inactive'
                   return (
@@ -452,8 +452,8 @@ export default function JuniperPage() {
 
       {/* ── Histórico de snapshots ── */}
       <SectionTitle icon={Clipboard}>Histórico de Conexões PPPoE</SectionTitle>
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-surface/20">
+      <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] bg-surface/20">
           <div className="flex items-center gap-2">
             <Pulse size={12} className="text-muted" />
             <span className="text-caption font-bold uppercase tracking-[0.06em] text-muted">
@@ -472,7 +472,7 @@ export default function JuniperPage() {
             )}
           </div>
         </div>
-        <div className="divide-y divide-subtle min-h-[120px] max-h-[600px] overflow-y-auto">
+        <div className="divide-y divide-white/[0.04] min-h-[120px] max-h-[600px] overflow-y-auto">
           {historico.length === 0 ? (
             <p className="text-center text-muted text-label py-10">
               O histórico será salvo automaticamente a cada coleta (5 min).
@@ -492,7 +492,7 @@ export default function JuniperPage() {
 
       {/* ── Correlação OS × Cidade ── */}
       <SectionTitle icon={GitMerge}>Correlação — OS Técnicas Abertas por Cidade</SectionTitle>
-      <div className="bg-card border border-border rounded-xl p-4">
+      <div className="bg-card border border-white/[0.08] rounded-xl p-4">
         <p className="text-caption text-muted mb-4 leading-relaxed">
           Alta concentração de OS em uma cidade pode indicar degradação de infraestrutura — correlacione com alertas PPPoE.
         </p>
@@ -509,9 +509,9 @@ export default function JuniperPage() {
       <>
         <SectionTitle icon={Sparkle}>Correlação IA — Conexões ativas × OS</SectionTitle>
         {!aiEnabled ? (
-          <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
+          <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkle size={12} className="text-blue/40" />
+              <Sparkle size={12} className="text-primary/40" />
               <span className="text-caption font-bold text-muted uppercase tracking-wide">Conexões ativas × OS · IA</span>
             </div>
             <button
@@ -524,7 +524,7 @@ export default function JuniperPage() {
             </button>
           </div>
         ) : (
-          <div className="rounded-xl border border-blue/20 bg-blue/[0.03] p-4 space-y-3">
+          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
             {aiLoading && !aiJuniper ? (
               <p className="text-label text-muted animate-pulse">Consultando IA…</p>
             ) : aiJuniper ? (

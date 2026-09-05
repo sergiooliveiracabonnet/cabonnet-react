@@ -64,7 +64,7 @@ export function DashboardInvestigation({ operation, territory, quality }: Dashbo
                 onKeyDown={event => selectFromKeyboard(event, index)}
                 className={`flex min-h-12 cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-left transition-colors duration-200
                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
-                            ${selected ? 'border border-primary/25 bg-primary/10 text-text shadow-xs' : 'border border-transparent text-muted hover:bg-surface-hover hover:text-secondary'}`}
+                            ${selected ? 'border border-primary/25 bg-primary/10 text-text shadow-xs' : 'border border-transparent text-muted hover:bg-white/[0.04] hover:text-secondary'}`}
               >
                 <Icon size={16} className={selected ? 'text-primary' : 'text-muted'} aria-hidden="true" />
                 <span className="min-w-0">

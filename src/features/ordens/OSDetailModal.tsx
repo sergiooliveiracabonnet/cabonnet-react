@@ -11,7 +11,7 @@ interface FieldProps { label: string; value?: string | number | null; mono?: boo
 function Field({ label, value, mono = false, full = false, highlight = false }: FieldProps) {
   return (
     <div className={`rounded-xl p-4 border
-                     ${highlight ? 'bg-blue/5 border-blue/20' : 'bg-surface/30 border-border'}
+                     ${highlight ? 'bg-primary/5 border-primary/20' : 'bg-surface/30 border-white/[0.08]'}
                      ${full ? 'col-span-2' : ''}`}>
       <p className="font-headline text-caption font-bold uppercase tracking-[0.06em] text-muted mb-1.5">
         {label}
@@ -184,7 +184,7 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
                 </div>
               )}
               {observacoes && (
-                <div className="bg-surface/30 border border-border rounded-xl p-4">
+                <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-4">
                   <p className="text-body text-secondary leading-relaxed font-sans whitespace-pre-wrap">
                     {observacoes}
                   </p>
@@ -211,7 +211,7 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
             <SectionDivider>Checklist de Execução</SectionDivider>
             <div className="space-y-1.5">
               {checklist.map((item, i) => (
-                <div key={i} className="flex items-center gap-2.5 bg-surface/30 border border-border rounded-lg px-3 py-2">
+                <div key={i} className="flex items-center gap-2.5 bg-surface/30 border border-white/[0.08] rounded-lg px-3 py-2">
                   {item.checked
                     ? <CheckSquare size={13} className="text-green flex-shrink-0" />
                     : <Square size={13} className="text-muted/50 flex-shrink-0" />}
@@ -232,7 +232,7 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
                 <button
                   key={foto.codfoto}
                   onClick={() => setLightboxFoto(foto)}
-                  className="aspect-square rounded-lg border border-border overflow-hidden bg-surface/30
+                  className="aspect-square rounded-lg border border-white/[0.08] overflow-hidden bg-surface/30
                              hover:border-primary/40 transition-colors"
                 >
                   <img

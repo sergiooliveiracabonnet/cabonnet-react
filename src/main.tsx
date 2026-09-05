@@ -25,7 +25,7 @@ createRoot(rootEl).render(
         <BrowserRouter>
           <Suspense fallback={
             <div className="flex items-center justify-center min-h-screen bg-bg">
-              <div className="w-6 h-6 border-2 border-blue border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           }>
             <App />

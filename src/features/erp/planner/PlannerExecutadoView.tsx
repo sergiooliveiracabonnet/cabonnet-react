@@ -171,9 +171,9 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
   }).filter(c => c.count > 0)
 
   return (
-    <div className="mt-3 rounded-xl border border-border overflow-hidden bg-surface/50">
+    <div className="mt-3 rounded-xl border border-white/[0.08] overflow-hidden bg-surface/50">
       {/* Header com resumo por categoria */}
-      <div className="px-4 py-2.5 border-b border-border flex items-center gap-4 flex-wrap">
+      <div className="px-4 py-2.5 border-b border-white/[0.08] flex items-center gap-4 flex-wrap">
         <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted mr-1">
           {rows.length} OS · {dayLabel}
         </span>
@@ -191,7 +191,7 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
       <div className="overflow-x-auto">
         <table className="w-full text-caption">
           <thead>
-            <tr className="border-b border-subtle bg-surface/20">
+            <tr className="border-b border-white/[0.05] bg-surface/20">
               {OS_COLS.map(c => (
                 <th key={c.key}
                     className="px-3 py-2 text-left text-caption font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap">
@@ -200,7 +200,7 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-subtle">
+          <tbody className="divide-y divide-white/[0.03]">
             {sorted.map(r => {
               const { color, Icon } = tipoIcon(r)
               const exec = (r.dataexecucao || r.databaixa || '').split(' ')
@@ -209,7 +209,7 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
                 <tr key={r.numos} className="hover:bg-surface/20 transition-colors">
                   {/* OS */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
-                    <span className="font-mono font-bold text-blue">{r.numos}</span>
+                    <span className="font-mono font-bold text-primary">{r.numos}</span>
                   </td>
                   {/* Cliente */}
                   <td className="px-3 py-2.5 max-w-[160px]">
@@ -272,7 +272,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
       {/* ── Summary row ── */}
       <tr
         onClick={onToggle}
-        className="border-b border-subtle hover:bg-surface/20 cursor-pointer transition-colors"
+        className="border-b border-white/[0.04] hover:bg-surface/20 cursor-pointer transition-colors"
       >
         {/* Rank */}
         <td className="px-4 py-3 w-10">
@@ -305,7 +305,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                                 background: val > 0 ? color : 'rgba(255,255,255,0.06)' }} />
                   {val > 0 && (
                     <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2
-                                    bg-elevated border border-border text-text text-caption
+                                    bg-elevated border border-white/[0.08] text-text text-caption
                                     font-bold px-1.5 py-0.5 rounded whitespace-nowrap
                                     opacity-0 group-hover:opacity-100 pointer-events-none z-10">
                       {d.label}: {val}
@@ -346,7 +346,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
 
       {/* ── Mini cards + inline table ── */}
       {isExpanded && (
-        <tr className="border-b border-subtle bg-surface/15">
+        <tr className="border-b border-white/[0.04] bg-surface/15">
           <td colSpan={8} className="px-4 pt-3 pb-4">
 
             {/* Day cards */}
@@ -381,7 +381,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                     } as React.CSSProperties}
                     title={clickable ? (isActive ? 'Fechar' : `Ver ${val} OS de ${d.label}`) : undefined}
                   >
-                    <span className={`text-caption font-bold ${d.isToday ? 'text-blue' : 'text-muted'}`}>
+                    <span className={`text-caption font-bold ${d.isToday ? 'text-primary' : 'text-muted'}`}>
                       {d.dow}
                     </span>
                     <span className="text-caption text-muted">{d.label}</span>
@@ -485,7 +485,7 @@ export default function PlannerExecutadoView() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center py-24 gap-3 text-secondary text-sm">
-      <div className="w-5 h-5 border-2 border-blue border-t-transparent rounded-full animate-spin" />
+      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       Carregando…
     </div>
   )
@@ -530,19 +530,19 @@ export default function PlannerExecutadoView() {
         <SectionLabel icon={ChartBar} color="#3b82f6">Ranking — {teams.length} equipes · {days.length} dias</SectionLabel>
 
         {teams.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center">
+          <div className="rounded-2xl border border-white/[0.08] bg-card px-4 py-12 text-center">
             <p className="text-label text-muted">Nenhuma OS executada no período</p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
             {/* Day header strip */}
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-subtle bg-surface/15">
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.05] bg-surface/15">
               <div className="w-10 flex-shrink-0" />
               <div className="w-[140px] flex-shrink-0" />
               <div className="flex flex-1 gap-[2px] min-w-0">
                 {days.map(d => (
                   <div key={d.key} className="flex-1 text-center">
-                    <span className={`text-caption font-bold ${d.isToday ? 'text-blue' : 'text-muted/50'}`}>
+                    <span className={`text-caption font-bold ${d.isToday ? 'text-primary' : 'text-muted/50'}`}>
                       {d.dow}
                     </span>
                   </div>
@@ -558,7 +558,7 @@ export default function PlannerExecutadoView() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-subtle bg-surface/10">
+                  <tr className="border-b border-white/[0.05] bg-surface/10">
                     <th className="px-4 py-2 text-left w-10" />
                     <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Equipe</th>
                     <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Últimos {days.length} dias</th>
@@ -594,9 +594,9 @@ export default function PlannerExecutadoView() {
 
       {/* ── AI Produtividade ──────────────────────────────────────────────── */}
       {!aiEnabled ? (
-        <div className="rounded-xl border border-subtle bg-surface/10 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkle size={12} className="text-blue/40" />
+            <Sparkle size={12} className="text-primary/40" />
             <span className="text-caption font-bold text-muted uppercase tracking-wide">Análise de Quedas de Produtividade · IA</span>
           </div>
           <button
@@ -609,10 +609,10 @@ export default function PlannerExecutadoView() {
           </button>
         </div>
       ) : (aiLoading || aiProdutividade) && (
-        <div className="rounded-xl border border-blue/20 bg-blue/[0.03] p-4 space-y-3">
+        <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkle size={12} className="text-blue" />
-            <span className="text-caption font-bold text-blue/80 uppercase tracking-wide">
+            <Sparkle size={12} className="text-primary" />
+            <span className="text-caption font-bold text-primary/80 uppercase tracking-wide">
               Análise de Quedas de Produtividade · IA
             </span>
             {aiLoading && (
@@ -627,7 +627,7 @@ export default function PlannerExecutadoView() {
               {aiProdutividade.analises && aiProdutividade.analises.length > 0 && (
                 <div className="space-y-2">
                   {aiProdutividade.analises.map((a, i) => (
-                    <div key={i} className="rounded-lg border border-subtle bg-surface/30 p-3 space-y-1">
+                    <div key={i} className="rounded-lg border border-white/[0.06] bg-surface/30 p-3 space-y-1">
                       <div className="flex items-center gap-2">
                         <TrendDown size={12} className="text-red flex-shrink-0" />
                         <span className="text-label font-semibold text-text">{a.equipe}</span>
@@ -637,7 +637,7 @@ export default function PlannerExecutadoView() {
                         {a.causa}
                       </p>
                       <p className="text-caption text-muted pl-5">
-                        <span className="font-semibold text-blue/70">Recomendação: </span>
+                        <span className="font-semibold text-primary/70">Recomendação: </span>
                         {a.recomendacao}
                       </p>
                     </div>

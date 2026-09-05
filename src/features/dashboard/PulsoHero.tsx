@@ -26,11 +26,11 @@ const TONE_BADGE: Record<Tone, string> = {
   ok: 'border-green/25 bg-green/[0.08] text-green',
   warn: 'border-yellow/25 bg-yellow/[0.08] text-yellow',
   bad: 'border-red/25 bg-red/[0.08] text-red',
-  idle: 'border-border bg-surface/50 text-secondary',
+  idle: 'border-white/[0.08] bg-surface/50 text-secondary',
 }
 
 const MICRO = 'text-caption font-bold uppercase tracking-[0.07em] text-muted'
-const CELL = 'min-w-0 rounded-md border border-subtle bg-bg/35'
+const CELL = 'min-w-0 rounded-md border border-white/[0.06] bg-bg/35'
 
 // Escala do trilho do MTTR: 10 dias cobre o pior caso operacional real sem
 // espremer a faixa útil (0–5d) num canto invisível da barra.
@@ -55,7 +55,7 @@ interface Vital {
  *  Sem ele "87%" só é legível para quem decorou os limiares. */
 function VitalTrack({ pct, alvoPct, tone }: { pct: number; alvoPct: number; tone: Tone }) {
   return (
-    <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-pill bg-surface-active" aria-hidden="true">
+    <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-pill bg-white/[0.07]" aria-hidden="true">
       <div className={`h-full rounded-pill transition-[width] duration-slow ${TONE_BAR[tone]}`} style={{ width: `${pct}%` }} />
       <span className="absolute inset-y-0 w-[2px] rounded-pill bg-text/55" style={{ left: `${alvoPct}%` }} />
     </div>
@@ -83,7 +83,7 @@ function FluxoBar({ label, value, max, barClass, refPct, excedenteDe, excedenteC
   const content = (
     <>
       <span className="w-[92px] flex-shrink-0 truncate text-caption text-secondary sm:w-[110px]">{label}</span>
-      <span className="relative h-2 min-w-0 flex-1 overflow-hidden rounded-pill bg-surface-active" aria-hidden="true">
+      <span className="relative h-2 min-w-0 flex-1 overflow-hidden rounded-pill bg-white/[0.07]" aria-hidden="true">
         <span className={`absolute inset-y-0 left-0 rounded-pill transition-[width] duration-slow ${barClass}`} style={{ width: `${basePct}%` }} />
         {excedenteClass && pct > basePct && (
           <span className={`absolute inset-y-0 rounded-pill ${excedenteClass}`} style={{ left: `${basePct}%`, width: `${pct - basePct}%` }} />
@@ -99,7 +99,7 @@ function FluxoBar({ label, value, max, barClass, refPct, excedenteDe, excedenteC
       type="button"
       onClick={onClick}
       aria-label={`${label}: ${value}. Ver ordens`}
-      className="group flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-1 text-left transition-colors duration-200 hover:bg-surface-hover
+      className="group flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-1 text-left transition-colors duration-200 hover:bg-white/[0.04]
                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:gap-3"
     >
       {content}
@@ -214,9 +214,9 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
       aria-labelledby="dashboard-pulse-title"
       className={`h-full rounded-lg border border-border border-l-2 bg-card ${TONE_EDGE[veredito.tone]}`}
     >
-      <header className="flex min-h-12 items-center justify-between gap-3 border-b border-subtle px-4 py-2.5">
+      <header className="flex min-h-12 items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-blue/20 bg-blue/[0.07] text-blue">
+          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/[0.07] text-primary">
             <Pulse size={14} aria-hidden="true" />
           </span>
           <div className="min-w-0">
@@ -327,7 +327,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
           <div className="mb-2 flex items-center gap-2">
             <span className={MICRO}>Leitura operacional</span>
             {aiData && (
-              <span className="inline-flex items-center gap-1 rounded-pill border border-blue/20 bg-blue/10 px-1.5 py-0.5 text-caption font-bold text-blue/80">
+              <span className="inline-flex items-center gap-1 rounded-pill border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-caption font-bold text-primary/80">
                 <Sparkle size={8} aria-hidden="true" /> IA
               </span>
             )}
@@ -388,13 +388,13 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
               </button>
 
               {showAIComposer && (
-                <div className="mt-2 space-y-2 rounded-md border border-subtle bg-surface/30 p-2.5">
+                <div className="mt-2 space-y-2 rounded-md border border-white/[0.06] bg-surface/30 p-2.5">
                   <textarea
                     value={draftObs}
                     onChange={event => setDraftObs(event.target.value)}
                     placeholder="Contexto opcional para a IA: ex. tivemos queda de energia hoje, o que pode justificar menor fluxo de atendimentos."
                     rows={2}
-                    className="w-full resize-none rounded-md border border-border bg-surface/60 px-3 py-2 text-caption leading-relaxed text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
+                    className="w-full resize-none rounded-md border border-white/[0.08] bg-surface/60 px-3 py-2 text-caption leading-relaxed text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -419,13 +419,13 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
                 <Sparkle size={9} aria-hidden="true" /> Reanalisar com novo contexto
               </button>
               {showReanalysis && (
-                <div className="mt-2 space-y-2 rounded-md border border-subtle bg-surface/30 p-2.5">
+                <div className="mt-2 space-y-2 rounded-md border border-white/[0.06] bg-surface/30 p-2.5">
                   <textarea
                     value={draftObs}
                     onChange={event => setDraftObs(event.target.value)}
                     placeholder="Novo contexto para a IA..."
                     rows={2}
-                    className="w-full resize-none rounded-md border border-border bg-surface/60 px-3 py-2 text-caption text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
+                    className="w-full resize-none rounded-md border border-white/[0.08] bg-surface/60 px-3 py-2 text-caption text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
                   />
                   <button
                     type="button"

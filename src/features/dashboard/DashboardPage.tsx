@@ -133,7 +133,6 @@ export default function DashboardPage() {
               {riskStats.map((k, i) => (
                 <StatCard
                   key={k.id}
-                  index={i}
                   title={k.title}
                   value={k.value}
                   sub={k.sub}
@@ -239,11 +238,11 @@ export default function DashboardPage() {
 
         <section aria-labelledby="dashboard-control-title" className="space-y-3 border-t border-border pt-4">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-blue/20 bg-blue/[0.08] text-blue">
+            <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/[0.08] text-primary">
               <Gauge size={16} aria-hidden="true" />
             </span>
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.09em] text-blue">Nível 2</p>
+              <p className="text-caption font-bold uppercase tracking-[0.09em] text-primary">Nível 2</p>
               <h2 id="dashboard-control-title" className="text-title font-bold text-text">Controlar a operação de hoje</h2>
               <p className="mt-0.5 text-caption text-muted">Entrega, volume e prazo da fila no ritmo atual.</p>
             </div>
@@ -356,7 +355,7 @@ export default function DashboardPage() {
                   exportCSV(modal!.rows, `os_${modal!.title.toLowerCase().replace(/\s+/g, '_')}_${date}.csv`)
                 }}
                 className="flex items-center gap-1.5 text-caption text-muted hover:text-primary
-                           border border-border hover:border-primary/30 rounded-md px-2.5 py-1
+                           border border-white/[0.08] hover:border-primary/30 rounded-md px-2.5 py-1
                            transition-all duration-fast"
               >
                 <DownloadSimple size={11} /> CSV

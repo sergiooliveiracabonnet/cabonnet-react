@@ -265,7 +265,7 @@ export default function OrdensPage() {
               <summary className="list-none cursor-pointer min-h-9 inline-flex items-center gap-2 px-3 rounded-md border border-primary/30 text-primary text-label font-semibold hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
                 <DownloadSimple size={13} /> Exportar <span className="text-muted">({os.filtered.length})</span>
               </summary>
-              <div className="absolute right-0 top-full mt-2 z-dropdown w-48 rounded-xl border border-border-hover bg-card-high shadow-xl p-1.5">
+              <div className="absolute right-0 top-full mt-2 z-dropdown w-48 rounded-xl border border-white/[0.10] bg-card-high shadow-xl p-1.5">
                 <button onClick={handleCopyImage} className="w-full min-h-9 px-3 flex items-center gap-2 rounded-lg text-label text-secondary hover:bg-surface hover:text-text">
                   {copied ? <CheckCircle size={14} className="text-green" /> : <Copy size={14} />} {copied ? 'Imagem copiada' : 'Copiar imagem'}
                 </button>
@@ -291,7 +291,7 @@ export default function OrdensPage() {
       )}
 
       {/* ── Opções de visualização ── */}
-      <div className="flex items-center justify-between gap-3 flex-wrap border-b border-subtle pb-2">
+      <div className="flex items-center justify-between gap-3 flex-wrap border-b border-white/[0.06] pb-2">
         <p className="text-caption font-bold uppercase tracking-[0.08em] text-muted">
           Indicadores do resultado atual
         </p>
@@ -300,7 +300,7 @@ export default function OrdensPage() {
         <button
           onClick={() => setKpiVisible(v => !v)}
           className="flex items-center gap-1.5 min-h-9 text-caption font-semibold text-secondary hover:text-text
-                     border border-border rounded-xl px-3 transition-all duration-fast"
+                     border border-white/[0.08] rounded-xl px-3 transition-all duration-fast"
         >
           <ChartBar size={12} /> KPIs
           <CaretUp size={11} className={`transition-transform ${kpiVisible ? '' : 'rotate-180'}`} />
@@ -313,13 +313,13 @@ export default function OrdensPage() {
                      border rounded-xl px-3 min-h-9 transition-all duration-fast
                      ${groupBy === 'cliente'
                        ? 'bg-primary/15 border-primary/40 text-primary'
-                       : 'border-border text-secondary hover:text-text'}`}
+                       : 'border-white/[0.08] text-secondary hover:text-text'}`}
         >
           <Users size={12} /> Por Cliente
         </button>
 
         {/* Density toggle */}
-        <div className="flex items-center gap-0.5 bg-card border border-border rounded-xl p-1">
+        <div className="flex items-center gap-0.5 bg-card border border-white/[0.08] rounded-xl p-1">
           {densityOptions.map((d) => (
             <button
               key={d.value}
@@ -340,37 +340,31 @@ export default function OrdensPage() {
       {kpiVisible && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard
-            index={0}
             title="Total OS" value={os.kpis.total} icon={ORDENS_CARD_ICONS.total}
             sub="limpar filtros" delay={0}
             onClick={() => { clearAllFilters(); scrollToTable() }}
           />
           <StatCard
-            index={1}
             title="Críticas" value={os.kpis.criticas} tone="critical" icon={ORDENS_CARD_ICONS.criticas}
             sub="SLA 2× excedido" delay={40}
             onClick={() => { os.setCritico(!os.critico); scrollToTable() }}
           />
           <StatCard
-            index={2}
             title="Sem equipe" value={os.kpis.semEquipe} tone="warning" icon={ORDENS_CARD_ICONS.semEquipe}
             sub="sem alocação" delay={80}
             onClick={() => { os.setSemEquipe(!os.semEquipe); scrollToTable() }}
           />
           <StatCard
-            index={3}
             title="Agend. hoje" value={os.kpis.agendHoje} tone="ok" icon={ORDENS_CARD_ICONS.agendHoje}
             sub="para hoje" delay={120}
             onClick={() => { os.setAgendaFoco('hoje'); scrollToTable() }}
           />
           <StatCard
-            index={4}
             title="Amanhã" value={os.kpis.agendAmanha} icon={ORDENS_CARD_ICONS.agendAmanha}
             sub="agendadas para amanhã" delay={160}
             onClick={() => { os.setAgendaFoco('amanha'); scrollToTable() }}
           />
           <StatCard
-            index={5}
             title="Após amanhã" value={os.kpis.agendFuturo} tone="warning" icon={ORDENS_CARD_ICONS.agendFuturo}
             sub="de depois de amanhã em diante" delay={200}
             onClick={() => { os.setAgendaFoco('posAmanha'); scrollToTable() }}
@@ -398,7 +392,7 @@ export default function OrdensPage() {
       </div>
 
       {/* ── Barra de filtros ── */}
-      <div className="bg-card border border-border rounded-xl p-3 space-y-2">
+      <div className="bg-card border border-white/[0.08] rounded-xl p-3 space-y-2">
         <div className="flex flex-wrap gap-2 items-center">
         <SearchBox
           value={os.search}
@@ -409,13 +403,13 @@ export default function OrdensPage() {
         <FilterSelect value={os.status}     onChange={os.setStatus}     options={statusOptions}     placeholder="Status"      className="w-44" />
         <FilterSelect value={os.cidade}     onChange={os.setCidade}     options={cidadeOpts}        placeholder="Cidade"      className="w-36" />
         <FilterSelect value={os.equipe}     onChange={os.setEquipe}     options={equipeOpts}        placeholder="Equipe"      className="w-36" />
-        <button onClick={() => setMoreFilters(v => !v)} className={`min-h-9 px-3 inline-flex items-center gap-2 rounded-lg border text-caption font-semibold ${moreFilters ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border text-secondary hover:text-text'}`}>
+        <button onClick={() => setMoreFilters(v => !v)} className={`min-h-9 px-3 inline-flex items-center gap-2 rounded-lg border text-caption font-semibold ${moreFilters ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/[0.08] text-secondary hover:text-text'}`}>
           <SlidersHorizontal size={13} /> Mais filtros <CaretUp size={11} className={`transition-transform ${moreFilters ? '' : 'rotate-180'}`} />
         </button>
         {os.filtersActive && <Button variant="ghost" size="sm" className="min-h-9" onClick={clearAllFilters}>Limpar tudo</Button>}
         </div>
 
-        {moreFilters && <div className="pt-2 border-t border-subtle flex flex-wrap gap-2 items-center animate-slide-down">
+        {moreFilters && <div className="pt-2 border-t border-white/[0.06] flex flex-wrap gap-2 items-center animate-slide-down">
         {(os.status === 'Reagendamento' || os.reagendTipo) && (
           <FilterSelect value={os.reagendTipo} onChange={os.setReagendTipo} options={reagendTipoOptions} placeholder="Subtipo reag." className="w-40" />
         )}
@@ -431,16 +425,16 @@ export default function OrdensPage() {
       {/* Banner filtros ativos */}
       {os.filtersActive && (
         <div className="flex items-center justify-between px-4 py-2.5 rounded-xl
-                        bg-blue/[0.06] border border-blue/20 text-label text-secondary">
+                        bg-primary/[0.06] border border-primary/20 text-label text-secondary">
           <span className="flex items-center gap-2 flex-wrap">
             Exibindo <strong className="text-text">{os.filtered.length}</strong> de{' '}
             <strong className="text-text">{os.ordens.length}</strong> OS
             {os.critico      && <span className="rounded-full px-2 py-0.5 text-caption font-bold bg-red/10 text-red border border-red/20">Críticas · SLA 2×</span>}
             {os.semEquipe    && <span className="badge-yellow  rounded-full px-2 py-0.5 text-caption font-bold">Sem equipe</span>}
             {os.agendHoje    && <span className="badge-green   rounded-full px-2 py-0.5 text-caption font-bold">Agend. hoje</span>}
-            {os.agendAmanha  && <span className="badge-blue    rounded-full px-2 py-0.5 text-caption font-bold">Amanhã</span>}
+            {os.agendAmanha  && <span className="badge-cyan    rounded-full px-2 py-0.5 text-caption font-bold">Amanhã</span>}
             {os.agendFuturo  && <span className="badge-orange  rounded-full px-2 py-0.5 text-caption font-bold">Após amanhã</span>}
-            {os.periodo      && <span className="badge-blue    rounded-full px-2 py-0.5 text-caption font-bold">{os.periodo}</span>}
+            {os.periodo      && <span className="badge-purple  rounded-full px-2 py-0.5 text-caption font-bold">{os.periodo}</span>}
           </span>
           <button onClick={clearAllFilters} className="text-muted hover:text-red transition-colors text-caption font-semibold">
             Limpar filtros
@@ -449,7 +443,7 @@ export default function OrdensPage() {
       )}
 
       {/* Tabela */}
-      <div ref={tableRef} className="bg-card border border-border rounded-xl overflow-hidden">
+      <div ref={tableRef} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
         {os.isLoading ? (
           <div className="p-4"><TableSkeleton rows={8} cols={8} /></div>
         ) : os.error ? (
@@ -493,11 +487,11 @@ export default function OrdensPage() {
         {/* Paginação — apenas no modo flat */}
         {!os.equipe && groupBy === 'none' && os.filtered.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3
-                          border-t border-subtle text-caption text-muted">
+                          border-t border-white/[0.05] text-caption text-muted">
             <div className="flex items-center gap-3">
               <span>{(os.page - 1) * os.pageSize + 1}–{Math.min(os.page * os.pageSize, os.filtered.length)} de {os.filtered.length} OS</span>
               <label className="flex items-center gap-1.5">Por página
-                <select value={os.pageSize} onChange={e => { os.setPageSize(Number(e.target.value)); os.setPage(1) }} className="bg-surface border border-border rounded-md px-2 py-1 text-text">
+                <select value={os.pageSize} onChange={e => { os.setPageSize(Number(e.target.value)); os.setPage(1) }} className="bg-surface border border-white/[0.08] rounded-md px-2 py-1 text-text">
                   {[25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </label>

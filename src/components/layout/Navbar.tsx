@@ -71,8 +71,7 @@ export function Navbar() {
   return (
     <>
     <header className={`navbar-premium fixed left-0 right-0 top-0 z-header flex h-16 max-w-full items-center gap-1.5 px-2 transition-[left] duration-200 sm:gap-3 sm:px-4
-                        md:right-3 md:top-3 md:rounded-2xl md:border md:border-border
-                        ${sidebarOpen ? 'md:left-[260px]' : 'md:left-[76px]'}`}>
+                        ${sidebarOpen ? 'md:left-[248px]' : 'md:left-[64px]'}`}>
       <button
         onClick={toggleSidebar}
         className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg sm:h-8 sm:w-8
@@ -92,7 +91,7 @@ export function Navbar() {
       <button
         onClick={() => setSearchOpen(true)}
         title="Busca global (Ctrl+K)"
-        className="flex h-11 w-11 flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-border
+        className="flex h-11 w-11 flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-white/[0.08]
                    px-0 sm:h-8 sm:w-auto sm:min-w-[160px] sm:justify-start sm:px-3
                    bg-surface text-muted hover:border-muted/30 hover:text-secondary
                    transition-colors duration-150"
@@ -100,7 +99,7 @@ export function Navbar() {
         <MagnifyingGlass size={12} className="flex-shrink-0" />
         <span className="text-caption flex-1 text-left hidden sm:block">Buscar OS, contrato ou CPF…</span>
         <kbd className="hidden md:flex items-center text-caption font-mono
-                        bg-surface border border-border rounded px-1.5 py-0.5 leading-none text-muted">Ctrl K</kbd>
+                        bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted">Ctrl K</kbd>
       </button>
 
       <div className="hidden lg:contents">
@@ -120,7 +119,7 @@ export function Navbar() {
           <PaperPlaneTilt size={13} />
           {naoLidos > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full
-                             bg-blue text-caption font-bold text-white flex items-center justify-center leading-none">
+                             bg-primary text-caption font-bold text-white flex items-center justify-center leading-none">
               {naoLidos > 9 ? '9+' : naoLidos}
             </span>
           )}

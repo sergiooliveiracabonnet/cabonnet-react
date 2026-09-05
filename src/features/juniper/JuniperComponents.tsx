@@ -28,7 +28,7 @@ const STATUS_STYLE = {
 }
 export function getHeroStyle(nivel: string): { text: string; border: string; bg: string; icon: string } {
   return (STATUS_STYLE as Record<string, typeof STATUS_STYLE[keyof typeof STATUS_STYLE]>)[nivel]
-    ?? { text: 'text-muted', border: 'border-border', bg: '', icon: 'bg-surface/40' }
+    ?? { text: 'text-muted', border: 'border-white/[0.08]', bg: '', icon: 'bg-surface/40' }
 }
 
 const OS_URGENCY = [
@@ -38,7 +38,7 @@ const OS_URGENCY = [
 ]
 export function getOsStyle(total: number): { text: string; bg: string; bar: string } {
   for (const u of OS_URGENCY) if (total >= u.min) return u
-  return { text: 'text-blue', bg: '', bar: 'bg-blue' }
+  return { text: 'text-primary', bg: '', bar: 'bg-primary' }
 }
 
 export function relTime(ts: string | null | undefined): string {
@@ -80,7 +80,7 @@ export function ClientCard({ c }: { c: JuniperClient }) {
       hover:-translate-y-0.5 hover:shadow-2xl
       ${isOnline
         ? 'bg-red/[0.035] border-red/[0.22] hover:border-red/45 hover:shadow-red/10'
-        : 'bg-card border-border'}`}>
+        : 'bg-card border-white/[0.08]'}`}>
 
       <div className={`absolute inset-x-0 top-0 h-[2px] ${isOnline
         ? 'bg-gradient-to-r from-red via-orange/70 to-transparent'
@@ -97,7 +97,7 @@ export function ClientCard({ c }: { c: JuniperClient }) {
             <p className="text-caption text-muted/60 ml-3.5 uppercase tracking-[0.04em] font-mono truncate">{c.iface}</p>
           </div>
           <span className={`flex-shrink-0 inline-flex items-center gap-1.5 text-caption font-bold px-2.5 py-1 rounded-full tracking-widest border
-            ${isOnline ? 'bg-red/[0.10] text-red border-red/25' : 'bg-surface text-muted border-border'}`}>
+            ${isOnline ? 'bg-red/[0.10] text-red border-red/25' : 'bg-surface text-muted border-white/[0.08]'}`}>
             <Circle size={7} weight="fill" className="flex-shrink-0" />
             {isOnline ? 'ATIVA' : 'INATIVA'}
           </span>
@@ -105,7 +105,7 @@ export function ClientCard({ c }: { c: JuniperClient }) {
 
         <div className={`rounded-xl px-3 py-2.5 mb-3 border ${isOnline
           ? 'bg-red/[0.06] border-red/[0.15]'
-          : 'bg-surface/20 border-subtle'}`}>
+          : 'bg-surface/20 border-white/[0.05]'}`}>
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-1">Endereço IP</p>
           <p className={`text-title font-mono font-bold uppercase antialiased leading-none tracking-wide
             ${isOnline ? 'text-red' : 'text-secondary'}`}>{c.ip}</p>
@@ -118,7 +118,7 @@ export function ClientCard({ c }: { c: JuniperClient }) {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2.5 border-t border-subtle mt-1">
+        <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.05] mt-1">
           <div className="flex items-center gap-1.5">
             {c.uptime !== '—' && (
               <>
@@ -143,7 +143,7 @@ interface IfaceRow { nome: string; total: number; online: number }
 export function InterfaceCard({ iface, maxIface }: { iface: IfaceRow; maxIface: number }) {
   const pct = Math.round((iface.total / maxIface) * 100)
   return (
-    <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+    <div className="bg-card border border-white/[0.08] rounded-xl p-4 flex flex-col gap-3">
       <div>
         <p className="text-caption font-bold text-text truncate mb-0.5">{iface.nome}</p>
         <div className="flex items-baseline gap-2">
@@ -172,7 +172,7 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
   const onlinePct = snap.total > 0 ? Math.round((snap.online / snap.total) * 100) : 0
   const relTxt    = relTime(snap.ts)
   return (
-    <div className="border-b border-subtle last:border-0">
+    <div className="border-b border-white/[0.04] last:border-0">
       <button
         onClick={onToggle}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/30 transition-colors text-left"
@@ -197,22 +197,22 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
       </button>
 
       {isOpen && (
-        <div className="overflow-x-auto border-t border-subtle bg-surface/15">
+        <div className="overflow-x-auto border-t border-white/[0.04] bg-surface/15">
           <table className="w-full text-label">
             <thead>
-              <tr className="border-b border-border">
+              <tr className="border-b border-white/[0.08]">
                 {['Usuário', 'IP', 'MAC', 'Interface', 'Uptime', 'Login'].map(h => (
                   <th key={h} className="px-4 py-2 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-subtle">
+            <tbody className="divide-y divide-white/[0.03]">
               {(snap.clientes ?? []).map((c, ci) => {
                 const cl = c as Record<string, string>
                 return (
-                  <tr key={ci} className="hover:bg-blue/[0.04]">
+                  <tr key={ci} className="hover:bg-primary/[0.04]">
                     <td className="px-4 py-2 font-bold text-text uppercase antialiased">{cl.usuario}</td>
-                    <td className="px-4 py-2 font-mono font-semibold text-blue uppercase antialiased">{cl.ip}</td>
+                    <td className="px-4 py-2 font-mono font-semibold text-primary uppercase antialiased">{cl.ip}</td>
                     <td className="px-4 py-2 font-mono text-label font-semibold text-text uppercase antialiased">{cl.mac}</td>
                     <td className="px-4 py-2 text-secondary uppercase">{cl.iface}</td>
                     <td className="px-4 py-2 text-muted uppercase">{cl.uptime}</td>
@@ -234,7 +234,7 @@ export function OsCityCard({ cidade, total, maxOsCity }: { cidade: string; total
   const style = getOsStyle(total)
   const pct   = Math.round((total / maxOsCity) * 100)
   return (
-    <div className={`${style.bg} bg-surface border border-border rounded-xl p-3 flex flex-col gap-2`}>
+    <div className={`${style.bg} bg-surface border border-white/[0.08] rounded-xl p-3 flex flex-col gap-2`}>
       <div className="flex items-center justify-between gap-1">
         <p className="text-caption font-semibold text-text truncate flex-1">{cidade}</p>
         <p className={`font-mono font-bold text-xl tabular-nums flex-shrink-0 ${style.text}`}>{total}</p>

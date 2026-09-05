@@ -30,7 +30,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
       <div className="flex flex-col" style={{ maxHeight: '72vh' }}>
 
         {/* Sub-header: count + legenda */}
-        <div className="flex items-center justify-between px-5 py-2.5 border-b border-border">
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-white/[0.08]">
           <span className="text-label font-semibold" style={{ color }}>
             {rows.length} {rows.length === 1 ? 'ordem' : 'ordens'}
           </span>
@@ -49,7 +49,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
 
         {/* Cabeçalho da tabela */}
         <div className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3 px-5 py-2
-                        bg-surface/20 border-b border-subtle
+                        bg-surface/20 border-b border-white/[0.05]
                         text-caption font-bold uppercase tracking-[0.05em] text-muted flex-shrink-0">
           <span>OS #</span>
           <span>Cliente</span>
@@ -65,7 +65,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
               Nenhuma OS encontrada
             </div>
           ) : (
-            <div className="divide-y divide-subtle">
+            <div className="divide-y divide-white/[0.04]">
               {rows.map(r => {
                 const aging = r._aging ?? 0
                 // Régua relativa ao SLA da OS: manutenção com 2d (limite 1d) já estourou
@@ -152,15 +152,15 @@ export function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no pe
 
   if (!cidades.length) {
     return (
-      <div className="rounded-xl border border-border bg-card px-4 py-8 text-center">
+      <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
         <p className="text-label text-muted">{emptyMsg}</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="divide-y divide-subtle">
+    <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
+      <div className="divide-y divide-white/[0.04]">
         {cidades.map((c, i) => {
           const pct = Math.round((c.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)
@@ -204,22 +204,22 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
 
   if (!rows.length) {
     return (
-      <div className="rounded-xl border border-border bg-card px-4 py-8 text-center">
+      <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
         <p className="text-label text-muted">Nenhuma OS em rota agora</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_1fr_80px] gap-3 px-4 py-2 bg-surface/20
-                      border-b border-subtle text-caption font-bold uppercase tracking-[0.05em] text-muted">
+                      border-b border-white/[0.05] text-caption font-bold uppercase tracking-[0.05em] text-muted">
         <span>Cliente</span>
         <span>Cidade · Equipe</span>
         <span className="text-right">Aging</span>
       </div>
-      <div className="divide-y divide-subtle max-h-72 overflow-y-auto">
+      <div className="divide-y divide-white/[0.04] max-h-72 overflow-y-auto">
         {rows.slice(0, 50).map(r => {
           const aging = r._agingAbertura ?? 0
           const pct   = Math.round((aging / max) * 100)
@@ -285,7 +285,7 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
           onChange={e => setQ(e.target.value)}
           placeholder="Buscar cliente em rota…"
           className="w-full pl-7 pr-7 py-1.5 rounded-lg text-caption bg-surface/30
-                     border border-border text-text placeholder:text-muted/50
+                     border border-white/[0.08] text-text placeholder:text-muted/50
                      focus:outline-none focus:border-muted/40 transition-colors"
         />
         {q && (
@@ -299,13 +299,13 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
 
       {/* Resultados */}
       {term && (
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="rounded-lg border border-white/[0.08] bg-card overflow-hidden">
           {results.length === 0 ? (
             <p className="px-3 py-2.5 text-caption text-muted text-center">
               Nenhum cliente em rota
             </p>
           ) : (
-            <div className="divide-y divide-subtle">
+            <div className="divide-y divide-white/[0.04]">
               {results.map(r => {
                 const aging = r._agingAbertura ?? 0
                 const ratio = r._slaLimite > 0 ? aging / r._slaLimite : aging
@@ -346,17 +346,17 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
 
   if (!equipes.length) {
     return (
-      <div className="rounded-xl border border-border bg-card px-4 py-8 text-center">
+      <div className="rounded-xl border border-white/[0.08] bg-card px-4 py-8 text-center">
         <p className="text-label text-muted">Sem dados de equipes no período</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="rounded-xl border border-white/[0.08] bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_54px_54px_54px_54px_44px_50px_24px] gap-2 px-4 py-2.5 bg-surface/20
-                      border-b border-subtle text-caption font-bold uppercase tracking-[0.05em] text-muted">
+                      border-b border-white/[0.05] text-caption font-bold uppercase tracking-[0.05em] text-muted">
         <span>Equipe</span>
         <span className="text-right">Total</span>
         <span className="text-right text-yellow">Pend.</span>
@@ -366,7 +366,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
         <span className="text-center" title="% das OS da equipe dentro do prazo de SLA">SLA</span>
         <span />
       </div>
-      <div className="divide-y divide-subtle max-h-96 overflow-y-auto">
+      <div className="divide-y divide-white/[0.04] max-h-96 overflow-y-auto">
         {equipes.map((e, _i) => {
           const pct = Math.round((e.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)
@@ -385,7 +385,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
               <div className="min-w-0">
                 <p className="text-label font-semibold text-text truncate">{e.equipe}</p>
                 <div className="mt-1 h-1 bg-surface/40 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full bg-blue/60 transition-all duration-700"
+                  <div className="h-full rounded-full bg-primary/60 transition-all duration-700"
                        style={{ width: `${pct}%` }} />
                 </div>
               </div>
@@ -393,7 +393,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
               <span className="font-mono text-label text-yellow text-right">{e.pendente}</span>
               <span className="font-mono text-label text-cyan text-right">{e.atendimento}</span>
               <span className="font-mono text-label text-green text-right">{e.concluida}</span>
-              <span className={`font-mono text-label text-right ${e.criticas > 0 ? 'text-red font-bold' : 'text-disabled'}`}>
+              <span className={`font-mono text-label text-right ${e.criticas > 0 ? 'text-red font-bold' : 'text-white/20'}`}>
                 {e.criticas > 0 ? e.criticas : '—'}
               </span>
               <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums text-center ${slaCls}`}>

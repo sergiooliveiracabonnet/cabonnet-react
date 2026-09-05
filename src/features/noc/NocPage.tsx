@@ -55,7 +55,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
       </div>
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-10 h-10 border-2 border-blue border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="flex-1 grid grid-cols-3 gap-4">
@@ -64,7 +64,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
             return (
               <div
                 key={k.id}
-                className={`${acc.tint} bg-card border border-border rounded-xl
+                className={`${acc.tint} bg-card border border-white/[0.08] rounded-xl
                              flex flex-col items-center justify-center gap-2 p-6 relative overflow-hidden`}
               >
                 <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${acc.bar}`} />
@@ -109,7 +109,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
           return (
             <div
               key={eq.nome}
-              className="flex items-center gap-3 bg-card border border-border
+              className="flex items-center gap-3 bg-card border border-white/[0.08]
                          rounded-xl px-4 py-3.5 relative overflow-hidden"
             >
               <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${cfg.bar}`} />
@@ -154,7 +154,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
                               ${veryOld ? 'bg-red/[0.07] border-red/25' : 'bg-card border-red/15'}`}
                 >
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 bg-red ${veryOld ? 'animate-pulse' : ''}`} />
-                  <span className="font-mono text-label text-blue font-bold w-20 flex-shrink-0">
+                  <span className="font-mono text-label text-primary font-bold w-20 flex-shrink-0">
                     {os.numos}
                   </span>
                   <span className="text-label text-text flex-1 truncate">{os.nomecliente}</span>
@@ -198,7 +198,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
           return (
             <div
               key={f.nome}
-              className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4"
+              className="bg-card border border-white/[0.08] rounded-xl p-5 flex flex-col gap-4"
               style={{ borderLeft: `3px solid ${f.cor}` }}
             >
               <div className="flex items-center gap-2.5">
@@ -343,20 +343,20 @@ function NocInner() {
 
       {/* ── Header ── */}
       <header className="flex items-center gap-3 px-6 py-3
-                         border-b border-border bg-elevated flex-shrink-0">
+                         border-b border-white/[0.08] bg-elevated flex-shrink-0">
         {/* Live pulse */}
         <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-60" />
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green" />
         </span>
 
-        <Monitor size={17} className="text-blue flex-shrink-0" />
+        <Monitor size={17} className="text-primary flex-shrink-0" />
         <span className="font-headline font-bold text-base tracking-wide">NOC — Cabonnet</span>
 
         <div className="w-px h-5 bg-border mx-1 flex-shrink-0" />
 
         {/* Current slide label */}
-        <SlideIcon size={13} className="text-blue flex-shrink-0" />
+        <SlideIcon size={13} className="text-primary flex-shrink-0" />
         <span className="text-label font-semibold text-secondary">{slideName}</span>
         <span className="text-caption text-muted/50 font-mono">{slide + 1}/{TOTAL_SLIDES}</span>
 
@@ -454,7 +454,7 @@ function NocInner() {
       </main>}
 
       {/* ── Footer ── */}
-      <footer className="flex-shrink-0 bg-elevated border-t border-border px-6 py-2.5">
+      <footer className="flex-shrink-0 bg-elevated border-t border-white/[0.08] px-6 py-2.5">
         <div className="flex items-center gap-1 mb-2">
           {SLIDE_CONFIG.map(({ name, icon: Icon }, i) => (
             <button
@@ -479,7 +479,7 @@ function NocInner() {
                 className={`rounded-full transition-all duration-normal
                             ${slide === i
                               ? 'w-4 h-2 bg-primary'
-                              : 'w-2 h-2 bg-surface-hover hover:bg-surface-active'}`}
+                              : 'w-2 h-2 bg-white/[0.20] hover:bg-white/[0.35]'}`}
               />
             ))}
           </div>
@@ -501,7 +501,7 @@ function NocInner() {
 
         <div className="h-[3px] bg-surface rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue rounded-full"
+            className="h-full bg-primary rounded-full"
             style={{ width: `${progress}%`, transition: 'width 100ms linear' }}
           />
         </div>
@@ -527,7 +527,7 @@ function NocAuthGuard({ children }: { children: React.ReactNode }) {
   if (!checked) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-bg">
-        <div className="w-8 h-8 border-2 border-blue border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }

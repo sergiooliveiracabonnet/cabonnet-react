@@ -5,19 +5,10 @@
     <link rel="icon" type="image/png" href="/LOGO.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://server.arcgisonline.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com; connect-src 'self' ws: wss: https://nominatim.openstreetmap.org https://cloudflareinsights.com;" />
-    <script>
-      // Aplica o tema antes do primeiro paint. Escuro e o padrao.
-      try {
-        if (localStorage.getItem('theme') !== 'light') {
-          document.documentElement.classList.add('dark')
-        }
-      } catch (_) {
-        document.documentElement.classList.add('dark')
-      }
-    </script>
     <title>Gestão de OS</title>
   </head>
   <body>
+    <script>(function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.classList.add('light');})()</script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

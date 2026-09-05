@@ -43,8 +43,8 @@ describe('configuração P0 do shell', () => {
     const layout = read('../components/layout/AppLayout.tsx')
     const sidebar = read('../components/layout/Sidebar.tsx')
 
-    expect(layout).toContain("'md:pl-[260px]'")
-    expect(layout).toContain("'md:pl-[76px]'")
+    expect(layout).toContain("'md:pl-[248px]'")
+    expect(layout).toContain("'md:pl-[64px]'")
     expect(layout).toContain('md:hidden')
     expect(sidebar).toContain('-translate-x-full')
     expect(sidebar).toContain('md:translate-x-0')

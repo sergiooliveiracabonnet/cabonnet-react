@@ -58,7 +58,7 @@ export function DashboardCommandCenter({
               <p className="text-caption text-muted">Clique em um card para abrir as ordens</p>
             </div>
           </div>
-          <span className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface/50 px-2 py-1 text-caption font-semibold text-secondary">
+          <span className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border border-white/[0.08] bg-surface/50 px-2 py-1 text-caption font-semibold text-secondary">
             {activeCount > 0 ? <Broadcast size={9} className="text-orange" aria-hidden="true" /> : <CheckCircle size={10} className="text-green" aria-hidden="true" />}
             {activeCount} {activeCount === 1 ? 'frente ativa' : 'frentes ativas'}
           </span>

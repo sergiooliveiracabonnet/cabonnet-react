@@ -103,11 +103,11 @@ export default function GerencialPage() {
     const el = produtividadeRef.current
     if (!el) return
     try {
-      const isDark     = document.documentElement.classList.contains('dark')
-      const bg         = isDark ? '#020202' : '#ffffff'
-      const bgHdr      = isDark ? '#121212' : '#f3f4f6'
-      const colorText  = isDark ? '#ffffff' : '#171717'
-      const colorMuted = isDark ? '#8a8a8a' : '#6e6e6e'
+      const isDark     = !document.documentElement.classList.contains('light')
+      const bg         = isDark ? '#0d1117' : '#ffffff'
+      const bgHdr      = isDark ? '#111827' : '#f0f4ff'
+      const colorText  = isDark ? '#e2e8f0' : '#0f172a'
+      const colorMuted = isDark ? '#94a3b8' : '#64748b'
       const borderClr  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
       const now         = new Date()
       const ts          = now.toLocaleDateString('pt-BR') + ' · ' +
@@ -208,7 +208,7 @@ export default function GerencialPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24 gap-3 text-secondary text-sm">
-        <div className="w-5 h-5 border-2 border-blue border-t-transparent rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         Carregando…
       </div>
     )
@@ -281,7 +281,7 @@ export default function GerencialPage() {
                 { label: 'Total',     drillRows: instRows,   color: '#3b82f6' },
               ].map(s => (
                 <div key={s.label}
-                     className="rounded-xl border border-border bg-card px-3 py-3
+                     className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill({ title: `Instalações ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
@@ -341,7 +341,7 @@ export default function GerencialPage() {
                 { label: 'Total',     drillRows: vtManutRows,   color: '#f97316' },
               ].map(s => (
                 <div key={s.label}
-                     className="rounded-xl border border-border bg-card px-3 py-3
+                     className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill({ title: `VT/Manutenção ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
@@ -401,7 +401,7 @@ export default function GerencialPage() {
                 { label: 'Total',     drillRows: servRows,   color: '#c4b5fd' },
               ].map(s => (
                 <div key={s.label}
-                     className="rounded-xl border border-border bg-card px-3 py-3
+                     className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill({ title: `Serviços ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
                   <p className="font-mono font-bold text-[24px] leading-none"
@@ -459,7 +459,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-3">
               {rotaInstSplit.futuras.length > 0 && (
                 <button
-                  className="text-caption font-semibold text-muted hover:text-secondary border border-border
+                  className="text-caption font-semibold text-muted hover:text-secondary border border-white/[0.08]
                              rounded-full px-2.5 py-1 transition-colors"
                   onClick={() => openDrill({ title: `Instalação atribuída p/ datas futuras — ${rotaInstSplit.futuras.length} ordens`, rows: rotaInstSplit.futuras, color: '#3b82f6' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
@@ -511,7 +511,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-3">
               {rotaVTManutSplit.futuras.length > 0 && (
                 <button
-                  className="text-caption font-semibold text-muted hover:text-secondary border border-border
+                  className="text-caption font-semibold text-muted hover:text-secondary border border-white/[0.08]
                              rounded-full px-2.5 py-1 transition-colors"
                   onClick={() => openDrill({ title: `VT/Manutenção atribuída p/ datas futuras — ${rotaVTManutSplit.futuras.length} ordens`, rows: rotaVTManutSplit.futuras, color: '#f97316' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
@@ -564,7 +564,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-3">
               {rotaServSplit.futuras.length > 0 && (
                 <button
-                  className="text-caption font-semibold text-muted hover:text-secondary border border-border
+                  className="text-caption font-semibold text-muted hover:text-secondary border border-white/[0.08]
                              rounded-full px-2.5 py-1 transition-colors"
                   onClick={() => openDrill({ title: `Serviço atribuído p/ datas futuras — ${rotaServSplit.futuras.length} ordens`, rows: rotaServSplit.futuras, color: '#c4b5fd' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">

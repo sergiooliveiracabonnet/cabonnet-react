@@ -32,7 +32,7 @@ function RitmoIntradiarioBar({ r }: { r: PulsoRitmoIntradiario }) {
   const pctManha = Math.round((r.manha / tot) * 100)
   const pctTarde = 100 - pctManha
   return (
-    <div className="mt-4 pt-3 border-t border-subtle">
+    <div className="mt-4 pt-3 border-t border-white/[0.05]">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ritmo por turno hoje</span>
         {r.alerta && (
@@ -92,7 +92,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
           {total > 0 && (
             <button
               onClick={() => onOpenModal('Executadas Hoje', hojeRows)}
-              className="text-caption text-muted hover:text-green border border-border
+              className="text-caption text-muted hover:text-green border border-white/[0.08]
                          hover:border-green/30 rounded-lg px-2.5 py-1 transition-all duration-fast"
             >
               Ver todas <ArrowRight size={11} weight="bold" className="inline-block align-[-1px]" />
@@ -101,7 +101,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
         </div>
 
         {projecao && (
-          <div className="flex items-center gap-4 flex-wrap mb-4 pb-3 border-b border-subtle">
+          <div className="flex items-center gap-4 flex-wrap mb-4 pb-3 border-b border-white/[0.05]">
             <RitmoIndicator p={projecao} />
           </div>
         )}
@@ -131,7 +131,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
                   <button
                     key={g.cat}
                     onClick={() => onOpenModal(`Hoje — ${g.label}`, g.rows)}
-                    className="bg-surface/30 hover:bg-surface border border-border
+                    className="bg-surface/30 hover:bg-surface border border-white/[0.08]
                                hover:border-muted/30 rounded-md p-3 text-left
                                transition-all duration-150 cursor-pointer group"
                   >

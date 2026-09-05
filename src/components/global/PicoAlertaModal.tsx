@@ -102,7 +102,7 @@ function AlertaPainel({
           onChange={e => setContexto(e.target.value)}
           placeholder="Ex: Troca em massa de roteadores Zyxel contaminados…"
           rows={2}
-          className="w-full rounded-xl border border-border bg-surface/30 px-3 py-2.5
+          className="w-full rounded-xl border border-white/[0.08] bg-surface/30 px-3 py-2.5
                      text-label text-text placeholder:text-muted/40 resize-none
                      focus:outline-none focus:border-violet-500/40 transition-colors"
         />
@@ -234,10 +234,10 @@ export function PicoAlertaModal() {
       {/* Painel centralizado */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div className="w-full max-w-lg pointer-events-auto animate-in fade-in zoom-in-95 duration-200">
-          <div className="rounded-2xl border border-red-500/30 bg-card shadow-2xl overflow-hidden">
+          <div className="rounded-2xl border border-red-500/30 bg-card shadow-2xl shadow-black/60 overflow-hidden">
 
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-subtle bg-red-500/5">
+            <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-white/[0.06] bg-red-500/5">
               <div className="flex items-center gap-2.5">
                 <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                 <div>

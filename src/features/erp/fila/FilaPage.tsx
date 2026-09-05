@@ -80,7 +80,7 @@ function TendenciaPanel({ items }: { items: TendenciaItem[] }) {
   const max = Math.max(1, ...items.map(d => d.violadas))
   const totalViol = items.reduce((s, d) => s + d.violadas, 0)
   return (
-    <div className="rounded-xl bg-card border border-border p-4">
+    <div className="rounded-xl bg-card border border-white/[0.08] p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Pulse size={14} className="text-muted" />
@@ -108,7 +108,7 @@ interface CargaItem { nome: string; total: number; violadas: number; criticas: n
 
 function CargaPanel({ title, icon: Icon, items }: { title: string; icon: typeof Truck; items: CargaItem[] }) {
   return (
-    <div className="rounded-xl bg-card border border-border p-4">
+    <div className="rounded-xl bg-card border border-white/[0.08] p-4">
       <div className="flex items-center gap-2 mb-3">
         <Icon size={14} className="text-muted" />
         <h3 className="text-label font-semibold text-text">{title}</h3>
@@ -357,12 +357,11 @@ export default function FilaPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard index={0} title="Violadas" value={kpis.violadas} tone="critical" icon={Warning} />
-        <StatCard index={1} title="Atenção" value={kpis.atencao} tone="warning" icon={Fire} />
-        <StatCard index={2} title="Sem Equipe" value={kpis.semEquipe} tone="warning" icon={UserMinus} />
-        <StatCard index={3} title="No prazo" value={kpis.noPrazo} tone="ok" icon={CheckCircle} />
+        <StatCard title="Violadas" value={kpis.violadas} tone="critical" icon={Warning} />
+        <StatCard title="Atenção" value={kpis.atencao} tone="warning" icon={Fire} />
+        <StatCard title="Sem Equipe" value={kpis.semEquipe} tone="warning" icon={UserMinus} />
+        <StatCard title="No prazo" value={kpis.noPrazo} tone="ok" icon={CheckCircle} />
         <StatCard
-          index={4}
           title="Cumprimento SLA"
           value={cumprimento.pct != null ? `${cumprimento.pct}%` : '—'}
           sub={cumprimento.total > 0 ? `${cumprimento.noPrazo}/${cumprimento.total} no prazo` : 'Sem execuções no período'}
@@ -384,12 +383,12 @@ export default function FilaPage() {
       </div>
 
       {fila.length === 0 ? (
-        <div className="rounded-xl bg-card border border-border p-12 text-center">
+        <div className="rounded-xl bg-card border border-white/[0.08] p-12 text-center">
           <CheckCircle size={32} weight="fill" className="text-green mx-auto mb-3" />
           <p className="text-body text-secondary">Nenhuma OS em aberto</p>
         </div>
       ) : (
-        <div ref={tableRef} className="bg-card border border-border rounded-xl overflow-hidden">
+        <div ref={tableRef} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
           <DataTable columns={columns} rows={fila} onRowClick={setDrawerOS} />
         </div>
       )}

@@ -74,8 +74,8 @@ export function AnimatedThemeToggler({ sound = true }: AnimatedThemeTogglerProps
   return (
     <>
       <style>{`
-        .att-btn { --at-ink: rgba(0,0,0,0.82) }
-        .dark .att-btn { --at-ink: rgba(255,255,255,0.82) }
+        .att-btn { --at-ink: rgba(255,255,255,0.82) }
+        .light .att-btn { --at-ink: rgba(0,0,0,0.82) }
       `}</style>
 
       <motion.button

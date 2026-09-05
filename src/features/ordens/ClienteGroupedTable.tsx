@@ -77,7 +77,7 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
   }
 
   return (
-    <div className="divide-y divide-subtle">
+    <div className="divide-y divide-white/[0.04]">
       {groups.map((g) => {
         const primeiraData = g.sorted[0]?.datacadastro?.split(' ')[0] ?? '—'
         const ultimaData   = g.sorted[g.sorted.length - 1]?.datacadastro?.split(' ')[0] ?? '—'
@@ -85,7 +85,7 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
         return (
           <div key={g.codigo || g.nome}>
             {/* Header do grupo */}
-            <div className="flex items-center gap-2 px-4 py-2 bg-elevated/40 border-b border-subtle">
+            <div className="flex items-center gap-2 px-4 py-2 bg-elevated/40 border-b border-white/[0.05]">
               <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
                 <span className="text-label font-bold text-text truncate">{g.nome}</span>
                 {g.codigo && (
@@ -116,12 +116,12 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
               <button
                 key={g.sorted[0].numos}
                 className="w-full text-left flex items-center gap-3 px-4 py-2.5
-                           hover:bg-primary/[0.04] border-b border-subtle
+                           hover:bg-primary/[0.04] border-b border-white/[0.03]
                            transition-colors text-caption cursor-pointer"
                 onClick={() => onRowClick?.(g.sorted[0])}
               >
                 <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${_dotColor(g.sorted[0]._situacaoEfetiva)}`} />
-                <span className="font-mono text-blue w-20 flex-shrink-0">{g.sorted[0].numos}</span>
+                <span className="font-mono text-primary w-20 flex-shrink-0">{g.sorted[0].numos}</span>
                 <span className="text-muted w-28 flex-shrink-0">{g.sorted[0].datacadastro?.split(' ')[0] ?? '—'}</span>
                 <span className="text-secondary truncate flex-1 min-w-0">{g.sorted[0].tiposervico ?? '—'}</span>
                 <span className="text-muted flex-shrink-0">{shortEquipe(g.sorted[0].nomedaequipe) || '—'}</span>
@@ -172,7 +172,7 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
                                           w-3 h-3 rounded-full ring-2 ring-card flex-shrink-0
                                           ${dotCls} ${isLast && ativo ? 'animate-pulse' : ''}`} />
 
-                        <span className="font-mono text-blue w-20 flex-shrink-0">{r.numos}</span>
+                        <span className="font-mono text-primary w-20 flex-shrink-0">{r.numos}</span>
                         <span className="text-muted w-28 flex-shrink-0 text-caption">
                           {r.datacadastro?.split(' ')[0] ?? '—'}
                         </span>

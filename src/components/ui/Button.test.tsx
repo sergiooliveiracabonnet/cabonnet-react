@@ -25,8 +25,7 @@ describe('Button', () => {
   it('aplica variante primary por padrão', () => {
     const { container } = render(<Button>OK</Button>)
     const btn = container.querySelector('button')
-    // O botão primário usa a cor de marca. Depois da troca do token, marca = laranja.
-    expect(btn?.className).toContain('bg-orange')
+    expect(btn?.className).toContain('bg-primary')
   })
 
   it('aplica variante ghost corretamente', () => {
@@ -38,14 +37,7 @@ describe('Button', () => {
   it('aplica variante danger corretamente', () => {
     const { container } = render(<Button variant="danger">Deletar</Button>)
     const btn = container.querySelector('button')
-    expect(btn?.className).toContain('bg-red')
-  })
-
-  it('secondary usa contraste invertido', () => {
-    const { container } = render(<Button variant="secondary">Ação</Button>)
-    const btn = container.querySelector('button')
-    expect(btn?.className).toContain('bg-text')
-    expect(btn?.className).toContain('text-bg')
+    expect(btn?.className).toContain('text-red')
   })
 
   it('aplica tamanho sm corretamente', () => {

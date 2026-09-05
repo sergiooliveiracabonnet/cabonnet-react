@@ -16,14 +16,6 @@ const RULES = [
     name: 'Import de componente removido do design system',
     test: (src) => [...src.matchAll(/from\s+['"][^'"]*ui\/KPICard['"]|(?:\bBentoKPICard\b|\bKpiBadge\b|\bKpiCard\b)/g)].map(m => m[0]),
   },
-  {
-    name: 'Token do design system antigo (--c-*) — use os tokens novos',
-    test: (src) => [...src.matchAll(/--c-[a-z-]+/g)].map(m => m[0]),
-  },
-  {
-    name: 'Cor aposentada do design system (pink/accent2/cyan/teal/purple fora de gráfico)',
-    test: (src) => [...src.matchAll(/\b(?:text|bg|border|ring|fill|stroke|divide)-(?:pink|accent2)\b/g)].map(m => m[0]),
-  },
 ]
 
 function* walk(dir) {

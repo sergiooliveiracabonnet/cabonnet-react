@@ -10,27 +10,30 @@ import {
 
 export { Cell }
 
-import { chartTooltip, token } from '../../lib/chartTheme'
-
 const FONT = '"Inter", system-ui, sans-serif'
+const TICK = '#71717a'
+
+function isLight(): boolean {
+  return document.documentElement.classList.contains('light')
+}
 
 function Tip({ active, payload }: any) {
   if (!active || !payload?.length) return null
   const { name, value, payload: entry } = payload[0]
-  const pct = Math.round((entry?.percent ?? 0) * 100)
-  const t   = chartTooltip()
+  const pct   = Math.round((entry?.percent ?? 0) * 100)
+  const light = isLight()
   return (
     <div style={{
-      background:   t.background,
-      border:       t.border,
-      borderRadius: t.borderRadius,
+      background:   light ? 'rgba(255,255,255,0.98)' : 'rgba(19,19,21,0.97)',
+      border:       light ? '1px solid #E4E4E7'      : '1px solid #27272A',
+      borderRadius: 8,
       padding:      '8px 12px',
       fontSize:     11,
       fontFamily:   FONT,
-      boxShadow:    t.boxShadow,
+      boxShadow:    light ? '0 4px 16px rgba(0,0,0,.10)' : '0 4px 16px rgba(0,0,0,.50)',
     }}>
-      <p style={{ color: t.valueColor }}>
-        <span style={{ color: t.labelColor }}>{name}: </span>
+      <p style={{ color: light ? '#09090b' : '#fafafa' }}>
+        <span style={{ color: TICK }}>{name}: </span>
         {value} OS ({pct}%)
       </p>
     </div>
@@ -68,7 +71,7 @@ export function Legend({ ...props }: any) {
       layout="vertical"
       align="right"
       verticalAlign="middle"
-      wrapperStyle={{ color: token('text-muted'), fontSize: 11, fontFamily: FONT }}
+      wrapperStyle={{ color: TICK, fontSize: 11, fontFamily: FONT }}
       iconSize={10}
       {...props}
     />

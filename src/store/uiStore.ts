@@ -106,7 +106,7 @@ export const useUIStore = create<UIState>((set) => ({
   toggleTheme:    () => set((s) => {
     const next = s.theme === 'dark' ? 'light' : 'dark'
     localStorage.setItem('theme', next)
-    document.documentElement.classList.toggle('dark', next === 'dark')
+    document.documentElement.classList.toggle('light', next === 'light')
     return { theme: next }
   }),
 

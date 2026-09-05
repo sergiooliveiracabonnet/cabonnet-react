@@ -12,12 +12,13 @@ export interface NavLinkDef {
 export interface NavGroup {
   key:   string
   label: string
+  color: string
   links: NavLinkDef[]
 }
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    key: 'agora', label: 'Agora',
+    key: 'agora', label: 'Agora', color: '#c4b5fd',
     links: [
       { to: '/',             label: 'Dashboard',          icon: SquaresFour },
       { to: '/erp/fila',     label: 'Fila de Prioridade', icon: Siren           },
@@ -25,7 +26,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    key: 'operar', label: 'Operar',
+    key: 'operar', label: 'Operar', color: '#22d3ee',
     links: [
       { to: '/ordens',      label: 'Ordens',  icon: ClipboardText },
       { to: '/erp/planner', label: 'Planner', icon: CalendarDots  },
@@ -33,7 +34,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    key: 'analisar', label: 'Analisar',
+    key: 'analisar', label: 'Analisar', color: '#4ade80',
     links: [
       { to: '/cidades',        label: 'Cidades',          icon: MapPin    },
       { to: '/erp/ranking',    label: 'Ranking Técnicos', icon: Medal     },
@@ -43,7 +44,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    key: 'infra', label: 'Infra & Campo',
+    key: 'infra', label: 'Infra & Campo', color: '#fb923c',
     links: [
       { to: '/fornecedor', label: 'Fornecedor', icon: Shield  },
       { to: '/juniper',    label: 'Juniper',    icon: Lightning     },

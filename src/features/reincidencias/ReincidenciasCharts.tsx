@@ -54,7 +54,7 @@ export function ReincidenciasCharts({ ranking, intervals, analysis }: {
 
 function ChartCard({ icon: Icon, title, subtitle, children }: { icon: typeof ChartBar; title: string; subtitle: string; children: React.ReactNode }) {
   return <article className="min-w-0 rounded-xl border border-border bg-card p-4">
-    <div className="flex items-start gap-2"><Icon size={17} className="mt-0.5 flex-shrink-0 text-blue" /><div><h2 className="text-body font-bold text-text">{title}</h2><p className="mt-0.5 text-caption text-secondary">{subtitle}</p></div></div>
+    <div className="flex items-start gap-2"><Icon size={17} className="mt-0.5 flex-shrink-0 text-primary" /><div><h2 className="text-body font-bold text-text">{title}</h2><p className="mt-0.5 text-caption text-secondary">{subtitle}</p></div></div>
     <div className="mt-3">{children}</div>
   </article>
 }

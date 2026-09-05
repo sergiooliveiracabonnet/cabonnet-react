@@ -15,21 +15,21 @@ const MARKDOWN_COMPONENTS = {
   h1:         ({ children }: { children?: React.ReactNode }) => <h1 className="text-sm font-semibold text-text mb-1.5 mt-2 first:mt-0">{children}</h1>,
   h2:         ({ children }: { children?: React.ReactNode }) => <h2 className="text-sm font-semibold text-text mb-1.5 mt-2 first:mt-0">{children}</h2>,
   h3:         ({ children }: { children?: React.ReactNode }) => <h3 className="text-body font-semibold text-text mb-1 mt-2 first:mt-0">{children}</h3>,
-  hr:         () => <hr className="border-border my-2" />,
+  hr:         () => <hr className="border-white/[0.08] my-2" />,
   a:          ({ children, href }: { children?: React.ReactNode; href?: string }) => (
-    <a href={href} target="_blank" rel="noreferrer" className="text-blue underline underline-offset-2 hover:text-blue/80">{children}</a>
+    <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">{children}</a>
   ),
   code:       ({ children }: { children?: React.ReactNode }) => (
-    <code className="px-1 py-0.5 rounded bg-surface border border-border text-caption font-mono">{children}</code>
+    <code className="px-1 py-0.5 rounded bg-surface border border-white/[0.08] text-caption font-mono">{children}</code>
   ),
   table:      ({ children }: { children?: React.ReactNode }) => (
-    <div className="overflow-x-auto mb-2 last:mb-0 rounded-lg border border-border">
+    <div className="overflow-x-auto mb-2 last:mb-0 rounded-lg border border-white/[0.08]">
       <table className="w-full text-caption border-collapse">{children}</table>
     </div>
   ),
   thead:      ({ children }: { children?: React.ReactNode }) => <thead className="bg-surface">{children}</thead>,
-  th:         ({ children }: { children?: React.ReactNode }) => <th className="text-left font-semibold text-text px-2 py-1.5 border-b border-border">{children}</th>,
-  td:         ({ children }: { children?: React.ReactNode }) => <td className="px-2 py-1.5 border-b border-subtle align-top">{children}</td>,
+  th:         ({ children }: { children?: React.ReactNode }) => <th className="text-left font-semibold text-text px-2 py-1.5 border-b border-white/[0.08]">{children}</th>,
+  td:         ({ children }: { children?: React.ReactNode }) => <td className="px-2 py-1.5 border-b border-white/[0.06] align-top">{children}</td>,
 }
 
 interface Message {
@@ -133,7 +133,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
             placeholder="Pergunte algo… (Enter para enviar, Shift+Enter = nova linha)"
             rows={2}
             disabled={loading}
-            className="flex-1 resize-none rounded-lg bg-card border border-border text-body text-text
+            className="flex-1 resize-none rounded-lg bg-card border border-white/[0.08] text-body text-text
                        placeholder:text-muted/50 px-3 py-2 outline-none
                        focus:border-primary/60 focus:ring-1 focus:ring-primary/20
                        transition-all disabled:opacity-50 leading-snug"
@@ -154,8 +154,8 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
       <div className="flex flex-col gap-3 p-4 pb-2">
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center gap-4 py-10 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-blue/10 border border-blue/20 flex items-center justify-center">
-              <Robot size={22} className="text-blue" />
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <Robot size={22} className="text-primary" />
             </div>
             <div>
               <p className="text-sm font-semibold text-text">Assistente operacional</p>
@@ -167,8 +167,8 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                   key={q}
                   onClick={() => pickSuggestion(q)}
                   className="w-full text-left text-label text-secondary hover:text-text
-                             px-3 py-2 rounded-lg border border-subtle
-                             hover:border-border-hover hover:bg-surface/40
+                             px-3 py-2 rounded-lg border border-white/[0.06]
+                             hover:border-white/[0.14] hover:bg-surface/40
                              transition-all duration-150"
                 >
                   {q}
@@ -182,8 +182,8 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
           <div key={i} className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
             <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
                             ${msg.role === 'user'
-                              ? 'bg-blue/15 text-blue border border-blue/20'
-                              : 'bg-surface border border-border text-secondary'}`}>
+                              ? 'bg-primary/15 text-primary border border-primary/20'
+                              : 'bg-surface border border-white/[0.08] text-secondary'}`}>
               {msg.role === 'user' ? <User size={12} /> : <Robot size={12} />}
             </div>
 
@@ -193,7 +193,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                   {[...new Set(msg.toolCalls)].map(t => (
                     <span key={t}
                       className="flex items-center gap-1 text-caption text-muted
-                                 bg-surface border border-subtle rounded-full px-2 py-0.5">
+                                 bg-surface border border-white/[0.06] rounded-full px-2 py-0.5">
                       <Wrench size={9} />
                       {TOOL_LABELS[t] ?? t}
                     </span>
@@ -202,8 +202,8 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
               )}
               <div className={`rounded-2xl px-3.5 py-2.5 text-body leading-relaxed break-words min-w-0
                               ${msg.role === 'user'
-                                ? 'bg-blue/12 text-text border border-blue/15 rounded-tr-sm whitespace-pre-wrap'
-                                : 'bg-card border border-border text-text rounded-tl-sm'}`}>
+                                ? 'bg-primary/12 text-text border border-primary/15 rounded-tr-sm whitespace-pre-wrap'
+                                : 'bg-card border border-white/[0.08] text-text rounded-tl-sm'}`}>
                 {msg.role === 'assistant' ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
                     {msg.content}
@@ -219,10 +219,10 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         {loading && (
           <div className="flex gap-2.5">
             <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0
-                            bg-surface border border-border text-secondary">
+                            bg-surface border border-white/[0.08] text-secondary">
               <Robot size={12} />
             </div>
-            <div className="flex items-center gap-2 bg-card border border-border rounded-2xl rounded-tl-sm px-3.5 py-2.5">
+            <div className="flex items-center gap-2 bg-card border border-white/[0.08] rounded-2xl rounded-tl-sm px-3.5 py-2.5">
               <CircleNotch size={12} className="text-primary animate-spin flex-shrink-0" />
               <span className="text-label text-muted">Consultando dados…</span>
             </div>

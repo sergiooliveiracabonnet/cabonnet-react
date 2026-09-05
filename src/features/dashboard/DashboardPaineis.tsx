@@ -484,7 +484,7 @@ export function RitmoEquipesPanel({ semaforo, onOpen }: {
                 <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
                      style={{
                        width: `${Math.min(100, r.atual / escala * 100)}%`,
-                       background: abaixo ? 'rgb(var(--orange))' : 'rgb(var(--blue))',
+                       background: abaixo ? 'rgb(var(--c-orange))' : 'rgb(var(--c-primary))',
                      }} />
               </div>
               <span className="text-label font-bold text-right tabular-nums">

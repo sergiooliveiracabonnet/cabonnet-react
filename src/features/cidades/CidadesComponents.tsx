@@ -128,9 +128,9 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
   const comFila = saude.filter(c => c.fila > 0)
 
   return (
-    <div id="city-health" className="bg-card border border-border rounded-xl overflow-hidden scroll-mt-4">
-      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border flex-wrap">
-        <Pulse size={13} className="text-blue flex-shrink-0" />
+    <div id="city-health" className="bg-card border border-white/[0.08] rounded-xl overflow-hidden scroll-mt-4">
+      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/[0.08] flex-wrap">
+        <Pulse size={13} className="text-primary flex-shrink-0" />
         <span className="font-bold text-body text-text">Saúde por Cidade</span>
         <span className="text-caption text-muted">
           — fila ao vivo vs capacidade dos últimos 14 dias · ordenado por backlog
@@ -139,7 +139,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
       <div className="overflow-x-auto">
         <table className="w-full text-label">
           <thead>
-            <tr className="border-b border-border bg-surface">
+            <tr className="border-b border-white/[0.08] bg-surface">
               {[
                 { l: 'Cidade',      a: 'left',   t: '' },
                 { l: 'Fila',        a: 'right',  t: 'OS ativas (pendente + atendimento)' },
@@ -158,14 +158,14 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-subtle">
+          <tbody className="divide-y divide-white/[0.04]">
             {comFila.map(c => {
               const slaCls  = c.slaPct >= 90 ? 'text-green bg-green/10' : c.slaPct >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
               const backCls = c.backlogDias == null ? 'text-muted' : c.backlogDias > 5 ? 'text-red' : c.backlogDias > 3 ? 'text-yellow' : 'text-text'
               const deltaCls = c.deltaShare >= 5 ? 'text-orange' : c.deltaShare <= -5 ? 'text-green' : 'text-muted'
               const reinc = reincDe.get(c.cidade.toUpperCase())
               return (
-                <tr key={c.cidade} className={`text-secondary transition-colors hover:bg-blue/[0.04] ${selectedCity === c.cidade ? 'bg-primary/[0.07]' : ''}`}>
+                <tr key={c.cidade} className={`text-secondary transition-colors hover:bg-primary/[0.04] ${selectedCity === c.cidade ? 'bg-primary/[0.07]' : ''}`}>
                   <td className="sticky left-0 z-[1] whitespace-nowrap bg-card px-2 py-1.5">
                     <button type="button" onClick={() => onSelectCity?.(c.cidade)}
                             aria-pressed={selectedCity === c.cidade}
@@ -177,7 +177,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
                   <td className="px-4 py-2.5 text-center">
                     {c.criticas > 0
                       ? <span className="font-mono font-bold text-red">{c.criticas}</span>
-                      : <span className="text-disabled">—</span>}
+                      : <span className="text-white/20">—</span>}
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums ${slaCls}`}>{c.slaPct}%</span>
@@ -196,7 +196,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
                   <td className="px-4 py-2.5 text-center">
                     {reinc != null
                       ? <span className={`font-mono tabular-nums ${reinc > 15 ? 'text-red font-bold' : reinc > 8 ? 'text-yellow' : 'text-muted'}`}>{reinc}%</span>
-                      : <span className="text-disabled">—</span>}
+                      : <span className="text-white/20">—</span>}
                   </td>
                 </tr>
               )
@@ -224,7 +224,7 @@ export function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, gro
     : cities.length === 0
 
   return (
-    <div id={`panel-${id}`} className="bg-card border border-border rounded-xl overflow-hidden">
+    <div id={`panel-${id}`} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
 
       <button
         onClick={onToggle}
@@ -247,7 +247,7 @@ export function PainelCidade({ id, title, subtitle, icon: Icon, color, rows, gro
       </button>
 
       {open && (
-        <div id={`panel-content-${id}`} className="border-t border-border">
+        <div id={`panel-content-${id}`} className="border-t border-white/[0.08]">
           {isLoading || isEmpty ? (
             <p className="text-center text-muted text-label py-8">Nenhuma OS nesta categoria.</p>
           ) : groups ? (
@@ -279,7 +279,7 @@ function GrupoFuturo({ group, color, onOS }: { group: FuturoGroup; color: string
 
   return (
     <div>
-      <div className={`flex items-center gap-2 px-5 py-2 border-y border-border
+      <div className={`flex items-center gap-2 px-5 py-2 border-y border-white/[0.08]
                        ${group.highlight ? hlBg : 'bg-surface/40'}`}>
         <span className={`text-caption font-bold uppercase tracking-[0.05em]
                           ${group.highlight ? hlText : 'text-muted'}`}>
@@ -319,7 +319,7 @@ function CidadeTable({ cities, tipos, maxTotal, color, expandedCity, setExpanded
     <div className="overflow-x-auto">
       <table className="w-full text-label">
         <thead>
-          <tr className="border-b border-border bg-surface">
+          <tr className="border-b border-white/[0.08] bg-surface">
             <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">
               Cidade
             </th>
@@ -379,7 +379,7 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
 
   return (
     <>
-      <tr className="border-b border-subtle transition-colors">
+      <tr className="border-b border-white/[0.04] transition-colors">
         <td className="min-w-[160px] p-1">
           <button type="button" onClick={onToggle} aria-expanded={expanded}
                   className="min-h-11 w-full rounded-md px-3 py-1.5 text-left transition-colors hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
@@ -405,14 +405,14 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
                   >
                     {count}
                   </button>
-                : <span className="text-disabled">—</span>}
+                : <span className="text-white/20">—</span>}
             </td>
           )
         })}
         <td className="px-4 py-2.5 text-center">
           {c.criticas > 0
             ? <span className="font-mono font-bold text-red">{c.criticas}</span>
-            : <span className="text-disabled">—</span>}
+            : <span className="text-white/20">—</span>}
         </td>
         <td className="px-4 py-2.5 text-center">
           <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums
@@ -464,9 +464,9 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
   }, [rows, tipoFilter, sort])
 
   return (
-    <div className="max-h-72 overflow-y-auto bg-surface/60 border-y border-subtle">
+    <div className="max-h-72 overflow-y-auto bg-surface/60 border-y border-white/[0.05]">
       {tipoFilter && (
-        <div className="px-4 py-1.5 border-b border-subtle flex items-center gap-2 bg-surface/30">
+        <div className="px-4 py-1.5 border-b border-white/[0.04] flex items-center gap-2 bg-surface/30">
           <span className={`text-caption font-bold uppercase tracking-[0.05em] ${TIPO_COLOR[tipoFilter]}`}>
             {TIPO_LABEL[tipoFilter]}
           </span>
@@ -475,7 +475,7 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
       )}
       <table className="w-full text-caption">
         <thead className="sticky top-0 bg-elevated z-10">
-          <tr className="border-b border-border">
+          <tr className="border-b border-white/[0.08]">
             {CITY_OS_COLS.map(col => (
               <th
                 key={col.key}
@@ -495,7 +495,7 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-subtle">
+        <tbody className="divide-y divide-white/[0.03]">
           {sorted.map(os => {
             const aging  = os._aging ?? 0
             // Badge relativo ao SLA da OS: manutenção com 2d (limite 1d) já estourou
@@ -513,7 +513,7 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
               <tr key={os.numos} onClick={() => onOS(os)}
                   className={`cursor-pointer transition-colors
                     ${semEquipe ? 'bg-orange/[0.04] hover:bg-orange/[0.08]' : 'hover:bg-primary/[0.04]'}`}>
-                <td className="px-4 py-1.5 font-mono text-blue">{os.numos}</td>
+                <td className="px-4 py-1.5 font-mono text-primary">{os.numos}</td>
                 <td className="px-4 py-1.5 text-text max-w-[140px] truncate">{os.nomecliente ?? '—'}</td>
                 <td className="px-4 py-1.5 text-muted">{tipoLabel}</td>
                 <td className="px-4 py-1.5 max-w-[130px]">

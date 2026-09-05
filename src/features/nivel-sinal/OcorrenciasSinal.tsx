@@ -93,20 +93,20 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
     <PageHeader title="Controle de Ocorrências de Sinal" description="Ocorrências criadas automaticamente a partir do CSV e mantidas até a normalização" icon={ClipboardText} />
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatCard index={0} title="Backlog ativo" value={open} sub={`${occurrences.filter(item => item.severity === 'Crítico' && item.status !== 'Concluído').length} críticas`} tone={open ? 'critical' : 'neutral'} icon={ClipboardText} />
-      <StatCard index={1} title="Em atendimento" value={inWork} sub="aguardando conclusão" tone="warning" icon={Wrench} />
-      <StatCard index={2} title="Concluídas" value={concluded} sub={`${occurrences.length ? Math.round(concluded / occurrences.length * 100) : 0}% de resolução`} tone="ok" icon={CheckCircle} />
-      <StatCard index={3} title="Melhora média" value={average == null ? '—' : `${average.toFixed(1)} dB`} sub="após a tratativa" tone="info" icon={ChartBar} />
+      <StatCard title="Backlog ativo" value={open} sub={`${occurrences.filter(item => item.severity === 'Crítico' && item.status !== 'Concluído').length} críticas`} tone={open ? 'critical' : 'neutral'} icon={ClipboardText} />
+      <StatCard title="Em atendimento" value={inWork} sub="aguardando conclusão" tone="warning" icon={Wrench} />
+      <StatCard title="Concluídas" value={concluded} sub={`${occurrences.length ? Math.round(concluded / occurrences.length * 100) : 0}% de resolução`} tone="ok" icon={CheckCircle} />
+      <StatCard title="Melhora média" value={average == null ? '—' : `${average.toFixed(1)} dB`} sub="após a tratativa" tone="info" icon={ChartBar} />
     </div>
 
     <div className="grid gap-4 xl:grid-cols-[1.45fr_.8fr]">
       <Card className="p-5"><div className="mb-5 flex items-center justify-between"><h2 className="text-body font-semibold text-text">Volume de ocorrências</h2><span className="text-caption text-muted">últimos 7 dias</span></div>
-        <div className="flex h-48 items-end gap-2 border-b border-border px-1 sm:gap-4">{days.map(day => <div key={day.key} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"><span className="text-caption font-semibold text-muted">{day.count || ''}</span><div title={`${day.count} ocorrência(s)`} className="w-full max-w-12 rounded-t-md bg-blue/80 transition-colors hover:bg-blue" style={{ height: `${Math.max(5, day.count / maxDay * 130)}px` }} /><span className="mb-2 truncate text-caption capitalize text-muted">{day.label}</span></div>)}</div>
+        <div className="flex h-48 items-end gap-2 border-b border-border px-1 sm:gap-4">{days.map(day => <div key={day.key} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"><span className="text-caption font-semibold text-muted">{day.count || ''}</span><div title={`${day.count} ocorrência(s)`} className="w-full max-w-12 rounded-t-md bg-primary/80 transition-colors hover:bg-primary" style={{ height: `${Math.max(5, day.count / maxDay * 130)}px` }} /><span className="mb-2 truncate text-caption capitalize text-muted">{day.label}</span></div>)}</div>
       </Card>
       <Card className="p-5"><div className="mb-3 flex items-center justify-between"><h2 className="text-body font-semibold text-text">Situação atual</h2><span className="text-caption text-muted">ao vivo</span></div>{STATUSES.map(status => <div key={status} className="flex items-center justify-between border-b border-border py-3 last:border-0"><SignalBadge status={status} /><strong className="text-subtitle text-text">{occurrences.filter(item => item.status === status).length}</strong></div>)}</Card>
     </div>
 
-    <Card className="p-4"><div className="mb-3 flex flex-wrap items-center gap-2"><div className="flex items-center gap-2 text-label font-semibold text-text"><Funnel size={15} className="text-blue" /> Priorizar tratativas</div><span className="text-caption text-muted">Combine os filtros para montar a próxima frente de trabalho.</span></div>
+    <Card className="p-4"><div className="mb-3 flex flex-wrap items-center gap-2"><div className="flex items-center gap-2 text-label font-semibold text-text"><Funnel size={15} className="text-primary" /> Priorizar tratativas</div><span className="text-caption text-muted">Combine os filtros para montar a próxima frente de trabalho.</span></div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
         <label className="relative sm:col-span-2 xl:col-span-2"><span className="sr-only">Buscar ocorrências</span><MagnifyingGlass size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="search" aria-label="Buscar ocorrências" value={query} onChange={event => setQuery(event.target.value)} placeholder="Cliente, serial, código, PPPoE, bairro…" className="h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-label text-text outline-none placeholder:text-muted focus:border-primary/50" /></label>
         <FilterSelect ariaLabel="Filtrar por status" value={statusFilter} onChange={setStatusFilter} options={[{ value: 'Ativas', label: 'Somente ativas' }, { value: 'Todos', label: 'Todos os status' }, ...STATUSES.map(status => ({ value: status, label: status }))]} />

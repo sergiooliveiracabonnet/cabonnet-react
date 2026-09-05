@@ -11,99 +11,82 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════
-   DESIGN TOKENS
-   :root = tema claro (padrão do documento)
-   .dark = tema escuro (padrão do produto — aplicado por uiStore)
-   Contraste WCAG AA verificado; ver o plano para a tabela completa.
+   DESIGN TOKENS — Stripe / Clerk reference
+   Paleta zinc-neutral (sem saturação azulada no fundo).
+   Dark = padrão (:root) · Light = sobrescrito por .light em <html>
 ═══════════════════════════════════════════════════════════════ */
 :root {
-  /* ── Superfícies ── */
-  --bg:             243 244 246;  /* #F3F4F6 */
-  --surface-1:      255 255 255;  /* #FFFFFF  shell            */
-  --surface-2:      255 255 255;  /* #FFFFFF  card             */
-  --surface-3:      255 255 255;  /* #FFFFFF  popover + sombra */
-  --surface-hover:  246 247 248;  /* #F6F7F8 */
-  --surface-active: 238 240 242;  /* #EEF0F2 */
-
-  /* ── Bordas ── */
-  --border:         232 232 232;  /* #E8E8E8 */
-  --border-subtle:  241 241 241;  /* #F1F1F1 */
-  --border-hover:   216 216 216;  /* #D8D8D8 */
+  /* ── Superfícies — zinc neutral dark ── */
+  --c-bg:           9   9  11;    /* #09090B  zinc-950               */
+  --c-elevated:    18  18  20;    /* #121214  1 grau acima           */
+  --c-surface:     24  24  27;    /* #18181B  zinc-900               */
+  --c-card:        19  19  21;    /* #131315  card base              */
+  --c-card-high:   26  26  29;    /* #1A1A1D  card elevado           */
+  --c-card-highest:33  33  37;    /* #212125  card destaque          */
+  --c-border:      39  39  42;    /* #27272A  zinc-800 — sólido      */
 
   /* ── Texto ── */
-  --text:            23  23  23;  /* #171717  17.93:1 */
-  --text-secondary:  68  68  68;  /* #444444   9.74:1 */
-  --text-muted:     110 110 110;  /* #6E6E6E   5.10:1 — spec pedia #777777 (4.48:1, reprova AA) */
-  --text-disabled:  165 165 165;  /* #A5A5A5   2.46:1 — isento, WCAG 1.4.3 */
+  --c-text:      250 250 250;     /* #FAFAFA  near-white             */
+  --c-secondary: 161 161 170;     /* zinc-400                        */
+  --c-muted:     113 113 122;     /* zinc-500                        */
+  --c-disabled:   63  63  70;     /* zinc-700                        */
 
-  /* ── Acentos ── */
-  --orange: 255  90  31;  /* #FF5A1F */
-  --blue:    40 100 232;  /* #2864E8   5.15:1 */
-  --green:   18 196 174;  /* #12C4AE */
-  --yellow: 251 203  18;  /* #FBCB12 */
-  --red:    224  49  49;  /* #E03131   4.51:1 */
+  /* ── Marca — blue refinado (menos elétrico) ── */
+  --c-primary:       59 130 246;  /* #3B82F6  blue-500               */
+  --c-primary-light: 96 165 250;  /* #60A5FA  blue-400               */
+  --c-primary-dark:  37 99  235;  /* #2563EB  blue-600               */
+  --c-cyan:          34 211 238;  /* #22D3EE  cyan-400               */
 
-  /* ── Escala categórica de gráfico (independente da semântica) ── */
-  --chart-1: 255  90  31;  /* laranja  */
-  --chart-2:  40 100 232;  /* azul     */
-  --chart-3:  18 196 174;  /* verde    */
-  --chart-4: 251 203  18;  /* amarelo  */
-  --chart-5: 224  49  49;  /* vermelho */
-  --chart-6: 124  77 255;  /* #7C4DFF violeta */
+  /* ── Semânticas — calibradas para WCAG AA em zinc-950 ── */
+  --c-green:  74  222 128;        /* green-400                       */
+  --c-yellow: 250 204  21;        /* yellow-400                      */
+  --c-red:    248 113 113;        /* red-400                         */
+  --c-orange: 251 146  60;        /* orange-400                      */
+  --c-purple: 167 139 250;        /* violet-400                      */
+  --c-pink:   244 114 182;        /* pink-400                        */
+  --c-teal:    45 212 191;        /* teal-400                        */
 
-  /* ── Tinta sobre KPI preenchido — branco reprova em verde e amarelo ── */
-  --kpi-ink-orange:  23  23  23;  /* 5.75:1  */
-  --kpi-ink-blue:   255 255 255;  /* 5.15:1  */
-  --kpi-ink-green:   23  23  23;  /* 8.14:1  */
-  --kpi-ink-yellow:  23  23  23;  /* 11.66:1 */
-
-  /* ── Sombras — quase invisíveis no claro ── */
-  --shadow-sm: 0 2px 10px rgba(0,0,0,.03);
-  --shadow-md: 0 4px 20px rgba(0,0,0,.04);
-  --shadow-lg: 0 10px 30px rgba(0,0,0,.08);
+  /* ── Acentos de grupo (sidebar) ── */
+  --c-grp-erp:   139  92 246;
+  --c-grp-ops:    34 211 238;
+  --c-grp-anal:   74 222 128;
+  --c-grp-infra: 251 146  60;
 }
 
-.dark {
-  --bg:               2   2   2;  /* #020202 */
-  --surface-1:        8   8   8;  /* #080808 */
-  --surface-2:       12  12  12;  /* #0C0C0C */
-  --surface-3:       18  18  18;  /* #121212 */
-  --surface-hover:   24  24  24;  /* #181818 */
-  --surface-active:  32  32  32;  /* #202020 */
+/* ─── Tema claro ─────────────────────────────────────────────── */
+.light {
+  /* Hierarquia de superfícies no estilo Stripe:
+     bg (zinc-100) → card (branco) → surface (gray-50, hovers visíveis) */
+  --c-bg:           244 244 245; /* zinc-100 — fundo da página             */
+  --c-elevated:     255 255 255; /* white    — overlays, dropdowns          */
+  --c-surface:      249 250 251; /* gray-50  — hover, inputs, superfícies   */
+  --c-card:         255 255 255; /* white    — cards se destacam do bg cinza*/
+  --c-card-high:    243 244 246; /* gray-100 — row hover, elementos elevados*/
+  --c-card-highest: 229 231 235; /* gray-200 — maior destaque dentro de card*/
+  --c-border:       228 228 231; /* zinc-200 */
 
-  --border:          37  37  37;  /* #252525 */
-  --border-subtle:   26  26  26;  /* #1A1A1A */
-  --border-hover:    53  53  53;  /* #353535 */
+  --c-text:       9   9  11;     /* zinc-950 */
+  --c-secondary:  82  82  91;    /* zinc-600 */
+  --c-muted:     113 113 122;    /* zinc-500 */
+  --c-disabled:  212 212 216;    /* zinc-300 */
 
-  --text:           255 255 255;  /* 19.56:1 */
-  --text-secondary: 181 181 181;  /* #B5B5B5  9.54:1 */
-  --text-muted:     138 138 138;  /* #8A8A8A  5.67:1 — spec pedia #777777 (4.37:1, reprova AA) */
-  --text-disabled:   80  80  80;  /* #505050  isento */
+  --c-primary:       37  99 235;
+  --c-primary-light: 59 130 246;
+  --c-primary-dark:  29  78 216;
+  --c-cyan:           8 145 178;
 
-  --orange: 255  90  31;  /* 6.27:1 */
-  --blue:    74 128 240;  /* #4A80F0 5.25:1 — spec pedia #2864E8 (3.80:1, reprova AA) */
-  --green:   17 199 176;  /* #11C7B0 9.15:1 */
-  --yellow: 245 201  21;  /* #F5C915 12.34:1 */
-  --red:    255 107 107;  /* #FF6B6B 7.05:1 */
+  --c-green:  22  163  74;
+  --c-yellow: 161  98   7;
+  --c-red:    220  38  38;
+  --c-orange: 194  65  12;
+  --c-purple: 109  40 217;
+  --c-pink:   190  24  93;
+  --c-teal:    15 118 110;
+}
 
-  --chart-1: 255  90  31;
-  --chart-2:  74 128 240;
-  --chart-3:  17 199 176;
-  --chart-4: 245 201  21;
-  --chart-5: 255 107 107;
-  --chart-6: 154 122 255;  /* #9A7AFF */
-
-  /* No escuro o KPI é tint + borda; a tinta é sempre o texto normal */
-  --kpi-ink-orange: 255 255 255;
-  --kpi-ink-blue:   255 255 255;
-  --kpi-ink-green:  255 255 255;
-  --kpi-ink-yellow: 255 255 255;
-
-  /* Sem sombra no escuro — o contraste vem de borda e luminosidade.
-     Só overlays (modal, dropdown) mantêm sombra real. */
-  --shadow-sm: 0 0 #0000;
-  --shadow-md: 0 0 #0000;
-  --shadow-lg: 0 16px 40px rgba(0,0,0,.55);
+/* ── Dot grid light mode — levemente mais visível ── */
+.light body {
+  background-image: radial-gradient(rgb(var(--c-border) / 0.8) 1px, transparent 1px);
 }
 
 /* ── Reset mínimo ─────────────────────────────────────────────── */
@@ -115,22 +98,17 @@ body {
   margin: 0;
   max-width: 100%;
   overflow-x: clip;
-  background-color: rgb(var(--bg));
-  color: rgb(var(--text));
+  background-color: rgb(var(--c-bg));
+  color: rgb(var(--c-text));
   font-family: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
   font-optical-sizing: auto;
   font-feature-settings: "cv11" 1, "zero" 1, "ss01" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-}
-
-/* Gradientes ambientais — só no escuro, quase imperceptíveis (spec §3 do DS) */
-.dark body {
-  background-image:
-    radial-gradient(circle at 15% 30%, rgba(255, 90, 31, .05), transparent 32%),
-    radial-gradient(circle at 85% 55%, rgba(17, 199, 176, .05), transparent 32%);
-  background-attachment: fixed;
+  /* Dot grid — muito sutil, padrão Stripe/Linear */
+  background-image: radial-gradient(rgb(var(--c-border) / 0.5) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 @media (max-width: 767px) {
@@ -144,11 +122,11 @@ body {
 ::-webkit-scrollbar        { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track  { background: transparent; }
 ::-webkit-scrollbar-thumb  {
-  background: rgb(var(--border));
+  background: rgb(var(--c-border));
   border-radius: 9999px;
   transition: background 0.2s ease;
 }
-::-webkit-scrollbar-thumb:hover { background: rgb(var(--text-muted) / 0.6); }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-muted) / 0.6); }
 
 /* ═══════════════════════════════════════════════════════════════
    KEYFRAMES
@@ -227,7 +205,8 @@ body {
 ═══════════════════════════════════════════════════════════════ */
 
 /* ── Card base ──
-   A borda é definida via Tailwind (border border-border) nos componentes.
+   A borda é definida via Tailwind (border border-white/[0.08]) nos componentes.
+   O override .light [class*="border-white/"] cuida do light mode automaticamente.
    .card-premium só adiciona hover e sombras — não sobrescreve a borda. */
 .card-premium {
   position: relative;
@@ -241,13 +220,13 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04);
 }
 .light .card-premium:hover {
-  border-color: rgb(var(--text-muted) / 0.35);
+  border-color: rgb(var(--c-muted) / 0.35);
   box-shadow: 0 4px 12px rgba(0,0,0,.09), 0 1px 3px rgba(0,0,0,.06);
 }
 
 /* ── Glass — apenas para overlays/modais (não em cards) ── */
 .glass {
-  background: rgb(var(--surface-3) / 0.92);
+  background: rgb(var(--c-elevated) / 0.92);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
@@ -255,32 +234,91 @@ body {
   background: rgb(255 255 255 / 0.92);
 }
 
-/* ── Semantic badges ── */
-/* Os tokens --orange/--blue/--green/--yellow/--red já mudam sozinhos com o
-   tema (.dark), então uma regra por cor basta — sem variante `.light`.
-   A largura da borda vive aqui, e não numa classe utilitária no JSX: há 11
-   spans que usam `badge-*` direto, sem passar pelo componente Badge, e sem
-   `border-width` o `border-color` abaixo não renderiza nada. */
-.badge-orange,
-.badge-blue,
-.badge-green,
-.badge-yellow,
-.badge-red { border-width: 1px; border-style: solid; }
+/* ── Navbar — sólida com borda sutil ── */
+.navbar-premium {
+  background: rgb(var(--c-elevated));
+  border-bottom: 1px solid rgb(var(--c-border));
+  box-shadow: 0 1px 0 rgb(var(--c-border));
+}
+.light .navbar-premium {
+  background: rgb(var(--c-card)); /* branco — coerente com sidebar */
+  box-shadow: 0 1px 0 rgb(var(--c-border));
+}
 
-.badge-orange { background: rgb(var(--orange) / .14); color: rgb(var(--orange)); border-color: rgb(var(--orange) / .30); }
-.badge-blue   { background: rgb(var(--blue)   / .14); color: rgb(var(--blue));   border-color: rgb(var(--blue)   / .30); }
-.badge-green  { background: rgb(var(--green)  / .14); color: rgb(var(--green));  border-color: rgb(var(--green)  / .30); }
-.badge-yellow { background: rgb(var(--yellow) / .14); color: rgb(var(--yellow)); border-color: rgb(var(--yellow) / .30); }
-.badge-red    { background: rgb(var(--red)    / .14); color: rgb(var(--red));    border-color: rgb(var(--red)    / .30); }
+/* ── Sidebar — sólida, borda direita ── */
+.sidebar-premium {
+  background: rgb(var(--c-bg));
+  border-right: 1px solid rgb(var(--c-border));
+}
+.light .sidebar-premium {
+  background: rgb(var(--c-card)); /* branco — destaca sobre o fundo zinc-100 */
+}
+
+/* ── Nav links por grupo ── */
+.nav-link-agora,
+.nav-link-operar,
+.nav-link-analisar,
+.nav-link-infra {
+  transition: background 150ms ease, color 150ms ease;
+}
+.nav-link-agora.active    { background: rgba(139,92,246,0.12); color: #c4b5fd; font-weight: 500; }
+.nav-link-operar.active   { background: rgba(34,211,238,0.10); color: #67e8f9; font-weight: 500; }
+.nav-link-analisar.active { background: rgba(74,222,128,0.10); color: #86efac; font-weight: 500; }
+.nav-link-infra.active    { background: rgba(251,146,60,0.11); color: #fdba74; font-weight: 500; }
+
+.nav-link-agora:hover:not(.active)    { background: rgba(139,92,246,0.07); color: #ddd6fe; }
+.nav-link-operar:hover:not(.active)   { background: rgba(34,211,238,0.07); color: #a5f3fc; }
+.nav-link-analisar:hover:not(.active) { background: rgba(74,222,128,0.07); color: #bbf7d0; }
+.nav-link-infra:hover:not(.active)    { background: rgba(251,146,60,0.08); color: #fed7aa; }
+
+/* Fallback active nav */
+.nav-active {
+  background: rgb(var(--c-surface));
+  color: rgb(var(--c-text));
+  font-weight: 500;
+}
+
+/* Group decorators */
+.grp-erp-line   { background: rgba(139,92,246,0.4); }
+.grp-ops-line   { background: rgba(34,211,238,0.4); }
+.grp-anal-line  { background: rgba(74,222,128,0.4); }
+.grp-infra-line { background: rgba(251,146,60,0.4); }
+
+.grp-erp-text   { color: rgba(167,139,250,0.65); }
+.grp-ops-text   { color: rgba(34,211,238,0.65);  }
+.grp-anal-text  { color: rgba(74,222,128,0.65);  }
+.grp-infra-text { color: rgba(251,191,36,0.65);  }
+
+.grp-dot-erp   { background: rgb(139,92,246);  }
+.grp-dot-ops   { background: rgb(34,211,238);  }
+.grp-dot-anal  { background: rgb(74,222,128);  }
+.grp-dot-infra { background: rgb(251,146,60);  }
+
+/* ── Semantic badges ── */
+.badge-green  { background: rgba(74,  222, 128, 0.12); color: rgb(var(--c-green)); }
+.badge-red    { background: rgba(248, 113, 113, 0.12); color: rgb(var(--c-red));   }
+.badge-yellow { background: rgba(250, 204,  21, 0.12); color: rgb(var(--c-yellow));}
+.badge-orange { background: rgba(251, 146,  60, 0.12); color: rgb(var(--c-orange));}
+.badge-purple { background: rgba(167, 139, 250, 0.12); color: rgb(var(--c-purple));}
+.badge-cyan   { background: rgba(34,  211, 238, 0.12); color: rgb(var(--c-cyan));  }
+.badge-teal   { background: rgba(45,  212, 191, 0.12); color: rgb(var(--c-teal));  }
+
+.light .badge-green  { background: rgba(22,  163,  74, 0.10); color: rgb(var(--c-green)); }
+.light .badge-red    { background: rgba(220,  38,  38, 0.10); color: rgb(var(--c-red));   }
+.light .badge-yellow { background: rgba(161,  98,   7, 0.11); color: rgb(var(--c-yellow));}
+.light .badge-orange { background: rgba(194,  65,  12, 0.10); color: rgb(var(--c-orange));}
+.light .badge-purple { background: rgba(109,  40, 217, 0.10); color: rgb(var(--c-purple));}
+.light .badge-cyan   { background: rgba(8,   145, 178, 0.10); color: rgb(var(--c-cyan));  }
+.light .badge-teal   { background: rgba(15,  118, 110, 0.10); color: rgb(var(--c-teal));  }
 
 /* ── Gradients ── */
 .gradient-sep {
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgb(var(--border)) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgb(var(--c-border)) 50%, transparent 100%);
 }
 .gradient-sep-subtle {
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgb(var(--border) / 0.5) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgb(var(--c-border) / 0.5) 50%, transparent 100%);
 }
 
 /* ── Gradient text ── */
@@ -357,9 +395,9 @@ body {
 .shimmer-bg {
   background: linear-gradient(
     90deg,
-    rgb(var(--border) / 0) 0%,
-    rgb(var(--border) / 0.6) 50%,
-    rgb(var(--border) / 0) 100%
+    rgb(var(--c-border) / 0) 0%,
+    rgb(var(--c-border) / 0.6) 50%,
+    rgb(var(--c-border) / 0) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
@@ -394,9 +432,9 @@ body {
 
 /* ── Border glow states ── */
 .border-glow  { border-color: rgba(59,130,246,0.4); }
-.border-ghost { border-color: rgb(var(--border)); }
+.border-ghost { border-color: rgb(var(--c-border)); }
 .light .border-glow  { border-color: rgba(37,99,235,0.4); }
-.light .border-ghost { border-color: rgb(var(--border)); }
+.light .border-ghost { border-color: rgb(var(--c-border)); }
 
 /* ── Donut root ── */
 .donut-root { isolation: isolate; }
@@ -421,22 +459,38 @@ body {
 .card-glow-cyan:hover      { border-color: rgba(34,211,238,0.30);  box-shadow: 0 4px 20px rgba(34,211,238,.12);  }
 .card-glow-purple:hover    { border-color: rgba(167,139,250,0.28); box-shadow: 0 4px 20px rgba(167,139,250,.11); }
 .card-glow-teal:hover      { border-color: rgba(45,212,191,0.28);  box-shadow: 0 4px 20px rgba(45,212,191,.11);  }
-.card-glow-secondary:hover { border-color: rgb(var(--text-muted)/0.3);box-shadow: 0 4px 16px rgba(0,0,0,.18);       }
+.card-glow-secondary:hover { border-color: rgb(var(--c-muted)/0.3);box-shadow: 0 4px 16px rgba(0,0,0,.18);       }
+
+/* ── Tema claro — overrides globais para border-white/* ── */
+.light [class*="bg-white/"]:not([class*="hover:bg-white/"]) {
+  background-color: rgba(0,0,0,0.025);
+}
+.light [class*="hover:bg-white/"]:hover { background-color: rgba(0,0,0,0.04); }
+.light [class*="border-white/"]         { border-color: rgb(var(--c-border)); }
+.light [class*="divide-white/"] > * + * { border-color: rgb(var(--c-border)); }
+
+/* Sombras Tailwind no tema claro */
+.light .shadow-xs  { box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.light .shadow-sm  { box-shadow: 0 1px 3px rgba(0,0,0,.08),  0 1px 2px rgba(0,0,0,.05); }
+.light .shadow-md  { box-shadow: 0 4px 12px rgba(0,0,0,.09), 0 2px 4px rgba(0,0,0,.05); }
+.light .shadow-lg  { box-shadow: 0 8px 24px rgba(0,0,0,.10), 0 4px 8px rgba(0,0,0,.06); }
+.light .shadow-xl  { box-shadow: 0 16px 40px rgba(0,0,0,.11),0 8px 16px rgba(0,0,0,.06);}
+.light .shadow-accent { box-shadow: 0 4px 16px rgba(37,99,235,.12), 0 2px 6px rgba(37,99,235,.08); }
 
 /* ═══════════════════════════════════════════════════════════════
    LEAFLET — dark theme
 ═══════════════════════════════════════════════════════════════ */
 .leaflet-container {
-  background: rgb(var(--bg));
+  background: rgb(var(--c-bg));
   font-family: inherit;
 }
 .map-tiles-dark {
   filter: invert(1) hue-rotate(180deg) brightness(0.80) contrast(0.88) saturate(0.60);
 }
 .leaflet-tooltip.map-tooltip {
-  background: rgb(var(--surface-3));
-  border: 1px solid rgb(var(--border));
-  color: rgb(var(--text));
+  background: rgb(var(--c-elevated));
+  border: 1px solid rgb(var(--c-border));
+  color: rgb(var(--c-text));
   font-size: 11px;
   font-weight: 500;
   padding: 3px 8px;
@@ -446,11 +500,11 @@ body {
 }
 .leaflet-tooltip.map-tooltip::before { display: none; }
 .leaflet-control-attribution {
-  background: rgb(var(--surface-3) / 0.8) !important;
-  color: rgb(var(--text-muted)) !important;
+  background: rgb(var(--c-elevated) / 0.8) !important;
+  color: rgb(var(--c-muted)) !important;
   font-size: 9px !important;
 }
-.leaflet-control-attribution a { color: rgb(var(--text-secondary)) !important; }
+.leaflet-control-attribution a { color: rgb(var(--c-secondary)) !important; }
 
 /* ═══════════════════════════════════════════════════════════════
    ACESSIBILIDADE — prefers-reduced-motion
@@ -462,6 +516,46 @@ body {
     transition-duration:       0.01ms !important;
     scroll-behavior:           auto   !important;
   }
+}
+
+/* Cabonnet Control Surface — fundação visual 2026 */
+:root {
+  --c-bg: 7 12 22;
+  --c-elevated: 11 18 31;
+  --c-surface: 16 25 42;
+  --c-card: 12 20 35;
+  --c-card-high: 19 30 49;
+  --c-card-highest: 27 41 65;
+  --c-border: 36 50 72;
+  --c-text: 241 245 249;
+  --c-secondary: 174 187 204;
+  --c-muted: 112 129 151;
+  --c-disabled: 56 71 92;
+  --c-primary: 59 130 246;
+  --c-primary-light: 96 165 250;
+  --c-primary-dark: 29 78 216;
+  --c-cyan: 56 189 248;
+}
+
+.light {
+  --c-bg: 243 246 250;
+  --c-elevated: 255 255 255;
+  --c-surface: 239 244 250;
+  --c-card: 255 255 255;
+  --c-card-high: 245 248 252;
+  --c-card-highest: 232 238 246;
+  --c-border: 210 220 232;
+  --c-text: 15 27 45;
+  --c-secondary: 61 78 100;
+  --c-muted: 91 108 129;
+}
+
+body,
+.light body {
+  background-image:
+    radial-gradient(circle at 92% -10%, rgb(var(--c-primary) / 0.10), transparent 30rem),
+    linear-gradient(180deg, rgb(var(--c-elevated) / 0.35), transparent 18rem);
+  background-attachment: fixed;
 }
 
 .app-content {
@@ -492,7 +586,7 @@ body {
 .page-header {
   position: relative;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgb(var(--border));
+  border-bottom: 1px solid rgb(var(--c-border));
 }
 
 .page-header::after {
@@ -503,7 +597,7 @@ body {
   width: 3.25rem;
   height: 2px;
   border-radius: 999px;
-  background: rgb(var(--blue));
+  background: rgb(var(--c-primary));
 }
 
 .page-header-icon {
@@ -512,20 +606,40 @@ body {
   height: 2rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgb(var(--blue) / 0.24);
+  border: 1px solid rgb(var(--c-primary) / 0.24);
   border-radius: 0.6rem;
-  background: rgb(var(--blue) / 0.1);
-  color: rgb(var(--blue));
+  background: rgb(var(--c-primary) / 0.1);
+  color: rgb(var(--c-primary-light));
 }
 
 .navbar-premium {
-  background: rgb(var(--surface-1) / .82);
-  backdrop-filter: blur(12px);
+  background: rgb(var(--c-elevated) / 0.94);
+  backdrop-filter: blur(18px) saturate(130%);
 }
 
 .sidebar-premium {
-  background: rgb(var(--surface-1) / .82);
-  backdrop-filter: blur(12px);
+  background:
+    linear-gradient(180deg, rgb(var(--c-primary) / 0.045), transparent 13rem),
+    rgb(var(--c-elevated));
+  box-shadow: 16px 0 40px rgb(0 0 0 / 0.12);
+}
+
+.nav-link-agora.active,
+.nav-link-operar.active,
+.nav-link-analisar.active,
+.nav-link-infra.active {
+  border-color: rgb(var(--c-primary) / 0.24);
+  background: rgb(var(--c-primary) / 0.12);
+  color: rgb(var(--c-text));
+  box-shadow: inset 3px 0 0 rgb(var(--c-primary));
+}
+
+.nav-link-agora:hover:not(.active),
+.nav-link-operar:hover:not(.active),
+.nav-link-analisar:hover:not(.active),
+.nav-link-infra:hover:not(.active) {
+  background: rgb(var(--c-surface) / 0.78);
+  color: rgb(var(--c-text));
 }
 
 @media (max-width: 767px) {

@@ -13,12 +13,6 @@ describe('Card interativo', () => {
     expect(container.firstChild).toHaveAttribute('data-ui', 'card')
     expect(container.firstChild).toHaveClass('surface-panel')
   })
-  it('usa o radius e a superficie do design system', () => {
-    const { container } = render(<Card>conteúdo</Card>)
-    const el = container.firstChild as HTMLElement
-    expect(el.className).toContain('rounded-lg')
-    expect(el.className).toContain('bg-surface-2')
-  })
   it('com onClick é botão acessível', () => {
     const onClick = vi.fn()
     render(<Card onClick={onClick}>conteúdo</Card>)

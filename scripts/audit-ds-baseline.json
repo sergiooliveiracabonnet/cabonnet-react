@@ -1,51 +1,39 @@
 {
   "globalHex": [
-    "#ff5a1f",
-    "#2864e8",
-    "#4a80f0",
-    "#12c4ae",
-    "#11c7b0",
-    "#fbcb12",
-    "#f5c915",
-    "#e03131",
-    "#ff6b6b",
-    "#7c4dff",
-    "#9a7aff",
-    "#171717",
-    "#444444",
-    "#6e6e6e",
-    "#8a8a8a",
-    "#a5a5a5",
-    "#505050",
-    "#ffffff",
-    "#f3f4f6",
-    "#f6f7f8",
-    "#eef0f2",
-    "#e8e8e8",
-    "#f1f1f1",
-    "#d8d8d8",
-    "#020202",
-    "#080808",
-    "#0c0c0c",
-    "#121212",
-    "#181818",
-    "#202020",
-    "#252525",
-    "#1a1a1a",
-    "#353535"
+    "#3b82f6",
+    "#60a5fa",
+    "#2563eb",
+    "#22d3ee",
+    "#4ade80",
+    "#facc15",
+    "#f87171",
+    "#fb923c",
+    "#a78bfa",
+    "#c4b5fd",
+    "#f472b6",
+    "#2dd4bf",
+    "#71717a",
+    "#09090b",
+    "#fafafa"
   ],
   "files": {
     "src/components/ErrorBoundary.tsx": [
       "#07090f",
       "#0d1220",
-      "#3b82f6",
       "#e2eeff",
-      "#f87171",
       "#fca5a5"
     ],
     "src/components/global/PicoAlertaModal.tsx": [
       "#374151",
       "#ef4444"
+    ],
+    "src/components/ui/bar-chart.tsx": [
+      "#27272a",
+      "#e4e4e7"
+    ],
+    "src/components/ui/pie-chart.tsx": [
+      "#27272a",
+      "#e4e4e7"
     ],
     "src/features/auth/LoginPage.tsx": [
       "#010509",
@@ -57,53 +45,27 @@
       "#0d2147",
       "#1d4ed8",
       "#1e40af",
-      "#2563eb",
       "#38bdf8",
-      "#3b82f6",
-      "#4ade80",
       "#4f46e5",
-      "#60a5fa",
       "#6366f1",
       "#818cf8",
       "#93c5fd",
       "#e2e8f0",
-      "#e8edf5",
-      "#f87171",
-      "#facc15"
+      "#e8edf5"
     ],
     "src/features/dashboard/DashboardHeroBlock.tsx": [
-      "#3b82f6",
-      "#4ade80",
-      "#71717a",
       "#818cf8",
       "#94a3b8",
-      "#c4b5fd",
-      "#f59e0b",
-      "#facc15",
-      "#fb923c"
+      "#f59e0b"
     ],
     "src/features/dashboard/DashboardPaineis.tsx": [
-      "#22d3ee",
-      "#3b82f6",
-      "#4ade80",
-      "#94a3b8",
-      "#a78bfa",
-      "#c4b5fd",
-      "#f87171",
-      "#facc15"
+      "#94a3b8"
     ],
     "src/features/erp/alertas/AlertasComponents.tsx": [
-      "#3b82f6",
-      "#f87171",
-      "#f97316",
-      "#facc15"
+      "#f97316"
     ],
     "src/features/erp/alertas/AlertasPage.tsx": [
-      "#3b82f6",
-      "#4ade80",
-      "#f87171",
-      "#f97316",
-      "#facc15"
+      "#f97316"
     ],
     "src/features/erp/biGestaoTecnica/PainelTab.tsx": [
       "#f97316"
@@ -123,36 +85,22 @@
       "#ffffff"
     ],
     "src/features/erp/planner/PlannerComponents.tsx": [
-      "#3b82f6",
-      "#4ade80",
       "#64748b",
-      "#c4b5fd",
-      "#f87171",
-      "#f97316",
-      "#facc15"
+      "#f97316"
     ],
     "src/features/erp/planner/PlannerPlanejadoView.tsx": [
       "#374151",
-      "#3b82f6",
-      "#4ade80",
       "#64748b",
-      "#c4b5fd",
-      "#f87171",
-      "#f97316",
-      "#facc15"
+      "#f97316"
     ],
     "src/features/erp/planner/PlannerExecutadoView.tsx": [
       "#374151",
-      "#3b82f6",
       "#475569",
-      "#4ade80",
       "#64748b",
       "#6b7280",
       "#94a3b8",
-      "#c4b5fd",
       "#cd7c3c",
       "#f59e0b",
-      "#f87171",
       "#f97316",
       "#fbbf24"
     ],
@@ -166,62 +114,49 @@
       "#f97316"
     ],
     "src/features/erp/qualidade/QualidadePage.tsx": [
-      "#8b5cf6",
-      "#f97316"
+      "#f97316",
+      "#8b5cf6"
     ],
     "src/features/erp/qualidade/RevisitaMotivosSection.tsx": [
       "#94a3b8",
       "#f97316"
     ],
     "src/features/erp/ranking/RankingTecnicosPage.tsx": [
-      "#4ade80",
-      "#94a3b8",
-      "#f87171",
-      "#facc15"
+      "#94a3b8"
     ],
     "src/features/erp/relatorios/RelatoriosComponents.tsx": [
-      "#3b82f6",
       "#94a3b8",
-      "#f87171",
       "#f97316"
     ],
     "src/features/erp/relatorios/RelatoriosPage.tsx": [
       "#34d399",
-      "#3b82f6",
-      "#4ade80",
-      "#60a5fa",
-      "#c4b5fd",
-      "#f87171",
-      "#f97316",
-      "#fb923c"
-    ],
-    "src/features/fornecedor/FornecedorPage.tsx": [
-      "#22d3ee",
-      "#3b82f6",
-      "#4ade80",
-      "#94a3b8",
-      "#c4b5fd",
-      "#f97316",
-      "#facc15"
-    ],
-    "src/features/gerencial/GerencialComponents.tsx": [
-      "#3b82f6",
-      "#94a3b8",
-      "#f87171",
       "#f97316"
     ],
+    "src/features/fornecedor/FornecedorPage.tsx": [
+      "#94a3b8",
+      "#f97316"
+    ],
+    "src/features/gerencial/GerencialComponents.tsx": [
+      "#94a3b8",
+      "#f97316"
+    ],
+    "src/features/gerencial/GerencialPage.tsx": [
+      "#0d1117",
+      "#0f172a",
+      "#111827",
+      "#64748b",
+      "#94a3b8",
+      "#e2e8f0",
+      "#f0f4ff",
+      "#f97316",
+      "#ffffff"
+    ],
     "src/features/graficos/GraficosComponents.tsx": [
-      "#22d3ee",
-      "#3b82f6",
-      "#4ade80",
       "#64748b",
       "#84cc16",
       "#8b5cf6",
-      "#c4b5fd",
       "#ec4899",
-      "#f87171",
-      "#f97316",
-      "#facc15"
+      "#f97316"
     ],
     "src/features/juniper/JuniperComponents.tsx": [
       "#0f1b2d",
@@ -229,26 +164,17 @@
     ],
     "src/features/mapa/MapaComponents.tsx": [
       "#0d1117",
-      "#22d3ee",
-      "#3b82f6",
-      "#4ade80",
       "#7dd3fc",
       "#86efac",
       "#a855f7",
-      "#f87171",
       "#f97316",
-      "#facc15",
       "#fca5a5",
       "#fdba74"
     ],
     "src/features/mapa/MapaPage.tsx": [
       "#0d1117",
-      "#22d3ee",
-      "#3b82f6",
-      "#4ade80",
       "#7dd3fc",
       "#86efac",
-      "#f87171",
       "#f97316",
       "#fca5a5",
       "#fdba74"
@@ -257,7 +183,6 @@
       "#0d1117",
       "#0f172a",
       "#111827",
-      "#3b82f6",
       "#64748b",
       "#94a3b8",
       "#e2e8f0",
@@ -265,56 +190,8 @@
       "#ffffff"
     ],
     "src/features/ordens/TelegramOrdensModal.tsx": [
-      "#22d3ee",
-      "#3b82f6",
-      "#4ade80",
       "#94a3b8",
-      "#c4b5fd",
-      "#f97316",
-      "#facc15"
-    ],
-    "src/features/dashboard/AnomaliaSection.tsx": [
-      "#4ade80",
-      "#f87171",
-      "#facc15"
-    ],
-    "src/features/dashboard/CapacidadePanel.tsx": [
-      "#22d3ee",
-      "#4ade80",
-      "#facc15",
-      "#fb923c"
-    ],
-    "src/features/dashboard/ChurnPanel.tsx": [
-      "#4ade80",
-      "#fb923c"
-    ],
-    "src/features/dashboard/CoortePanel.tsx": [
-      "#09090b",
-      "#a78bfa"
-    ],
-    "src/features/dashboard/DashboardPage.tsx": [
-      "#3b82f6",
-      "#f87171"
-    ],
-    "src/features/dashboard/FluxoOSPanel.tsx": [
-      "#3b82f6",
-      "#a78bfa"
-    ],
-    "src/features/juniper/JuniperPage.tsx": [
-      "#f87171"
-    ],
-    "src/features/reincidencias/ReincidenciasCharts.tsx": [
-      "#60a5fa",
-      "#a78bfa",
-      "#fb923c"
-    ],
-    "src/features/gerencial/GerencialPage.tsx": [
-      "#22d3ee",
-      "#3b82f6",
-      "#4ade80",
-      "#c4b5fd",
-      "#f97316",
-      "#facc15"
+      "#f97316"
     ]
   }
 }
