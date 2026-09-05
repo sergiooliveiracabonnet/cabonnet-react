@@ -43,3 +43,16 @@ def test_sync_atualiza_sem_duplicar(tmp_db):
 
     assert len(db._db_list_signal_occurrences()) == 1
     assert db._db_list_signal_occurrences()[0]["status"] == "Em atendimento"
+
+
+def test_get_latest_signal_import_sem_importacao_retorna_none(tmp_db):
+    assert db._db_get_latest_signal_import() is None
+
+
+def test_get_latest_signal_import_devolve_a_mais_recente(tmp_db):
+    db._db_sync_signal_occurrences("a.csv", "csv-a", [occurrence()], "sergio")
+    db._db_sync_signal_occurrences("b.csv", "csv-b", [occurrence(status="Em atendimento")], "sergio")
+
+    latest = db._db_get_latest_signal_import()
+    assert latest["file_name"] == "b.csv"
+    assert latest["csv_text"] == "csv-b"

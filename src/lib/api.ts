@@ -172,8 +172,11 @@ async function compressedRequest<T>(path: string, body: unknown): Promise<T> {
   return result
 }
 
+export interface SignalImport { id: number; file_name: string; csv_text: string; created_at: string; created_by: string }
+
 export const signalOccurrencesApi = {
   list: <T>() => request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/ocorrencias'),
+  latestImport: () => request<{ ok: boolean; item: SignalImport | null }>('/api/nivel-sinal/import/latest'),
   sync: <T>(body: { file_name: string; csv_text: string; occurrences: T[] }) =>
     compressedRequest<{ ok: boolean; import_id: number; items: T[] }>('/api/nivel-sinal/ocorrencias/sync', body),
   update: <T>(item: T) =>

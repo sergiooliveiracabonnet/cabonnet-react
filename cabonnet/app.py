@@ -1499,6 +1499,12 @@ async def list_signal_occurrences(_role: str = Depends(_require_modulo("nivel_si
     return {"ok": True, "items": _db_list_signal_occurrences()}
 
 
+@router.get("/api/nivel-sinal/import/latest")
+async def get_latest_signal_import(_role: str = Depends(_require_modulo("nivel_sinal"))):
+    from cabonnet.db import _db_get_latest_signal_import
+    return {"ok": True, "item": _db_get_latest_signal_import()}
+
+
 @router.post("/api/nivel-sinal/ocorrencias/sync")
 async def sync_signal_occurrences(
     request: Request,
