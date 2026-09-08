@@ -7,7 +7,8 @@ import type { SignalRow } from './nivelSinal'
 const signal = (overrides: Partial<SignalRow>): SignalRow => ({
   cidade: 'Taubaté', bairro: 'Centro', olt: 'OLT TBT', tipo: 'Huawei', slot: '1', pon: '1/2', onu: '7',
   cliente: 'Cliente Crítico', codigo: '1001', situacao: 'Conectado', pppoe: 'critico', serial: 'SERIAL-1',
-  modelo: 'HG8145', status: 'Online', classificacao: 'Crítico', rx: -30, tx: null, oltRx: null, distancia: null, causa: '—',
+  modelo: 'HG8145', status: 'Online', classificacao: 'Crítico', rx: -30, tx: null, oltRx: null, distancia: null,
+  temperatura: null, causa: '—', cidadeCliente: 'TAUBATE', alertaRx: true,
   ...overrides,
 })
 
