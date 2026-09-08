@@ -1588,6 +1588,48 @@ async def update_signal_occurrence(
     return {"ok": True, "items": _db_list_signal_occurrences()}
 
 
+@router.get("/api/nivel-sinal/pons-tratadas")
+async def list_pon_treatments(_role: str = Depends(_require_modulo("nivel_sinal"))):
+    from cabonnet.db import _db_list_pon_treatments
+    return {"ok": True, "items": _db_list_pon_treatments()}
+
+
+@router.post("/api/nivel-sinal/pon/tratar")
+async def treat_pon(
+    request: Request,
+    _role: str = Depends(_require_modulo("nivel_sinal")),
+    sess: dict = Depends(_require_session),
+):
+    return await _register_pon_treatment(request, "tratada", sess)
+
+
+@router.post("/api/nivel-sinal/pon/reabrir")
+async def reopen_pon(
+    request: Request,
+    _role: str = Depends(_require_modulo("nivel_sinal")),
+    sess: dict = Depends(_require_session),
+):
+    return await _register_pon_treatment(request, "reaberta", sess)
+
+
+async def _register_pon_treatment(request: Request, action: str, sess: dict):
+    from cabonnet.db import _db_add_pon_treatment, _db_list_pon_treatments
+    body = await _json_body(request)
+    pon_key = str(body.get("pon_key", "")).strip()
+    snapshot = body.get("snapshot")
+    if snapshot is None:
+        snapshot = {}
+    if not pon_key:
+        raise HTTPException(400, "pon_key é obrigatório")
+    if not isinstance(snapshot, dict):
+        raise HTTPException(400, "snapshot deve ser um objeto")
+    try:
+        _db_add_pon_treatment(pon_key, action, snapshot, sess.get("username") or "")
+    except (TypeError, ValueError) as ex:
+        raise HTTPException(400, str(ex)) from ex
+    return {"ok": True, "items": _db_list_pon_treatments()}
+
+
 @router.get("/api/justificativas")
 async def list_justificativas(limit: int = 100, _role: str = Depends(_require_auth)):
     from cabonnet.db import _db_list_justificativas

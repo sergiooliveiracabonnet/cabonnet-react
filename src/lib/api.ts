@@ -183,6 +183,14 @@ export const signalOccurrencesApi = {
     request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/ocorrencia/update', { method: 'POST', body: JSON.stringify(item) }),
 }
 
+export const ponTreatmentsApi = {
+  list: <T>() => request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pons-tratadas'),
+  treat: <T>(body: { pon_key: string; snapshot: unknown }) =>
+    request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pon/tratar', { method: 'POST', body: JSON.stringify(body) }),
+  reopen: <T>(body: { pon_key: string; snapshot: unknown }) =>
+    request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pon/reabrir', { method: 'POST', body: JSON.stringify(body) }),
+}
+
 export type UserRole = 'gestor' | 'operador' | 'viewer' | 'fornecedor'
 export type FornecedorAcesso = 'WES' | 'Instacable' | 'THM'
 

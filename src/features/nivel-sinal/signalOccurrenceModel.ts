@@ -32,7 +32,9 @@ export interface SignalOccurrence {
   missedSnapshots: number
 }
 
-const invalidIdentifier = new Set(['', '-', '—', '--', 'N/A', 'NA', 'NULL', 'NULO'])
+// 'NONE' aparece literalmente na coluna Serial do CSV. Sem ele na lista, todas
+// as ONUs com esse serial colidem numa unica ocorrencia.
+const invalidIdentifier = new Set(['', '-', '—', '--', 'N/A', 'NA', 'NULL', 'NULO', 'NONE'])
 const validIdentifier = (value: string) => {
   const normalized = value.trim().toUpperCase()
   return invalidIdentifier.has(normalized) ? '' : normalized

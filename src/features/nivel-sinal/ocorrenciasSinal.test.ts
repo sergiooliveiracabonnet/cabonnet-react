@@ -5,7 +5,8 @@ import type { SignalRow } from './nivelSinal'
 const row = (overrides: Partial<SignalRow> = {}): SignalRow => ({
   cidade: 'Taubaté', bairro: 'Centro', olt: 'OLT TBT', tipo: 'Huawei', slot: '1', pon: '1/2', onu: '7',
   cliente: 'Cliente Teste', codigo: '12345', situacao: 'Conectado', pppoe: 'cliente.teste', serial: 'ABC123',
-  modelo: 'HG8145', status: 'Online', classificacao: 'Crítico', rx: -29.5, tx: null, oltRx: null, distancia: null, causa: '—',
+  modelo: 'HG8145', status: 'Online', classificacao: 'Crítico', rx: -29.5, tx: null, oltRx: null, distancia: null,
+  temperatura: null, causa: '—', cidadeCliente: 'TAUBATE', alertaRx: true,
   ...overrides,
 })
 
@@ -55,5 +56,24 @@ describe('syncSignalOccurrences', () => {
     const second = signalOccurrenceKey(row({ serial: '—', codigo: '1002' }))
     expect(first).toBe('codigo:1001')
     expect(second).toBe('codigo:1002')
+  })
+
+  it('trata o serial literal None do CSV como placeholder', () => {
+    // O relatorio traz 'None' na coluna Serial; sem isso todas essas ONUs
+    // colapsavam numa unica ocorrencia.
+    const first = signalOccurrenceKey(row({ serial: 'None', codigo: '2001' }))
+    const second = signalOccurrenceKey(row({ serial: 'None', codigo: '2002' }))
+
+    expect(first).toBe('codigo:2001')
+    expect(second).toBe('codigo:2002')
+  })
+
+  it('abre uma ocorrência por ONU quando várias compartilham o serial None', () => {
+    const rows = [
+      row({ serial: 'None', codigo: '3001', cliente: 'Cliente Um' }),
+      row({ serial: 'None', codigo: '3002', cliente: 'Cliente Dois' }),
+    ]
+
+    expect(syncSignalOccurrences([], rows, '2026-08-11')).toHaveLength(2)
   })
 })

@@ -18,6 +18,10 @@ from cabonnet import state
 log    = logging.getLogger("CaboNetServer")
 log_db = logging.getLogger("CaboNetServer.DB")
 
+# Quantas importacoes de CSV guardam o texto bruto. Cada uma pesa alguns MB e so
+# a mais recente e lida para restaurar a pagina.
+_SIGNAL_IMPORT_HISTORY = 5
+
 # ── Módulos do app togleáveis por papel (gestor/operador/viewer) ──────────────
 # Mapeados 1:1 com as rotas do Sidebar (src/components/layout/Sidebar.tsx).
 ALL_MODULOS = [
@@ -235,6 +239,17 @@ def _db_init():
                 PRIMARY KEY(upload_id, chunk_index)
             )
         """)
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS signal_pon_treatments (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                pon_key    TEXT NOT NULL,
+                action     TEXT NOT NULL,
+                snapshot   TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                created_by TEXT NOT NULL DEFAULT ''
+            )
+        """)
+        con.execute("CREATE INDEX IF NOT EXISTS idx_signal_pon_key ON signal_pon_treatments(pon_key, id)")
         con.commit()
         con.close()
 
@@ -262,6 +277,13 @@ def _db_sync_signal_occurrences(file_name, csv_text, occurrences, username=""):
                     ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,
                         updated_at=excluded.updated_at, updated_by=excluded.updated_by, deleted_at=NULL
                 """, (occurrence_id, payload, now, now, username))
+            # O csv_text de cada import pesa alguns MB e so a ultima importacao e lida
+            # (_db_get_latest_signal_import). Sem poda o SQLite cresce sem teto.
+            con.execute(
+                "DELETE FROM signal_imports WHERE id NOT IN ("
+                "SELECT id FROM signal_imports ORDER BY id DESC LIMIT ?)",
+                (_SIGNAL_IMPORT_HISTORY,),
+            )
             con.commit()
             return cur.lastrowid
         except Exception:
@@ -327,6 +349,48 @@ def _db_update_signal_occurrence(item, username=""):
         )
         con.commit(); con.close()
     return cur.rowcount > 0
+
+
+def _db_list_pon_treatments():
+    """Estado atual de cada PON: o ultimo evento do log manda, e os contadores
+    de ciclo revelam reincidencia (a PON so reabre na mao, entao sem isso um
+    problema recorrente ficaria invisivel)."""
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        rows = con.execute(
+            "SELECT pon_key,action,snapshot,created_at,created_by "
+            "FROM signal_pon_treatments ORDER BY pon_key, id"
+        ).fetchall()
+        con.close()
+    current = {}
+    for pon_key, action, snapshot, created_at, created_by in rows:
+        entry = current.setdefault(pon_key, {"pon_key": pon_key, "treated_count": 0, "reopened_count": 0})
+        entry["action"] = action
+        entry["snapshot"] = json.loads(snapshot)
+        entry["created_at"] = created_at
+        entry["created_by"] = created_by
+        entry["treated_count" if action == "tratada" else "reopened_count"] += 1
+    return list(current.values())
+
+
+def _db_add_pon_treatment(pon_key, action, snapshot, username=""):
+    """Log append-only: o historico de tratada/reaberta de cada PON fica inteiro."""
+    if action not in ("tratada", "reaberta"):
+        raise ValueError(f"Acao invalida: {action}")
+    pon_key = str(pon_key or "").strip()
+    if not pon_key:
+        raise ValueError("pon_key e obrigatorio")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    payload = json.dumps(snapshot if isinstance(snapshot, dict) else {}, ensure_ascii=False, separators=(",", ":"))
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        con.execute(
+            "INSERT INTO signal_pon_treatments(pon_key,action,snapshot,created_at,created_by) VALUES(?,?,?,?,?)",
+            (pon_key[:255], action, payload, now, username),
+        )
+        con.commit()
+        con.close()
+    return True
 
 
 def _db_get_signal_import(import_id):
