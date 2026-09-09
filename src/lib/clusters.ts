@@ -14,6 +14,8 @@ export type ClusterFilter = ClusterKey | 'TODOS'
 
 export interface Cluster {
   label: string
+  /** Como a operação chama a região no dia a dia — cabe em rodapé e chip. */
+  labelCurto: string
   /** Prefixo que identifica as equipes do cluster em `nomedaequipe`. */
   prefixoEquipe: string
   /** chave normalizada (sem acento, maiúscula) → nome de exibição */
@@ -24,6 +26,7 @@ export interface Cluster {
 export const CLUSTERS: Record<ClusterKey, Cluster> = {
   VALE: {
     label: 'Vale do Paraíba',
+    labelCurto: 'Vale',
     prefixoEquipe: '- VAL -',
     cidades: {
       'SAO JOSE DOS CAMPOS': 'São José dos Campos',
@@ -36,6 +39,7 @@ export const CLUSTERS: Record<ClusterKey, Cluster> = {
   },
   ADAMANTINA: {
     label: 'Adamantina',
+    labelCurto: 'Adamantina',
     prefixoEquipe: '- ADA -',
     cidades: {
       'ADAMANTINA': 'Adamantina',
@@ -118,3 +122,16 @@ export const clusterLabel = (filtro: ClusterFilter): string =>
 /** Nomes de exibição das cidades do recorte, para rodapés e prompts. */
 export const cidadesDoFiltro = (filtro: ClusterFilter): string[] =>
   (filtro === 'TODOS' ? CLUSTER_KEYS : [filtro]).flatMap(key => Object.values(CLUSTERS[key].cidades))
+
+export const clusterLabelCurto = (filtro: ClusterFilter): string =>
+  filtro === 'TODOS' ? 'Todos os clusters' : CLUSTERS[filtro].labelCurto
+
+/**
+ * Cluster que a conta de fato enxerga.
+ *
+ * Conta amarrada a um cluster não vê o seletor, então o valor persistido dele
+ * não pode valer nada aqui — valeria o último cluster escolhido por outra
+ * conta no mesmo navegador.
+ */
+export const clusterExibido = (daConta: ClusterFilter, doSeletor: ClusterFilter): ClusterFilter =>
+  daConta !== 'TODOS' ? daConta : doSeletor

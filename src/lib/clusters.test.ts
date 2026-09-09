@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   CIDADES_ATENDIDAS, CLUSTERS, CLUSTER_DE_CIDADE, CLUSTER_KEYS,
-  cidadesDoFiltro, clusterDaCidade, clusterDaEquipe, clusterFiltroCliente, isCidadeValida, matchesCluster, normCity,
+  cidadesDoFiltro, clusterDaCidade, clusterDaEquipe, clusterExibido, clusterFiltroCliente,
+  clusterLabelCurto, isCidadeValida, matchesCluster, normCity,
 } from './clusters'
 
 /**
@@ -151,5 +152,26 @@ describe('clusterFiltroCliente', () => {
 
   it('conta com TODOS e seletor em Tudo não filtra nada', () => {
     expect(clusterFiltroCliente('TODOS', 'TODOS')).toBeNull()
+  })
+})
+
+describe('rótulo do cluster em exibição', () => {
+  it('usa o nome curto, que é como a operação chama a região', () => {
+    expect(clusterLabelCurto('VALE')).toBe('Vale')
+    expect(clusterLabelCurto('ADAMANTINA')).toBe('Adamantina')
+    expect(clusterLabelCurto('TODOS')).toBe('Todos os clusters')
+  })
+
+  it('conta amarrada a um cluster ignora o seletor', () => {
+    // A conta de Adamantina nem vê o seletor; se o valor persistido do seletor
+    // ficasse valendo, o rodapé diria "Vale" para quem só enxerga Adamantina.
+    expect(clusterExibido('ADAMANTINA', 'VALE')).toBe('ADAMANTINA')
+    expect(clusterExibido('VALE', 'ADAMANTINA')).toBe('VALE')
+  })
+
+  it('conta global segue o seletor', () => {
+    expect(clusterExibido('TODOS', 'ADAMANTINA')).toBe('ADAMANTINA')
+    expect(clusterExibido('TODOS', 'VALE')).toBe('VALE')
+    expect(clusterExibido('TODOS', 'TODOS')).toBe('TODOS')
   })
 })
