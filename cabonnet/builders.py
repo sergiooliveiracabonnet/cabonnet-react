@@ -433,10 +433,11 @@ def _build_meta_inst(operadora="INSTACABLE"):
     return "\n".join(lines)
 
 
-def _build_kpi():
+def _build_kpi(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
         ts   = state._dados_cache["ts"]
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis para o KPI."
     hoje       = date.today()
@@ -1188,9 +1189,10 @@ def _build_agenda(data_str=None):
     return "\n".join(linhas)
 
 
-def _build_pendentes_semequipe():
+def _build_pendentes_semequipe(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis. Acesse o dashboard para carregar os dados."
     hoje     = date.today()
