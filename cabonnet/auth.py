@@ -38,7 +38,8 @@ def _authenticate(username: str, password: str) -> dict | None:
         return None
     if not db._verify_password(password, user["senha_hash"]):
         return None
-    return {"id": user["id"], "username": user["username"], "role": user["role"], "fornecedor_key": user.get("fornecedor_key")}
+    return {"id": user["id"], "username": user["username"], "role": user["role"],
+            "fornecedor_key": user.get("fornecedor_key"), "cluster_key": user.get("cluster_key") or "VALE"}
 
 
 def _role_from_cookie(cookie_str: str | None) -> str | None:
@@ -69,11 +70,13 @@ def _session_from_cookie(cookie_str: str | None) -> dict | None:
                 with state._sessions_lock:
                     state._sessions.pop(token, None)
                 return None
-            return {"role": sess.get("role", "gestor"), "username": sess.get("username"), "fornecedor_key": sess.get("fornecedor_key")}
+            return {"role": sess.get("role", "gestor"), "username": sess.get("username"),
+                    "fornecedor_key": sess.get("fornecedor_key"), "cluster_key": sess.get("cluster_key") or "TODOS"}
     return None
 
 
-def _create_session(role: str = "gestor", username: str | None = None, fornecedor_key: str | None = None) -> str:
+def _create_session(role: str = "gestor", username: str | None = None, fornecedor_key: str | None = None,
+                    cluster_key: str | None = None) -> str:
     """Cria uma sessão persistida com role (+ username, quando aplicável) e
     retorna o token. `username=None` é usado por sessões internas do sistema
     (ex: geração de PDF headless via Playwright em builders.py), que não
@@ -85,5 +88,6 @@ def _create_session(role: str = "gestor", username: str | None = None, fornecedo
             "role":     role,
             "username": username,
             "fornecedor_key": fornecedor_key,
+            "cluster_key": cluster_key or "TODOS",
         }
     return token

@@ -76,6 +76,7 @@ interface UIState {
   setSidebar:           (open: boolean) => void
   toggleHideRede:       () => void
   setCluster:           (cluster: ClusterFilter) => void
+  aplicarClusterDaSessao: (doUsuario: ClusterFilter) => void
   toggleTheme:          () => void
   setPreset:            (preset: string) => void
   setCustomRange:       (from: Date, to: Date) => void
@@ -116,6 +117,13 @@ export const useUIStore = create<UIState>((set) => ({
     localStorage.setItem('cluster', cluster)
     set({ cluster })
   },
+  // Conta amarrada a um cluster nao escolhe: o servidor ja recorta o CSV, e
+  // deixar o seletor livre so mostraria um filtro que nao muda nada.
+  aplicarClusterDaSessao: (doUsuario) => set(() => {
+    if (doUsuario === 'TODOS') return {}
+    localStorage.setItem('cluster', doUsuario)
+    return { cluster: doUsuario }
+  }),
   toggleTheme:    () => set((s) => {
     const next = s.theme === 'dark' ? 'light' : 'dark'
     localStorage.setItem('theme', next)

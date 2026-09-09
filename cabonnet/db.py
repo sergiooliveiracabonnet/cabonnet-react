@@ -167,6 +167,14 @@ def _db_init():
         existing_user_cols = {row[1] for row in con.execute("PRAGMA table_info(usuarios)")}
         if "fornecedor_key" not in existing_user_cols:
             con.execute("ALTER TABLE usuarios ADD COLUMN fornecedor_key TEXT")
+        if "cluster_key" not in existing_user_cols:
+            con.execute("ALTER TABLE usuarios ADD COLUMN cluster_key TEXT")
+        # Backfill: ate a chegada de Adamantina so existia dado do Vale, entao
+        # ninguem perde acesso que ja tinha. Gestor herda TODOS, coerente com o
+        # tratamento de modulos (gestor = tudo, sem linha na tabela).
+        con.execute("UPDATE usuarios SET cluster_key='TODOS' "
+                    "WHERE cluster_key IS NULL AND role='gestor'")
+        con.execute("UPDATE usuarios SET cluster_key='VALE' WHERE cluster_key IS NULL")
         # Módulos liberados por papel (operador/viewer). Gestor não é gravado
         # aqui — é tratado como "todos os módulos" direto no código
         # (ver _db_get_permissoes) pra nunca haver risco de autoexclusão.
@@ -1008,13 +1016,14 @@ def _db_list_usuarios():
         with state._db_lock:
             con = sqlite3.connect(_DB_PATH)
             rows = con.execute(
-                "SELECT id, username, role, ativo, criado_em, atualizado_em, fornecedor_key "
+                "SELECT id, username, role, ativo, criado_em, atualizado_em, fornecedor_key, cluster_key "
                 "FROM usuarios ORDER BY username COLLATE NOCASE"
             ).fetchall()
             con.close()
         return [
             {"id": r[0], "username": r[1], "role": r[2], "ativo": bool(r[3]),
-             "criado_em": r[4], "atualizado_em": r[5], "fornecedor_key": r[6]}
+             "criado_em": r[4], "atualizado_em": r[5], "fornecedor_key": r[6],
+             "cluster_key": r[7] or "VALE"}
             for r in rows
         ]
     except Exception as ex:
@@ -1027,28 +1036,30 @@ def _db_get_usuario_by_username(username):
     with state._db_lock:
         con = sqlite3.connect(_DB_PATH)
         row = con.execute(
-            "SELECT id, username, senha_hash, role, ativo, fornecedor_key FROM usuarios WHERE username=?",
+            "SELECT id, username, senha_hash, role, ativo, fornecedor_key, cluster_key FROM usuarios WHERE username=?",
             (username,)
         ).fetchone()
         con.close()
     if not row:
         return None
-    return {"id": row[0], "username": row[1], "senha_hash": row[2], "role": row[3], "ativo": bool(row[4]), "fornecedor_key": row[5]}
+    return {"id": row[0], "username": row[1], "senha_hash": row[2], "role": row[3], "ativo": bool(row[4]),
+            "fornecedor_key": row[5], "cluster_key": row[6] or "VALE"}
 
 
 def _db_get_usuario_by_id(uid):
     with state._db_lock:
         con = sqlite3.connect(_DB_PATH)
         row = con.execute(
-            "SELECT id, username, role, ativo, fornecedor_key FROM usuarios WHERE id=?", (uid,)
+            "SELECT id, username, role, ativo, fornecedor_key, cluster_key FROM usuarios WHERE id=?", (uid,)
         ).fetchone()
         con.close()
     if not row:
         return None
-    return {"id": row[0], "username": row[1], "role": row[2], "ativo": bool(row[3]), "fornecedor_key": row[4]}
+    return {"id": row[0], "username": row[1], "role": row[2], "ativo": bool(row[3]),
+            "fornecedor_key": row[4], "cluster_key": row[5] or "VALE"}
 
 
-def _db_create_usuario(username, senha_hash, role, fornecedor_key=None):
+def _db_create_usuario(username, senha_hash, role, fornecedor_key=None, cluster_key="VALE"):
     """Cria um usuário. Propaga sqlite3.IntegrityError se o username já existe
     (COLLATE NOCASE) — o endpoint traduz isso para HTTP 409."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1056,9 +1067,9 @@ def _db_create_usuario(username, senha_hash, role, fornecedor_key=None):
         con = sqlite3.connect(_DB_PATH)
         try:
             cur = con.execute(
-                "INSERT INTO usuarios (username, senha_hash, role, ativo, criado_em, atualizado_em, fornecedor_key) "
-                "VALUES (?,?,?,1,?,?,?)",
-                (username, senha_hash, role, now, now, fornecedor_key)
+                "INSERT INTO usuarios (username, senha_hash, role, ativo, criado_em, atualizado_em, fornecedor_key, cluster_key) "
+                "VALUES (?,?,?,1,?,?,?,?)",
+                (username, senha_hash, role, now, now, fornecedor_key, cluster_key)
             )
             con.commit()
             return cur.lastrowid
@@ -1066,7 +1077,7 @@ def _db_create_usuario(username, senha_hash, role, fornecedor_key=None):
             con.close()
 
 
-def _db_update_usuario(uid, role=None, ativo=None, fornecedor_key=...):
+def _db_update_usuario(uid, role=None, ativo=None, fornecedor_key=..., cluster_key=...):
     """Atualização parcial de papel/status. Username é imutável (evita
     re-chavear sessões em memória, que guardam o username no token)."""
     fields, values = [], []
@@ -1079,6 +1090,9 @@ def _db_update_usuario(uid, role=None, ativo=None, fornecedor_key=...):
     if fornecedor_key is not ...:
         fields.append("fornecedor_key=?")
         values.append(fornecedor_key)
+    if cluster_key is not ...:
+        fields.append("cluster_key=?")
+        values.append(cluster_key)
     if not fields:
         return _db_get_usuario_by_id(uid)
     fields.append("atualizado_em=?")

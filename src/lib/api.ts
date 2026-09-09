@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import type { ClusterFilter } from './clusters'
 
 export function resolveApiBase(configured: string | undefined, search: string): string {
   return new URLSearchParams(search).get('automation') === 'pdf' ? '' : (configured ?? '')
@@ -80,6 +81,7 @@ export interface AuthResponse {
   username?: string | null
   fornecedor_key?: FornecedorAcesso | null
   modulos?:  string[]
+  cluster_key?: ClusterFilter
   error?:    string
 }
 
@@ -199,6 +201,8 @@ export interface UsuarioItem {
   username:      string
   role:          UserRole
   fornecedor_key: FornecedorAcesso | null
+  /** Recorte regional da conta. Aplicado no servidor, não é preferência de tela. */
+  cluster_key:   ClusterFilter
   ativo:         boolean
   criado_em:     string
   atualizado_em: string

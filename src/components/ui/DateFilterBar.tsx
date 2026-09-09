@@ -3,6 +3,7 @@ import { Calendar, CaretDown, CaretLeft, CaretRight, HardDrives, ArrowRight } fr
 import { useUIStore, PRESETS, isSameMonth } from '../../store/uiStore'
 import type { DateCampo } from '../../lib/types'
 import type { ClusterFilter } from '../../lib/clusters'
+import { useAuthStore } from '../../store/authStore'
 
 const CAMPOS: { value: DateCampo; label: string }[] = [
   { value: 'datacadastro',    label: 'Abertura'     },
@@ -52,6 +53,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
     dateFilter, setPreset, setCustomRange, setCampo, hideRede, toggleHideRede, cluster, setCluster,
     mensalAnchor, mensalPrevMonth, mensalNextMonth,
   } = useUIStore()
+  const clusterDaConta = useAuthStore(s => s.cluster)
   const { preset, from, to, campo } = dateFilter
   const [showCampo, setShowCampo] = useState(false)
 
@@ -201,9 +203,10 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
 
       <span className="mx-0.5 hidden h-4 w-px flex-shrink-0 bg-surface md:block" />
 
-      {/* Cluster regional: recorta cidades em todas as telas de uma vez.
-          Default VALE — somar Adamantina de saída mudaria todo KPI histórico. */}
-      <div role="group" aria-label="Cluster regional" className="flex h-11 flex-shrink-0 items-center gap-0.5 rounded-full border border-white/[0.08] p-0.5 md:h-6">
+      {/* Cluster regional. Só aparece para quem enxerga mais de um: se a conta
+          está amarrada a um cluster, o servidor já recortou o CSV e um seletor
+          aqui só prometeria uma troca que não acontece. */}
+      {clusterDaConta === 'TODOS' && <div role="group" aria-label="Cluster regional" className="flex h-11 flex-shrink-0 items-center gap-0.5 rounded-full border border-white/[0.08] p-0.5 md:h-6">
         {CLUSTER_OPCOES.map(opcao => (
           <button
             key={opcao.valor}
@@ -218,7 +221,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             {opcao.rotulo}
           </button>
         ))}
-      </div>
+      </div>}
 
       <span className="mx-0.5 hidden h-4 w-px flex-shrink-0 bg-surface md:block" />
 
