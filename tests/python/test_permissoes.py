@@ -56,8 +56,10 @@ def test_get_permissoes_returns_all_roles_and_modulos(client, gestor):
         r = client.get("/api/permissoes", headers=gestor)
     assert r.status_code == 200
     data = r.json()
-    assert set(data["permissoes"].keys()) == {"gestor", "operador", "viewer"}
+    assert set(data["permissoes"].keys()) == {"gestor", "supervisor", "operador", "viewer"}
     assert data["permissoes"]["gestor"] == db.ALL_MODULOS
+    # Supervisor nasce igual ao gestor; a diferenca e que o dele e editavel.
+    assert sorted(data["permissoes"]["supervisor"]) == sorted(db.ALL_MODULOS)
     keys = {m["key"] for m in data["modulos"]}
     assert keys == set(db.ALL_MODULOS)
 

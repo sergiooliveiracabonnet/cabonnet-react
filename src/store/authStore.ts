@@ -1,9 +1,12 @@
+import type { UserRole as ApiUserRole } from '../lib/api'
 import type { ClusterFilter } from '../lib/clusters'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
 export type AuthStatus = 'checking' | 'authed' | 'unauthed'
-export type UserRole   = 'gestor' | 'operador' | 'viewer' | 'fornecedor' | null
+// Deriva do tipo do api.ts em vez de repetir a lista: eram duas definicoes
+// independentes, e acrescentar um papel exigia lembrar das duas.
+export type UserRole   = ApiUserRole | null
 export type AuthFornecedor = 'WES' | 'Instacable' | 'THM' | null
 
 interface AuthState {

@@ -633,8 +633,11 @@ _MODULO_LABELS = {
     "erp_fila":           "Fila de Prioridade",
     "erp_ranking":        "Ranking Técnicos",
 }
-_ROLES_VALIDOS = ("gestor", "operador", "viewer", "fornecedor")
-_ROLES_PERMISSOES_EDITAVEIS = ("gestor", "operador", "viewer")
+_ROLES_VALIDOS = ("gestor", "supervisor", "operador", "viewer", "fornecedor")
+# Supervisor entra aqui: os modulos dele saem da tabela, nao do codigo, entao
+# sao editaveis. Gestor segue na lista so para a tela mostrar a coluna dele —
+# _db_set_permissoes recusa gravar gestor.
+_ROLES_PERMISSOES_EDITAVEIS = ("gestor", "supervisor", "operador", "viewer")
 _FORNECEDORES_EXTERNOS = {"WES", "Instacable", "THM"}
 
 

@@ -193,7 +193,7 @@ export const ponTreatmentsApi = {
     request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pon/reabrir', { method: 'POST', body: JSON.stringify(body) }),
 }
 
-export type UserRole = 'gestor' | 'operador' | 'viewer' | 'fornecedor'
+export type UserRole = 'gestor' | 'supervisor' | 'operador' | 'viewer' | 'fornecedor'
 export type FornecedorAcesso = 'WES' | 'Instacable' | 'THM'
 
 export interface UsuarioItem {

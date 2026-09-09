@@ -9,7 +9,7 @@ import type { UserRole, UsuarioItem, FornecedorAcesso } from '../../lib/api'
 import type { ClusterFilter } from '../../lib/clusters'
 import { PageHeader } from '../../components/ui/PageHeader'
 
-const ROLE_LABEL: Record<UserRole, string> = { gestor: 'Gestor', operador: 'Operador', viewer: 'Viewer', fornecedor: 'Fornecedor' }
+const ROLE_LABEL: Record<UserRole, string> = { gestor: 'Gestor', supervisor: 'Supervisor', operador: 'Operador', viewer: 'Viewer', fornecedor: 'Fornecedor' }
 const FORNECEDORES: FornecedorAcesso[] = ['WES', 'Instacable', 'THM']
 const CLUSTER_OPCOES: { valor: ClusterFilter; rotulo: string }[] = [
   { valor: 'VALE', rotulo: 'Vale do Paraíba' },
@@ -145,7 +145,7 @@ function PermissoesMatrix() {
 
   if (isLoading || !data) return <p className="text-label text-muted p-4">Carregando permissões…</p>
 
-  const roles: UserRole[] = ['gestor', 'operador', 'viewer']
+  const roles: UserRole[] = ['gestor', 'supervisor', 'operador', 'viewer']
 
   async function toggle(role: UserRole, modulo: string) {
     if (role === 'gestor' || !data) return
