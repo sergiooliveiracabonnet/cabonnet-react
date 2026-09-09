@@ -180,7 +180,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       <div className="flex items-center gap-2 px-3 pt-2 pb-1">
                         <div className="w-1 h-3 rounded-full flex-shrink-0" style={{ background: group.color }} />
                         <span
-                          className="text-caption font-semibold uppercase tracking-[0.06em]"
+                          className="text-caption font-semibold uppercase tracking-label"
                           style={{ color: group.color + 'aa' }}
                         >
                           {group.label}
@@ -244,7 +244,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               {results.pages.length > 0 && (
                 <div>
                   {showSectionHeaders && (
-                    <p className="px-4 pt-3 pb-1 text-caption font-semibold text-muted uppercase tracking-[0.06em]">Páginas</p>
+                    <p className="px-4 pt-3 pb-1 text-caption font-semibold text-muted uppercase tracking-label">Páginas</p>
                   )}
                   <div className="divide-y divide-hairline">
                     {results.pages.map(page => {
@@ -276,7 +276,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               {results.os.length > 0 && (
                 <div>
                   {showSectionHeaders && (
-                    <p className="px-4 pt-3 pb-1 text-caption font-semibold text-muted uppercase tracking-[0.06em]">Ordens de Serviço</p>
+                    <p className="px-4 pt-3 pb-1 text-caption font-semibold text-muted uppercase tracking-label">Ordens de Serviço</p>
                   )}
                   <div className="divide-y divide-hairline">
                     {results.os.map(os => {

@@ -257,7 +257,7 @@ function KPIHeader({ stats, periodoLabel, onCSV, onPDF, onPrint }: {
 function Section({ title, children, borderColor }: { title: string; children: React.ReactNode; borderColor?: string }) {
   return (
     <div className={`bg-card border rounded-xl p-5 ${borderColor ? `border-${borderColor}` : 'border-subtle'}`}>
-      <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-4">{title}</p>
+      <p className="text-caption font-bold uppercase tracking-label text-muted mb-4">{title}</p>
       {children}
     </div>
   )
@@ -439,7 +439,7 @@ function RedeBlock({ rows, stats, periodoLabel, isMain = false }: {
       )}
 
       <div>
-        <p className="text-caption font-bold uppercase tracking-[0.05em] text-cyan mb-3">
+        <p className="text-caption font-bold uppercase tracking-label text-cyan mb-3">
           Rede — Bloco Independente
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
@@ -453,17 +453,17 @@ function RedeBlock({ rows, stats, periodoLabel, isMain = false }: {
       </div>
 
       <div>
-        <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-3">Equipes de Rede</p>
+        <p className="text-caption font-bold uppercase tracking-label text-muted mb-3">Equipes de Rede</p>
         <EquipesTable byEquipe={stats.byEquipe} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
-          <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-3">Produtividade por Cidade</p>
+          <p className="text-caption font-bold uppercase tracking-label text-muted mb-3">Produtividade por Cidade</p>
           <CidadesChart byCidade={stats.byCidade} />
         </div>
         <div>
-          <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-3">Clientes Atendidos</p>
+          <p className="text-caption font-bold uppercase tracking-label text-muted mb-3">Clientes Atendidos</p>
           <ClientesRedeList rows={rows} />
         </div>
       </div>

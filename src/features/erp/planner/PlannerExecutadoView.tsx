@@ -174,7 +174,7 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
     <div className="mt-3 rounded-xl border border-subtle overflow-hidden bg-surface/50">
       {/* Header com resumo por categoria */}
       <div className="px-4 py-2.5 border-b border-subtle flex items-center gap-4 flex-wrap">
-        <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted mr-1">
+        <span className="text-caption font-bold uppercase tracking-label text-muted mr-1">
           {rows.length} OS · {dayLabel}
         </span>
         {cats.map(c => (
@@ -194,7 +194,7 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
             <tr className="border-b border-hairline bg-surface/20">
               {OS_COLS.map(c => (
                 <th key={c.key}
-                    className="px-3 py-2 text-left text-caption font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap">
+                    className="px-3 py-2 text-left text-caption font-bold text-muted uppercase tracking-label whitespace-nowrap">
                   {c.label}
                 </th>
               ))}
@@ -560,12 +560,12 @@ export default function PlannerExecutadoView() {
                 <thead>
                   <tr className="border-b border-hairline bg-surface/10">
                     <th className="px-4 py-2 text-left w-10" />
-                    <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Equipe</th>
-                    <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Últimos {days.length} dias</th>
-                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">{thisLen}d</th>
-                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Δ</th>
-                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">{days.length}d</th>
-                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Pico</th>
+                    <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-label text-muted">Equipe</th>
+                    <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-label text-muted">Últimos {days.length} dias</th>
+                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-label text-muted">{thisLen}d</th>
+                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-label text-muted">Δ</th>
+                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-label text-muted">{days.length}d</th>
+                    <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-label text-muted">Pico</th>
                     <th className="w-8" />
                   </tr>
                 </thead>

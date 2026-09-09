@@ -132,7 +132,7 @@ export function MapLegend() {
   return (
     <section aria-label="Legenda do mapa" className="absolute bottom-2 right-2 z-[500] max-w-[calc(100%-1rem)] sm:bottom-4 sm:right-4">
       <details className="group rounded-xl border border-strong bg-elevated/95 shadow-xl backdrop-blur sm:open:min-w-56" open>
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-caption font-bold uppercase tracking-[0.05em] text-secondary">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-caption font-bold uppercase tracking-label text-secondary">
           Legenda
           <CaretDown size={13} className="transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
         </summary>
@@ -201,7 +201,7 @@ export function CidadePanel({ cidade, onClose }: { cidade: CidadeAgg | null; onC
         {/* Top bairros */}
         {cidade.topBairros?.length > 0 && (
           <div className="px-4 py-3">
-            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Top bairros</p>
+            <p className="text-caption font-bold uppercase tracking-label text-muted mb-2">Top bairros</p>
             <div className="space-y-1.5">
               {cidade.topBairros.map((b: { bairro: string; count: number; criticos: number }, i: number) => (
                 <div key={i} className="flex items-center gap-2">
@@ -299,7 +299,7 @@ export function AddressSearchPanel({ result, info, onClose }: {
         {/* Equipes próximas */}
         {equipes.length > 0 && (
           <div className="px-4 py-3 border-b border-subtle">
-            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Equipes com OS ativas</p>
+            <p className="text-caption font-bold uppercase tracking-label text-muted mb-2">Equipes com OS ativas</p>
             <div className="flex flex-wrap gap-1.5">
               {equipes.map(e => (
                 <span key={e.nome} className="text-caption bg-surface/40 border border-subtle rounded-full px-2.5 py-1">
@@ -314,7 +314,7 @@ export function AddressSearchPanel({ result, info, onClose }: {
         {/* Bairros próximos */}
         {proximos.length > 0 && (
           <div className="px-4 py-3 max-h-48 overflow-y-auto">
-            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-1">Bairros próximos</p>
+            <p className="text-caption font-bold uppercase tracking-label text-muted mb-1">Bairros próximos</p>
             <p className="mb-2 text-caption text-yellow">Distâncias estimadas a partir de posições aproximadas.</p>
             <div className="space-y-1.5">
               {proximos.map(b => (
@@ -339,7 +339,7 @@ export function Stat({ label, value, color }: { label: string; value: string | n
   return (
     <div className="flex flex-col items-center py-2.5 px-1 gap-0.5">
       <span className={`text-subtitle font-black font-mono leading-none ${color}`}>{value}</span>
-      <span className="text-caption font-bold uppercase tracking-[0.04em] text-muted text-center leading-tight">{label}</span>
+      <span className="text-caption font-bold uppercase tracking-label text-muted text-center leading-tight">{label}</span>
     </div>
   )
 }
@@ -382,7 +382,7 @@ export function RankingPanel({ cidades, onSelect, selected }: {
       <div className="bg-elevated/90 backdrop-blur-md border border-subtle rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-subtle">
           <TrendUp size={12} className="text-primary" />
-          <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking de cidades</p>
+          <p className="text-caption font-bold uppercase tracking-label text-muted">Ranking de cidades</p>
         </div>
         <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-hairline">
           {cidades.slice(0, 15).map((g: CidadeAgg, i: number) => {
@@ -561,7 +561,7 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
       <div className="bg-elevated/90 backdrop-blur-md border border-subtle rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-subtle">
           <TrendUp size={12} className="text-primary" />
-          <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking por bairro</p>
+          <p className="text-caption font-bold uppercase tracking-label text-muted">Ranking por bairro</p>
         </div>
         <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-hairline">
           {bairros.slice(0, 20).map((b, i) => {

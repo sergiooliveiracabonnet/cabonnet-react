@@ -13,7 +13,7 @@ function Field({ label, value, mono = false, full = false, highlight = false }: 
     <div className={`rounded-xl p-4 border
                      ${highlight ? 'bg-primary/5 border-primary/20' : 'bg-surface/30 border-subtle'}
                      ${full ? 'col-span-2' : ''}`}>
-      <p className="font-headline text-caption font-bold uppercase tracking-[0.06em] text-muted mb-1.5">
+      <p className="font-headline text-caption font-bold uppercase tracking-label text-muted mb-1.5">
         {label}
       </p>
       <p className={`text-body font-semibold text-text break-words leading-snug
@@ -26,7 +26,7 @@ function Field({ label, value, mono = false, full = false, highlight = false }: 
 
 function SectionDivider({ children }: { children: ReactNode }) {
   return (
-    <p className="font-headline text-caption font-bold uppercase tracking-[0.07em] text-muted/70 mb-3 flex items-center gap-3">
+    <p className="font-headline text-caption font-bold uppercase tracking-label text-muted/70 mb-3 flex items-center gap-3">
       <span className="flex-1 h-px bg-surface" />
       {children}
       <span className="flex-1 h-px bg-surface" />
@@ -174,7 +174,7 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
             <div className="space-y-3">
               {observacaoCritica && (
                 <div className="bg-red/[0.07] border border-red/25 rounded-xl p-4">
-                  <p className="font-headline text-caption font-bold uppercase tracking-[0.05em] text-red mb-1.5 flex items-center gap-1.5">
+                  <p className="font-headline text-caption font-bold uppercase tracking-label text-red mb-1.5 flex items-center gap-1.5">
                     <Warning size={13} weight="fill" className="flex-shrink-0" />
                     Observação Crítica
                   </p>

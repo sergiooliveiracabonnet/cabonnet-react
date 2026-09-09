@@ -200,7 +200,7 @@ export default function JuniperPage() {
         }
         actions={
           cluster && (
-            <span className="text-caption font-bold uppercase tracking-[0.06em] px-2.5 py-0.5
+            <span className="text-caption font-bold uppercase tracking-label px-2.5 py-0.5
                              rounded-full bg-primary/10 text-primary border border-primary/20">
               {cluster}
             </span>
@@ -254,7 +254,7 @@ export default function JuniperPage() {
       {/* ── Origem segura da coleta ── */}
       <div className="bg-card border border-subtle border-l-[4px] border-l-primary rounded-xl p-5">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
+          <p className="text-caption font-bold uppercase tracking-label text-primary/80 flex items-center gap-1.5">
             <ShieldCheck size={13} /> Coleta protegida pelo servidor · Cluster {cluster}
           </p>
           <StatusPill nivel={hero.nivel ?? ''} txt={hero.statusTxt ?? 'Não verificado'} />
@@ -421,9 +421,9 @@ export default function JuniperPage() {
             <table className="w-full text-body">
               <thead>
                 <tr className="border-b-2 border-subtle">
-                  <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em] w-8" />
+                  <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-label w-8" />
                   {['Usuário', 'IP', 'MAC', 'Interface', 'Uptime'].map(h => (
-                    <th key={h} className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
+                    <th key={h} className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-label">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -456,7 +456,7 @@ export default function JuniperPage() {
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-subtle bg-surface/20">
           <div className="flex items-center gap-2">
             <Pulse size={12} className="text-muted" />
-            <span className="text-caption font-bold uppercase tracking-[0.06em] text-muted">
+            <span className="text-caption font-bold uppercase tracking-label text-muted">
               {historico.length} snapshots
             </span>
             <span className="text-caption text-muted/40">· máx {MAX_SNAPS}</span>

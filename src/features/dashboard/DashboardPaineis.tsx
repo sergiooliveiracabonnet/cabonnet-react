@@ -13,7 +13,7 @@ export function MudancasStrip({ mudancas }: { mudancas: DashMover[] }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-card border border-border px-4 py-2.5">
       <div className="flex items-center gap-2">
-        <span className="text-caption font-bold uppercase tracking-[0.07em] text-muted">O que mais mudou</span>
+        <span className="text-caption font-bold uppercase tracking-label text-muted">O que mais mudou</span>
         <span className={`inline-flex items-center gap-1 text-label font-semibold tabular-nums ${destaque.melhorou ? 'text-green' : 'text-red'}`}>
           {destaque.label}
           {destaque.melhorou
@@ -90,7 +90,7 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
       <div className="p-5">
         <div className="flex items-start justify-between mb-4">
           <SectionLabel icon={Lightning} color="#f87171">Clusters de Falha</SectionLabel>
-          <span className="text-caption font-bold uppercase tracking-[0.05em] bg-red/15 text-red
+          <span className="text-caption font-bold uppercase tracking-label bg-red/15 text-red
                            border border-red/25 rounded-full px-2.5 py-1">
             ALERTA
           </span>
@@ -590,7 +590,7 @@ export function QualidadePeriodoCard({ pulso, taxaRevisitas }: { pulso: Pulso; t
         {stats.map(s => (
           <div key={s.label} title={s.hint}
                className="flex flex-col border border-border rounded-md bg-bg/40 px-3 py-2">
-            <p className="text-caption font-semibold uppercase tracking-[0.04em] text-muted">{s.label}</p>
+            <p className="text-caption font-semibold uppercase tracking-label text-muted">{s.label}</p>
             <p className={`font-bold text-subtitle leading-none tabular-nums tracking-tight mt-1
                            ${s.danger ? 'text-red' : s.warn ? 'text-yellow' : 'text-text'}`}>
               {s.value}

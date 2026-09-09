@@ -11,7 +11,7 @@ export function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; 
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color }}>
+      <span className="text-caption font-bold uppercase tracking-label" style={{ color }}>
         {children}
       </span>
     </div>
@@ -50,7 +50,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
         {/* Cabeçalho da tabela */}
         <div className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3 px-5 py-2
                         bg-surface/20 border-b border-hairline
-                        text-caption font-bold uppercase tracking-[0.05em] text-muted flex-shrink-0">
+                        text-caption font-bold uppercase tracking-label text-muted flex-shrink-0">
           <span>OS #</span>
           <span>Cliente</span>
           <span>Cidade</span>
@@ -214,7 +214,7 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
     <div className="rounded-xl border border-subtle bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_1fr_80px] gap-3 px-4 py-2 bg-surface/20
-                      border-b border-hairline text-caption font-bold uppercase tracking-[0.05em] text-muted">
+                      border-b border-hairline text-caption font-bold uppercase tracking-label text-muted">
         <span>Cliente</span>
         <span>Cidade · Equipe</span>
         <span className="text-right">Aging</span>
@@ -356,7 +356,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
     <div className="rounded-xl border border-subtle bg-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1fr_54px_54px_54px_54px_44px_50px_24px] gap-2 px-4 py-2.5 bg-surface/20
-                      border-b border-hairline text-caption font-bold uppercase tracking-[0.05em] text-muted">
+                      border-b border-hairline text-caption font-bold uppercase tracking-label text-muted">
         <span>Equipe</span>
         <span className="text-right">Total</span>
         <span className="text-right text-yellow">Pend.</span>

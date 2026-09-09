@@ -416,7 +416,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                 <thead>
                   <tr className="border-b-2 border-subtle bg-surface">
                     {['Equipe','Total','Concluídas','Críticas','SLA%','MTTR','Aging Méd.'].map(h => (
-                      <th key={h} className="px-3 py-2 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
+                      <th key={h} className="px-3 py-2 text-left text-caption font-bold text-muted uppercase tracking-label">{h}</th>
                     ))}
                   </tr>
                 </thead>

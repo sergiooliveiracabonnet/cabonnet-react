@@ -109,7 +109,7 @@ export function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; 
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
+      <span className="text-caption font-bold uppercase tracking-label" style={{ color }}>{children}</span>
     </div>
   )
 }
@@ -188,7 +188,7 @@ export function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null
             <div>
               <div className="px-4 pt-3 pb-1.5 flex items-center gap-2">
                 <Clock size={10} className="text-yellow" />
-                <span className="text-caption font-bold uppercase tracking-[0.06em] text-yellow">
+                <span className="text-caption font-bold uppercase tracking-label text-yellow">
                   Pendentes / Em atendimento ({nPending})
                 </span>
               </div>
@@ -199,7 +199,7 @@ export function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null
             <div>
               <div className={`px-4 pb-1.5 flex items-center gap-2 ${pending.length > 0 ? 'pt-3 border-t border-subtle mt-1' : 'pt-3'}`}>
                 <CheckCircle size={10} className="text-green" />
-                <span className="text-caption font-bold uppercase tracking-[0.06em] text-green">
+                <span className="text-caption font-bold uppercase tracking-label text-green">
                   Concluídas ({nConcluded})
                 </span>
               </div>

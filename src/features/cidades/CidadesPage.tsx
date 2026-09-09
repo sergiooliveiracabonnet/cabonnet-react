@@ -192,7 +192,7 @@ export default function CidadesPage() {
                         className="min-h-28 rounded-xl border border-subtle bg-card p-4 text-left transition-colors hover:border-primary/25 hover:bg-surface/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-default disabled:hover:border-subtle">
                   <div className="flex items-center gap-2">
                     <Icon size={14} className={card.color} />
-                    <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</span>
+                    <span className="text-caption font-bold uppercase tracking-label text-muted">{card.label}</span>
                   </div>
                   <p className={`mt-2 truncate font-mono text-2xl font-bold tabular-nums ${card.color}`}>{card.value}</p>
                   <p className="mt-1 text-caption text-muted">{card.sub}</p>
@@ -251,7 +251,7 @@ export default function CidadesPage() {
         )}
 
         <div className="flex items-center justify-between gap-2 pt-1">
-          <h3 className="text-label font-bold uppercase tracking-[0.06em] text-secondary">Atalhos operacionais</h3>
+          <h3 className="text-label font-bold uppercase tracking-label text-secondary">Atalhos operacionais</h3>
           <span className="text-caption text-muted">Abra somente o detalhe necessário</span>
         </div>
         {isLoading ? <KPIGridSkeleton count={5} /> : (
@@ -271,7 +271,7 @@ export default function CidadesPage() {
                             hover:shadow-md hover:-translate-y-0.5 focus-visible:outline-none
                             focus-visible:ring-2 focus-visible:ring-primary/50`}
               >
-                <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted mb-1">{p.title}</p>
+                <p className="text-caption font-bold uppercase tracking-label text-muted mb-1">{p.title}</p>
                 <p className={`font-mono font-bold text-3xl text-${p.color}`}>{p.rows.length}</p>
                 <p className="text-caption text-muted mt-0.5">ordens</p>
                 {(p.semEquipe ?? 0) > 0 && (

@@ -190,7 +190,7 @@ export function Sidebar() {
                   className="w-1 h-1 rounded-full flex-shrink-0 bg-primary"
                 />
                 <span
-                  className="text-caption font-semibold uppercase tracking-[0.07em]"
+                  className="text-caption font-semibold uppercase tracking-label"
                   style={{ color: 'rgb(var(--c-muted))' }}
                 >
                   {group.label}

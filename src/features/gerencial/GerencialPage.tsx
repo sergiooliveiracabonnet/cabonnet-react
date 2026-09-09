@@ -294,7 +294,7 @@ export default function GerencialPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
@@ -304,7 +304,7 @@ export default function GerencialPage() {
               />
             </div>
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Concluídas por cidade
               </p>
               <CidadeTable
@@ -354,7 +354,7 @@ export default function GerencialPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
@@ -364,7 +364,7 @@ export default function GerencialPage() {
               />
             </div>
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Concluídas por cidade
               </p>
               <CidadeTable
@@ -414,7 +414,7 @@ export default function GerencialPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
@@ -424,7 +424,7 @@ export default function GerencialPage() {
               />
             </div>
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Concluídos por cidade
               </p>
               <CidadeTable
@@ -451,7 +451,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-2">
               <div className="w-[3px] h-3.5 rounded-full" style={{ background: '#3b82f6' }} />
               <Package size={11} style={{ color: '#3b82f6' }} />
-              <span className="text-caption font-bold uppercase tracking-[0.06em]"
+              <span className="text-caption font-bold uppercase tracking-label"
                     style={{ color: '#3b82f6' }}>
                 Instalação em rota
               </span>
@@ -503,7 +503,7 @@ export default function GerencialPage() {
             <div className="flex items-center gap-2">
               <div className="w-[3px] h-3.5 rounded-full" style={{ background: '#f97316' }} />
               <Wrench size={11} style={{ color: '#f97316' }} />
-              <span className="text-caption font-bold uppercase tracking-[0.06em]"
+              <span className="text-caption font-bold uppercase tracking-label"
                     style={{ color: '#f97316' }}>
                 VT / Manutenção em rota
               </span>
@@ -556,7 +556,7 @@ export default function GerencialPage() {
               <div className="w-[3px] h-3.5 rounded-full" style={{ background: '#c4b5fd' }} />
 
               <Briefcase size={11} style={{ color: '#c4b5fd' }} />
-              <span className="text-caption font-bold uppercase tracking-[0.06em]"
+              <span className="text-caption font-bold uppercase tracking-label"
                     style={{ color: '#c4b5fd' }}>
                 Serviço em rota
               </span>

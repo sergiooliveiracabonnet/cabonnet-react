@@ -364,7 +364,7 @@ export default function JuniperTopology3D({ clientes, cluster }: Props) {
   return (
     <div className="bg-card border border-subtle rounded-xl overflow-hidden">
       <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-hairline flex-wrap">
-        <p className="text-caption font-bold uppercase tracking-[0.08em] text-primary/80 flex items-center gap-1.5">
+        <p className="text-caption font-bold uppercase tracking-label text-primary/80 flex items-center gap-1.5">
           <CubeTransparent size={13} /> Topologia PPPoE · cluster → interface → cliente
         </p>
         <div className="flex items-center gap-2">
