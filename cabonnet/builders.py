@@ -503,9 +503,10 @@ def _build_kpi(operadora=None):
     return "\n".join(lines)
 
 
-def _build_sla_detalhado():
+def _build_sla_detalhado(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis."
     hoje     = date.today()
@@ -539,9 +540,10 @@ def _build_sla_detalhado():
     return "\n".join(linhas)
 
 
-def _build_equipe_ficha(sigla):
+def _build_equipe_ficha(sigla, operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis."
     sig_up   = sigla.strip().upper()
@@ -592,9 +594,10 @@ def _build_equipe_ficha(sigla):
     return "\n".join(linhas)
 
 
-def _build_aging():
+def _build_aging(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis."
     hoje     = date.today()
@@ -624,9 +627,10 @@ def _build_aging():
     return "\n".join(linhas)
 
 
-def _build_ranking():
+def _build_ranking(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis."
     hoje     = date.today()
@@ -660,9 +664,10 @@ def _build_ranking():
     return "\n".join(linhas)
 
 
-def _build_reagendadas():
+def _build_reagendadas(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis."
     hoje     = date.today()
@@ -696,9 +701,10 @@ def _build_reagendadas():
     return "\n".join(linhas)
 
 
-def _build_cidade(nome):
+def _build_cidade(nome, operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis."
     nome_norm = _normalizar_busca(nome.strip())
@@ -730,9 +736,10 @@ def _build_cidade(nome):
     return "\n".join(linhas)
 
 
-def _build_turno():
+def _build_turno(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis."
     agora    = datetime.now()
@@ -772,9 +779,10 @@ def _build_turno():
     return "\n".join(linhas)
 
 
-def _build_forecast():
+def _build_forecast(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis."
     agora    = datetime.now()
@@ -810,9 +818,10 @@ def _build_forecast():
     return "\n".join(linhas)
 
 
-def _build_listarede():
+def _build_listarede(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     atend = [r for r in rows if r.get("descsituacao") == "Atendimento"
              and (r.get("servico") or "").upper().startswith("REDE")]
     if not atend:
@@ -1287,9 +1296,10 @@ def _build_semexec(operadora=None):
     return "\n".join(linhas)
 
 
-def _build_comparativo():
+def _build_comparativo(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis."
     hoje      = date.today()
@@ -1444,9 +1454,10 @@ def _build_resumo_diario(periodo):
         log.warning("[Telegram] Erro no resumo '%s': %s", periodo, str(ex)[:120])
 
 
-def _build_manutencoes_hoje():
+def _build_manutencoes_hoje(operadora=None):
     with state._dados_cache_lock:
         rows = list(state._dados_cache["agendado"])
+    rows = _filter_by_operadora(rows, operadora)
     if not rows:
         return "⏳ Sem dados disponíveis."
     hoje     = date.today()
