@@ -20,13 +20,17 @@ A Fase 4 fecha o buraco da Fase 2: **`letterSpacing` ficou de fora da escala.**
 
 ## O diagnóstico
 
-Há 167 valores arbitrários de tracking no `src`, em 47 arquivos. Distribuídos assim:
+Há **164** ocorrências de `tracking-[` no `src`, em 47 arquivos `.tsx`. Distribuídas assim:
 
 ```
 79× tracking-[0.05em]     13× tracking-[0.07em]      5× tracking-[0.08em]
 26× tracking-[0.06em]     10× tracking-[0.6px]       2× tracking-[0.03em]
-16× tracking-[0.04em]      9× tracking-[0.09em]     + cauda
+16× tracking-[0.04em]      9× tracking-[0.09em]      1× tracking-[0.14em]
+
+1× tracking-[-0.04em]      1× tracking-[-0.025em]    1× tracking-[-0.015em]
 ```
+
+161 positivos, 3 negativos.
 
 Seis valores dominantes. Medido o contexto de cada um, **todos aparecem no mesmo papel**:
 
@@ -60,7 +64,7 @@ letterSpacing: {
 --ls-label: 0.05em;
 ```
 
-**Por que `0.05em`:** é a pluralidade absoluta (79 dos 167) e é tipograficamente correto para caixa alta em tamanho `caption` — caixa alta pequena precisa de respiro, e 0.05em é o meio da faixa em uso (0.04–0.09).
+**Por que `0.05em`:** é a pluralidade absoluta (79 dos 164) e é tipograficamente correto para caixa alta em tamanho `caption` — caixa alta pequena precisa de respiro, e 0.05em é o meio da faixa em uso (0.04–0.09).
 
 **Por que um token e não uma escala.** A proposta inicial era colapsar em 3 ou 4 tokens. O dado desmentiu: existe um papel, não uma família. Uma escala de tracking aqui seria inventar distinção que o produto não faz.
 
@@ -70,33 +74,54 @@ letterSpacing: {
 
 Rejeitada porque a diferença entre 0.05em e 0.09em nunca foi decidida. Preservá-la seria **institucionalizar o acidente** — transformar deriva em token é dar-lhe autoridade que ela não tem. O usuário confirmou que o `SectionLabel` mais estreito não incomoda.
 
-### O que não entra
+### O que não entra: o lado negativo
 
-O lado **negativo** da escala fica como está. A Fase 2 já embutiu `letterSpacing` nos `fontSize` de `headline` (`-0.015em`) e `readout*` (`-0.025em` a `-0.035em`). Mexer ali reabriria decisão fechada.
+A Fase 4 fecha **o lado positivo** — onde está a deriva de seis valores para um papel só. O lado negativo fica fora, e a distinção importa: são problemas de naturezas diferentes. O positivo é ruído acumulado sem autor; o negativo são três overrides conscientes, em três arquivos.
+
+A Fase 2 já embutiu `letterSpacing` nos `fontSize` de `headline` (`-0.015em`) e `readout*` (`-0.025em` a `-0.035em`). Abrir esse eixo agora reabriria decisão fechada e testada.
+
+> **Correção de uma versão anterior desta spec.** Ela afirmava que o `tracking-[-0.015em]` do `Navbar.tsx:86` era redundante com o `headline` e podia sair. **É falso.** `font-headline` é família de fonte (`fontFamily`, linha 41 do `tailwind.config.js`); `headline` com `letterSpacing` é degrau de tamanho (`fontSize`, linha 52). O elemento usa `font-headline` + `text-title`, e `text-title` **não declara `letterSpacing`**. Remover o tracking ali mudaria a aparência do título da aplicação. Seguir a spec como estava teria apagado código funcional.
 
 Nada de `fontSize`, peso ou cor. Um eixo por fase.
 
 ## A migração
 
-47 arquivos, 167 substituições.
+São **164** ocorrências de `tracking-[` em 47 arquivos `.tsx`. A conta fecha assim:
+
+| Grupo | Qtd | Destino |
+|---|---|---|
+| Caixa alta — o papel | 158 | → `tracking-label` |
+| `text-caption` sem caixa alta (`LoginPage.tsx:318` e `:450`) | 2 | mesmo papel → `tracking-label` |
+| `ui/PageHeader.tsx:20` — `tracking-[-0.025em]` | 1 | **defeito, removido** (ver abaixo) |
+| `layout/Sidebar.tsx:173` — `tracking-[0.08em]` | 1 | marca, deliberado; fica com justificativa na baseline |
+| `layout/Navbar.tsx:86` — `tracking-[-0.015em]` | 1 | necessário (`text-title` não tem tracking próprio); fica |
+| `dashboard/DashboardCommandCenter.tsx:90` — `tracking-[-0.04em]` | 1 | override consciente sobre `readout`; fica |
+| **Total** | **164** | **161 saem, 3 ficam** |
+
+Ordem de execução:
 
 1. **Os três primitivos primeiro** — `SectionLabel`, `SectionTitle`, `StatCard`. Concentram o maior alcance visual; migrá-los antes reduz o que sobra na varredura.
-2. **Passada mecânica** — os seis valores viram `tracking-label` onde o contexto é `text-caption + uppercase`. São ~163 dos 167.
-3. **Os quatro fora do papel**, tratados um a um:
+2. **Passada mecânica** nos 158 de caixa alta mais os 2 do `LoginPage`.
+3. **O defeito do `PageHeader`**, isolado em seu próprio commit.
 
-| Caso | Ocorrências | Decisão |
-|---|---|---|
-| `text-caption tracking-[0.06em]` sem caixa alta | 2 | mesmo papel → `tracking-label` |
-| `tracking-[-0.015em]` em `text-title` | 1 | **redundante** — `headline` já traz esse valor; remove |
-| `font-headline text-title tracking-[0.08em]` | 1 | único deliberado (marca); fica, entra na baseline com justificativa escrita |
+### O defeito do `PageHeader`
+
+```
+text-subtitle sm:text-headline leading-tight tracking-[-0.025em]
+```
+
+O tamanho é responsivo, o tracking é fixo. A partir de `sm`, `text-headline` traz `-0.015em` por definição do degrau — mas a utility arbitrária vence, e o valor do degrau **nunca se aplica**. Não há erro de build, de tipo ou de teste: a escala simplesmente deixa de valer naquele título.
+
+A correção é remover o `tracking-[-0.025em]` e deixar cada degrau trazer o seu — `subtitle` sem tracking, `headline` com `-0.015em`. É o sistema funcionando como desenhado. Muda a aparência levemente nos dois tamanhos, e é o ponto.
 
 ## O que muda na tela
 
 Isto **não é refatoração invisível**:
 
-- 79 usos ficam idênticos (já eram `0.05em`)
-- ~88 estreitam ou alargam por frações de em
+- 79 dos 160 migrados ficam idênticos (já eram `0.05em`)
+- 81 estreitam ou alargam por frações de em
 - o mais visível é o `SectionLabel`, de `0.09em` para `0.05em`, presente em várias telas
+- o `PageHeader` muda nos dois tamanhos, ao passar a obedecer o degrau
 
 É o ganho pretendido — parar o ruído —, mas exige conferência visual nos dois temas depois de aplicado.
 
@@ -116,15 +141,15 @@ Três asserções:
 
 1. **Nenhum `tracking-[` avulso no JSX** — mesma varredura que a Fase 2 faz para tamanho.
 2. **O token está declarado** e resolve nos dois temas.
-3. **A exceção deliberada é única** — se aparecer uma segunda `tracking-[`, o teste reprova e obriga a decidir se virou papel novo.
+3. **As exceções são exatamente três, nomeadas** — `Sidebar.tsx` (marca), `Navbar.tsx` e `DashboardCommandCenter.tsx` (overrides negativos conscientes). O teste lista as três por caminho; uma quarta reprova e obriga a decidir se virou papel novo.
 
 ## Impacto na catraca
 
 ```
-valoresArbitrarios: 454 → 288
+valoresArbitrarios: 454 → 293
 ```
 
-166 dos 167 saem — o único tracking deliberado (marca) permanece.
+161 dos 164 saem; ficam as três exceções nomeadas acima.
 
 A maior queda de qualquer fase até aqui. Roda-se `npm run audit:ds:catraca` ao final para baixar o teto ao real.
 
