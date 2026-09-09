@@ -28,7 +28,7 @@ export default function App() {
       .then((res) => {
         const { ok, role, modulos, fornecedor_key, cluster_key } = res
         if (ok) {
-          setAuthed((role ?? 'viewer') as 'gestor' | 'operador' | 'viewer' | 'fornecedor', modulos ?? [], fornecedor_key ?? null, cluster_key ?? 'TODOS')
+          setAuthed((role ?? 'viewer') as 'gestor' | 'supervisor' | 'operador' | 'viewer' | 'fornecedor', modulos ?? [], fornecedor_key ?? null, cluster_key ?? 'TODOS')
           useUIStore.getState().aplicarClusterDaSessao(cluster_key ?? 'TODOS')
         } else setUnauthed()
       })

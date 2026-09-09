@@ -39,6 +39,11 @@ _DEFAULT_OPERADOR_MODULOS = [
     "erp_planner", "erp_fila", "erp_ranking",
 ]
 _DEFAULT_VIEWER_MODULOS = ["dashboard", "graficos", "cidades", "mapa"]
+# Supervisor nasce com tudo, como o gestor — a diferenca e que os modulos
+# dele ficam na tabela e podem ser recortados. Administrar usuarios continua
+# exclusivo do gestor (_require_gestor), senao o supervisor desfaria sozinho
+# qualquer corte e poderia se promover.
+_DEFAULT_SUPERVISOR_MODULOS = list(ALL_MODULOS)
 _FORNECEDOR_MODULOS = ["dashboard", "ordens", "graficos", "cidades", "fornecedor"]
 
 # Onda 3a (2026-07): erp_produtividade fundido em erp_planner, erp_acao removido
@@ -178,6 +183,14 @@ def _db_init():
         # Módulos liberados por papel (operador/viewer). Gestor não é gravado
         # aqui — é tratado como "todos os módulos" direto no código
         # (ver _db_get_permissoes) pra nunca haver risco de autoexclusão.
+        # Marcos de migracao que rodam UMA vez. Sem isto, semear um papel a cada
+        # startup desfaria em silencio os cortes feitos na tela de permissoes.
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS app_meta (
+                chave TEXT PRIMARY KEY,
+                valor TEXT NOT NULL
+            )
+        """)
         con.execute("""
             CREATE TABLE IF NOT EXISTS role_permissoes (
                 role   TEXT NOT NULL,
@@ -262,6 +275,34 @@ def _db_init():
         con.close()
 
     _db_migrate_onda3a_modulos()
+    _db_seed_supervisor()
+
+
+def _db_seed_supervisor():
+    """Libera todos os modulos para o papel supervisor, uma unica vez.
+
+    Marcado em app_meta porque semear a cada startup apagaria os cortes feitos
+    depois na tela de permissoes — inclusive o caso legitimo de deixar o papel
+    sem nenhum modulo."""
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            ja_feito = con.execute(
+                "SELECT 1 FROM app_meta WHERE chave='seed_supervisor'"
+            ).fetchone()
+            if not ja_feito:
+                con.executemany(
+                    "INSERT OR IGNORE INTO role_permissoes (role, modulo) VALUES ('supervisor', ?)",
+                    [(m,) for m in _DEFAULT_SUPERVISOR_MODULOS],
+                )
+                con.execute(
+                    "INSERT INTO app_meta (chave, valor) VALUES ('seed_supervisor', ?)",
+                    (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),),
+                )
+                con.commit()
+            con.close()
+    except Exception as ex:
+        log_db.warning("Falha ao semear permissoes de supervisor: %s", ex)
 
 
 def _db_sync_signal_occurrences(file_name, csv_text, occurrences, username=""):

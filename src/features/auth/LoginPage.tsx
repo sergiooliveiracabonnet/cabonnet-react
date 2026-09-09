@@ -29,7 +29,7 @@ export function LoginPage() {
         logAudit(`Login realizado`, `role: ${res.role ?? 'gestor'}`, 'auth')
         setSuccess(true)
         setTimeout(() => {
-          setAuthed((res.role ?? 'gestor') as 'gestor' | 'operador' | 'viewer' | 'fornecedor', res.modulos ?? [], res.fornecedor_key ?? null, res.cluster_key ?? 'TODOS')
+          setAuthed((res.role ?? 'gestor') as 'gestor' | 'supervisor' | 'operador' | 'viewer' | 'fornecedor', res.modulos ?? [], res.fornecedor_key ?? null, res.cluster_key ?? 'TODOS')
           useUIStore.getState().aplicarClusterDaSessao(res.cluster_key ?? 'TODOS')
         }, 600)
         return
