@@ -178,6 +178,20 @@ externamente — apenas o Nginx fala com o mundo.
 
 - **Lockfile**: se o processo for encerrado à força, pode sobrar `cabonnet_server.lock`
   na raiz do projeto — é seguro apagar antes de reiniciar o serviço.
+- **Banco corrompido**: se o log mostrar `Falha ao salvar cache SQLite: database
+  disk image is malformed`, ou `PRAGMA integrity_check` acusar erro, use
+  `scripts/reparar_db.py`. Ele reconstrói o banco copiando tabela a tabela e
+  descarta o `query_cache` (cache puro, repovoado pelo warmup). `DROP TABLE` e
+  `VACUUM` não resolvem: os dois precisam percorrer a árvore da tabela quebrada.
+
+  ```bash
+  docker compose stop
+  cp cabonnet_data.db cabonnet_data.db.bak
+  python3 scripts/reparar_db.py cabonnet_data.db     # gera .novo e valida
+  mv cabonnet_data.db.novo cabonnet_data.db          # só se disser "íntegro"
+  docker compose start
+  ```
+
 - **Logs**: tudo vai para `logs/cabonnet_server.log` e para stdout
   (`docker compose logs` ou `journalctl -u cabonnet`, conforme a opção escolhida).
   O caminho do arquivo sai de `CABONNET_LOG_FILE`; sem a variável, cai em
