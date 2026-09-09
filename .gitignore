@@ -81,3 +81,9 @@ docs/superpowers/plans/2026-06-27-cabonnet-pap-*.md
 docs/superpowers/specs/2026-06-25-cabonnet-pap-*.md
 docs/superpowers/specs/2026-06-26-cabonnet-pap-*.md
 NÍVEL DE SINAL.html
+
+# Impeccable: estado de sessão da página de decisão (PID, porta, heartbeat) e
+# preferências de máquina. O .impeccable/config.json, quando existir, é do
+# projeto e deve ser versionado.
+.impeccable/questions/
+.impeccable/config.local.json
