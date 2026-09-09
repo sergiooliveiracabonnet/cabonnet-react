@@ -17,6 +17,7 @@ from cabonnet.config import (
     _OPERADORA_GRUPOS,
     _OPERADORA_POR_PREFIXO,
     TELEGRAM_CHAT_ADAMANTINA,
+    CLUSTER_DE_CIDADE, CLUSTERS,
 )
 from cabonnet import state
 
@@ -206,14 +207,64 @@ def _operadora_for_chat(chat_id):
     if TELEGRAM_CHAT_WES             and s == str(TELEGRAM_CHAT_WES):             return "WES"
     if TELEGRAM_CHAT_REDE            and s == str(TELEGRAM_CHAT_REDE):            return "REDE"
     if TELEGRAM_CHAT_OPERACIONAL_THM and s == str(TELEGRAM_CHAT_OPERACIONAL_THM): return "THM"
-    if TELEGRAM_CHAT_ADAMANTINA      and s == str(TELEGRAM_CHAT_ADAMANTINA):      return "ADA"
-    return None  # Alertas | Cabonnet = visão global
+    # Grupos de cluster: visao completa da regiao, nao de uma operadora.
+    if TELEGRAM_CHAT_ADAMANTINA      and s == str(TELEGRAM_CHAT_ADAMANTINA):
+        return escopo_cluster("ADAMANTINA")
+    if TELEGRAM_CHAT_ALERTAS         and s == str(TELEGRAM_CHAT_ALERTAS):
+        return escopo_cluster("VALE")
+    return None  # Produtividade | Cabonnet = visão global
+
+
+# ── Escopo de cluster ────────────────────────────────────────────────────────
+# O parametro `operadora` dos builders passa a aceitar tambem um escopo de
+# cluster ("cluster:ADAMANTINA"). Isso faz os 12 builders herdarem o recorte
+# sem mudar nenhuma assinatura: todos ja chamam _filter_by_operadora.
+#
+# Operadora e cluster sao coisas diferentes: operadora recorta por frente e
+# exclui REDE/manutencao; cluster recorta por CIDADE e mantem tudo, porque e
+# uma visao global da regiao — o equivalente do grupo Alertas para o cluster.
+_ESCOPO_CLUSTER = "cluster:"
+
+
+def escopo_cluster(nome):
+    return "%s%s" % (_ESCOPO_CLUSTER, nome)
+
+
+def cluster_do_escopo(escopo):
+    """Devolve o cluster se o escopo for de cluster, senao None."""
+    texto = escopo or ""
+    return texto[len(_ESCOPO_CLUSTER):] if texto.startswith(_ESCOPO_CLUSTER) else None
+
+
+def _cidade_normalizada(valor):
+    import unicodedata
+    bruto = unicodedata.normalize("NFD", valor or "").encode("ascii", "ignore").decode("ascii")
+    return " ".join(bruto.upper().split())
+
+
+def _cluster_da_linha(row):
+    """Cluster da OS pela cidade, ou None se a cidade nao for de nenhum."""
+    return CLUSTER_DE_CIDADE.get(_cidade_normalizada(row.get("nomedacidade")))
+
+
+def _filter_by_cluster(rows, cluster):
+    """Recorta pelas cidades do cluster. Cluster desconhecido nao devolve nada,
+    em vez de devolver tudo — o mesmo criterio do filtro do /query."""
+    if not cluster:
+        return rows
+    if cluster not in CLUSTERS:
+        return []
+    return [r for r in rows
+            if CLUSTER_DE_CIDADE.get(_cidade_normalizada(r.get("nomedacidade"))) == cluster]
 
 
 def _filter_by_operadora(rows, operadora):
     """Filtra linhas pela operadora; fornecedores nunca recebem REDE ou MANUT."""
     if not operadora:
         return rows
+    cluster = cluster_do_escopo(operadora)
+    if cluster:
+        return _filter_by_cluster(rows, cluster)
     if operadora == "REDE":
         return [r for r in rows if (r.get("servico") or "").upper().startswith("REDE")]
     # Operadora identificada por prefixo de equipe (cluster de operadora unica).
@@ -243,6 +294,9 @@ def _filter_by_operadora(rows, operadora):
 
 def _label_operadora(operadora):
     """Rótulo legível para o cabeçalho da operadora."""
+    cluster = cluster_do_escopo(operadora)
+    if cluster:
+        return CLUSTERS.get(cluster, {}).get("label", cluster).upper()
     return {"INSTACABLE": "INSTACABLE", "WES": "WES", "REDE": "REDE", "THM": "THM",
             "ADA": "ADAMANTINA"}.get(operadora or "", "GLOBAL")
 
@@ -342,7 +396,13 @@ def _tg_broadcast_status_changes(changes):
     inst_ch  = [(r, o, n) for r, o, n in changes if _operadora_da_os(r) == "INSTACABLE" and not _is_equipe_rede_ou_manut(r)]
     rede_ch  = [(r, o, n) for r, o, n in changes if _operadora_da_os(r) == "REDE"]
     thm_ch   = [(r, o, n) for r, o, n in changes if _operadora_da_os(r) == "THM"        and not _is_equipe_rede_ou_manut(r)]
-    ada_ch   = [(r, o, n) for r, o, n in changes if _operadora_da_os(r) == "ADA"]
+    # Por CIDADE, nao por prefixo de equipe: equipes de fora (01 - TUP -) tambem
+    # atendem cidades do cluster, e o grupo da regiao precisa ve-las.
+    ada_ch   = [(r, o, n) for r, o, n in changes if _cluster_da_linha(r) == "ADAMANTINA"]
+    # Alertas fica com o Vale E com o que nao caiu em cluster nenhum. Recortar por
+    # "== VALE" faria uma OS de cidade inesperada sumir dos dois grupos, em
+    # silencio; aqui ela sempre tem onde aparecer.
+    vale_ch  = [(r, o, n) for r, o, n in changes if _cluster_da_linha(r) != "ADAMANTINA"]
 
     def _send_batch(batch, chat_id, label=""):
         if not chat_id or not batch:
@@ -355,8 +415,8 @@ def _tg_broadcast_status_changes(changes):
             for row, old_st, new_st in batch:
                 _telegram_send(_tg_fmt_status_change(row, old_st, new_st), chat_id_override=chat_id)
 
-    # Alertas — recebe TODAS as mudanças
-    _send_batch(changes, TELEGRAM_CHAT_ALERTAS, "ALERTAS")
+    # Alertas — so o Vale. Adamantina tem grupo proprio; ver escopo_cluster.
+    _send_batch(vale_ch, TELEGRAM_CHAT_ALERTAS, "ALERTAS/VALE")
 
     # Produtividade — visão completa: instalação, serviço e manutenção.
     _send_batch(changes, TELEGRAM_CHAT_ID, "PRODUTIVIDADE")

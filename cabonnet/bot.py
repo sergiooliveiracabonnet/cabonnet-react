@@ -99,12 +99,6 @@ def _telegram_poll_loop_inner():
         "/listatendimento", "/resumo", "/detalhado",
         "/producao", "/os", "/notathm", "/menu", "/help",
     }
-    # Mesmo conjunto do THM: grupo de operadora, sem os comandos globais.
-    _CMDS_ADA = {
-        "/status", "/pulso", "/equipes", "/executadas",
-        "/listatendimento", "/resumo", "/detalhado",
-        "/producao", "/os", "/menu", "/help",
-    }
     _CMDS_ALERTAS = {
         "/status", "/pulso", "/equipes", "/executadas", "/listatendimento",
         "/resumo", "/detalhado",
@@ -115,6 +109,10 @@ def _telegram_poll_loop_inner():
         "/cidade", "/turno", "/forecast", "/manutencoes",
         "/semexec", "/comparativo", "/menu", "/help",
     }
+    # Grupo de cluster: mesmos comandos do Alertas, recortados pelas cidades da
+    # regiao. Sem os /nota*, que sao por operadora do Vale.
+    _CMDS_ADAMANTINA = _CMDS_ALERTAS - {"/notainstacable", "/notawes", "/notarede", "/notathm"}
+
     _CMDS_PRODUTIVIDADE = {
         "/status", "/pulso", "/equipes", "/ranking", "/meta", "/menu",
         "/os", "/agenda", "/executadas", "/listatendimento",
@@ -126,7 +124,7 @@ def _telegram_poll_loop_inner():
         if TELEGRAM_CHAT_INSTACABLE      and s == str(TELEGRAM_CHAT_INSTACABLE):      return "INSTACABLE",    _CMDS_INSTACABLE
         if TELEGRAM_CHAT_WES             and s == str(TELEGRAM_CHAT_WES):             return "WES",           _CMDS_WES
         if TELEGRAM_CHAT_OPERACIONAL_THM and s == str(TELEGRAM_CHAT_OPERACIONAL_THM): return "THM",           _CMDS_THM
-        if TELEGRAM_CHAT_ADAMANTINA      and s == str(TELEGRAM_CHAT_ADAMANTINA):      return "ADA",           _CMDS_ADA
+        if TELEGRAM_CHAT_ADAMANTINA      and s == str(TELEGRAM_CHAT_ADAMANTINA):      return "ADAMANTINA",    _CMDS_ADAMANTINA
         if TELEGRAM_CHAT_ALERTAS         and s == str(TELEGRAM_CHAT_ALERTAS):         return "ALERTAS",       _CMDS_ALERTAS
         if TELEGRAM_CHAT_ID              and s == str(TELEGRAM_CHAT_ID):              return "PRODUTIVIDADE", _CMDS_PRODUTIVIDADE
         return None, set()
@@ -222,7 +220,7 @@ def _telegram_poll_loop_inner():
                 continue
 
             cid = chat_id
-            if grupo in ("PRODUTIVIDADE", "ALERTAS") and not text.startswith("/"):
+            if grupo in ("PRODUTIVIDADE", "ALERTAS", "ADAMANTINA") and not text.startswith("/"):
                 termo_livre = text.strip()
                 if termo_livre.isdigit() and len(termo_livre) >= 5:
                     _telegram_send("🔍 Buscando informações solicitadas...", chat_id_override=cid)
@@ -327,7 +325,8 @@ def _telegram_poll_loop_inner():
                 threading.Thread(target=_enviar_detalhado, daemon=True).start()
 
             elif text.startswith("/meta"):
-                op_meta = operadora if grupo != "ALERTAS" else None
+                # Grupos de cluster sao visao regional, nao de operadora: /meta usa o global.
+                op_meta = operadora if grupo not in ("ALERTAS", "ADAMANTINA") else None
                 threading.Thread(target=lambda o=op_meta: _telegram_send(_build_meta_inst(o), chat_id_override=cid), daemon=True).start()
 
             elif text.startswith("/producao"):
