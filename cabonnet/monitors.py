@@ -671,14 +671,16 @@ def _resumo_scheduler_loop():
 
         if agora.hour == 17 and agora.minute < 2 and chave_alerta_pend not in enviados:
             enviados.add(chave_alerta_pend)
-            def _alerta_pendentes():
+            def _alerta_pendentes(_chat, _cluster):
                 try:
-                    txt = _build_pendentes_semequipe()
+                    txt = _build_pendentes_semequipe(operadora=escopo_cluster(_cluster))
                     if "Sem OS pendentes" not in txt:
-                        _telegram_send(txt)
+                        _telegram_send(txt, chat_id_override=_chat)
                 except Exception as ex:
                     log.warning("[Scheduler] Erro alerta pendentes: %s", str(ex)[:120])
-            threading.Thread(target=_alerta_pendentes, daemon=True).start()
+            for _chat_d, _cluster_d in _destinos_cluster():
+                threading.Thread(target=_alerta_pendentes, args=(_chat_d, _cluster_d),
+                                 daemon=True).start()
 
         if agora.hour == 18 and agora.minute >= 30 and chave_pppoe not in enviados:
             enviados.add(chave_pppoe)

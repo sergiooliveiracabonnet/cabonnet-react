@@ -147,3 +147,12 @@ def test_pulso_das_12h_recorta_pelo_cluster():
     fonte = _fonte_monitors()
     assert "_build_pulso()" not in fonte
     assert "_build_pulso(operadora=escopo_cluster(_cluster))" in fonte
+
+
+def test_pendentes_das_17h_vai_para_o_grupo_da_regiao():
+    """Era o unico agendado ainda sem destino: _telegram_send(txt) sem override
+    cai no TELEGRAM_CHAT_ID, o grupo geral, com a fila das duas regioes junta."""
+    fonte = _fonte_monitors()
+    assert "_build_pendentes_semequipe()" not in fonte
+    assert "_build_pendentes_semequipe(operadora=escopo_cluster(_cluster))" in fonte
+    assert "_telegram_send(txt)" not in fonte
