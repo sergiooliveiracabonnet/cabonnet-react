@@ -51,3 +51,13 @@ Backup/
 *.xls
 *.db
 ~$*
+
+# Relatórios locais com dados operacionais
+*.csv
+.planning/
+.hex-skills/
+docs/
+tests/
+e2e/
+*.bat
+*.ps1
