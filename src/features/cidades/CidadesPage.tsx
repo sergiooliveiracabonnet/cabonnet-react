@@ -145,16 +145,16 @@ export default function CidadesPage() {
               <h2 className="font-headline text-xl font-semibold text-text">Centro Operacional por Cidade</h2>
             </div>
             <div className="mt-1.5 flex flex-wrap gap-1.5 text-caption text-muted">
-              <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Fila ao vivo</span>
-              <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Capacidade: últimos 14 dias úteis</span>
-              <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Executadas: hoje</span>
+              <span className="rounded-full border border-subtle bg-surface/40 px-2 py-1">Fila ao vivo</span>
+              <span className="rounded-full border border-subtle bg-surface/40 px-2 py-1">Capacidade: últimos 14 dias úteis</span>
+              <span className="rounded-full border border-subtle bg-surface/40 px-2 py-1">Executadas: hoje</span>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-label="Filtros da visão por cidade">
             <label className="text-caption font-semibold text-muted">
               Cidade
               <select value={cidadeFilter} onChange={e => setCidadeFilter(e.target.value)}
-                      className="mt-1 min-h-11 w-full rounded-lg border border-white/[0.10] bg-card px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9">
+                      className="mt-1 min-h-11 w-full rounded-lg border border-strong bg-card px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9">
                 <option value="">Todas as cidades</option>
                 {cidadesOptions.map(cidade => <option key={cidade} value={cidade}>{cidade}</option>)}
               </select>
@@ -162,7 +162,7 @@ export default function CidadesPage() {
             <label className="text-caption font-semibold text-muted">
               Categoria
               <select value={tipoFilter} onChange={e => setTipoFilter(e.target.value as CidadeTipoFilter)}
-                      className="mt-1 min-h-11 w-full rounded-lg border border-white/[0.10] bg-card px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9">
+                      className="mt-1 min-h-11 w-full rounded-lg border border-strong bg-card px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9">
                 <option value="TODOS">Todas</option>
                 <option value="INSTALACAO">Instalação</option>
                 <option value="MANUTENCAO">Manutenção</option>
@@ -189,7 +189,7 @@ export default function CidadesPage() {
               return (
                 <button key={card.label} onClick={card.onClick}
                         disabled={!card.onClick || (card.label === 'Cidade prioritária' && !executive.prioritaria)}
-                        className="min-h-28 rounded-xl border border-white/[0.08] bg-card p-4 text-left transition-colors hover:border-primary/25 hover:bg-surface/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-default disabled:hover:border-white/[0.08]">
+                        className="min-h-28 rounded-xl border border-subtle bg-card p-4 text-left transition-colors hover:border-primary/25 hover:bg-surface/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-default disabled:hover:border-subtle">
                   <div className="flex items-center gap-2">
                     <Icon size={14} className={card.color} />
                     <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</span>
@@ -204,7 +204,7 @@ export default function CidadesPage() {
 
         {/* ── AI Clusters Panel ── */}
         {!aiEnabled ? (
-          <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+          <div className="rounded-xl border border-hairline bg-surface/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkle size={12} className="text-primary/40" />
               <span className="text-caption font-bold text-muted uppercase tracking-wide">Clusters de Pendências · IA</span>
@@ -232,7 +232,7 @@ export default function CidadesPage() {
             <div className="flex flex-wrap gap-2">
               {aiClusters.clusters.map((cl, i) => (
                 <div key={i}
-                     className="flex-1 min-w-[200px] bg-card border border-white/[0.08] rounded-lg px-3 py-2.5 space-y-1">
+                     className="flex-1 min-w-[200px] bg-card border border-subtle rounded-lg px-3 py-2.5 space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-label font-semibold text-text truncate">{cl.bairro}</p>
                     <span className="font-mono text-body font-bold text-primary tabular-nums flex-shrink-0">{cl.count}</span>
@@ -266,7 +266,7 @@ export default function CidadesPage() {
                   }, 50)
                 }}
                 className={`bg-card bg-gradient-to-br ${PANEL_FROM[p.color]} to-transparent
-                            border border-white/[0.08] ${PANEL_HOVER[p.color]}
+                            border border-subtle ${PANEL_HOVER[p.color]}
                             rounded-xl p-4 text-left cursor-pointer transition-all duration-normal
                             hover:shadow-md hover:-translate-y-0.5 focus-visible:outline-none
                             focus-visible:ring-2 focus-visible:ring-primary/50`}
@@ -278,7 +278,7 @@ export default function CidadesPage() {
                   <p className="text-caption text-orange font-semibold mt-1">{p.semEquipe} sem equipe</p>
                 )}
                 {(p.breakdown.inst > 0 || p.breakdown.manut > 0 || p.breakdown.serv > 0) && (
-                  <div className="mt-2 pt-2 border-t border-white/[0.08] space-y-0.5">
+                  <div className="mt-2 pt-2 border-t border-subtle space-y-0.5">
                     {p.breakdown.inst  > 0 && (
                       <div className="flex justify-between">
                         <span className="text-caption text-muted">Instalação</span>

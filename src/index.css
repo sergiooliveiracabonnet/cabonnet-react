@@ -195,6 +195,32 @@
   --fs-readout-2xl:  86px;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENTE — a terceira camada
+
+   Nasce com as bordas. Antes eram 382 `border-white/[alfa]` em nove
+   niveis, e no tema claro os nove colapsavam num valor so por um
+   seletor global de atributo. Ou seja: o tema claro ja tratava tudo
+   como uma borda unica, e a variacao existia apenas no escuro.
+
+   Tres pesos bastam para hierarquia. No claro os tres apontam para
+   --c-border, exatamente o que o seletor global fazia.
+═══════════════════════════════════════════════════════════════ */
+
+/* COMPONENTE: DARK */
+:root {
+  --c-border-hairline: rgb(var(--p-white) / 0.05);
+  --c-border-subtle:   rgb(var(--p-white) / 0.08);
+  --c-border-strong:   rgb(var(--p-white) / 0.12);
+}
+
+/* COMPONENTE: LIGHT */
+.light {
+  --c-border-hairline: rgb(var(--c-border));
+  --c-border-subtle:   rgb(var(--c-border));
+  --c-border-strong:   rgb(var(--c-border));
+}
+
 /* ── Dot grid light mode — levemente mais visível ── */
 .light body {
   background-image: radial-gradient(rgb(var(--c-border) / 0.8) 1px, transparent 1px);
@@ -316,9 +342,8 @@ body {
 ═══════════════════════════════════════════════════════════════ */
 
 /* ── Card base ──
-   A borda é definida via Tailwind (border border-white/[0.08]) nos componentes.
-   O override .light [class*="border-white/"] cuida do light mode automaticamente.
-   .card-premium só adiciona hover e sombras — não sobrescreve a borda. */
+   A borda vem do token de componente (border-subtle), que já resolve os dois
+   temas. .card-premium só adiciona hover e sombras. */
 .card-premium {
   position: relative;
   transition: border-color 150ms ease, box-shadow 150ms ease;
@@ -577,8 +602,6 @@ body {
   background-color: rgba(0,0,0,0.025);
 }
 .light [class*="hover:bg-white/"]:hover { background-color: rgba(0,0,0,0.04); }
-.light [class*="border-white/"]         { border-color: rgb(var(--c-border)); }
-.light [class*="divide-white/"] > * + * { border-color: rgb(var(--c-border)); }
 
 /* Sombras Tailwind no tema claro */
 .light .shadow-xs  { box-shadow: 0 1px 2px rgba(0,0,0,.06); }

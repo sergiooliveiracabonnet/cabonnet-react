@@ -131,19 +131,19 @@ export function MapLegend() {
   ]
   return (
     <section aria-label="Legenda do mapa" className="absolute bottom-2 right-2 z-[500] max-w-[calc(100%-1rem)] sm:bottom-4 sm:right-4">
-      <details className="group rounded-xl border border-white/[0.10] bg-elevated/95 shadow-xl backdrop-blur sm:open:min-w-56" open>
+      <details className="group rounded-xl border border-strong bg-elevated/95 shadow-xl backdrop-blur sm:open:min-w-56" open>
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-caption font-bold uppercase tracking-[0.05em] text-secondary">
           Legenda
           <CaretDown size={13} className="transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
         </summary>
-        <div className="space-y-2 border-t border-white/[0.08] px-3 pb-3 pt-2">
+        <div className="space-y-2 border-t border-subtle px-3 pb-3 pt-2">
           {items.map(item => (
             <div key={item.label} className="flex items-center gap-2 text-caption text-secondary">
               <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: item.color }} aria-hidden="true" />
               {item.label}
             </div>
           ))}
-          <div className="border-t border-white/[0.08] pt-2 text-caption text-muted">Maior círculo = mais OS</div>
+          <div className="border-t border-subtle pt-2 text-caption text-muted">Maior círculo = mais OS</div>
           <div className="flex items-center gap-2 text-caption text-muted">
             <span className="h-2.5 w-2.5 rounded-full border border-dashed border-secondary" aria-hidden="true" />
             Contorno tracejado = posição aproximada
@@ -167,9 +167,9 @@ export function CidadePanel({ cidade, onClose }: { cidade: CidadeAgg | null; onC
   const { fill } = bubbleColor(cidade)
   return (
     <div className="absolute bottom-2 left-2 right-2 z-[500] animate-fade-in sm:bottom-4 sm:left-4 sm:right-auto sm:w-72">
-      <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-elevated/95 backdrop-blur-md border border-subtle rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-subtle">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full" style={{ background: fill }} />
             <p className="text-body font-bold text-text capitalize">
@@ -187,12 +187,12 @@ export function CidadePanel({ cidade, onClose }: { cidade: CidadeAgg | null; onC
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08]">
+        <div className="grid grid-cols-3 divide-x divide-hairline border-b border-subtle">
           <Stat label="Total OS"   value={cidade.count}              color="text-text" />
           <Stat label="Críticas"   value={cidade.criticos}           color={cidade.criticos  > 0 ? 'text-red'    : 'text-muted'} />
           <Stat label="Excedidas"  value={cidade.excedidos}          color={cidade.excedidos > 0 ? 'text-orange' : 'text-muted'} />
         </div>
-        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08]">
+        <div className="grid grid-cols-3 divide-x divide-hairline border-b border-subtle">
           <Stat label="Aging med." value={`${cidade.avgAging.toFixed(1)}d`} color="text-cyan" />
           <Stat label="Pendentes"  value={cidade.pendentes}   color="text-yellow" />
           <Stat label="Sem equipe" value={cidade.semEquipe}   color={cidade.semEquipe > 0 ? 'text-orange' : 'text-muted'} />
@@ -250,9 +250,9 @@ export function AddressSearchPanel({ result, info, onClose }: {
   const { temEquipesProximas, equipes, proximos, maisProximo } = info
   return (
     <div className="absolute bottom-2 left-2 right-2 z-[500] animate-fade-in sm:bottom-auto sm:left-4 sm:right-auto sm:top-4 sm:w-80">
-      <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-elevated/95 backdrop-blur-md border border-subtle rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-start justify-between gap-2 px-4 py-3 border-b border-white/[0.08]">
+        <div className="flex items-start justify-between gap-2 px-4 py-3 border-b border-subtle">
           <div className="flex items-start gap-2 min-w-0">
             <PinIcon size={13} className="text-cyan flex-shrink-0 mt-0.5" />
             <p className="text-label text-secondary leading-snug">{result.label}</p>
@@ -268,7 +268,7 @@ export function AddressSearchPanel({ result, info, onClose }: {
         </div>
 
         {/* Veredito */}
-        <div className={`flex items-start gap-2.5 px-4 py-3 border-b border-white/[0.08]
+        <div className={`flex items-start gap-2.5 px-4 py-3 border-b border-subtle
                           ${temEquipesProximas ? 'bg-green/[0.06]' : 'bg-yellow/[0.06]'}`}>
           {temEquipesProximas
             ? <CheckCircle size={15} className="text-green flex-shrink-0 mt-0.5" />
@@ -298,11 +298,11 @@ export function AddressSearchPanel({ result, info, onClose }: {
 
         {/* Equipes próximas */}
         {equipes.length > 0 && (
-          <div className="px-4 py-3 border-b border-white/[0.08]">
+          <div className="px-4 py-3 border-b border-subtle">
             <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2">Equipes com OS ativas</p>
             <div className="flex flex-wrap gap-1.5">
               {equipes.map(e => (
-                <span key={e.nome} className="text-caption bg-surface/40 border border-white/[0.08] rounded-full px-2.5 py-1">
+                <span key={e.nome} className="text-caption bg-surface/40 border border-subtle rounded-full px-2.5 py-1">
                   <span className="text-text font-semibold">{shortEquipe(e.nome)}</span>
                   <span className="text-muted ml-1.5 font-mono">{e.count}</span>
                 </span>
@@ -355,7 +355,7 @@ export function EquipeGeocodeStatus({ resolved, total, capped, totalEquipe }: {
   const done = resolved >= total
   return (
     <div className="absolute left-1/2 top-40 z-[500] max-w-[calc(100%-1rem)] -translate-x-1/2 sm:top-20">
-      <div className="flex items-center gap-2 bg-elevated/95 backdrop-blur-md border border-white/[0.08]
+      <div className="flex items-center gap-2 bg-elevated/95 backdrop-blur-md border border-subtle
                        rounded-full px-3.5 py-1.5 shadow-2xl">
         {!done && <CircleNotch size={11} className="animate-spin text-primary" />}
         <span className="text-caption font-semibold text-secondary">
@@ -379,12 +379,12 @@ export function RankingPanel({ cidades, onSelect, selected }: {
 }) {
   return (
     <div className="absolute right-2 top-40 z-[500] w-[min(15rem,calc(100%-1rem))] sm:right-4 sm:top-4 sm:w-60">
-      <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
-        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.08]">
+      <div className="bg-elevated/90 backdrop-blur-md border border-subtle rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-subtle">
           <TrendUp size={12} className="text-primary" />
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking de cidades</p>
         </div>
-        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
+        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-hairline">
           {cidades.slice(0, 15).map((g: CidadeAgg, i: number) => {
             const { fill } = bubbleColor(g)
             const isSelected = selected?.cidade === g.cidade
@@ -469,10 +469,10 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
 
   return (
     <div className="absolute bottom-2 left-2 right-2 z-[500] animate-fade-in sm:bottom-4 sm:left-4 sm:right-auto sm:w-80">
-      <div className="bg-elevated/95 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[70vh]">
+      <div className="bg-elevated/95 backdrop-blur-md border border-subtle rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[70vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08] flex-shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-subtle flex-shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: fill }} />
             <div className="min-w-0">
@@ -486,12 +486,12 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08] flex-shrink-0">
+        <div className="grid grid-cols-3 divide-x divide-hairline border-b border-subtle flex-shrink-0">
           <Stat label="Total OS"  value={bairro.count}    color="text-text" />
           <Stat label="Críticas"  value={bairro.criticos} color={bairro.criticos  > 0 ? 'text-red'    : 'text-muted'} />
           <Stat label="Excedidas" value={bairro.excedidos} color={bairro.excedidos > 0 ? 'text-orange' : 'text-muted'} />
         </div>
-        <div className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08] flex-shrink-0">
+        <div className="grid grid-cols-3 divide-x divide-hairline border-b border-subtle flex-shrink-0">
           <Stat label="Aging med." value={`${bairro.avgAging.toFixed(1)}d`} color="text-cyan" />
           <Stat label="Pendentes"  value={bairro.pendentes} color="text-yellow" />
           <Stat label="Sem equipe" value={bairro.semEquipe} color={bairro.semEquipe > 0 ? 'text-orange' : 'text-muted'} />
@@ -501,7 +501,7 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
         {sorted.length > 0 && (
           <>
             {/* Cabeçalho da tabela */}
-            <div className="flex items-center px-3 py-1.5 border-b border-white/[0.05] bg-surface/30 flex-shrink-0">
+            <div className="flex items-center px-3 py-1.5 border-b border-hairline bg-surface/30 flex-shrink-0">
               <button onClick={() => toggleSort('numos')} className="flex items-center gap-0.5 text-caption font-bold uppercase text-muted hover:text-secondary w-14 flex-shrink-0">
                 Nº OS <SortIcon k="numos" sortKey={sortKey} sortDir={sortDir} />
               </button>
@@ -515,7 +515,7 @@ export function BairroPanel({ bairro, rows, onClose, onOS }: {
             </div>
 
             {/* Linhas */}
-            <div className="overflow-y-auto flex-1 divide-y divide-white/[0.04]">
+            <div className="overflow-y-auto flex-1 divide-y divide-hairline">
               {sorted.map(os => {
                 const aging  = os._aging ?? 0
                 const agVar  = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'
@@ -558,12 +558,12 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
 }) {
   return (
     <div className="absolute right-2 top-40 z-[500] w-[min(16rem,calc(100%-1rem))] sm:right-4 sm:top-4 sm:w-64">
-      <div className="bg-elevated/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
-        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/[0.08]">
+      <div className="bg-elevated/90 backdrop-blur-md border border-subtle rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-subtle">
           <TrendUp size={12} className="text-primary" />
           <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ranking por bairro</p>
         </div>
-        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-white/[0.05]">
+        <div className="max-h-[calc(100vh-260px)] overflow-y-auto divide-y divide-hairline">
           {bairros.slice(0, 20).map((b, i) => {
             const fill = b.criticos > 0 ? '#f87171' : b.excedidos > 0 ? '#f97316' : '#3b82f6'
             const isSelected = selected?.bairro === b.bairro && selected?.cidade === b.cidade

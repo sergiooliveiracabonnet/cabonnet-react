@@ -73,7 +73,7 @@ function OcorrenciasExpand({ numos }: { numos: string }) {
       )}
       {hist.map((e, i) => (
         <div key={i}
-             className={`rounded-xl px-3 py-2 border ${e.isReagend ? 'bg-orange/[0.08] border-orange/25' : 'bg-surface/30 border-white/[0.06]'}`}>
+             className={`rounded-xl px-3 py-2 border ${e.isReagend ? 'bg-orange/[0.08] border-orange/25' : 'bg-surface/30 border-hairline'}`}>
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             {e.isReagend && (
               <span className="flex items-center gap-1 text-caption font-bold uppercase tracking-wide text-orange/80">
@@ -209,7 +209,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
       )}
       {filteredRows.length > 0 && <>
       {/* Cabeçalho de colunas — clique para ordenar */}
-      <div className="sticky top-0 z-20 h-9 flex items-center gap-3 bg-card px-5 border-b border-white/[0.12]">
+      <div className="sticky top-0 z-20 h-9 flex items-center gap-3 bg-card px-5 border-b border-strong">
         <span className={`${COL_W.chevron} flex-shrink-0`} />
         <SortHeader label="Nº OS"    active={sortKey === 'numos'}    dir={sortDir} onClick={() => toggleSort('numos')}    className={COL_W.numos} />
         <SortHeader label="Cliente"  active={sortKey === 'cliente'}  dir={sortDir} onClick={() => toggleSort('cliente')}  className="flex-1 min-w-[160px]" />
@@ -224,9 +224,9 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
       </div>
 
       {grupos.map(([cidade, list], gi) => (
-        <div key={cidade} className={gi > 0 ? 'border-t-2 border-white/[0.12]' : ''}>
+        <div key={cidade} className={gi > 0 ? 'border-t-2 border-strong' : ''}>
           {/* Cabeçalho da cidade */}
-          <div className="sticky top-9 z-10 flex items-center justify-between gap-2 bg-surface px-5 py-2.5 border-b border-white/[0.08]">
+          <div className="sticky top-9 z-10 flex items-center justify-between gap-2 bg-surface px-5 py-2.5 border-b border-subtle">
             <span className="flex items-center gap-1.5 text-caption font-bold text-text uppercase tracking-[0.03em]">
               <MapPin size={11} className="text-primary/70" /> {cidade}
               <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-caption font-bold tabular-nums">
@@ -240,7 +240,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
           </div>
 
           {/* Linhas da cidade */}
-          <div className="divide-y divide-white/[0.04]">
+          <div className="divide-y divide-hairline">
             {list.map(os => {
               const aging  = os._aging ?? 0
               const agVar  = aging >= 6 ? 'red' : aging >= 3 ? 'yellow' : 'cyan'

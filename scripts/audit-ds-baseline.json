@@ -67,22 +67,8 @@
     "src/features/erp/alertas/AlertasPage.tsx": [
       "#f97316"
     ],
-    "src/features/erp/biGestaoTecnica/PainelTab.tsx": [
-      "#f97316"
-    ],
-    "src/features/erp/biGestaoTecnica/RevisitaTab.tsx": [
-      "#f97316"
-    ],
     "src/features/erp/fila/FilaPage.tsx": [
-      "#0d1117",
-      "#0f172a",
-      "#111827",
-      "#64748b",
-      "#94a3b8",
-      "#e2e8f0",
-      "#ef4444",
-      "#f0f4ff",
-      "#ffffff"
+      "#ef4444"
     ],
     "src/features/erp/planner/PlannerComponents.tsx": [
       "#64748b",
@@ -103,23 +89,6 @@
       "#f59e0b",
       "#f97316",
       "#fbbf24"
-    ],
-    "src/features/erp/qualidade/CausaRaizSection.tsx": [
-      "#6b7280",
-      "#94a3b8",
-      "#c084fc",
-      "#f97316"
-    ],
-    "src/features/erp/qualidade/QualidadeComponents.tsx": [
-      "#f97316"
-    ],
-    "src/features/erp/qualidade/QualidadePage.tsx": [
-      "#f97316",
-      "#8b5cf6"
-    ],
-    "src/features/erp/qualidade/RevisitaMotivosSection.tsx": [
-      "#94a3b8",
-      "#f97316"
     ],
     "src/features/erp/ranking/RankingTecnicosPage.tsx": [
       "#94a3b8"
@@ -152,15 +121,10 @@
       "#ffffff"
     ],
     "src/features/graficos/GraficosComponents.tsx": [
-      "#64748b",
       "#84cc16",
       "#8b5cf6",
       "#ec4899",
       "#f97316"
-    ],
-    "src/features/juniper/JuniperComponents.tsx": [
-      "#0f1b2d",
-      "#1a0f0f"
     ],
     "src/features/mapa/MapaComponents.tsx": [
       "#0d1117",
@@ -179,19 +143,13 @@
       "#fca5a5",
       "#fdba74"
     ],
-    "src/features/ordens/OrdensPage.tsx": [
-      "#0d1117",
-      "#0f172a",
-      "#111827",
-      "#64748b",
-      "#94a3b8",
-      "#e2e8f0",
-      "#f0f4ff",
-      "#ffffff"
-    ],
     "src/features/ordens/TelegramOrdensModal.tsx": [
       "#94a3b8",
       "#f97316"
     ]
+  },
+  "tetos": {
+    "hexTolerados": 99,
+    "valoresArbitrarios": 455
   }
 }

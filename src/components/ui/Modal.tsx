@@ -79,11 +79,11 @@ export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', head
         aria-modal="true"
         aria-labelledby="modal-title"
         style={{ maxWidth }}
-        className="w-full bg-card border border-white/[0.08] rounded-xl
+        className="w-full bg-card border border-subtle rounded-xl
                    flex flex-col overflow-hidden shadow-2xl max-h-[85vh]
                    animate-card-enter"
       >
-        <div className="flex items-center gap-4 px-6 py-4 border-b border-white/[0.08] flex-shrink-0">
+        <div className="flex items-center gap-4 px-6 py-4 border-b border-subtle flex-shrink-0">
           <div className="flex-1 min-w-0">
             <p id="modal-title" className="font-headline font-bold text-title text-text">{title}</p>
             {subtitle && <p className="text-caption text-muted mt-0.5">{subtitle}</p>}
@@ -92,7 +92,7 @@ export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', head
           <button
             onClick={onClose}
             aria-label="Fechar modal"
-            className="w-8 h-8 rounded-md border border-white/[0.08] flex items-center justify-center
+            className="w-8 h-8 rounded-md border border-subtle flex items-center justify-center
                        text-muted hover:text-text hover:bg-surface transition-all duration-fast"
           >
             <X size={15} />

@@ -21,7 +21,7 @@ export function ClassificarEncerramento({ numos, nomedaequipe, nomedacidade }: {
   if (isLoading) return null
 
   return (
-    <div className="bg-surface/30 border border-white/[0.08] rounded-xl p-3.5 space-y-2.5">
+    <div className="bg-surface/30 border border-subtle rounded-xl p-3.5 space-y-2.5">
       <div className="flex items-center justify-between gap-2">
         <p className="text-caption font-semibold text-secondary">
           {existente ? 'Motivo do encerramento' : 'Classificar motivo do encerramento'}
@@ -43,7 +43,7 @@ export function ClassificarEncerramento({ numos, nomedaequipe, nomedacidade }: {
                           transition-colors ${
                             ativo
                               ? 'border-green/40 bg-green/10 text-green'
-                              : 'border-white/[0.08] text-muted hover:text-text hover:border-muted/30'
+                              : 'border-subtle text-muted hover:text-text hover:border-muted/30'
                           }`}
             >
               <m.icon size={11} /> {m.label}

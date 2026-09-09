@@ -130,12 +130,12 @@ function TecnicoCell({ codigo, cadastro }: { codigo: string; cadastro: TecnicoIt
         <input
           autoFocus value={nome} onChange={e => setNome(e.target.value)}
           placeholder="Nome real"
-          className="w-28 text-caption bg-surface/40 border border-white/[0.08] rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
+          className="w-28 text-caption bg-surface/40 border border-subtle rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
         />
         <input
           value={contato} onChange={e => setContato(e.target.value)}
           placeholder="Contato"
-          className="w-24 text-caption bg-surface/40 border border-white/[0.08] rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
+          className="w-24 text-caption bg-surface/40 border border-subtle rounded px-1.5 py-1 text-text outline-none focus:border-primary/40"
         />
         <button onClick={() => { upsert({ codigo, nome_real: nome, contato }); setEditing(false) }}
                 className="text-green hover:text-green/80"><Check size={13} /></button>
@@ -216,11 +216,11 @@ export default function RankingTecnicosPage() {
         <StatCard title="Com OS crítica" value={kpis.criticos} tone="critical" />
       </div>
 
-      <div className="rounded-2xl border border-white/[0.08] bg-card overflow-hidden">
+      <div className="rounded-2xl border border-subtle bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-label">
             <thead>
-              <tr className="border-b border-white/[0.05] bg-surface/10">
+              <tr className="border-b border-hairline bg-surface/10">
                 <th className="px-4 py-3 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Técnico</th>
                 <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('volume')}>
@@ -248,7 +248,7 @@ export default function RankingTecnicosPage() {
             </thead>
             <tbody>
               {sorted.map(r => (
-                <tr key={r.nome} className="border-b border-white/[0.03] hover:bg-surface/10 transition-colors">
+                <tr key={r.nome} className="border-b border-hairline hover:bg-surface/10 transition-colors">
                   <td className="px-4 py-2.5">
                     <TecnicoCell codigo={r.nome} cadastro={cadastroMap.get(r.nome)} />
                   </td>

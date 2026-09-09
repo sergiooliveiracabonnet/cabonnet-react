@@ -18,3 +18,11 @@ export interface EscalaTipo {
 
 export declare function parseEscalaTipo(css: string): EscalaTipo
 export declare function lerEscalaTipo(caminho?: string): EscalaTipo
+
+export interface Componentes {
+  dark: Record<string, string>
+  light: Record<string, string>
+}
+
+export declare function parseComponentes(css: string): Componentes
+export declare function lerComponentes(caminho?: string): Componentes

@@ -59,6 +59,20 @@ export default {
         'readout-2xl': ['var(--fs-readout-2xl)',  { lineHeight: '1', letterSpacing: '-0.035em' }],
       },
 
+      // Peso de borda. divideColor NAO herda de um borderColor declarado dentro
+      // de extend — sem o bloco proprio abaixo, divide-subtle nao e emitido e o
+      // divisor fica sem cor nenhuma.
+      borderColor: {
+        hairline: 'var(--c-border-hairline)',
+        subtle:   'var(--c-border-subtle)',
+        strong:   'var(--c-border-strong)',
+      },
+      divideColor: {
+        hairline: 'var(--c-border-hairline)',
+        subtle:   'var(--c-border-subtle)',
+        strong:   'var(--c-border-strong)',
+      },
+
       borderRadius: {
         xs:      '3px',
         sm:      '6px',

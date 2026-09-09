@@ -93,7 +93,7 @@ export default function FornecedorPage() {
         {FORNECEDORES.map((f) => (
           <button key={f.value} onClick={() => setFiltro(f.value)}
             className={`flex items-center gap-1.5 text-caption font-bold px-3 py-1.5 rounded-pill border transition-all duration-fast cursor-pointer
-                        ${filtro === f.value ? 'text-white border-transparent' : 'border-white/[0.08] text-muted hover:text-secondary'}`}
+                        ${filtro === f.value ? 'text-white border-transparent' : 'border-subtle text-muted hover:text-secondary'}`}
             style={filtro === f.value ? { background: f.color, borderColor: f.color } : {}}>
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: f.color }} />
             {f.label}
@@ -112,7 +112,7 @@ export default function FornecedorPage() {
         <>
           {/* Ranking por SLA */}
           {!isFornecedor && ranking.length > 1 && (
-            <div className="bg-card border border-white/[0.08] rounded-xl p-4">
+            <div className="bg-card border border-subtle rounded-xl p-4">
               <SectionTitle icon={Trophy} className="mb-3">Ranking por SLA</SectionTitle>
               <p className="text-caption text-muted mb-4">
                 SLA = % das OS entregues dentro do prazo. Empate desconta pelo menor MTTR.
@@ -164,7 +164,7 @@ export default function FornecedorPage() {
                       {f.amostraInsuficiente && (
                         <span
                           className="text-caption font-bold px-1.5 py-0.5 rounded border flex-shrink-0
-                                     text-muted bg-surface border-white/[0.08]"
+                                     text-muted bg-surface border-subtle"
                           title={`Só ${f.total} OS no período — abaixo do piso de ${MIN_OS_RANKING} para o ranking valer`}
                         >
                           n={f.total}
@@ -180,7 +180,7 @@ export default function FornecedorPage() {
                           onChange={e => isGestor && void salvarMeta(f.fornKey, Number(e.target.value))}
                           disabled={!isGestor}
                           placeholder="Meta"
-                          className="w-14 bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 text-caption font-mono
+                          className="w-14 bg-surface border border-subtle rounded px-1.5 py-0.5 text-caption font-mono
                                      text-text text-center outline-none focus:border-primary/50 transition-colors disabled:opacity-40"
                           title={isGestor ? "Meta de SLA para esta operadora" : "Apenas gestores podem editar"}
                         />
@@ -201,7 +201,7 @@ export default function FornecedorPage() {
 
           {/* ── AI Fornecedor ─────────────────────────────────────────── */}
           {!isFornecedor && (!aiEnabled ? (
-            <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+            <div className="rounded-xl border border-hairline bg-surface/10 px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkle size={12} className="text-primary/40" />
                 <span className="text-caption font-bold text-muted uppercase tracking-wide">Recomendações por Fornecedor · IA</span>
@@ -236,7 +236,7 @@ export default function FornecedorPage() {
                       {aiFornecedor.ranking.map((r, i) => {
                         const tier = TIER_CFG[r.tier] ?? TIER_CFG.C
                         return (
-                          <div key={i} className="flex items-start gap-3 py-2 border-b border-white/[0.05] last:border-0">
+                          <div key={i} className="flex items-start gap-3 py-2 border-b border-hairline last:border-0">
                             <span className={`text-caption font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${tier.text} ${tier.bg} ${tier.border}`}>
                               Tier {r.tier}
                             </span>
@@ -339,7 +339,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
   ] : []
 
   return (
-    <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+    <div className="bg-card border border-subtle rounded-xl overflow-hidden">
       {/* Header */}
       <button onClick={() => setExpanded(e => !e)}
         className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-surface/20 transition-colors cursor-pointer">
@@ -360,7 +360,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
             </span>
           )}
           {kpis?.mttr != null && (
-            <span className="flex items-center gap-1 text-caption text-muted border border-white/[0.08] rounded px-2 py-0.5">
+            <span className="flex items-center gap-1 text-caption text-muted border border-subtle rounded px-2 py-0.5">
               <Clock size={9} /> {kpis.mttr}d P50 · {kpis.mttrP90}d P90
             </span>
           )}
@@ -374,7 +374,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
         <div className="px-5 pb-5 space-y-4 animate-slide-down">
 
           {/* Custo mensal — input */}
-          {showFinancial && <div className="flex items-center gap-2 py-2 border-t border-white/[0.05]">
+          {showFinancial && <div className="flex items-center gap-2 py-2 border-t border-hairline">
             <CurrencyDollar size={12} className="text-muted flex-shrink-0" />
             <span className="text-caption text-muted">Custo mensal desta operadora (R$):</span>
             <input
@@ -383,7 +383,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
               onChange={e => isGestor && onCustoChange(Number(e.target.value))}
               disabled={!isGestor}
               placeholder="0"
-              className="w-32 bg-surface border border-white/[0.08] rounded-md px-2 py-1 text-label font-mono
+              className="w-32 bg-surface border border-subtle rounded-md px-2 py-1 text-label font-mono
                          text-text outline-none focus:border-primary/50 transition-colors disabled:opacity-40"
             />
             {kpis?.custoPorOs != null && (
@@ -401,7 +401,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
               {kpiCards.map((k) => (
                 <div key={k.label}
                   title={'title' in k ? k.title : undefined}
-                  className={`bg-surface bg-gradient-to-br ${FROM[k.accent] ?? FROM.primary} to-transparent border border-white/[0.08] rounded-xl p-3`}>
+                  className={`bg-surface bg-gradient-to-br ${FROM[k.accent] ?? FROM.primary} to-transparent border border-subtle rounded-xl p-3`}>
                   <p className="text-caption font-bold uppercase tracking-wide text-muted mb-1">{k.label}</p>
                   <p className={`font-mono font-bold text-xl leading-none ${TEXT[k.accent] ?? TEXT.primary}`}>{k.value ?? '—'}</p>
                 </div>
@@ -411,16 +411,16 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
 
           {/* Tabela de equipes */}
           {equipes?.length > 0 && (
-            <div className="overflow-x-auto rounded-xl border border-white/[0.08]">
+            <div className="overflow-x-auto rounded-xl border border-subtle">
               <table className="w-full text-caption">
                 <thead>
-                  <tr className="border-b-2 border-white/[0.08] bg-surface">
+                  <tr className="border-b-2 border-subtle bg-surface">
                     {['Equipe','Total','Concluídas','Críticas','SLA%','MTTR','Aging Méd.'].map(h => (
                       <th key={h} className="px-3 py-2 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+                <tbody className="divide-y divide-hairline">
                   {(equipes as { nome: string; total: number; concluidas: number; criticas: number; sla: number; mttr: number; aging: number }[]).map((eq) => (
                     <tr key={eq.nome} className="text-secondary hover:bg-primary/[0.05] transition-colors">
                       <td className="px-3 py-2 font-semibold text-text max-w-[180px] truncate">{eq.nome}</td>
@@ -445,7 +445,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
 
           {/* Gráfico total vs. concluídas */}
           {chart?.labels?.length > 0 && (
-            <div className="bg-surface border border-white/[0.08] rounded-xl p-4 h-48">
+            <div className="bg-surface border border-subtle rounded-xl p-4 h-48">
               <BarChart data={(chart.labels as string[]).map((name: string, i: number) => ({ name, Total: (chart.total as number[])[i] ?? 0, Concluídas: (chart.concluidas as number[])[i] ?? 0 }))}>
                 <Bar dataKey="Total" fill={cor} name="Total" />
                 <Bar dataKey="Concluídas" fill="#4ade80" name="Concluídas" />

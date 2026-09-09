@@ -194,7 +194,7 @@ export default function RelatoriosPage() {
         description="Prévia exportável · todos os indicadores respeitam os filtros abaixo"
         actions={<>
           <button type="button" onClick={() => exportCSV(`relatorio-operacional-${new Date().toISOString().slice(0, 10)}.csv`, exportRows())}
-            disabled={!ranking.length} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/[0.08] bg-elevated px-3 text-label font-semibold text-secondary transition-colors hover:bg-surface/40 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+            disabled={!ranking.length} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-subtle bg-elevated px-3 text-label font-semibold text-secondary transition-colors hover:bg-surface/40 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
             <DownloadSimple size={15} /> CSV
           </button>
           <button type="button" onClick={() => printRelatoriosPDF(theme, ranking, totals, kpis, periodoFilter, tipoFilter, [
@@ -210,7 +210,7 @@ export default function RelatoriosPage() {
       {/* ── Filtros ── */}
       <div className="flex items-center gap-3 flex-wrap">
         {/* Filtro de período */}
-        <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
+        <div className="flex gap-1 bg-elevated border border-subtle rounded-lg p-0.5">
           {[
             { value: 'all',   label: 'Período global' },
             { value: 'month', label: 'Últimos 30 dias' },
@@ -231,7 +231,7 @@ export default function RelatoriosPage() {
         </div>
 
         {/* Filtro de tipo */}
-        <div className="flex gap-1 bg-elevated border border-white/[0.08] rounded-lg p-0.5">
+        <div className="flex gap-1 bg-elevated border border-subtle rounded-lg p-0.5">
           {[
             { value: '',           label: 'Todos'      },
             { value: 'INSTALACAO', label: 'Instalação' },
@@ -255,14 +255,14 @@ export default function RelatoriosPage() {
 
         <label className="text-caption text-muted">Data
           <select value={dateField} onChange={event => setDateField(event.target.value as typeof dateField)}
-            className="ml-2 min-h-11 rounded-lg border border-white/[0.08] bg-elevated px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+            className="ml-2 min-h-11 rounded-lg border border-subtle bg-elevated px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
             <option value="datacadastro">Cadastro</option><option value="dataagendamento">Agendamento</option><option value="dataexecucao">Execução/baixa</option>
           </select>
         </label>
         {[{ label: 'Cidade', value: cidadeFilter, set: setCidadeFilter, options: cidades }, { label: 'Equipe', value: equipeFilter, set: setEquipeFilter, options: equipes }, { label: 'Situação', value: situacaoFilter, set: setSituacaoFilter, options: situacoes }].map(filter => (
           <label key={filter.label} className="text-caption text-muted">{filter.label}
             <select value={filter.value} onChange={event => filter.set(event.target.value)}
-              className="ml-2 min-h-11 max-w-44 rounded-lg border border-white/[0.08] bg-elevated px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+              className="ml-2 min-h-11 max-w-44 rounded-lg border border-subtle bg-elevated px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
               <option value="">Todos</option>{filter.options.map(option => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
@@ -295,7 +295,7 @@ export default function RelatoriosPage() {
           const KIcon = k.Icon
           return (
             <button type="button" key={k.label}
-                 className="bg-elevated border border-white/[0.08] rounded-xl px-4 py-3
+                 className="bg-elevated border border-subtle rounded-xl px-4 py-3
                             flex min-h-20 items-center gap-3 cursor-pointer text-left hover:bg-surface/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                  onClick={() => setDrill({ title: `${k.label} — ${k.rows.length} ordens`, rows: k.rows, color: k.color })}>
               <div className={`w-9 h-9 rounded-lg ${k.bgCls} flex items-center justify-center flex-shrink-0`}>
@@ -320,8 +320,8 @@ export default function RelatoriosPage() {
         <>
           {/* ── Produção Consolidada ── */}
           {totals.execTotal > 0 && (
-            <div className="bg-elevated border border-white/[0.08] rounded-xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-white/[0.08]">
+            <div className="bg-elevated border border-subtle rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-subtle">
                 <p className="text-body font-semibold text-text">Produção Consolidada do Período</p>
                 <p className="text-caption text-muted mt-0.5">Total de OS executadas (concluídas) por tipo de serviço</p>
               </div>
@@ -329,7 +329,7 @@ export default function RelatoriosPage() {
               {/* KPI cards */}
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 p-4">
                 {/* Total */}
-                <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-card px-5 py-4
+                <div className="relative overflow-hidden rounded-xl border border-subtle bg-card px-5 py-4
                                 flex flex-col justify-between cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => setDrill({ title: `Total Executado — ${drillConcl.length} ordens`, rows: drillConcl, color: '#3b82f6' })}>
                   <div className="absolute top-0 left-0 right-0 h-[2px] bg-surface/200" />
@@ -466,8 +466,8 @@ export default function RelatoriosPage() {
             </Section>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-elevated">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] px-5 py-4">
+          <div className="overflow-hidden rounded-xl border border-subtle bg-elevated">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-subtle px-5 py-4">
               <div><p className="text-body font-semibold text-text">Prévia do relatório por equipe</p><p className="mt-0.5 text-caption text-muted">Inclui equipes não cadastradas e OS sem equipe · clique para detalhar</p></div>
               <span className="rounded-full border border-primary/20 bg-primary/[0.06] px-2 py-1 text-caption font-semibold text-primary">{ranking.length} linhas</span>
             </div>
@@ -476,7 +476,7 @@ export default function RelatoriosPage() {
                 <thead className="bg-surface/30 text-caption font-bold uppercase tracking-wide text-muted">
                   <tr>{['Equipe / líder', 'Instalação', 'Manutenção', 'Serviço', 'Rede', 'Executadas', 'Fila', 'SLA fila', 'Vencidas', 'Aging'].map(label => <th key={label} className="px-4 py-3 text-left">{label}</th>)}</tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.05]">
+                <tbody className="divide-y divide-hairline">
                   {ranking.map(entry => {
                     const teamRows = filteredRows.filter(row => (shortEquipe(row.nomedaequipe).split(' - ')[0].trim() || 'Sem equipe') === entry.code)
                     const executed = entry.execInst + entry.execManut + entry.execServico + entry.execRede
