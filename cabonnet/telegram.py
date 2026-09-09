@@ -247,6 +247,17 @@ def _cluster_da_linha(row):
     return CLUSTER_DE_CIDADE.get(_cidade_normalizada(row.get("nomedacidade")))
 
 
+def _rows_para_grupo(rows, cluster):
+    """Recorte do grupo regional.
+
+    O Vale (Alertas) leva tambem o que nao caiu em cluster nenhum: recortar
+    por "== VALE" faria uma OS de cidade inesperada sumir de todos os grupos,
+    em silencio."""
+    if cluster == "VALE":
+        return [r for r in rows if _cluster_da_linha(r) in (None, "VALE")]
+    return [r for r in rows if _cluster_da_linha(r) == cluster]
+
+
 def _filter_by_cluster(rows, cluster):
     """Recorta pelas cidades do cluster. Cluster desconhecido nao devolve nada,
     em vez de devolver tudo — o mesmo criterio do filtro do /query."""
