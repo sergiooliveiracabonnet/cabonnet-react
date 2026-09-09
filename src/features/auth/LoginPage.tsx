@@ -30,7 +30,7 @@ export function LoginPage() {
         setSuccess(true)
         setTimeout(() => {
           setAuthed((res.role ?? 'gestor') as 'gestor' | 'supervisor' | 'operador' | 'viewer' | 'fornecedor', res.modulos ?? [], res.fornecedor_key ?? null, res.cluster_key ?? 'TODOS')
-          useUIStore.getState().aplicarClusterDaSessao(res.cluster_key ?? 'TODOS')
+          useUIStore.getState().aplicarClusterDaSessao(res.cluster_key ?? 'TODOS', username.trim())
         }, 600)
         return
       } else {
