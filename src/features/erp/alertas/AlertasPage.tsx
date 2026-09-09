@@ -159,7 +159,7 @@ export default function AlertasPage() {
           <button
             onClick={() => setShowSettings(true)}
             className="flex items-center gap-1.5 text-caption text-secondary hover:text-text
-                       px-3 py-1.5 rounded-xl border border-white/[0.08] hover:border-muted/40
+                       px-3 py-1.5 rounded-xl border border-subtle hover:border-muted/40
                        hover:bg-surface/30 transition-all duration-150 flex-shrink-0"
           >
             <Gear size={13} /> Configurar
@@ -234,7 +234,7 @@ export default function AlertasPage() {
 
       {/* ── AI Alertas ───────────────────────────────────────────────────── */}
       {!aiEnabled ? (
-        <div className="rounded-xl border border-white/[0.06] bg-surface/10 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-xl border border-hairline bg-surface/10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkle size={12} className="text-primary/40" />
             <span className="text-caption font-bold text-muted uppercase tracking-wide">Análise de Alertas · IA</span>
@@ -347,25 +347,25 @@ export default function AlertasPage() {
         </div>
       )}
 
-      <section aria-label="Filtros de alertas" className="rounded-xl border border-white/[0.08] bg-card p-3">
+      <section aria-label="Filtros de alertas" className="rounded-xl border border-subtle bg-card p-3">
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
           <label className="relative flex-1 min-w-0">
             <span className="sr-only">Pesquisar alertas</span>
             <MagnifyingGlass size={14} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
             <input value={search} onChange={event => setSearch(event.target.value)}
               placeholder="Pesquisar OS, cliente, equipe, cidade ou regra"
-              className="w-full h-10 rounded-lg border border-white/[0.08] bg-surface pl-9 pr-3 text-label text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50" />
+              className="w-full h-10 rounded-lg border border-subtle bg-surface pl-9 pr-3 text-label text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50" />
           </label>
           <div className="flex flex-wrap gap-2">
             <label className="sr-only" htmlFor="alert-severity-filter">Severidade</label>
             <select id="alert-severity-filter" value={severityFilter} onChange={event => setSeverityFilter(event.target.value)}
-              className="h-10 rounded-lg border border-white/[0.08] bg-surface px-3 text-label text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+              className="h-10 rounded-lg border border-subtle bg-surface px-3 text-label text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
               <option value="TODOS">Todas as severidades</option><option value="CRITICO">Críticos</option>
               <option value="ALTO">Altos</option><option value="MEDIO">Médios</option>
             </select>
             <label className="sr-only" htmlFor="alert-status-filter">Situação</label>
             <select id="alert-status-filter" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}
-              className="h-10 rounded-lg border border-white/[0.08] bg-surface px-3 text-label text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+              className="h-10 rounded-lg border border-subtle bg-surface px-3 text-label text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
               <option value="ATIVOS">Não reconhecidos</option><option value="RECONHECIDOS">Reconhecidos ({summary.acknowledged})</option>
               <option value="TODOS">Todos</option>
             </select>
@@ -376,7 +376,7 @@ export default function AlertasPage() {
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-2xl bg-surface/30 border border-white/[0.08] animate-pulse" />
+            <div key={i} className="h-20 rounded-2xl bg-surface/30 border border-subtle animate-pulse" />
           ))}
         </div>
       ) : alerts.length === 0 && ruleAlerts.length === 0 ? (
@@ -393,7 +393,7 @@ export default function AlertasPage() {
           </div>
         </div>
       ) : visibleAlerts.length === 0 && visibleRuleAlerts.length === 0 ? (
-        <div className="rounded-xl border border-white/[0.08] bg-card px-5 py-12 text-center">
+        <div className="rounded-xl border border-subtle bg-card px-5 py-12 text-center">
           <CheckCircle size={24} className="mx-auto mb-3 text-muted" />
           <p className="text-label font-semibold text-text">Nenhum alerta corresponde aos filtros</p>
           <button onClick={() => { setSearch(''); setSeverityFilter('TODOS'); setStatusFilter('TODOS') }}

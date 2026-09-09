@@ -107,7 +107,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                           whitespace-nowrap transition-all duration-fast md:min-h-0 md:px-2.5
                           ${preset === p.id
                             ? 'bg-primary/15 border-primary/40 text-primary'
-                            : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
+                            : 'border-subtle text-muted hover:text-secondary hover:border-muted/30'}`}
             >
               {mensalLabel}
             </button>
@@ -135,7 +135,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                             : 'bg-primary/15 border-primary/40 text-primary'
                           : p.id === 'amanha'
                             ? 'border-cyan/20 text-cyan/60 hover:text-cyan hover:border-cyan/40'
-                            : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
+                            : 'border-subtle text-muted hover:text-secondary hover:border-muted/30'}`}
           >
             {p.label}
           </button>
@@ -150,7 +150,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             type="date"
             value={toInputVal(from)}
             onChange={e => setCustomRange(fromInputVal(e.target.value)!, to!)}
-            className="bg-surface border border-white/[0.08] rounded-md px-2 py-0.5 font-mono text-secondary
+            className="bg-surface border border-subtle rounded-md px-2 py-0.5 font-mono text-secondary
                        outline-none focus:border-primary/50 w-[120px] text-caption"
           />
           <ArrowRight size={12} weight="bold" className="text-muted flex-shrink-0" />
@@ -158,7 +158,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             type="date"
             value={toInputVal(to)}
             onChange={e => setCustomRange(from!, toEndOfDay(e.target.value)!)}
-            className="bg-surface border border-white/[0.08] rounded-md px-2 py-0.5 font-mono text-secondary
+            className="bg-surface border border-subtle rounded-md px-2 py-0.5 font-mono text-secondary
                        outline-none focus:border-primary/50 w-[120px] text-caption"
           />
         </div>
@@ -185,7 +185,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
         {showCampo && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setShowCampo(false)} />
-            <div className="fixed right-[104px] top-[104px] z-50 min-w-[140px] overflow-hidden rounded-lg border border-white/[0.08] bg-elevated shadow-accent md:right-[84px] md:top-[80px]">
+            <div className="fixed right-[104px] top-[104px] z-50 min-w-[140px] overflow-hidden rounded-lg border border-subtle bg-elevated shadow-accent md:right-[84px] md:top-[80px]">
               {CAMPOS.map(c => (
                 <button
                   key={c.value}
@@ -206,7 +206,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
       {/* Cluster regional. Só aparece para quem enxerga mais de um: se a conta
           está amarrada a um cluster, o servidor já recortou o CSV e um seletor
           aqui só prometeria uma troca que não acontece. */}
-      {clusterDaConta === 'TODOS' && <div role="group" aria-label="Cluster regional" className="flex h-11 flex-shrink-0 items-center gap-0.5 rounded-full border border-white/[0.08] p-0.5 md:h-6">
+      {clusterDaConta === 'TODOS' && <div role="group" aria-label="Cluster regional" className="flex h-11 flex-shrink-0 items-center gap-0.5 rounded-full border border-subtle p-0.5 md:h-6">
         {CLUSTER_OPCOES.map(opcao => (
           <button
             key={opcao.valor}
@@ -232,7 +232,7 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
                     transition-all duration-fast flex-shrink-0
                     ${hideRede
                       ? 'border-orange/40 bg-orange/[0.07] text-orange'
-                      : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}
+                      : 'border-subtle text-muted hover:text-secondary hover:border-muted/30'}`}
       >
         <HardDrives size={10} className="flex-shrink-0" />
         <span>Rede</span>

@@ -114,7 +114,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
                               transition-all duration-fast
                               ${active
                                 ? 'border-border0 bg-surface text-text'
-                                : 'border-white/[0.08] text-muted hover:text-secondary hover:border-border0'}`}
+                                : 'border-subtle text-muted hover:text-secondary hover:border-border0'}`}
                 >
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: o.color }} />
                   {o.label}
@@ -126,7 +126,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
         </div>
 
         {/* Preview */}
-        <div className="rounded-lg bg-elevated border border-white/[0.08] px-4 py-3 text-label space-y-2">
+        <div className="rounded-lg bg-elevated border border-subtle px-4 py-3 text-label space-y-2">
           <div className="flex items-center justify-between">
             <p className="font-semibold text-text">{opt?.label}</p>
             <span className="text-caption text-muted">Alertas | Cabonnet</span>

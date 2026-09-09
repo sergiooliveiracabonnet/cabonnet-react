@@ -91,7 +91,7 @@ export function Navbar() {
       <button
         onClick={() => setSearchOpen(true)}
         title="Busca global (Ctrl+K)"
-        className="flex h-11 w-11 flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-white/[0.08]
+        className="flex h-11 w-11 flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-subtle
                    px-0 sm:h-8 sm:w-auto sm:min-w-[160px] sm:justify-start sm:px-3
                    bg-surface text-muted hover:border-muted/30 hover:text-secondary
                    transition-colors duration-150"
@@ -99,7 +99,7 @@ export function Navbar() {
         <MagnifyingGlass size={12} className="flex-shrink-0" />
         <span className="text-caption flex-1 text-left hidden sm:block">Buscar OS, contrato ou CPF…</span>
         <kbd className="hidden md:flex items-center text-caption font-mono
-                        bg-surface border border-white/[0.08] rounded px-1.5 py-0.5 leading-none text-muted">Ctrl K</kbd>
+                        bg-surface border border-subtle rounded px-1.5 py-0.5 leading-none text-muted">Ctrl K</kbd>
       </button>
 
       <div className="hidden lg:contents">

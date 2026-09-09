@@ -85,3 +85,28 @@ export function parseEscalaTipo(css) {
 export function lerEscalaTipo(caminho = 'src/index.css') {
   return parseEscalaTipo(readFileSync(caminho, 'utf8'))
 }
+
+/* ── Camada de componente (Fase 3) ───────────────────────────────────────
+   Nasce com os pesos de borda. Fica separada da semantica de proposito: o
+   valor aqui pode compor (rgb(...) com alfa), enquanto na semantica todo
+   valor tem que ser alias puro de primitivo. */
+
+const BLOCOS_COMP = {
+  dark:  /\/\* COMPONENTE: DARK \*\/\s*:root\s*\{([\s\S]*?)\n\}/,
+  light: /\/\* COMPONENTE: LIGHT \*\/\s*\.light\s*\{([\s\S]*?)\n\}/,
+}
+
+export function parseComponentes(css) {
+  const bloco = (re) => {
+    const saida = {}
+    for (const m of (css.match(re)?.[1] ?? '').matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
+      saida[m[1]] = m[2].trim()
+    }
+    return saida
+  }
+  return { dark: bloco(BLOCOS_COMP.dark), light: bloco(BLOCOS_COMP.light) }
+}
+
+export function lerComponentes(caminho = 'src/index.css') {
+  return parseComponentes(readFileSync(caminho, 'utf8'))
+}

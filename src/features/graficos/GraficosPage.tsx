@@ -58,7 +58,7 @@ export default function GraficosPage() {
               className={`text-caption font-medium px-3 py-1 rounded-md border transition-all duration-150 cursor-pointer
                           ${fornecedor === f.value
                             ? 'border-primary/40 bg-primary/10 text-primary'
-                            : 'border-white/[0.08] text-muted hover:text-secondary hover:border-muted/30'}`}>
+                            : 'border-subtle text-muted hover:text-secondary hover:border-muted/30'}`}>
               {f.label}
             </button>
           ))}
@@ -69,9 +69,9 @@ export default function GraficosPage() {
 
       {(['distribuicao', 'tendencia', 'estatistica', 'cohort'].includes(tab)) && (
         <div className="flex flex-wrap items-center gap-1.5 text-caption text-muted" aria-label="Escopo dos gráficos">
-          <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Período: {periodoLabel}</span>
-          <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Data de {campoLabel}</span>
-          <span className="rounded-full border border-white/[0.08] bg-surface/40 px-2 py-1">Escopo: {isFornecedor ? 'Seu fornecedor' : (FORN_PILLS.find(f => f.value === fornecedor)?.label ?? 'Todos')}</span>
+          <span className="rounded-full border border-subtle bg-surface/40 px-2 py-1">Período: {periodoLabel}</span>
+          <span className="rounded-full border border-subtle bg-surface/40 px-2 py-1">Data de {campoLabel}</span>
+          <span className="rounded-full border border-subtle bg-surface/40 px-2 py-1">Escopo: {isFornecedor ? 'Seu fornecedor' : (FORN_PILLS.find(f => f.value === fornecedor)?.label ?? 'Todos')}</span>
           <span className="rounded-full border border-primary/20 bg-primary/[0.06] px-2 py-1 text-primary">{activeRows.length.toLocaleString('pt-BR')} OS</span>
         </div>
       )}

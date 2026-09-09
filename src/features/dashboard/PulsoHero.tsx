@@ -26,11 +26,11 @@ const TONE_BADGE: Record<Tone, string> = {
   ok: 'border-green/25 bg-green/[0.08] text-green',
   warn: 'border-yellow/25 bg-yellow/[0.08] text-yellow',
   bad: 'border-red/25 bg-red/[0.08] text-red',
-  idle: 'border-white/[0.08] bg-surface/50 text-secondary',
+  idle: 'border-subtle bg-surface/50 text-secondary',
 }
 
 const MICRO = 'text-caption font-bold uppercase tracking-[0.07em] text-muted'
-const CELL = 'min-w-0 rounded-md border border-white/[0.06] bg-bg/35'
+const CELL = 'min-w-0 rounded-md border border-hairline bg-bg/35'
 
 // Escala do trilho do MTTR: 10 dias cobre o pior caso operacional real sem
 // espremer a faixa útil (0–5d) num canto invisível da barra.
@@ -214,7 +214,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
       aria-labelledby="dashboard-pulse-title"
       className={`h-full rounded-lg border border-border border-l-2 bg-card ${TONE_EDGE[veredito.tone]}`}
     >
-      <header className="flex min-h-12 items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5">
+      <header className="flex min-h-12 items-center justify-between gap-3 border-b border-hairline px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/[0.07] text-primary">
             <Pulse size={14} aria-hidden="true" />
@@ -388,13 +388,13 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
               </button>
 
               {showAIComposer && (
-                <div className="mt-2 space-y-2 rounded-md border border-white/[0.06] bg-surface/30 p-2.5">
+                <div className="mt-2 space-y-2 rounded-md border border-hairline bg-surface/30 p-2.5">
                   <textarea
                     value={draftObs}
                     onChange={event => setDraftObs(event.target.value)}
                     placeholder="Contexto opcional para a IA: ex. tivemos queda de energia hoje, o que pode justificar menor fluxo de atendimentos."
                     rows={2}
-                    className="w-full resize-none rounded-md border border-white/[0.08] bg-surface/60 px-3 py-2 text-caption leading-relaxed text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
+                    className="w-full resize-none rounded-md border border-subtle bg-surface/60 px-3 py-2 text-caption leading-relaxed text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -419,13 +419,13 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
                 <Sparkle size={9} aria-hidden="true" /> Reanalisar com novo contexto
               </button>
               {showReanalysis && (
-                <div className="mt-2 space-y-2 rounded-md border border-white/[0.06] bg-surface/30 p-2.5">
+                <div className="mt-2 space-y-2 rounded-md border border-hairline bg-surface/30 p-2.5">
                   <textarea
                     value={draftObs}
                     onChange={event => setDraftObs(event.target.value)}
                     placeholder="Novo contexto para a IA..."
                     rows={2}
-                    className="w-full resize-none rounded-md border border-white/[0.08] bg-surface/60 px-3 py-2 text-caption text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
+                    className="w-full resize-none rounded-md border border-subtle bg-surface/60 px-3 py-2 text-caption text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
                   />
                   <button
                     type="button"

@@ -15,21 +15,21 @@ const MARKDOWN_COMPONENTS = {
   h1:         ({ children }: { children?: React.ReactNode }) => <h1 className="text-sm font-semibold text-text mb-1.5 mt-2 first:mt-0">{children}</h1>,
   h2:         ({ children }: { children?: React.ReactNode }) => <h2 className="text-sm font-semibold text-text mb-1.5 mt-2 first:mt-0">{children}</h2>,
   h3:         ({ children }: { children?: React.ReactNode }) => <h3 className="text-body font-semibold text-text mb-1 mt-2 first:mt-0">{children}</h3>,
-  hr:         () => <hr className="border-white/[0.08] my-2" />,
+  hr:         () => <hr className="border-subtle my-2" />,
   a:          ({ children, href }: { children?: React.ReactNode; href?: string }) => (
     <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">{children}</a>
   ),
   code:       ({ children }: { children?: React.ReactNode }) => (
-    <code className="px-1 py-0.5 rounded bg-surface border border-white/[0.08] text-caption font-mono">{children}</code>
+    <code className="px-1 py-0.5 rounded bg-surface border border-subtle text-caption font-mono">{children}</code>
   ),
   table:      ({ children }: { children?: React.ReactNode }) => (
-    <div className="overflow-x-auto mb-2 last:mb-0 rounded-lg border border-white/[0.08]">
+    <div className="overflow-x-auto mb-2 last:mb-0 rounded-lg border border-subtle">
       <table className="w-full text-caption border-collapse">{children}</table>
     </div>
   ),
   thead:      ({ children }: { children?: React.ReactNode }) => <thead className="bg-surface">{children}</thead>,
-  th:         ({ children }: { children?: React.ReactNode }) => <th className="text-left font-semibold text-text px-2 py-1.5 border-b border-white/[0.08]">{children}</th>,
-  td:         ({ children }: { children?: React.ReactNode }) => <td className="px-2 py-1.5 border-b border-white/[0.06] align-top">{children}</td>,
+  th:         ({ children }: { children?: React.ReactNode }) => <th className="text-left font-semibold text-text px-2 py-1.5 border-b border-subtle">{children}</th>,
+  td:         ({ children }: { children?: React.ReactNode }) => <td className="px-2 py-1.5 border-b border-hairline align-top">{children}</td>,
 }
 
 interface Message {
@@ -133,7 +133,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
             placeholder="Pergunte algo… (Enter para enviar, Shift+Enter = nova linha)"
             rows={2}
             disabled={loading}
-            className="flex-1 resize-none rounded-lg bg-card border border-white/[0.08] text-body text-text
+            className="flex-1 resize-none rounded-lg bg-card border border-subtle text-body text-text
                        placeholder:text-muted/50 px-3 py-2 outline-none
                        focus:border-primary/60 focus:ring-1 focus:ring-primary/20
                        transition-all disabled:opacity-50 leading-snug"
@@ -167,8 +167,8 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                   key={q}
                   onClick={() => pickSuggestion(q)}
                   className="w-full text-left text-label text-secondary hover:text-text
-                             px-3 py-2 rounded-lg border border-white/[0.06]
-                             hover:border-white/[0.14] hover:bg-surface/40
+                             px-3 py-2 rounded-lg border border-hairline
+                             hover:border-strong hover:bg-surface/40
                              transition-all duration-150"
                 >
                   {q}
@@ -183,7 +183,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
             <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
                             ${msg.role === 'user'
                               ? 'bg-primary/15 text-primary border border-primary/20'
-                              : 'bg-surface border border-white/[0.08] text-secondary'}`}>
+                              : 'bg-surface border border-subtle text-secondary'}`}>
               {msg.role === 'user' ? <User size={12} /> : <Robot size={12} />}
             </div>
 
@@ -193,7 +193,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                   {[...new Set(msg.toolCalls)].map(t => (
                     <span key={t}
                       className="flex items-center gap-1 text-caption text-muted
-                                 bg-surface border border-white/[0.06] rounded-full px-2 py-0.5">
+                                 bg-surface border border-hairline rounded-full px-2 py-0.5">
                       <Wrench size={9} />
                       {TOOL_LABELS[t] ?? t}
                     </span>
@@ -203,7 +203,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
               <div className={`rounded-2xl px-3.5 py-2.5 text-body leading-relaxed break-words min-w-0
                               ${msg.role === 'user'
                                 ? 'bg-primary/12 text-text border border-primary/15 rounded-tr-sm whitespace-pre-wrap'
-                                : 'bg-card border border-white/[0.08] text-text rounded-tl-sm'}`}>
+                                : 'bg-card border border-subtle text-text rounded-tl-sm'}`}>
                 {msg.role === 'assistant' ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
                     {msg.content}
@@ -219,10 +219,10 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         {loading && (
           <div className="flex gap-2.5">
             <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0
-                            bg-surface border border-white/[0.08] text-secondary">
+                            bg-surface border border-subtle text-secondary">
               <Robot size={12} />
             </div>
-            <div className="flex items-center gap-2 bg-card border border-white/[0.08] rounded-2xl rounded-tl-sm px-3.5 py-2.5">
+            <div className="flex items-center gap-2 bg-card border border-subtle rounded-2xl rounded-tl-sm px-3.5 py-2.5">
               <CircleNotch size={12} className="text-primary animate-spin flex-shrink-0" />
               <span className="text-label text-muted">Consultando dados…</span>
             </div>

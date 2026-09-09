@@ -21,7 +21,7 @@ export function FilterSelect({ value, onChange, options, placeholder, className 
         aria-label={ariaLabel ?? placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full appearance-none pl-3 pr-7 py-1.5 text-label rounded-md
-                   bg-surface border border-white/[0.08] text-text rounded-lg
+                   bg-surface border border-subtle text-text rounded-lg
                    outline-none focus:border-primary/40 transition-colors duration-fast
                    cursor-pointer"
       >

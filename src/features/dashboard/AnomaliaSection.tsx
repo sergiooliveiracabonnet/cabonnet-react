@@ -136,7 +136,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
           )}
 
           {/* ── Análise de Causa Raiz (Claude) ── */}
-          <div className="border-t border-white/[0.08] pt-4">
+          <div className="border-t border-subtle pt-4">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <Sparkle size={12} className="text-primary/70" />

@@ -131,13 +131,13 @@ export function DrillModal({ drill, onClose, onOS }: { drill: DrillState | null;
       <div className="p-4 space-y-3">
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por OS, cliente, cidade ou equipe..."
-          className="w-full bg-surface border border-white/[0.08] rounded-xl px-3 py-2.5 text-label
+          className="w-full bg-surface border border-subtle rounded-xl px-3 py-2.5 text-label
                      text-text placeholder:text-muted/60 outline-none focus:border-primary/50 transition-colors"
           autoFocus />
         <div className="overflow-auto max-h-[55vh]">
           <table className="w-full text-caption">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-white/[0.08] bg-surface">
+              <tr className="border-b border-subtle bg-surface">
                 {DRILL_COLS.map(col => (
                   <th key={col.key} onClick={() => toggleSort(col.key)}
                     className="px-3 py-2 text-left text-caption font-bold text-muted uppercase tracking-wide
@@ -154,7 +154,7 @@ export function DrillModal({ drill, onClose, onOS }: { drill: DrillState | null;
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.03]">
+            <tbody className="divide-y divide-hairline">
               {sorted.slice(0, 250).map(r => (
                 <tr key={r.numos} className="hover:bg-surface/20 transition-colors">
                   <td className="px-1 py-1 font-mono whitespace-nowrap">
@@ -273,7 +273,7 @@ export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown
         {forecast.previsao.map((d, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
             <span className="text-caption text-muted font-semibold">{d.data}</span>
-            <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-surface border border-white/[0.08]">
+            <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-surface border border-subtle">
               <span className="text-body font-bold text-text">{d.volume}</span>
             </div>
             <span className={`text-caption font-bold px-1.5 py-0.5 rounded-full border ${CONF_STYLE[d.confianca] ?? CONF_STYLE['media']}`}>
@@ -300,7 +300,7 @@ function RankedDistribution({ data, color, onSelect }: {
       {data.map(item => (
         <button key={item.name} type="button" onClick={() => onSelect(item)} role="listitem"
                 aria-label={`${item.name}: ${item.value} OS, ${item.pct}% da amostra`}
-                className="group relative min-h-11 w-full overflow-hidden rounded-lg border border-transparent px-3 py-2 text-left transition-colors hover:border-white/[0.08] hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+                className="group relative min-h-11 w-full overflow-hidden rounded-lg border border-transparent px-3 py-2 text-left transition-colors hover:border-subtle hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
           <span className="absolute inset-y-1 left-1 rounded-md opacity-[0.12] transition-opacity group-hover:opacity-[0.18]"
                 style={{ width: `${Math.max(3, Math.round(item.value / max * 100))}%`, background: color }} />
           <span className="relative flex items-center gap-3">
@@ -333,7 +333,7 @@ export function TabDistribuicao({ d, rows, onDrill }: { d: Record<string,unknown
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map(card => (
-          <div key={card.label} className="min-h-24 rounded-xl border border-white/[0.08] bg-card p-4">
+          <div key={card.label} className="min-h-24 rounded-xl border border-subtle bg-card p-4">
             <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
             <p className="mt-2 truncate font-mono text-xl font-bold text-text">{card.value}</p>
             <p className="mt-1 text-caption text-muted">{card.sub}</p>
@@ -420,7 +420,7 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map(card => (
-          <div key={card.label} className="min-h-24 rounded-xl border border-white/[0.08] bg-card p-4">
+          <div key={card.label} className="min-h-24 rounded-xl border border-subtle bg-card p-4">
             <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
             <p className={`mt-2 font-mono text-xl font-bold tabular-nums ${card.tone}`}>{card.value.toLocaleString('pt-BR')}</p>
             <p className="mt-1 text-caption text-muted">{card.sub}</p>
@@ -485,13 +485,13 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
           </AreaChart>
           <p className="px-3 pb-3 text-caption text-muted">Percentual das OS abertas em cada dia que atualmente possuem execução real.</p>
         </ChartCard>
-        <div className="rounded-xl border border-white/[0.08] bg-card p-5">
+        <div className="rounded-xl border border-subtle bg-card p-5">
           <p className="text-body font-bold text-text">Como interpretar</p>
           <div className="mt-4 space-y-3 text-label leading-relaxed text-secondary">
             <p><span className="font-bold text-blue-400">Abertas</span> seguem a data de cadastro da OS.</p>
             <p><span className="font-bold text-green">Concluídas</span> consideram somente execução real e seguem a data de baixa ou execução.</p>
             <p><span className="font-bold text-red">SLA excedido</span> é associado ao mês de abertura da OS.</p>
-            <p className="border-t border-white/[0.08] pt-3 text-muted">Os valores representam o recorte selecionado no cabeçalho e não reconstituem mudanças históricas de status.</p>
+            <p className="border-t border-subtle pt-3 text-muted">Os valores representam o recorte selecionado no cabeçalho e não reconstituem mudanças históricas de status.</p>
           </div>
         </div>
       </div>
@@ -518,7 +518,7 @@ export function TabEstatistica({ d, rows, onDrill }: { d: Record<string,unknown>
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
         {cards.map(card => (
-          <div key={card.label} className="min-h-24 rounded-xl border border-white/[0.08] bg-card p-4">
+          <div key={card.label} className="min-h-24 rounded-xl border border-subtle bg-card p-4">
             <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
             <p className={`mt-2 font-mono text-xl font-bold tabular-nums ${card.tone}`}>{card.value}</p>
             <p className="mt-1 text-caption text-muted">{card.sub}</p>
@@ -533,8 +533,8 @@ export function TabEstatistica({ d, rows, onDrill }: { d: Record<string,unknown>
       </ChartCard>
 
       <SectionTitle icon={Sliders}>Comparação por cidade</SectionTitle>
-      <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-card">
-        <div className="grid grid-cols-[minmax(0,1fr)_72px_88px_88px] gap-2 border-b border-white/[0.08] px-4 py-2 text-caption font-bold uppercase tracking-wide text-muted">
+      <div className="overflow-hidden rounded-xl border border-subtle bg-card">
+        <div className="grid grid-cols-[minmax(0,1fr)_72px_88px_88px] gap-2 border-b border-subtle px-4 py-2 text-caption font-bold uppercase tracking-wide text-muted">
           <span>Cidade</span><span className="text-right">Amostra</span><span className="text-right">Média</span><span className="text-right">Mediana</span>
         </div>
         <div role="list">
@@ -542,7 +542,7 @@ export function TabEstatistica({ d, rows, onDrill }: { d: Record<string,unknown>
             <button key={city.name} type="button" role="listitem"
               onClick={() => onDrill(`OS ativas em ${city.name}`, rows.filter(r => ['Pendente', 'Atendimento'].includes(r.descsituacao) && (r.nomedacidade || '').trim() === city.name && r._aging != null))}
               aria-label={`${city.name}: ${city.total} OS, aging médio ${city.media} dias, mediana ${city.mediana} dias`}
-              className="grid min-h-11 w-full cursor-pointer grid-cols-[minmax(0,1fr)_72px_88px_88px] gap-2 border-b border-white/[0.05] px-4 py-2 text-left transition-colors last:border-0 hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50">
+              className="grid min-h-11 w-full cursor-pointer grid-cols-[minmax(0,1fr)_72px_88px_88px] gap-2 border-b border-hairline px-4 py-2 text-left transition-colors last:border-0 hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50">
               <span className="truncate text-label font-semibold text-secondary">{city.name}</span>
               <span className="text-right font-mono text-label tabular-nums text-text">{city.total}</span>
               <span className="text-right font-mono text-label font-bold tabular-nums text-orange">{city.media}d</span>
@@ -576,7 +576,7 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {cards.map(card => (
-          <div key={card.label} className="min-h-24 rounded-xl border border-white/[0.08] bg-card p-4">
+          <div key={card.label} className="min-h-24 rounded-xl border border-subtle bg-card p-4">
             <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
             <p className={`mt-2 font-mono text-xl font-bold tabular-nums ${card.tone}`}>{card.value}</p>
             <p className="mt-1 text-caption text-muted">{card.sub}</p>
@@ -621,8 +621,8 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
       </ChartCard>
 
       {cohort.rows.length > 0 && (
-        <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-white/[0.08]">
+        <div className="bg-card border border-subtle rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-subtle">
             <p className="text-caption font-bold uppercase tracking-wide text-muted">
               Tabela detalhada das coortes
               <span className="ml-2 font-normal normal-case tracking-normal text-muted/50">
@@ -633,13 +633,13 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
           <div className="overflow-x-auto">
             <table className="w-full text-caption">
               <thead>
-                <tr className="border-b border-white/[0.08] bg-surface">
+                <tr className="border-b border-subtle bg-surface">
                   {['Mês de abertura','Total','Encerradas','Ainda abertas','Mesmo mês','Taxa total','MTTR'].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-hairline">
                 {cohort.rows.map(item => (
                   <tr key={item.name} tabIndex={0} role="button"
                       aria-label={`Abrir coorte ${item.name}, ${item.total} OS`}

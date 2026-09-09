@@ -17,7 +17,7 @@ const CLUSTER_OPCOES: { valor: ClusterFilter; rotulo: string }[] = [
   { valor: 'TODOS', rotulo: 'Todos os clusters' },
 ]
 
-const inputCls = 'w-full rounded-lg px-3 py-2 text-body bg-surface/40 border border-white/[0.08] ' +
+const inputCls = 'w-full rounded-lg px-3 py-2 text-body bg-surface/40 border border-subtle ' +
   'text-text outline-none focus:border-primary/40 transition-colors'
 
 function errMsg(e: unknown): string {
@@ -169,7 +169,7 @@ function PermissoesMatrix() {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-label">
           <thead>
-            <tr className="border-b-2 border-white/[0.08]">
+            <tr className="border-b-2 border-subtle">
               <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Módulo</th>
               {roles.map(r => (
                 <th key={r} className="px-3 py-2 text-center text-caption font-bold uppercase tracking-[0.6px] text-muted">
@@ -180,7 +180,7 @@ function PermissoesMatrix() {
           </thead>
           <tbody>
             {data.modulos.map(m => (
-              <tr key={m.key} className="border-b border-white/[0.05] hover:bg-white/[0.02]">
+              <tr key={m.key} className="border-b border-hairline hover:bg-white/[0.02]">
                 <td className="px-3 py-2 text-secondary">{m.label}</td>
                 {roles.map(r => {
                   const checked  = r === 'gestor' ? true : (data.permissoes[r] ?? []).includes(m.key)
@@ -235,7 +235,7 @@ export default function UsuariosPage() {
         }
       />
 
-      <div className="rounded-xl bg-card border border-white/[0.08] overflow-hidden">
+      <div className="rounded-xl bg-card border border-subtle overflow-hidden">
         {isLoading ? (
           <p className="text-label text-muted p-4">Carregando…</p>
         ) : usuariosList.length === 0 ? (
@@ -243,7 +243,7 @@ export default function UsuariosPage() {
         ) : (
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b-2 border-white/[0.08]">
+              <tr className="border-b-2 border-subtle">
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Usuário</th>
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Papel</th>
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Fornecedor</th>
@@ -255,7 +255,7 @@ export default function UsuariosPage() {
             <tbody>
               {usuariosList.map(u => (
                 <Fragment key={u.id}>
-                  <tr className="border-b border-white/[0.05] hover:bg-white/[0.02] text-label">
+                  <tr className="border-b border-hairline hover:bg-white/[0.02] text-label">
                     <td className="px-3 py-2.5 text-text font-medium">{u.username}</td>
                     <td className="px-3 py-2.5">
                       <select
@@ -264,7 +264,7 @@ export default function UsuariosPage() {
                           const role = e.target.value as UserRole
                           handleUpdate(u, { role, fornecedor_key: role === 'fornecedor' ? (u.fornecedor_key ?? 'WES') : null })
                         }}
-                        className="bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40"
+                        className="bg-transparent border border-subtle rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40"
                       >
                         {(Object.keys(ROLE_LABEL) as UserRole[]).map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
                       </select>
@@ -272,7 +272,7 @@ export default function UsuariosPage() {
                     <td className="px-3 py-2.5">
                       {u.role === 'fornecedor' ? (
                         <select value={u.fornecedor_key ?? 'WES'} onChange={e => handleUpdate(u, { fornecedor_key: e.target.value as FornecedorAcesso })}
-                          className="bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40">
+                          className="bg-transparent border border-subtle rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40">
                           {FORNECEDORES.map(f => <option key={f} value={f}>{f}</option>)}
                         </select>
                       ) : <span className="text-muted">—</span>}
@@ -280,7 +280,7 @@ export default function UsuariosPage() {
                     <td className="px-3 py-2.5">
                       <select value={u.cluster_key ?? 'VALE'} aria-label={`Cluster de ${u.username}`}
                         onChange={e => handleUpdate(u, { cluster_key: e.target.value as ClusterFilter })}
-                        className="bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40">
+                        className="bg-transparent border border-subtle rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40">
                         {CLUSTER_OPCOES.map(o => <option key={o.valor} value={o.valor}>{o.rotulo}</option>)}
                       </select>
                     </td>
@@ -324,7 +324,7 @@ export default function UsuariosPage() {
         )}
       </div>
 
-      <div className="rounded-xl bg-card border border-white/[0.08] p-4">
+      <div className="rounded-xl bg-card border border-subtle p-4">
         <h2 className="text-body font-semibold text-text mb-1">Permissões por papel</h2>
         <p className="text-caption text-muted mb-3">Gestor sempre tem acesso total a todos os módulos. Operador e Viewer são configuráveis abaixo.</p>
         <PermissoesMatrix />

@@ -189,9 +189,9 @@ export function AlertCard({ alert, delay = 0, acknowledged = false, onToggleAckn
               +{extra} item{extra > 1 ? 's' : ''} adicionais
             </p>
           )}
-          <div className="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-white/[0.06]">
+          <div className="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-hairline">
             <button onClick={onToggleAcknowledged}
-              className="min-h-10 inline-flex items-center gap-2 rounded-lg border border-white/[0.08] px-3 text-label text-secondary hover:text-text hover:bg-surface focus-visible:ring-2 focus-visible:ring-primary/50">
+              className="min-h-10 inline-flex items-center gap-2 rounded-lg border border-subtle px-3 text-label text-secondary hover:text-text hover:bg-surface focus-visible:ring-2 focus-visible:ring-primary/50">
               <CheckCircle size={14} /> {acknowledged ? 'Marcar como pendente' : 'Reconhecer alerta'}
             </button>
             <button onClick={onView}
@@ -236,7 +236,7 @@ export function RuleCard({ rule, delay = 0, acknowledged = false, onToggleAcknow
         </div>
         <button onClick={onToggleAcknowledged} aria-label={acknowledged ? `Marcar ${rule.label} como pendente` : `Reconhecer ${rule.label}`}
           title={acknowledged ? 'Alerta reconhecido' : 'Reconhecer alerta'}
-          className={`min-w-10 min-h-10 rounded-lg border flex items-center justify-center hover:text-green hover:border-green/30 focus-visible:ring-2 focus-visible:ring-primary/50 ${acknowledged ? 'border-green/30 bg-green/10 text-green' : 'border-white/[0.08] text-muted'}`}>
+          className={`min-w-10 min-h-10 rounded-lg border flex items-center justify-center hover:text-green hover:border-green/30 focus-visible:ring-2 focus-visible:ring-primary/50 ${acknowledged ? 'border-green/30 bg-green/10 text-green' : 'border-subtle text-muted'}`}>
           <CheckCircle size={16} />
         </button>
       </div>
@@ -251,7 +251,7 @@ export function GrafanaCityStrip({ cidades, loading }: { cidades: GrafanaCidade[
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-xl bg-surface/30 border border-white/[0.08] animate-pulse" />
+          <div key={i} className="h-24 rounded-xl bg-surface/30 border border-subtle animate-pulse" />
         ))}
       </div>
     )
@@ -356,10 +356,10 @@ export function SettingsPanel({ settings, onSave, onClose }: {
   return (
     <div className="fixed inset-0 z-[300] flex items-stretch justify-end">
       <div aria-hidden="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="alert-settings-title" className="relative w-full max-w-md bg-elevated border-l border-white/[0.08]
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="alert-settings-title" className="relative w-full max-w-md bg-elevated border-l border-subtle
                       flex flex-col shadow-2xl animate-in slide-in-from-right-4 duration-200">
 
-        <div className="flex items-center justify-between p-5 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between p-5 border-b border-subtle">
           <div>
             <h2 id="alert-settings-title" className="text-title font-bold text-text">Configurar Alertas</h2>
             <p className="text-caption text-muted mt-0.5">Thresholds e limites de SLA</p>
@@ -400,7 +400,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
             </div>
           </div>
 
-          <div className="pt-2 border-t border-white/[0.08]">
+          <div className="pt-2 border-t border-subtle">
             <div className="flex items-center justify-between mb-4">
               <p className="text-caption font-bold uppercase tracking-widest text-muted">Regras de negócio</p>
               <button onClick={() => setRulesD(DEFAULT_RULES.map(rule => ({ ...rule })))}
@@ -410,7 +410,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
             </div>
             <div className="space-y-3">
               {rulesD.map(rule => (
-                <div key={rule.id} className="rounded-lg border border-white/[0.08] bg-surface/30 p-3">
+                <div key={rule.id} className="rounded-lg border border-subtle bg-surface/30 p-3">
                   <div className="flex items-center gap-3">
                     <button type="button" role="switch" aria-checked={rule.enabled} aria-label={`${rule.enabled ? 'Desativar' : 'Ativar'} ${rule.label}`}
                       onClick={() => setRulesD(current => current.map(item => item.id === rule.id ? { ...item, enabled: !item.enabled } : item))}
@@ -425,7 +425,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
                       <span className="text-caption font-mono text-muted">{rule.operator}</span>
                       <input id={`rule-threshold-${rule.id}`} type="number" value={rule.threshold}
                         onChange={event => setRulesD(current => current.map(item => item.id === rule.id ? { ...item, threshold: Number(event.target.value) } : item))}
-                        className="w-16 h-9 rounded-md border border-white/[0.08] bg-card px-2 text-center text-label font-mono text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50" />
+                        className="w-16 h-9 rounded-md border border-subtle bg-card px-2 text-center text-label font-mono text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/50" />
                     </div>
                   </div>
                 </div>
@@ -433,7 +433,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
             </div>
           </div>
 
-          <div className="pt-2 border-t border-white/[0.08]">
+          <div className="pt-2 border-t border-subtle">
             <div className="flex items-center justify-between mb-4">
               <p className="text-caption font-bold uppercase tracking-widest text-muted">
                 Limites de SLA por Tipo (dias)
@@ -453,7 +453,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
                       id={`sla-setting-${f.key}`}
                       type="number" min={1} max={30} value={(slaD as Record<string, number>)[f.key] ?? 2}
                       onChange={e => setSlaD(d => ({ ...d, [f.key]: Number(e.target.value) }))}
-                      className="w-14 bg-surface border border-white/[0.08] rounded-md px-2 py-1
+                      className="w-14 bg-surface border border-subtle rounded-md px-2 py-1
                                  text-label font-mono text-text text-center outline-none
                                  focus:border-primary/50 transition-colors"
                     />
@@ -468,9 +468,9 @@ export function SettingsPanel({ settings, onSave, onClose }: {
           </div>
         </div>
 
-        <div className="p-5 border-t border-white/[0.08] flex gap-2">
+        <div className="p-5 border-t border-subtle flex gap-2">
           <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-white/[0.08] text-label text-secondary
+            className="flex-1 py-2.5 rounded-xl border border-subtle text-label text-secondary
                        hover:text-text hover:border-muted/40 transition-colors">
             Cancelar
           </button>

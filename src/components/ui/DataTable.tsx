@@ -102,7 +102,7 @@ export function DataTable<T extends Record<string, unknown>>({
     <div ref={wrapRef} className={`overflow-x-auto ${className}`}>
       <table className="w-full border-collapse">
         <thead className={stickyHeader ? 'sticky top-24 z-sticky bg-card' : undefined}>
-          <tr className="border-b-2 border-white/[0.08]">
+          <tr className="border-b-2 border-subtle">
             {columns.map((col) => (
               <th
                 key={col.key ?? col.label}
@@ -150,7 +150,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 event.preventDefault()
                 onRowClick(row)
               }}
-              className={`border-b border-white/[0.04] ${textSize[density]}
+              className={`border-b border-hairline ${textSize[density]}
                           transition-colors duration-fast text-secondary
                           hover:bg-primary/[0.07] hover:text-text
                           ${onRowClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50' : ''}

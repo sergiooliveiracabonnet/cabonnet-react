@@ -197,7 +197,7 @@ export default function MapaPage() {
     <div className="-mx-6 -my-6 flex h-[calc(100dvh-96px)] min-h-[560px] flex-col overflow-hidden">
 
       {/* ── Barra superior ────────────────────────────────────────────────── */}
-      <header className="flex-shrink-0 border-b border-white/[0.08] bg-elevated/95 px-3 py-2.5 sm:px-4">
+      <header className="flex-shrink-0 border-b border-subtle bg-elevated/95 px-3 py-2.5 sm:px-4">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
 
         {/* Ícone + título */}
@@ -221,7 +221,7 @@ export default function MapaPage() {
               onKeyDown={e => { if (e.key === 'Enter') handleSearchAddress() }}
               placeholder="Buscar endereço (ex: Rua X, bairro, cidade)"
               className="h-11 w-full pl-8 pr-3 text-base sm:text-label rounded-lg
-                         bg-bg border border-white/[0.08] text-text placeholder:text-muted
+                         bg-bg border border-subtle text-text placeholder:text-muted
                          outline-none focus:border-primary/40 transition-colors duration-fast"
             />
           </div>
@@ -241,7 +241,7 @@ export default function MapaPage() {
               title="Limpar busca"
               aria-label="Limpar busca de endereço"
               className="flex h-11 w-11 items-center justify-center rounded-lg
-                         text-muted hover:text-text border border-white/[0.08] hover:bg-surface transition-all"
+                         text-muted hover:text-text border border-subtle hover:bg-surface transition-all"
             >
               <X size={12} />
             </button>
@@ -260,7 +260,7 @@ export default function MapaPage() {
           aria-expanded={filtersOpen}
           aria-controls="mapa-filtros"
           className={`flex min-h-11 items-center gap-2 rounded-lg border px-3 text-caption font-semibold transition-colors
-                      ${filtersOpen || activeFilterCount > 0 ? 'border-primary/30 bg-primary/15 text-primary' : 'border-white/[0.08] text-secondary hover:bg-surface'}`}
+                      ${filtersOpen || activeFilterCount > 0 ? 'border-primary/30 bg-primary/15 text-primary' : 'border-subtle text-secondary hover:bg-surface'}`}
         >
           <SlidersHorizontal size={14} />
           Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
@@ -276,13 +276,13 @@ export default function MapaPage() {
         </div>
 
         {filtersOpen && (
-          <div id="mapa-filtros" className="mt-2 grid grid-cols-2 gap-2 border-t border-white/[0.08] pt-2 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(130px,1fr))_auto]">
+          <div id="mapa-filtros" className="mt-2 grid grid-cols-2 gap-2 border-t border-subtle pt-2 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(130px,1fr))_auto]">
             <FilterSelect ariaLabel="Filtrar por status" value={filterStatus} onChange={setFilterStatus} options={statusOpts} />
             <FilterSelect ariaLabel="Filtrar por tipo" value={filterTipo} onChange={setFilterTipo} options={tipoOpts} />
             <FilterSelect ariaLabel="Filtrar por equipe" value={filterEquipe} onChange={setFilterEquipe} options={equipeOpts} />
             <FilterSelect ariaLabel="Filtrar por aging" value={filterAging} onChange={setFilterAging} options={agingOpts} />
             <button type="button" onClick={clearFilters} disabled={activeFilterCount === 0}
-                    className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/[0.08] px-3 text-caption font-semibold text-secondary hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 sm:col-span-1">
+                    className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-lg border border-subtle px-3 text-caption font-semibold text-secondary hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 sm:col-span-1">
               <ArrowCounterClockwise size={13} /> Limpar filtros
             </button>
           </div>
@@ -294,7 +294,7 @@ export default function MapaPage() {
       <div className="relative overflow-hidden overscroll-contain" style={{ flex: '1 1 0', minHeight: 0 }}
            role="region" aria-label="Mapa operacional das ordens de serviço">
         <div className="absolute left-2 top-2 z-[500] flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-2 sm:left-4 sm:top-4">
-          <div className="flex rounded-xl border border-white/[0.10] bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Agrupamento geográfico">
+          <div className="flex rounded-xl border border-strong bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Agrupamento geográfico">
             {([
               { val: 'cidade', icon: GridFour, label: 'Cidade' },
               { val: 'bairro', icon: Stack, label: 'Bairro' },
@@ -307,7 +307,7 @@ export default function MapaPage() {
             ))}
           </div>
 
-          <div className="flex rounded-xl border border-white/[0.10] bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Camada de visualização">
+          <div className="flex rounded-xl border border-strong bg-elevated/95 p-1 shadow-lg backdrop-blur" aria-label="Camada de visualização">
             {([
               { val: 'bolhas', icon: Circle, label: 'Bolhas' },
               { val: 'calor', icon: Fire, label: 'Concentração' },
@@ -325,14 +325,14 @@ export default function MapaPage() {
 
           <button type="button" onClick={() => setShowExecucao(v => !v)} aria-pressed={showExecucao}
                   className={`flex min-h-11 items-center gap-1.5 rounded-xl border bg-elevated/95 px-3 text-caption font-semibold shadow-lg backdrop-blur transition-colors
-                              ${showExecucao ? 'border-yellow/30 text-yellow' : 'border-white/[0.10] text-muted hover:bg-surface hover:text-text'}`}>
+                              ${showExecucao ? 'border-yellow/30 text-yellow' : 'border-strong text-muted hover:bg-surface hover:text-text'}`}>
             <Wrench size={13} aria-hidden="true" />
             Em campo{execucaoGeo.length > 0 ? ` (${execucaoGeo.length})` : ''}
           </button>
         </div>
 
         {showExecucao && execucaoGeo.length === 0 && (
-          <div role="status" className="absolute left-2 top-36 z-[500] rounded-lg border border-white/[0.08] bg-elevated/95 px-3 py-2 text-caption text-muted sm:left-4 sm:top-32">
+          <div role="status" className="absolute left-2 top-36 z-[500] rounded-lg border border-subtle bg-elevated/95 px-3 py-2 text-caption text-muted sm:left-4 sm:top-32">
             Nenhuma OS em campo agora
           </div>
         )}

@@ -19,7 +19,8 @@
     "cap:sync": "npx cap sync android",
     "cap:open": "npx cap open android",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "audit:ds:catraca": "node scripts/audit-ds.mjs --catraca"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
