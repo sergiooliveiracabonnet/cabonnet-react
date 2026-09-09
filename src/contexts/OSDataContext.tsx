@@ -5,7 +5,8 @@ import { useServerEvents } from '../hooks/useServerEvents'
 import { useRevisitasData } from '../hooks/useRevisitasData'
 import { useUIStore } from '../store/uiStore'
 import { applyDateFilter } from '../lib/transform'
-import { clusterDaCidade } from '../lib/clusters'
+import { clusterDaCidade, clusterFiltroCliente } from '../lib/clusters'
+import { useAuthStore } from '../store/authStore'
 import {
   buildDashboard, buildSla, buildGraficos, buildAuditoria,
   buildCidades, buildCampo, buildCoorte, buildCapacidade, buildChurn, buildRevisitas, buildOrdens, buildAnomalias, buildFila,
@@ -188,11 +189,13 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
   // uma vez para dashboard, SLA, gráficos, cidades, campo, ordens e fila.
   // 'TODOS' não filtra cidade nenhuma — assim uma grafia inesperada vinda do ERP
   // aparece no app em vez de sumir em silêncio.
+  const clusterDaConta = useAuthStore(s => s.cluster)
+  const filtroCluster = clusterFiltroCliente(clusterDaConta, cluster)
   const keep = useCallback(
     (r: OSRow) =>
       (!hideRede || r._tipo !== 'REDE')
-      && (cluster === 'TODOS' || clusterDaCidade(r.nomedacidade ?? '') === cluster),
-    [hideRede, cluster],
+      && (!filtroCluster || clusterDaCidade(r.nomedacidade ?? '') === filtroCluster),
+    [hideRede, filtroCluster],
   )
 
   const activeRows    = useMemo(() => rows.filter(keep),     [rows,     keep])
