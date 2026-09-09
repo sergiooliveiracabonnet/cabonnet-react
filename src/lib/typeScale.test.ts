@@ -102,3 +102,13 @@ describe('degraus e densidade', () => {
     }
   })
 })
+
+describe('tracking é token, não valor solto', () => {
+  it('o token existe e é declarado uma vez só', () => {
+    // Em em, o valor acompanha o tamanho da fonte sozinho. Declarar por
+    // densidade repetiria o mesmo número em dois lugares para nada.
+    const css = readFileSync('src/index.css', 'utf8')
+    expect(css).toMatch(/--ls-label:\s*0\.05em;/)
+    expect(css.match(/--ls-label\s*:/g)).toHaveLength(1)
+  })
+})
