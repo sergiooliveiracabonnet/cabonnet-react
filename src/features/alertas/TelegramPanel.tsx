@@ -193,7 +193,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
 
           {/* Nível de verbosidade */}
           <div>
-            <label className="text-caption font-bold uppercase tracking-[0.06em] text-muted block mb-2">
+            <label className="text-caption font-bold uppercase tracking-label text-muted block mb-2">
               <Gear size={9} className="inline mr-1" /> Nível de Alertas Telegram
             </label>
             <div className="flex flex-col gap-1.5">
@@ -208,7 +208,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
 
           {/* Alertas de aging individual */}
           <div>
-            <label className="text-caption font-bold uppercase tracking-[0.06em] text-muted block mb-2">Alertas OS Individuais</label>
+            <label className="text-caption font-bold uppercase tracking-label text-muted block mb-2">Alertas OS Individuais</label>
             <div className="flex items-center justify-between px-3 py-2.5 bg-surface border border-subtle rounded-lg">
               <div>
                 <p className="text-caption font-semibold text-text">OS com SLA vencido</p>
@@ -242,7 +242,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
 
           {/* Briefing Executivo */}
           <div>
-            <label className="text-caption font-bold uppercase tracking-[0.06em] text-muted block mb-2">
+            <label className="text-caption font-bold uppercase tracking-label text-muted block mb-2">
               <Sparkle size={9} className="inline mr-1 text-primary" /> Briefing Executivo IA
             </label>
             {briefing?.texto ? (

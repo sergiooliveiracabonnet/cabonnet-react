@@ -152,7 +152,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
                 { l: 'Reinc.',      a: 'center', t: 'Taxa de revisitas no período (retrabalho)' },
               ].map(h => (
                 <th key={h.l} title={h.t}
-                    className={`px-4 py-2.5 text-${h.a} text-caption font-bold text-muted uppercase tracking-[0.04em] whitespace-nowrap`}>
+                    className={`px-4 py-2.5 text-${h.a} text-caption font-bold text-muted uppercase tracking-label whitespace-nowrap`}>
                   {h.l}
                 </th>
               ))}
@@ -281,7 +281,7 @@ function GrupoFuturo({ group, color, onOS }: { group: FuturoGroup; color: string
     <div>
       <div className={`flex items-center gap-2 px-5 py-2 border-y border-subtle
                        ${group.highlight ? hlBg : 'bg-surface/40'}`}>
-        <span className={`text-caption font-bold uppercase tracking-[0.05em]
+        <span className={`text-caption font-bold uppercase tracking-label
                           ${group.highlight ? hlText : 'text-muted'}`}>
           {group.label}
         </span>
@@ -320,23 +320,23 @@ function CidadeTable({ cities, tipos, maxTotal, color, expandedCity, setExpanded
       <table className="w-full text-label">
         <thead>
           <tr className="border-b border-subtle bg-surface">
-            <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-[0.04em]">
+            <th className="px-4 py-2.5 text-left text-caption font-bold text-muted uppercase tracking-label">
               Cidade
             </th>
             {tipos.map(t => (
-              <th key={t} className="px-4 py-2.5 text-center text-caption font-bold text-muted uppercase tracking-[0.04em]">
+              <th key={t} className="px-4 py-2.5 text-center text-caption font-bold text-muted uppercase tracking-label">
                 {TIPO_LABEL[t]}
               </th>
             ))}
-            <th className="px-4 py-2.5 text-center text-caption font-bold text-muted uppercase tracking-[0.04em]"
+            <th className="px-4 py-2.5 text-center text-caption font-bold text-muted uppercase tracking-label"
                 title="OS com mais de 2× o prazo de SLA">
               Crít.
             </th>
-            <th className="px-4 py-2.5 text-center text-caption font-bold text-muted uppercase tracking-[0.04em]"
+            <th className="px-4 py-2.5 text-center text-caption font-bold text-muted uppercase tracking-label"
                 title="% das OS desta cidade dentro do prazo de SLA">
               SLA
             </th>
-            <th className="px-4 py-2.5 text-right text-caption font-bold text-muted uppercase tracking-[0.04em]">
+            <th className="px-4 py-2.5 text-right text-caption font-bold text-muted uppercase tracking-label">
               Total
             </th>
           </tr>
@@ -467,7 +467,7 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
     <div className="max-h-72 overflow-y-auto bg-surface/60 border-y border-hairline">
       {tipoFilter && (
         <div className="px-4 py-1.5 border-b border-hairline flex items-center gap-2 bg-surface/30">
-          <span className={`text-caption font-bold uppercase tracking-[0.05em] ${TIPO_COLOR[tipoFilter]}`}>
+          <span className={`text-caption font-bold uppercase tracking-label ${TIPO_COLOR[tipoFilter]}`}>
             {TIPO_LABEL[tipoFilter]}
           </span>
           <span className="text-caption text-muted">· {sorted.length} OS · clique no número da coluna para mudar filtro</span>
@@ -480,7 +480,7 @@ function CityOSMini({ rows, tipoFilter, onOS }: {
               <th
                 key={col.key}
                 onClick={() => toggleSort(col.key)}
-                className="px-4 py-2 text-left text-caption font-bold text-muted uppercase tracking-[0.03em]
+                className="px-4 py-2 text-left text-caption font-bold text-muted uppercase tracking-label
                            cursor-pointer select-none hover:text-secondary transition-colors whitespace-nowrap"
               >
                 <span className="flex items-center gap-1">

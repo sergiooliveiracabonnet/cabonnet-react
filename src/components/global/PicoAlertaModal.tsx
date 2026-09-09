@@ -94,7 +94,7 @@ function AlertaPainel({
 
       {/* Campo contexto */}
       <div className="space-y-1.5">
-        <label className="text-caption font-bold uppercase tracking-[0.07em] text-muted">
+        <label className="text-caption font-bold uppercase tracking-label text-muted">
           O que aconteceu neste dia? <span className="font-normal normal-case tracking-normal text-muted/50">(opcional)</span>
         </label>
         <textarea
@@ -151,16 +151,16 @@ function AlertaPainel({
           {expanded && (
             <div className="px-4 pb-4 space-y-2.5 text-label">
               <div>
-                <p className="text-caption font-bold uppercase tracking-[0.07em] text-violet-400/70 mb-0.5">Causa Principal</p>
+                <p className="text-caption font-bold uppercase tracking-label text-violet-400/70 mb-0.5">Causa Principal</p>
                 <p className="text-text leading-relaxed">{iaResult.causa_principal}</p>
               </div>
               <div>
-                <p className="text-caption font-bold uppercase tracking-[0.07em] text-muted mb-0.5">Impacto</p>
+                <p className="text-caption font-bold uppercase tracking-label text-muted mb-0.5">Impacto</p>
                 <p className="text-text leading-relaxed">{iaResult.impacto}</p>
               </div>
               {iaResult.acoes?.length > 0 && (
                 <div>
-                  <p className="text-caption font-bold uppercase tracking-[0.07em] text-muted mb-1">Ações</p>
+                  <p className="text-caption font-bold uppercase tracking-label text-muted mb-1">Ações</p>
                   <ul className="space-y-0.5">
                     {iaResult.acoes.map((a, i) => (
                       <li key={i} className="flex items-baseline gap-1.5 text-text">
@@ -171,7 +171,7 @@ function AlertaPainel({
                 </div>
               )}
               <div className="pt-2 border-t border-violet-500/10">
-                <p className="text-caption font-bold uppercase tracking-[0.07em] text-muted mb-0.5">Recomendação para Gestão</p>
+                <p className="text-caption font-bold uppercase tracking-label text-muted mb-0.5">Recomendação para Gestão</p>
                 <p className="text-violet-200 font-medium">{iaResult.recomendacao_gestao}</p>
               </div>
             </div>

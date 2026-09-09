@@ -29,7 +29,7 @@ const TONE_BADGE: Record<Tone, string> = {
   idle: 'border-subtle bg-surface/50 text-secondary',
 }
 
-const MICRO = 'text-caption font-bold uppercase tracking-[0.07em] text-muted'
+const MICRO = 'text-caption font-bold uppercase tracking-label text-muted'
 const CELL = 'min-w-0 rounded-md border border-hairline bg-bg/35'
 
 // Escala do trilho do MTTR: 10 dias cobre o pior caso operacional real sem

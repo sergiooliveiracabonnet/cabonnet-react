@@ -194,7 +194,7 @@ export default function DashboardPage() {
               <Lightning size={16} weight="fill" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.09em] text-orange">Nível 1</p>
+              <p className="text-caption font-bold uppercase tracking-label text-orange">Nível 1</p>
               <h1 id="dashboard-now-title" className="text-title font-bold text-text">Agir agora</h1>
               <p className="mt-0.5 text-caption text-muted">Exceções e riscos que precisam de decisão imediata.</p>
             </div>
@@ -242,7 +242,7 @@ export default function DashboardPage() {
               <Gauge size={16} aria-hidden="true" />
             </span>
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.09em] text-primary">Nível 2</p>
+              <p className="text-caption font-bold uppercase tracking-label text-primary">Nível 2</p>
               <h2 id="dashboard-control-title" className="text-title font-bold text-text">Controlar a operação de hoje</h2>
               <p className="mt-0.5 text-caption text-muted">Entrega, volume e prazo da fila no ritmo atual.</p>
             </div>

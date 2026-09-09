@@ -94,7 +94,7 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                   <div className={`flex items-center gap-2.5 px-4 py-2.5 border-b ${border}
                                   ${gi > 0 ? 'border-t border-subtle' : ''} ${bg}`}>
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />
-                    <span className={`text-caption font-bold uppercase tracking-[0.06em] ${color}`}>
+                    <span className={`text-caption font-bold uppercase tracking-label ${color}`}>
                       Período: {periodo}
                     </span>
                     <span className="text-caption font-mono text-muted ml-1">— {periodoRows.length} OS</span>

@@ -170,9 +170,9 @@ function PermissoesMatrix() {
         <table className="w-full border-collapse text-label">
           <thead>
             <tr className="border-b-2 border-subtle">
-              <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Módulo</th>
+              <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-label text-muted">Módulo</th>
               {roles.map(r => (
-                <th key={r} className="px-3 py-2 text-center text-caption font-bold uppercase tracking-[0.6px] text-muted">
+                <th key={r} className="px-3 py-2 text-center text-caption font-bold uppercase tracking-label text-muted">
                   {ROLE_LABEL[r]}
                 </th>
               ))}
@@ -244,12 +244,12 @@ export default function UsuariosPage() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b-2 border-subtle">
-                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Usuário</th>
-                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Papel</th>
-                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Fornecedor</th>
-                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Cluster</th>
-                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Status</th>
-                <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.6px] text-muted">Ações</th>
+                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-label text-muted">Usuário</th>
+                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-label text-muted">Papel</th>
+                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-label text-muted">Fornecedor</th>
+                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-label text-muted">Cluster</th>
+                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-label text-muted">Status</th>
+                <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-label text-muted">Ações</th>
               </tr>
             </thead>
             <tbody>

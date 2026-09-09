@@ -19,7 +19,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
         </div>
         <div className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3 px-5 py-2
                         bg-surface/20 border-b border-hairline flex-shrink-0
-                        text-caption font-bold uppercase tracking-[0.05em] text-muted">
+                        text-caption font-bold uppercase tracking-label text-muted">
           <span>OS #</span><span>Cliente</span><span>Cidade</span><span>Equipe</span>
           <span className="text-right">Aging</span>
         </div>

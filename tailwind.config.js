@@ -59,6 +59,12 @@ export default {
         'readout-2xl': ['var(--fs-readout-2xl)',  { lineHeight: '1', letterSpacing: '-0.035em' }],
       },
 
+      // Espacamento entre letras. So o lado positivo e token: o negativo ja vem
+      // embutido nos degraus headline e readout*, definidos acima.
+      letterSpacing: {
+        label: 'var(--ls-label)',
+      },
+
       // Peso de borda. divideColor NAO herda de um borderColor declarado dentro
       // de extend — sem o bloco proprio abaixo, divide-subtle nao e emitido e o
       // divisor fica sem cor nenhuma.

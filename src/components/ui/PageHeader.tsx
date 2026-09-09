@@ -17,7 +17,7 @@ export function PageHeader({ title, titleExtra, description, descriptionExtra, i
   return (
     <div data-ui="page-header" className={`page-header flex items-end justify-between gap-5 flex-wrap ${className}`}>
       <div className="min-w-0">
-        <h1 className={`text-subtitle sm:text-headline leading-tight tracking-[-0.025em] font-semibold text-text ${hasTitleRow ? 'flex items-center gap-2' : ''}`}>
+        <h1 className={`text-subtitle sm:text-headline leading-tight font-semibold text-text ${hasTitleRow ? 'flex items-center gap-2' : ''}`}>
           {Icon && <span className="page-header-icon"><Icon size={17} /></span>}
           {title}
           {titleExtra}

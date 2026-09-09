@@ -118,7 +118,7 @@ export function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; 
     <div className="flex items-center gap-2.5">
       <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
       <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-caption font-bold uppercase tracking-[0.07em]" style={{ color }}>{children}</span>
+      <span className="text-caption font-bold uppercase tracking-label" style={{ color }}>{children}</span>
     </div>
   )
 }
@@ -153,7 +153,7 @@ export function AlertCard({ alert, delay = 0, acknowledged = false, onToggleAckn
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <p className="text-body font-semibold text-text">{alert.title}</p>
-            <span className="text-caption font-bold uppercase tracking-[0.05em] px-2 py-0.5 rounded-full border flex-shrink-0"
+            <span className="text-caption font-bold uppercase tracking-label px-2 py-0.5 rounded-full border flex-shrink-0"
                   style={{ background: sev.bg, borderColor: `${sev.color}40`, color: sev.color }}>
               {sev.label}
             </span>

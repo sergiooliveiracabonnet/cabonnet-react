@@ -227,7 +227,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
         <div key={cidade} className={gi > 0 ? 'border-t-2 border-strong' : ''}>
           {/* Cabeçalho da cidade */}
           <div className="sticky top-9 z-10 flex items-center justify-between gap-2 bg-surface px-5 py-2.5 border-b border-subtle">
-            <span className="flex items-center gap-1.5 text-caption font-bold text-text uppercase tracking-[0.03em]">
+            <span className="flex items-center gap-1.5 text-caption font-bold text-text uppercase tracking-label">
               <MapPin size={11} className="text-primary/70" /> {cidade}
               <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-caption font-bold tabular-nums">
                 {list.length} OS

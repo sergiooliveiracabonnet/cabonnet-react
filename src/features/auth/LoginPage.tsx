@@ -315,7 +315,7 @@ export function LoginPage() {
               style={{ color: '#e8edf5', letterSpacing: '-0.02em' }}>
             Gestão de OS
           </h1>
-          <p className="text-caption mt-1.5 tracking-[0.06em]"
+          <p className="text-caption mt-1.5 tracking-label"
              style={{ color: 'rgba(148,163,184,0.52)' }}>
             Supervisor&nbsp;|&nbsp;Sergio Oliveira
           </p>
@@ -339,7 +339,7 @@ export function LoginPage() {
           }}
         >
           {/* Section label */}
-          <p className="text-caption font-medium tracking-[0.14em] uppercase mb-5 text-center"
+          <p className="text-caption font-medium tracking-label uppercase mb-5 text-center"
              style={{ color: 'rgba(96,165,250,0.6)' }}>
             Acesso restrito
           </p>
@@ -447,7 +447,7 @@ export function LoginPage() {
         {/* Footer */}
         <div className="flex items-center justify-center gap-2 mt-7">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(59,130,246,0.4)' }} />
-          <p className="text-caption tracking-[0.06em]" style={{ color: 'rgba(100,116,139,0.55)' }}>
+          <p className="text-caption tracking-label" style={{ color: 'rgba(100,116,139,0.55)' }}>
             Cabonnet ISP · Sistema Interno · v{__APP_VERSION__}
           </p>
         </div>

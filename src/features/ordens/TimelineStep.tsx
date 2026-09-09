@@ -129,7 +129,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Troca de equipe — agendada vs. executante */}
             {d.equipeAgendada && (
               <div className="bg-yellow/[0.07] border border-yellow/20 rounded-xl px-3 py-2.5">
-                <p className="text-caption font-bold uppercase tracking-[0.05em] text-yellow/80 mb-1.5 flex items-center gap-1.5">
+                <p className="text-caption font-bold uppercase tracking-label text-yellow/80 mb-1.5 flex items-center gap-1.5">
                   <Users size={10} /> Equipe diferente da agendada
                 </p>
                 <div className="flex items-center gap-3 text-caption">
@@ -147,7 +147,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Histórico de notas / reagendamentos */}
             {(d.historico?.length ?? 0) > 0 && (
               <div className="space-y-1.5">
-                <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
+                <p className="text-caption font-bold uppercase tracking-label text-muted flex items-center gap-1.5">
                   <ChatText size={10} /> Histórico de ocorrências
                 </p>
                 {d.historico!.map((entry, i) => (
@@ -193,7 +193,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Materiais utilizados */}
             {(d.materiais?.length ?? 0) > 0 && (
               <div className="bg-surface/30 border border-subtle rounded-xl px-3 py-2.5">
-                <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 flex items-center gap-1.5">
+                <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
                   <Package size={10} /> Materiais utilizados
                 </p>
                 <div className="space-y-1">
@@ -211,7 +211,7 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             {/* Materiais retirados */}
             {(d.matRetirados?.length ?? 0) > 0 && (
               <div className="bg-red/[0.05] border border-red/15 rounded-xl px-3 py-2.5">
-                <p className="text-caption font-bold uppercase tracking-[0.05em] text-red/70 mb-2 flex items-center gap-1.5">
+                <p className="text-caption font-bold uppercase tracking-label text-red/70 mb-2 flex items-center gap-1.5">
                   <Package size={10} /> Materiais retirados
                 </p>
                 <div className="space-y-1">
@@ -238,7 +238,7 @@ function Meta({ icon: Icon, label, value, mono }: MetaProps) {
   return (
     <div className="flex items-center gap-1.5">
       <Icon size={10} className="text-muted/40 flex-shrink-0" />
-      <span className="text-caption font-bold uppercase tracking-[0.04em] text-muted">{label}:</span>
+      <span className="text-caption font-bold uppercase tracking-label text-muted">{label}:</span>
       <span className={`text-caption text-secondary font-medium ${mono ? 'font-mono' : ''}`}>{value}</span>
     </div>
   )
@@ -247,7 +247,7 @@ function Meta({ icon: Icon, label, value, mono }: MetaProps) {
 function InfoBlock({ label, text }: { label: string; text: string }) {
   return (
     <div className="bg-surface/30 border border-subtle rounded-xl px-3 py-2.5">
-      <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-1">{label}</p>
+      <p className="text-caption font-bold uppercase tracking-label text-muted mb-1">{label}</p>
       <p className="text-caption text-secondary leading-relaxed whitespace-pre-wrap">{text}</p>
     </div>
   )

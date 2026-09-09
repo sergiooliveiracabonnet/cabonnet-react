@@ -195,6 +195,13 @@
   --fs-readout-2xl:  86px;
 }
 
+/* TIPO: TRACKING — nao varia com densidade
+   O valor e em `em`, entao acompanha o tamanho da fonte sozinho. Um bloco por
+   densidade repetiria o mesmo numero duas vezes sem ninguem ganhar nada. */
+:root {
+  --ls-label:        0.05em;  /* rotulo micro em caixa alta */
+}
+
 /* ═══════════════════════════════════════════════════════════════
    COMPONENTE — a terceira camada
 

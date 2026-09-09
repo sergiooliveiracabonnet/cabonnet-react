@@ -149,7 +149,7 @@ export default function PlannerPlanejadoView() {
 
       {/* Carga diária */}
       <div className="rounded-xl border border-subtle bg-card p-4">
-        <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted mb-3">Carga total por dia</p>
+        <p className="text-caption font-bold uppercase tracking-label text-muted mb-3">Carga total por dia</p>
         <div className="flex gap-2">
           {loadDays.map(d => {
             const pct   = maxDayLoad > 0 ? (d.total / maxDayLoad) * 100 : 0
@@ -197,7 +197,7 @@ export default function PlannerPlanejadoView() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-subtle bg-surface/30">
-                    <th className="px-4 py-3 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted w-[160px]">
+                    <th className="px-4 py-3 text-left text-caption font-bold uppercase tracking-label text-muted w-[160px]">
                       Equipe
                     </th>
                     {days.map(d => (
@@ -211,11 +211,11 @@ export default function PlannerPlanejadoView() {
                       </th>
                     ))}
                     {editMeta && (
-                      <th className="px-3 py-3 text-center text-caption font-bold uppercase tracking-[0.05em] text-muted w-[70px]">
+                      <th className="px-3 py-3 text-center text-caption font-bold uppercase tracking-label text-muted w-[70px]">
                         Meta/sem
                       </th>
                     )}
-                    <th className="px-3 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted w-[80px]">
+                    <th className="px-3 py-3 text-right text-caption font-bold uppercase tracking-label text-muted w-[80px]">
                       Total
                     </th>
                   </tr>

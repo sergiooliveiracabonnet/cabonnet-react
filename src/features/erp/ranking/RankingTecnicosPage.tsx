@@ -221,29 +221,29 @@ export default function RankingTecnicosPage() {
           <table className="w-full text-label">
             <thead>
               <tr className="border-b border-hairline bg-surface/10">
-                <th className="px-4 py-3 text-left text-caption font-bold uppercase tracking-[0.05em] text-muted">Técnico</th>
-                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
+                <th className="px-4 py-3 text-left text-caption font-bold uppercase tracking-label text-muted">Técnico</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-label text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('volume')}>
                   <span className="inline-flex items-center gap-1">Volume concluído <SortIcon col="volume" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-label text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('sla')}>
                   <span className="inline-flex items-center gap-1">SLA <SortIcon col="sla" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-label text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('criticas')}>
                   <span className="inline-flex items-center gap-1">Críticas <SortIcon col="criticas" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted cursor-pointer select-none"
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-label text-muted cursor-pointer select-none"
                     onClick={() => toggleSort('taxaRevisita')}>
                   <span className="inline-flex items-center gap-1">Retrabalho <SortIcon col="taxaRevisita" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Exec. Instalação</th>
-                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Exec. Manutenção</th>
-                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Exec. Serviço</th>
-                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">OS na Fila</th>
-                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">SLA Vencido</th>
-                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-[0.05em] text-muted">Aging Médio</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-label text-muted">Exec. Instalação</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-label text-muted">Exec. Manutenção</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-label text-muted">Exec. Serviço</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-label text-muted">OS na Fila</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-label text-muted">SLA Vencido</th>
+                <th className="px-4 py-3 text-right text-caption font-bold uppercase tracking-label text-muted">Aging Médio</th>
               </tr>
             </thead>
             <tbody>

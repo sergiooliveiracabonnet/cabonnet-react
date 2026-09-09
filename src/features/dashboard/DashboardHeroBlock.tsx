@@ -34,7 +34,7 @@ function RitmoIntradiarioBar({ r }: { r: PulsoRitmoIntradiario }) {
   return (
     <div className="mt-4 pt-3 border-t border-hairline">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Ritmo por turno hoje</span>
+        <span className="text-caption font-bold uppercase tracking-label text-muted">Ritmo por turno hoje</span>
         {r.alerta && (
           <span className="text-caption font-semibold text-yellow flex items-center gap-1"
                 title={`Com ${Math.round(r.fracTarde * 100)}% do turno decorrido, o esperado no ritmo da manhã seria ~${r.esperadoTarde}`}>

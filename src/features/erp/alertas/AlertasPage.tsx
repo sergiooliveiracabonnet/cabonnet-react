@@ -189,7 +189,7 @@ export default function AlertasPage() {
                        style={{ background: s.bg, border: `1px solid ${s.color}30` }}>
                     <SIcon size={18} style={{ color: s.color }} />
                   </div>
-                  <span className="text-caption font-bold uppercase tracking-[0.07em]"
+                  <span className="text-caption font-bold uppercase tracking-label"
                         style={{ color: `${s.color}80` }}>
                     {s.label}
                   </span>

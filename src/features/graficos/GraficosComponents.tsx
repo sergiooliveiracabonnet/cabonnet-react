@@ -334,7 +334,7 @@ export function TabDistribuicao({ d, rows, onDrill }: { d: Record<string,unknown
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map(card => (
           <div key={card.label} className="min-h-24 rounded-xl border border-subtle bg-card p-4">
-            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
+            <p className="text-caption font-bold uppercase tracking-label text-muted">{card.label}</p>
             <p className="mt-2 truncate font-mono text-xl font-bold text-text">{card.value}</p>
             <p className="mt-1 text-caption text-muted">{card.sub}</p>
           </div>
@@ -421,7 +421,7 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map(card => (
           <div key={card.label} className="min-h-24 rounded-xl border border-subtle bg-card p-4">
-            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
+            <p className="text-caption font-bold uppercase tracking-label text-muted">{card.label}</p>
             <p className={`mt-2 font-mono text-xl font-bold tabular-nums ${card.tone}`}>{card.value.toLocaleString('pt-BR')}</p>
             <p className="mt-1 text-caption text-muted">{card.sub}</p>
           </div>
@@ -519,7 +519,7 @@ export function TabEstatistica({ d, rows, onDrill }: { d: Record<string,unknown>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
         {cards.map(card => (
           <div key={card.label} className="min-h-24 rounded-xl border border-subtle bg-card p-4">
-            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
+            <p className="text-caption font-bold uppercase tracking-label text-muted">{card.label}</p>
             <p className={`mt-2 font-mono text-xl font-bold tabular-nums ${card.tone}`}>{card.value}</p>
             <p className="mt-1 text-caption text-muted">{card.sub}</p>
           </div>
@@ -577,7 +577,7 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {cards.map(card => (
           <div key={card.label} className="min-h-24 rounded-xl border border-subtle bg-card p-4">
-            <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted">{card.label}</p>
+            <p className="text-caption font-bold uppercase tracking-label text-muted">{card.label}</p>
             <p className={`mt-2 font-mono text-xl font-bold tabular-nums ${card.tone}`}>{card.value}</p>
             <p className="mt-1 text-caption text-muted">{card.sub}</p>
           </div>

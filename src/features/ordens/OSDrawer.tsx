@@ -222,14 +222,14 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
 
                 {/* Situação */}
                 <div className="flex-1 px-4 py-3 flex flex-col gap-1.5">
-                  <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Situação</span>
+                  <span className="text-caption font-bold uppercase tracking-label text-muted">Situação</span>
                   <Badge variant={situacaoVariant(sit)} className="w-fit">{sit ?? '—'}</Badge>
                 </div>
 
                 {/* Aging */}
                 {os._aging != null && (
                   <div className="px-4 py-3 flex flex-col gap-1 items-center justify-center min-w-[72px]">
-                    <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Aging</span>
+                    <span className="text-caption font-bold uppercase tracking-label text-muted">Aging</span>
                     <span className={`font-mono font-black text-headline leading-none ${agingCls}`}>
                       {os._aging}<span className="text-label font-semibold ml-0.5 opacity-60">d</span>
                     </span>
@@ -238,7 +238,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
 
                 {/* SLA */}
                 <div className="px-4 py-3 flex flex-col gap-1.5 items-center justify-center min-w-[80px]">
-                  <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">SLA</span>
+                  <span className="text-caption font-bold uppercase tracking-label text-muted">SLA</span>
                   {os._slaCritico
                     ? <Badge variant="red">Crítico</Badge>
                     : os._slaExcedido
@@ -250,7 +250,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                 {/* Fornecedor */}
                 {fornLabel && (
                   <div className="px-4 py-3 flex flex-col gap-1.5 items-center justify-center min-w-[72px]">
-                    <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Frente</span>
+                    <span className="text-caption font-bold uppercase tracking-label text-muted">Frente</span>
                     <span className="text-caption font-semibold text-secondary">{fornLabel}</span>
                   </div>
                 )}
@@ -261,7 +261,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
             <Section label="Observações">
               {obsCrit && (
                 <div className="bg-red/[0.08] border border-red/20 rounded-xl p-4">
-                  <p className="text-caption font-bold uppercase tracking-[0.05em] text-red mb-2 flex items-center gap-1.5">
+                  <p className="text-caption font-bold uppercase tracking-label text-red mb-2 flex items-center gap-1.5">
                     <Warning size={11} /> Observação Crítica
                   </p>
                   <p className="text-label text-red/85 leading-relaxed whitespace-pre-wrap">{obsCrit as string}</p>
@@ -345,7 +345,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                     os._diasAteAgendamento!= null && { label: 'Dias até agend.',        value: `${os._diasAteAgendamento}d`, color: 'text-secondary' },
                   ].filter(Boolean).map((item) => { const { label, value, color } = item as { label: string; value: string; color: string }; return (
                     <div key={label} className="bg-surface/30 border border-subtle rounded-xl p-3 text-center">
-                      <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 leading-tight">{label}</p>
+                      <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 leading-tight">{label}</p>
                       <p className={`font-mono text-headline font-black leading-none ${color}`}>{value}</p>
                     </div>
                   )})}
@@ -363,7 +363,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                     <div className="grid grid-cols-2 divide-x divide-hairline">
                       {dataContratacao && (
                         <div className="px-4 py-3 flex flex-col gap-1">
-                          <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
+                          <span className="text-caption font-bold uppercase tracking-label text-muted flex items-center gap-1.5">
                             <FileText size={10} /> Contratação
                           </span>
                           <span className="text-body font-semibold text-text font-mono tabular-nums">
@@ -373,7 +373,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                       )}
                       {dataInstalacao && (
                         <div className="px-4 py-3 flex flex-col gap-1">
-                          <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted flex items-center gap-1.5">
+                          <span className="text-caption font-bold uppercase tracking-label text-muted flex items-center gap-1.5">
                             <Wrench size={10} /> Instalação
                           </span>
                           <span className="text-body font-semibold text-text font-mono tabular-nums">
@@ -386,7 +386,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                       <div className="border-t border-hairline grid grid-cols-2 divide-x divide-hairline">
                         {situacaoContratoLabel && (
                           <div className="px-4 py-3 flex flex-col gap-1">
-                            <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Situação</span>
+                            <span className="text-caption font-bold uppercase tracking-label text-muted">Situação</span>
                             <span className={`text-label font-semibold ${
                               situacaoContrato === 2 ? 'text-green' :
                               situacaoContrato === 5 ? 'text-red' :
@@ -398,7 +398,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                         )}
                         {valorContrato != null && valorContrato > 0 && (
                           <div className="px-4 py-3 flex flex-col gap-1">
-                            <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Valor mensal</span>
+                            <span className="text-caption font-bold uppercase tracking-label text-muted">Valor mensal</span>
                             <span className="text-body font-semibold text-text tabular-nums">
                               {valorContrato.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                             </span>
@@ -447,7 +447,7 @@ function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap">{label}</p>
+        <p className="text-caption font-bold uppercase tracking-label text-muted whitespace-nowrap">{label}</p>
         <div className="flex-1 h-px bg-surface" />
       </div>
       {children}
@@ -467,7 +467,7 @@ function InfoCard({ icon: Icon, label, value, prominent = false, action = null }
                        : 'bg-surface/30 border-subtle'}`}>
       <div className="flex items-center gap-1.5">
         <Icon size={12} className={prominent ? 'text-primary/60' : 'text-muted'} />
-        <p className={`text-caption font-bold uppercase tracking-[0.05em] leading-none
+        <p className={`text-caption font-bold uppercase tracking-label leading-none
                        ${prominent ? 'text-primary/70' : 'text-muted'}`}>
           {label}
         </p>

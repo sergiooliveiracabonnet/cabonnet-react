@@ -84,7 +84,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
 
           {picosDia.length > 0 && (
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted mb-2">Picos de Abertura</p>
+              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2">Picos de Abertura</p>
               <div className="space-y-2">
                 {picosDia.map(p => (
                   <div key={p.date} className="flex items-center gap-3 text-label bg-surface/20 rounded-lg px-3 py-2">
@@ -99,7 +99,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
 
           {bairrosAnomalia.length > 0 && (
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted mb-2">Bairros com SLA Anômalo</p>
+              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2">Bairros com SLA Anômalo</p>
               <div className="space-y-2">
                 {bairrosAnomalia.map(b => (
                   <div key={b.bairro} className="bg-surface/20 rounded-lg px-3 py-2">
@@ -118,7 +118,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
 
           {equipesAnomalia.length > 0 && (
             <div>
-              <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted mb-2">Equipes com Aging Elevado</p>
+              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2">Equipes com Aging Elevado</p>
               <div className="space-y-2">
                 {equipesAnomalia.map(e => (
                   <div key={e.nome} className="bg-surface/20 rounded-lg px-3 py-2">
@@ -140,7 +140,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <Sparkle size={12} className="text-primary/70" />
-                <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted">Análise de Causa Raiz</p>
+                <p className="text-caption font-bold uppercase tracking-label text-muted">Análise de Causa Raiz</p>
               </div>
               {!rcaLoading && (
                 <button

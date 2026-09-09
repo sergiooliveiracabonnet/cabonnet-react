@@ -58,4 +58,13 @@ describe('PageHeader', () => {
     render(<PageHeader title="X" descriptionExtra={<span data-testid="live">Ao vivo</span>} />)
     expect(screen.queryByTestId('live')).not.toBeInTheDocument()
   })
+  it('deixa o degrau responsivo trazer o proprio tracking', () => {
+    // text-subtitle e sm:text-headline tem trackings diferentes por definicao da
+    // escala. Um tracking fixo no mesmo elemento anula os dois, em silencio.
+    const { container } = render(<PageHeader title="Nível de Sinal" />)
+    const h1 = container.querySelector('h1')
+
+    expect(h1?.className).toContain('sm:text-headline')
+    expect(h1?.className).not.toMatch(/tracking-\[/)
+  })
 })

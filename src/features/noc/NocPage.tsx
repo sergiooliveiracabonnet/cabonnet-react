@@ -49,7 +49,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
     <div className="h-full p-6 flex flex-col gap-4">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Pulse size={13} className="text-muted" />
-        <p className="text-caption font-bold uppercase tracking-[0.09em] text-muted/70">
+        <p className="text-caption font-bold uppercase tracking-label text-muted/70">
           Visão Operacional
         </p>
       </div>
@@ -68,7 +68,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
                              flex flex-col items-center justify-center gap-2 p-6 relative overflow-hidden`}
               >
                 <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${acc.bar}`} />
-                <p className="text-caption font-bold text-muted uppercase tracking-[0.08em] text-center">
+                <p className="text-caption font-bold text-muted uppercase tracking-label text-center">
                   {k.title}
                 </p>
                 <p className={`font-mono text-7xl font-bold tabular-nums ${acc.text}`}>
@@ -96,7 +96,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       <div className="flex flex-col gap-2.5 overflow-y-auto">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
           <Users size={13} className="text-muted" />
-          <p className="text-caption font-bold uppercase tracking-[0.09em] text-muted/70">
+          <p className="text-caption font-bold uppercase tracking-label text-muted/70">
             Semáforo por Equipe
           </p>
         </div>
@@ -128,7 +128,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       <div className="flex flex-col gap-2.5 overflow-hidden">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
           <WarningCircle size={13} className="text-red flex-shrink-0" />
-          <p className="text-caption font-bold uppercase tracking-[0.09em] text-muted/70">
+          <p className="text-caption font-bold uppercase tracking-label text-muted/70">
             OS com SLA 2× Excedido
           </p>
           <span className="ml-auto font-mono text-body font-bold text-red tabular-nums">
@@ -182,7 +182,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
     <div className="h-full p-6 flex flex-col gap-4 overflow-y-auto">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Package size={13} className="text-muted" />
-        <p className="text-caption font-bold uppercase tracking-[0.09em] text-muted/70">
+        <p className="text-caption font-bold uppercase tracking-label text-muted/70">
           Desempenho por Fornecedor
         </p>
       </div>

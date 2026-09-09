@@ -52,18 +52,18 @@ export function CoortePanel({ buckets, linhas }: { buckets: number[]; linhas: Co
         <table className="w-full min-w-[380px] border-collapse">
           <thead>
             <tr>
-              <th className="text-left text-caption font-semibold uppercase tracking-[0.05em] text-muted pb-2 pr-2">
+              <th className="text-left text-caption font-semibold uppercase tracking-label text-muted pb-2 pr-2">
                 Semana
               </th>
-              <th className="text-right text-caption font-semibold uppercase tracking-[0.05em] text-muted pb-2 px-2">
+              <th className="text-right text-caption font-semibold uppercase tracking-label text-muted pb-2 px-2">
                 OS
               </th>
               {buckets.map(d => (
-                <th key={d} className="text-center text-caption font-semibold uppercase tracking-[0.05em] text-muted pb-2 px-1">
+                <th key={d} className="text-center text-caption font-semibold uppercase tracking-label text-muted pb-2 px-1">
                   D+{d}
                 </th>
               ))}
-              <th className="text-center text-caption font-semibold uppercase tracking-[0.05em] text-muted pb-2 pl-3 border-l border-border"
+              <th className="text-center text-caption font-semibold uppercase tracking-label text-muted pb-2 pl-3 border-l border-border"
                   title="% resolvidas dentro do SLA da própria OS — manutenção vence em 1 dia, instalação em 2">
                 No prazo
               </th>
