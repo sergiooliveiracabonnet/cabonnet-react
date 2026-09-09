@@ -87,3 +87,15 @@ NÍVEL DE SINAL.html
 # projeto e deve ser versionado.
 .impeccable/questions/
 .impeccable/config.local.json
+
+# Relatórios de sinal exportados: carregam nome, código e serial de assinantes.
+# Entram pelo upload da tela e ficam no banco — não no repositório.
+# Fixtures de teste são a exceção e continuam versionadas.
+*.csv
+!tests/**/*.csv
+!src/**/__fixtures__/*.csv
+
+# Cópias do banco feitas antes de manutenção (o *.db acima não pega o sufixo).
+cabonnet_data.db.bak*
+cabonnet_data.db.novo
+cabonnet_data.db.pre-*
