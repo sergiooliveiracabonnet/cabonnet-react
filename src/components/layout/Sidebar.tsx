@@ -229,7 +229,7 @@ export function Sidebar() {
             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}${status.breathe ? ' breathe' : ''}`} />
             <span className={`text-caption font-semibold ${status.color}`}>{status.label}</span>
           </div>
-          <p className="text-caption text-muted">Cluster · {clusterLabelCurto(clusterEmExibicao)}</p>
+          <p className="text-caption text-muted">Cluster | {clusterLabelCurto(clusterEmExibicao)}</p>
         </div>
       )}
 
