@@ -1671,19 +1671,54 @@ async def reopen_pon(
     return await _register_pon_treatment(request, "reaberta", sess)
 
 
+@router.post("/api/nivel-sinal/pon/medicoes")
+async def save_pon_medicoes(
+    request: Request,
+    _role: str = Depends(_require_modulo("nivel_sinal")),
+    sess: dict = Depends(_require_session),
+):
+    """Completar potência que ficou em branco não é tratar de novo: só o cadastro
+    muda, o log de ciclos da PON fica intacto."""
+    from cabonnet.db import _db_list_pon_treatments, _db_save_pon_medicoes
+    body = await _json_body(request)
+    pon_key = str(body.get("pon_key", "")).strip()
+    medicoes = body.get("medicoes")
+    # A forma do corpo vem antes da existência do recurso: o cliente precisa saber
+    # que mandou errado, não que a PON sumiu.
+    if not pon_key:
+        raise HTTPException(400, "pon_key é obrigatório")
+    if not isinstance(medicoes, list):
+        raise HTTPException(400, "medicoes deve ser uma lista")
+    # Cadastro de potência pertence a uma tratativa: sem ela não há o que completar.
+    if not any(item["pon_key"] == pon_key for item in _db_list_pon_treatments()):
+        raise HTTPException(404, "PON sem tratativa registrada")
+    try:
+        _db_save_pon_medicoes(pon_key, medicoes, sess.get("username") or "")
+    except (TypeError, ValueError) as ex:
+        raise HTTPException(400, str(ex)) from ex
+    return {"ok": True, "items": _db_list_pon_treatments()}
+
+
 async def _register_pon_treatment(request: Request, action: str, sess: dict):
-    from cabonnet.db import _db_add_pon_treatment, _db_list_pon_treatments
+    from cabonnet.db import _db_add_pon_treatment, _db_list_pon_treatments, _db_save_pon_medicoes
     body = await _json_body(request)
     pon_key = str(body.get("pon_key", "")).strip()
     snapshot = body.get("snapshot")
+    medicoes = body.get("medicoes")
     if snapshot is None:
         snapshot = {}
     if not pon_key:
         raise HTTPException(400, "pon_key é obrigatório")
     if not isinstance(snapshot, dict):
         raise HTTPException(400, "snapshot deve ser um objeto")
+    if medicoes is not None and not isinstance(medicoes, list):
+        raise HTTPException(400, "medicoes deve ser uma lista")
     try:
         _db_add_pon_treatment(pon_key, action, snapshot, sess.get("username") or "")
+        # Sem lista no corpo o cadastro anterior fica de pé: reabrir e tratar de
+        # novo não pode apagar as potências medidas no ciclo passado.
+        if medicoes is not None:
+            _db_save_pon_medicoes(pon_key, medicoes, sess.get("username") or "")
     except (TypeError, ValueError) as ex:
         raise HTTPException(400, str(ex)) from ex
     return {"ok": True, "items": _db_list_pon_treatments()}

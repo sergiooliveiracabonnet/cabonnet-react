@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowUUpLeft, Broadcast, CheckCircle, MagnifyingGlass, Repeat, WarningCircle, X } from '@phosphor-icons/react'
+import { ArrowUUpLeft, Broadcast, CheckCircle, MagnifyingGlass, PencilSimple, Repeat, WarningCircle, WaveSine, X } from '@phosphor-icons/react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -7,13 +7,15 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
-import { treatedSummary, type TreatedPon } from './ponTreatments'
+import { medicoesProgresso, treatedSummary, type TreatedPon } from './ponTreatments'
 
 interface PonsTratadasProps {
   treated: TreatedPon[]
   /** Sem CSV carregado não dá para dizer se a PON normalizou — só o histórico. */
   hasCsv: boolean
   onReopen: (item: TreatedPon) => void
+  /** Abre o formulário de potências da PON — dá para completar o que ficou em branco. */
+  onEditMedicoes: (item: TreatedPon) => void
   busyKey: string
 }
 
@@ -25,7 +27,7 @@ const formatMoment = (value: string) => {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
 
-export function PonsTratadas({ treated, hasCsv, onReopen, busyKey }: PonsTratadasProps) {
+export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKey }: PonsTratadasProps) {
   const [situacao, setSituacao] = useState('')
   const [cidade, setCidade] = useState('')
   const [olt, setOlt] = useState('')
@@ -38,6 +40,7 @@ export function PonsTratadas({ treated, hasCsv, onReopen, busyKey }: PonsTratada
       if (situacao === 'criticas' && !item.aindaCritica) return false
       if (situacao === 'normalizadas' && item.aindaCritica) return false
       if (situacao === 'reincidentes' && !item.reopened_count) return false
+      if (situacao === 'potencias' && !medicoesProgresso(item).pendentes) return false
       if (cidade && item.snapshot.cidade !== cidade) return false
       if (olt && item.snapshot.olt !== olt) return false
       if (normalized && ![item.snapshot.pon, item.snapshot.olt, item.snapshot.bairro, item.created_by]
@@ -51,12 +54,14 @@ export function PonsTratadas({ treated, hasCsv, onReopen, busyKey }: PonsTratada
     <PageHeader title="PONs tratadas" icon={CheckCircle}
       description="PONs que saíram da pendência por confirmação manual — só voltam se você reabrir" />
 
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
       <StatCard title="Tratadas" value={summary.total} sub="fora da fila de pendência" tone="ok" icon={CheckCircle} />
       <StatCard title="Ainda críticas" value={summary.aindaCriticas} tone={summary.aindaCriticas ? 'critical' : 'neutral'} icon={WarningCircle}
         sub={hasCsv ? 'batem o critério no CSV atual' : 'sem CSV carregado'} />
       <StatCard title="Normalizadas" value={summary.normalizadas} tone="ok" icon={Broadcast}
         sub={hasCsv ? 'saíram do critério no CSV atual' : 'sem CSV carregado'} />
+      <StatCard title="Potências pendentes" value={summary.potenciasPendentes} sub="PONs com cliente ainda sem nova medição"
+        tone={summary.potenciasPendentes ? 'warning' : 'ok'} icon={WaveSine} />
       <StatCard title="Reincidentes" value={summary.reincidentes} sub="já foram reabertas ao menos uma vez" tone="warning" icon={Repeat} />
     </div>
 
@@ -70,7 +75,7 @@ export function PonsTratadas({ treated, hasCsv, onReopen, busyKey }: PonsTratada
               className="h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-label text-text outline-none placeholder:text-muted focus:border-primary/50" />
           </label>
           <FilterSelect ariaLabel="Filtrar por situação" value={situacao} onChange={setSituacao} placeholder="Todas as situações"
-            options={[{ value: 'criticas', label: 'Ainda críticas' }, { value: 'normalizadas', label: 'Normalizadas' }, { value: 'reincidentes', label: 'Reincidentes' }]} />
+            options={[{ value: 'criticas', label: 'Ainda críticas' }, { value: 'normalizadas', label: 'Normalizadas' }, { value: 'reincidentes', label: 'Reincidentes' }, { value: 'potencias', label: 'Com potência pendente' }]} />
           <FilterSelect ariaLabel="Filtrar por cidade" value={cidade} onChange={value => { setCidade(value); setOlt('') }}
             placeholder="Todas as cidades" options={options(treated.map(item => item.snapshot.cidade))} />
           <FilterSelect ariaLabel="Filtrar por OLT" value={olt} onChange={setOlt} placeholder="Todas as OLTs"
@@ -88,9 +93,9 @@ export function PonsTratadas({ treated, hasCsv, onReopen, busyKey }: PonsTratada
           <p className="mt-0.5 text-caption text-muted">Os números são a foto do momento do OK, confrontada com o CSV carregado agora.</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1020px] text-left text-label">
+          <table className="w-full min-w-[1180px] text-left text-label">
             <thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>
-              {['PON / OLT', 'Cidade / bairro', 'No momento do OK', 'Tratada em', 'Ciclos', 'Situação no CSV atual', 'Ação'].map(label =>
+              {['PON / OLT', 'Cidade / bairro', 'No momento do OK', 'Tratada em', 'Ciclos', 'Potências', 'Situação no CSV atual', 'Ações'].map(label =>
                 <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}
             </tr></thead>
             <tbody>{visible.map(item => <tr key={item.pon_key} className="border-t border-border transition-colors hover:bg-surface/50">
@@ -102,16 +107,27 @@ export function PonsTratadas({ treated, hasCsv, onReopen, busyKey }: PonsTratada
               </td>
               <td className="px-4 py-3 text-secondary"><span className="block">{formatMoment(item.created_at)}</span><span className="text-caption text-muted">{item.created_by || 'sem usuário'}</span></td>
               <td className="px-4 py-3 tabular-nums text-secondary">{item.treated_count}× tratada{item.reopened_count ? <span className="block text-caption text-orange">{item.reopened_count}× reaberta</span> : null}</td>
+              <td className="px-4 py-3">{medicoesProgresso(item).total
+                ? <><span className="block tabular-nums text-text">{medicoesProgresso(item).preenchidas}/{medicoesProgresso(item).total} medidas</span>
+                  {medicoesProgresso(item).pendentes
+                    ? <span className="text-caption text-orange">{medicoesProgresso(item).pendentes} sem potência</span>
+                    : <span className="text-caption text-muted">cadastro completo</span>}</>
+                : <span className="text-caption text-muted">sem clientes registrados</span>}</td>
               <td className="px-4 py-3">{!hasCsv
                 ? <span className="text-caption text-muted">sem CSV carregado</span>
                 : item.aindaCritica
                   ? <Badge variant="red">Ainda crítica{item.atual ? ` · ${item.atual.criticos} críticas` : ''}</Badge>
                   : <Badge variant="green">Normalizada</Badge>}</td>
-              <td className="px-4 py-3"><Button variant="ghost" size="sm" disabled={busyKey === item.pon_key}
-                aria-label={`Reabrir PON ${item.snapshot.pon} da ${item.snapshot.olt}`}
-                onClick={() => onReopen(item)}><ArrowUUpLeft size={13} /> Reabrir</Button></td>
+              <td className="px-4 py-3"><div className="flex flex-wrap gap-2">
+                <Button variant="ghost" size="sm" disabled={busyKey === item.pon_key}
+                  aria-label={`Editar potências da PON ${item.snapshot.pon} da ${item.snapshot.olt}`}
+                  onClick={() => onEditMedicoes(item)}><PencilSimple size={13} /> Potências</Button>
+                <Button variant="ghost" size="sm" disabled={busyKey === item.pon_key}
+                  aria-label={`Reabrir PON ${item.snapshot.pon} da ${item.snapshot.olt}`}
+                  onClick={() => onReopen(item)}><ArrowUUpLeft size={13} /> Reabrir</Button>
+              </div></td>
             </tr>)}
-            {!visible.length && <tr><td colSpan={7} className="px-4 py-12 text-center text-muted">Nenhuma PON corresponde aos filtros.</td></tr>}
+            {!visible.length && <tr><td colSpan={8} className="px-4 py-12 text-center text-muted">Nenhuma PON corresponde aos filtros.</td></tr>}
             </tbody>
           </table>
         </div>

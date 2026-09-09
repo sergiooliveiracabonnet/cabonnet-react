@@ -187,10 +187,12 @@ export const signalOccurrencesApi = {
 
 export const ponTreatmentsApi = {
   list: <T>() => request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pons-tratadas'),
-  treat: <T>(body: { pon_key: string; snapshot: unknown }) =>
+  treat: <T>(body: { pon_key: string; snapshot: unknown; medicoes?: unknown[] }) =>
     request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pon/tratar', { method: 'POST', body: JSON.stringify(body) }),
   reopen: <T>(body: { pon_key: string; snapshot: unknown }) =>
     request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pon/reabrir', { method: 'POST', body: JSON.stringify(body) }),
+  saveMedicoes: <T>(body: { pon_key: string; medicoes: unknown[] }) =>
+    request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pon/medicoes', { method: 'POST', body: JSON.stringify(body) }),
 }
 
 export type UserRole = 'gestor' | 'supervisor' | 'operador' | 'viewer' | 'fornecedor'

@@ -130,13 +130,21 @@ const namedNeighborhood = (value: string) => {
 
 const addressTokens = (value: string) => normalizeText(value).replace(/[^A-Z0-9]+/g, ' ')
 
+/** A régua é nossa: o CSV não traz coluna de classificação confiável. */
+export function severityFromRx(rx: number | null): SignalSeverity {
+  if (rx == null) return '—'
+  if (rx <= -27) return 'Crítico'
+  if (rx <= -25) return 'Atenção'
+  return 'Normal'
+}
+
 function severity(value: string, rx: number | null, isRxAlert = false): SignalSeverity {
   const normalized = normalizeText(value)
   if (normalized.includes('CRIT')) return 'Crítico'
   if (normalized.includes('ATEN')) return 'Atenção'
   if (normalized.includes('NORMAL')) return 'Normal'
-  if (rx != null && rx <= -27) return 'Crítico'
-  if (rx != null && rx <= -25) return 'Atenção'
+  const byRx = severityFromRx(rx)
+  if (byRx === 'Crítico' || byRx === 'Atenção') return byRx
   if (isRxAlert) return 'Atenção'
   return '—'
 }

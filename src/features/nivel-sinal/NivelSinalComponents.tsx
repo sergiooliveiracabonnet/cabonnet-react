@@ -132,7 +132,7 @@ export function HotspotGrid({ hotspots, rows, onOpen, onApply, onTreat, treatmen
           ? <span className="text-caption text-orange">Reaberta · já tratada {cycles.treated_count}×</span>
           : <span className="text-caption text-muted">Pendente de tratativa</span>}
         <Button variant="ghost" size="sm" disabled={busyKey === hotspot.key} aria-label={`Marcar PON ${hotspot.pon} da ${hotspot.olt} como tratada`}
-          onClick={event => { event.stopPropagation(); onTreat(hotspot) }}><Check size={13} /> Tratada</Button>
+          onClick={event => { event.stopPropagation(); onTreat(hotspot) }}><Check size={13} /> Tratar</Button>
       </div>
     </Card>
   }) : <div className="col-span-full flex flex-col items-center py-10 text-center text-muted"><Broadcast size={28} className="mb-2 opacity-40" /><p className="text-label">Nenhuma PON pendente atinge ≥4 críticas e ≥30% de concentração.</p></div>}</div>

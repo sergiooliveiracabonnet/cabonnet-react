@@ -12,6 +12,8 @@ import { NivelSinalAI } from './NivelSinalAI'
 import { OcorrenciasSinal } from './OcorrenciasSinal'
 import { syncSignalOccurrences, type SignalOccurrence } from './signalOccurrenceModel'
 import { PonsTratadas } from './PonsTratadas'
+import { PonMedicoesModal } from './PonMedicoesModal'
+import { buildMedicaoDrafts, type MedicaoDraft, type PonMedicao } from './ponMedicoes'
 import { buildTreatedPons, snapshotFromHotspot, splitHotspots, treatedPonKeys, treatmentsByKey, type PonTreatment, type TreatedPon } from './ponTreatments'
 import { ponTreatmentsApi, signalOccurrencesApi } from '../../lib/api'
 
@@ -22,6 +24,16 @@ const EMPTY_FILTERS: SignalFilters = { query: '', cidade: '', olt: '', pon: '', 
 const HOTSPOTS_PER_PAGE = 12
 
 function csvCell(value: unknown) { return `"${String(value ?? '').replace(/"/g, '""')}"` }
+
+/** Formulário de potências aberto: tratar fecha a PON junto, editar só o cadastro. */
+interface MedicaoTarget {
+  modo: 'tratar' | 'editar'
+  ponKey: string
+  titulo: string
+  subtitulo: string
+  drafts: MedicaoDraft[]
+  hotspot?: SignalHotspot
+}
 
 export default function NivelSinalPage() {
   const [activeTab, setActiveTab] = useState('analise')
@@ -38,6 +50,7 @@ export default function NivelSinalPage() {
   const [filters, setFilters] = useState<SignalFilters>(EMPTY_FILTERS)
   const [detail, setDetail] = useState<DetailState | null>(null)
   const [hotspotPage, setHotspotPage] = useState(0)
+  const [medicaoTarget, setMedicaoTarget] = useState<MedicaoTarget | null>(null)
 
   const rows = useMemo(() => alertRows(allRows), [allRows])
   const hotspots = useMemo(() => buildHotspots(rows), [rows])
@@ -123,13 +136,37 @@ export default function NivelSinalPage() {
     reader.readAsText(file, 'utf-8'); event.target.value = ''
   }
 
-  async function treatPon(hotspot: SignalHotspot) {
-    setBusyPon(hotspot.key)
+  // Tratar a PON e informar a potência de cada cliente é o mesmo gesto: o OK só
+  // vai ao banco depois que a equipe passa pelo formulário.
+  function openTratar(hotspot: SignalHotspot) {
+    setMedicaoTarget({
+      modo: 'tratar', ponKey: hotspot.key, hotspot,
+      titulo: `Tratar PON ${hotspot.pon} · ${hotspot.olt}`,
+      subtitulo: `${hotspot.cidade} · ${hotspot.bairro} — informe a nova potência dos clientes desta PON.`,
+      drafts: buildMedicaoDrafts(allRows.filter(row => signalPonKey(row) === hotspot.key), treatmentMap.get(hotspot.key)?.medicoes ?? []),
+    })
+  }
+
+  function openEditarMedicoes(item: TreatedPon) {
+    setMedicaoTarget({
+      modo: 'editar', ponKey: item.pon_key,
+      titulo: `Potências da PON ${item.snapshot.pon} · ${item.snapshot.olt}`,
+      subtitulo: `${item.snapshot.cidade} · ${item.snapshot.bairro} — complete ou corrija o que foi medido em campo.`,
+      drafts: buildMedicaoDrafts(allRows.filter(row => signalPonKey(row) === item.pon_key), item.medicoes ?? []),
+    })
+  }
+
+  async function confirmMedicoes(target: MedicaoTarget, medicoes: PonMedicao[]) {
+    setBusyPon(target.ponKey)
     try {
-      const saved = await ponTreatmentsApi.treat<PonTreatment>({ pon_key: hotspot.key, snapshot: snapshotFromHotspot(hotspot) })
-      setTreatments(saved.items); setError('')
+      const saved = target.modo === 'tratar' && target.hotspot
+        ? await ponTreatmentsApi.treat<PonTreatment>({ pon_key: target.ponKey, snapshot: snapshotFromHotspot(target.hotspot), medicoes })
+        : await ponTreatmentsApi.saveMedicoes<PonTreatment>({ pon_key: target.ponKey, medicoes })
+      setTreatments(saved.items); setError(''); setMedicaoTarget(null)
     } catch {
-      setError('Não foi possível marcar a PON como tratada no banco de dados.')
+      setError(target.modo === 'tratar'
+        ? 'Não foi possível marcar a PON como tratada no banco de dados.'
+        : 'Não foi possível salvar as potências no banco de dados.')
     } finally {
       setBusyPon('')
     }
@@ -159,7 +196,7 @@ export default function NivelSinalPage() {
 
   return <div className="space-y-4 animate-fade-in">
     <TabBar tabs={[{ id: 'analise', label: 'Análise de sinal', icon: WaveSine }, { id: 'tratadas', label: `PONs tratadas${treatedPons.length ? ` (${treatedPons.length})` : ''}`, icon: CheckCircle }, { id: 'ocorrencias', label: 'Controle de ocorrências', icon: WarningCircle }]} active={activeTab} onChange={setActiveTab} />
-    {activeTab === 'tratadas' ? <PonsTratadas treated={treatedPons} hasCsv={rows.length > 0} onReopen={reopenPon} busyKey={busyPon} />
+    {activeTab === 'tratadas' ? <PonsTratadas treated={treatedPons} hasCsv={rows.length > 0} onReopen={reopenPon} onEditMedicoes={openEditarMedicoes} busyKey={busyPon} />
     : activeTab === 'ocorrencias' ? <OcorrenciasSinal occurrences={occurrences} onChange={async updated => {
       const changed = updated.find(item => occurrences.find(previous => previous.id === item.id) !== item)
       if (!changed) return
@@ -208,7 +245,7 @@ export default function NivelSinalPage() {
       <div className="grid gap-4 xl:grid-cols-[1.25fr_.75fr]"><Panel title="Distribuição por cidade" hint="crítico / atenção"><SeverityBars groups={groupBySeverity(filtered, row => row.cidade, 8)} label="Cidade" onOpen={setDetail} /></Panel><Panel title="Causa / status"><RankedList items={rankedCounts(filtered, row => row.status.toLocaleLowerCase('pt-BR') !== 'online' ? `⚠ ${row.status}` : row.causa !== '—' ? row.causa : 'sem causa reportada', 6)} label="Causa/status" onOpen={setDetail} /></Panel></div>
       <Panel title="Hotspots de PON — prioridade de campo" hint={`${matchingHotspots.length} PON${matchingHotspots.length === 1 ? '' : 's'} priorizada${matchingHotspots.length === 1 ? '' : 's'}`}>
         <p className="mb-4 text-caption text-muted">PONs ordenadas da maior para a menor quantidade de ONUs críticas. Ao marcar “Tratada” a PON sai desta fila e vai para a aba PONs tratadas.</p>
-        <HotspotGrid hotspots={visibleHotspots} rows={filtered} onOpen={setDetail} onApply={applyHotspot} onTreat={treatPon} treatments={treatmentMap} busyKey={busyPon} />
+        <HotspotGrid hotspots={visibleHotspots} rows={filtered} onOpen={setDetail} onApply={applyHotspot} onTreat={openTratar} treatments={treatmentMap} busyKey={busyPon} />
         {matchingHotspots.length > HOTSPOTS_PER_PAGE && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 text-caption text-muted">
           <span>{hotspotPage * HOTSPOTS_PER_PAGE + 1}–{Math.min(matchingHotspots.length, (hotspotPage + 1) * HOTSPOTS_PER_PAGE)} de {matchingHotspots.length} PONs</span>
           <div className="flex items-center gap-2"><Button variant="ghost" size="sm" aria-label="Página anterior de hotspots" disabled={hotspotPage === 0} onClick={() => setHotspotPage(page => page - 1)}>Anterior</Button><span className="min-w-24 text-center">Página {hotspotPage + 1} de {hotspotPages}</span><Button variant="ghost" size="sm" aria-label="Próxima página de hotspots" disabled={hotspotPage >= hotspotPages - 1} onClick={() => setHotspotPage(page => page + 1)}>Próxima</Button></div>
@@ -219,5 +256,9 @@ export default function NivelSinalPage() {
     </>}
     <SignalDetailModal detail={detail} onClose={() => setDetail(null)} />
     </>}
+    {medicaoTarget && <PonMedicoesModal key={`${medicaoTarget.modo}-${medicaoTarget.ponKey}`}
+      titulo={medicaoTarget.titulo} subtitulo={medicaoTarget.subtitulo} modo={medicaoTarget.modo}
+      drafts={medicaoTarget.drafts} hasCsv={allRows.length > 0} busy={busyPon === medicaoTarget.ponKey}
+      onCancel={() => setMedicaoTarget(null)} onConfirm={medicoes => confirmMedicoes(medicaoTarget, medicoes)} />}
   </div>
 }
