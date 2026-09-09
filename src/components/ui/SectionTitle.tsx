@@ -9,7 +9,7 @@ interface SectionTitleProps {
 export function SectionTitle({ children, icon: Icon, className = '' }: SectionTitleProps) {
   return (
     <h2 className={`flex items-center gap-2 font-headline font-semibold text-caption
-                    uppercase tracking-[0.06em] text-muted
+                    uppercase tracking-label text-muted
                     mt-6 mb-3 ${className}`}>
       {Icon && <Icon size={12} className="text-muted/70" />}
       {children}
