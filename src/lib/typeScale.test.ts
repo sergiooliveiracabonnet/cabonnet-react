@@ -104,6 +104,35 @@ describe('degraus e densidade', () => {
 })
 
 describe('tracking é token, não valor solto', () => {
+  // As tres excecoes vivas do sistema. Qualquer outro tracking-[ e fuga.
+  const TRACKING_PERMITIDO = new Map([
+    ['src/components/layout/Sidebar.tsx', 'tracking-[0.08em]'],
+    ['src/components/layout/Navbar.tsx', 'tracking-[-0.015em]'],
+    ['src/features/dashboard/DashboardCommandCenter.tsx', 'tracking-[-0.04em]'],
+  ])
+
+  it('nenhum tracking avulso sobrou no JSX', () => {
+    // Seis valores entre 0.04em e 0.09em para o mesmo rotulo em caixa alta nao
+    // e escala, e deriva: ninguem escolheu a diferenca.
+    const fugas: string[] = []
+    for (const arquivo of tsx('src')) {
+      const rel = arquivo.replace(/\\/g, '/')
+      for (const m of readFileSync(arquivo, 'utf8').matchAll(/\btracking-\[[^\]]+\]/g)) {
+        if (TRACKING_PERMITIDO.get(rel) === m[0]) continue
+        fugas.push(`${rel}: ${m[0]}`)
+      }
+    }
+    expect(fugas).toEqual([])
+  })
+
+  it('cada exceção declarada ainda existe onde foi declarada', () => {
+    // Sem isto a lista vira paisagem: excecao para codigo que ja saiu continua
+    // dando permissao a quem vier depois.
+    for (const [arquivo, classe] of TRACKING_PERMITIDO) {
+      expect(readFileSync(arquivo, 'utf8')).toContain(classe)
+    }
+  })
+
   it('o token existe e é declarado uma vez só', () => {
     // Em em, o valor acompanha o tamanho da fonte sozinho. Declarar por
     // densidade repetiria o mesmo número em dois lugares para nada.
