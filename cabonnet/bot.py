@@ -80,54 +80,242 @@ def _telegram_poll_loop():
             _time_mod.sleep(5)
 
 
+_CMDS_INSTACABLE = {
+    "/status", "/pulso", "/equipes", "/executadas",
+    "/listatendimento", "/resumo", "/detalhado",
+    "/meta", "/producao", "/os", "/notainstacable", "/menu", "/help",
+}
+_CMDS_WES = {
+    "/status", "/pulso", "/equipes", "/executadas",
+    "/listatendimento", "/resumo", "/detalhado",
+    "/producao", "/os", "/notawes", "/menu", "/help",
+}
+_CMDS_THM = {
+    "/status", "/pulso", "/equipes", "/executadas",
+    "/listatendimento", "/resumo", "/detalhado",
+    "/producao", "/os", "/notathm", "/menu", "/help",
+}
+_CMDS_ALERTAS = {
+    "/status", "/pulso", "/equipes", "/executadas", "/listatendimento",
+    "/resumo", "/detalhado",
+    "/meta", "/producao", "/os",
+    "/notainstacable", "/notawes", "/notarede", "/notathm",
+    "/kpi", "/atualizar", "/listarede",
+    "/sla", "/equipe", "/aging", "/ranking", "/reagendadas",
+    "/cidade", "/turno", "/forecast", "/manutencoes",
+    "/semexec", "/comparativo", "/menu", "/help",
+}
+# Grupo de cluster: mesmos comandos do Alertas, recortados pelas cidades da
+# regiao. Sem os /nota*, que sao por operadora do Vale.
+_CMDS_ADAMANTINA = _CMDS_ALERTAS - {"/notainstacable", "/notawes", "/notarede", "/notathm"}
+
+_CMDS_PRODUTIVIDADE = {
+    "/status", "/pulso", "/equipes", "/ranking", "/meta", "/menu",
+    "/os", "/agenda", "/executadas", "/listatendimento",
+    "/producao", "/pendentes", "/semana", "/help",
+}
+
+def _grupo_cmds(chat_id):
+    s = str(chat_id)
+    if TELEGRAM_CHAT_INSTACABLE      and s == str(TELEGRAM_CHAT_INSTACABLE):      return "INSTACABLE",    _CMDS_INSTACABLE
+    if TELEGRAM_CHAT_WES             and s == str(TELEGRAM_CHAT_WES):             return "WES",           _CMDS_WES
+    if TELEGRAM_CHAT_OPERACIONAL_THM and s == str(TELEGRAM_CHAT_OPERACIONAL_THM): return "THM",           _CMDS_THM
+    if TELEGRAM_CHAT_ADAMANTINA      and s == str(TELEGRAM_CHAT_ADAMANTINA):      return "ADAMANTINA",    _CMDS_ADAMANTINA
+    if TELEGRAM_CHAT_ALERTAS         and s == str(TELEGRAM_CHAT_ALERTAS):         return "ALERTAS",       _CMDS_ALERTAS
+    if TELEGRAM_CHAT_ID              and s == str(TELEGRAM_CHAT_ID):              return "PRODUTIVIDADE", _CMDS_PRODUTIVIDADE
+    return None, set()
+
+
+_CMDS_POR_GRUPO = {
+    "INSTACABLE":    _CMDS_INSTACABLE,
+    "WES":           _CMDS_WES,
+    "THM":           _CMDS_THM,
+    "ALERTAS":       _CMDS_ALERTAS,
+    "ADAMANTINA":    _CMDS_ADAMANTINA,
+    "PRODUTIVIDADE": _CMDS_PRODUTIVIDADE,
+}
+
+
+# O /help de cada grupo mora ao lado de _CMDS_POR_GRUPO de proposito: comando
+# liberado que nao aparece aqui e comando que o usuario nao tem como descobrir.
+_AJUDA = {
+    "INSTACABLE": (
+        f"ℹ️ <b>Cabonnet — Operacional Instacable</b>\n"
+        f"{_TG_DIV}\n"
+        f"/status — Status das OS Instacable (fila, execuções, SLA)\n"
+        f"/pulso — Snapshot rápido: executadas, fila, taxa, SLA crítico\n"
+        f"/equipes — Produção por equipe hoje (exec vs fila)\n"
+        f"/executadas — OS executadas hoje por cidade\n"
+        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
+        f"/resumo — Imagem: OS ativas por equipe (menor → maior)\n"
+        f"/detalhado — Imagem: OS de hoje listadas por equipe\n"
+        f"/meta — Meta de instalações do dia\n"
+        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
+        f"  Ex: /producao INST F01  ·  /producao F04\n"
+        f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
+        f"/notainstacable — Gera Fechamento de Nota em PDF\n"
+        f"/menu — Abre o menu rápido\n"
+        f"/help — Esta mensagem"
+    ),
+    "WES": (
+        f"ℹ️ <b>Cabonnet — Operacional WES</b>\n"
+        f"{_TG_DIV}\n"
+        f"/status — Status das OS WES (fila, execuções, SLA)\n"
+        f"/pulso — Snapshot rápido: executadas, fila, taxa, SLA crítico\n"
+        f"/equipes — Produção por equipe hoje (exec vs fila)\n"
+        f"/executadas — OS executadas hoje por cidade\n"
+        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
+        f"/resumo — Imagem: OS ativas por equipe (menor → maior)\n"
+        f"/detalhado — Imagem: OS de hoje listadas por equipe\n"
+        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
+        f"  Ex: /producao WES  ·  /producao F08\n"
+        f"/notawes — Gera Fechamento de Nota em PDF\n"
+        f"/menu — Abre o menu rápido\n"
+        f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
+        f"/help — Esta mensagem"
+    ),
+    "THM": (
+        f"ℹ️ <b>Cabonnet — Operacional THM</b>\n"
+        f"{_TG_DIV}\n"
+        f"/status — Status das OS THM (frentes F12, F13 e F14)\n"
+        f"/pulso — Snapshot rápido: executadas, fila, taxa, SLA crítico\n"
+        f"/equipes — Produção por equipe hoje (exec vs fila)\n"
+        f"/executadas — OS executadas hoje por cidade\n"
+        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
+        f"/resumo — Imagem: OS ativas por equipe (menor → maior)\n"
+        f"/detalhado — Imagem: OS de hoje listadas por equipe\n"
+        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
+        f"  Ex: /producao THM  ·  /producao INST F12\n"
+        f"/notathm — Gera Fechamento de Nota em PDF\n"
+        f"/menu — Abre o menu rápido\n"
+        f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
+        f"/help — Esta mensagem"
+    ),
+    "PRODUTIVIDADE": (
+        f"ℹ️ <b>Cabonnet — Produtividade</b>\n"
+        f"{_TG_DIV}\n"
+        f"<b>Consulta de OS</b>\n"
+        f"  Digitar o número diretamente — ex: <code>9025595</code>\n"
+        f"  Digitar o nome do cliente — ex: <code>João da Silva</code>\n"
+        f"/os &lt;num|nome|c…|a…&gt; — Busca explícita por OS\n"
+        f"{_TG_DIV}\n"
+        f"<b>Agenda</b>\n"
+        f"/agenda — OS agendadas para hoje\n"
+        f"/agenda amanhã — OS agendadas para amanhã\n"
+        f"/agenda 25/04 — OS agendadas para uma data específica\n"
+        f"{_TG_DIV}\n"
+        f"<b>Acompanhamento</b>\n"
+        f"/status — Panorama completo de instalação, serviço e manutenção\n"
+        f"/pulso — Resumo rápido da operação completa\n"
+        f"/equipes — Produção e fila por equipe\n"
+        f"/ranking — Ranking geral de produtividade\n"
+        f"/meta — Meta global de instalações\n"
+        f"/executadas — OS executadas hoje por cidade\n"
+        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
+        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
+        f"{_TG_DIV}\n"
+        f"<b>Gestão Comercial</b>\n"
+        f"/pendentes — OS na fila sem equipe atribuída\n"
+        f"/semana — Resumo semanal por dia (executadas vs agendadas)\n"
+        f"/menu — Abre o menu rápido\n"
+        f"/help — Esta mensagem"
+    ),
+    "ALERTAS": (
+        f"ℹ️ <b>Cabonnet — Alertas | Supervisor de Rede</b>\n"
+        f"{_TG_DIV}\n"
+        f"<b>KPI &amp; Status</b>\n"
+        f"/kpi — Painel KPI executivo consolidado (todas as operadoras)\n"
+        f"/status — Status operacional global (fila, exec, SLA)\n"
+        f"/status rede — Status somente das OS de Rede\n"
+        f"/pulso — Snapshot rápido: executadas, fila, taxa, equipes paradas\n"
+        f"/forecast — Projeção de fechamento com base no ritmo atual\n"
+        f"/comparativo — Hoje vs. ontem: execuções, Sem Execução, SLA\n"
+        f"{_TG_DIV}\n"
+        f"<b>Gestão de Equipes</b>\n"
+        f"/equipes — Produção por equipe hoje (exec vs fila)\n"
+        f"/equipe &lt;sigla&gt; — Ficha completa de uma equipe\n"
+        f"/turno — Quem está em campo agora (OS em Atendimento)\n"
+        f"/ranking — Ranking de produtividade por equipe\n"
+        f"/meta — Meta de instalações global (todas as equipes)\n"
+        f"{_TG_DIV}\n"
+        f"<b>Gestão de OS</b>\n"
+        f"/resumo — Imagem: OS ativas por equipe (menor → maior)\n"
+        f"/detalhado — Imagem: OS de hoje listadas por equipe\n"
+        f"/executadas — OS executadas hoje por cidade\n"
+        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
+        f"/listarede — OS de Rede em Atendimento\n"
+        f"/sla — SLA detalhado por equipe (vencidas, aging)\n"
+        f"/aging — Top 20 OS mais antigas na fila\n"
+        f"/reagendadas — OS reagendadas ainda na fila\n"
+        f"/cidade &lt;nome&gt; — OS pendentes e executadas em uma cidade\n"
+        f"/manutencoes — Manutenções abertas hoje por cidade/bairro\n"
+        f"/semexec — OS encerradas como Sem Execução hoje\n"
+        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
+        f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
+        f"{_TG_DIV}\n"
+        f"<b>Relatórios PDF</b>\n"
+        f"/notainstacable — Fechamento de Nota — Instacable\n"
+        f"/notawes — Fechamento de Nota — WES\n"
+        f"/notathm — Fechamento de Nota — THM\n"
+        f"/notarede — Fechamento de Nota — Rede\n"
+        f"{_TG_DIV}\n"
+        f"/atualizar — Força atualização dos dados do Grafana agora\n"
+        f"/menu — Abre o menu rápido com as consultas principais\n"
+        f"/help — Esta mensagem"
+    ),
+    "ADAMANTINA": (
+        f"ℹ️ <b>Cabonnet — Adamantina | Supervisão da Região</b>\n"
+        f"{_TG_DIV}\n"
+        f"<b>Consulta de OS</b>\n"
+        f"  Digitar o número da OS direto — ex: <code>9025595</code>\n"
+        f"  Digitar o nome do cliente — ex: <code>João da Silva</code>\n"
+        f"/os &lt;num|nome|c…|a…&gt; — Busca explícita por OS\n"
+        f"{_TG_DIV}\n"
+        f"<b>KPI &amp; Status</b>\n"
+        f"/kpi — Painel KPI executivo da região\n"
+        f"/status — Status operacional da região (fila, exec, SLA)\n"
+        f"/status rede — Status somente das OS de Rede\n"
+        f"/pulso — Snapshot rápido: executadas, fila, taxa, equipes paradas\n"
+        f"/forecast — Projeção de fechamento com base no ritmo atual\n"
+        f"/comparativo — Hoje vs. ontem: execuções, Sem Execução, SLA\n"
+        f"{_TG_DIV}\n"
+        f"<b>Gestão de Equipes</b>\n"
+        f"/equipes — Produção por equipe hoje (exec vs fila)\n"
+        f"/equipe &lt;sigla&gt; — Ficha completa de uma equipe\n"
+        f"/turno — Quem está em campo agora (OS em Atendimento)\n"
+        f"/ranking — Ranking de produtividade por equipe\n"
+        f"/meta — Meta de instalações da região\n"
+        f"{_TG_DIV}\n"
+        f"<b>Gestão de OS</b>\n"
+        f"/resumo — Imagem: OS ativas por equipe (menor → maior)\n"
+        f"/detalhado — Imagem: OS de hoje listadas por equipe\n"
+        f"/executadas — OS executadas hoje por cidade\n"
+        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
+        f"/listarede — OS de Rede em Atendimento\n"
+        f"/sla — SLA detalhado por equipe (vencidas, aging)\n"
+        f"/aging — Top 20 OS mais antigas na fila\n"
+        f"/reagendadas — OS reagendadas ainda na fila\n"
+        f"/cidade &lt;nome&gt; — OS pendentes e executadas em uma cidade\n"
+        f"/manutencoes — Manutenções abertas hoje por cidade/bairro\n"
+        f"/semexec — OS encerradas como Sem Execução hoje\n"
+        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
+        f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
+        f"{_TG_DIV}\n"
+        f"/atualizar — Força atualização dos dados do Grafana agora\n"
+        f"/menu — Abre o menu rápido com as consultas principais\n"
+        f"/help — Esta mensagem"
+    ),
+}
+
+
+def _ajuda_do_grupo(grupo):
+    return _AJUDA.get(grupo, "")
+
+
 def _telegram_poll_loop_inner():
     log.info("[Telegram] Polling de comandos iniciado")
     _telegram_skip_old_updates()
 
-    _CMDS_INSTACABLE = {
-        "/status", "/pulso", "/equipes", "/executadas",
-        "/listatendimento", "/resumo", "/detalhado",
-        "/meta", "/producao", "/os", "/notainstacable", "/menu", "/help",
-    }
-    _CMDS_WES = {
-        "/status", "/pulso", "/equipes", "/executadas",
-        "/listatendimento", "/resumo", "/detalhado",
-        "/producao", "/os", "/notawes", "/menu", "/help",
-    }
-    _CMDS_THM = {
-        "/status", "/pulso", "/equipes", "/executadas",
-        "/listatendimento", "/resumo", "/detalhado",
-        "/producao", "/os", "/notathm", "/menu", "/help",
-    }
-    _CMDS_ALERTAS = {
-        "/status", "/pulso", "/equipes", "/executadas", "/listatendimento",
-        "/resumo", "/detalhado",
-        "/meta", "/producao", "/os",
-        "/notainstacable", "/notawes", "/notarede", "/notathm",
-        "/kpi", "/atualizar", "/listarede",
-        "/sla", "/equipe", "/aging", "/ranking", "/reagendadas",
-        "/cidade", "/turno", "/forecast", "/manutencoes",
-        "/semexec", "/comparativo", "/menu", "/help",
-    }
-    # Grupo de cluster: mesmos comandos do Alertas, recortados pelas cidades da
-    # regiao. Sem os /nota*, que sao por operadora do Vale.
-    _CMDS_ADAMANTINA = _CMDS_ALERTAS - {"/notainstacable", "/notawes", "/notarede", "/notathm"}
-
-    _CMDS_PRODUTIVIDADE = {
-        "/status", "/pulso", "/equipes", "/ranking", "/meta", "/menu",
-        "/os", "/agenda", "/executadas", "/listatendimento",
-        "/producao", "/pendentes", "/semana", "/help",
-    }
-
-    def _grupo_cmds(chat_id):
-        s = str(chat_id)
-        if TELEGRAM_CHAT_INSTACABLE      and s == str(TELEGRAM_CHAT_INSTACABLE):      return "INSTACABLE",    _CMDS_INSTACABLE
-        if TELEGRAM_CHAT_WES             and s == str(TELEGRAM_CHAT_WES):             return "WES",           _CMDS_WES
-        if TELEGRAM_CHAT_OPERACIONAL_THM and s == str(TELEGRAM_CHAT_OPERACIONAL_THM): return "THM",           _CMDS_THM
-        if TELEGRAM_CHAT_ADAMANTINA      and s == str(TELEGRAM_CHAT_ADAMANTINA):      return "ADAMANTINA",    _CMDS_ADAMANTINA
-        if TELEGRAM_CHAT_ALERTAS         and s == str(TELEGRAM_CHAT_ALERTAS):         return "ALERTAS",       _CMDS_ALERTAS
-        if TELEGRAM_CHAT_ID              and s == str(TELEGRAM_CHAT_ID):              return "PRODUTIVIDADE", _CMDS_PRODUTIVIDADE
-        return None, set()
 
     while True:
         if not _telegram_enabled():
@@ -226,20 +414,20 @@ def _telegram_poll_loop_inner():
                     _telegram_send("🔍 Buscando informações solicitadas...", chat_id_override=cid)
                     n = termo_livre
                     threading.Thread(
-                        target=lambda n=n: _telegram_send_long(_build_os_detalhes(n), chat_id_override=cid),
+                        target=lambda n=n, o=operadora: _telegram_send_long(_build_os_detalhes(n, operadora=o), chat_id_override=cid),
                         daemon=True,
                     ).start()
                 elif len(termo_livre) >= 4:
                     _telegram_send("🔍 Buscando informações solicitadas...", chat_id_override=cid)
                     t = termo_livre; pfx = "os"
-                    def _busca_livre(t=t, cid=cid, pfx=pfx):
-                        msg_txt, botoes = _build_os_busca(t, callback_prefix=pfx)
+                    def _busca_livre(t=t, cid=cid, pfx=pfx, o=operadora):
+                        msg_txt, botoes = _build_os_busca(t, callback_prefix=pfx, operadora=o)
                         markup = {"inline_keyboard": botoes} if botoes else None
                         _telegram_send(msg_txt, chat_id_override=cid, reply_markup=markup)
                     threading.Thread(target=_busca_livre, daemon=True).start()
 
             elif text.startswith("/status"):
-                is_rede = "rede" in text.lower() and grupo == "ALERTAS"
+                is_rede = "rede" in text.lower() and grupo in ("ALERTAS", "ADAMANTINA")
                 op      = None if is_rede else operadora
                 threading.Thread(
                     target=lambda r=is_rede, o=op: _telegram_send(_build_status_text(rede=r, operadora=o), chat_id_override=cid),
@@ -247,7 +435,7 @@ def _telegram_poll_loop_inner():
                 ).start()
 
             elif text.startswith("/menu"):
-                if grupo == "ALERTAS":
+                if grupo in ("ALERTAS", "ADAMANTINA"):
                     keyboard = [
                         [{"text": "/kpi"}, {"text": "/pulso"}, {"text": "/status"}],
                         [{"text": "/sla"}, {"text": "/aging"}, {"text": "/forecast"}],
@@ -350,10 +538,10 @@ def _telegram_poll_loop_inner():
                     _telegram_send_long(_build_agenda(arg or None), chat_id_override=cid)
                 threading.Thread(target=_enviar_agenda, daemon=True).start()
 
-            elif text.startswith("/pendentes") and grupo == "PRODUTIVIDADE":
-                threading.Thread(target=lambda: _telegram_send(_build_pendentes_semequipe(), chat_id_override=cid), daemon=True).start()
+            elif text.startswith("/pendentes"):
+                threading.Thread(target=lambda o=operadora: _telegram_send(_build_pendentes_semequipe(operadora=o), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/semana") and grupo == "PRODUTIVIDADE":
+            elif text.startswith("/semana"):
                 threading.Thread(target=lambda: _telegram_send(_build_semana(), chat_id_override=cid), daemon=True).start()
 
             elif text.startswith("/os") or (text.startswith("/") and text[1:].split("@")[0].isdigit()):
@@ -408,54 +596,54 @@ def _telegram_poll_loop_inner():
                 threading.Thread(target=_nota_rede, daemon=True).start()
 
             elif text.startswith("/kpi"):
-                threading.Thread(target=lambda: _telegram_send(_build_kpi(), chat_id_override=cid), daemon=True).start()
+                threading.Thread(target=lambda o=operadora: _telegram_send(_build_kpi(operadora=o), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/sla") and grupo == "ALERTAS":
-                threading.Thread(target=lambda: _telegram_send(_build_sla_detalhado(), chat_id_override=cid), daemon=True).start()
+            elif text.startswith("/sla"):
+                threading.Thread(target=lambda o=operadora: _telegram_send(_build_sla_detalhado(operadora=o), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/equipe") and grupo == "ALERTAS":
+            elif text.startswith("/equipe"):
                 parts = text.split(None, 1)
                 arg   = parts[1].strip() if len(parts) > 1 else ""
                 if not arg:
                     _telegram_send("ℹ️ Uso: <code>/equipe &lt;sigla&gt;</code>\nEx: <code>/equipe F04</code>", chat_id_override=cid)
                 else:
                     a = arg
-                    def _env_equipe(a=a, cid=cid): _telegram_send(_build_equipe_ficha(a), chat_id_override=cid)
+                    def _env_equipe(a=a, cid=cid, o=operadora): _telegram_send(_build_equipe_ficha(a, operadora=o), chat_id_override=cid)
                     threading.Thread(target=_env_equipe, daemon=True).start()
 
-            elif text.startswith("/aging") and grupo == "ALERTAS":
-                threading.Thread(target=lambda: _telegram_send(_build_aging(), chat_id_override=cid), daemon=True).start()
+            elif text.startswith("/aging"):
+                threading.Thread(target=lambda o=operadora: _telegram_send(_build_aging(operadora=o), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/ranking") and grupo in ("ALERTAS", "PRODUTIVIDADE"):
-                threading.Thread(target=lambda: _telegram_send(_build_ranking(), chat_id_override=cid), daemon=True).start()
+            elif text.startswith("/ranking"):
+                threading.Thread(target=lambda o=operadora: _telegram_send(_build_ranking(operadora=o), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/reagendadas") and grupo == "ALERTAS":
-                threading.Thread(target=lambda: _telegram_send(_build_reagendadas(), chat_id_override=cid), daemon=True).start()
+            elif text.startswith("/reagendadas"):
+                threading.Thread(target=lambda o=operadora: _telegram_send(_build_reagendadas(operadora=o), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/cidade") and grupo == "ALERTAS":
+            elif text.startswith("/cidade"):
                 parts = text.split(None, 1)
                 arg   = parts[1].strip() if len(parts) > 1 else ""
                 if not arg:
                     _telegram_send("ℹ️ Uso: <code>/cidade &lt;nome&gt;</code>", chat_id_override=cid)
                 else:
                     a = arg
-                    def _env_cidade(a=a, cid=cid): _telegram_send(_build_cidade(a), chat_id_override=cid)
+                    def _env_cidade(a=a, cid=cid, o=operadora): _telegram_send(_build_cidade(a, operadora=o), chat_id_override=cid)
                     threading.Thread(target=_env_cidade, daemon=True).start()
 
-            elif text.startswith("/turno") and grupo == "ALERTAS":
-                threading.Thread(target=lambda: _telegram_send_long(_build_turno(), chat_id_override=cid), daemon=True).start()
+            elif text.startswith("/turno"):
+                threading.Thread(target=lambda o=operadora: _telegram_send_long(_build_turno(operadora=o), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/forecast") and grupo == "ALERTAS":
-                threading.Thread(target=lambda: _telegram_send(_build_forecast(), chat_id_override=cid), daemon=True).start()
+            elif text.startswith("/forecast"):
+                threading.Thread(target=lambda o=operadora: _telegram_send(_build_forecast(operadora=o), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/manutencoes") and grupo == "ALERTAS":
-                threading.Thread(target=lambda: _telegram_send_long(_build_manutencoes_hoje(), chat_id_override=cid), daemon=True).start()
+            elif text.startswith("/manutencoes"):
+                threading.Thread(target=lambda o=operadora: _telegram_send_long(_build_manutencoes_hoje(operadora=o), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/semexec") and grupo == "ALERTAS":
-                threading.Thread(target=lambda: _telegram_send_long(_build_semexec(), chat_id_override=cid), daemon=True).start()
+            elif text.startswith("/semexec"):
+                threading.Thread(target=lambda o=operadora: _telegram_send_long(_build_semexec(o), chat_id_override=cid), daemon=True).start()
 
-            elif text.startswith("/comparativo") and grupo == "ALERTAS":
-                threading.Thread(target=lambda: _telegram_send(_build_comparativo(), chat_id_override=cid), daemon=True).start()
+            elif text.startswith("/comparativo"):
+                threading.Thread(target=lambda o=operadora: _telegram_send(_build_comparativo(operadora=o), chat_id_override=cid), daemon=True).start()
 
             elif text.startswith("/atualizar"):
                 def _atualizar(cid=cid):
@@ -470,135 +658,7 @@ def _telegram_poll_loop_inner():
                 threading.Thread(target=_atualizar, daemon=True).start()
 
             elif text.startswith("/listarede"):
-                threading.Thread(target=lambda: _telegram_send_long(_build_listarede(), chat_id_override=cid), daemon=True).start()
+                threading.Thread(target=lambda o=operadora: _telegram_send_long(_build_listarede(operadora=o), chat_id_override=cid), daemon=True).start()
 
             elif text.startswith("/help"):
-                if grupo == "INSTACABLE":
-                    _telegram_send(
-                        f"ℹ️ <b>Cabonnet — Operacional Instacable</b>\n"
-                        f"{_TG_DIV}\n"
-                        f"/status — Status das OS Instacable (fila, execuções, SLA)\n"
-                        f"/pulso — Snapshot rápido: executadas, fila, taxa, SLA crítico\n"
-                        f"/equipes — Produção por equipe hoje (exec vs fila)\n"
-                        f"/executadas — OS executadas hoje por cidade\n"
-                        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
-                        f"/resumo — Imagem: OS ativas por equipe (menor → maior)\n"
-                        f"/detalhado — Imagem: OS de hoje listadas por equipe\n"
-                        f"/meta — Meta de instalações do dia\n"
-                        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
-                        f"  Ex: /producao INST F01  ·  /producao F04\n"
-                        f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
-                        f"/notainstacable — Gera Fechamento de Nota em PDF\n"
-                        f"/menu — Abre o menu rápido\n"
-                        f"/help — Esta mensagem",
-                        chat_id_override=cid)
-                elif grupo == "WES":
-                    _telegram_send(
-                        f"ℹ️ <b>Cabonnet — Operacional WES</b>\n"
-                        f"{_TG_DIV}\n"
-                        f"/status — Status das OS WES (fila, execuções, SLA)\n"
-                        f"/pulso — Snapshot rápido: executadas, fila, taxa, SLA crítico\n"
-                        f"/equipes — Produção por equipe hoje (exec vs fila)\n"
-                        f"/executadas — OS executadas hoje por cidade\n"
-                        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
-                        f"/resumo — Imagem: OS ativas por equipe (menor → maior)\n"
-                        f"/detalhado — Imagem: OS de hoje listadas por equipe\n"
-                        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
-                        f"  Ex: /producao WES  ·  /producao F08\n"
-                        f"/notawes — Gera Fechamento de Nota em PDF\n"
-                        f"/menu — Abre o menu rápido\n"
-                        f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
-                        f"/help — Esta mensagem",
-                        chat_id_override=cid)
-                elif grupo == "THM":
-                    _telegram_send(
-                        f"ℹ️ <b>Cabonnet — Operacional THM</b>\n"
-                        f"{_TG_DIV}\n"
-                        f"/status — Status das OS THM (frentes F12, F13 e F14)\n"
-                        f"/pulso — Snapshot rápido: executadas, fila, taxa, SLA crítico\n"
-                        f"/equipes — Produção por equipe hoje (exec vs fila)\n"
-                        f"/executadas — OS executadas hoje por cidade\n"
-                        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
-                        f"/resumo — Imagem: OS ativas por equipe (menor → maior)\n"
-                        f"/detalhado — Imagem: OS de hoje listadas por equipe\n"
-                        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
-                        f"  Ex: /producao THM  ·  /producao INST F12\n"
-                        f"/notathm — Gera Fechamento de Nota em PDF\n"
-                        f"/menu — Abre o menu rápido\n"
-                        f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
-                        f"/help — Esta mensagem",
-                        chat_id_override=cid)
-                elif grupo == "PRODUTIVIDADE":
-                    _telegram_send(
-                        f"ℹ️ <b>Cabonnet — Produtividade</b>\n"
-                        f"{_TG_DIV}\n"
-                        f"<b>Consulta de OS</b>\n"
-                        f"  Digitar o número diretamente — ex: <code>9025595</code>\n"
-                        f"  Digitar o nome do cliente — ex: <code>João da Silva</code>\n"
-                        f"/os &lt;num|nome|c…|a…&gt; — Busca explícita por OS\n"
-                        f"{_TG_DIV}\n"
-                        f"<b>Agenda</b>\n"
-                        f"/agenda — OS agendadas para hoje\n"
-                        f"/agenda amanhã — OS agendadas para amanhã\n"
-                        f"/agenda 25/04 — OS agendadas para uma data específica\n"
-                        f"{_TG_DIV}\n"
-                        f"<b>Acompanhamento</b>\n"
-                        f"/status — Panorama completo de instalação, serviço e manutenção\n"
-                        f"/pulso — Resumo rápido da operação completa\n"
-                        f"/equipes — Produção e fila por equipe\n"
-                        f"/ranking — Ranking geral de produtividade\n"
-                        f"/meta — Meta global de instalações\n"
-                        f"/executadas — OS executadas hoje por cidade\n"
-                        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
-                        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
-                        f"{_TG_DIV}\n"
-                        f"<b>Gestão Comercial</b>\n"
-                        f"/pendentes — OS na fila sem equipe atribuída\n"
-                        f"/semana — Resumo semanal por dia (executadas vs agendadas)\n"
-                        f"/menu — Abre o menu rápido\n"
-                        f"/help — Esta mensagem",
-                        chat_id_override=cid)
-                elif grupo == "ALERTAS":
-                    _telegram_send(
-                        f"ℹ️ <b>Cabonnet — Alertas | Supervisor de Rede</b>\n"
-                        f"{_TG_DIV}\n"
-                        f"<b>KPI &amp; Status</b>\n"
-                        f"/kpi — Painel KPI executivo consolidado (todas as operadoras)\n"
-                        f"/status — Status operacional global (fila, exec, SLA)\n"
-                        f"/status rede — Status somente das OS de Rede\n"
-                        f"/pulso — Snapshot rápido: executadas, fila, taxa, equipes paradas\n"
-                        f"/forecast — Projeção de fechamento com base no ritmo atual\n"
-                        f"/comparativo — Hoje vs. ontem: execuções, Sem Execução, SLA\n"
-                        f"{_TG_DIV}\n"
-                        f"<b>Gestão de Equipes</b>\n"
-                        f"/equipes — Produção por equipe hoje (exec vs fila)\n"
-                        f"/equipe &lt;sigla&gt; — Ficha completa de uma equipe\n"
-                        f"/turno — Quem está em campo agora (OS em Atendimento)\n"
-                        f"/ranking — Ranking de produtividade por equipe\n"
-                        f"/meta — Meta de instalações global (todas as equipes)\n"
-                        f"{_TG_DIV}\n"
-                        f"<b>Gestão de OS</b>\n"
-                        f"/resumo — Imagem: OS ativas por equipe (menor → maior)\n"
-                        f"/detalhado — Imagem: OS de hoje listadas por equipe\n"
-                        f"/executadas — OS executadas hoje por cidade\n"
-                        f"/listatendimento — OS em Atendimento agrupadas por equipe\n"
-                        f"/listarede — OS de Rede em Atendimento\n"
-                        f"/sla — SLA detalhado por equipe (vencidas, aging)\n"
-                        f"/aging — Top 20 OS mais antigas na fila\n"
-                        f"/reagendadas — OS reagendadas ainda na fila\n"
-                        f"/cidade &lt;nome&gt; — OS pendentes e executadas em uma cidade\n"
-                        f"/manutencoes — Manutenções abertas hoje por cidade/bairro\n"
-                        f"/semexec — OS encerradas como Sem Execução hoje\n"
-                        f"/producao &lt;sigla&gt; — Produção detalhada de uma equipe\n"
-                        f"/os &lt;num|nome|c…|a…&gt; — Busca OS por número, nome, contrato ou assinante\n"
-                        f"{_TG_DIV}\n"
-                        f"<b>Relatórios PDF</b>\n"
-                        f"/notainstacable — Fechamento de Nota — Instacable\n"
-                        f"/notawes — Fechamento de Nota — WES\n"
-                        f"/notathm — Fechamento de Nota — THM\n"
-                        f"/notarede — Fechamento de Nota — Rede\n"
-                        f"{_TG_DIV}\n"
-                        f"/atualizar — Força atualização dos dados do Grafana agora\n"
-                        f"/menu — Abre o menu rápido com as consultas principais\n"
-                        f"/help — Esta mensagem",
-                        chat_id_override=cid)
+                _telegram_send(_ajuda_do_grupo(grupo), chat_id_override=cid)
