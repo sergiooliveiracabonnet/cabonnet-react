@@ -229,7 +229,7 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
             <div key={r.numos} className="grid grid-cols-[1fr_1fr_80px] gap-3 px-4 py-2.5
                                           hover:bg-surface/20 transition-colors items-center">
               <div className="min-w-0">
-                <p className="text-[11.5px] font-semibold text-text truncate">
+                <p className="text-label font-semibold text-text truncate">
                   {r.nomecliente || '—'}
                 </p>
                 <p className="text-caption font-mono text-muted">{r.numos}</p>
@@ -317,7 +317,7 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
                     onClick={() => onDrillDown({ title: `${r.nomecliente} — OS ${r.numos}`, rows: [r], color })}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11.5px] font-semibold text-text truncate leading-none">
+                      <p className="text-label font-semibold text-text truncate leading-none">
                         {r.nomecliente || '—'}
                       </p>
                       <p className="text-caption text-muted mt-0.5 truncate">

@@ -87,7 +87,7 @@ export function DashboardCommandCenter({
                             ${isActive ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} ${toneClass}`}
               >
                 <span className="flex items-start justify-between gap-2">
-                  <span className={`text-[30px] font-black leading-none tracking-[-0.04em] tabular-nums ${valueClass}`}>
+                  <span className={`text-readout font-black leading-none tracking-[-0.04em] tabular-nums ${valueClass}`}>
                     {priority.value}
                   </span>
                   <span className={`flex h-7 w-7 items-center justify-center rounded-md border ${isActive ? 'border-current/20 bg-bg/25 ' + valueClass : 'border-border text-muted'}`}>

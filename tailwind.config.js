@@ -44,11 +44,19 @@ export default {
 
       // Escala tipográfica semantizada — 5 papéis, mínimo 11px (spec Onda 1)
       fontSize: {
-        caption: ['11px', { lineHeight: '1.35' }],
-        label:   ['12px', { lineHeight: '1.4' }],
-        body:    ['13px', { lineHeight: '1.45' }],
-        title:   ['15px', { lineHeight: '1.35' }],
-        display: ['28px', { lineHeight: '1', letterSpacing: '-0.025em' }],
+        caption:       ['var(--fs-caption)',      { lineHeight: '1.35' }],
+        label:         ['var(--fs-label)',        { lineHeight: '1.4'  }],
+        body:          ['var(--fs-body)',         { lineHeight: '1.45' }],
+        title:         ['var(--fs-title)',        { lineHeight: '1.35' }],
+        subtitle:      ['var(--fs-subtitle)',     { lineHeight: '1.3'  }],
+        headline:      ['var(--fs-headline)',     { lineHeight: '1.2',  letterSpacing: '-0.015em' }],
+        // Leitura de metrica: o conteudo principal de um painel de operacao.
+        // Antes da Fase 2 so existia `display`, e as outras oito medidas eram
+        // inventadas dentro de cada componente.
+        readout:       ['var(--fs-readout)',      { lineHeight: '1', letterSpacing: '-0.025em' }],
+        'readout-lg':  ['var(--fs-readout-lg)',   { lineHeight: '1', letterSpacing: '-0.03em'  }],
+        'readout-xl':  ['var(--fs-readout-xl)',   { lineHeight: '1', letterSpacing: '-0.03em'  }],
+        'readout-2xl': ['var(--fs-readout-2xl)',  { lineHeight: '1', letterSpacing: '-0.035em' }],
       },
 
       borderRadius: {

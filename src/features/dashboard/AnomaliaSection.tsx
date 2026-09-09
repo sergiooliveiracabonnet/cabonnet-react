@@ -16,7 +16,7 @@ function ComposicaoLine({ composicao }: { composicao: Composicao }) {
   const recorrente = composicao.clientesRecorrentes[0]
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-3 pt-0.5 pb-1 text-[10.5px] text-muted/80">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-3 pt-0.5 pb-1 text-caption text-muted/80">
       {tipo && (
         <span>Predomina <span className="text-secondary font-medium">{tipo.nome}</span> ({tipo.pct}%)</span>
       )}

@@ -141,7 +141,7 @@ export default function PlannerPlanejadoView() {
             <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: k.color }} />
             <div className="p-4">
               <p className="text-caption text-muted mb-1.5">{k.label}</p>
-              <p className="font-mono font-black tabular-nums text-display leading-none" style={{ color: k.color }}>{k.value}</p>
+              <p className="font-mono font-black tabular-nums text-readout leading-none" style={{ color: k.color }}>{k.value}</p>
             </div>
           </div>
         ))}
@@ -226,7 +226,7 @@ export default function PlannerPlanejadoView() {
                         className="border-b border-white/[0.08] hover:bg-surface/30 transition-colors"
                         style={{ animationDelay: `${i * 30}ms` }}>
                       <td className="px-4 py-3 w-[160px]">
-                        <p className="text-[11.5px] font-semibold text-text truncate">{t.team}</p>
+                        <p className="text-label font-semibold text-text truncate">{t.team}</p>
                       </td>
                       {days.map(d => (
                         <PlannerCell
@@ -294,7 +294,7 @@ export default function PlannerPlanejadoView() {
             {cidades.map(([cidade, cnt]: [string, number]) => (
               <div key={cidade} className="flex items-center gap-2 bg-card border border-white/[0.08] rounded-xl px-3 py-2">
                 <MapPin size={10} className="text-muted" />
-                <span className="text-[11.5px] font-semibold text-text">{cidade}</span>
+                <span className="text-label font-semibold text-text">{cidade}</span>
                 <span className="font-mono text-caption text-primary font-bold">{cnt}</span>
               </div>
             ))}

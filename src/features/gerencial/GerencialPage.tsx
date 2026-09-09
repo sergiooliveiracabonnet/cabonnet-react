@@ -230,7 +230,7 @@ export default function GerencialPage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-[20px] font-headline font-bold text-text">Visão Gerencial</h1>
+            <h1 className="text-headline font-headline font-bold text-text">Visão Gerencial</h1>
             <span className="flex items-center gap-1.5 text-caption text-muted">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75" />
@@ -284,7 +284,7 @@ export default function GerencialPage() {
                      className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill({ title: `Instalações ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
-                  <p className="font-mono font-bold text-[24px] leading-none"
+                  <p className="font-mono font-bold text-readout leading-none"
                      style={{ color: s.color }}>{s.drillRows.length}</p>
                   <p className="text-caption text-muted mt-1">{s.label}</p>
                 </div>
@@ -344,7 +344,7 @@ export default function GerencialPage() {
                      className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill({ title: `VT/Manutenção ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
-                  <p className="font-mono font-bold text-[24px] leading-none"
+                  <p className="font-mono font-bold text-readout leading-none"
                      style={{ color: s.color }}>{s.drillRows.length}</p>
                   <p className="text-caption text-muted mt-1">{s.label}</p>
                 </div>
@@ -404,7 +404,7 @@ export default function GerencialPage() {
                      className="rounded-xl border border-white/[0.08] bg-card px-3 py-3
                                 cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => openDrill({ title: `Serviços ${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
-                  <p className="font-mono font-bold text-[24px] leading-none"
+                  <p className="font-mono font-bold text-readout leading-none"
                      style={{ color: s.color }}>{s.drillRows.length}</p>
                   <p className="text-caption text-muted mt-1">{s.label}</p>
                 </div>
@@ -467,7 +467,7 @@ export default function GerencialPage() {
                 </button>
               )}
               <button
-                className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
+                className="flex items-center gap-1.5 font-mono font-black text-headline leading-none
                            hover:opacity-80 transition-opacity"
                 style={{ color: '#3b82f6' }}
                 onClick={() => openDrill({ title: `Instalação em Rota hoje — ${rotaInst.length} ordens`, rows: rotaInst, color: '#3b82f6' })}
@@ -519,7 +519,7 @@ export default function GerencialPage() {
                 </button>
               )}
               <button
-                className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
+                className="flex items-center gap-1.5 font-mono font-black text-headline leading-none
                            hover:opacity-80 transition-opacity"
                 style={{ color: '#f97316' }}
                 onClick={() => openDrill({ title: `VT/Manutenção em Rota hoje — ${rotaVTManut.length} ordens`, rows: rotaVTManut, color: '#f97316' })}
@@ -572,7 +572,7 @@ export default function GerencialPage() {
                 </button>
               )}
               <button
-                className="flex items-center gap-1.5 font-mono font-black text-[22px] leading-none
+                className="flex items-center gap-1.5 font-mono font-black text-headline leading-none
                            hover:opacity-80 transition-opacity"
                 style={{ color: '#c4b5fd' }}
                 onClick={() => openDrill({ title: `Serviço em Rota hoje — ${rotaServ.length} ordens`, rows: rotaServ, color: '#c4b5fd' })}
@@ -628,7 +628,7 @@ export default function GerencialPage() {
                  style={{ borderColor: `${s.color}20` }}
                  onClick={() => openDrill({ title: `${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
               <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: s.color }} />
-              <p className="font-mono font-black tabular-nums text-display leading-none"
+              <p className="font-mono font-black tabular-nums text-readout leading-none"
                  style={{ color: s.color }}>{s.drillRows.length}</p>
               <p className="text-caption text-muted mt-1">{s.label}</p>
             </div>

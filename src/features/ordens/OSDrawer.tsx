@@ -230,7 +230,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                 {os._aging != null && (
                   <div className="px-4 py-3 flex flex-col gap-1 items-center justify-center min-w-[72px]">
                     <span className="text-caption font-bold uppercase tracking-[0.05em] text-muted">Aging</span>
-                    <span className={`font-mono font-black text-[22px] leading-none ${agingCls}`}>
+                    <span className={`font-mono font-black text-headline leading-none ${agingCls}`}>
                       {os._aging}<span className="text-label font-semibold ml-0.5 opacity-60">d</span>
                     </span>
                   </div>
@@ -346,7 +346,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                   ].filter(Boolean).map((item) => { const { label, value, color } = item as { label: string; value: string; color: string }; return (
                     <div key={label} className="bg-surface/30 border border-white/[0.08] rounded-xl p-3 text-center">
                       <p className="text-caption font-bold uppercase tracking-[0.05em] text-muted mb-2 leading-tight">{label}</p>
-                      <p className={`font-mono text-[20px] font-black leading-none ${color}`}>{value}</p>
+                      <p className={`font-mono text-headline font-black leading-none ${color}`}>{value}</p>
                     </div>
                   )})}
                 </div>

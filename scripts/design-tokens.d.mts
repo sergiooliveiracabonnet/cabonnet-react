@@ -9,3 +9,12 @@ export interface DesignTokens {
 export declare function parseTokens(css: string): DesignTokens
 export declare function resolveTheme(tokens: DesignTokens, tema: 'dark' | 'light'): Record<string, string>
 export declare function lerIndexCss(caminho?: string): DesignTokens
+
+export interface EscalaTipo {
+  /** Papel → tamanho em px. Ordenado do menor para o maior. */
+  mesa: Record<string, number>
+  parede: Record<string, number>
+}
+
+export declare function parseEscalaTipo(css: string): EscalaTipo
+export declare function lerEscalaTipo(caminho?: string): EscalaTipo

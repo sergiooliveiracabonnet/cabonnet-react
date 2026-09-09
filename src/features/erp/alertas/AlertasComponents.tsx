@@ -152,16 +152,16 @@ export function AlertCard({ alert, delay = 0, acknowledged = false, onToggleAckn
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-            <p className="text-[13.5px] font-semibold text-text">{alert.title}</p>
+            <p className="text-body font-semibold text-text">{alert.title}</p>
             <span className="text-caption font-bold uppercase tracking-[0.05em] px-2 py-0.5 rounded-full border flex-shrink-0"
                   style={{ background: sev.bg, borderColor: `${sev.color}40`, color: sev.color }}>
               {sev.label}
             </span>
           </div>
-          <p className="text-[11.5px] text-secondary">{alert.desc}</p>
+          <p className="text-label text-secondary">{alert.desc}</p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
-          <span className="font-mono font-black tabular-nums text-[40px] leading-none" style={{ color: sev.color }}>
+          <span className="font-mono font-black tabular-nums text-readout-lg leading-none" style={{ color: sev.color }}>
             {alert.count}
           </span>
           <CaretDown size={14} className="text-muted transition-transform duration-200"
@@ -225,11 +225,11 @@ export function RuleCard({ rule, delay = 0, acknowledged = false, onToggleAcknow
           <RIcon size={17} style={{ color: sev.color }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[12.5px] font-semibold text-text">{rule.label}</p>
-          <p className="text-[10.5px] text-secondary mt-0.5">{rule.desc}</p>
+          <p className="text-body font-semibold text-text">{rule.label}</p>
+          <p className="text-caption text-secondary mt-0.5">{rule.desc}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="font-mono font-black tabular-nums text-display leading-none" style={{ color: sev.color }}>
+          <p className="font-mono font-black tabular-nums text-readout leading-none" style={{ color: sev.color }}>
             {rule.currentValue}
           </p>
           <p className="text-caption text-muted mt-0.5">{rule.operator} {rule.threshold}</p>
@@ -277,12 +277,12 @@ export function GrafanaCityStrip({ cidades, loading }: { cidades: GrafanaCidade[
               <MapPin size={10} className="text-muted flex-shrink-0" />
               <p className="text-caption font-semibold text-secondary truncate">{c.cidade}</p>
             </div>
-            <p className="font-mono font-black text-display leading-none tabular-nums text-text">{c.pendentes ?? 0}</p>
+            <p className="font-mono font-black text-readout leading-none tabular-nums text-text">{c.pendentes ?? 0}</p>
             <div className="h-1.5 rounded-full bg-surface/40 overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700"
                    style={{ width: `${pct}%`, background: barClr, boxShadow: `0 0 6px ${barClr}60` }} />
             </div>
-            <div className="flex justify-between text-[9.5px]">
+            <div className="flex justify-between text-caption">
               <span className="text-muted">{c.fechados_7d ?? 0} fechados/7d</span>
               {isCrit && (
                 <span className="font-semibold" style={{ color: '#f97316' }}>{c.aging_critico} aging</span>
@@ -381,7 +381,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
                 <div key={f.key} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label htmlFor={`alert-setting-${f.key}`} className="text-label text-secondary font-medium">{f.label}</label>
-                    <span className="text-[16px] font-bold text-primary tabular-nums font-mono">
+                    <span className="text-title font-bold text-primary tabular-nums font-mono">
                       {(draft as unknown as Record<string, number>)[f.key]}{f.suffix}
                     </span>
                   </div>

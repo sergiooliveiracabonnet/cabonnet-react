@@ -298,7 +298,7 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
         {resto.length > 0 && (
           <button type="button"
                   onClick={() => onOpen('Fila — Outros serviços', resto.flatMap(g => g.rows))}
-                  className="w-full text-left text-[10.5px] text-muted hover:text-secondary pt-2 bg-transparent border-0 cursor-pointer">
+                  className="w-full text-left text-caption text-muted hover:text-secondary pt-2 bg-transparent border-0 cursor-pointer">
             + {resto.length} outros tipos ({resto.reduce((s, g) => s + g.rows.length, 0)} OS) — ver todas
           </button>
         )}
@@ -591,7 +591,7 @@ export function QualidadePeriodoCard({ pulso, taxaRevisitas }: { pulso: Pulso; t
           <div key={s.label} title={s.hint}
                className="flex flex-col border border-border rounded-md bg-bg/40 px-3 py-2">
             <p className="text-caption font-semibold uppercase tracking-[0.04em] text-muted">{s.label}</p>
-            <p className={`font-bold text-[18px] leading-none tabular-nums tracking-tight mt-1
+            <p className={`font-bold text-subtitle leading-none tabular-nums tracking-tight mt-1
                            ${s.danger ? 'text-red' : s.warn ? 'text-yellow' : 'text-text'}`}>
               {s.value}
             </p>

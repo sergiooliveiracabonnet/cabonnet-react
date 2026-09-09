@@ -222,7 +222,7 @@ export default function AlertasPage() {
               <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: k.color }} />
               <div className="p-4">
                 <p className="text-caption text-muted mb-2">{k.label}</p>
-                <p className="font-mono font-black tabular-nums text-[30px] leading-none" style={{ color: k.color }}>
+                <p className="font-mono font-black tabular-nums text-readout leading-none" style={{ color: k.color }}>
                   {k.value}
                 </p>
                 <p className="text-caption text-muted mt-1">{k.sub}</p>

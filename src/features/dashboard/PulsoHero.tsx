@@ -250,7 +250,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
                   </dt>
                   <dd className="mt-0.5">
                     <span className="flex items-baseline gap-2">
-                      <span className={`text-display font-black tabular-nums ${TONE_TEXT[v.tone]}`}>{v.valor}</span>
+                      <span className={`text-readout font-black tabular-nums ${TONE_TEXT[v.tone]}`}>{v.valor}</span>
                       {m && (
                         <span className={`inline-flex items-center gap-1 text-caption font-bold tabular-nums ${m.melhorou ? 'text-green' : 'text-red'}`}>
                           {m.delta > 0

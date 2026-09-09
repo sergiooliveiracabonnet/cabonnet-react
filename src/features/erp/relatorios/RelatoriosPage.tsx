@@ -302,7 +302,7 @@ export default function RelatoriosPage() {
                 <KIcon size={16} className={k.colorCls} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-mono font-black tabular-nums text-[26px] leading-none text-text">{k.value}</p>
+                <p className="font-mono font-black tabular-nums text-readout leading-none text-text">{k.value}</p>
                 <p className="text-caption text-secondary mt-0.5">{k.label}</p>
               </div>
               <CaretRight size={13} className="text-muted flex-shrink-0" />

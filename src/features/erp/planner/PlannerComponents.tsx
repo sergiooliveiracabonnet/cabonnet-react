@@ -257,7 +257,7 @@ export function PlannerCell({ rows = [] as OSRow[], isPast, _isToday: _isToday =
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}>
       <div className="flex flex-col items-center gap-1">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-mono font-black text-[17px] tabular-nums
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-mono font-black text-subtitle tabular-nums
                         group-hover:scale-110 transition-transform duration-150"
              style={{ background: `${color}2e`, border: `1px solid ${color}66`, color: color ?? undefined }}>
           {count}

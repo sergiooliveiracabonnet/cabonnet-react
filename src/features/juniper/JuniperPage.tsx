@@ -269,7 +269,7 @@ export default function JuniperPage() {
             <Lightning size={40} className={`${heroStyle.text} relative`} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className={`font-headline font-bold text-[22px] ${heroStyle.text}`}>
+            <p className={`font-headline font-bold text-headline ${heroStyle.text}`}>
               {hero.nivel_label ?? 'Aguardando validação'}
             </p>
             <p className="text-label text-muted mt-1">{hero.desc ?? 'Configure a fonte acima para exibir clientes PPPoE'}</p>
@@ -290,7 +290,7 @@ export default function JuniperPage() {
             )}
           </div>
           <div className="text-right">
-            <p className={`font-headline font-bold text-[52px] leading-none tabular-nums ${heroStyle.text}`}>
+            <p className={`font-headline font-bold text-readout-xl leading-none tabular-nums ${heroStyle.text}`}>
               {kpis.total ?? '—'}
             </p>
             <p className="text-caption text-muted mt-1">conexões indevidas</p>
