@@ -99,6 +99,19 @@ export function clusterDaEquipe(nomedaequipe: string | null | undefined): Cluste
   return null
 }
 
+/**
+ * Cluster que o cliente ainda precisa filtrar, ou null quando não precisa.
+ *
+ * Conta amarrada a um cluster já recebe o CSV recortado pelo servidor. Filtrar
+ * de novo aqui só cria a chance de os dois discordarem — e discordar significa
+ * tela vazia, que foi exatamente o que aconteceu com uma conta de Adamantina
+ * cujo seletor tinha ficado em Vale.
+ */
+export function clusterFiltroCliente(daConta: ClusterFilter, doSeletor: ClusterFilter): ClusterKey | null {
+  if (daConta !== 'TODOS') return null
+  return doSeletor === 'TODOS' ? null : doSeletor
+}
+
 export const clusterLabel = (filtro: ClusterFilter): string =>
   filtro === 'TODOS' ? 'Todos os clusters' : CLUSTERS[filtro].label
 

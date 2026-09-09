@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   CIDADES_ATENDIDAS, CLUSTERS, CLUSTER_DE_CIDADE, CLUSTER_KEYS,
-  cidadesDoFiltro, clusterDaCidade, clusterDaEquipe, isCidadeValida, matchesCluster, normCity,
+  cidadesDoFiltro, clusterDaCidade, clusterDaEquipe, clusterFiltroCliente, isCidadeValida, matchesCluster, normCity,
 } from './clusters'
 
 /**
@@ -132,5 +132,24 @@ describe('helpers de exibição', () => {
 
   it('CLUSTER_DE_CIDADE cobre canônicas e aliases', () => {
     expect(Object.keys(CLUSTER_DE_CIDADE)).toHaveLength(14)
+  })
+})
+
+describe('clusterFiltroCliente', () => {
+  it('conta amarrada não filtra no cliente — o servidor já recortou', () => {
+    // O bug: conta ADAMANTINA + seletor parado em VALE zerava a tela, porque o
+    // cliente filtrava por VALE linhas que o servidor já limitara a Adamantina.
+    expect(clusterFiltroCliente('ADAMANTINA', 'VALE')).toBeNull()
+    expect(clusterFiltroCliente('ADAMANTINA', 'ADAMANTINA')).toBeNull()
+    expect(clusterFiltroCliente('VALE', 'ADAMANTINA')).toBeNull()
+  })
+
+  it('conta com TODOS respeita a escolha do seletor', () => {
+    expect(clusterFiltroCliente('TODOS', 'VALE')).toBe('VALE')
+    expect(clusterFiltroCliente('TODOS', 'ADAMANTINA')).toBe('ADAMANTINA')
+  })
+
+  it('conta com TODOS e seletor em Tudo não filtra nada', () => {
+    expect(clusterFiltroCliente('TODOS', 'TODOS')).toBeNull()
   })
 })
