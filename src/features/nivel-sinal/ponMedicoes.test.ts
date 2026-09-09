@@ -12,20 +12,20 @@ const row = (overrides: Partial<SignalRow> = {}): SignalRow => ({
 })
 
 const medicao = (overrides: Partial<PonMedicao> = {}): PonMedicao => ({
-  onu_key: '12345', cliente: 'Cliente A', onu: '7', serial: 'ABC123',
+  onu_key: 'ABC123', cliente: 'Cliente A', onu: '7', serial: 'ABC123', codigo: '12345',
   rx_antes: -29.5, rx_depois: null, observacao: '',
   ...overrides,
 })
 
 describe('medicaoKey', () => {
-  it('usa o código do assinante, que não muda quando a ONU é trocada', () => {
-    expect(medicaoKey(row())).toBe('12345')
+  it('usa o serial como identidade do cliente na PON', () => {
+    expect(medicaoKey(row())).toBe('ABC123')
   })
 
-  it('cai para serial, ONU e cliente quando o CSV não traz a coluna Código', () => {
-    expect(medicaoKey(row({ codigo: '' }))).toBe('ABC123')
-    expect(medicaoKey(row({ codigo: '—', serial: '' }))).toBe('7')
-    expect(medicaoKey(row({ codigo: '', serial: '', onu: '' }))).toBe('Cliente A')
+  it('cai para ONU, código e cliente quando o serial não vem no CSV', () => {
+    expect(medicaoKey(row({ serial: '' }))).toBe('7')
+    expect(medicaoKey(row({ serial: '—', onu: '' }))).toBe('12345')
+    expect(medicaoKey(row({ serial: '', onu: '', codigo: '' }))).toBe('Cliente A')
   })
 })
 
@@ -51,9 +51,9 @@ describe('formatRx', () => {
 describe('buildMedicaoDrafts', () => {
   it('lista todos os clientes da PON, pior potência primeiro', () => {
     const drafts = buildMedicaoDrafts([
-      row({ codigo: 'A', cliente: 'Boa', rx: -21 }),
-      row({ codigo: 'B', cliente: 'Pior', rx: -33 }),
-      row({ codigo: 'C', cliente: 'Sem leitura', rx: null }),
+      row({ serial: 'A', cliente: 'Boa', rx: -21 }),
+      row({ serial: 'B', cliente: 'Pior', rx: -33 }),
+      row({ serial: 'C', cliente: 'Sem leitura', rx: null }),
     ], [])
 
     expect(drafts.map(item => item.cliente)).toEqual(['Pior', 'Boa', 'Sem leitura'])
@@ -83,7 +83,7 @@ describe('buildMedicaoDrafts', () => {
   })
 
   it('funciona sem CSV carregado: a lista salva basta para editar depois', () => {
-    expect(buildMedicaoDrafts([], [medicao(), medicao({ onu_key: 'B' })])).toHaveLength(2)
+    expect(buildMedicaoDrafts([], [medicao(), medicao({ onu_key: 'B', serial: 'B' })])).toHaveLength(2)
   })
 })
 
@@ -121,26 +121,40 @@ describe('buildMedicaoDrafts — identidade repetida', () => {
 
 describe('buildMedicaoDrafts — troca de ONU', () => {
   it('segue o mesmo assinante quando o serial muda em campo', () => {
-    // Trocar a ONU e tratativa de rotina e muda o serial. Com o codigo na chave,
-    // o assinante continua sendo o mesmo registro — sem heuristica no meio.
+    // Trocar a ONU e uma das tratativas mais comuns de PON: o CSV seguinte traz
+    // serial novo e a medicao antiga virava orfa, com uma linha vazia ao lado.
     const drafts = buildMedicaoDrafts(
       [row({ serial: 'NOVO999', codigo: '12345', cliente: 'Cliente A', rx: -21 })],
-      [medicao({ rx_antes: -29.5, rx_depois: -21.4 })],
+      [medicao({ onu_key: 'ABC123', serial: 'ABC123', codigo: '12345', rx_antes: -29.5, rx_depois: -21.4 })],
     )
 
     expect(drafts).toHaveLength(1)
     expect(drafts[0].noCsv).toBe(false)
-    expect(drafts[0].onu_key).toBe('12345')
+    expect(drafts[0].onu_key).toBe('NOVO999')
     expect(drafts[0].serial).toBe('NOVO999')
     expect(drafts[0].rx_antes).toBe(-29.5)
     expect(drafts[0].rx_depois).toBe(-21.4)
   })
 
-  it('mantém homônimos sem código separados, mesmo trocando a ONU dos dois', () => {
-    const csv = [row({ serial: 'NOVO1', codigo: '', cliente: 'JOSE DA SILVA', rx: -21 }),
-      row({ serial: 'NOVO2', codigo: '', cliente: 'JOSE DA SILVA', rx: -22 })]
+  it('reencontra pelo nome a medição antiga que não tem código gravado', () => {
+    const drafts = buildMedicaoDrafts(
+      [row({ serial: 'NOVO999', codigo: '12345', cliente: 'Cliente A', rx: -21 })],
+      [medicao({ onu_key: 'ABC123', serial: 'ABC123', codigo: '', rx_depois: -21.4 })],
+    )
 
-    expect(new Set(buildMedicaoDrafts(csv, []).map(item => item.onu_key)).size).toBe(2)
+    expect(drafts).toHaveLength(1)
+    expect(drafts[0].rx_depois).toBe(-21.4)
+  })
+
+  it('não adivinha entre homônimos sem código: prefere deixar órfã a trocar de dono', () => {
+    const drafts = buildMedicaoDrafts(
+      [row({ serial: 'NOVO1', codigo: '', cliente: 'JOSE DA SILVA', rx: -21 }),
+        row({ serial: 'NOVO2', codigo: '', cliente: 'JOSE DA SILVA', rx: -22 })],
+      [medicao({ onu_key: 'VELHO1', serial: 'VELHO1', codigo: '', cliente: 'JOSE DA SILVA', rx_depois: -21.4 })],
+    )
+
+    expect(drafts).toHaveLength(3)
+    expect(drafts.filter(item => item.noCsv)).toHaveLength(1)
   })
 })
 
@@ -158,10 +172,10 @@ describe('buildMedicaoDrafts — RX de antes congelado', () => {
 describe('medicoesResumo', () => {
   it('conta o que falta medir sem tratar em branco como erro', () => {
     const drafts = buildMedicaoDrafts(
-      [row({ codigo: 'A', rx: -29 }), row({ codigo: 'B', rx: -30 }), row({ codigo: 'C', rx: -28 })],
+      [row({ serial: 'A', rx: -29 }), row({ serial: 'B', rx: -30 }), row({ serial: 'C', rx: -28 })],
       [
-        medicao({ onu_key: 'A', rx_antes: -29, rx_depois: -22 }),
-        medicao({ onu_key: 'B', rx_antes: -30, rx_depois: -31 }),
+        medicao({ onu_key: 'A', serial: 'A', rx_antes: -29, rx_depois: -22 }),
+        medicao({ onu_key: 'B', serial: 'B', rx_antes: -30, rx_depois: -31 }),
       ],
     )
 
@@ -182,12 +196,12 @@ describe('medicoesResumo — valor inválido', () => {
 
 describe('draftsToMedicoes', () => {
   it('envia o cadastro completo, com as pendentes em branco', () => {
-    const drafts = buildMedicaoDrafts([row({ codigo: 'A', cliente: 'Cliente A', rx: -29 }), row({ codigo: 'B', cliente: 'Cliente B', rx: -30 })], [])
+    const drafts = buildMedicaoDrafts([row({ serial: 'A', cliente: 'Cliente A', rx: -29 }), row({ serial: 'B', cliente: 'Cliente B', rx: -30 })], [])
     const editado = drafts.map(item => item.onu_key === 'A' ? { ...item, valor: '-22,5', observacao: 'Splitter limpo' } : item)
 
     expect(draftsToMedicoes(editado)).toEqual([
-      { onu_key: 'B', cliente: 'Cliente B', onu: '7', serial: 'ABC123', rx_antes: -30, rx_depois: null, observacao: '' },
-      { onu_key: 'A', cliente: 'Cliente A', onu: '7', serial: 'ABC123', rx_antes: -29, rx_depois: -22.5, observacao: 'Splitter limpo' },
+      { onu_key: 'B', cliente: 'Cliente B', onu: '7', serial: 'B', codigo: '12345', rx_antes: -30, rx_depois: null, observacao: '' },
+      { onu_key: 'A', cliente: 'Cliente A', onu: '7', serial: 'A', codigo: '12345', rx_antes: -29, rx_depois: -22.5, observacao: 'Splitter limpo' },
     ])
   })
 

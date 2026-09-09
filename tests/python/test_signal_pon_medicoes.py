@@ -154,17 +154,16 @@ def test_potencia_nao_finita_vira_pendente_para_o_json_seguir_valido(client, tmp
         assert medicoes[2]["rx_antes"] is None
 
 
-def test_chave_do_assinante_atravessa_o_banco_intacta(client, tmp_path):
-    """A onu_key e o codigo do assinante, que nao muda quando a ONU e trocada.
-    Se o banco a alterasse, a tela perderia o vinculo e a PON ficaria pendente."""
-    with patch("cabonnet.db._DB_PATH", str(tmp_path / "medicoes_chave.db")):
+def test_codigo_do_assinante_sobrevive_ao_banco(client, tmp_path):
+    """Trocar a ONU muda serial e onu_key. Sem o codigo gravado, a tela nao
+    reencontra o assinante e a PON fica pendente de potencia para sempre."""
+    with patch("cabonnet.db._DB_PATH", str(tmp_path / "medicoes_codigo.db")):
         db._db_init()
-        _tratar(client, [{"onu_key": "98765", "cliente": "Cliente A", "serial": "ABC1",
+        _tratar(client, [{"onu_key": "ABC1", "cliente": "Cliente A", "codigo": "98765",
                           "rx_antes": -29.5, "rx_depois": -22.3}])
 
         medicao = client.get("/api/nivel-sinal/pons-tratadas").json()["items"][0]["medicoes"][0]
-        assert medicao["onu_key"] == "98765"
-        assert medicao["serial"] == "ABC1"
+        assert medicao["codigo"] == "98765"
 
 
 def test_medicoes_de_pon_desconhecida_sao_recusadas(client, tmp_path):

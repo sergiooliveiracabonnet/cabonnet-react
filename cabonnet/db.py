@@ -437,7 +437,7 @@ def _db_list_pon_treatments():
     return list(current.values())
 
 
-_MEDICAO_TEXT_FIELDS = ("cliente", "onu", "serial", "observacao")
+_MEDICAO_TEXT_FIELDS = ("cliente", "onu", "serial", "codigo", "observacao")
 
 
 def _coerce_rx(value):

@@ -14,7 +14,7 @@ const row = (overrides: Partial<SignalRow> = {}): SignalRow => ({
 })
 
 const medicao = (overrides: Partial<PonMedicao> = {}): PonMedicao => ({
-  onu_key: 'SUMIU', cliente: 'Fantasma', onu: '9', serial: 'SUMIU',
+  onu_key: 'SUMIU', cliente: 'Fantasma', onu: '9', serial: 'SUMIU', codigo: '999',
   rx_antes: -30, rx_depois: null, observacao: '',
   ...overrides,
 })
