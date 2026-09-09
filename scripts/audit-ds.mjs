@@ -13,6 +13,10 @@ const RULES = [
     test: (src) => [...src.matchAll(/text-\[(?:8|9|10)px\]/g)].map(m => m[0]),
   },
   {
+    name: 'Primitivo de token em componente (use a camada semantica --c-*)',
+    test: (src) => [...src.matchAll(/--p-[a-z0-9-]+/g)].map(m => m[0]),
+  },
+  {
     name: 'Import de componente removido do design system',
     test: (src) => [...src.matchAll(/from\s+['"][^'"]*ui\/KPICard['"]|(?:\bBentoKPICard\b|\bKpiBadge\b|\bKpiCard\b)/g)].map(m => m[0]),
   },
