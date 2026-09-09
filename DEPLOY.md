@@ -178,8 +178,13 @@ externamente — apenas o Nginx fala com o mundo.
 
 - **Lockfile**: se o processo for encerrado à força, pode sobrar `cabonnet_server.lock`
   na raiz do projeto — é seguro apagar antes de reiniciar o serviço.
-- **Logs**: tudo vai para `cabonnet_server.log` na raiz do projeto e para stdout
+- **Logs**: tudo vai para `logs/cabonnet_server.log` e para stdout
   (`docker compose logs` ou `journalctl -u cabonnet`, conforme a opção escolhida).
+  O caminho do arquivo sai de `CABONNET_LOG_FILE`; sem a variável, cai em
+  `cabonnet_server.log` na raiz. Ele **precisa** ficar dentro de um diretório
+  montado: o handler renomeia o arquivo ao girar nos 10 MB, e renomear um
+  bind-mount de arquivo único falha dentro do container — o log congela sem
+  aviso, com a aplicação viva.
 - **Banco/cache**: `cabonnet_data.db` (SQLite) guarda o cache de OS para sobreviver a
   quedas do Grafana — não precisa ser versionado nem copiado manualmente entre ambientes.
 - **Backups**: a pasta `Backup/` guarda snapshots do Grafana; no Docker já é um volume

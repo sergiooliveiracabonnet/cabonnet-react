@@ -75,7 +75,11 @@ CONFIG = {
     "port":        5000,
     "port_backup": 5001,
     "timeout_s":   30,
-    "log_file":    os.path.join(_PROJECT_DIR, "cabonnet_server.log"),
+    # Configuravel porque o RotatingFileHandler precisa RENOMEAR o arquivo ao
+    # girar, e nao se renomeia um bind-mount de arquivo unico de dentro do
+    # container: o rename falha, logging.handleError engole a excecao e o log
+    # congela em silencio. Apontar para um diretorio montado resolve.
+    "log_file":    os.environ.get("CABONNET_LOG_FILE") or os.path.join(_PROJECT_DIR, "cabonnet_server.log"),
 }
 
 # ── Telegram — Bot e Grupos ──────────────────────────────────────────────────

@@ -99,3 +99,72 @@ def test_query_response_exige_a_sessao():
     from cabonnet.app import _query_response
     sig = inspect.signature(_query_response)
     assert sig.parameters["sess"].default is inspect.Parameter.empty
+
+
+# ── Caminhos de fallback ────────────────────────────────────────────────────
+# O bug anterior passou porque os testes so exercitavam o cache fresco. Depois
+# de um restart o cache em memoria esta vazio e o /query desce por estes ramos,
+# que tambem precisam respeitar o cluster.
+
+SESS_ADA = {"role": "gestor", "username": "oscar", "fornecedor_key": None, "cluster_key": "ADAMANTINA"}
+
+
+@pytest.fixture
+def cache_expirado():
+    """Cache em memoria antigo: derruba o caminho rapido, cai no Fallback 1."""
+    with state._query_cache_lock:
+        anterior = dict(state._query_cache)
+        state._query_cache.update({
+            "ts": time.time() - 86400, "pendente": CSV, "agendado": CSV, "futuro": CSV,
+        })
+    yield
+    with state._query_cache_lock:
+        state._query_cache.clear()
+        state._query_cache.update(anterior)
+
+
+def test_fallback_de_memoria_tambem_recorta_por_cluster(client, cache_expirado):
+    with patch("cabonnet.app.grafana_post", side_effect=RuntimeError("Grafana fora")):
+        payload = _consulta(client, SESS_ADA)
+    assert payload.get("cached") is True
+    assert _cidades(payload) == ["Adamantina", "Lucélia", "Osvaldo Cruz"]
+
+
+def test_fallback_do_sqlite_tambem_recorta_por_cluster(client):
+    """Cache em memoria zerado, como logo apos um restart."""
+    with state._query_cache_lock:
+        anterior = dict(state._query_cache)
+        state._query_cache.update({"ts": 0, "pendente": "", "agendado": "", "futuro": ""})
+    try:
+        with patch("cabonnet.app.grafana_post", side_effect=RuntimeError("Grafana fora")), \
+             patch("cabonnet.app._db_load_cache", side_effect=lambda chave: (CSV, time.time() - 3600)):
+            payload = _consulta(client, SESS_ADA)
+        assert payload.get("cached_source") == "sqlite"
+        assert _cidades(payload) == ["Adamantina", "Lucélia", "Osvaldo Cruz"]
+    finally:
+        with state._query_cache_lock:
+            state._query_cache.clear()
+            state._query_cache.update(anterior)
+
+
+def test_sem_grafana_e_sem_cache_devolve_502_e_nao_500(client):
+    """query_cache corrompido devolve ('', 0) — o /query tem de degradar para
+    502 com mensagem, nao estourar exception."""
+    with state._query_cache_lock:
+        anterior = dict(state._query_cache)
+        state._query_cache.update({"ts": 0, "pendente": "", "agendado": "", "futuro": ""})
+    try:
+        with patch("cabonnet.app.grafana_post", side_effect=RuntimeError("Grafana fora")), \
+             patch("cabonnet.app._db_load_cache", return_value=("", 0)), \
+             patch("cabonnet.app.pg_is_available", return_value=False):
+            app.dependency_overrides[_require_session] = lambda: SESS_ADA
+            try:
+                r = client.get("/query?date=hoje")
+            finally:
+                app.dependency_overrides.pop(_require_session, None)
+        assert r.status_code == 502
+        assert "cache" in r.text.lower()
+    finally:
+        with state._query_cache_lock:
+            state._query_cache.clear()
+            state._query_cache.update(anterior)
