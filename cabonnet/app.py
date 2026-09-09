@@ -203,7 +203,10 @@ def _require_session(request: Request) -> dict:
     — usado por endpoints que precisam saber QUEM está agindo, não só o papel
     (ex: trocar a própria senha)."""
     if not _auth_enabled():
-        return {"role": "gestor", "username": None}
+        # Escopo explicito: sem auth o modo local ve tudo. Deixar as chaves
+        # ausentes daria o mesmo resultado por acidente, e foi um None
+        # implicito assim que desligou o filtro de cluster no /query.
+        return {"role": "gestor", "username": None, "fornecedor_key": None, "cluster_key": "TODOS"}
     sess = _session_from_cookie(request.headers.get("cookie", ""))
     if sess is None:
         raise HTTPException(401, "Não autenticado")
@@ -931,8 +934,15 @@ def _filter_csv_escopo(csv_text: str, fornecedor_key: str | None, cluster_key: s
     return _filter_csv_cluster(_filter_csv_fornecedor(csv_text, fornecedor_key), cluster_key)
 
 
-def _query_response(snapshot: dict, data_iso: str, compact: bool, fornecedor_key: str | None = None,
-                    cluster_key: str | None = None, **metadata):
+def _query_response(snapshot: dict, data_iso: str, compact: bool, sess: dict, **metadata):
+    """Monta a resposta do /query ja recortada pelo escopo da sessao.
+
+    `sess` e obrigatoria de proposito: a versao anterior recebia as chaves
+    soltas com default None, e esquecer de passar uma delas desligava o filtro
+    sem erro nenhum. Foi assim que o cluster ficou sem efeito no /query.
+    """
+    fornecedor_key = sess.get("fornecedor_key")
+    cluster_key = sess.get("cluster_key")
     pendente = _filter_csv_escopo(snapshot.get('pendente', '') or '', fornecedor_key, cluster_key)
     agendado = _filter_csv_escopo(snapshot.get('agendado', '') or '', fornecedor_key, cluster_key)
     futuro = _filter_csv_escopo(snapshot.get('futuro', '') or '', fornecedor_key, cluster_key)
@@ -988,7 +998,7 @@ async def query(
             cached,
             data_iso,
             compact,
-            fornecedor_key=sess.get("fornecedor_key"),
+            sess=sess,
             cached=True,
             cache_age_sec=int(cache_age),
         )
@@ -1001,7 +1011,7 @@ async def query(
     if ok:
         with state._query_cache_lock:
             cached = dict(state._query_cache)
-        return _query_response(cached, data_iso, compact, fornecedor_key=sess.get("fornecedor_key"))
+        return _query_response(cached, data_iso, compact, sess=sess)
 
     # Fallback 1: cache em memória (expirado mas disponível)
     with state._query_cache_lock:
@@ -1014,7 +1024,7 @@ async def query(
             mem_copy,
             data_iso,
             compact,
-            fornecedor_key=sess.get("fornecedor_key"),
+            sess=sess,
             cached=True,
             cache_age_min=cache_age,
         )
@@ -1031,7 +1041,7 @@ async def query(
             {'pendente': csv_p_db or '', 'agendado': csv_a_db, 'futuro': csv_f_db or '', 'ts': ts_db},
             data_iso,
             compact,
-            fornecedor_key=sess.get("fornecedor_key"),
+            sess=sess,
             cached=True,
             cached_source='sqlite',
             cache_age_min=cache_age,
@@ -1049,7 +1059,7 @@ async def query(
                 {'pendente': csv_p_pg or '', 'agendado': csv_a_pg, 'futuro': csv_f_pg or '', 'ts': ts_pg},
                 data_iso,
                 compact,
-                fornecedor_key=sess.get("fornecedor_key"),
+                sess=sess,
                 cached=True,
                 cached_source='postgresql',
                 cache_age_min=cache_age,
