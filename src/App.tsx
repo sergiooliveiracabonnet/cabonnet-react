@@ -26,10 +26,10 @@ export default function App() {
     // é 'authed' e a verificação acontece em background sem bloquear a UI.
     api.auth.check()
       .then((res) => {
-        const { ok, role, modulos, fornecedor_key, cluster_key } = res
+        const { ok, role, modulos, fornecedor_key, cluster_key, username } = res
         if (ok) {
           setAuthed((role ?? 'viewer') as 'gestor' | 'supervisor' | 'operador' | 'viewer' | 'fornecedor', modulos ?? [], fornecedor_key ?? null, cluster_key ?? 'TODOS')
-          useUIStore.getState().aplicarClusterDaSessao(cluster_key ?? 'TODOS')
+          useUIStore.getState().aplicarClusterDaSessao(cluster_key ?? 'TODOS', username ?? null)
         } else setUnauthed()
       })
       .catch(() => {

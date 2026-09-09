@@ -67,6 +67,8 @@ interface UIState {
   sidebarOpen:          boolean
   hideRede:             boolean
   cluster:              ClusterFilter
+  /** Dono da escolha guardada. Sem ele, o cluster de um usuario vaza para o proximo. */
+  clusterDono:          string | null
   theme:                'dark' | 'light'
   globalRefreshTick:    number
   dateFilter:           DateFilter
@@ -76,7 +78,7 @@ interface UIState {
   setSidebar:           (open: boolean) => void
   toggleHideRede:       () => void
   setCluster:           (cluster: ClusterFilter) => void
-  aplicarClusterDaSessao: (doUsuario: ClusterFilter) => void
+  aplicarClusterDaSessao: (doUsuario: ClusterFilter, username: string | null) => void
   toggleTheme:          () => void
   setPreset:            (preset: string) => void
   setCustomRange:       (from: Date, to: Date) => void
@@ -86,11 +88,27 @@ interface UIState {
 }
 
 const _savedTheme = localStorage.getItem('theme') === 'light' ? 'light' : 'dark'
+
+// A escolha de cluster e por usuario. Uma chave unica nao distinguia a escolha
+// de um admin do recorte que o servidor amarra numa conta regional, e a segunda
+// vazava para o login seguinte: o admin entrava depois do Oscar e via a operacao
+// inteira recortada em Adamantina, sem ter escolhido nada.
+const _CLUSTER_DONO_KEY = 'clusterUltimoDono'
+const clusterKeyDe = (username: string | null): string | null =>
+  username ? `cluster:${username}` : null
+
 // Default VALE, nao TODOS: somar Adamantina de saida mudaria todos os KPIs
 // historicos sem aviso. Adamantina e opt-in.
-const _savedCluster = localStorage.getItem('cluster')
-const _initialCluster: ClusterFilter =
-  _savedCluster === 'ADAMANTINA' || _savedCluster === 'TODOS' ? _savedCluster : 'VALE'
+const clusterGuardadoDe = (username: string | null): ClusterFilter => {
+  const chave = clusterKeyDe(username)
+  const salvo = chave ? localStorage.getItem(chave) : null
+  return salvo === 'ADAMANTINA' || salvo === 'TODOS' ? salvo : 'VALE'
+}
+
+// Quem recarrega a pagina costuma ser quem acabou de sair dela: restaurar a
+// escolha do ultimo dono evita a tela piscar no Vale ate a sessao responder.
+const _ultimoDono   = localStorage.getItem(_CLUSTER_DONO_KEY)
+const _initialCluster: ClusterFilter = clusterGuardadoDe(_ultimoDono)
 const initRange   = getPresetRange('hoje')
 const initialSidebarOpen = typeof window === 'undefined' || window.innerWidth >= 768
 
@@ -98,6 +116,7 @@ export const useUIStore = create<UIState>((set) => ({
   sidebarOpen:       initialSidebarOpen,
   hideRede:          true,
   cluster:           _initialCluster,
+  clusterDono:       _ultimoDono,
   theme:             _savedTheme,
   globalRefreshTick: 0,
   mensalAnchor:      new Date(),
@@ -113,16 +132,19 @@ export const useUIStore = create<UIState>((set) => ({
   toggleSidebar:  () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   setSidebar:     (open) => set({ sidebarOpen: open }),
   toggleHideRede: () => set((s) => ({ hideRede: !s.hideRede })),
-  setCluster:     (cluster) => {
-    localStorage.setItem('cluster', cluster)
-    set({ cluster })
-  },
+  setCluster:     (cluster) => set((s) => {
+    const chave = clusterKeyDe(s.clusterDono)
+    if (chave) localStorage.setItem(chave, cluster)
+    return { cluster }
+  }),
   // Conta amarrada a um cluster nao escolhe: o servidor ja recorta o CSV, e
-  // deixar o seletor livre so mostraria um filtro que nao muda nada.
-  aplicarClusterDaSessao: (doUsuario) => set(() => {
-    if (doUsuario === 'TODOS') return {}
-    localStorage.setItem('cluster', doUsuario)
-    return { cluster: doUsuario }
+  // deixar o seletor livre so mostraria um filtro que nao muda nada. Por nao ser
+  // escolha, esse valor nao vai para o disco — se fosse, seria lido no proximo
+  // login como se o usuario seguinte tivesse pedido.
+  aplicarClusterDaSessao: (doUsuario, username) => set(() => {
+    if (username) localStorage.setItem(_CLUSTER_DONO_KEY, username)
+    if (doUsuario !== 'TODOS') return { cluster: doUsuario, clusterDono: username }
+    return { cluster: clusterGuardadoDe(username), clusterDono: username }
   }),
   toggleTheme:    () => set((s) => {
     const next = s.theme === 'dark' ? 'light' : 'dark'
