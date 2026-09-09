@@ -8,6 +8,7 @@ import { useOSDerived } from '../../contexts/OSDataContext'
 import { api } from '../../lib/api'
 import { LogoIcon } from '../ui/LogoIcon'
 import { useVisibleNavGroups } from '../../lib/navigation'
+import { clusterExibido, clusterLabelCurto } from '../../lib/clusters'
 
 const ROLE_LABELS: Record<string, string> = {
   gestor:   'Gestor',
@@ -97,9 +98,11 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onN
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 export function Sidebar() {
-  const { sidebarOpen, setSidebar } = useUIStore()
+  const { sidebarOpen, setSidebar, cluster: clusterDoSeletor } = useUIStore()
   const setUnauthed = useAuthStore(s => s.setUnauthed)
   const role        = useAuthStore(s => s.role)
+  const clusterDaConta = useAuthStore(s => s.cluster)
+  const clusterEmExibicao = clusterExibido(clusterDaConta, clusterDoSeletor)
   const logAudit    = useAuditStore(s => s.log)
   const { isLoading, error, dataUpdatedAt } = useOSDerived()
 
@@ -226,7 +229,7 @@ export function Sidebar() {
             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}${status.breathe ? ' breathe' : ''}`} />
             <span className={`text-caption font-semibold ${status.color}`}>{status.label}</span>
           </div>
-          <p className="text-caption text-muted">Vale do Paraíba · SJC</p>
+          <p className="text-caption text-muted">Cluster | {clusterLabelCurto(clusterEmExibicao)}</p>
         </div>
       )}
 
