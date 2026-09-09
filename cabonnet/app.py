@@ -19,6 +19,7 @@ import re
 import threading
 import time as _time_mod
 import unicodedata
+import zlib
 from contextlib import asynccontextmanager
 from datetime import datetime, date
 from pathlib import Path
@@ -470,6 +471,13 @@ async def _access_boundary_middleware(request: Request, call_next):
 
 router = APIRouter(tags=["v1"])
 
+# ATENÇÃO: rotas que falam com Grafana/Zabbix/Telegram são `def`, não `async def`.
+# Elas usam `requests` (bloqueante, timeout de 30s). Num `async def` isso roda no
+# event loop e congela a API inteira enquanto o serviço externo não responde —
+# até rotas que só leem SQLite local, como /api/nivel-sinal/ocorrencias. Como
+# `def`, o Starlette as executa no threadpool e o loop segue livre.
+# Coberto por tests/python/test_event_loop_nao_bloqueia.py.
+
 
 async def _json_body(request: Request, max_bytes: int = 25 * 1024 * 1024):
     """Lê JSON comum ou gzip com limites antes/depois da descompressão."""
@@ -833,19 +841,19 @@ def get_stats(sess: dict = Depends(_require_session)):
 # ── CSV exports ───────────────────────────────────────────────────────────────
 
 @router.get("/pendente")
-async def pendente(sess: dict = Depends(_require_session)):
+def pendente(sess: dict = Depends(_require_session)):
     response = _csv_response(SQL_PENDENTE, "PENDENTE")
     csv_text = response.body.decode("utf-8-sig")
     return RawResponse(content=_filter_csv_escopo(csv_text, sess.get("fornecedor_key"), sess.get("cluster_key")), media_type="text/csv; charset=utf-8")
 
 @router.get("/agendado")
-async def agendado(sess: dict = Depends(_require_session)):
+def agendado(sess: dict = Depends(_require_session)):
     response = _csv_response(SQL_AGENDADO, "AGENDADO")
     csv_text = response.body.decode("utf-8-sig")
     return RawResponse(content=_filter_csv_escopo(csv_text, sess.get("fornecedor_key"), sess.get("cluster_key")), media_type="text/csv; charset=utf-8")
 
 @router.get("/futuro")
-async def futuro(sess: dict = Depends(_require_session)):
+def futuro(sess: dict = Depends(_require_session)):
     response = _csv_response(SQL_FUTURO, "FUTURO")
     csv_text = response.body.decode("utf-8-sig")
     return RawResponse(content=_filter_csv_escopo(csv_text, sess.get("fornecedor_key"), sess.get("cluster_key")), media_type="text/csv; charset=utf-8")
@@ -975,7 +983,7 @@ def _query_response(snapshot: dict, data_iso: str, compact: bool, sess: dict, **
 
 
 @router.get("/query")
-async def query(
+def query(
     request: Request,
     date: str = "hoje",
     compact: bool = False,
@@ -1089,7 +1097,7 @@ async def os_observacoes(request: Request, sess: dict = Depends(_require_session
 
 
 @router.get("/revisitas")
-async def revisitas(sess: dict = Depends(_require_session)):
+def revisitas(sess: dict = Depends(_require_session)):
     try:
         csv_r = frames_to_csv(grafana_post(SQL_REVISITAS))
         filtered = _filter_csv_escopo(csv_r or "", sess.get("fornecedor_key"), sess.get("cluster_key"))
@@ -1112,7 +1120,7 @@ async def revisitas(sess: dict = Depends(_require_session)):
 
 
 @router.get("/atendimento")
-async def atendimento():
+def atendimento():
     try:
         now = _time_mod.time()
         with state._ate_cache_lock:
@@ -1153,7 +1161,7 @@ def _assert_os_scope(numos: str, sess: dict) -> None:
 
 
 @router.get("/detalhes")
-async def detalhes(numos: str = "", sess: dict = Depends(_require_session)):
+def detalhes(numos: str = "", sess: dict = Depends(_require_session)):
     if not numos.strip().isdigit():
         raise HTTPException(400, "Parâmetro 'numos' inválido.")
     numos_int = int(numos.strip())
@@ -1211,7 +1219,7 @@ _FOTO_EXT_PERMITIDAS = {"jpg", "jpeg", "png", "gif", "webp", "bmp"}
 
 
 @router.get("/detalhes/foto")
-async def detalhes_foto(numos: str = "", codfoto: str = "", sess: dict = Depends(_require_session)):
+def detalhes_foto(numos: str = "", codfoto: str = "", sess: dict = Depends(_require_session)):
     if not numos.strip().isdigit() or not codfoto.strip().isdigit():
         raise HTTPException(400, "Parâmetros 'numos'/'codfoto' inválidos.")
     numos_int   = int(numos.strip())
@@ -1231,7 +1239,7 @@ async def detalhes_foto(numos: str = "", codfoto: str = "", sess: dict = Depends
 
 
 @router.get("/erp/os-execucao-geo")
-async def os_execucao_geo():
+def os_execucao_geo():
     try:
         rows = frames_to_dict_list(grafana_post(SQL_OS_EXECUCAO_GEO))
     except Exception:
@@ -1316,14 +1324,18 @@ async def telegram_photo(request: Request):
         raise HTTPException(400, "Formato inválido")
     img_bytes   = _base64.b64decode(data_uri.split(";base64,", 1)[1])
     as_document = bool(body.get("as_document", False))
+    # Precisa continuar `async def` por causa do `await request.json()`, então o
+    # POST bloqueante vai pra thread — senão trava o event loop por até 30s.
     if as_document:
         url  = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
-        resp = _requests.post(url, data={"chat_id": chat_id, "caption": _tg_caps(caption), "parse_mode": "HTML"},
-                               files={"document": ("relatorio-cabonnet.png", img_bytes, "image/png")}, timeout=30)
+        resp = await asyncio.to_thread(
+            _requests.post, url, data={"chat_id": chat_id, "caption": _tg_caps(caption), "parse_mode": "HTML"},
+            files={"document": ("relatorio-cabonnet.png", img_bytes, "image/png")}, timeout=30)
     else:
         url  = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-        resp = _requests.post(url, data={"chat_id": chat_id, "caption": _tg_caps(caption), "parse_mode": "HTML"},
-                               files={"photo": ("relatorio.png", img_bytes, "image/png")}, timeout=30)
+        resp = await asyncio.to_thread(
+            _requests.post, url, data={"chat_id": chat_id, "caption": _tg_caps(caption), "parse_mode": "HTML"},
+            files={"photo": ("relatorio.png", img_bytes, "image/png")}, timeout=30)
     ok = resp.ok
     if ok:   log.info("[Telegram] %s enviado — %d bytes", "Documento" if as_document else "Foto", len(img_bytes))
     else:    log.warning("[Telegram] Falha: %s", resp.text[:200])
@@ -1333,7 +1345,7 @@ async def telegram_photo(request: Request):
 # ── Juniper ───────────────────────────────────────────────────────────────────
 
 @router.get("/juniper")
-async def juniper(cluster: str = ""):
+def juniper(cluster: str = ""):
     cluster = cluster or MONITOR_CONFIG["cluster_default"]
     try:
         result   = juniper_fetch(cluster)
@@ -1583,6 +1595,9 @@ async def sync_signal_occurrences(
         import_id = _db_sync_signal_occurrences(file_name, csv_text, occurrences, sess.get("username") or "")
     except (TypeError, ValueError) as ex:
         raise HTTPException(400, str(ex)) from ex
+    except Exception as ex:
+        log.exception("[NívelSinal] Falha ao persistir importação (arquivo=%s)", file_name)
+        raise HTTPException(500, f"Falha ao salvar a importação: {ex}") from ex
     return {"ok": True, "import_id": import_id, "items": _db_list_signal_occurrences()}
 
 
@@ -1607,12 +1622,17 @@ async def sync_signal_occurrences_chunk(
     chunk = await request.body()
     if not chunk or len(chunk) > 512 * 1024:
         raise HTTPException(413, "Bloco vazio ou maior que 512 KB")
-    complete = _db_store_signal_import_chunk(upload_id, chunk_index, chunk_total, chunk, sess.get("username") or "")
+    try:
+        complete = _db_store_signal_import_chunk(upload_id, chunk_index, chunk_total, chunk, sess.get("username") or "")
+    except Exception as ex:
+        log.exception("[NívelSinal] Falha ao guardar bloco %d/%d (upload=%s)", chunk_index + 1, chunk_total, upload_id)
+        raise HTTPException(500, f"Falha ao guardar o bloco da importação: {ex}") from ex
     if complete is None:
         return {"ok": True, "complete": False, "received": chunk_index + 1}
     if len(complete) > 5 * 1024 * 1024:
         _db_delete_signal_import_chunks(upload_id)
         raise HTTPException(413, "Payload comprimido excede o limite")
+    file_name = ""
     try:
         if request.headers.get("x-payload-encoding", "").lower() == "gzip":
             complete = gzip.decompress(complete)
@@ -1627,10 +1647,17 @@ async def sync_signal_occurrences_chunk(
         import_id = _db_sync_signal_occurrences(file_name, csv_text, occurrences, sess.get("username") or "")
     except HTTPException:
         raise
-    except (gzip.BadGzipFile, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as ex:
+    except (gzip.BadGzipFile, EOFError, zlib.error, UnicodeDecodeError,
+            json.JSONDecodeError, TypeError, ValueError) as ex:
         raise HTTPException(400, str(ex) or "Payload de importação inválido") from ex
+    except Exception as ex:
+        log.exception("[NívelSinal] Falha ao persistir importação (upload=%s arquivo=%s)", upload_id, file_name)
+        raise HTTPException(500, f"Falha ao salvar a importação: {ex}") from ex
     finally:
-        _db_delete_signal_import_chunks(upload_id)
+        try:
+            _db_delete_signal_import_chunks(upload_id)
+        except Exception:
+            log.exception("[NívelSinal] Falha ao limpar blocos do upload %s", upload_id)
     return {"ok": True, "complete": True, "import_id": import_id, "items": _db_list_signal_occurrences()}
 
 
@@ -2030,7 +2057,7 @@ async def ai_status_endpoint():
 
 
 @router.get("/grafana/os-totais")
-async def grafana_os_totais():
+def grafana_os_totais():
     try:
         rows = frames_to_dict_list(grafana_post(SQL_ERP_OS_TOTAIS))
         return {"ok": True, "data": rows[0] if rows else {}}
@@ -2039,7 +2066,7 @@ async def grafana_os_totais():
 
 
 @router.get("/grafana/os-cidades")
-async def grafana_os_cidades():
+def grafana_os_cidades():
     try:
         return {"ok": True, "data": frames_to_dict_list(grafana_post(SQL_ERP_OS_CIDADES))}
     except Exception as exc:
