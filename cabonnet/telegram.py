@@ -16,6 +16,7 @@ from cabonnet.config import (
     _STATUS_CHANGE_BATCH_LIMIT, _STATUS_EMOJI,
     _OPERADORA_GRUPOS,
     _OPERADORA_POR_PREFIXO,
+    TELEGRAM_CHAT_ADAMANTINA,
 )
 from cabonnet import state
 
@@ -205,6 +206,7 @@ def _operadora_for_chat(chat_id):
     if TELEGRAM_CHAT_WES             and s == str(TELEGRAM_CHAT_WES):             return "WES"
     if TELEGRAM_CHAT_REDE            and s == str(TELEGRAM_CHAT_REDE):            return "REDE"
     if TELEGRAM_CHAT_OPERACIONAL_THM and s == str(TELEGRAM_CHAT_OPERACIONAL_THM): return "THM"
+    if TELEGRAM_CHAT_ADAMANTINA      and s == str(TELEGRAM_CHAT_ADAMANTINA):      return "ADA"
     return None  # Alertas | Cabonnet = visão global
 
 
@@ -214,20 +216,35 @@ def _filter_by_operadora(rows, operadora):
         return rows
     if operadora == "REDE":
         return [r for r in rows if (r.get("servico") or "").upper().startswith("REDE")]
+    # Operadora identificada por prefixo de equipe (cluster de operadora unica).
+    # Sem este ramo, o "return rows" logo abaixo entregaria a operacao inteira
+    # ao grupo dela — o Vale junto.
+    prefixo = next((p for p, op in _OPERADORA_POR_PREFIXO.items() if op == operadora), None)
+    if prefixo:
+        return [r for r in rows if prefixo in (r.get("nomedaequipe") or "").upper()]
     frentes = _OPERADORA_GRUPOS.get(operadora, [])
     if not frentes:
         return rows
+    # Frentes de outros clusters usam a mesma numeracao (o Vale tem F01, Adamantina
+    # tem F 01) e a normalizacao abaixo apaga o espaco. Sem descartar os prefixos
+    # alheios primeiro, o grupo do Vale receberia OS de Adamantina.
+    prefixos_alheios = [pre for pre, op in _OPERADORA_POR_PREFIXO.items() if op != operadora]
+
     def _match(r):
         if _is_rede_ou_manut(r):
             return False
-        raw = _re_global.sub(r'([A-Z])\s+(\d)', r'\1\2', (r.get("nomedaequipe") or "").upper())
+        equipe = (r.get("nomedaequipe") or "").upper()
+        if any(pre in equipe for pre in prefixos_alheios):
+            return False
+        raw = _re_global.sub(r'([A-Z])\s+(\d)', r'\1\2', equipe)
         return any(f in raw for f in frentes)
     return [r for r in rows if _match(r)]
 
 
 def _label_operadora(operadora):
     """Rótulo legível para o cabeçalho da operadora."""
-    return {"INSTACABLE": "INSTACABLE", "WES": "WES", "REDE": "REDE", "THM": "THM"}.get(operadora or "", "GLOBAL")
+    return {"INSTACABLE": "INSTACABLE", "WES": "WES", "REDE": "REDE", "THM": "THM",
+            "ADA": "ADAMANTINA"}.get(operadora or "", "GLOBAL")
 
 
 def _operadora_da_os(row):
@@ -325,6 +342,7 @@ def _tg_broadcast_status_changes(changes):
     inst_ch  = [(r, o, n) for r, o, n in changes if _operadora_da_os(r) == "INSTACABLE" and not _is_equipe_rede_ou_manut(r)]
     rede_ch  = [(r, o, n) for r, o, n in changes if _operadora_da_os(r) == "REDE"]
     thm_ch   = [(r, o, n) for r, o, n in changes if _operadora_da_os(r) == "THM"        and not _is_equipe_rede_ou_manut(r)]
+    ada_ch   = [(r, o, n) for r, o, n in changes if _operadora_da_os(r) == "ADA"]
 
     def _send_batch(batch, chat_id, label=""):
         if not chat_id or not batch:
@@ -348,3 +366,4 @@ def _tg_broadcast_status_changes(changes):
     _send_batch(inst_ch, TELEGRAM_CHAT_INSTACABLE, "INSTACABLE")
     _send_batch(rede_ch, TELEGRAM_CHAT_REDE, "REDE")
     _send_batch(thm_ch,  TELEGRAM_CHAT_OPERACIONAL_THM, "THM")
+    _send_batch(ada_ch,  TELEGRAM_CHAT_ADAMANTINA, "ADAMANTINA")

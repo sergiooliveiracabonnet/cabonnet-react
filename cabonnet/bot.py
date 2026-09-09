@@ -14,6 +14,7 @@ from cabonnet.config import (
     TELEGRAM_CHAT_INSTACABLE, TELEGRAM_CHAT_WES,
     TELEGRAM_CHAT_ALERTAS, TELEGRAM_CHAT_REDE,
     TELEGRAM_CHAT_OPERACIONAL_THM,
+    TELEGRAM_CHAT_ADAMANTINA,
     _DB_PATH, _OPERADORA_LABEL,
 )
 from cabonnet import state
@@ -98,6 +99,12 @@ def _telegram_poll_loop_inner():
         "/listatendimento", "/resumo", "/detalhado",
         "/producao", "/os", "/notathm", "/menu", "/help",
     }
+    # Mesmo conjunto do THM: grupo de operadora, sem os comandos globais.
+    _CMDS_ADA = {
+        "/status", "/pulso", "/equipes", "/executadas",
+        "/listatendimento", "/resumo", "/detalhado",
+        "/producao", "/os", "/menu", "/help",
+    }
     _CMDS_ALERTAS = {
         "/status", "/pulso", "/equipes", "/executadas", "/listatendimento",
         "/resumo", "/detalhado",
@@ -119,6 +126,7 @@ def _telegram_poll_loop_inner():
         if TELEGRAM_CHAT_INSTACABLE      and s == str(TELEGRAM_CHAT_INSTACABLE):      return "INSTACABLE",    _CMDS_INSTACABLE
         if TELEGRAM_CHAT_WES             and s == str(TELEGRAM_CHAT_WES):             return "WES",           _CMDS_WES
         if TELEGRAM_CHAT_OPERACIONAL_THM and s == str(TELEGRAM_CHAT_OPERACIONAL_THM): return "THM",           _CMDS_THM
+        if TELEGRAM_CHAT_ADAMANTINA      and s == str(TELEGRAM_CHAT_ADAMANTINA):      return "ADA",           _CMDS_ADA
         if TELEGRAM_CHAT_ALERTAS         and s == str(TELEGRAM_CHAT_ALERTAS):         return "ALERTAS",       _CMDS_ALERTAS
         if TELEGRAM_CHAT_ID              and s == str(TELEGRAM_CHAT_ID):              return "PRODUTIVIDADE", _CMDS_PRODUTIVIDADE
         return None, set()

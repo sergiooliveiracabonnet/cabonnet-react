@@ -86,6 +86,7 @@ TELEGRAM_CHAT_WES            = _env("TELEGRAM_CHAT_WES",             "")
 TELEGRAM_CHAT_ALERTAS        = _env("TELEGRAM_CHAT_ALERTAS",         "")
 TELEGRAM_CHAT_REDE           = _env("TELEGRAM_CHAT_REDE",            "")
 TELEGRAM_CHAT_OPERACIONAL_THM = _env("TELEGRAM_CHAT_OPERACIONAL_THM", "")
+TELEGRAM_CHAT_ADAMANTINA     = _env("TELEGRAM_CHAT_ADAMANTINA",      "")
 
 # ── Limites de SLA por tipo de serviço (em dias) ────────────────────────────
 _SLA_LIMITS = {
