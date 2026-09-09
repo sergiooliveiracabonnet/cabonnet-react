@@ -95,7 +95,7 @@ describe('treatedSummary', () => {
   })
 
   it('acusa a PON que ficou com cliente sem nova potência', () => {
-    const medicao = (rx: number | null) => ({ onu_key: `k${rx}`, cliente: 'Cliente', onu: '1', serial: 's', codigo: '1', rx_antes: -29, rx_depois: rx, observacao: '' })
+    const medicao = (rx: number | null) => ({ onu_key: `k${rx}`, cliente: 'Cliente', onu: '1', serial: 's', rx_antes: -29, rx_depois: rx, observacao: '' })
     const treated = buildTreatedPons([
       treatment({ medicoes: [medicao(-22), medicao(null)] }),
       treatment({ pon_key: 'OLT TBT · 5/5', medicoes: [medicao(-21)] }),
