@@ -7,6 +7,9 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    environment:
+      # Precisa ficar dentro de um DIRETORIO montado para a rotacao funcionar.
+      - CABONNET_LOG_FILE=/app/logs/cabonnet_server.log
     volumes:
       # Sem isto, todo `docker compose up --build` recria o container e o
       # SQLite (histórico de OS, cadastro de usuários/senhas, técnicos etc.)
@@ -14,6 +17,9 @@ services:
       # a cada deploy. ./logs:/app/logs (removido) não persistia nada real:
       # nenhum código escreve em /app/logs, os arquivos ficam na raiz do app.
       - ./cabonnet_data.db:/app/cabonnet_data.db
-      - ./cabonnet_server.log:/app/cabonnet_server.log
+      # Diretorio, nao arquivo: o RotatingFileHandler renomeia o log ao girar,
+      # e renomear um bind-mount de arquivo unico falha dentro do container —
+      # foi assim que o log ficou congelado de 23/07 a 09/09, com o app vivo.
+      - ./logs:/app/logs
       - ./jun_historico.json:/app/jun_historico.json
       - ./Backup:/app/Backup

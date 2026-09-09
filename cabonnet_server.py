@@ -7,6 +7,7 @@ Toda a lógica de negócio vive em cabonnet/.
 
 import atexit
 import logging
+import os
 import threading
 from datetime import date
 
@@ -19,6 +20,7 @@ _log_fmt     = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s — %(mes
 _root_logger = logging.getLogger()
 _root_logger.setLevel(logging.INFO)
 
+os.makedirs(os.path.dirname(CONFIG["log_file"]) or ".", exist_ok=True)
 _fh = _RFH(CONFIG["log_file"], maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8")
 _fh.setFormatter(_log_fmt)
 _root_logger.addHandler(_fh)

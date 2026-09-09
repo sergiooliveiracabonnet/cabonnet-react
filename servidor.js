@@ -434,7 +434,10 @@ async function startPython() {
   log(`Iniciando servidor Python em background (${pyCmd})...`)
   const pyProcess = spawn(pyCmd, [path.join(__dirname, 'cabonnet_server.py')], {
     cwd    : __dirname,
-    stdio  : DEV_MODE ? ['ignore', 'inherit', 'inherit'] : 'ignore',
+    // Em producao isto era 'ignore': a saida do Python sumia e `docker compose
+    // logs` so mostrava o banner do Node. Herdando, o Docker captura os logs do
+    // Python tambem — canal que nao depende de rotacao de arquivo.
+    stdio  : ['ignore', 'inherit', 'inherit'],
     detached: false,
   })
   pyProcess.on('error', err  => log(`[AVISO] Python: ${err.message}`))
