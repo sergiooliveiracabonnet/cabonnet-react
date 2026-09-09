@@ -89,11 +89,15 @@ export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', head
             {subtitle && <p className="text-caption text-muted mt-0.5">{subtitle}</p>}
           </div>
           {headerAction && <div className="flex-shrink-0">{headerAction}</div>}
+          {/* Sem onClose o X não fecha nada (ex: gravação em curso). Desabilitar é
+              mais honesto que oferecer um botão inerte. */}
           <button
             onClick={onClose}
+            disabled={!onClose}
             aria-label="Fechar modal"
             className="w-8 h-8 rounded-md border border-subtle flex items-center justify-center
-                       text-muted hover:text-text hover:bg-surface transition-all duration-fast"
+                       text-muted hover:text-text hover:bg-surface transition-all duration-fast
+                       disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
           >
             <X size={15} />
           </button>

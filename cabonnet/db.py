@@ -6,6 +6,7 @@ cabonnet/db.py — SQLite: persistência de cache e histórico de status.
 import hashlib
 import hmac
 import json
+import math
 import secrets
 import sqlite3
 import logging
@@ -271,6 +272,17 @@ def _db_init():
             )
         """)
         con.execute("CREATE INDEX IF NOT EXISTS idx_signal_pon_key ON signal_pon_treatments(pon_key, id)")
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS signal_pon_medicoes (
+                pon_key    TEXT NOT NULL,
+                onu_key    TEXT NOT NULL,
+                position   INTEGER NOT NULL DEFAULT 0,
+                payload    TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                updated_by TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY(pon_key, onu_key)
+            )
+        """)
         con.commit()
         con.close()
 
@@ -419,7 +431,94 @@ def _db_list_pon_treatments():
         entry["created_at"] = created_at
         entry["created_by"] = created_by
         entry["treated_count" if action == "tratada" else "reopened_count"] += 1
+    medicoes = _db_list_pon_medicoes()
+    for pon_key, entry in current.items():
+        entry["medicoes"] = medicoes.get(pon_key, [])
     return list(current.values())
+
+
+_MEDICAO_TEXT_FIELDS = ("cliente", "onu", "serial", "observacao")
+
+
+def _coerce_rx(value):
+    """Potencia ilegivel vira pendente: o cadastro se completa depois, na mao.
+    nan/inf passam pelo float() e viram NaN/Infinity literais no json.dumps — JSON
+    invalido que derruba a listagem inteira, nao so a medicao ruim."""
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        parsed = float(str(value).strip().replace(",", "."))
+    except (TypeError, ValueError):
+        return None
+    return parsed if math.isfinite(parsed) else None
+
+
+def _normalize_medicao(item):
+    if not isinstance(item, dict):
+        return None
+    onu_key = str(item.get("onu_key", "")).strip()
+    if not onu_key:
+        return None
+    normalized = {"onu_key": onu_key[:255]}
+    for field in _MEDICAO_TEXT_FIELDS:
+        normalized[field] = str(item.get(field) or "").strip()[:255]
+    normalized["rx_antes"] = _coerce_rx(item.get("rx_antes"))
+    normalized["rx_depois"] = _coerce_rx(item.get("rx_depois"))
+    return normalized
+
+
+def _db_list_pon_medicoes():
+    """Potencia por cliente da PON — estado atual, reescrito a cada salvamento."""
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        rows = con.execute(
+            "SELECT pon_key,payload,updated_at,updated_by FROM signal_pon_medicoes ORDER BY pon_key, position, onu_key"
+        ).fetchall()
+        con.close()
+    grouped = {}
+    for pon_key, payload, updated_at, updated_by in rows:
+        item = json.loads(payload)
+        item["updated_at"] = updated_at
+        item["updated_by"] = updated_by
+        grouped.setdefault(pon_key, []).append(item)
+    return grouped
+
+
+def _db_save_pon_medicoes(pon_key, medicoes, username=""):
+    """Substitui a lista inteira da PON: a tela sempre manda o cadastro completo,
+    inclusive quem ficou sem medir — some da lista quem some do cadastro."""
+    pon_key = str(pon_key or "").strip()
+    if not pon_key:
+        raise ValueError("pon_key e obrigatorio")
+    if not isinstance(medicoes, list):
+        raise ValueError("medicoes deve ser uma lista")
+    # Assinante sem serial/ONU/codigo cai na chave do nome: duas linhas iguais
+    # estouravam o UNIQUE no meio do executemany. Vale a primeira ocorrencia.
+    normalized = {}
+    for entry in medicoes:
+        item = _normalize_medicao(entry)
+        if item:
+            normalized.setdefault(item["onu_key"], item)
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        try:
+            con.execute("DELETE FROM signal_pon_medicoes WHERE pon_key=?", (pon_key[:255],))
+            con.executemany(
+                "INSERT INTO signal_pon_medicoes(pon_key,onu_key,position,payload,updated_at,updated_by) VALUES(?,?,?,?,?,?)",
+                [
+                    (pon_key[:255], item["onu_key"], index,
+                     json.dumps(item, ensure_ascii=False, separators=(",", ":")), now, username)
+                    for index, item in enumerate(normalized.values())
+                ],
+            )
+            con.commit()
+        except Exception:
+            con.rollback()
+            raise
+        finally:
+            con.close()
+    return len(normalized)
 
 
 def _db_add_pon_treatment(pon_key, action, snapshot, username=""):

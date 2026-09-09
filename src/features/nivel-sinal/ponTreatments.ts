@@ -1,4 +1,5 @@
 import type { SignalHotspot } from './nivelSinal'
+import type { PonMedicao } from './ponMedicoes'
 
 export type PonTreatmentAction = 'tratada' | 'reaberta'
 
@@ -26,6 +27,8 @@ export interface PonTreatment {
   created_by: string
   treated_count: number
   reopened_count: number
+  /** Potência por cliente da PON — sobrevive aos ciclos e é editável depois. */
+  medicoes: PonMedicao[]
 }
 
 export interface TreatedPon extends PonTreatment {
@@ -78,11 +81,19 @@ export function buildTreatedPons(items: PonTreatment[], hotspots: SignalHotspot[
       || b.created_at.localeCompare(a.created_at))
 }
 
+/** Quanto do cadastro de potências da PON já foi preenchido. */
+export function medicoesProgresso(item: Pick<PonTreatment, 'medicoes'>) {
+  const medicoes = item.medicoes ?? []
+  const preenchidas = medicoes.filter(medicao => medicao.rx_depois != null).length
+  return { total: medicoes.length, preenchidas, pendentes: medicoes.length - preenchidas }
+}
+
 export function treatedSummary(treated: TreatedPon[]) {
   return {
     total: treated.length,
     aindaCriticas: treated.filter(item => item.aindaCritica).length,
     normalizadas: treated.filter(item => !item.aindaCritica).length,
     reincidentes: treated.filter(item => item.reopened_count > 0).length,
+    potenciasPendentes: treated.filter(item => medicoesProgresso(item).pendentes > 0).length,
   }
 }

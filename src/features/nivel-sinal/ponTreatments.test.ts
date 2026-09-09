@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildTreatedPons, snapshotFromHotspot, splitHotspots, treatedPonKeys, treatedSummary, treatmentsByKey, type PonTreatment } from './ponTreatments'
+import { buildTreatedPons, medicoesProgresso, snapshotFromHotspot, splitHotspots, treatedPonKeys, treatedSummary, treatmentsByKey, type PonTreatment } from './ponTreatments'
 import type { SignalHotspot } from './nivelSinal'
 
 const hotspot = (overrides: Partial<SignalHotspot> = {}): SignalHotspot => ({
@@ -11,7 +11,7 @@ const hotspot = (overrides: Partial<SignalHotspot> = {}): SignalHotspot => ({
 
 const treatment = (overrides: Partial<PonTreatment> = {}): PonTreatment => ({
   pon_key: 'OLT TBT · 1/2', action: 'tratada', snapshot: snapshotFromHotspot(hotspot()),
-  created_at: '2026-09-01 10:00:00', created_by: 'sergio', treated_count: 1, reopened_count: 0,
+  created_at: '2026-09-01 10:00:00', created_by: 'sergio', treated_count: 1, reopened_count: 0, medicoes: [],
   ...overrides,
 })
 
@@ -91,7 +91,18 @@ describe('treatedSummary', () => {
       [hotspot()],
     )
 
-    expect(treatedSummary(treated)).toEqual({ total: 2, aindaCriticas: 1, normalizadas: 1, reincidentes: 1 })
+    expect(treatedSummary(treated)).toEqual({ total: 2, aindaCriticas: 1, normalizadas: 1, reincidentes: 1, potenciasPendentes: 0 })
+  })
+
+  it('acusa a PON que ficou com cliente sem nova potência', () => {
+    const medicao = (rx: number | null) => ({ onu_key: `k${rx}`, cliente: 'Cliente', onu: '1', serial: 's', rx_antes: -29, rx_depois: rx, observacao: '' })
+    const treated = buildTreatedPons([
+      treatment({ medicoes: [medicao(-22), medicao(null)] }),
+      treatment({ pon_key: 'OLT TBT · 5/5', medicoes: [medicao(-21)] }),
+    ], [])
+
+    expect(treatedSummary(treated).potenciasPendentes).toBe(1)
+    expect(medicoesProgresso(treated[0])).toEqual({ total: 2, preenchidas: 1, pendentes: 1 })
   })
 })
 

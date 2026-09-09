@@ -81,8 +81,9 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
     expect(screen.getByRole('button', { name: /apoio à decisão/i })).toBeInTheDocument()
   })
 
-  it('tira a PON da pendência ao marcar como tratada e a lista na aba PONs tratadas', async () => {
-    const treatments: unknown[] = []
+  it('pede a nova potência dos clientes antes de fechar a PON e deixa completar depois', async () => {
+    const treatments: Record<string, unknown>[] = []
+    let medicoes: Record<string, unknown>[] = []
     vi.stubGlobal('fetch', vi.fn(async (url: string, options?: RequestInit) => {
       let raw = options?.body ? String(options.body) : ''
       if (options?.body instanceof Blob) {
@@ -95,37 +96,94 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
       }
       const body = raw ? JSON.parse(raw) : null
       if (url.includes('/pon/tratar')) {
+        if (body.medicoes) medicoes = body.medicoes
         treatments.push({
           pon_key: body.pon_key, action: 'tratada', snapshot: body.snapshot,
           created_at: '2026-09-08 09:30:00', created_by: 'sergio', treated_count: 1, reopened_count: 0,
         })
       }
+      if (url.includes('/pon/medicoes')) medicoes = body.medicoes
       // Copia: devolver a mesma referencia faria o React bailar do re-render
       // e o teste passaria a medir o mock, nao a tela.
-      const items = url.includes('/pon') ? [...treatments] : (body?.occurrences ?? [])
+      const items = url.includes('/pon') ? treatments.map(item => ({ ...item, medicoes: [...medicoes] })) : (body?.occurrences ?? [])
       return { ok: true, status: 200, headers: new Headers({ 'content-type': 'application/json' }), json: async () => ({ ok: true, items, import_id: 1 }) } as Response
     }))
 
     const { container } = render(<NivelSinalPage />)
-    const header = 'Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo'
+    const header = 'Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo;Serial'
     const linhas = Array.from({ length: 4 }, (_, index) =>
-      `Taubaté;Centro;OLT TBT;Huawei;1;1/2;${index};Cliente ${index};Conectado;Online;Crítico;-31,5;HG8145`)
+      `Taubaté;Centro;OLT TBT;Huawei;1;1/2;${index};Cliente ${index};Conectado;Online;Crítico;-3${index},5;HG8145;SN${index}`)
     fireEvent.change(container.querySelector('input[type="file"]') as HTMLInputElement, {
       target: { files: [new File([[header, ...linhas].join('\n')], 'sinais.csv', { type: 'text/csv' })] },
     })
 
-    const tratar = await screen.findByRole('button', { name: 'Marcar PON 1/2 da OLT TBT como tratada' })
-    fireEvent.click(tratar)
+    fireEvent.click(await screen.findByRole('button', { name: 'Marcar PON 1/2 da OLT TBT como tratada' }))
+
+    // O clique abre o formulário de potências: a PON só fecha depois dele.
+    expect(await screen.findByText('Tratar PON 1/2 · OLT TBT')).toBeInTheDocument()
+    expect(screen.getByText('0 de 4 medidas')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Nova potência de Cliente 0'), { target: { value: '-22,5' } })
+    expect(screen.getByText('1 de 4 medidas')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar PON como tratada' }))
 
     await waitFor(() => expect(screen.getByText(/Nenhuma PON pendente atinge/)).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('tab', { name: 'PONs tratadas (1)' }))
-
     expect(screen.getByRole('heading', { name: 'PONs tratadas' })).toBeInTheDocument()
-    expect(screen.getByText('1/2')).toBeInTheDocument()
     // O CSV carregado ainda acusa a PON: a tratativa sai da fila mas fica sinalizada.
     expect(screen.getByText('Ainda crítica · 4 críticas', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.getByText('1/4 medidas')).toBeInTheDocument()
+    expect(screen.getByText('3 sem potência')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editar potências da PON 1/2 da OLT TBT' }))
+    expect(await screen.findByText('Potências da PON 1/2 · OLT TBT')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Nova potência de Cliente 1'), { target: { value: '-21' } })
+    fireEvent.change(screen.getByLabelText('Observação de Cliente 1'), { target: { value: 'Conector trocado' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar potências' }))
+
+    expect(await screen.findByText('2/4 medidas')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reabrir PON 1/2 da OLT TBT' })).toBeInTheDocument()
+  })
+
+  it('recusa potência fora da faixa plausível em vez de gravar dedo trocado', async () => {
+    const { container } = render(<NivelSinalPage />)
+    const header = 'Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo;Serial'
+    const linhas = Array.from({ length: 4 }, (_, index) =>
+      `Taubaté;Centro;OLT TBT;Huawei;1;1/2;${index};Cliente ${index};Conectado;Online;Crítico;-3${index},5;HG8145;SN${index}`)
+    fireEvent.change(container.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [new File([[header, ...linhas].join('\n')], 'sinais.csv', { type: 'text/csv' })] },
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Marcar PON 1/2 da OLT TBT como tratada' }))
+    fireEvent.change(await screen.findByLabelText('Nova potência de Cliente 0'), { target: { value: '25' } })
+
+    expect(screen.getByText('valor inválido')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Marcar PON como tratada' })).toBeDisabled()
+  })
+
+  it('classifica a nova potência de quem não tinha leitura anterior no CSV', async () => {
+    const { container } = render(<NivelSinalPage />)
+    const header = 'Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo;Serial'
+    const linhas = Array.from({ length: 4 }, (_, index) =>
+      `Taubaté;Centro;OLT TBT;Huawei;1;1/2;${index};Cliente ${index};Conectado;Online;Crítico;-3${index},5;HG8145;SN${index}`)
+    // A ONU estava offline na coleta: entra na PON sem potência de "antes".
+    linhas.push('Taubaté;Centro;OLT TBT;Huawei;1;1/2;9;Sem Leitura;Conectado;Offline;—;;HG8145;SN9')
+    fireEvent.change(container.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [new File([[header, ...linhas].join('\n')], 'sinais.csv', { type: 'text/csv' })] },
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Marcar PON 1/2 da OLT TBT como tratada' }))
+    const campo = await screen.findByLabelText('Nova potência de Sem Leitura')
+    const linha = campo.closest('tr') as HTMLElement
+    expect(linha).toHaveTextContent('a medir')
+
+    fireEvent.change(campo, { target: { value: '-22,5' } })
+
+    // Sem "antes" não há delta, mas a medição existe: dizer "a medir" contradiz
+    // o contador do cabeçalho, que já conta a linha como preenchida.
+    expect(linha).not.toHaveTextContent('a medir')
+    expect(linha).toHaveTextContent('Normal')
+    expect(screen.getByText('1 de 5 medidas')).toBeInTheDocument()
   })
 
   it('pagina os hotspots em uma matriz de doze PONs', async () => {
