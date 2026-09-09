@@ -93,7 +93,9 @@ export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKe
           <p className="mt-0.5 text-caption text-muted">Os números são a foto do momento do OK, confrontada com o CSV carregado agora.</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1180px] text-left text-label">
+          {/* min-w-max: as 8 colunas nunca se espremem e o wrapper rola. Melhor que
+              um px fixo, que envelhece assim que uma coluna entra ou sai. */}
+          <table className="w-full min-w-max text-left text-label">
             <thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>
               {['PON / OLT', 'Cidade / bairro', 'No momento do OK', 'Tratada em', 'Ciclos', 'Potências', 'Situação no CSV atual', 'Ações'].map(label =>
                 <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}
