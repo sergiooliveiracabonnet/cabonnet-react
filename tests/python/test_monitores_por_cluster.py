@@ -156,3 +156,13 @@ def test_pendentes_das_17h_vai_para_o_grupo_da_regiao():
     assert "_build_pendentes_semequipe()" not in fonte
     assert "_build_pendentes_semequipe(operadora=escopo_cluster(_cluster))" in fonte
     assert "_telegram_send(txt)" not in fonte
+
+
+def test_executadas_dos_marcos_tambem_sai_por_regiao():
+    """O relatorio dos marcos 10/13/16/19h se dividia por operadora do Vale, e
+    o grupo regional nao entrava em nenhuma fatia. A visao global do grupo geral
+    e as fatias por operadora continuam — o envio por cluster e somado."""
+    fonte = _fonte_monitors()
+    assert "_build_executadas_hoje(operadora=escopo_cluster(_cluster))" in fonte
+    assert "texto_global = _build_executadas_hoje(operadora=None)" in fonte
+    assert 'for _op, _chat in [("INSTACABLE", TELEGRAM_CHAT_INSTACABLE),' in fonte

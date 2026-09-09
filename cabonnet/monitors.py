@@ -701,6 +701,11 @@ def _resumo_scheduler_loop():
                         if _chat:
                             texto_op = _build_executadas_hoje(operadora=_op)
                             if texto_op: _telegram_send(texto_op, chat_id_override=_chat)
+                    # Os grupos regionais nao cabem em nenhuma operadora do Vale:
+                    # levam a regiao inteira, do mesmo jeito que os outros agendados.
+                    for _chat_c, _cluster in _destinos_cluster():
+                        texto_c = _build_executadas_hoje(operadora=escopo_cluster(_cluster))
+                        if texto_c: _telegram_send(texto_c, chat_id_override=_chat_c)
                     log.info("[Telegram] Executadas Hoje enviado por grupo — %02dh", hora)
                 except Exception as ex:
                     log.warning("[Telegram] Erro Executadas Hoje: %s", str(ex)[:120])
