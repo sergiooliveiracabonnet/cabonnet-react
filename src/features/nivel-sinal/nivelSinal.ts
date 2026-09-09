@@ -1,3 +1,4 @@
+import { CLUSTER_DE_CIDADE } from '../../lib/clusters'
 export type SignalSeverity = 'Crítico' | 'Atenção' | 'Normal' | '—'
 
 export interface SignalRow {
@@ -20,7 +21,11 @@ export interface SignalRow {
   tx: number | null
   oltRx: number | null
   distancia: number | null
+  temperatura: number | null
   causa: string
+  cidadeCliente: string
+  /** A linha entrou no recorte de alerta de RX do CSV (coluna "Alerta RX"). */
+  alertaRx: boolean
 }
 
 export interface SignalFilters {
@@ -47,14 +52,27 @@ export interface SignalHotspot {
   concentracao: number
   rxMediano: number | null
   piorRx: number | null
+  /** Maior temperatura entre as ONUs da PON - troco degradado costuma esquentar. */
+  tempMax: number | null
   nivel: 'alto' | 'medio'
   score: number
+}
+
+export interface HistogramBin {
+  start: number
+  end: number
+  total: number
+  rows: SignalRow[]
+  label: string
+  /** Bin de ponta: recolhe tudo que cai fora da faixa, entao o rotulo e ≤ / ≥. */
+  overflow: boolean
 }
 
 export type SignalSortKey = keyof SignalRow
 export type SortDirection = 'asc' | 'desc'
 
-const VALID_CITIES = new Set(['CACAPAVA', 'PINDAMONHANGABA', 'SAO JOSE DOS CAMPOS', 'TAUBATE', 'TREMEMBE'])
+// Fonte única: CLUSTERS em config.py, espelhado em lib/clusters.ts.
+const VALID_CITIES = new Set(Object.keys(CLUSTER_DE_CIDADE))
 
 const normalizeText = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim()
 
@@ -105,6 +123,13 @@ function parseCsvRows(text: string): string[][] {
   return rows
 }
 
+const namedNeighborhood = (value: string) => {
+  const trimmed = value.trim()
+  return trimmed && trimmed !== '-' && trimmed !== '--' ? trimmed : ''
+}
+
+const addressTokens = (value: string) => normalizeText(value).replace(/[^A-Z0-9]+/g, ' ')
+
 function severity(value: string, rx: number | null, isRxAlert = false): SignalSeverity {
   const normalized = normalizeText(value)
   if (normalized.includes('CRIT')) return 'Crítico'
@@ -139,14 +164,18 @@ export function parseSignalCsv(text: string, options: { includeNonAlerts?: boole
 
   const scopedRows = rows.filter(row => VALID_CITIES.has(normalizeText(get(row, 'Cidade'))))
   const neighborhoods = new Map<string, Map<string, number>>()
-  const knownNeighborhoods = [...new Set(scopedRows.map(row => getAny(row, 'Bairro', 'Setor/Bairro')).filter(value => value && value !== '-' && value !== '--'))]
+  // Normaliza cada bairro uma vez so: antes o normalizeText rodava por candidato,
+  // por linha - O(linhas x bairros) de trabalho redundante em 23 mil linhas.
+  const knownNeighborhoods = [...new Set(scopedRows.map(row => namedNeighborhood(getAny(row, 'Bairro', 'Setor/Bairro'))).filter(Boolean))]
     .sort((a, b) => b.length - a.length)
+    .map(value => ({ value, token: addressTokens(value) }))
+  const inferNeighborhood = (clientOnu: string) => {
+    if (!knownNeighborhoods.length) return ''
+    const address = addressTokens(clientOnu)
+    return knownNeighborhoods.find(item => address.includes(item.token))?.value ?? ''
+  }
   scopedRows.forEach(row => {
-    const rawBairro = getAny(row, 'Bairro', 'Setor/Bairro')
-    const address = normalizeText(get(row, 'Cliente ONU')).replace(/[^A-Z0-9]+/g, ' ')
-    const bairro = rawBairro && rawBairro !== '-' && rawBairro !== '--'
-      ? rawBairro
-      : knownNeighborhoods.find(value => address.includes(normalizeText(value).replace(/[^A-Z0-9]+/g, ' ')))
+    const bairro = namedNeighborhood(getAny(row, 'Bairro', 'Setor/Bairro')) || inferNeighborhood(get(row, 'Cliente ONU'))
     if (!bairro) return
     const pon = get(row, 'PON')
     const key = `${get(row, 'OLT')}|${get(row, 'Slot') || pon.split('/')[0] || ''}|${pon}`
@@ -162,16 +191,19 @@ export function parseSignalCsv(text: string, options: { includeNonAlerts?: boole
     const slot = get(row, 'Slot') || pon.split('/')[0] || ''
     const ponLocation = `${get(row, 'OLT')}|${slot}|${pon}`
     const inferredBairro = [...(neighborhoods.get(ponLocation)?.entries() ?? [])].sort((a, b) => b[1] - a[1])[0]?.[0]
-    const bairro = getAny(row, 'Bairro', 'Setor/Bairro')
     return {
-      cidade, bairro: bairro && bairro !== '-' && bairro !== '--' ? bairro : inferredBairro || '—', olt: get(row, 'OLT') || '—', tipo: get(row, 'Tipo') || '—',
+      cidade, bairro: namedNeighborhood(getAny(row, 'Bairro', 'Setor/Bairro')) || inferredBairro || '—', olt: get(row, 'OLT') || '—', tipo: get(row, 'Tipo') || '—',
       slot, pon: pon || '—', onu: get(row, 'ONU ID'),
       cliente: clientName(getAny(row, 'Cliente', 'Cliente iManager'), get(row, 'Cliente ONU')), codigo: get(row, 'Código'),
       situacao: get(row, 'Situação') || '—', pppoe: get(row, 'PPPoE'), serial: get(row, 'Serial'),
       modelo: get(row, 'Modelo') || '—', status: get(row, 'Status') || '—',
       classificacao: severity(get(row, 'Classificação'), rx, rowHasRxAlert), rx, tx: parseNumber(get(row, 'TX dBm')),
       oltRx: parseNumber(get(row, 'OLT RX dBm')), distancia: parseDistance(getAny(row, 'Distância', 'Distância m')),
+      temperatura: parseNumber(getAny(row, 'Temperatura C', 'Temperatura')),
       causa: get(row, 'Down Cause') || '—',
+      cidadeCliente: get(row, 'Cidade Cliente') || '—',
+      // Sem a coluna "Alerta RX" o CSV inteiro e o recorte - e o que o filtro acima faz.
+      alertaRx: hasRxAlert ? rowHasRxAlert : true,
     }
   })
 }
@@ -180,11 +212,17 @@ export function signalSummary(rows: SignalRow[]) {
   return {
     total: rows.length,
     criticos: rows.filter(row => row.classificacao === 'Crítico').length,
-    atencao: rows.filter(row => row.classificacao !== 'Crítico').length,
+    // "Atenção" e a classificação Atenção, nao "tudo que nao e Crítico" - senao
+    // Normal e — entram na conta e o KPI infla.
+    atencao: rows.filter(row => row.classificacao === 'Atenção').length,
+    outros: rows.filter(row => row.classificacao !== 'Crítico' && row.classificacao !== 'Atenção').length,
     offline: rows.filter(row => normalizeText(row.status) !== 'ONLINE').length,
     pons: new Set(rows.map(row => `${row.olt}|${row.slot}|${row.pon}`)).size,
   }
 }
+
+/** Recorte de alerta de RX dentro de um snapshot completo do CSV. */
+export const alertRows = (rows: SignalRow[]) => rows.filter(row => row.alertaRx)
 
 export const signalPonKey = (row: Pick<SignalRow, 'olt' | 'pon'>) => `${row.olt} · ${row.pon}`
 
@@ -200,23 +238,34 @@ export function buildHotspots(rows: SignalRow[]): SignalHotspot[] {
     const concentracao = items.length ? criticos / items.length : 0
     if (criticos < 4 || concentracao < 0.3) return []
     const rxs = items.map(item => item.rx).filter((value): value is number => value != null).sort((a, b) => a - b)
+    const temps = items.map(item => item.temperatura).filter((value): value is number => value != null)
     const bairros = new Map<string, number>()
     items.forEach(item => bairros.set(item.bairro, (bairros.get(item.bairro) ?? 0) + 1))
     const bairro = [...bairros.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'
     return [{
       key, olt: items[0].olt, pon: items[0].pon, cidade: items[0].cidade, bairro,
       total: items.length, criticos, concentracao, rxMediano: rxs.length ? rxs[Math.floor(rxs.length / 2)] : null,
-      piorRx: rxs[0] ?? null, nivel: criticos >= 8 && concentracao >= 0.45 ? 'alto' : 'medio',
+      piorRx: rxs[0] ?? null, tempMax: temps.length ? Math.max(...temps) : null,
+      nivel: criticos >= 8 && concentracao >= 0.45 ? 'alto' : 'medio',
       score: criticos * concentracao,
     } satisfies SignalHotspot]
   }).sort((a, b) => b.criticos - a.criticos || b.concentracao - a.concentracao || b.total - a.total)
 }
 
-export function buildHistogram(rows: SignalRow[], min = -34, max = -24, step = 0.5) {
+export function buildHistogram(rows: SignalRow[], min = -38, max = -24, step = 0.5): HistogramBin[] {
   const count = Math.round((max - min) / step)
-  const bins = Array.from({ length: count }, (_, index) => ({
-    start: min + index * step, end: min + (index + 1) * step, total: 0, rows: [] as SignalRow[],
-  }))
+  const bins: HistogramBin[] = Array.from({ length: count }, (_, index) => {
+    const start = min + index * step
+    const overflow = index === 0 || index === count - 1
+    return {
+      start, end: start + step, total: 0, rows: [] as SignalRow[], overflow,
+      // As pontas recolhem tudo que cai fora da faixa; anunciar uma faixa fechada
+      // ali seria mentira sobre onde os piores sinais realmente estao.
+      label: index === 0
+        ? `≤ ${(start + step).toFixed(1)}`
+        : overflow ? `≥ ${start.toFixed(1)}` : `${start.toFixed(1)} a ${(start + step).toFixed(1)}`,
+    }
+  })
   rows.forEach(row => {
     if (row.rx == null) return
     const index = Math.min(count - 1, Math.max(0, Math.floor((row.rx - min) / step)))

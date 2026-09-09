@@ -1,15 +1,24 @@
 import type { OSRow } from '../../lib/types'
 import { shortEquipe } from '../../lib/osFormat'
 
-// Coordenadas das cidades da Cabonnet ISP — Vale do Paraíba / SP
-// Cidades atendidas: SJC, Caçapava, Taubaté, Tremembé, Pindamonhangaba
+// Coordenadas das cidades da Cabonnet ISP.
+// Centros de município aproximados — servem para o mapa de calor, não para
+// posicionar endereço. Conferir se alguma aparecer deslocada.
 const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
-  // ── Cobertura principal ──────────────────────────────────────────────────
+  // ── Cluster Vale do Paraíba ──────────────────────────────────────────────
   'SAO JOSE DOS CAMPOS':        { lat: -23.1894, lng: -45.8837 },
   'CACAPAVA':                   { lat: -23.0998, lng: -45.7021 },
   'TAUBATE':                    { lat: -23.0256, lng: -45.5553 },
   'TREMEMBE':                   { lat: -22.9669, lng: -45.5514 },
   'PINDAMONHANGABA':            { lat: -22.9249, lng: -45.4613 },
+  // ── Cluster Adamantina (Alta Paulista) ───────────────────────────────────
+  'ADAMANTINA':                 { lat: -21.6853, lng: -51.0736 },
+  'OSVALDO CRUZ':               { lat: -21.7972, lng: -50.8767 },
+  'LUCELIA':                    { lat: -21.7189, lng: -51.0189 },
+  'MARIAPOLIS':                 { lat: -21.7947, lng: -51.1811 },
+  'INUBIA PAULISTA':            { lat: -21.7717, lng: -50.9569 },
+  'FLORIDA PAULISTA':           { lat: -21.6089, lng: -51.1725 },
+  'PACAEMBU':                   { lat: -21.5622, lng: -51.2633 },
   // ── Municípios vizinhos (fallback) ───────────────────────────────────────
   'JACAREI':                    { lat: -23.3049, lng: -45.9658 },
   'GUARATINGUETA':              { lat: -22.8164, lng: -45.1939 },

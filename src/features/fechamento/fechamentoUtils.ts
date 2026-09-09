@@ -1,5 +1,6 @@
 import { shortEquipe, EQUIPE_NAMES } from '../../lib/osFormat'
 import type { OSRow } from '../../lib/types'
+import { clusterDaEquipe } from '../../lib/clusters'
 
 // ── Interfaces exportadas ──────────────────────────────────────────────────────
 export interface TeamStats   { exec: number; semExec: number; pend: number; slaVenc: number }
@@ -21,25 +22,32 @@ const WES_EQS  = ['F08', 'F11', 'F23', 'F36', 'F44']
 const THM_EQS  = ['F12', 'F13', 'F14']
 const normEq   = (s: string | null | undefined): string => (s || '').toUpperCase().replace(/([A-Z])\s+(\d)/g, '$1$2')
 
+// Adamantina resolve pelo prefixo: as frentes se repetem entre clusters
+// (Vale tem F01, Adamantina tem F 01) e só o prefixo distingue as equipes.
+export const isADA = (r: OSRow): boolean => clusterDaEquipe(r.nomedaequipe) === 'ADAMANTINA'
+
 export const isRede = (r: OSRow): boolean =>
   (r.nomedaequipe || '').toUpperCase().includes('- REDE') || r._tipo === 'REDE'
 
 export const isInstacable = (r: OSRow): boolean => {
+  if (isADA(r)) return false
   const eq = normEq(r.nomedaequipe)
   return eq.includes('INSTALAC') && INST_EQS.some(f => eq.includes(f))
 }
 
 export const isWES = (r: OSRow): boolean => {
+  if (isADA(r)) return false
   const eq = normEq(r.nomedaequipe)
   return WES_EQS.some(f => eq.includes(f))
 }
 
 export const isTHM = (r: OSRow): boolean => {
+  if (isADA(r)) return false
   const eq = normEq(r.nomedaequipe)
   return THM_EQS.some(f => eq.includes(f))
 }
 
-export const ABA_LABEL: Record<string, string> = { global: 'Global', instacable: 'Instacable', wes: 'WES', thm: 'THM', rede: 'Rede' }
+export const ABA_LABEL: Record<string, string> = { global: 'Global', instacable: 'Instacable', wes: 'WES', thm: 'THM', ada: 'ADA', rede: 'Rede' }
 
 // ── Period helpers ─────────────────────────────────────────────────────────────
 export function getPeriodDates(periodo: string, customFrom: Date | null, customTo: Date | null): { from: Date | null; to: Date | null } {

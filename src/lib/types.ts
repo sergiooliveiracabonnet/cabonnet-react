@@ -1,6 +1,6 @@
 // ─── Raw OS Row (saída do Grafana/CSV, enriquecida por enrichRows) ────────────
 
-export type Fornecedor = 'WES' | 'Instacable' | 'THM' | 'REDE' | 'MANUTENCAO' | 'INSTALACAO' | 'INTERNO' | 'OUTRO'
+export type Fornecedor = 'WES' | 'Instacable' | 'THM' | 'ADA' | 'REDE' | 'MANUTENCAO' | 'INSTALACAO' | 'INTERNO' | 'OUTRO'
 export type TipoEquipe = 'REDE' | 'INSTALACAO' | 'MANUTENCAO' | 'OUTRO'
 export type Categoria  = 'REDE' | 'VT_MANUTENCAO' | 'INSTALACAO' | 'SERVICO'
 export type SituacaoEfetiva = 'Pendente' | 'Atendimento' | 'Reagendamento' | 'Concluída' | 'Cancelada' | string

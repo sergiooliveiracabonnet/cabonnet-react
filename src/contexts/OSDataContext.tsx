@@ -1,10 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
 import { useOSData } from '../hooks/useOSData'
 import { useServerEvents } from '../hooks/useServerEvents'
 import { useRevisitasData } from '../hooks/useRevisitasData'
 import { useUIStore } from '../store/uiStore'
 import { applyDateFilter } from '../lib/transform'
+import { clusterDaCidade } from '../lib/clusters'
 import {
   buildDashboard, buildSla, buildGraficos, buildAuditoria,
   buildCidades, buildCampo, buildCoorte, buildCapacidade, buildChurn, buildRevisitas, buildOrdens, buildAnomalias, buildFila,
@@ -181,18 +182,28 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
   useServerEvents()  // push SSE → invalida ['os-query'] automaticamente
   const { rows, allRows, prevRows, discardedLixo, duplicadosLixo, isLoading, error, dataUpdatedAt } = useOSData()
   const { revisitaRows: allRevisitaRows } = useRevisitasData()
-  const { hideRede, dateFilter } = useUIStore()
+  const { hideRede, cluster, dateFilter } = useUIStore()
 
-  // Quando hideRede está ativo, remove as OS de Rede Interna de todos os builders
-  const activeRows    = useMemo(() => hideRede ? rows.filter(r => r._tipo !== 'REDE')    : rows,    [rows,    hideRede])
-  const activeAllRows = useMemo(() => hideRede ? allRows.filter(r => r._tipo !== 'REDE') : allRows, [allRows, hideRede])
-  const activePrev    = useMemo(() => hideRede ? prevRows.filter(r => r._tipo !== 'REDE'): prevRows, [prevRows, hideRede])
+  // Corte único: Rede Interna (hideRede) + cluster regional. Feito aqui, vale de
+  // uma vez para dashboard, SLA, gráficos, cidades, campo, ordens e fila.
+  // 'TODOS' não filtra cidade nenhuma — assim uma grafia inesperada vinda do ERP
+  // aparece no app em vez de sumir em silêncio.
+  const keep = useCallback(
+    (r: OSRow) =>
+      (!hideRede || r._tipo !== 'REDE')
+      && (cluster === 'TODOS' || clusterDaCidade(r.nomedacidade ?? '') === cluster),
+    [hideRede, cluster],
+  )
+
+  const activeRows    = useMemo(() => rows.filter(keep),     [rows,     keep])
+  const activeAllRows = useMemo(() => allRows.filter(keep),  [allRows,  keep])
+  const activePrev    = useMemo(() => prevRows.filter(keep), [prevRows, keep])
 
   // Revisitas: usa OS concluídas filtradas por dataexecucao (não datacadastro)
   const activeRevisitaRows = useMemo(() => {
     const filtered = applyDateFilter(allRevisitaRows, { ...dateFilter, campo: 'dataexecucao' })
-    return hideRede ? filtered.filter(r => r._tipo !== 'REDE') : filtered
-  }, [allRevisitaRows, dateFilter, hideRede])
+    return filtered.filter(keep)
+  }, [allRevisitaRows, dateFilter, keep])
 
   const prevRevisitaRows = useMemo(() => {
     const { from, to } = dateFilter ?? {}
@@ -201,8 +212,8 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     const prevTo   = new Date(from.getTime() - 1)
     const prevFrom = new Date(from.getTime() - duration - 1)
     const filtered = applyDateFilter(allRevisitaRows, { ...dateFilter, campo: 'dataexecucao', from: prevFrom, to: prevTo })
-    return hideRede ? filtered.filter(r => r._tipo !== 'REDE') : filtered
-  }, [allRevisitaRows, dateFilter, hideRede])
+    return filtered.filter(keep)
+  }, [allRevisitaRows, dateFilter, keep])
 
   const dashboard  = useMemo(() => safe('dashboard', () => buildDashboard(activeRows, activeAllRows, activePrev), EMPTY_DERIVED.dashboard), [activeRows, activeAllRows, activePrev])
   const sla        = useMemo(() => safe('sla',        () => buildSla(activeRows),        EMPTY_DERIVED.sla),        [activeRows])
@@ -217,7 +228,7 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
   const churn      = useMemo(() => safe('churn',      () => buildChurn(activeAllRows),      EMPTY_DERIVED.churn),      [activeAllRows])
   const revisitas  = useMemo(() => safe('revisitas',  () => buildRevisitas(activeRevisitaRows, prevRevisitaRows), EMPTY_DERIVED.revisitas), [activeRevisitaRows, prevRevisitaRows])
   const ordens     = useMemo(() => safe('ordens',     () => buildOrdens(activeRows),     EMPTY_DERIVED.ordens),     [activeRows])
-  const allRevisitaActive = useMemo(() => hideRede ? allRevisitaRows.filter(r => r._tipo !== 'REDE') : allRevisitaRows, [allRevisitaRows, hideRede])
+  const allRevisitaActive = useMemo(() => allRevisitaRows.filter(keep), [allRevisitaRows, keep])
   const fila       = useMemo(() => safe('fila',       () => buildFila(activeRows, activeRevisitaRows, prevRevisitaRows, allRevisitaActive), EMPTY_DERIVED.fila), [activeRows, activeRevisitaRows, prevRevisitaRows, allRevisitaActive])
 
   // Detecta falhas de builders por identidade de referência com o fallback

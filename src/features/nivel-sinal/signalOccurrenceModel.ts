@@ -32,7 +32,9 @@ export interface SignalOccurrence {
   missedSnapshots: number
 }
 
-const invalidIdentifier = new Set(['', '-', '—', '--', 'N/A', 'NA', 'NULL', 'NULO'])
+// 'NONE' aparece literalmente na coluna Serial do CSV. Sem ele na lista, todas
+// as ONUs com esse serial colidem numa unica ocorrencia.
+const invalidIdentifier = new Set(['', '-', '—', '--', 'N/A', 'NA', 'NULL', 'NULO', 'NONE'])
 const validIdentifier = (value: string) => {
   const normalized = value.trim().toUpperCase()
   return invalidIdentifier.has(normalized) ? '' : normalized
@@ -49,6 +51,16 @@ export function signalOccurrenceKey(row: SignalRow) {
 }
 
 const isAlert = (row: SignalRow) => row.classificacao === 'Crítico' || row.classificacao === 'Atenção'
+
+/**
+ * Data operacional em Brasilia, YYYY-MM-DD.
+ *
+ * new Date().toISOString() devolve a data em UTC: entre 21h e meia-noite de
+ * Brasilia ela ja e a de amanha, e a tratativa registrada a noite caia num dia
+ * futuro — sumindo dos graficos de 7 dias.
+ */
+export const hojeOperacional = (): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
 
 export function createOccurrenceId() {
   if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID()

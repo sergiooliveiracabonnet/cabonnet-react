@@ -5,6 +5,7 @@ import { LoginPage } from './features/auth/LoginPage'
 import { RequireModulo, RequireGestor } from './components/auth/RequireAcesso'
 import { useAuthStore } from './store/authStore'
 import { api } from './lib/api'
+import { useUIStore } from './store/uiStore'
 import {
   ERPRelatoriosPage,
   ERPAlertasPage,
@@ -25,8 +26,11 @@ export default function App() {
     // é 'authed' e a verificação acontece em background sem bloquear a UI.
     api.auth.check()
       .then((res) => {
-        const { ok, role, modulos, fornecedor_key } = res
-        ok ? setAuthed((role ?? 'viewer') as 'gestor' | 'operador' | 'viewer' | 'fornecedor', modulos ?? [], fornecedor_key ?? null) : setUnauthed()
+        const { ok, role, modulos, fornecedor_key, cluster_key } = res
+        if (ok) {
+          setAuthed((role ?? 'viewer') as 'gestor' | 'operador' | 'viewer' | 'fornecedor', modulos ?? [], fornecedor_key ?? null, cluster_key ?? 'TODOS')
+          useUIStore.getState().aplicarClusterDaSessao(cluster_key ?? 'TODOS')
+        } else setUnauthed()
       })
       .catch(() => {
         // Erro de rede: só desloga se ainda estava em 'checking'

@@ -41,6 +41,7 @@ from cabonnet.auth import _auth_enabled, _authenticate, _create_session, _role_f
 from cabonnet.builders import _build_status_text
 from cabonnet.cache import _dados_cache_update
 from cabonnet.config import (
+    CLUSTERS, CLUSTER_DE_CIDADE,
     _ATE_CACHE_TTL,
     _OPERADORA_GRUPOS,
     _load_env,
@@ -546,7 +547,7 @@ async def login_form(request: Request):
     pwd  = body.get("password") or ""
     auth = _authenticate(user, pwd)
     if auth:
-        token = _create_session(auth["role"], auth["username"], auth.get("fornecedor_key"))
+        token = _create_session(auth["role"], auth["username"], auth.get("fornecedor_key"), auth.get("cluster_key"))
         log.info("[Auth] Login OK — usuario: %s role: %s", auth["username"], auth["role"])
         resp = RedirectResponse("/dashboard", status_code=302)
         resp.set_cookie("cbn_session", token, path="/", httponly=True, samesite="strict", secure=_COOKIE_SECURE, max_age=SESSION_DURATION)
@@ -564,10 +565,11 @@ async def api_login(request: Request):
     pwd  = body.get("password") or ""
     auth = _authenticate(user, pwd)
     if auth:
-        token   = _create_session(auth["role"], auth["username"], auth.get("fornecedor_key"))
+        token   = _create_session(auth["role"], auth["username"], auth.get("fornecedor_key"), auth.get("cluster_key"))
         modulos = _db_get_permissoes(auth["role"])
         log.info("[Auth] Login React OK — usuario: %s role: %s", auth["username"], auth["role"])
-        resp = JSONResponse({"ok": True, "role": auth["role"], "username": auth["username"], "modulos": modulos, "fornecedor_key": auth.get("fornecedor_key")})
+        resp = JSONResponse({"ok": True, "role": auth["role"], "username": auth["username"], "modulos": modulos, "fornecedor_key": auth.get("fornecedor_key"),
+                             "cluster_key": auth.get("cluster_key")})
         resp.set_cookie("cbn_session", token, path="/", httponly=True, samesite="strict", secure=_COOKIE_SECURE, max_age=SESSION_DURATION)
         return resp
     log.warning("[Auth] Login React FALHOU — usuario: %s", user)
@@ -586,6 +588,7 @@ async def api_session(request: Request):
         "username":     sess.get("username"),
         "modulos":      _db_get_permissoes(sess["role"]),
         "fornecedor_key": sess.get("fornecedor_key"),
+        "cluster_key": sess.get("cluster_key") or "TODOS",
     }
 
 
@@ -643,6 +646,9 @@ async def create_usuario(request: Request, _role: str = Depends(_require_gestor)
     password = body.get("password") or ""
     role     = body.get("role") or "viewer"
     fornecedor_key = body.get("fornecedor_key")
+    cluster_key = str(body.get("cluster_key") or "VALE").upper()
+    if cluster_key not in _CLUSTERS_VALIDOS:
+        raise HTTPException(400, "cluster_key invalido: use VALE, ADAMANTINA ou TODOS")
     if not username:
         raise HTTPException(400, "username é obrigatório")
     if len(password) < 6:
@@ -654,7 +660,7 @@ async def create_usuario(request: Request, _role: str = Depends(_require_gestor)
     if role != "fornecedor":
         fornecedor_key = None
     try:
-        uid = _db_create_usuario(username, _hash_password(password), role, fornecedor_key)
+        uid = _db_create_usuario(username, _hash_password(password), role, fornecedor_key, cluster_key)
     except Exception:
         raise HTTPException(409, "Já existe um usuário com esse username")
     log.info("[Usuarios] Criado — username: %s role: %s", username, role)
@@ -671,6 +677,11 @@ async def update_usuario(uid: int, request: Request, _role: str = Depends(_requi
     role  = body.get("role")
     ativo = body.get("ativo")
     fornecedor_key = body.get("fornecedor_key", ...)
+    cluster_key = body.get("cluster_key", ...)
+    if cluster_key is not ...:
+        cluster_key = str(cluster_key or "").upper()
+        if cluster_key not in _CLUSTERS_VALIDOS:
+            raise HTTPException(400, "cluster_key invalido: use VALE, ADAMANTINA ou TODOS")
     if role is not None and role not in _ROLES_VALIDOS:
         raise HTTPException(400, f"role inválida — use um de: {', '.join(_ROLES_VALIDOS)}")
 
@@ -687,7 +698,8 @@ async def update_usuario(uid: int, request: Request, _role: str = Depends(_requi
         raise HTTPException(400, "fornecedor invalido")
     if effective_role != "fornecedor":
         effective_forn = None
-    updated = _db_update_usuario(uid, role=role, ativo=ativo, fornecedor_key=effective_forn)
+    updated = _db_update_usuario(uid, role=role, ativo=ativo, fornecedor_key=effective_forn,
+                                 cluster_key=cluster_key)
     log.info("[Usuarios] Atualizado — id: %s role: %s ativo: %s", uid, role, ativo)
     return {"ok": True, "item": updated}
 
@@ -802,10 +814,11 @@ def get_stats(sess: dict = Depends(_require_session)):
         cached = dict(state._query_cache)
     ts = cached.get("ts", 0)
     fornecedor_key = sess.get("fornecedor_key")
+    cluster_key = sess.get("cluster_key")
     result = compute_stats(
-        _filter_csv_fornecedor(cached.get("pendente", ""), fornecedor_key),
-        _filter_csv_fornecedor(cached.get("agendado",  ""), fornecedor_key),
-        _filter_csv_fornecedor(cached.get("futuro",    ""), fornecedor_key),
+        _filter_csv_escopo(cached.get("pendente", ""), fornecedor_key, cluster_key),
+        _filter_csv_escopo(cached.get("agendado",  ""), fornecedor_key, cluster_key),
+        _filter_csv_escopo(cached.get("futuro",    ""), fornecedor_key, cluster_key),
     )
     return JSONResponse({"ts": ts, "cached": bool(ts), **result})
 
@@ -816,19 +829,19 @@ def get_stats(sess: dict = Depends(_require_session)):
 async def pendente(sess: dict = Depends(_require_session)):
     response = _csv_response(SQL_PENDENTE, "PENDENTE")
     csv_text = response.body.decode("utf-8-sig")
-    return RawResponse(content=_filter_csv_fornecedor(csv_text, sess.get("fornecedor_key")), media_type="text/csv; charset=utf-8")
+    return RawResponse(content=_filter_csv_escopo(csv_text, sess.get("fornecedor_key"), sess.get("cluster_key")), media_type="text/csv; charset=utf-8")
 
 @router.get("/agendado")
 async def agendado(sess: dict = Depends(_require_session)):
     response = _csv_response(SQL_AGENDADO, "AGENDADO")
     csv_text = response.body.decode("utf-8-sig")
-    return RawResponse(content=_filter_csv_fornecedor(csv_text, sess.get("fornecedor_key")), media_type="text/csv; charset=utf-8")
+    return RawResponse(content=_filter_csv_escopo(csv_text, sess.get("fornecedor_key"), sess.get("cluster_key")), media_type="text/csv; charset=utf-8")
 
 @router.get("/futuro")
 async def futuro(sess: dict = Depends(_require_session)):
     response = _csv_response(SQL_FUTURO, "FUTURO")
     csv_text = response.body.decode("utf-8-sig")
-    return RawResponse(content=_filter_csv_fornecedor(csv_text, sess.get("fornecedor_key")), media_type="text/csv; charset=utf-8")
+    return RawResponse(content=_filter_csv_escopo(csv_text, sess.get("fornecedor_key"), sess.get("cluster_key")), media_type="text/csv; charset=utf-8")
 
 
 # ── Query principal ───────────────────────────────────────────────────────────
@@ -836,6 +849,8 @@ async def futuro(sess: dict = Depends(_require_session)):
 _CACHE_FRESH_SEC  = 240   # < 4 min → retorna cache imediatamente
 _CACHE_STALE_SEC  = 120   # > 2 min → agenda refresh em background mesmo devolvendo cache
 
+
+_CLUSTERS_VALIDOS = set(CLUSTERS) | {"TODOS"}
 
 _FORNECEDOR_FRENTES = {
     "Instacable": set(_OPERADORA_GRUPOS["INSTACABLE"]),
@@ -886,10 +901,40 @@ def _filter_csv_fornecedor(csv_text: str, fornecedor_key: str | None) -> str:
     return output.getvalue()
 
 
-def _query_response(snapshot: dict, data_iso: str, compact: bool, fornecedor_key: str | None = None, **metadata):
-    pendente = _filter_csv_fornecedor(snapshot.get('pendente', '') or '', fornecedor_key)
-    agendado = _filter_csv_fornecedor(snapshot.get('agendado', '') or '', fornecedor_key)
-    futuro = _filter_csv_fornecedor(snapshot.get('futuro', '') or '', fornecedor_key)
+def _filter_csv_cluster(csv_text: str, cluster_key: str | None) -> str:
+    """Remove no servidor as linhas de fora do cluster do usuario.
+
+    Espelha o que _filter_csv_fornecedor faz: o recorte tem de acontecer antes
+    de qualquer compactacao ou envio, senao o dado do outro cluster chega ao
+    navegador e o "filtro" vira enfeite."""
+    if not cluster_key or cluster_key == "TODOS" or not csv_text:
+        return csv_text
+    if cluster_key not in CLUSTERS:
+        return ""
+    reader = csv.DictReader(io.StringIO(csv_text))
+    if not reader.fieldnames:
+        return ""
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(output, fieldnames=reader.fieldnames, lineterminator="\n")
+    writer.writeheader()
+    for row in reader:
+        cidade = _scope_key(next((v for k, v in row.items() if (k or "").lower() == "nomedacidade"), ""))
+        if CLUSTER_DE_CIDADE.get(cidade) == cluster_key:
+            writer.writerow(row)
+    return output.getvalue()
+
+
+def _filter_csv_escopo(csv_text: str, fornecedor_key: str | None, cluster_key: str | None) -> str:
+    """Escopo completo da sessao. Ponto unico: um endpoint novo que esqueca
+    de chamar isto vaza dado, entao nao existe caminho paralelo."""
+    return _filter_csv_cluster(_filter_csv_fornecedor(csv_text, fornecedor_key), cluster_key)
+
+
+def _query_response(snapshot: dict, data_iso: str, compact: bool, fornecedor_key: str | None = None,
+                    cluster_key: str | None = None, **metadata):
+    pendente = _filter_csv_escopo(snapshot.get('pendente', '') or '', fornecedor_key, cluster_key)
+    agendado = _filter_csv_escopo(snapshot.get('agendado', '') or '', fornecedor_key, cluster_key)
+    futuro = _filter_csv_escopo(snapshot.get('futuro', '') or '', fornecedor_key, cluster_key)
     parts = (
         compact_query_parts(
             pendente,
@@ -1023,7 +1068,7 @@ async def os_observacoes(request: Request, sess: dict = Depends(_require_session
         cached = dict(state._query_cache)
     fornecedor_key = sess.get("fornecedor_key") if isinstance(sess, dict) else None
     parts = [
-        _filter_csv_fornecedor(cached.get(key, ""), fornecedor_key)
+        _filter_csv_escopo(cached.get(key, ""), fornecedor_key, cluster_key)
         for key in ("pendente", "agendado", "futuro")
     ]
     return {"ok": True, "items": extract_os_details(parts, requested)}
@@ -1033,7 +1078,7 @@ async def os_observacoes(request: Request, sess: dict = Depends(_require_session
 async def revisitas(sess: dict = Depends(_require_session)):
     try:
         csv_r = frames_to_csv(grafana_post(SQL_REVISITAS))
-        filtered = _filter_csv_fornecedor(csv_r or "", sess.get("fornecedor_key"))
+        filtered = _filter_csv_escopo(csv_r or "", sess.get("fornecedor_key"), sess.get("cluster_key"))
         n = len(filtered.splitlines()) - 1 if filtered else 0
         raw_n = len(csv_r.splitlines()) - 1 if csv_r else 0
         with state._revisitas_cache_lock:
@@ -1046,7 +1091,7 @@ async def revisitas(sess: dict = Depends(_require_session)):
         if cached["ts"] > 0:
             cache_age = int((_time_mod.time() - cached["ts"]) / 60)
             log.warning("[/revisitas] Servindo cache de %d min atrás", cache_age)
-            filtered = _filter_csv_fornecedor(cached["csv"], sess.get("fornecedor_key"))
+            filtered = _filter_csv_escopo(cached["csv"], sess.get("fornecedor_key"), sess.get("cluster_key"))
             return {"concluidas": filtered, "n": max(0, len(filtered.splitlines()) - 1), "cached": True, "cache_age_min": cache_age}
         log.exception("Erro /revisitas sem cache disponível")
         raise HTTPException(502, str(ex))
@@ -1586,6 +1631,48 @@ async def update_signal_occurrence(
     if not isinstance(item, dict) or not _db_update_signal_occurrence(item, sess.get("username") or ""):
         raise HTTPException(404, "Ocorrência não encontrada")
     return {"ok": True, "items": _db_list_signal_occurrences()}
+
+
+@router.get("/api/nivel-sinal/pons-tratadas")
+async def list_pon_treatments(_role: str = Depends(_require_modulo("nivel_sinal"))):
+    from cabonnet.db import _db_list_pon_treatments
+    return {"ok": True, "items": _db_list_pon_treatments()}
+
+
+@router.post("/api/nivel-sinal/pon/tratar")
+async def treat_pon(
+    request: Request,
+    _role: str = Depends(_require_modulo("nivel_sinal")),
+    sess: dict = Depends(_require_session),
+):
+    return await _register_pon_treatment(request, "tratada", sess)
+
+
+@router.post("/api/nivel-sinal/pon/reabrir")
+async def reopen_pon(
+    request: Request,
+    _role: str = Depends(_require_modulo("nivel_sinal")),
+    sess: dict = Depends(_require_session),
+):
+    return await _register_pon_treatment(request, "reaberta", sess)
+
+
+async def _register_pon_treatment(request: Request, action: str, sess: dict):
+    from cabonnet.db import _db_add_pon_treatment, _db_list_pon_treatments
+    body = await _json_body(request)
+    pon_key = str(body.get("pon_key", "")).strip()
+    snapshot = body.get("snapshot")
+    if snapshot is None:
+        snapshot = {}
+    if not pon_key:
+        raise HTTPException(400, "pon_key é obrigatório")
+    if not isinstance(snapshot, dict):
+        raise HTTPException(400, "snapshot deve ser um objeto")
+    try:
+        _db_add_pon_treatment(pon_key, action, snapshot, sess.get("username") or "")
+    except (TypeError, ValueError) as ex:
+        raise HTTPException(400, str(ex)) from ex
+    return {"ok": True, "items": _db_list_pon_treatments()}
 
 
 @router.get("/api/justificativas")

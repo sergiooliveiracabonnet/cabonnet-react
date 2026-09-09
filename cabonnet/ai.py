@@ -11,7 +11,7 @@ from datetime import date
 
 import requests
 
-from cabonnet.config import ANTHROPIC_API_KEY, _AI_CACHE_TTL, _OPERADORA_GRUPOS
+from cabonnet.config import ANTHROPIC_API_KEY, CLUSTERS, _AI_CACHE_TTL, _OPERADORA_GRUPOS
 from cabonnet import state
 
 log = logging.getLogger("CaboNetServer")
@@ -1872,7 +1872,12 @@ _OPERADORAS_CHAT_CONTEXT = "\n".join(
 _CHAT_SYSTEM = (
     "Você é o assistente de operações Cabonnet — sistema de gestão de OS para ISP no Vale do Paraíba (SP).\n\n"
     "CONTEXTO:\n"
-    "- 5 cidades: São José dos Campos (SJC), Caçapava, Taubaté, Tremembé, Pindamonhangaba\n"
+    "- Clusters atendidos: {}\n".format(
+        "; ".join(
+            "{} ({})".format(c["label"], ", ".join(c["cidades"].values()))
+            for c in CLUSTERS.values()
+        )
+    ) +
     "- OS = Ordem de Serviço | Data atual: {today}\n\n"
     "OPERADORAS:\n"
     f"{_OPERADORAS_CHAT_CONTEXT}\n\n"

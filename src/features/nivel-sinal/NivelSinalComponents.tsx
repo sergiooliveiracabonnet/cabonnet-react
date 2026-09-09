@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ArrowDown, ArrowUp, Broadcast, MapPin, Rows, WarningCircle } from '@phosphor-icons/react'
+import { ArrowDown, ArrowUp, ArrowUUpLeft, Broadcast, Check, MapPin, Rows, Thermometer, WarningCircle } from '@phosphor-icons/react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Modal } from '../../components/ui/Modal'
 import { buildHistogram, type SignalHotspot, type SignalRow, type SignalSeverity, sortSignals, type SignalSortKey, type SortDirection } from './nivelSinal'
+import type { PonTreatment } from './ponTreatments'
 
 export function severityVariant(value: SignalSeverity) {
   if (value === 'Crítico') return 'red'
@@ -74,13 +75,13 @@ export function SignalHistogram({ rows, onOpen }: { rows: SignalRow[]; onOpen: (
   const bins = buildHistogram(rows)
   const max = Math.max(1, ...bins.map(bin => bin.total))
   return <div><div className="flex h-44 items-end gap-1 border-b border-border px-1">{bins.map(bin => (
-    <button key={bin.start} disabled={!bin.total} title={`${bin.start.toFixed(1)} a ${bin.end.toFixed(1)} dBm · ${bin.total} ONUs`}
-      onClick={() => onOpen({ title: `Potência RX: ${bin.start.toFixed(1)} a ${bin.end.toFixed(1)} dBm`, subtitle: 'ONUs posicionadas nesta faixa do histograma.', rows: bin.rows })}
+    <button key={bin.start} disabled={!bin.total} title={`${bin.label} dBm · ${bin.total} ONUs`}
+      onClick={() => onOpen({ title: `Potência RX: ${bin.label} dBm`, subtitle: bin.overflow ? 'Faixa de ponta: recolhe também tudo que cai fora do eixo.' : 'ONUs posicionadas nesta faixa do histograma.', rows: bin.rows })}
       className="group flex h-full flex-1 flex-col justify-end focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
       <span className="mb-1 text-caption tabular-nums text-muted opacity-0 transition-opacity group-hover:opacity-100">{bin.total || ''}</span>
       <span style={{ height: `${bin.total / max * 100}%` }} className={`min-h-px w-full rounded-t-sm transition-opacity group-hover:opacity-75 ${bin.start < -26.5 ? 'bg-red' : 'bg-orange'}`} />
     </button>
-  ))}</div><div className="mt-2 flex justify-between text-caption font-mono text-muted"><span>-34</span><span>-32</span><span>-30</span><span>-28</span><span>-26</span><span>-24 dBm</span></div></div>
+  ))}</div><div className="mt-2 flex justify-between text-caption font-mono text-muted">{['-38', '-36', '-34', '-32', '-30', '-28', '-26', '-24 dBm'].map(tick => <span key={tick}>{tick}</span>)}</div></div>
 }
 
 export interface SeverityGroup { key: string; total: number; criticos: number; atencao: number; rows: SignalRow[] }
@@ -104,17 +105,40 @@ export function RankedList({ items, label, onOpen }: { items: RankItem[]; label:
   )) : <p className="py-8 text-center text-label text-muted">Sem dados</p>}</div>
 }
 
-export function HotspotGrid({ hotspots, rows, onOpen, onApply }: { hotspots: SignalHotspot[]; rows: SignalRow[]; onOpen: (detail: DetailState) => void; onApply: (hotspot: SignalHotspot) => void }) {
+interface HotspotGridProps {
+  hotspots: SignalHotspot[]
+  rows: SignalRow[]
+  onOpen: (detail: DetailState) => void
+  onApply: (hotspot: SignalHotspot) => void
+  onTreat: (hotspot: SignalHotspot) => void
+  treatments: Map<string, PonTreatment>
+  busyKey: string
+}
+
+export function HotspotGrid({ hotspots, rows, onOpen, onApply, onTreat, treatments, busyKey }: HotspotGridProps) {
   return <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{hotspots.length ? hotspots.map(hotspot => {
     const related = rows.filter(row => `${row.olt} · ${row.pon}` === hotspot.key)
+    const cycles = treatments.get(hotspot.key)
     return <Card key={hotspot.key} onClick={() => onOpen({ title: `Hotspot ${hotspot.pon} · ${hotspot.olt}`, subtitle: `${hotspot.cidade} · ${hotspot.bairro} · ${hotspot.criticos} críticas em ${hotspot.total} ONUs.`, rows: related, action: { label: 'Aplicar este filtro', run: () => onApply(hotspot) } })} className="p-4">
       <div className="flex items-start justify-between gap-2"><div><p className="font-mono text-title font-bold text-text">{hotspot.pon}</p><p className="mt-0.5 text-caption text-muted">{hotspot.olt}</p></div><Badge variant={hotspot.nivel === 'alto' ? 'red' : 'orange'}>{hotspot.nivel === 'alto' ? 'Risco alto' : 'Risco médio'}</Badge></div>
-      <p className="mt-3 flex items-center gap-1 text-caption text-muted"><MapPin size={11} /> {hotspot.cidade} · {hotspot.bairro}</p>
+      <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-muted">
+        <span className="flex items-center gap-1"><MapPin size={11} /> {hotspot.cidade} · {hotspot.bairro}</span>
+        {hotspot.tempMax != null && <span className="flex items-center gap-1"><Thermometer size={11} /> {hotspot.tempMax.toFixed(0)}°C máx</span>}
+      </p>
       <div className="mt-4 grid grid-cols-4 gap-2 text-center"><Metric label="Críticas" value={hotspot.criticos} critical /><Metric label="Total" value={hotspot.total} /><Metric label="Concentr." value={`${(hotspot.concentracao * 100).toFixed(0)}%`} /><Metric label="RX med." value={hotspot.rxMediano?.toFixed(1) ?? '—'} /></div>
       <div className="mt-3 h-1 overflow-hidden rounded-full bg-surface"><div className="h-full bg-red" style={{ width: `${hotspot.concentracao * 100}%` }} /></div>
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+        {cycles && cycles.treated_count > 0
+          ? <span className="text-caption text-orange">Reaberta · já tratada {cycles.treated_count}×</span>
+          : <span className="text-caption text-muted">Pendente de tratativa</span>}
+        <Button variant="ghost" size="sm" disabled={busyKey === hotspot.key} aria-label={`Marcar PON ${hotspot.pon} da ${hotspot.olt} como tratada`}
+          onClick={event => { event.stopPropagation(); onTreat(hotspot) }}><Check size={13} /> Tratada</Button>
+      </div>
     </Card>
-  }) : <div className="col-span-full flex flex-col items-center py-10 text-center text-muted"><Broadcast size={28} className="mb-2 opacity-40" /><p className="text-label">Nenhuma PON atinge ≥4 críticas e ≥30% de concentração.</p></div>}</div>
+  }) : <div className="col-span-full flex flex-col items-center py-10 text-center text-muted"><Broadcast size={28} className="mb-2 opacity-40" /><p className="text-label">Nenhuma PON pendente atinge ≥4 críticas e ≥30% de concentração.</p></div>}</div>
 }
+
+export const treatedIcons = { reopen: ArrowUUpLeft }
 
 function Metric({ label, value, critical }: { label: string; value: ReactNode; critical?: boolean }) {
   return <div><span className="text-caption uppercase tracking-wide text-muted">{label}</span><strong className={`mt-1 block text-body tabular-nums ${critical ? 'text-red' : 'text-text'}`}>{value}</strong></div>
@@ -126,17 +150,25 @@ export function KpiAction({ children, onClick }: { children: ReactNode; onClick:
 
 export const signalIcons = { rows: Rows, warning: WarningCircle }
 
+const normalizeCity = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim()
+const divergentCity = (row: SignalRow) =>
+  row.cidadeCliente !== '—' && normalizeCity(row.cidadeCliente) !== normalizeCity(row.cidade)
+
 const TABLE_COLUMNS: { key: SignalSortKey; label: string; render: (row: SignalRow) => ReactNode }[] = [
   { key: 'classificacao', label: 'Sev', render: row => <Badge variant={severityVariant(row.classificacao)}>{row.classificacao}</Badge> },
   { key: 'rx', label: 'RX dBm', render: row => <b className={row.classificacao === 'Crítico' ? 'text-red' : 'text-orange'}>{row.rx?.toFixed(2) ?? '—'}</b> },
   { key: 'oltRx', label: 'OLT RX', render: row => row.oltRx?.toFixed(2) ?? '—' },
   { key: 'tx', label: 'TX dBm', render: row => row.tx?.toFixed(2) ?? '—' },
   { key: 'cliente', label: 'Cliente', render: row => <span className="block max-w-52 truncate font-semibold text-text" title={row.cliente}>{row.cliente}</span> },
-  { key: 'cidade', label: 'Cidade', render: row => row.cidade }, { key: 'bairro', label: 'Bairro', render: row => row.bairro },
+  { key: 'cidade', label: 'Cidade (OLT)', render: row => row.cidade },
+  // A Cidade do CSV e a da OLT; a do cliente diverge em alguns casos e ficava invisivel.
+  { key: 'cidadeCliente', label: 'Cidade (cliente)', render: row => <span className={divergentCity(row) ? 'font-semibold text-orange' : ''} title={divergentCity(row) ? 'Cliente atendido por OLT de outra cidade' : undefined}>{row.cidadeCliente}</span> },
+  { key: 'bairro', label: 'Bairro', render: row => row.bairro },
   { key: 'olt', label: 'OLT', render: row => row.olt }, { key: 'pon', label: 'PON', render: row => <span className="font-mono">{row.pon}</span> },
   { key: 'onu', label: 'ONU', render: row => <span className="font-mono">{row.onu}</span> }, { key: 'modelo', label: 'Modelo', render: row => row.modelo },
   { key: 'serial', label: 'Serial', render: row => <span className="font-mono">{row.serial || '—'}</span> },
   { key: 'distancia', label: 'Dist (m)', render: row => row.distancia?.toLocaleString('pt-BR') ?? '—' },
+  { key: 'temperatura', label: 'Temp °C', render: row => row.temperatura == null ? '—' : <span className={row.temperatura >= 60 ? 'font-semibold text-red' : ''}>{row.temperatura.toFixed(1)}</span> },
   { key: 'status', label: 'Status', render: row => <span className={row.status.toLocaleLowerCase('pt-BR') !== 'online' ? 'font-semibold text-red' : ''}>{row.status}</span> },
   { key: 'situacao', label: 'Situação', render: row => row.situacao }, { key: 'causa', label: 'Causa', render: row => row.causa },
 ]

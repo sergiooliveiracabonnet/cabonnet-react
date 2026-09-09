@@ -212,6 +212,7 @@ export const FORN_LABEL: Record<Fornecedor, string> = {
   WES:        'WES',
   Instacable: 'Instacable',
   THM:        'THM',
+  ADA:        'ADA',
   REDE:       'Rede',
   MANUTENCAO: 'Manutenção',
   INSTALACAO: 'Instalação',

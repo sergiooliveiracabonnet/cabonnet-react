@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import type { ClusterFilter } from './clusters'
 
 export function resolveApiBase(configured: string | undefined, search: string): string {
   return new URLSearchParams(search).get('automation') === 'pdf' ? '' : (configured ?? '')
@@ -80,6 +81,7 @@ export interface AuthResponse {
   username?: string | null
   fornecedor_key?: FornecedorAcesso | null
   modulos?:  string[]
+  cluster_key?: ClusterFilter
   error?:    string
 }
 
@@ -183,6 +185,14 @@ export const signalOccurrencesApi = {
     request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/ocorrencia/update', { method: 'POST', body: JSON.stringify(item) }),
 }
 
+export const ponTreatmentsApi = {
+  list: <T>() => request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pons-tratadas'),
+  treat: <T>(body: { pon_key: string; snapshot: unknown }) =>
+    request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pon/tratar', { method: 'POST', body: JSON.stringify(body) }),
+  reopen: <T>(body: { pon_key: string; snapshot: unknown }) =>
+    request<{ ok: boolean; items: T[] }>('/api/nivel-sinal/pon/reabrir', { method: 'POST', body: JSON.stringify(body) }),
+}
+
 export type UserRole = 'gestor' | 'operador' | 'viewer' | 'fornecedor'
 export type FornecedorAcesso = 'WES' | 'Instacable' | 'THM'
 
@@ -191,6 +201,8 @@ export interface UsuarioItem {
   username:      string
   role:          UserRole
   fornecedor_key: FornecedorAcesso | null
+  /** Recorte regional da conta. Aplicado no servidor, não é preferência de tela. */
+  cluster_key:   ClusterFilter
   ativo:         boolean
   criado_em:     string
   atualizado_em: string

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildAIContext, buildHistogram, buildHotspots, filterSignals, groupBySeverity, parseSignalCsv, signalSummary, sortSignals, type SignalSeverity } from './nivelSinal'
+import { alertRows, buildAIContext, buildHistogram, buildHotspots, filterSignals, groupBySeverity, parseSignalCsv, signalSummary, sortSignals, type SignalSeverity } from './nivelSinal'
 
 const csv = `Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Serial
 Taubaté;Centro;OLT Taubaté;Huawei;1;1/2;7;Cliente A;Conectado;Online;Crítico;-31,5;ABC
@@ -14,7 +14,7 @@ describe('parseSignalCsv', () => {
   })
 
   it('resume severidade, indisponibilidade e PONs', () => {
-    expect(signalSummary(parseSignalCsv(csv))).toEqual({ total: 2, criticos: 1, atencao: 1, offline: 1, pons: 2 })
+    expect(signalSummary(parseSignalCsv(csv))).toEqual({ total: 2, criticos: 1, atencao: 1, outros: 0, offline: 1, pons: 2 })
   })
 
   it('calcula hotspots com o mesmo critério do relatório original', () => {
@@ -86,6 +86,53 @@ Taubaté;OLT TBT;1/1;2;Cliente Normal;-20,00;Não`
     expect(snapshot).toHaveLength(2)
     expect(snapshot[0].classificacao).toBe('Crítico')
     expect(snapshot[1].classificacao).toBe('—')
+  })
+
+  it('leva os piores sinais para o bin certo em vez de amontoar na ponta', () => {
+    const report = `Cidade;OLT;PON;ONU ID;Cliente;RX dBm;Alerta RX
+Taubaté;OLT TBT;1/1;1;Cliente Pior;-36,97;Sim
+Taubaté;OLT TBT;1/1;2;Cliente Fundo;-40,00;Sim`
+
+    const bins = buildHistogram(parseSignalCsv(report))
+    const pior = bins.find(bin => bin.rows.some(row => row.rx === -36.97))
+    const fora = bins.find(bin => bin.rows.some(row => row.rx === -40))
+
+    expect(pior?.start).toBe(-37)
+    expect(pior?.overflow).toBe(false)
+    // -40 esta fora do eixo e cai na ponta, que por isso e rotulada com ≤.
+    expect(fora?.start).toBe(-38)
+    expect(fora?.overflow).toBe(true)
+    expect(fora?.label).toBe('≤ -37.5')
+    expect(bins.at(-1)?.label).toBe('≥ -24.5')
+  })
+
+  it('separa o recorte de alerta do snapshot completo sem reparsear o arquivo', () => {
+    const report = `Cidade;OLT;PON;ONU ID;Cliente;RX dBm;Alerta RX
+Taubaté;OLT TBT;1/1;1;Cliente Alerta;-28,00;Sim
+Taubaté;OLT TBT;1/1;2;Cliente Normal;-20,00;Não`
+
+    const snapshot = parseSignalCsv(report, { includeNonAlerts: true })
+
+    expect(snapshot.map(row => row.alertaRx)).toEqual([true, false])
+    expect(alertRows(snapshot)).toEqual(parseSignalCsv(report))
+  })
+
+  it('aproveita temperatura e cidade do cliente em vez de descartar as colunas', () => {
+    const report = `Cidade;OLT;PON;ONU ID;Cliente;RX dBm;Temperatura C;Cidade Cliente;Alerta RX
+Taubaté;OLT TBT;1/1;1;Cliente A;-28,00;46,5;TREMEMBE;Sim`
+
+    expect(parseSignalCsv(report)[0]).toMatchObject({ temperatura: 46.5, cidadeCliente: 'TREMEMBE' })
+  })
+
+  it('conta Atenção como Atenção, não como tudo que não é Crítico', () => {
+    const report = `Cidade;OLT;PON;ONU ID;Cliente;RX dBm;Alerta RX
+Taubaté;OLT TBT;1/1;1;Cliente Crit;-30,00;Sim
+Taubaté;OLT TBT;1/1;2;Cliente Aten;-26,00;Sim
+Taubaté;OLT TBT;1/1;3;Cliente Sem RX;;Sim`
+
+    const resumo = signalSummary(parseSignalCsv(report))
+
+    expect(resumo).toMatchObject({ total: 3, criticos: 1, atencao: 2, outros: 0 })
   })
 
   it('monta contexto agregado para IA sem dados pessoais ou identificadores', () => {

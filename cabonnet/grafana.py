@@ -12,16 +12,35 @@ import requests
 
 from cabonnet.config import (
     CONFIG, GRAFANA_URL, USERNAME, PASSWORD, DS_UID,
-    _ATE_ATENDENTES, _ATE_CACHE_TTL,
+    _ATE_ATENDENTES, _ATE_CACHE_TTL, CIDADES_ATENDIDAS,
 )
 
 log = logging.getLogger("CaboNetServer")
 
 
+# As cidades atendidas apareciam cravadas em 15 pontos deste arquivo. Agora
+# saem todas de CLUSTERS (config.py): incluir um cluster novo e uma linha la,
+# nao uma varredura aqui. Sentinela em vez de .format() porque varias destas
+# SQL ja usam {} para interpolar o numos.
+_CIDADES_IN = ",".join("'{}'".format(c) for c in CIDADES_ATENDIDAS)
+
+
+def _com_cidades(sql: str, indent: int = 4) -> str:
+    """Resolve as sentinelas __CIDADES_IN__ e __CIDADES_CASE__."""
+    # A sentinela ja carrega a indentacao do bloco original; lstrip evita dobrar.
+    espaco = " " * indent
+    linhas = "\n".join(
+        "{}when '{}'{} then '{}'".format(espaco, chave, " " * max(1, 22 - len(chave)), nome)
+        for chave, nome in CIDADES_ATENDIDAS.items()
+    )
+    return sql.replace("__CIDADES_CASE__", linhas.lstrip()) \
+              .replace("__CIDADES_IN__", _CIDADES_IN)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  SQL — PENDENTE
 # ══════════════════════════════════════════════════════════════════════════════
-SQL_PENDENTE = """
+SQL_PENDENTE = _com_cidades("""
 with analitico as (
   select
   cart.descricao as empresa,
@@ -33,11 +52,7 @@ with analitico as (
   o.codigocontrato,
   o.codigoassinante as codigocliente,
   case t.nome
-    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
-    when 'CACAPAVA'            then 'Caçapava'
-    when 'TAUBATE'             then 'Taubaté'
-    when 'TREMEMBE'            then 'Tremembé'
-    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    __CIDADES_CASE__
     else t.nome
   end as nomedacidade,
   coalesce(ende.tipodologradouro || ' ' || ende.nomelogradouro, '') as logradouro,
@@ -87,7 +102,7 @@ with analitico as (
   left join empresas e on e.codempresa = ct.codempresa and e.codcidade = t.codigo
   where
   case when t.estado is null then 'N/A' else t.estado end in ('SP') and
-  case when t.nome is null then 'N/A' else t.nome end in ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
+  case when t.nome is null then 'N/A' else t.nome end in (__CIDADES_IN__)
   and o.d_datacadastro >= '2025-11-01'
 )
 select * from analitico a where descsituacao = 'Pendente'
@@ -102,12 +117,12 @@ select * from analitico a where descsituacao = 'Pendente'
   and upper(coalesce(a.servico,'')) not like '%RETIRADA DE EQUIPAMENTO%'
   and upper(coalesce(a.servico,'')) not like '%CONTRATO - UPGRADE%'
 order by datacadastro desc
-"""
+""", indent=4)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  SQL — AGENDADO
 # ══════════════════════════════════════════════════════════════════════════════
-SQL_AGENDADO = """
+SQL_AGENDADO = _com_cidades("""
 with analitico as (
   select
   cart.descricao as empresa,
@@ -119,11 +134,7 @@ with analitico as (
   o.codigocontrato,
   o.codigoassinante as codigocliente,
   case t.nome
-    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
-    when 'CACAPAVA'            then 'Caçapava'
-    when 'TAUBATE'             then 'Taubaté'
-    when 'TREMEMBE'            then 'Tremembé'
-    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    __CIDADES_CASE__
     else t.nome
   end as nomedacidade,
   coalesce(ende.tipodologradouro || ' ' || ende.nomelogradouro, '') as logradouro,
@@ -173,7 +184,7 @@ with analitico as (
   left join empresas e on e.codempresa = ct.codempresa and e.codcidade = t.codigo
   where
   case when t.estado is null then 'N/A' else t.estado end in ('SP') and
-  case when t.nome is null then 'N/A' else t.nome end in ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
+  case when t.nome is null then 'N/A' else t.nome end in (__CIDADES_IN__)
   and o.d_datacadastro >= '2025-11-01'
 )
 select * from analitico a
@@ -188,12 +199,12 @@ select * from analitico a
   and upper(coalesce(a.servico,'')) not like '%RETIRADA DE EQUIPAMENTO%'
   and upper(coalesce(a.servico,'')) not like '%CONTRATO - UPGRADE%'
 order by dataagendamento asc
-"""
+""", indent=4)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  SQL — FUTURO
 # ══════════════════════════════════════════════════════════════════════════════
-SQL_FUTURO = """
+SQL_FUTURO = _com_cidades("""
 with analitico as (
   select
   cart.descricao as empresa,
@@ -205,11 +216,7 @@ with analitico as (
   o.codigocontrato,
   o.codigoassinante as codigocliente,
   case t.nome
-    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
-    when 'CACAPAVA'            then 'Caçapava'
-    when 'TAUBATE'             then 'Taubaté'
-    when 'TREMEMBE'            then 'Tremembé'
-    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    __CIDADES_CASE__
     else t.nome
   end as nomedacidade,
   coalesce(ende.tipodologradouro || ' ' || ende.nomelogradouro, '') as logradouro,
@@ -259,7 +266,7 @@ with analitico as (
   o.situacao = 2
   and o.d_dataagendamento > current_date
   and case when t.estado is null then 'N/A' else t.estado end in ('SP')
-  and case when t.nome is null then 'N/A' else t.nome end in ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
+  and case when t.nome is null then 'N/A' else t.nome end in (__CIDADES_IN__)
 )
 select * from analitico a
   where upper(coalesce(a.nomedaequipe,'')) not in (
@@ -273,12 +280,12 @@ select * from analitico a
   and upper(coalesce(a.servico,'')) not like '%RETIRADA DE EQUIPAMENTO%'
   and upper(coalesce(a.servico,'')) not like '%CONTRATO - UPGRADE%'
 order by dataagendamento asc
-"""
+""", indent=4)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  SQL — REVISITAS
 # ══════════════════════════════════════════════════════════════════════════════
-SQL_REVISITAS = """
+SQL_REVISITAS = _com_cidades("""
 with analitico as (
   select
   cart.descricao as empresa,
@@ -290,11 +297,7 @@ with analitico as (
   o.codigocontrato,
   o.codigoassinante as codigocliente,
   case t.nome
-    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
-    when 'CACAPAVA'            then 'Caçapava'
-    when 'TAUBATE'             then 'Taubaté'
-    when 'TREMEMBE'            then 'Tremembé'
-    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    __CIDADES_CASE__
     else t.nome
   end as nomedacidade,
   o.situacao,
@@ -325,7 +328,7 @@ with analitico as (
   and o.d_dataexecucao is not null
   and o.d_dataexecucao >= date_trunc('month', current_date - interval '2 months')
   and case when t.estado is null then 'N/A' else t.estado end in ('SP')
-  and case when t.nome is null then 'N/A' else t.nome end in ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
+  and case when t.nome is null then 'N/A' else t.nome end in (__CIDADES_IN__)
 )
 select * from analitico a
   where upper(coalesce(a.nomedaequipe,'')) not in (
@@ -339,12 +342,12 @@ select * from analitico a
   and upper(coalesce(a.servico,'')) not like '%RETIRADA DE EQUIPAMENTO%'
   and upper(coalesce(a.servico,'')) not like '%CONTRATO - UPGRADE%'
 order by dataexecucao desc
-"""
+""", indent=4)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  SQL — DETALHES (busca completa por numos)
 # ══════════════════════════════════════════════════════════════════════════════
-SQL_DETALHES_TEMPLATE = """
+SQL_DETALHES_TEMPLATE = _com_cidades("""
 SELECT
   cart.descricao                                                     as empresa,
   coalesce(nullif(trim(cli.nome),''), o.nomecliente, '')             as nomecliente,
@@ -355,11 +358,7 @@ SELECT
   l.descricaodoserv_lanc                                             as servico,
   ts.descricao                                                       as tiposervico,
   case t.nome
-    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
-    when 'CACAPAVA'            then 'Caçapava'
-    when 'TAUBATE'             then 'Taubaté'
-    when 'TREMEMBE'            then 'Tremembé'
-    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    __CIDADES_CASE__
     else t.nome
   end as nomedacidade,
   coalesce(ende.tipodologradouro || ' ' || ende.nomelogradouro, '')  as logradouro,
@@ -410,7 +409,7 @@ FROM ordemservico o
   LEFT JOIN enderecos ende   ON ende.codigodacidade = ct.cidade AND ende.codigodologradouro = ct.enderecoconexao
 WHERE o.numos = {numos}
 LIMIT 1
-"""
+""", indent=4)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  SQL — FOTOS, CHECKLIST E MOTIVO DE INCONCLUSÃO (mobile schema)
@@ -450,7 +449,7 @@ LIMIT 1
 #  tablocal.codigo; situacaoos=2 == Atendimento). Ajustar se a verificação
 #  pós-GRANT indicar o contrário.
 # ══════════════════════════════════════════════════════════════════════════════
-SQL_OS_EXECUCAO_GEO = """
+SQL_OS_EXECUCAO_GEO = _com_cidades("""
 SELECT
   mo.numos,
   mo.latitudeinicio,
@@ -462,8 +461,8 @@ WHERE mo.situacaoos = 2
   AND mo.latitudeinicio IS NOT NULL
   AND mo.longitudeinicio IS NOT NULL
   AND t.estado = 'SP'
-  AND t.nome IN ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
-"""
+  AND t.nome IN (__CIDADES_IN__)
+""", indent=4)
 
 SQL_DIAG_TEMPLATE = """
 SELECT
@@ -548,16 +547,12 @@ def sql_motivo_inconclusivo(numos) -> str:
     return SQL_MOTIVO_INCONCLUSIVO_TEMPLATE.format(numos=int(numos))
 
 
-SQL_ATENDIMENTO = """
+SQL_ATENDIMENTO = _com_cidades("""
 SELECT
     h.d_data,
     h.atendente,
     case t.nome
-      when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
-      when 'CACAPAVA'            then 'Caçapava'
-      when 'TAUBATE'             then 'Taubaté'
-      when 'TREMEMBE'            then 'Tremembé'
-      when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+      __CIDADES_CASE__
       else t.nome
     end AS cidade,
     tc.descricao    AS canal,
@@ -582,13 +577,13 @@ WHERE h.d_data >= '2026-01-01'
   AND h.atendente IN ('{ate}')
   AND h.codigocontato IS NOT NULL
 ORDER BY h.d_data ASC
-""".format(ate="','".join(_ATE_ATENDENTES))
+""", indent=6).format(ate="','".join(_ATE_ATENDENTES))
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  SQL — REVISITAS COM OBSERVAÇÕES (para análise de causa raiz por IA)
 #  Parâmetros: {inicio} e {fim} — datas ISO (ex: '2026-05-01', '2026-06-01')
 # ══════════════════════════════════════════════════════════════════════════════
-SQL_REVISITAS_COM_OBS = """
+SQL_REVISITAS_COM_OBS = _com_cidades("""
 with analitico as (
   select
   cart.descricao as empresa,
@@ -600,11 +595,7 @@ with analitico as (
   o.codigocontrato,
   o.codigoassinante as codigocliente,
   case t.nome
-    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
-    when 'CACAPAVA'            then 'Caçapava'
-    when 'TAUBATE'             then 'Taubaté'
-    when 'TREMEMBE'            then 'Tremembé'
-    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    __CIDADES_CASE__
     else t.nome
   end as nomedacidade,
   o.situacao,
@@ -638,7 +629,7 @@ with analitico as (
   and o.d_dataexecucao >= '{inicio}'
   and o.d_dataexecucao <  '{fim}'
   and case when t.estado is null then 'N/A' else t.estado end in ('SP')
-  and case when t.nome is null then 'N/A' else t.nome end in ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
+  and case when t.nome is null then 'N/A' else t.nome end in (__CIDADES_IN__)
 )
 select * from analitico a
   where upper(coalesce(a.nomedaequipe,'')) not in (
@@ -652,7 +643,7 @@ select * from analitico a
   and upper(coalesce(a.servico,'')) not like '%RETIRADA DE EQUIPAMENTO%'
   and upper(coalesce(a.servico,'')) not like '%CONTRATO - UPGRADE%'
 order by dataexecucao desc
-"""
+""", indent=4)
 
 _DATE_ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -836,7 +827,7 @@ ORDER BY pendentes DESC
 #  SQL — BACKLOG iManager (SLA + Recorrência)
 #  Parâmetros: {inicio} e {fim} — datas ISO (ex: '2026-05-01', '2026-06-01')
 # ══════════════════════════════════════════════════════════════════════════════
-SQL_BACKLOG_TEMPLATE = """
+SQL_BACKLOG_TEMPLATE = _com_cidades("""
 WITH base AS (
   SELECT
     coalesce(nullif(trim(cli.nome),''), o.nomecliente, '')        AS nomecliente,
@@ -847,11 +838,7 @@ WITH base AS (
     l.descricaodoserv_lanc                                        AS servico,
     ts.descricao                                                  AS tiposervico,
     case t.nome
-    when 'SAO JOSE DOS CAMPOS' then 'São José dos Campos'
-    when 'CACAPAVA'            then 'Caçapava'
-    when 'TAUBATE'             then 'Taubaté'
-    when 'TREMEMBE'            then 'Tremembé'
-    when 'PINDAMONHANGABA'     then 'Pindamonhangaba'
+    __CIDADES_CASE__
     else t.nome
     end                                                           AS nomedacidade,
     coalesce(ct.bairroconexao::text, cli.bairroresidencial::text) AS bairro,
@@ -958,7 +945,7 @@ WITH base AS (
     AND o.d_dataexecucao >= '{inicio}'
     AND o.d_dataexecucao <  '{fim}'
     AND CASE WHEN t.estado IS NULL THEN 'N/A' ELSE t.estado END IN ('SP')
-    AND CASE WHEN t.nome   IS NULL THEN 'N/A' ELSE t.nome   END IN ('TAUBATE','TREMEMBE','SAO JOSE DOS CAMPOS','PINDAMONHANGABA','CACAPAVA')
+    AND CASE WHEN t.nome   IS NULL THEN 'N/A' ELSE t.nome   END IN (__CIDADES_IN__)
     AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%INADIMPLENCIA%'
     AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%RECONEXAO AUTOMATICA%'
     AND upper(coalesce(l.descricaodoserv_lanc,'')) NOT LIKE '%REGUA DE CONFIANCA%'
@@ -971,7 +958,7 @@ SELECT
   CASE WHEN horas_resolucao > 3  THEN 1 ELSE 0 END AS tempo_maior_3h
 FROM base
 ORDER BY dataexecucao DESC
-"""
+""", indent=4)
 
 
 def sql_backlog(inicio: str, fim: str) -> str:

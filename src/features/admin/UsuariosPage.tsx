@@ -6,10 +6,16 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import type { UserRole, UsuarioItem, FornecedorAcesso } from '../../lib/api'
+import type { ClusterFilter } from '../../lib/clusters'
 import { PageHeader } from '../../components/ui/PageHeader'
 
 const ROLE_LABEL: Record<UserRole, string> = { gestor: 'Gestor', operador: 'Operador', viewer: 'Viewer', fornecedor: 'Fornecedor' }
 const FORNECEDORES: FornecedorAcesso[] = ['WES', 'Instacable', 'THM']
+const CLUSTER_OPCOES: { valor: ClusterFilter; rotulo: string }[] = [
+  { valor: 'VALE', rotulo: 'Vale do Paraíba' },
+  { valor: 'ADAMANTINA', rotulo: 'Adamantina' },
+  { valor: 'TODOS', rotulo: 'Todos os clusters' },
+]
 
 const inputCls = 'w-full rounded-lg px-3 py-2 text-body bg-surface/40 border border-white/[0.08] ' +
   'text-text outline-none focus:border-primary/40 transition-colors'
@@ -24,11 +30,12 @@ function NovoUsuarioModal({ open, onClose }: { open: boolean; onClose: () => voi
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<UserRole>('viewer')
   const [fornecedor, setFornecedor] = useState<FornecedorAcesso>('WES')
+  const [cluster, setCluster] = useState<ClusterFilter>('VALE')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
   function reset() {
-    setUsername(''); setPassword(''); setRole('viewer'); setFornecedor('WES'); setError('')
+    setUsername(''); setPassword(''); setRole('viewer'); setFornecedor('WES'); setCluster('VALE'); setError('')
   }
 
   async function handleSave() {
@@ -39,7 +46,7 @@ function NovoUsuarioModal({ open, onClose }: { open: boolean; onClose: () => voi
     setSaving(true)
     setError('')
     try {
-      await create({ username: username.trim(), password, role, fornecedor_key: role === 'fornecedor' ? fornecedor : null })
+      await create({ username: username.trim(), password, role, fornecedor_key: role === 'fornecedor' ? fornecedor : null, cluster_key: cluster })
       reset()
       onClose()
     } catch (e) {
@@ -65,6 +72,13 @@ function NovoUsuarioModal({ open, onClose }: { open: boolean; onClose: () => voi
             <p className="mt-1 text-caption text-muted">Este acesso receberá somente as ordens e relatórios desse fornecedor.</p>
           </div>
         )}
+        <div>
+          <label className="block text-caption font-medium text-secondary mb-1">Cluster regional</label>
+          <select value={cluster} onChange={e => setCluster(e.target.value as ClusterFilter)} className={inputCls}>
+            {CLUSTER_OPCOES.map(o => <option key={o.valor} value={o.valor}>{o.rotulo}</option>)}
+          </select>
+          <p className="mt-1 text-caption text-muted">O servidor remove as ordens dos outros clusters antes de enviar. Não é preferência de tela.</p>
+        </div>
         <div>
           <label className="block text-caption font-medium text-secondary mb-1">Senha</label>
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} className={inputCls} />
@@ -199,7 +213,7 @@ export default function UsuariosPage() {
   const [resetUser, setResetUser] = useState<UsuarioItem | null>(null)
   const [rowError, setRowError] = useState<{ id: number; msg: string } | null>(null)
 
-  async function handleUpdate(u: UsuarioItem, body: { role?: UserRole; ativo?: boolean; fornecedor_key?: FornecedorAcesso | null }) {
+  async function handleUpdate(u: UsuarioItem, body: { role?: UserRole; ativo?: boolean; fornecedor_key?: FornecedorAcesso | null; cluster_key?: ClusterFilter }) {
     setRowError(null)
     try {
       await update(u.id, body)
@@ -233,6 +247,7 @@ export default function UsuariosPage() {
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Usuário</th>
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Papel</th>
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Fornecedor</th>
+                <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Cluster</th>
                 <th className="px-3 py-2 text-left text-caption font-bold uppercase tracking-[0.6px] text-muted">Status</th>
                 <th className="px-3 py-2 text-right text-caption font-bold uppercase tracking-[0.6px] text-muted">Ações</th>
               </tr>
@@ -261,6 +276,13 @@ export default function UsuariosPage() {
                           {FORNECEDORES.map(f => <option key={f} value={f}>{f}</option>)}
                         </select>
                       ) : <span className="text-muted">—</span>}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <select value={u.cluster_key ?? 'VALE'} aria-label={`Cluster de ${u.username}`}
+                        onChange={e => handleUpdate(u, { cluster_key: e.target.value as ClusterFilter })}
+                        className="bg-transparent border border-white/[0.08] rounded-md px-2 py-1 text-caption text-text outline-none focus:border-primary/40">
+                        {CLUSTER_OPCOES.map(o => <option key={o.valor} value={o.valor}>{o.rotulo}</option>)}
+                      </select>
                     </td>
                     <td className="px-3 py-2.5">
                       <Badge variant={u.ativo ? 'green' : 'red'}>{u.ativo ? 'Ativo' : 'Inativo'}</Badge>

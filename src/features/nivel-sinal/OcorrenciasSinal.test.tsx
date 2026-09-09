@@ -7,7 +7,8 @@ import type { SignalRow } from './nivelSinal'
 const signal = (overrides: Partial<SignalRow>): SignalRow => ({
   cidade: 'Taubaté', bairro: 'Centro', olt: 'OLT TBT', tipo: 'Huawei', slot: '1', pon: '1/2', onu: '7',
   cliente: 'Cliente Crítico', codigo: '1001', situacao: 'Conectado', pppoe: 'critico', serial: 'SERIAL-1',
-  modelo: 'HG8145', status: 'Online', classificacao: 'Crítico', rx: -30, tx: null, oltRx: null, distancia: null, causa: '—',
+  modelo: 'HG8145', status: 'Online', classificacao: 'Crítico', rx: -30, tx: null, oltRx: null, distancia: null,
+  temperatura: null, causa: '—', cidadeCliente: 'TAUBATE', alertaRx: true,
   ...overrides,
 })
 
@@ -71,7 +72,9 @@ describe('OcorrenciasSinal — confirmação rápida do sinal após manutenção
 
 describe('OcorrenciasSinal — evolução do sinal médio', () => {
   it('exibe o gráfico de evolução com as barras de antes e depois quando há confirmações no dia', () => {
-    const today = new Date().toISOString().slice(0, 10)
+    // Data de Brasilia, nao UTC: depois das 21h as duas divergem e o teste
+    // procurava a barra num dia que o componente nao desenha.
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
     const withConfirmation = occurrences.map(item => item.client === 'Cliente Crítico'
       ? { ...item, after: -18, status: 'Concluído' as const, updatedAt: today }
       : item)

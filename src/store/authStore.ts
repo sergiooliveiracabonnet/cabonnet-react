@@ -1,3 +1,4 @@
+import type { ClusterFilter } from '../lib/clusters'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
@@ -10,7 +11,8 @@ interface AuthState {
   role:    UserRole
   modulos: string[]
   fornecedorKey: AuthFornecedor
-  setAuthed:   (role?: UserRole, modulos?: string[], fornecedorKey?: AuthFornecedor) => void
+  cluster: ClusterFilter
+  setAuthed:   (role?: UserRole, modulos?: string[], fornecedorKey?: AuthFornecedor, cluster?: ClusterFilter) => void
   setUnauthed: () => void
   setChecking: () => void
 }
@@ -25,21 +27,22 @@ export const useAuthStore = create<AuthState>()(
       role:    null,
       modulos: [],
       fornecedorKey: null,
+      cluster: 'TODOS',
 
-      setAuthed:   (role = 'gestor', modulos = [], fornecedorKey = null) => set({ status: 'authed', role, modulos, fornecedorKey }),
-      setUnauthed: () => set({ status: 'unauthed', role: null, modulos: [], fornecedorKey: null }),
-      setChecking: () => set({ status: 'checking', role: null, modulos: [], fornecedorKey: null }),
+      setAuthed:   (role = 'gestor', modulos = [], fornecedorKey = null, cluster = 'TODOS') => set({ status: 'authed', role, modulos, fornecedorKey, cluster }),
+      setUnauthed: () => set({ status: 'unauthed', role: null, modulos: [], fornecedorKey: null, cluster: 'TODOS' }),
+      setChecking: () => set({ status: 'checking', role: null, modulos: [], fornecedorKey: null, cluster: 'TODOS' }),
     }),
     {
       name:    'cbn_auth',
       storage: createJSONStorage(() => sessionStorage),
       // Persiste apenas status, role e modulos — nunca funções
-      partialize: (s) => ({ status: s.status, role: s.role, modulos: s.modulos, fornecedorKey: s.fornecedorKey }),
+      partialize: (s) => ({ status: s.status, role: s.role, modulos: s.modulos, fornecedorKey: s.fornecedorKey, cluster: s.cluster }),
       // Só restaura estado 'authed'; 'checking'/'unauthed' recomeçam do zero
       merge: (persisted, current) => {
         const p = persisted as Partial<AuthState>
         if (p?.status === 'authed') {
-          return { ...current, status: 'authed', role: p.role ?? null, modulos: p.modulos ?? [], fornecedorKey: p.fornecedorKey ?? null }
+          return { ...current, status: 'authed', role: p.role ?? null, modulos: p.modulos ?? [], fornecedorKey: p.fornecedorKey ?? null, cluster: p.cluster ?? 'TODOS' }
         }
         return current
       },

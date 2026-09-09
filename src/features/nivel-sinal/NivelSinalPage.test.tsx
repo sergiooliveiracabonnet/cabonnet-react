@@ -75,10 +75,57 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
     expect(screen.getByText('Bairros mais afetados')).toBeInTheDocument()
     expect(screen.getByText('Modelos de ONU')).toBeInTheDocument()
     expect(screen.getByText('Detalhamento das ONUs')).toBeInTheDocument()
-    expect(screen.getByText('Crítico + Atenção no filtro')).toBeInTheDocument()
-    expect(screen.getByText('Classificação “Crítico” no CSV · 100.0%')).toBeInTheDocument()
-    expect(screen.getByText('Classificação “Atenção” no CSV · 0.0%')).toBeInTheDocument()
+    expect(screen.getByText('1 crítico · 0 atenção')).toBeInTheDocument()
+    expect(screen.getByText('RX ≤ −27 dBm · 100.0%')).toBeInTheDocument()
+    expect(screen.getByText('RX entre −27 e −25 dBm · 0.0%')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /apoio à decisão/i })).toBeInTheDocument()
+  })
+
+  it('tira a PON da pendência ao marcar como tratada e a lista na aba PONs tratadas', async () => {
+    const treatments: unknown[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string, options?: RequestInit) => {
+      let raw = options?.body ? String(options.body) : ''
+      if (options?.body instanceof Blob) {
+        raw = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(String(reader.result ?? ''))
+          reader.onerror = () => reject(reader.error)
+          reader.readAsText(options.body as Blob)
+        })
+      }
+      const body = raw ? JSON.parse(raw) : null
+      if (url.includes('/pon/tratar')) {
+        treatments.push({
+          pon_key: body.pon_key, action: 'tratada', snapshot: body.snapshot,
+          created_at: '2026-09-08 09:30:00', created_by: 'sergio', treated_count: 1, reopened_count: 0,
+        })
+      }
+      // Copia: devolver a mesma referencia faria o React bailar do re-render
+      // e o teste passaria a medir o mock, nao a tela.
+      const items = url.includes('/pon') ? [...treatments] : (body?.occurrences ?? [])
+      return { ok: true, status: 200, headers: new Headers({ 'content-type': 'application/json' }), json: async () => ({ ok: true, items, import_id: 1 }) } as Response
+    }))
+
+    const { container } = render(<NivelSinalPage />)
+    const header = 'Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo'
+    const linhas = Array.from({ length: 4 }, (_, index) =>
+      `Taubaté;Centro;OLT TBT;Huawei;1;1/2;${index};Cliente ${index};Conectado;Online;Crítico;-31,5;HG8145`)
+    fireEvent.change(container.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [new File([[header, ...linhas].join('\n')], 'sinais.csv', { type: 'text/csv' })] },
+    })
+
+    const tratar = await screen.findByRole('button', { name: 'Marcar PON 1/2 da OLT TBT como tratada' })
+    fireEvent.click(tratar)
+
+    await waitFor(() => expect(screen.getByText(/Nenhuma PON pendente atinge/)).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('tab', { name: 'PONs tratadas (1)' }))
+
+    expect(screen.getByRole('heading', { name: 'PONs tratadas' })).toBeInTheDocument()
+    expect(screen.getByText('1/2')).toBeInTheDocument()
+    // O CSV carregado ainda acusa a PON: a tratativa sai da fila mas fica sinalizada.
+    expect(screen.getByText('Ainda crítica · 4 críticas', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reabrir PON 1/2 da OLT TBT' })).toBeInTheDocument()
   })
 
   it('pagina os hotspots em uma matriz de doze PONs', async () => {

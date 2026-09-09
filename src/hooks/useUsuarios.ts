@@ -1,3 +1,4 @@
+import type { ClusterFilter } from '../lib/clusters'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { usuarios, type UsuarioItem, type UserRole, type FornecedorAcesso } from '../lib/api'
 
@@ -16,12 +17,12 @@ export function useUsuarios() {
 export function useUsuariosActions() {
   const qc = useQueryClient()
 
-  const create = async (body: { username: string; password: string; role: UserRole; fornecedor_key?: FornecedorAcesso | null }) => {
+  const create = async (body: { username: string; password: string; role: UserRole; fornecedor_key?: FornecedorAcesso | null; cluster_key?: ClusterFilter }) => {
     await usuarios.create(body)
     await qc.invalidateQueries({ queryKey: QK })
   }
 
-  const update = async (id: number, body: { role?: UserRole; ativo?: boolean; fornecedor_key?: FornecedorAcesso | null }) => {
+  const update = async (id: number, body: { role?: UserRole; ativo?: boolean; fornecedor_key?: FornecedorAcesso | null; cluster_key?: ClusterFilter }) => {
     await usuarios.update(id, body)
     await qc.invalidateQueries({ queryKey: QK })
   }

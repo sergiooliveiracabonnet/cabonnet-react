@@ -215,7 +215,7 @@ export function printRelatoriosPDF(
     </table>
   </div>
   <div class="footer">
-    <span>Cabonnet ISP Dashboard — SJC · Caçapava · Taubaté · Tremembé · Pindamonhangaba</span>
+    <span>Cabonnet ISP Dashboard — ${cidadesDoFiltro(clusterAtivo()).join(' · ')}</span>
     <span>Exportado em ${dateStr} às ${timeStr}</span>
   </div>
 </div>
@@ -230,3 +230,8 @@ export function printRelatoriosPDF(
   win.document.close()
 }
 import { buildPDFHTMLHeader } from '../../../lib/pdfBrand'
+import { cidadesDoFiltro } from '../../../lib/clusters'
+import { useUIStore } from '../../../store/uiStore'
+
+// O rodapé anunciava as 5 cidades fixas; agora segue o cluster selecionado.
+const clusterAtivo = () => useUIStore.getState().cluster

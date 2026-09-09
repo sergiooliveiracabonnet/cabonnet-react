@@ -19,6 +19,15 @@ const API_HOST   = '127.0.0.1'
 const API_PORT   = 5000
 const SERVE_PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000
 
+// Cidades atendidas, nomes como o SQL devolve. Espelho de CLUSTERS em
+// cabonnet/config.py — src/lib/clusters.test.ts trava esta lista contra ele.
+const CIDADES_ATENDIDAS = [
+  'São José dos Campos', 'Caçapava', 'Taubaté', 'Tremembé', 'Pindamonhangaba',
+  'Adamantina', 'Osvaldo Cruz', 'Lucélia', 'Mariápolis', 'Inúbia Paulista',
+  'Flórida Paulista', 'Pacaembu',
+]
+const CIDADES_SQL = CIDADES_ATENDIDAS.map(c => `'${c}'`).join(',')
+
 function getLocalIP() {
   for (const ifaces of Object.values(os.networkInterfaces())) {
     for (const iface of ifaces) {
@@ -226,7 +235,7 @@ SELECT
 FROM ordemservico o
 JOIN lanceservicos l ON l.codigodoserv_lanc = o.codservsolicitado
 WHERE l.nomecategoriaservico IN ('INSTALAÇÃO','MANUTENÇÃO','REDE')
-  AND o.cidade IN (SELECT codigo FROM tablocal WHERE nomedacidade IN ('São José dos Campos','Caçapava','Taubaté','Tremembé','Pindamonhangaba'))
+  AND o.cidade IN (SELECT codigo FROM tablocal WHERE nomedacidade IN (${CIDADES_SQL}))
 `
 
 const SQL_OS_CIDADES = `
@@ -241,7 +250,7 @@ FROM ordemservico o
 JOIN lanceservicos l ON l.codigodoserv_lanc = o.codservsolicitado
 JOIN tablocal tl ON tl.codigo = o.cidade
 WHERE l.nomecategoriaservico IN ('INSTALAÇÃO','MANUTENÇÃO','REDE')
-  AND tl.nomedacidade IN ('São José dos Campos','Caçapava','Taubaté','Tremembé','Pindamonhangaba')
+  AND tl.nomedacidade IN (${CIDADES_SQL})
 GROUP BY tl.nomedacidade
 ORDER BY pendentes DESC
 `
