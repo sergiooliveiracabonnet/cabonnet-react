@@ -10,7 +10,7 @@ import time as _time_mod
 from datetime import datetime, date, timedelta
 
 from cabonnet.config import (
-    TELEGRAM_CHAT_ALERTAS, TELEGRAM_CHAT_ID,
+    TELEGRAM_CHAT_ALERTAS, TELEGRAM_CHAT_ID, TELEGRAM_CHAT_ADAMANTINA,
     TELEGRAM_CHAT_INSTACABLE, TELEGRAM_CHAT_WES, TELEGRAM_CHAT_REDE,
     TELEGRAM_CHAT_OPERACIONAL_THM,
 )
@@ -21,6 +21,8 @@ from cabonnet.telegram import (
     _telegram_enabled, _telegram_send, _telegram_send_long,
     _tg_esc, _abrev_equipe, _is_campo, _operadora_da_os,
     _tg_header, _tg_footer, _tg_endereco,
+    _rows_para_grupo,
+    _label_operadora, escopo_cluster,
 )
 from cabonnet.grafana import grafana_post, frames_to_csv, SQL_AGENDADO
 from cabonnet.builders import (
@@ -36,6 +38,50 @@ log_db  = logging.getLogger("CaboNetServer.DB")
 
 
 # ─── Detecção de pico diário (17h) ───────────────────────────────────────────
+
+# ── Fan-out por cluster ──────────────────────────────────────────────────────
+# Os monitores calculam uma vez e mandam a fatia de cada regiao ao grupo dela.
+# A deduplicacao continua por OS e global — uma OS pertence a um cluster so, e
+# alertar uma vez, no grupo certo, e o comportamento desejado.
+
+
+def _destinos_cluster():
+    """(chat, cluster) de cada grupo regional, na ordem de envio."""
+    destinos = [(TELEGRAM_CHAT_ALERTAS, "VALE")]
+    if TELEGRAM_CHAT_ADAMANTINA:
+        destinos.append((TELEGRAM_CHAT_ADAMANTINA, "ADAMANTINA"))
+    return [(chat, cluster) for chat, cluster in destinos if chat]
+
+
+def _chat_do_row(row):
+    """Grupo da regiao de uma OS, ou None se nenhum grupo cobre a regiao.
+
+    Usado onde o monitor manda uma mensagem por OS, em vez de um lote. Devolver
+    None importa: _telegram_send sem chat_id_override cai no TELEGRAM_CHAT_ID,
+    e a OS apareceria no grupo geral.
+    """
+    for chat, cluster in _destinos_cluster():
+        if _rows_para_grupo([row], cluster):
+            return chat
+    return None
+
+
+def _enviar_por_cluster(itens, montar, linha=lambda i: i, apos=None):
+    """Manda cada fatia ao grupo da regiao dela.
+
+    `montar(fatia)` devolve as linhas da mensagem; `linha(item)` extrai a OS
+    quando o item e uma tupla (row, idade). Grupos sem nada na fatia nao
+    recebem mensagem vazia.
+    """
+    for chat, cluster in _destinos_cluster():
+        fatia = _rows_para_grupo([linha(i) for i in itens], cluster)
+        selecionados = [i for i in itens if linha(i) in fatia]
+        if not selecionados:
+            continue
+        _telegram_send("\n".join(montar(selecionados)), chat_id_override=chat)
+        if apos:
+            apos(cluster, selecionados)
+
 
 def _check_pico_diario():
     """Conta OS abertas hoje, compara com média móvel 30d e salva alerta se Z ≥ 2σ."""
@@ -109,7 +155,7 @@ def _sla_monitor_loop():
     log.info("[SLAMonitor] Iniciado")
     while True:
         _time_mod.sleep(300)
-        if not TELEGRAM_CHAT_ALERTAS or not _telegram_enabled():
+        if not _destinos_cluster() or not _telegram_enabled():
             continue
         try:
             hoje = date.today()
@@ -135,21 +181,27 @@ def _sla_monitor_loop():
                     state._sla_alertados.add(numos)
 
             if not novas: continue
-            linhas = _tg_header("🔴", "ALERTA SLA", None,
-                                f"{len(novas)} OS vencida{'s' if len(novas) != 1 else ''}")
-            for r, age in sorted(novas, key=lambda x: -x[1])[:10]:
-                numos  = str(r.get("numos", "?"))
-                nome   = _tg_esc((r.get("nomecliente") or "?")[:24])
-                eq     = _tg_esc(_abrev_equipe(r.get("nomedaequipe", "")) or "Sem equipe")
-                sit    = r.get("descsituacao") or ""
-                sit_ic = "🔵" if "Atendimento" in sit else "🟡"
-                linhas.append(f"{sit_ic} <b>{numos}</b> · {age}d · {nome} · {eq}")
-                end = _tg_endereco(r, bairro_cidade=True)
-                if end: linhas.append(f"   📍 {end}")
-            if len(novas) > 10: linhas.append(f"<i>… +{len(novas) - 10} OS</i>")
-            linhas += _tg_footer("/sla para visão por equipe")
-            _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
-            log.info("[SLAMonitor] Alerta enviado — %d novas OS vencidas", len(novas))
+
+            def _montar_sla(itens):
+                linhas = _tg_header("🔴", "ALERTA SLA", None,
+                                    f"{len(itens)} OS vencida{'s' if len(itens) != 1 else ''}")
+                for r, age in sorted(itens, key=lambda x: -x[1])[:10]:
+                    numos  = str(r.get("numos", "?"))
+                    nome   = _tg_esc((r.get("nomecliente") or "?")[:24])
+                    eq     = _tg_esc(_abrev_equipe(r.get("nomedaequipe", "")) or "Sem equipe")
+                    sit    = r.get("descsituacao") or ""
+                    sit_ic = "🔵" if "Atendimento" in sit else "🟡"
+                    linhas.append(f"{sit_ic} <b>{numos}</b> · {age}d · {nome} · {eq}")
+                    end = _tg_endereco(r, bairro_cidade=True)
+                    if end: linhas.append(f"   📍 {end}")
+                if len(itens) > 10: linhas.append(f"<i>… +{len(itens) - 10} OS</i>")
+                return linhas + _tg_footer("/sla para visão por equipe")
+
+            _enviar_por_cluster(
+                novas, _montar_sla, linha=lambda i: i[0],
+                apos=lambda cluster, fatia: log.info(
+                    "[SLAMonitor] Alerta enviado — %d OS vencidas (%s)", len(fatia), cluster),
+            )
         except Exception as ex:
             log.warning("[SLAMonitor] Erro: %s", str(ex)[:120])
 
@@ -159,28 +211,34 @@ def _fila_monitor_loop():
     _time_mod.sleep(900)
     while True:
         _time_mod.sleep(900)
-        if not TELEGRAM_CHAT_ALERTAS or not _telegram_enabled():
+        if not _destinos_cluster() or not _telegram_enabled():
             continue
         try:
             with state._dados_cache_lock:
                 rows = list(state._dados_cache["agendado"])
 
-            fila_atual = len([r for r in rows
-                              if r.get("descsituacao") in ("Pendente", "Atendimento")
-                              and not (r.get("servico") or "").upper().startswith("REDE")])
-            prev = state._fila_prev_count
-            state._fila_prev_count = fila_atual
+            em_fila = [r for r in rows
+                       if r.get("descsituacao") in ("Pendente", "Atendimento")
+                       and not (r.get("servico") or "").upper().startswith("REDE")]
 
-            if prev == 0: continue
+            # Contagem por regiao: um numero unico ficaria oscilando entre os
+            # clusters e dispararia alerta de crescimento que nao existe.
+            if not isinstance(state._fila_prev_count, dict):
+                state._fila_prev_count = {}
+            for chat, cluster in _destinos_cluster():
+                fila_atual = len(_rows_para_grupo(em_fila, cluster))
+                prev = state._fila_prev_count.get(cluster, 0)
+                state._fila_prev_count[cluster] = fila_atual
+                if prev == 0: continue
 
-            crescimento = fila_atual - prev
-            if crescimento >= 5 and prev > 0 and (crescimento / prev) >= 0.20:
-                pct = round(crescimento / prev * 100)
-                linhas_fila = _tg_header("📈", "ALERTA — FILA CRESCENDO") + [
-                    f"Fila passou de <b>{prev}</b> → <b>{fila_atual}</b> OS (+{crescimento} / +{pct}%)"
-                ] + _tg_footer("/status", "/pulso", "/aging")
-                _telegram_send("\n".join(linhas_fila), chat_id_override=TELEGRAM_CHAT_ALERTAS)
-                log.info("[FilaMonitor] Alerta fila crescendo: %d → %d", prev, fila_atual)
+                crescimento = fila_atual - prev
+                if crescimento >= 5 and (crescimento / prev) >= 0.20:
+                    pct = round(crescimento / prev * 100)
+                    linhas_fila = _tg_header("📈", "ALERTA — FILA CRESCENDO") + [
+                        f"Fila passou de <b>{prev}</b> → <b>{fila_atual}</b> OS (+{crescimento} / +{pct}%)"
+                    ] + _tg_footer("/status", "/pulso", "/aging")
+                    _telegram_send("\n".join(linhas_fila), chat_id_override=chat)
+                    log.info("[FilaMonitor] Fila crescendo em %s: %d → %d", cluster, prev, fila_atual)
 
             # OS sem equipe há mais de 4 horas
             agora  = datetime.now()
@@ -200,17 +258,24 @@ def _fila_monitor_loop():
                       if str(r.get("numos", "")) not in state._sem_equipe_alertadas]
             if sem_eq:
                 sem_eq.sort(key=lambda x: -x[1])
-                linhas = _tg_header("⚠️", "OS SEM EQUIPE HÁ +4H", None, f"{len(sem_eq)} OS")
-                for r, h in sem_eq[:10]:
-                    numos   = _tg_esc(r.get("numos","—"))
-                    cliente = _tg_esc(r.get("nomecliente","—"))[:30]
-                    cidade  = _tg_esc(r.get("nomedacidade","—"))
-                    linhas.append(f"• OS <b>{numos}</b> — {cliente} ({cidade}) — {round(h)}h")
-                    end = _tg_endereco(r, bairro_cidade=True)
-                    if end: linhas.append(f"   📍 {end}")
-                if len(sem_eq) > 10: linhas.append(f"<i>... e mais {len(sem_eq)-10} OS</i>")
-                _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
-                log_sla.info("[SemEquipe] Alerta enviado — %d OS", len(sem_eq))
+
+                def _montar_sem_eq(itens):
+                    linhas = _tg_header("⚠️", "OS SEM EQUIPE HÁ +4H", None, f"{len(itens)} OS")
+                    for r, h in itens[:10]:
+                        numos   = _tg_esc(r.get("numos","—"))
+                        cliente = _tg_esc(r.get("nomecliente","—"))[:30]
+                        cidade  = _tg_esc(r.get("nomedacidade","—"))
+                        linhas.append(f"• OS <b>{numos}</b> — {cliente} ({cidade}) — {round(h)}h")
+                        end = _tg_endereco(r, bairro_cidade=True)
+                        if end: linhas.append(f"   📍 {end}")
+                    if len(itens) > 10: linhas.append(f"<i>... e mais {len(itens)-10} OS</i>")
+                    return linhas
+
+                _enviar_por_cluster(
+                    sem_eq, _montar_sem_eq, linha=lambda i: i[0],
+                    apos=lambda cluster, fatia: log_sla.info(
+                        "[SemEquipe] Alerta enviado — %d OS (%s)", len(fatia), cluster),
+                )
 
         except Exception as ex:
             log.warning("[FilaMonitor] Erro: %s", str(ex)[:120])
@@ -220,7 +285,7 @@ def _manut_monitor_loop():
     log.info("[ManutMonitor] Iniciado")
     while True:
         _time_mod.sleep(300)
-        if not TELEGRAM_CHAT_ALERTAS or not _telegram_enabled():
+        if not _destinos_cluster() or not _telegram_enabled():
             continue
         try:
             hoje = date.today()
@@ -276,7 +341,11 @@ def _manut_monitor_loop():
                 for eq, cnt in sugestoes[:4]:
                     linhas.append(f"  • <b>{_tg_esc(eq)}</b> — {cnt} OS na área")
                 linhas += _tg_footer(f"/os {numos}", "/manutencoes")
-                _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
+                chat_manut = _chat_do_row(r)
+                if not chat_manut:
+                    log.info("[ManutMonitor] OS %s sem grupo para a regiao — sem alerta", numos)
+                    continue
+                _telegram_send("\n".join(linhas), chat_id_override=chat_manut)
                 log.info("[ManutMonitor] Alerta enviado — OS %s (%s)", numos, cidade)
         except Exception as ex:
             log.warning("[ManutMonitor] Erro: %s", str(ex)[:120])
@@ -287,7 +356,7 @@ def _atendimento_travado_loop():
     _time_mod.sleep(600)
     while True:
         _time_mod.sleep(1800)
-        if not TELEGRAM_CHAT_ALERTAS or not _telegram_enabled():
+        if not _destinos_cluster() or not _telegram_enabled():
             continue
         try:
             agora = datetime.now()
@@ -317,20 +386,26 @@ def _atendimento_travado_loop():
 
             if not novas: continue
             novas.sort(key=lambda x: -x[1])
-            linhas = _tg_header("⏳", "EM ATENDIMENTO HÁ 2H+", None, f"{len(novas)} OS paradas")
-            for r, mins in novas[:10]:
-                numos  = str(r.get("numos", "?"))
-                nome   = _tg_esc((r.get("nomecliente") or "?")[:24])
-                eq     = _tg_esc(_abrev_equipe(r.get("nomedaequipe", "")) or "Sem equipe")
-                h, m   = divmod(mins, 60)
-                tempo  = f"{h}h{m:02d}min"
-                linhas.append(f"🔵 <b>{numos}</b> · ⏱ <b>{tempo}</b> · {nome} · {eq}")
-                end = _tg_endereco(r, bairro_cidade=True)
-                if end: linhas.append(f"   📍 {end}")
-            if len(novas) > 10: linhas.append(f"<i>… +{len(novas) - 10} OS</i>")
-            linhas += _tg_footer("Verifique com a equipe e atualize o status no sistema")
-            _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
-            log.info("[AtendTravado] Alerta enviado — %d OS travadas em Atendimento", len(novas))
+
+            def _montar_travado(itens):
+                linhas = _tg_header("⏳", "EM ATENDIMENTO HÁ 2H+", None, f"{len(itens)} OS paradas")
+                for r, mins in itens[:10]:
+                    numos  = str(r.get("numos", "?"))
+                    nome   = _tg_esc((r.get("nomecliente") or "?")[:24])
+                    eq     = _tg_esc(_abrev_equipe(r.get("nomedaequipe", "")) or "Sem equipe")
+                    h, m   = divmod(mins, 60)
+                    tempo  = f"{h}h{m:02d}min"
+                    linhas.append(f"🔵 <b>{numos}</b> · ⏱ <b>{tempo}</b> · {nome} · {eq}")
+                    end = _tg_endereco(r, bairro_cidade=True)
+                    if end: linhas.append(f"   📍 {end}")
+                if len(itens) > 10: linhas.append(f"<i>… +{len(itens) - 10} OS</i>")
+                return linhas + _tg_footer("Verifique com a equipe e atualize o status no sistema")
+
+            _enviar_por_cluster(
+                novas, _montar_travado, linha=lambda i: i[0],
+                apos=lambda cluster, fatia: log.info(
+                    "[AtendTravado] Alerta enviado — %d OS travadas (%s)", len(fatia), cluster),
+            )
         except Exception as ex:
             log.warning("[AtendTravado] Erro: %s", str(ex)[:120])
 
@@ -340,7 +415,7 @@ def _sem_exec_monitor_loop():
     _time_mod.sleep(900)
     while True:
         _time_mod.sleep(1800)
-        if not TELEGRAM_CHAT_ALERTAS or not _telegram_enabled():
+        if not _destinos_cluster() or not _telegram_enabled():
             continue
         try:
             hoje = date.today()
@@ -366,19 +441,26 @@ def _sem_exec_monitor_loop():
                     state._sem_exec_alertadas[eq] = len(os_list)
 
             if not alertar: continue
-            linhas = _tg_header("🚫", "SEM EXECUÇÃO ACUMULADA")
-            for eq, os_list in sorted(alertar, key=lambda x: -len(x[1])):
-                linhas.append(f"\n⚠️ <b>{_tg_esc(eq)}</b> — {len(os_list)} OS Sem Execução hoje")
-                for r in os_list[:4]:
-                    numos  = str(r.get("numos", "?"))
-                    nome   = _tg_esc((r.get("nomecliente") or "?")[:24])
-                    linhas.append(f"  /os{numos} · {nome}")
-                    end = _tg_endereco(r, bairro_cidade=True)
-                    if end: linhas.append(f"      📍 {end}")
-                if len(os_list) > 4: linhas.append(f"  <i>… +{len(os_list) - 4} OS</i>")
-            linhas += _tg_footer("/semexec para o relatório completo")
-            _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
-            log.info("[SemExecMonitor] Alerta enviado — %d equipes", len(alertar))
+            # Agrupado por equipe, mas cada equipe atende um cluster: recorta as OS
+            # de cada grupo e descarta equipes que ficaram sem nenhuma.
+            for chat, cluster in _destinos_cluster():
+                por_equipe = [(eq, _rows_para_grupo(os_list, cluster)) for eq, os_list in alertar]
+                por_equipe = [(eq, lista) for eq, lista in por_equipe if lista]
+                if not por_equipe: continue
+
+                linhas = _tg_header("🚫", "SEM EXECUÇÃO ACUMULADA")
+                for eq, os_list in sorted(por_equipe, key=lambda x: -len(x[1])):
+                    linhas.append(f"\n⚠️ <b>{_tg_esc(eq)}</b> — {len(os_list)} OS Sem Execução hoje")
+                    for r in os_list[:4]:
+                        numos  = str(r.get("numos", "?"))
+                        nome   = _tg_esc((r.get("nomecliente") or "?")[:24])
+                        linhas.append(f"  /os{numos} · {nome}")
+                        end = _tg_endereco(r, bairro_cidade=True)
+                        if end: linhas.append(f"      📍 {end}")
+                    if len(os_list) > 4: linhas.append(f"  <i>… +{len(os_list) - 4} OS</i>")
+                linhas += _tg_footer("/semexec para o relatório completo")
+                _telegram_send("\n".join(linhas), chat_id_override=chat)
+                log.info("[SemExecMonitor] Alerta enviado — %d equipes (%s)", len(por_equipe), cluster)
         except Exception as ex:
             log.warning("[SemExecMonitor] Erro: %s", str(ex)[:120])
 
@@ -406,17 +488,20 @@ def _resumo_scheduler_loop():
 
         if agora.hour == 7 and agora.minute < 2 and chave_briefing_7h not in enviados:
             enviados.add(chave_briefing_7h)
-            if TELEGRAM_CHAT_ALERTAS:
-                def _briefing_7h():
+            if _destinos_cluster():
+                def _briefing_7h(_chat, _cluster):
                     try:
                         from cabonnet.stats import compute_stats
                         from cabonnet.ai import _ai_daily_briefing
+                        # Import tardio: app importa monitors, o contrario no topo
+                        # fecharia ciclo.
+                        from cabonnet.app import _filter_csv_cluster
                         with state._query_cache_lock:
                             cached = dict(state._query_cache)
                         stats = compute_stats(
-                            cached.get("pendente", ""),
-                            cached.get("agendado", ""),
-                            cached.get("futuro", ""),
+                            _filter_csv_cluster(cached.get("pendente", ""), _cluster),
+                            _filter_csv_cluster(cached.get("agendado", ""), _cluster),
+                            _filter_csv_cluster(cached.get("futuro", ""), _cluster),
                         )
                         ontem = date.today() - timedelta(days=1)
                         payload = {
@@ -434,20 +519,25 @@ def _resumo_scheduler_loop():
                         ]
                         for i, acao in enumerate(result.get("acoes", []), 1):
                             linhas.append(f"  {i}. {_tg_esc(acao)}")
-                        _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
-                        log.info("[Scheduler] Briefing 7h enviado")
+                        _telegram_send("\n".join(linhas), chat_id_override=_chat)
+                        log.info("[Scheduler] Briefing 7h enviado (%s)", _cluster)
                     except Exception as ex:
                         log.warning("[Scheduler] Erro briefing 7h: %s", str(ex)[:200])
-                threading.Thread(target=_briefing_7h, daemon=True).start()
+                for _chat_d, _cluster_d in _destinos_cluster():
+                    threading.Thread(target=_briefing_7h, args=(_chat_d, _cluster_d), daemon=True).start()
 
         if agora.hour == 8 and agora.minute < 2 and chave_m not in enviados:
             enviados.add(chave_m)
             threading.Thread(target=_build_resumo_diario, args=("manha",), daemon=True).start()
-            if TELEGRAM_CHAT_ALERTAS:
+            if _destinos_cluster():
                 def _kpi_manha():
                     try:
-                        _telegram_send("🌅 <b>RESUMO MATINAL</b>\n" + _build_kpi().split("\n", 1)[1],
-                                       chat_id_override=TELEGRAM_CHAT_ALERTAS)
+                        for _chat, _cluster in _destinos_cluster():
+                            _texto = _build_kpi(operadora=escopo_cluster(_cluster))
+                            if "\n" not in _texto:
+                                continue
+                            _telegram_send("🌅 <b>RESUMO MATINAL</b>\n" + _texto.split("\n", 1)[1],
+                                           chat_id_override=_chat)
                     except Exception as ex:
                         log.warning("[Scheduler] Erro KPI manha: %s", str(ex)[:120])
                 threading.Thread(target=_kpi_manha, daemon=True).start()
@@ -467,11 +557,15 @@ def _resumo_scheduler_loop():
         elif agora.hour == 18 and agora.minute >= 30 and chave_t not in enviados:
             enviados.add(chave_t)
             threading.Thread(target=_build_resumo_diario, args=("tarde",), daemon=True).start()
-            if TELEGRAM_CHAT_ALERTAS:
+            if _destinos_cluster():
                 def _kpi_tarde():
                     try:
-                        _telegram_send("🌆 <b>FECHAMENTO DO DIA</b>\n" + _build_kpi().split("\n", 1)[1],
-                                       chat_id_override=TELEGRAM_CHAT_ALERTAS)
+                        for _chat, _cluster in _destinos_cluster():
+                            _texto = _build_kpi(operadora=escopo_cluster(_cluster))
+                            if "\n" not in _texto:
+                                continue
+                            _telegram_send("🌆 <b>FECHAMENTO DO DIA</b>\n" + _texto.split("\n", 1)[1],
+                                           chat_id_override=_chat)
                     except Exception as ex:
                         log.warning("[Scheduler] Erro KPI tarde: %s", str(ex)[:120])
                 threading.Thread(target=_kpi_tarde, daemon=True).start()
@@ -490,23 +584,25 @@ def _resumo_scheduler_loop():
 
         if agora.hour == 12 and agora.minute < 2 and chave_pulso_12h not in enviados:
             enviados.add(chave_pulso_12h)
-            if TELEGRAM_CHAT_ALERTAS:
-                def _pulso_12h():
+            if _destinos_cluster():
+                def _pulso_12h(_chat, _cluster):
                     try:
-                        pulso  = _build_pulso()
+                        pulso  = _build_pulso(operadora=escopo_cluster(_cluster))
                         linhas = pulso.split("\n"); linhas[0] = "☀️ <b>PULSO INTERMEDIÁRIO — 12h</b>"
-                        _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
+                        _telegram_send("\n".join(linhas), chat_id_override=_chat)
                     except Exception as ex:
                         log.warning("[Scheduler] Erro pulso 12h: %s", str(ex)[:120])
-                threading.Thread(target=_pulso_12h, daemon=True).start()
+                for _chat_d, _cluster_d in _destinos_cluster():
+                    threading.Thread(target=_pulso_12h, args=(_chat_d, _cluster_d), daemon=True).start()
 
         if agora.hour == 15 and agora.minute < 2 and chave_alerta_15h not in enviados:
             enviados.add(chave_alerta_15h)
-            if TELEGRAM_CHAT_ALERTAS:
-                def _alerta_equipes_15h():
+            if _destinos_cluster():
+                def _alerta_equipes_15h(_chat, _cluster):
                     try:
                         with state._dados_cache_lock:
                             rows = list(state._dados_cache["agendado"])
+                        rows = _rows_para_grupo(rows, _cluster)
                         hoje     = date.today()
                         sem_rede = [r for r in rows if not (r.get("servico") or "").upper().startswith("REDE")]
                         is_hoje  = lambda r: _parse_data_br(r.get("dataexecucao") or r.get("databaixa")) == hoje
@@ -526,10 +622,11 @@ def _resumo_scheduler_loop():
                         for eq, fila_cnt in paradas:
                             linhas.append(f"  ⚠️ <b>{_tg_esc(eq)}</b> — {fila_cnt} OS na fila, nenhuma executada")
                         linhas += _tg_footer("/equipe", "/turno", "/ranking")
-                        _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
+                        _telegram_send("\n".join(linhas), chat_id_override=_chat)
                     except Exception as ex:
                         log.warning("[Scheduler] Erro alerta 15h: %s", str(ex)[:120])
-                threading.Thread(target=_alerta_equipes_15h, daemon=True).start()
+                for _chat_d, _cluster_d in _destinos_cluster():
+                    threading.Thread(target=_alerta_equipes_15h, args=(_chat_d, _cluster_d), daemon=True).start()
 
         if agora.hour == 17 and agora.minute < 2 and chave_pico_17h not in enviados:
             enviados.add(chave_pico_17h)
@@ -537,11 +634,12 @@ def _resumo_scheduler_loop():
 
         if agora.hour == 14 and agora.minute < 2 and chave_ritmo_14h not in enviados:
             enviados.add(chave_ritmo_14h)
-            if TELEGRAM_CHAT_ALERTAS:
-                def _alerta_ritmo_14h():
+            if _destinos_cluster():
+                def _alerta_ritmo_14h(_chat, _cluster):
                     try:
                         with state._dados_cache_lock:
                             rows = list(state._dados_cache["agendado"])
+                        rows = _rows_para_grupo(rows, _cluster)
                         agora_r  = datetime.now(); hoje = agora_r.date()
                         sem_rede = [r for r in rows if not (r.get("servico") or "").upper().startswith("REDE")]
                         is_hoje  = lambda r: _parse_data_br(r.get("dataexecucao") or r.get("databaixa")) == hoje
@@ -564,22 +662,25 @@ def _resumo_scheduler_loop():
                                      f"🔭 Projeção ao fechar: <b>~{proj} OS ({pct_proj}%)</b>", "",
                                      "<b>Intervenção necessária para atingir a meta de 80%.</b>"]
                         linhas   += _tg_footer("/ranking", "/equipes", "/turno")
-                        _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
-                        log.info("[Scheduler] Alerta ritmo 14h enviado — taxa %d%%", taxa)
+                        _telegram_send("\n".join(linhas), chat_id_override=_chat)
+                        log.info("[Scheduler] Alerta ritmo 14h enviado — taxa %d%% (%s)", taxa, _cluster)
                     except Exception as ex:
                         log.warning("[Scheduler] Erro alerta ritmo 14h: %s", str(ex)[:120])
-                threading.Thread(target=_alerta_ritmo_14h, daemon=True).start()
+                for _chat_d, _cluster_d in _destinos_cluster():
+                    threading.Thread(target=_alerta_ritmo_14h, args=(_chat_d, _cluster_d), daemon=True).start()
 
         if agora.hour == 17 and agora.minute < 2 and chave_alerta_pend not in enviados:
             enviados.add(chave_alerta_pend)
-            def _alerta_pendentes():
+            def _alerta_pendentes(_chat, _cluster):
                 try:
-                    txt = _build_pendentes_semequipe()
+                    txt = _build_pendentes_semequipe(operadora=escopo_cluster(_cluster))
                     if "Sem OS pendentes" not in txt:
-                        _telegram_send(txt)
+                        _telegram_send(txt, chat_id_override=_chat)
                 except Exception as ex:
                     log.warning("[Scheduler] Erro alerta pendentes: %s", str(ex)[:120])
-            threading.Thread(target=_alerta_pendentes, daemon=True).start()
+            for _chat_d, _cluster_d in _destinos_cluster():
+                threading.Thread(target=_alerta_pendentes, args=(_chat_d, _cluster_d),
+                                 daemon=True).start()
 
         if agora.hour == 18 and agora.minute >= 30 and chave_pppoe not in enviados:
             enviados.add(chave_pppoe)
@@ -600,6 +701,11 @@ def _resumo_scheduler_loop():
                         if _chat:
                             texto_op = _build_executadas_hoje(operadora=_op)
                             if texto_op: _telegram_send(texto_op, chat_id_override=_chat)
+                    # Os grupos regionais nao cabem em nenhuma operadora do Vale:
+                    # levam a regiao inteira, do mesmo jeito que os outros agendados.
+                    for _chat_c, _cluster in _destinos_cluster():
+                        texto_c = _build_executadas_hoje(operadora=escopo_cluster(_cluster))
+                        if texto_c: _telegram_send(texto_c, chat_id_override=_chat_c)
                     log.info("[Telegram] Executadas Hoje enviado por grupo — %02dh", hora)
                 except Exception as ex:
                     log.warning("[Telegram] Erro Executadas Hoje: %s", str(ex)[:120])
@@ -699,10 +805,16 @@ def _enviar_alertas_vt(items, tipo):
             texto, markup = _montar(batch, op)
             _telegram_send(texto, chat_id_override=chat, reply_markup=markup)
 
-    # Alertas recebe uma única visão global, sem fragmentação por fornecedor.
-    if TELEGRAM_CHAT_ALERTAS:
-        texto, markup = _montar(items, "VISÃO GLOBAL")
-        _telegram_send(texto, chat_id_override=TELEGRAM_CHAT_ALERTAS, reply_markup=markup)
+    # Cada grupo regional recebe a visao completa da sua regiao, sem fragmentar
+    # por fornecedor — o papel que o Alertas ja fazia para o Vale.
+    for chat, cluster in _destinos_cluster():
+        # items sao tuplas (row, restante, prazo_h): recorta pela row de cada uma.
+        rows_regiao = _rows_para_grupo([item[0] for item in items], cluster)
+        fatia = [item for item in items if item[0] in rows_regiao]
+        if not fatia:
+            continue
+        texto, markup = _montar(fatia, _label_operadora(escopo_cluster(cluster)))
+        _telegram_send(texto, chat_id_override=chat, reply_markup=markup)
 
     log.info("[VTMonitor] %s — %d OS notificadas", tipo, len(items))
 
@@ -766,14 +878,23 @@ def _vt_monitor_loop():
             normalizadas = [(numos, reg) for numos, reg in list(state._vt_alertados.items())
                             if numos not in vt_ativos and reg.get("row")]
             if normalizadas:
-                linhas = _tg_header("✅", "VT NORMALIZADO", "VISÃO GLOBAL", f"{len(normalizadas)} OS")
-                for numos, reg in normalizadas[:20]:
-                    r = reg["row"]
-                    linhas.append(f"✅ <b>OS {_tg_esc(numos)}</b> · {_tg_esc(_operadora_da_os(r) or 'Sem fornecedor')} · saiu da fila ativa")
+                # Uma mensagem por regiao. O pop do estado sai do laco: com dois
+                # grupos, remover dentro faria a segunda iteracao nao achar nada.
+                for chat, cluster in _destinos_cluster():
+                    fatia = [(n, reg) for n, reg in normalizadas
+                             if _rows_para_grupo([reg["row"]], cluster)]
+                    if not fatia:
+                        continue
+                    linhas = _tg_header("✅", "VT NORMALIZADO",
+                                        _label_operadora(escopo_cluster(cluster)), f"{len(fatia)} OS")
+                    for numos, reg in fatia[:20]:
+                        r = reg["row"]
+                        linhas.append(f"✅ <b>OS {_tg_esc(numos)}</b> · {_tg_esc(_operadora_da_os(r) or 'Sem fornecedor')} · saiu da fila ativa")
+                    linhas += _tg_footer("Situação normalizada desde o último alerta")
+                    if _vt_pode_enviar_normalizacao(agora):
+                        _telegram_send("\n".join(linhas), chat_id_override=chat)
+                for numos, _reg in normalizadas:
                     state._vt_alertados.pop(numos, None)
-                linhas += _tg_footer("Situação normalizada desde o último alerta")
-                if _vt_pode_enviar_normalizacao(agora):
-                    _telegram_send("\n".join(linhas), chat_id_override=TELEGRAM_CHAT_ALERTAS)
 
         except Exception as ex:
             log.warning("[VTMonitor] Erro: %s", str(ex)[:120])

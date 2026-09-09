@@ -40,7 +40,9 @@ _tg_offset  = 0
 # ── Variáveis de estado para monitors em tempo real ───────────────────────────
 _sla_alertados      = set()   # numos já alertados hoje por SLA
 _sla_alertados_data = None    # date do último reset
-_fila_prev_count    = 0       # tamanho anterior da fila para alerta de crescimento
+_fila_prev_count    = {}      # tamanho anterior da fila POR CLUSTER — um numero
+                              # unico oscilaria entre as regioes e dispararia
+                              # alerta de crescimento que nao existe
 _atend_travados      = set()  # numos de OS em Atendimento já alertadas por travamento
 _atend_travados_data = None
 _sem_exec_alertadas      = {} # { equipe: quantidade alertada } para Sem Execução acumulada

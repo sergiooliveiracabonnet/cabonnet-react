@@ -15,11 +15,11 @@ from cabonnet.telegram import _filter_by_operadora, _label_operadora, _operadora
 CHAT_ADA = "-1004296795561"
 
 LINHAS = [
-    {"numos": "1", "nomedaequipe": "03- VAL - INSTALACAO F01",   "servico": "INSTALACAO"},
-    {"numos": "2", "nomedaequipe": "05 - ADA - INSTALACAO F 01", "servico": "INSTALACAO"},
-    {"numos": "3", "nomedaequipe": "05 - ADA - MANUTENCAO F 07", "servico": "MANUTENCAO"},
-    {"numos": "4", "nomedaequipe": "03- VAL - INSTALACAO F08",   "servico": "INSTALACAO"},
-    {"numos": "5", "nomedaequipe": "COPE - INSTALACAO",          "servico": "INSTALACAO"},
+    {"numos": "1", "nomedacidade": "Taubaté", "nomedaequipe": "03- VAL - INSTALACAO F01", "servico": "INSTALACAO"},
+    {"numos": "2", "nomedacidade": "Adamantina", "nomedaequipe": "05 - ADA - INSTALACAO F 01", "servico": "INSTALACAO"},
+    {"numos": "3", "nomedacidade": "Lucélia", "nomedaequipe": "05 - ADA - MANUTENCAO F 07", "servico": "MANUTENCAO"},
+    {"numos": "4", "nomedacidade": "Pindamonhangaba", "nomedaequipe": "03- VAL - INSTALACAO F08", "servico": "INSTALACAO"},
+    {"numos": "5", "nomedacidade": "Taubaté", "nomedaequipe": "COPE - INSTALACAO", "servico": "INSTALACAO"},
 ]
 
 
@@ -27,9 +27,11 @@ def _os(operadora):
     return [r["numos"] for r in _filter_by_operadora(LINHAS, operadora)]
 
 
-def test_chat_de_adamantina_resolve_para_ada():
+def test_chat_de_adamantina_resolve_para_escopo_de_cluster():
+    """O grupo e visao regional, nao de operadora: recorta por cidade e mantem
+    REDE e manutencao, como o Alertas faz para o Vale."""
     with patch.object(telegram, "TELEGRAM_CHAT_ADAMANTINA", CHAT_ADA):
-        assert _operadora_for_chat(CHAT_ADA) == "ADA"
+        assert _operadora_for_chat(CHAT_ADA) == telegram.escopo_cluster("ADAMANTINA")
         assert _operadora_for_chat("-100999999999") is None
 
 
@@ -78,6 +80,25 @@ def test_broadcast_manda_mudanca_de_adamantina_para_o_grupo_certo():
 
     assert enviados, "nada foi enviado"
     assert set(enviados) == {CHAT_ADA}, "vazou para outro grupo: %s" % set(enviados)
+
+
+def test_alertas_recebe_o_vale_e_o_que_nao_tem_cluster(client=None):
+    """Alertas e o catch-all: Vale mais qualquer OS de cidade inesperada. Sem
+    isso, uma cidade fora da lista sumiria dos dois grupos, em silencio."""
+    linhas = LINHAS + [{"numos": "9", "nomedacidade": "Presidente Prudente",
+                        "nomedaequipe": "09 - PP - INSTALACAO F01", "servico": "INSTALACAO"}]
+    changes = [(r, "Pendente", "Atendimento") for r in linhas]
+    enviados = {}
+
+    def _fake_send(texto, chat_id_override=None, **kwargs):
+        enviados.setdefault(chat_id_override, []).append(texto)
+
+    with patch.object(telegram, "TELEGRAM_CHAT_ADAMANTINA", CHAT_ADA),          patch.object(telegram, "TELEGRAM_CHAT_ALERTAS", "alertas"),          patch.object(telegram, "TELEGRAM_CHAT_ID", ""),          patch.object(telegram, "TELEGRAM_CHAT_WES", ""),          patch.object(telegram, "TELEGRAM_CHAT_INSTACABLE", ""),          patch.object(telegram, "TELEGRAM_CHAT_REDE", ""),          patch.object(telegram, "TELEGRAM_CHAT_OPERACIONAL_THM", ""),          patch.object(telegram, "_telegram_enabled", return_value=True),          patch.object(telegram, "_telegram_send", _fake_send):
+        telegram._tg_broadcast_status_changes(changes)
+
+    assert set(enviados) == {CHAT_ADA, "alertas"}
+    texto_alertas = " ".join(enviados["alertas"])
+    assert "Presidente Prudente" in texto_alertas or "9" in texto_alertas
 
 
 def test_bot_reconhece_o_grupo_e_libera_os_comandos_de_operadora():
