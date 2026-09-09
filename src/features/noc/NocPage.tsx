@@ -535,6 +535,14 @@ function NocAuthGuard({ children }: { children: React.ReactNode }) {
 }
 
 export default function NocPage() {
+  // O NOC é o painel da sala, lido a 4 metros — a única tela do sistema que não
+  // é a mesa do supervisor. A escala inteira sobe por token; nenhum componente
+  // daqui sabe que isso aconteceu.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-densidade', 'parede')
+    return () => document.documentElement.removeAttribute('data-densidade')
+  }, [])
+
   return (
     <NocAuthGuard>
       <OSDataProvider>

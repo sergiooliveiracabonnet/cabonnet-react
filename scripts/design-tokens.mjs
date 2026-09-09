@@ -56,3 +56,32 @@ export function resolveTheme(tokens, tema) {
 export function lerIndexCss(caminho = 'src/index.css') {
   return parseTokens(readFileSync(caminho, 'utf8'))
 }
+
+/* ── Escala tipográfica (Fase 2) ─────────────────────────────────────────
+   Os papéis viram tokens em vez de valores fixos no tailwind.config.js, para
+   que a densidade — mesa e parede — troque a escada inteira sem tocar em
+   nenhum componente. */
+
+const BLOCOS_TIPO = {
+  mesa:   /\/\* TIPO: MESA \*\/\s*:root\s*\{([\s\S]*?)\n\}/,
+  parede: /\/\* TIPO: PAREDE \*\/\s*\[data-densidade="parede"\]\s*\{([\s\S]*?)\n\}/,
+}
+
+function px(corpo) {
+  const saida = {}
+  for (const m of (corpo ?? '').matchAll(/(--fs-[\w-]+)\s*:\s*([0-9.]+)px\s*;/g)) {
+    saida[m[1]] = Number(m[2])
+  }
+  return saida
+}
+
+export function parseEscalaTipo(css) {
+  return {
+    mesa:   px(css.match(BLOCOS_TIPO.mesa)?.[1]),
+    parede: px(css.match(BLOCOS_TIPO.parede)?.[1]),
+  }
+}
+
+export function lerEscalaTipo(caminho = 'src/index.css') {
+  return parseEscalaTipo(readFileSync(caminho, 'utf8'))
+}

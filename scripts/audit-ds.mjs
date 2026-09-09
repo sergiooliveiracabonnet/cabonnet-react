@@ -9,8 +9,11 @@ const BASELINE = JSON.parse(readFileSync(new URL('./audit-ds-baseline.json', imp
 
 const RULES = [
   {
-    name: 'Tamanho de fonte banido (mínimo do sistema é 11px / text-caption)',
-    test: (src) => [...src.matchAll(/text-\[(?:8|9|10)px\]/g)].map(m => m[0]),
+    // A regra antiga so pegava 8/9/10px inteiros — 9.5px e 10.5px passavam por
+    // baixo dela. Agora qualquer tamanho avulso reprova: quem precisa de um
+    // degrau novo adiciona na escala, onde o vizinho e visivel.
+    name: 'Tamanho de fonte avulso (use um papel da escala: text-caption ... text-readout-2xl)',
+    test: (src) => [...src.matchAll(/text-\[[0-9.]+(?:px|rem|em)\]/g)].map(m => m[0]),
   },
   {
     name: 'Primitivo de token em componente (use a camada semantica --c-*)',

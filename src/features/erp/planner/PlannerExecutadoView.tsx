@@ -318,7 +318,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
         </td>
 
         <td className="px-3 py-3 text-right">
-          <p className="font-mono font-bold text-[18px] leading-none text-text">{entry.thisWeek}</p>
+          <p className="font-mono font-bold text-subtitle leading-none text-text">{entry.thisWeek}</p>
           <p className="text-caption text-muted mt-0.5">últimos {thisLen}d</p>
         </td>
 
@@ -385,7 +385,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                       {d.dow}
                     </span>
                     <span className="text-caption text-muted">{d.label}</span>
-                    <span className="font-mono font-black text-[20px] leading-none"
+                    <span className="font-mono font-black text-headline leading-none"
                           style={{ color: val > 0 ? color : 'rgba(255,255,255,0.15)' }}>
                       {val}
                     </span>
@@ -515,7 +515,7 @@ export default function PlannerExecutadoView() {
             <div className="p-4">
               <p className="text-caption text-muted mb-2">{k.label}</p>
               <div className="flex items-end gap-2">
-                <p className="font-mono font-black text-[30px] leading-none tabular-nums"
+                <p className="font-mono font-black text-readout leading-none tabular-nums"
                    style={{ color: k.color }}>{k.value}</p>
                 {k.delta != null && <DeltaBadge delta={k.delta} />}
               </div>

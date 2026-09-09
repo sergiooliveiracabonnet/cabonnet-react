@@ -28,7 +28,11 @@ describe('PageHeader', () => {
   it('h1 sem ícone não tem classes flex', () => {
     const { container } = render(<PageHeader title="Ordens de Serviço" />)
     const h1 = container.querySelector('h1')
-    expect(h1).toHaveClass('text-title', 'font-semibold', 'text-text')
+    // Um degrau só, mais o passo responsivo. Antes eram três classes de tamanho
+    // no mesmo h1 — text-title ficava morto sob os dois px avulsos que vinham
+    // depois, e este teste fixava justamente a classe que não pintava nada.
+    expect(h1).toHaveClass('text-subtitle', 'sm:text-headline', 'font-semibold', 'text-text')
+    expect(h1).not.toHaveClass('text-title')
     expect(h1).not.toHaveClass('flex', 'items-center', 'gap-2')
   })
   it('renderiza titleExtra ao lado do título e aplica flex no h1', () => {

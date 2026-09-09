@@ -156,6 +156,45 @@
   --c-grp-infra:     var(--p-orange-400);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ESCALA TIPOGRAFICA — papel, nao tamanho
+
+   Quem escolhe tamanho escolhe um papel. O px mora aqui e em nenhum
+   outro lugar, para que a densidade troque a escada inteira sem que
+   um unico componente saiba disso.
+
+   mesa   supervisor a 60cm, jornada inteira
+   parede painel da sala, lido a 4 metros
+═══════════════════════════════════════════════════════════════ */
+
+/* TIPO: MESA */
+:root {
+  --fs-caption:      11px;   /* rotulo denso, o piso do sistema */
+  --fs-label:        12px;   /* rotulo de campo                 */
+  --fs-body:         13px;   /* texto corrido                   */
+  --fs-title:        15px;   /* titulo de cartao                */
+  --fs-subtitle:     18px;   /* titulo de secao                 */
+  --fs-headline:     22px;   /* titulo de pagina                */
+  --fs-readout:      28px;   /* numero de metrica               */
+  --fs-readout-lg:   40px;   /* numero de painel                */
+  --fs-readout-xl:   52px;   /* numero de destaque              */
+  --fs-readout-2xl:  64px;   /* numero heroi, modo NOC          */
+}
+
+/* TIPO: PAREDE */
+[data-densidade="parede"] {
+  --fs-caption:      15px;
+  --fs-label:        16px;
+  --fs-body:         18px;
+  --fs-title:        20px;
+  --fs-subtitle:     24px;
+  --fs-headline:     30px;
+  --fs-readout:      38px;
+  --fs-readout-lg:   54px;
+  --fs-readout-xl:   70px;
+  --fs-readout-2xl:  86px;
+}
+
 /* ── Dot grid light mode — levemente mais visível ── */
 .light body {
   background-image: radial-gradient(rgb(var(--c-border) / 0.8) 1px, transparent 1px);

@@ -108,7 +108,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
 
         {total === 0 ? (
           <div className="flex items-center gap-3 py-4">
-            <p className="number-display text-[64px] leading-none text-muted/20">0</p>
+            <p className="number-display text-readout-2xl leading-none text-muted/20">0</p>
             <p className="text-body text-muted/60">Nenhuma OS concluída registrada ainda.</p>
           </div>
         ) : (
@@ -142,7 +142,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
                       }
                       <span className="text-caption font-mono text-muted">{pct}%</span>
                     </div>
-                    <p className="font-mono font-bold text-[26px] leading-none mb-1"
+                    <p className="font-mono font-bold text-readout leading-none mb-1"
                        style={{ color: g.color }}>
                       {g.rows.length}
                     </p>

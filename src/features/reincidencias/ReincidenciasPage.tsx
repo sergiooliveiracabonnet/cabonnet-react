@@ -105,5 +105,5 @@ function Filter({ label, value, onChange, options, all }: { label: string; value
 }
 
 function KPI({ label, value, detail }: { label: string; value: string | number; detail: string }) {
-  return <div className="rounded-xl border border-border bg-card p-4"><p className="text-caption font-semibold uppercase tracking-wide text-muted">{label}</p><p className="mt-1 text-[24px] font-bold tabular-nums text-text">{value}</p><p className="text-caption text-secondary">{detail}</p></div>
+  return <div className="rounded-xl border border-border bg-card p-4"><p className="text-caption font-semibold uppercase tracking-wide text-muted">{label}</p><p className="mt-1 text-readout font-bold tabular-nums text-text">{value}</p><p className="text-caption text-secondary">{detail}</p></div>
 }

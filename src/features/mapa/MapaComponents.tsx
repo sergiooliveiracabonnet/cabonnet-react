@@ -255,7 +255,7 @@ export function AddressSearchPanel({ result, info, onClose }: {
         <div className="flex items-start justify-between gap-2 px-4 py-3 border-b border-white/[0.08]">
           <div className="flex items-start gap-2 min-w-0">
             <PinIcon size={13} className="text-cyan flex-shrink-0 mt-0.5" />
-            <p className="text-[11.5px] text-secondary leading-snug">{result.label}</p>
+            <p className="text-label text-secondary leading-snug">{result.label}</p>
           </div>
           <button
             onClick={onClose}
@@ -279,7 +279,7 @@ export function AddressSearchPanel({ result, info, onClose }: {
                 <p className="text-label font-bold text-green leading-snug">
                   {equipes.length} equipe{equipes.length !== 1 ? 's' : ''} com OS nas proximidades
                 </p>
-                <p className="text-[10.5px] text-muted mt-0.5">raio de {PROXIMIDADE_KM} km</p>
+                <p className="text-caption text-muted mt-0.5">raio de {PROXIMIDADE_KM} km</p>
               </>
             ) : (
               <>
@@ -287,7 +287,7 @@ export function AddressSearchPanel({ result, info, onClose }: {
                   Nenhuma equipe com OS ativa em até {PROXIMIDADE_KM} km
                 </p>
                 {maisProximo && (
-                  <p className="text-[10.5px] text-muted mt-0.5">
+                  <p className="text-caption text-muted mt-0.5">
                     Mais próxima: {maisProximo.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())} — {maisProximo.distKm.toFixed(1)} km
                   </p>
                 )}
@@ -338,7 +338,7 @@ export function AddressSearchPanel({ result, info, onClose }: {
 export function Stat({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
     <div className="flex flex-col items-center py-2.5 px-1 gap-0.5">
-      <span className={`text-[18px] font-black font-mono leading-none ${color}`}>{value}</span>
+      <span className={`text-subtitle font-black font-mono leading-none ${color}`}>{value}</span>
       <span className="text-caption font-bold uppercase tracking-[0.04em] text-muted text-center leading-tight">{label}</span>
     </div>
   )

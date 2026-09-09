@@ -311,7 +311,7 @@ export function LoginPage() {
               style={{ filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.55)) drop-shadow(0 0 28px rgba(59,130,246,0.16))' }}
             />
           </div>
-          <h1 className="font-headline text-[22px] font-semibold tracking-tight"
+          <h1 className="font-headline text-headline font-semibold tracking-tight"
               style={{ color: '#e8edf5', letterSpacing: '-0.02em' }}>
             Gestão de OS
           </h1>

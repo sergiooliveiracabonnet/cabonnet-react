@@ -119,7 +119,7 @@ export function StatCard({
                       : 'bg-bg'}
                     ${onClick ? `cursor-pointer ${FOCUS_RING}` : ''} ${className}`}
       >
-        <p className="text-[22px] font-bold tabular-nums leading-none" style={{ color: valColor }}>{value ?? '—'}</p>
+        <p className="text-headline font-bold tabular-nums leading-none" style={{ color: valColor }}>{value ?? '—'}</p>
         <p className="text-caption text-muted mt-1 uppercase tracking-wide">{title}</p>
         {sub && <p className="text-caption text-muted mt-0.5">{sub}</p>}
         {sparkline && sparkline.length > 1 && (
