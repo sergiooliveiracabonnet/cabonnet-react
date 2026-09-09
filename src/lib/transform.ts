@@ -1,5 +1,6 @@
 import { shortEquipe } from './osFormat'
 import type { OSRow, DateFilter, Fornecedor, TipoEquipe, SlaLimits } from './types'
+import { CLUSTERS, clusterDaEquipe, isCidadeValida } from './clusters'
 
 // OS concluída canonicamente: inclui QUALQUER fechamento formal.
 // Usar para: revisitas, cohort, MTTR, "está essa OS encerrada?"
@@ -117,18 +118,8 @@ function isValidNumos(v: string): boolean {
 }
 
 // Cidades atendidas — usada em parseCSV e buildOrdens
-const _normCity = (s: string) =>
-  (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim()
-
-const CIDADES_ATENDIDAS = new Set([
-  'PINDAMONHANGABA',
-  'TREMEMBE',
-  'TAUBATE',
-  'CACAPAVA',
-  'SAO JOSE',
-  'SAO JOSE DOS CAMPOS',
-])
-export const isCidadeValida = (c: string): boolean => CIDADES_ATENDIDAS.has(_normCity(c))
+// A lista de cidades vive em clusters.ts, espelhando CLUSTERS do config.py.
+export { isCidadeValida }
 
 const EQUIPES_EXCLUIR = new Set([
   'ESTOQUE', 'COPE - RETIRADA', 'ATENDIMENTO',
@@ -232,6 +223,7 @@ const FORNECEDOR_CIDADES: Record<string, Set<string>> = {
   WES: new Set(['PINDAMONHANGABA']),
   THM: new Set(['TAUBATE', 'TREMEMBE']),
   Instacable: new Set(['SAO JOSE', 'SAO JOSE DOS CAMPOS', 'SJCAMPOS', 'CACAPAVA', 'TAUBATE', 'TREMEMBE']),
+  ADA: new Set(Object.keys(CLUSTERS.ADAMANTINA.cidades)),
 }
 
 /** Escopo externo: próprias equipes em qualquer cidade + fila compartilhada
@@ -294,6 +286,9 @@ const THM_CODES  = new Set(['F12', 'F13', 'F14'])
 
 export function getFornecedor(equipe: string | undefined | null): Fornecedor {
   const u = (equipe || '').toUpperCase()
+  // O prefixo do cluster resolve antes das frentes: Vale e Adamantina reusam a
+  // mesma numeracao (F01 la, F 01 aqui) e so o prefixo distingue as equipes.
+  if (clusterDaEquipe(u) === 'ADAMANTINA') return 'ADA'
   if (/COPE/i.test(u))     return 'INTERNO'
   if (/\bREDE\b/.test(u))  return 'REDE'
   if (/MANUTENC/.test(u))  return 'MANUTENCAO'

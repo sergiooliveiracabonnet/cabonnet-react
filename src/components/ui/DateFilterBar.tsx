@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Calendar, CaretDown, CaretLeft, CaretRight, HardDrives, ArrowRight } from '@phosphor-icons/react'
 import { useUIStore, PRESETS, isSameMonth } from '../../store/uiStore'
 import type { DateCampo } from '../../lib/types'
+import type { ClusterFilter } from '../../lib/clusters'
 
 const CAMPOS: { value: DateCampo; label: string }[] = [
   { value: 'datacadastro',    label: 'Abertura'     },
@@ -40,9 +41,15 @@ const MESES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ]
 
+const CLUSTER_OPCOES: { valor: ClusterFilter; rotulo: string; titulo: string }[] = [
+  { valor: 'VALE',       rotulo: 'Vale', titulo: 'Só o Vale do Paraíba — SJC, Caçapava, Taubaté, Tremembé, Pindamonhangaba' },
+  { valor: 'ADAMANTINA', rotulo: 'ADA',  titulo: 'Só Adamantina — Adamantina, Osvaldo Cruz, Lucélia, Mariápolis, Inúbia Paulista, Flórida Paulista, Pacaembu' },
+  { valor: 'TODOS',      rotulo: 'Tudo', titulo: 'Os dois clusters somados' },
+]
+
 export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
   const {
-    dateFilter, setPreset, setCustomRange, setCampo, hideRede, toggleHideRede,
+    dateFilter, setPreset, setCustomRange, setCampo, hideRede, toggleHideRede, cluster, setCluster,
     mensalAnchor, mensalPrevMonth, mensalNextMonth,
   } = useUIStore()
   const { preset, from, to, campo } = dateFilter
@@ -190,6 +197,27 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
             </div>
           </>
         )}
+      </div>
+
+      <span className="mx-0.5 hidden h-4 w-px flex-shrink-0 bg-surface md:block" />
+
+      {/* Cluster regional: recorta cidades em todas as telas de uma vez.
+          Default VALE — somar Adamantina de saída mudaria todo KPI histórico. */}
+      <div role="group" aria-label="Cluster regional" className="flex h-11 flex-shrink-0 items-center gap-0.5 rounded-full border border-white/[0.08] p-0.5 md:h-6">
+        {CLUSTER_OPCOES.map(opcao => (
+          <button
+            key={opcao.valor}
+            onClick={() => setCluster(opcao.valor)}
+            aria-pressed={cluster === opcao.valor}
+            title={opcao.titulo}
+            className={`rounded-full px-2.5 text-caption font-semibold transition-all duration-fast
+                        ${cluster === opcao.valor
+                          ? 'bg-primary/15 text-primary'
+                          : 'text-muted hover:text-secondary'}`}
+          >
+            {opcao.rotulo}
+          </button>
+        ))}
       </div>
 
       <span className="mx-0.5 hidden h-4 w-px flex-shrink-0 bg-surface md:block" />

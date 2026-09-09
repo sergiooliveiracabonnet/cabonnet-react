@@ -1,3 +1,4 @@
+import { CLUSTER_DE_CIDADE } from '../../lib/clusters'
 export type SignalSeverity = 'Crítico' | 'Atenção' | 'Normal' | '—'
 
 export interface SignalRow {
@@ -70,7 +71,8 @@ export interface HistogramBin {
 export type SignalSortKey = keyof SignalRow
 export type SortDirection = 'asc' | 'desc'
 
-const VALID_CITIES = new Set(['CACAPAVA', 'PINDAMONHANGABA', 'SAO JOSE DOS CAMPOS', 'TAUBATE', 'TREMEMBE'])
+// Fonte única: CLUSTERS em config.py, espelhado em lib/clusters.ts.
+const VALID_CITIES = new Set(Object.keys(CLUSTER_DE_CIDADE))
 
 const normalizeText = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim()
 

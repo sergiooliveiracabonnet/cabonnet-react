@@ -184,7 +184,66 @@ _STATUS_EMOJI = {
     "Concluída/Sem Execução":  "⚠️",
 }
 
-# Grupos de operadoras: alias → frentes INST vinculadas
+# ── Clusters regionais ────────────────────────────────────────────────────────
+# O ERP é multi-operação (9.705 cidades cadastradas, das quais so estas sao
+# Cabonnet), entao a lista de cidades e o que recorta o que entra no app.
+# Espelhado em src/lib/clusters.ts — tests/python/test_cluster_consistency.py
+# e src/lib/clusters.test.ts travam os dois contra este dicionario.
+CLUSTERS = {
+    "VALE": {
+        "label": "Vale do Paraíba",
+        "prefixo_equipe": "- VAL -",
+        "cidades": {
+            "SAO JOSE DOS CAMPOS": "São José dos Campos",
+            "CACAPAVA":            "Caçapava",
+            "TAUBATE":             "Taubaté",
+            "TREMEMBE":            "Tremembé",
+            "PINDAMONHANGABA":     "Pindamonhangaba",
+        },
+        "operadoras": ["INSTACABLE", "WES", "THM"],
+    },
+    "ADAMANTINA": {
+        "label": "Adamantina",
+        "prefixo_equipe": "- ADA -",
+        "cidades": {
+            "ADAMANTINA":       "Adamantina",
+            "OSVALDO CRUZ":     "Osvaldo Cruz",
+            "LUCELIA":          "Lucélia",
+            "MARIAPOLIS":       "Mariápolis",
+            "INUBIA PAULISTA":  "Inúbia Paulista",
+            "FLORIDA PAULISTA": "Flórida Paulista",
+            "PACAEMBU":         "Pacaembu",
+        },
+        "operadoras": ["ADA"],
+    },
+}
+
+# Grafias alternativas que o ERP devolve, por cidade canonica.
+CIDADE_ALIASES = {
+    "SAO JOSE DOS CAMPOS": ["SAO JOSE", "SJCAMPOS"],
+}
+
+# Indices derivados — nunca redigitar as listas acima.
+CIDADES_ATENDIDAS = {c: nome for v in CLUSTERS.values() for c, nome in v["cidades"].items()}
+CLUSTER_DE_CIDADE = {c: k for k, v in CLUSTERS.items() for c in v["cidades"]}
+for _canon, _alts in CIDADE_ALIASES.items():
+    for _alt in _alts:
+        CLUSTER_DE_CIDADE[_alt] = CLUSTER_DE_CIDADE[_canon]
+
+# Toda grafia aceita (canonica + alias) — e o que "cidade atendida" significa.
+CIDADES_VALIDAS = set(CLUSTER_DE_CIDADE)
+
+# Operadora reconhecida pelo prefixo da equipe, sem lista de frentes: qualquer
+# frente nova do cluster entra sozinha. So vale para cluster de operadora unica.
+# O Vale NAO entra aqui: la as tres operadoras dividem o mesmo prefixo "- VAL -"
+# e precisam da separacao por frente (_OPERADORA_GRUPOS, logo abaixo).
+_OPERADORA_POR_PREFIXO = {"- ADA -": "ADA"}
+
+
+# Grupos de operadoras do VALE: alias → frentes INST vinculadas.
+# EXCLUSIVO DO VALE. As frentes de outros clusters usam a mesma numeracao
+# (Adamantina tem F 01..F 10), entao casar so pelo numero misturaria os
+# clusters — por isso _operadora_da_os resolve o prefixo ANTES desta lista.
 _OPERADORA_GRUPOS = {
     "INSTACABLE": ["F01", "F04", "F05", "F07", "F20", "F45", "F46", "F47", "F48", "F49", "F50"],
     "WES":        ["F08", "F11", "F23", "F36", "F44"],

@@ -42,13 +42,8 @@ _SOURCE_CACHE_TTL = 5 * 60
 _source_cache: dict[str, Any] = {"rows": None, "ts": 0.0}
 _source_cache_lock = threading.Lock()
 
-_VALID_CITIES = {
-    "SAO JOSE DOS CAMPOS": "São José dos Campos",
-    "CACAPAVA": "Caçapava",
-    "TAUBATE": "Taubaté",
-    "TREMEMBE": "Tremembé",
-    "PINDAMONHANGABA": "Pindamonhangaba",
-}
+# Fonte unica: CLUSTERS em config.py.
+from cabonnet.config import CIDADES_ATENDIDAS as _VALID_CITIES
 
 _FIELD_MAP = {
     "empresa": "empresa",

@@ -15,6 +15,7 @@ from cabonnet.config import (
     _TG_DIV,
     _STATUS_CHANGE_BATCH_LIMIT, _STATUS_EMOJI,
     _OPERADORA_GRUPOS,
+    _OPERADORA_POR_PREFIXO,
 )
 from cabonnet import state
 
@@ -230,10 +231,18 @@ def _label_operadora(operadora):
 
 
 def _operadora_da_os(row):
-    """Retorna 'INSTACABLE', 'WES', 'REDE' ou None conforme equipe/serviço da OS."""
+    """Retorna 'INSTACABLE', 'WES', 'THM', 'ADA', 'REDE' ou None.
+
+    O prefixo do cluster resolve ANTES das frentes do Vale. Sem isso,
+    "05 - ADA - INSTALACAO F 01" normaliza para "...F01" e casa com a F01
+    do Vale — Adamantina seria faturada como INSTACABLE."""
+    equipe = (row.get("nomedaequipe") or "").upper()
+    for prefixo, operadora in _OPERADORA_POR_PREFIXO.items():
+        if prefixo in equipe:
+            return operadora
     if (row.get("servico") or "").upper().startswith("REDE"):
         return "REDE"
-    raw = _re_global.sub(r'([A-Z])\s+(\d)', r'\1\2', (row.get("nomedaequipe") or "").upper())
+    raw = _re_global.sub(r'([A-Z])\s+(\d)', r'\1\2', equipe)
     for op_name, frentes in _OPERADORA_GRUPOS.items():
         if any(f in raw for f in frentes):
             return op_name

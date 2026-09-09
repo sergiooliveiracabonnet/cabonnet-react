@@ -19,10 +19,9 @@ from cabonnet.utils import _parse_csv_rows, _parse_data_br, isConcluida_str
 def _norm(s: str) -> str:
     return unicodedata.normalize("NFD", s or "").encode("ascii", "ignore").decode().upper().strip()
 
-_CIDADES_VALIDAS = {
-    "PINDAMONHANGABA", "TREMEMBE", "TAUBATE",
-    "CACAPAVA", "SAO JOSE", "SAO JOSE DOS CAMPOS",
-}
+# Fonte unica: CLUSTERS em config.py. Redigitar a lista aqui foi o que
+# deixou este modulo fora de sincronia com o filtro do SQL.
+from cabonnet.config import CIDADES_VALIDAS as _CIDADES_VALIDAS
 
 def _cidade_valida(c: str) -> bool:
     return _norm(c) in _CIDADES_VALIDAS

@@ -6,7 +6,7 @@ import { FilterSelect } from '../../components/ui/FilterSelect'
 import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
-import { OCCURRENCE_STATUSES as STATUSES, type OccurrenceStatus, type SignalOccurrence } from './signalOccurrenceModel'
+import { hojeOperacional, OCCURRENCE_STATUSES as STATUSES, type OccurrenceStatus, type SignalOccurrence } from './signalOccurrenceModel'
 
 // Domínio de RX usado só pra escalar as barras do gráfico de evolução —
 // cobre da faixa crítica (buildHistogram usa -34) até um sinal bom (-14).
@@ -85,8 +85,8 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
   const improvements = occurrences.filter(item => item.after != null).map(item => (item.after as number) - item.before)
   const average = improvements.length ? improvements.reduce((sum, item) => sum + item, 0) / improvements.length : null
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(); date.setHours(12, 0, 0, 0); date.setDate(date.getDate() - (6 - index))
-    const key = date.toISOString().slice(0, 10)
+    const date = new Date(); date.setDate(date.getDate() - (6 - index))
+    const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(date)
     return { key, label: new Intl.DateTimeFormat('pt-BR', { weekday: 'short' }).format(date).replace('.', ''), count: occurrences.filter(item => item.date === key).length }
   }), [occurrences])
   const maxDay = Math.max(1, ...days.map(day => day.count))
@@ -94,8 +94,8 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
   // Compara o sinal medio antes x depois das confirmacoes feitas em cada dia
   // (mesmo par de ocorrencias nos dois lados, pra a comparacao ser justa).
   const progressDays = useMemo(() => Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(); date.setHours(12, 0, 0, 0); date.setDate(date.getDate() - (6 - index))
-    const key = date.toISOString().slice(0, 10)
+    const date = new Date(); date.setDate(date.getDate() - (6 - index))
+    const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(date)
     const confirmed = occurrences.filter(item => item.after != null && item.updatedAt === key)
     const avg = (pick: (item: SignalOccurrence) => number) => confirmed.length ? confirmed.reduce((sum, item) => sum + pick(item), 0) / confirmed.length : null
     return {
@@ -110,7 +110,7 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
 
   async function confirmSignal(item: SignalOccurrence, after: number) {
     const updated = occurrences.map(row => row.id === item.id ? {
-      ...row, after, status: 'Concluído' as const, updatedAt: new Date().toISOString().slice(0, 10),
+      ...row, after, status: 'Concluído' as const, updatedAt: hojeOperacional(),
       resolution: row.resolution || 'Sinal confirmado após manutenção',
     } : row)
     await onChange(updated)
@@ -124,7 +124,7 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
     const updated = occurrences.map(item => item.id === selected.id ? {
       ...item, status, after: form.get('after') === '' ? null : Number(form.get('after')),
       team: String(form.get('team')).trim(), note: String(form.get('note')).trim(),
-      updatedAt: new Date().toISOString().slice(0, 10), resolution: status === 'Concluído' ? 'Tratativa manual' : '',
+      updatedAt: hojeOperacional(), resolution: status === 'Concluído' ? 'Tratativa manual' : '',
     } : item)
     await onChange(updated); setSelected(null)
   }

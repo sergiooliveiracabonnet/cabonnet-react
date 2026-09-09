@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { DateFilter, DatePreset, DateCampo } from '../lib/types'
+import type { ClusterFilter } from '../lib/clusters'
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -65,6 +66,7 @@ export const PRESETS: DatePresetOption[] = [
 interface UIState {
   sidebarOpen:          boolean
   hideRede:             boolean
+  cluster:              ClusterFilter
   theme:                'dark' | 'light'
   globalRefreshTick:    number
   dateFilter:           DateFilter
@@ -73,6 +75,7 @@ interface UIState {
   toggleSidebar:        () => void
   setSidebar:           (open: boolean) => void
   toggleHideRede:       () => void
+  setCluster:           (cluster: ClusterFilter) => void
   toggleTheme:          () => void
   setPreset:            (preset: string) => void
   setCustomRange:       (from: Date, to: Date) => void
@@ -82,12 +85,18 @@ interface UIState {
 }
 
 const _savedTheme = localStorage.getItem('theme') === 'light' ? 'light' : 'dark'
+// Default VALE, nao TODOS: somar Adamantina de saida mudaria todos os KPIs
+// historicos sem aviso. Adamantina e opt-in.
+const _savedCluster = localStorage.getItem('cluster')
+const _initialCluster: ClusterFilter =
+  _savedCluster === 'ADAMANTINA' || _savedCluster === 'TODOS' ? _savedCluster : 'VALE'
 const initRange   = getPresetRange('hoje')
 const initialSidebarOpen = typeof window === 'undefined' || window.innerWidth >= 768
 
 export const useUIStore = create<UIState>((set) => ({
   sidebarOpen:       initialSidebarOpen,
   hideRede:          true,
+  cluster:           _initialCluster,
   theme:             _savedTheme,
   globalRefreshTick: 0,
   mensalAnchor:      new Date(),
@@ -103,6 +112,10 @@ export const useUIStore = create<UIState>((set) => ({
   toggleSidebar:  () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   setSidebar:     (open) => set({ sidebarOpen: open }),
   toggleHideRede: () => set((s) => ({ hideRede: !s.hideRede })),
+  setCluster:     (cluster) => {
+    localStorage.setItem('cluster', cluster)
+    set({ cluster })
+  },
   toggleTheme:    () => set((s) => {
     const next = s.theme === 'dark' ? 'light' : 'dark'
     localStorage.setItem('theme', next)

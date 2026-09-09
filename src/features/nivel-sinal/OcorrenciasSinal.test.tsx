@@ -72,7 +72,9 @@ describe('OcorrenciasSinal — confirmação rápida do sinal após manutenção
 
 describe('OcorrenciasSinal — evolução do sinal médio', () => {
   it('exibe o gráfico de evolução com as barras de antes e depois quando há confirmações no dia', () => {
-    const today = new Date().toISOString().slice(0, 10)
+    // Data de Brasilia, nao UTC: depois das 21h as duas divergem e o teste
+    // procurava a barra num dia que o componente nao desenha.
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
     const withConfirmation = occurrences.map(item => item.client === 'Cliente Crítico'
       ? { ...item, after: -18, status: 'Concluído' as const, updatedAt: today }
       : item)
