@@ -146,6 +146,25 @@ describe('buildMedicaoDrafts — troca de ONU', () => {
     expect(drafts[0].rx_depois).toBe(-21.4)
   })
 
+  it('não reencontra por código repetido na PON: 246 das 1171 PONs em produção têm', () => {
+    // O código do assinante nunca muda, mas nao e unico por ONU: o mesmo codigo
+    // aparece em mais de um cliente da mesma PON. Casar por ele nesse caso
+    // trocaria a potencia de dono — e a troca fica invisivel na tela.
+    const drafts = buildMedicaoDrafts(
+      [row({ serial: 'NOVO1', codigo: '197540', cliente: 'Unidade A', rx: -21 }),
+        row({ serial: 'NOVO2', codigo: '197540', cliente: 'Unidade B', rx: -22 })],
+      [medicao({ onu_key: 'VELHO1', serial: 'VELHO1', codigo: '197540', cliente: 'Unidade A', rx_depois: -21.4 }),
+        medicao({ onu_key: 'VELHO2', serial: 'VELHO2', codigo: '197540', cliente: 'Unidade B', rx_depois: -22.9 })],
+    )
+
+    // O codigo empatou, o nome desempatou: cada um fica com a SUA potencia.
+    // A propriedade que importa nao e "ninguem herda", e "ninguem herda a errada".
+    const porCliente = new Map(drafts.map(item => [item.cliente, item]))
+    expect(drafts).toHaveLength(2)
+    expect(porCliente.get('Unidade A')?.rx_depois).toBe(-21.4)
+    expect(porCliente.get('Unidade B')?.rx_depois).toBe(-22.9)
+  })
+
   it('não adivinha entre homônimos sem código: prefere deixar órfã a trocar de dono', () => {
     const drafts = buildMedicaoDrafts(
       [row({ serial: 'NOVO1', codigo: '', cliente: 'JOSE DA SILVA', rx: -21 }),
