@@ -41,7 +41,7 @@ from cabonnet.auth import _auth_enabled, _authenticate, _create_session, _role_f
 from cabonnet.builders import _build_status_text
 from cabonnet.cache import _dados_cache_update
 from cabonnet.config import (
-    CLUSTERS, CLUSTER_DE_CIDADE,
+    CLUSTERS, CLUSTER_DE_CIDADE, TELEGRAM_CHAT_ADAMANTINA,
     _ATE_CACHE_TTL,
     _OPERADORA_GRUPOS,
     _load_env,
@@ -170,6 +170,7 @@ _CHAT_MAP = {
     "wes":           TELEGRAM_CHAT_WES,
     "rede":          TELEGRAM_CHAT_REDE,
     "thm":           TELEGRAM_CHAT_OPERACIONAL_THM,
+    "adamantina":    TELEGRAM_CHAT_ADAMANTINA,
 }
 
 # ── Auth helpers ──────────────────────────────────────────────────────────────

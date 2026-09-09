@@ -367,8 +367,7 @@ const VT_CHAT_KEY: Record<Fornecedor, string> = {
   WES:        'wes',
   Instacable: 'instacable',
   THM:        'thm',
-  // Sem grupo proprio ainda: cai em alertas ate TELEGRAM_CHAT_ADAMANTINA existir.
-  ADA:        'alertas',
+  ADA:        'adamantina',
   REDE:       'rede',
   MANUTENCAO: 'alertas',
   INSTALACAO: 'alertas',
