@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 // Módulo .mjs compartilhado com os scripts de auditoria; tipos em design-tokens.d.ts
-import { lerIndexCss, resolveTheme } from '../../scripts/design-tokens.mjs'
+import { lerComponentes, lerIndexCss, resolveTheme } from '../../scripts/design-tokens.mjs'
 
 /**
  * Fase 1 do design system: arquitetura de token em três camadas.
@@ -183,5 +183,28 @@ describe('contraste de texto sobre superficie', () => {
     for (const s of Object.keys(resolvidos).filter(ehSuperficie)) {
       expect(resolvidos[s], `--c-border igual a ${s}`).not.toBe(borda)
     }
+  })
+})
+
+describe('sombra e a hierarquia do tema claro', () => {
+  it('os tres niveis existem nos dois temas', () => {
+    // No claro os tres primeiros niveis de superficie sao #FFFFFF: sem sombra,
+    // popover sobre card fica branco em branco. Token declarado num tema so
+    // herda o valor do outro pelo cascade, sem erro e sem aviso — foi o que
+    // aconteceu com os --c-grp-* antes da Fase 1.
+    const componentes = lerComponentes()
+    for (const nivel of ['--c-shadow-sm', '--c-shadow-md', '--c-shadow-lg']) {
+      expect(Object.keys(componentes.dark), `dark ${nivel}`).toContain(nivel)
+      expect(Object.keys(componentes.light), `light ${nivel}`).toContain(nivel)
+    }
+  })
+
+  it('o escuro zera as duas sombras pequenas', () => {
+    // No escuro a separacao vem de borda e luminosidade; sombra preta sobre
+    // #020202 nao aparece. So o nivel lg sobrevive, para modal e dropdown.
+    const componentes = lerComponentes()
+    expect(componentes.dark['--c-shadow-sm']).toBe('0 0 #0000')
+    expect(componentes.dark['--c-shadow-md']).toBe('0 0 #0000')
+    expect(componentes.dark['--c-shadow-lg']).not.toBe('0 0 #0000')
   })
 })

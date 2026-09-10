@@ -91,9 +91,11 @@ export default {
 
       boxShadow: {
         xs:         '0 1px 2px rgba(0,0,0,.40)',
-        sm:         '0 1px 3px rgba(0,0,0,.40), 0 1px 2px rgba(0,0,0,.30)',
-        md:         '0 4px 12px rgba(0,0,0,.45), 0 2px 4px rgba(0,0,0,.30)',
-        lg:         '0 8px 24px rgba(0,0,0,.50), 0 4px 8px rgba(0,0,0,.35)',
+        // Estes tres trocam por tema. No claro as tres superficies de cima sao
+        // o mesmo branco, e a sombra e o unico separador entre elas.
+        sm:         'var(--c-shadow-sm)',
+        md:         'var(--c-shadow-md)',
+        lg:         'var(--c-shadow-lg)',
         xl:         '0 16px 40px rgba(0,0,0,.55), 0 8px 16px rgba(0,0,0,.40)',
         '2xl':      '0 24px 60px rgba(0,0,0,.65), 0 12px 24px rgba(0,0,0,.50)',
         accent:     '0 4px 16px rgba(59,130,246,.18), 0 2px 6px rgba(59,130,246,.10)',
