@@ -301,14 +301,14 @@ git commit -m "feat(ds): os oito acentos adotam a paleta medida do design system
 npx vitest run src/lib/designTokens.test.ts -t "valores resolvidos" 2>&1 | grep -c "AssertionError"
 ```
 
-Esperado: **30**. São 15 por tema, de duas naturezas:
+Esperado: **28** — 13 no escuro e 15 no claro.
 
-- **9 mudam de valor:** `--c-primary`, `--c-primary-dark`, `--c-cyan`, `--c-green`, `--c-yellow`, `--c-red`, `--c-orange`, `--c-purple`, `--c-teal`.
-- **6 deixam de existir** e a tabela ainda os cobra, então a asserção recebe `undefined`: `--c-primary-light`, `--c-pink` e os quatro `--c-grp-*`.
+- **Mudam de valor:** 7 no escuro e 9 no claro. `--c-cyan` e `--c-teal` **não** falham no escuro: os valores do design system (`34 211 238` e `45 212 191`) coincidem exatamente com os de hoje, então o valor resolvido não muda.
+- **Deixam de existir:** 6 em cada tema. A tabela ainda os cobra, então a asserção recebe `undefined` — `--c-primary-light`, `--c-pink` e os quatro `--c-grp-*`.
 
 `--c-blue` não entra na conta: é token novo, e a tabela ainda não o menciona.
 
-Se o número não for 30, compare a tabela do teste com os blocos do CSS antes de seguir.
+Se o número não for 28, compare a tabela do teste com os blocos do CSS antes de seguir.
 
 - [ ] **Step 9: Atualizar a trava**
 
