@@ -129,3 +129,59 @@ describe('arquitetura de três camadas', () => {
     expect(orfaos).toEqual([])
   })
 })
+
+// Formula de luminancia relativa e de razao de contraste da WCAG 2.2,
+// definicoes 1.4.3 e 1.4.11. Os valores chegam como "9 9 11" do resolveTheme.
+function luminancia(rgb: string): number {
+  const [r, g, b] = rgb.split(' ').map(Number).map(v => {
+    const s = v / 255
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+function contraste(a: string, b: string): number {
+  const la = luminancia(a)
+  const lb = luminancia(b)
+  const [alto, baixo] = la > lb ? [la, lb] : [lb, la]
+  return (alto + 0.05) / (baixo + 0.05)
+}
+
+// Derivado do nome, nao escrito a mao: superficie nova entra na varredura
+// sozinha. As contagens minimas abaixo sao o que impede a lista de esvaziar
+// em silencio depois de um rename.
+const ehSuperficie = (n: string) => /^--c-(bg|elevated|surface|card)(-|$)/.test(n)
+const ehTextoAtivo = (n: string) => /^--c-(text|secondary|muted)$/.test(n)
+
+describe('contraste de texto sobre superficie', () => {
+  it.each(['dark', 'light'] as const)('%s: todo par atinge 4.5:1', tema => {
+    // O comentario do design system media cada texto contra UM fundo. O par
+    // que reprova e sempre o extremo: atenuado sobre a superficie ativa.
+    const resolvidos = resolveTheme(tokens, tema)
+    const superficies = Object.keys(resolvidos).filter(ehSuperficie)
+    const textos = Object.keys(resolvidos).filter(ehTextoAtivo)
+
+    expect(superficies.length, 'a varredura de superficie esvaziou').toBeGreaterThanOrEqual(6)
+    expect(textos.length, 'a varredura de texto esvaziou').toBe(3)
+
+    const reprovados: string[] = []
+    for (const t of textos) {
+      for (const s of superficies) {
+        const r = contraste(resolvidos[t], resolvidos[s])
+        if (r < 4.5) reprovados.push(`${t} sobre ${s}: ${r.toFixed(2)}:1`)
+      }
+    }
+    expect(reprovados).toEqual([])
+  })
+
+  it.each(['dark', 'light'] as const)('%s: a borda nao some dentro da superficie', tema => {
+    // Borda com o mesmo valor do fundo desaparece sem erro nenhum. Nao se
+    // cobra 3:1 aqui: medida, a borda fica em 1.06-1.35:1 nos dois temas, e
+    // e separador decorativo, nao o que identifica o componente.
+    const resolvidos = resolveTheme(tokens, tema)
+    const borda = resolvidos['--c-border']
+    for (const s of Object.keys(resolvidos).filter(ehSuperficie)) {
+      expect(resolvidos[s], `--c-border igual a ${s}`).not.toBe(borda)
+    }
+  })
+})
