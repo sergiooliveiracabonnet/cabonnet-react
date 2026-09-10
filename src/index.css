@@ -28,30 +28,32 @@
 
 /* PRIMITIVOS */
 :root {
-  /* Escala neutra zinc — a espinha do sistema nos dois temas */
-  --p-zinc-950:    9   9  11;
-  --p-zinc-900:   24  24  27;
-  --p-zinc-800:   39  39  42;
-  --p-zinc-700:   63  63  70;
-  --p-zinc-600:   82  82  91;
-  --p-zinc-500:  113 113 122;
-  --p-zinc-400:  161 161 170;
-  --p-zinc-300:  212 212 216;
-  --p-zinc-200:  228 228 231;
-  --p-zinc-100:  244 244 245;
-  --p-zinc-50:   250 250 250;
+  /* Escala escura do design system. Sete degraus de superficie mais tres de
+     texto: o painel de operacao empilha muita superficie, e sem degrau proprio
+     cada componente inventava o seu. */
+  --p-carbon-0:    2   2   2;
+  --p-carbon-1:    8   8   8;
+  --p-carbon-2:   12  12  12;
+  --p-carbon-3:   18  18  18;
+  --p-carbon-4:   24  24  24;
+  --p-carbon-5:   32  32  32;
+  --p-carbon-6:   37  37  37;
+  --p-carbon-7:   80  80  80;
+  --p-carbon-8:  138 138 138;
+  --p-carbon-9:  181 181 181;
 
-  /* Degraus escuros proprios, entre zinc-950 e zinc-900 */
-  --p-carbon-1:   18  18  20;
-  --p-carbon-2:   19  19  21;
-  --p-carbon-3:   26  26  29;
-  --p-carbon-4:   33  33  37;
+  /* Escala clara. O 5 e #6D6D6D, nao o #6E6E6E do design system original:
+     sobre a superficie ativa o #6E6E6E da 4.46:1 e reprova AA. */
+  --p-paper-0:  243 244 246;
+  --p-paper-1:  246 247 248;
+  --p-paper-2:  238 240 242;
+  --p-paper-3:  232 232 232;
+  --p-paper-4:  165 165 165;
+  --p-paper-5:  109 109 109;
+  --p-paper-6:   68  68  68;
+  --p-paper-7:   23  23  23;
 
-  /* Cinzas do tema claro */
-  --p-gray-50:   249 250 251;
-  --p-gray-100:  243 244 246;
-  --p-gray-200:  229 231 235;
-  --p-white:     255 255 255;
+  --p-white:    255 255 255;
 
   /* Azul de marca */
   --p-blue-400:   96 165 250;
@@ -81,20 +83,21 @@
 
 /* SEMANTICOS: DARK */
 :root {
-  /* Superficies */
-  --c-bg:            var(--p-zinc-950);
+  /* Superficies. O surface e o hover e o card-highest e o estado ativo, que e
+     mais claro — por isso o 4 vem antes do 5. */
+  --c-bg:            var(--p-carbon-0);
   --c-elevated:      var(--p-carbon-1);
-  --c-surface:       var(--p-zinc-900);
+  --c-surface:       var(--p-carbon-4);
   --c-card:          var(--p-carbon-2);
   --c-card-high:     var(--p-carbon-3);
-  --c-card-highest:  var(--p-carbon-4);
-  --c-border:        var(--p-zinc-800);
+  --c-card-highest:  var(--p-carbon-5);
+  --c-border:        var(--p-carbon-6);
 
   /* Texto */
-  --c-text:          var(--p-zinc-50);
-  --c-secondary:     var(--p-zinc-400);
-  --c-muted:         var(--p-zinc-500);
-  --c-disabled:      var(--p-zinc-700);
+  --c-text:          var(--p-white);
+  --c-secondary:     var(--p-carbon-9);
+  --c-muted:         var(--p-carbon-8);
+  --c-disabled:      var(--p-carbon-7);
 
   /* Marca */
   --c-primary:       var(--p-blue-500);
@@ -120,19 +123,20 @@
 
 /* SEMANTICOS: LIGHT */
 .light {
-  /* Hierarquia de superficie: bg cinza → card branco → surface para hover */
-  --c-bg:            var(--p-zinc-100);
+  /* Hierarquia de superficie: fundo cinza, card branco. Os tres brancos nao
+     sao redundancia — quem separa shell de card de popover e a sombra. */
+  --c-bg:            var(--p-paper-0);
   --c-elevated:      var(--p-white);
-  --c-surface:       var(--p-gray-50);
+  --c-surface:       var(--p-paper-1);
   --c-card:          var(--p-white);
-  --c-card-high:     var(--p-gray-100);
-  --c-card-highest:  var(--p-gray-200);
-  --c-border:        var(--p-zinc-200);
+  --c-card-high:     var(--p-white);
+  --c-card-highest:  var(--p-paper-2);
+  --c-border:        var(--p-paper-3);
 
-  --c-text:          var(--p-zinc-950);
-  --c-secondary:     var(--p-zinc-600);
-  --c-muted:         var(--p-zinc-500);
-  --c-disabled:      var(--p-zinc-300);
+  --c-text:          var(--p-paper-7);
+  --c-secondary:     var(--p-paper-6);
+  --c-muted:         var(--p-paper-5);
+  --c-disabled:      var(--p-paper-4);
 
   --c-primary:       var(--p-blue-600);
   --c-primary-light: var(--p-blue-500);
