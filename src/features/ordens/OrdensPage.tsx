@@ -66,9 +66,16 @@ const densityOptions = [
   { value: 'mini',    label: 'Mini' },
 ]
 
-const columns: { key?: string; label: string; render?: ColRender }[] = [
-  { key: 'numos',           label: 'Nº OS' },
-  { key: '_aging',          label: 'Aging',
+// `w-px whitespace-nowrap` encolhe a coluna ate a largura do proprio conteudo:
+// em table-layout auto, uma largura minima faz o navegador usar o min-content.
+// Isso devolve a sobra para as colunas de texto livre, que sao as que precisam.
+// Sem isso, `tiposervico` quebrava em duas linhas a partir de ~1250px de area
+// util — "ALTERACAO DE / PROGRAMACAO" — e a data de agendamento tambem.
+const ENCOLHE = 'w-px whitespace-nowrap'
+
+const columns: { key?: string; label: string; className?: string; render?: ColRender }[] = [
+  { key: 'numos',           label: 'Nº OS',  className: ENCOLHE },
+  { key: '_aging',          label: 'Aging',  className: ENCOLHE,
     render: (v, row) => {
       const active = v as number | null
       const n = active ?? (row._agingAbertura ?? 0)
@@ -88,12 +95,12 @@ const columns: { key?: string; label: string; render?: ColRender }[] = [
   { key: 'nomedacidade',    label: 'Cidade' },
   { key: 'bairro',          label: 'Bairro' },
   { key: 'logradouro',      label: 'Endereço' },
-  { key: 'tiposervico',     label: 'Tipo' },
+  { key: 'tiposervico',     label: 'Tipo',   className: 'whitespace-nowrap' },
   { key: 'nomedaequipe',    label: 'Equipe', render: (v) => shortEquipe(v as string) },
-  { key: '_situacaoEfetiva', label: 'Situação',
+  { key: '_situacaoEfetiva', label: 'Situação', className: ENCOLHE,
     render: (v) => <Badge variant={situacaoVariant(v as string)}>{v as string}</Badge>
   },
-  { key: 'dataagendamento', label: 'Agend.',
+  { key: 'dataagendamento', label: 'Agend.', className: ENCOLHE,
     render: (v) => v ? (v as string).slice(0, 10) : '—'
   },
 ]
