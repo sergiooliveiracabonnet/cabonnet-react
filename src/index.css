@@ -676,37 +676,12 @@ body {
   }
 }
 
-/* Cabonnet Control Surface — fundação visual 2026 */
-:root {
-  --c-bg: 7 12 22;
-  --c-elevated: 11 18 31;
-  --c-surface: 16 25 42;
-  --c-card: 12 20 35;
-  --c-card-high: 19 30 49;
-  --c-card-highest: 27 41 65;
-  --c-border: 36 50 72;
-  --c-text: 241 245 249;
-  --c-secondary: 174 187 204;
-  --c-muted: 112 129 151;
-  --c-disabled: 56 71 92;
-  --c-primary: 59 130 246;
-  --c-primary-light: 96 165 250;
-  --c-primary-dark: 29 78 216;
-  --c-cyan: 56 189 248;
-}
-
-.light {
-  --c-bg: 243 246 250;
-  --c-elevated: 255 255 255;
-  --c-surface: 239 244 250;
-  --c-card: 255 255 255;
-  --c-card-high: 245 248 252;
-  --c-card-highest: 232 238 246;
-  --c-border: 210 220 232;
-  --c-text: 15 27 45;
-  --c-secondary: 61 78 100;
-  --c-muted: 91 108 129;
-}
+/* O bloco "Cabonnet Control Surface — fundacao visual 2026" vivia aqui, de
+   2026-08-19 ate a Fase 5. Ele redeclarava 15 tokens semanticos em navy depois
+   da camada semantica, entao vencia pelo cascade: o que a arquitetura de tres
+   camadas publicava para esses tokens nunca chegava a tela. As Fases 1 a 4
+   passaram por cima dele sem notar, porque o parser so le blocos marcados.
+   Ficou o teste "nenhum --c-* e declarado fora dos blocos marcados". */
 
 body,
 .light body {

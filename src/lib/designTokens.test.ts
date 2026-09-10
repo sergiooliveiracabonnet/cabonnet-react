@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 // Módulo .mjs compartilhado com os scripts de auditoria; tipos em design-tokens.d.ts
 import { lerComponentes, lerIndexCss, resolveTheme } from '../../scripts/design-tokens.mjs'
@@ -183,6 +184,28 @@ describe('contraste de texto sobre superficie', () => {
     for (const s of Object.keys(resolvidos).filter(ehSuperficie)) {
       expect(resolvidos[s], `--c-border igual a ${s}`).not.toBe(borda)
     }
+  })
+})
+
+describe('a camada semantica e o unico lugar', () => {
+  it('nenhum --c-* e declarado fora dos blocos marcados', () => {
+    // Um bloco :root sem marcacao, declarado depois, vence pelo cascade e
+    // torna a camada semantica ficcao. Aconteceu: o "Cabonnet Control Surface"
+    // de 2026-08-19 redeclarava 15 tokens em navy e atravessou as Fases 1 a 4
+    // sem ninguem notar, porque o parser so le os blocos marcados.
+    const css = readFileSync('src/index.css', 'utf8')
+    const marcados = [
+      /\/\* SEMANTICOS: DARK \*\/\s*:root\s*\{[\s\S]*?\n\}/,
+      /\/\* SEMANTICOS: LIGHT \*\/\s*\.light\s*\{[\s\S]*?\n\}/,
+      /\/\* COMPONENTE: DARK \*\/\s*:root\s*\{[\s\S]*?\n\}/,
+      /\/\* COMPONENTE: LIGHT \*\/\s*\.light\s*\{[\s\S]*?\n\}/,
+    ]
+    // Apaga os blocos legitimos; o que sobrar declarando --c-* e clandestino.
+    let resto = css
+    for (const bloco of marcados) resto = resto.replace(bloco, '')
+
+    const fugas = [...resto.matchAll(/^\s*(--c-[\w-]+)\s*:/gm)].map(m => m[1])
+    expect(fugas).toEqual([])
   })
 })
 
