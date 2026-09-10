@@ -284,6 +284,30 @@ describe('tinta de KPI e serie de grafico', () => {
     expect(invisiveis).toEqual([])
   })
 
+  it('nenhum var(--c-*) aponta para token que nao existe', () => {
+    // A assercao abaixo cobre uma direcao: token declarado sem leitor. Esta
+    // cobre a outra: leitor apontando para token removido. Faltava, e custou
+    // caro — a Fase 6a apagou --c-primary-light por nao ter uso no JSX, sem
+    // ver que o proprio index.css o usava no .page-header-icon. A referencia
+    // quebrada nao da erro: `rgb(var(--inexistente))` e invalido, a declaracao
+    // e descartada e o elemento herda a cor do pai, em silencio.
+    const css = readFileSync('src/index.css', 'utf8')
+    const config = readFileSync('tailwind.config.js', 'utf8')
+    const declarados = new Set([
+      ...Object.keys(resolveTheme(tokens, 'dark')),
+      ...Object.keys(lerComponentes().dark),
+      ...Object.keys(lerComponentes().light),
+    ])
+
+    const quebradas = new Set<string>()
+    for (const fonte of [css, config]) {
+      for (const m of fonte.matchAll(/var\((--c-[\w-]+)\)/g)) {
+        if (!declarados.has(m[1])) quebradas.add(m[1])
+      }
+    }
+    expect([...quebradas]).toEqual([])
+  })
+
   it('todo acento declarado e consumido por alguem', () => {
     // Os --c-grp-* eram declarados, corrigidos pela Fase 1 e lidos por ninguem:
     // as classes .grp-* do proprio index.css usam rgba cravado. Token sem
