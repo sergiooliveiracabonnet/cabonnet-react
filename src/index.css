@@ -773,7 +773,10 @@ body,
   border: 1px solid rgb(var(--c-primary) / 0.24);
   border-radius: 0.6rem;
   background: rgb(var(--c-primary) / 0.1);
-  color: rgb(var(--c-primary-light));
+  /* Era --c-primary-light, removido na Fase 6a por nao ter uso no JSX — mas
+     tinha uso aqui. Sobre o proprio fundo a 10%, o --c-primary da 4.99:1 no
+     escuro e 4.58:1 no claro. */
+  color: rgb(var(--c-primary));
 }
 
 .navbar-premium {
