@@ -76,26 +76,47 @@ A tinta é sempre o oposto da luminosidade do acento, e é uniforme por tema.
 
 O design system declara os tokens de gráfico como "escala categórica independente da semântica", e eles ficam com os valores vívidos nos dois temas:
 
-| Token | Claro | Escuro |
-|---|---|---|
-| `--chart-1` | `#FF5A1F` | `#FF5A1F` |
-| `--chart-2` | `#2864E8` | `#4A80F0` |
-| `--chart-3` | `#12C4AE` | `#11C7B0` |
-| `--chart-4` | `#FBCB12` | `#F5C915` |
-| `--chart-5` | `#E03131` | `#FF6B6B` |
-| `--chart-6` | `#7C4DFF` | `#9A7AFF` |
+| Token | Claro | Escuro | claro sobre a pior superfície |
+|---|---|---|---|
+| `--chart-1` | `#FF4502` | `#FF5A1F` | 3.01:1 |
+| `--chart-2` | `#2864E8` | `#4A80F0` | 4.51:1 |
+| `--chart-3` | `#0E9B89` | `#11C7B0` | 3.03:1 |
+| `--chart-4` | `#A78503` | `#F5C915` | 3.06:1 |
+| `--chart-5` | `#E03131` | `#FF6B6B` | 3.95:1 |
+| `--chart-6` | `#7C4DFF` | `#9A7AFF` | 4.21:1 |
 
-Eles **não** seguem os valores escurecidos dos acentos: uma série de gráfico é preenchimento ou traço, não texto, e escurecê-la custaria a distinção entre séries sem ganhar legibilidade de leitura. Por isso também não são cobrados em 4.5:1.
+Eles **não** seguem os valores escurecidos dos acentos: uma série de gráfico é preenchimento ou traço, não texto, e escurecê-la até 4.5:1 custaria a distinção entre séries sem ganhar legibilidade de leitura. Por isso não são cobrados em 4.5:1.
+
+**Mas são cobrados em 3:1.** O critério WCAG 1.4.11 cobre objeto gráfico necessário para entender o conteúdo, e uma barra de gráfico é exatamente isso. Medidos, três valores claros do design system ficavam abaixo: `#FF5A1F` em 2.73:1, `#12C4AE` em 1.93:1 e `#FBCB12` em **1.35:1** — uma barra amarela praticamente invisível sobre branco, perceptível só pela legenda. Os três foram escurecidos preservando matiz até cruzar 3:1; os outros três e as seis do escuro já passavam e ficam como o design system os definiu.
+
+Consequência aceita: no tema claro a série 1 fica em `#FF4502`, levemente diferente do laranja de marca. Uma série de gráfico e um botão primário raramente encostam, e a alternativa era cobrar a barra de cinco cores e isentar uma.
 
 Nascem sem consumidor — a Fase 7 os usa. O mesmo vale para os `--kpi-ink-*`.
 
 ## Limpeza que cabe aqui
 
-`--c-pink` e `--c-primary-light` têm **zero usos** no JSX. `--c-primary-dark` tem 1.
+Seis tokens semânticos estão declarados e não são lidos por ninguém:
 
-Nenhum teste pega isso: `todo primitivo declarado é usado por alguém` olha apenas primitivos consumidos pela camada semântica, não tokens semânticos consumidos pelo JSX. Os dois de zero uso saem, e entra a asserção correspondente.
+| Token | Situação |
+|---|---|
+| `--c-pink` | zero usos no JSX |
+| `--c-primary-light` | zero usos no JSX |
+| `--c-grp-erp` | nenhum leitor em lugar nenhum |
+| `--c-grp-ops` | nenhum leitor em lugar nenhum |
+| `--c-grp-anal` | nenhum leitor em lugar nenhum |
+| `--c-grp-infra` | nenhum leitor em lugar nenhum |
 
-`--c-primary-dark` fica, por ter consumidor.
+Nenhum teste pega isso: `todo primitivo declarado é usado por alguém` olha apenas primitivos consumidos pela camada semântica, não tokens semânticos consumidos por alguém.
+
+Os quatro `--c-grp-*` são o caso mais chamativo. A Fase 1 os corrigiu — "antes da Fase 1 estes quatro não eram declarados aqui: o tema claro herdava o valor escuro pelo cascade" — e o comentário até hoje está no `index.css`. O conserto foi real, mas aplicado a tokens que **ninguém lê**: as classes `.grp-erp-line`, `.grp-erp-text` e `.grp-dot-erp` do próprio `index.css` usam `rgba(139,92,246,0.4)` cravado, não o token.
+
+Medidos, os quatro reprovariam AA no tema claro de qualquer forma — de 1.53:1 a 3.71:1 — e o `grp-erp` reprova também no escuro, em 3.85:1. Mantê-los significaria isentá-los da asserção 1 sem que ninguém ganhe nada.
+
+Os seis saem. `--c-primary-dark` fica, por ter um consumidor.
+
+Os primitivos que ficam órfãos com essa remoção saem junto, por exigência do teste da Fase 1: `--p-pink-400`, `--p-pink-700`, `--p-blue-400` e `--p-violet-500`.
+
+**Fora de escopo, registrado:** as classes `.grp-*-line`, `.grp-*-text` e `.grp-dot-*` do `index.css` e as doze entradas correspondentes no safelist do `tailwind.config.js` também não são usadas por nenhum `.tsx`. É CSS morto, não token — outro eixo, outra fase.
 
 ## O teste
 
@@ -103,12 +124,12 @@ Estende o bloco de contraste do `designTokens.test.ts`, criado na Fase 5.
 
 1. **Todo acento atinge 4.5:1 como texto sobre todas as superfícies**, nos dois temas. A lista de acentos é derivada dos nomes declarados, como a de superfícies — acento novo entra na varredura sozinho.
 2. **Todo `--kpi-ink-*` atinge 4.5:1 sobre o acento correspondente.** O par é derivado do sufixo: `--kpi-ink-orange` é medido contra `--c-orange`.
-3. **As seis cores de gráfico são distintas entre si** em cada tema. Pega o erro de copiar-colar que deixa duas séries com a mesma cor — defeito que não quebra nada e some na tela.
+3. **As seis cores de gráfico são distintas entre si** em cada tema, e **cada uma atinge 3:1 contra todas as superfícies**. A distinção pega o erro de copiar-colar que deixa duas séries com a mesma cor; a barra de 3:1 pega a série que não se vê sobre o fundo.
 4. **Todo token semântico de acento é consumido por alguém no JSX.** Fecha o buraco que deixou `--c-pink` e `--c-primary-light` vivos sem uso.
 
 Duas isenções explícitas, porque sem elas as asserções se contradizem:
 
-- Os tokens de gráfico ficam fora da asserção 1 — não são texto.
+- Os tokens de gráfico ficam fora da asserção 1 — não são texto. A asserção 3 cobra deles a barra própria, de 3:1.
 - `--chart-1..6` e `--kpi-ink-*` ficam fora da asserção 4 — nascem nesta fase sem consumidor, para a Fase 7 usar. A isenção é nominal, por prefixo, e some quando a Fase 7 os consumir.
 
 ## Verificação
