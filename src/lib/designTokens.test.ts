@@ -231,3 +231,30 @@ describe('sombra e a hierarquia do tema claro', () => {
     expect(componentes.dark['--c-shadow-lg']).not.toBe('0 0 #0000')
   })
 })
+
+// Acento e o que pinta significado: marca, estado e categoria. Derivado do
+// nome, como as superficies — acento novo entra na varredura sozinho.
+// Os --c-grp-* nao aparecem aqui porque a Task 2 os remove: ninguem os le.
+const ehAcento = (n: string) =>
+  /^--c-(primary|blue|green|yellow|red|orange|purple|cyan|teal)$/.test(n)
+
+describe('contraste de acento', () => {
+  it.each(['dark', 'light'] as const)('%s: todo acento atinge 4.5:1 como texto', tema => {
+    // Sao 198 text-primary no JSX: acento e texto com muita frequencia. A barra
+    // vale contra a pior superficie, nao contra o fundo base.
+    const resolvidos = resolveTheme(tokens, tema)
+    const acentos = Object.keys(resolvidos).filter(ehAcento)
+    const superficies = Object.keys(resolvidos).filter(ehSuperficie)
+
+    expect(acentos.length, 'a varredura de acento esvaziou').toBeGreaterThanOrEqual(8)
+
+    const reprovados: string[] = []
+    for (const a of acentos) {
+      for (const s of superficies) {
+        const r = contraste(resolvidos[a], resolvidos[s])
+        if (r < 4.5) reprovados.push(`${a} sobre ${s}: ${r.toFixed(2)}:1`)
+      }
+    }
+    expect(reprovados).toEqual([])
+  })
+})
