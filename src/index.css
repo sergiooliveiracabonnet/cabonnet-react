@@ -28,30 +28,32 @@
 
 /* PRIMITIVOS */
 :root {
-  /* Escala neutra zinc — a espinha do sistema nos dois temas */
-  --p-zinc-950:    9   9  11;
-  --p-zinc-900:   24  24  27;
-  --p-zinc-800:   39  39  42;
-  --p-zinc-700:   63  63  70;
-  --p-zinc-600:   82  82  91;
-  --p-zinc-500:  113 113 122;
-  --p-zinc-400:  161 161 170;
-  --p-zinc-300:  212 212 216;
-  --p-zinc-200:  228 228 231;
-  --p-zinc-100:  244 244 245;
-  --p-zinc-50:   250 250 250;
+  /* Escala escura do design system. Sete degraus de superficie mais tres de
+     texto: o painel de operacao empilha muita superficie, e sem degrau proprio
+     cada componente inventava o seu. */
+  --p-carbon-0:    2   2   2;
+  --p-carbon-1:    8   8   8;
+  --p-carbon-2:   12  12  12;
+  --p-carbon-3:   18  18  18;
+  --p-carbon-4:   24  24  24;
+  --p-carbon-5:   32  32  32;
+  --p-carbon-6:   37  37  37;
+  --p-carbon-7:   80  80  80;
+  --p-carbon-8:  138 138 138;
+  --p-carbon-9:  181 181 181;
 
-  /* Degraus escuros proprios, entre zinc-950 e zinc-900 */
-  --p-carbon-1:   18  18  20;
-  --p-carbon-2:   19  19  21;
-  --p-carbon-3:   26  26  29;
-  --p-carbon-4:   33  33  37;
+  /* Escala clara. O 5 e #6D6D6D, nao o #6E6E6E do design system original:
+     sobre a superficie ativa o #6E6E6E da 4.46:1 e reprova AA. */
+  --p-paper-0:  243 244 246;
+  --p-paper-1:  246 247 248;
+  --p-paper-2:  238 240 242;
+  --p-paper-3:  232 232 232;
+  --p-paper-4:  165 165 165;
+  --p-paper-5:  109 109 109;
+  --p-paper-6:   68  68  68;
+  --p-paper-7:   23  23  23;
 
-  /* Cinzas do tema claro */
-  --p-gray-50:   249 250 251;
-  --p-gray-100:  243 244 246;
-  --p-gray-200:  229 231 235;
-  --p-white:     255 255 255;
+  --p-white:    255 255 255;
 
   /* Azul de marca */
   --p-blue-400:   96 165 250;
@@ -81,20 +83,21 @@
 
 /* SEMANTICOS: DARK */
 :root {
-  /* Superficies */
-  --c-bg:            var(--p-zinc-950);
+  /* Superficies. O surface e o hover e o card-highest e o estado ativo, que e
+     mais claro — por isso o 4 vem antes do 5. */
+  --c-bg:            var(--p-carbon-0);
   --c-elevated:      var(--p-carbon-1);
-  --c-surface:       var(--p-zinc-900);
+  --c-surface:       var(--p-carbon-4);
   --c-card:          var(--p-carbon-2);
   --c-card-high:     var(--p-carbon-3);
-  --c-card-highest:  var(--p-carbon-4);
-  --c-border:        var(--p-zinc-800);
+  --c-card-highest:  var(--p-carbon-5);
+  --c-border:        var(--p-carbon-6);
 
   /* Texto */
-  --c-text:          var(--p-zinc-50);
-  --c-secondary:     var(--p-zinc-400);
-  --c-muted:         var(--p-zinc-500);
-  --c-disabled:      var(--p-zinc-700);
+  --c-text:          var(--p-white);
+  --c-secondary:     var(--p-carbon-9);
+  --c-muted:         var(--p-carbon-8);
+  --c-disabled:      var(--p-carbon-7);
 
   /* Marca */
   --c-primary:       var(--p-blue-500);
@@ -120,19 +123,20 @@
 
 /* SEMANTICOS: LIGHT */
 .light {
-  /* Hierarquia de superficie: bg cinza → card branco → surface para hover */
-  --c-bg:            var(--p-zinc-100);
+  /* Hierarquia de superficie: fundo cinza, card branco. Os tres brancos nao
+     sao redundancia — quem separa shell de card de popover e a sombra. */
+  --c-bg:            var(--p-paper-0);
   --c-elevated:      var(--p-white);
-  --c-surface:       var(--p-gray-50);
+  --c-surface:       var(--p-paper-1);
   --c-card:          var(--p-white);
-  --c-card-high:     var(--p-gray-100);
-  --c-card-highest:  var(--p-gray-200);
-  --c-border:        var(--p-zinc-200);
+  --c-card-high:     var(--p-white);
+  --c-card-highest:  var(--p-paper-2);
+  --c-border:        var(--p-paper-3);
 
-  --c-text:          var(--p-zinc-950);
-  --c-secondary:     var(--p-zinc-600);
-  --c-muted:         var(--p-zinc-500);
-  --c-disabled:      var(--p-zinc-300);
+  --c-text:          var(--p-paper-7);
+  --c-secondary:     var(--p-paper-6);
+  --c-muted:         var(--p-paper-5);
+  --c-disabled:      var(--p-paper-4);
 
   --c-primary:       var(--p-blue-600);
   --c-primary-light: var(--p-blue-500);
@@ -219,6 +223,12 @@
   --c-border-hairline: rgb(var(--p-white) / 0.05);
   --c-border-subtle:   rgb(var(--p-white) / 0.08);
   --c-border-strong:   rgb(var(--p-white) / 0.12);
+
+  /* Sombra no escuro seria preto sobre #020202: invisivel. A separacao vem de
+     borda e luminosidade. So o overlay real mantem sombra. */
+  --c-shadow-sm: 0 0 #0000;
+  --c-shadow-md: 0 0 #0000;
+  --c-shadow-lg: 0 16px 40px rgba(0, 0, 0, .55);
 }
 
 /* COMPONENTE: LIGHT */
@@ -226,6 +236,12 @@
   --c-border-hairline: rgb(var(--c-border));
   --c-border-subtle:   rgb(var(--c-border));
   --c-border-strong:   rgb(var(--c-border));
+
+  /* Quase invisiveis de proposito: sao o unico separador entre shell, card e
+     popover, que no claro sao os tres o mesmo branco. */
+  --c-shadow-sm: 0 2px 10px rgba(0, 0, 0, .03);
+  --c-shadow-md: 0 4px 20px rgba(0, 0, 0, .04);
+  --c-shadow-lg: 0 10px 30px rgba(0, 0, 0, .08);
 }
 
 /* ── Dot grid light mode — levemente mais visível ── */
@@ -610,11 +626,12 @@ body {
 }
 .light [class*="hover:bg-white/"]:hover { background-color: rgba(0,0,0,0.04); }
 
-/* Sombras Tailwind no tema claro */
+/* Sombras Tailwind no tema claro.
+   sm, md e lg sairam daqui: viraram --c-shadow-*, que ja troca por tema. Este
+   remendo tem especificidade 0,2,0 contra 0,1,0 da utility, entao venceria o
+   token e a sombra do claro nunca se aplicaria. xs, xl e accent seguem aqui
+   ate virarem token — o accent depende do azul, que e da Fase 6. */
 .light .shadow-xs  { box-shadow: 0 1px 2px rgba(0,0,0,.06); }
-.light .shadow-sm  { box-shadow: 0 1px 3px rgba(0,0,0,.08),  0 1px 2px rgba(0,0,0,.05); }
-.light .shadow-md  { box-shadow: 0 4px 12px rgba(0,0,0,.09), 0 2px 4px rgba(0,0,0,.05); }
-.light .shadow-lg  { box-shadow: 0 8px 24px rgba(0,0,0,.10), 0 4px 8px rgba(0,0,0,.06); }
 .light .shadow-xl  { box-shadow: 0 16px 40px rgba(0,0,0,.11),0 8px 16px rgba(0,0,0,.06);}
 .light .shadow-accent { box-shadow: 0 4px 16px rgba(37,99,235,.12), 0 2px 6px rgba(37,99,235,.08); }
 
@@ -659,37 +676,12 @@ body {
   }
 }
 
-/* Cabonnet Control Surface — fundação visual 2026 */
-:root {
-  --c-bg: 7 12 22;
-  --c-elevated: 11 18 31;
-  --c-surface: 16 25 42;
-  --c-card: 12 20 35;
-  --c-card-high: 19 30 49;
-  --c-card-highest: 27 41 65;
-  --c-border: 36 50 72;
-  --c-text: 241 245 249;
-  --c-secondary: 174 187 204;
-  --c-muted: 112 129 151;
-  --c-disabled: 56 71 92;
-  --c-primary: 59 130 246;
-  --c-primary-light: 96 165 250;
-  --c-primary-dark: 29 78 216;
-  --c-cyan: 56 189 248;
-}
-
-.light {
-  --c-bg: 243 246 250;
-  --c-elevated: 255 255 255;
-  --c-surface: 239 244 250;
-  --c-card: 255 255 255;
-  --c-card-high: 245 248 252;
-  --c-card-highest: 232 238 246;
-  --c-border: 210 220 232;
-  --c-text: 15 27 45;
-  --c-secondary: 61 78 100;
-  --c-muted: 91 108 129;
-}
+/* O bloco "Cabonnet Control Surface — fundacao visual 2026" vivia aqui, de
+   2026-08-19 ate a Fase 5. Ele redeclarava 15 tokens semanticos em navy depois
+   da camada semantica, entao vencia pelo cascade: o que a arquitetura de tres
+   camadas publicava para esses tokens nunca chegava a tela. As Fases 1 a 4
+   passaram por cima dele sem notar, porque o parser so le blocos marcados.
+   Ficou o teste "nenhum --c-* e declarado fora dos blocos marcados". */
 
 body,
 .light body {

@@ -29,6 +29,12 @@ const css = readFileSync('src/index.css', 'utf8')
 const componentes = lerComponentes()
 const PESOS = ['--c-border-hairline', '--c-border-subtle', '--c-border-strong']
 
+// A camada de componente nasceu com as bordas, mas nao e so delas: a Fase 5
+// pos as sombras aqui. As assercoes abaixo sao sobre borda, entao filtram por
+// prefixo em vez de assumir que a camada inteira lhes pertence.
+const bordasDe = (tema: 'dark' | 'light') =>
+  Object.entries(componentes[tema]).filter(([nome]) => nome.startsWith('--c-border-'))
+
 describe('bordas viraram token', () => {
   it('nenhuma borda de superfície em alfa sobre branco sobrou no JSX', () => {
     // Só o padrão de superfície, com alfa entre colchetes. `border-white/30` de
@@ -55,16 +61,16 @@ describe('bordas viraram token', () => {
   it('os dois temas declaram os três pesos', () => {
     // Peso que existe num tema e não no outro herda o valor errado em silêncio,
     // o mesmo defeito que os --c-grp-* tinham antes da Fase 1.
-    expect(Object.keys(componentes.dark).sort()).toEqual([...PESOS].sort())
-    expect(Object.keys(componentes.light).sort()).toEqual([...PESOS].sort())
+    expect(bordasDe('dark').map(([nome]) => nome).sort()).toEqual([...PESOS].sort())
+    expect(bordasDe('light').map(([nome]) => nome).sort()).toEqual([...PESOS].sort())
   })
 
   it('no escuro os três pesos são distintos; no claro os três são a borda do tema', () => {
     // Três pesos iguais no escuro seriam um peso com três nomes. No claro, ao
     // contrário, o valor único é o comportamento correto — é o que o seletor
     // global já impunha, agora escrito em vez de imposto de fora.
-    expect(new Set(Object.values(componentes.dark)).size).toBe(3)
-    expect(new Set(Object.values(componentes.light)).size).toBe(1)
+    expect(new Set(bordasDe('dark').map(([, valor]) => valor)).size).toBe(3)
+    expect(new Set(bordasDe('light').map(([, valor]) => valor)).size).toBe(1)
   })
 
   it('divide- tem cor declarada, não só border-', () => {
@@ -80,9 +86,11 @@ describe('bordas viraram token', () => {
     }
   })
 
-  it('a camada de componente compõe sobre a camada de baixo, nunca sobre literal', () => {
+  it('a borda compõe sobre a camada de baixo, nunca sobre literal', () => {
+    // Vale para cor. Sombra e geometria mais cor — `0 16px 40px rgba(...)` —
+    // e nunca sera um var() puro, por isso fica fora desta varredura.
     for (const tema of ['dark', 'light'] as const) {
-      for (const [nome, valor] of Object.entries(componentes[tema])) {
+      for (const [nome, valor] of bordasDe(tema)) {
         expect(valor, `${tema} ${nome}`).toMatch(/var\(--[pc]-[\w-]+\)/)
         expect(valor, `${tema} ${nome} tem literal cru`).not.toMatch(/#[0-9a-fA-F]{3,8}/)
       }

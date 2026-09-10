@@ -1,6 +1,7 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 // Módulo .mjs compartilhado com os scripts de auditoria; tipos em design-tokens.d.ts
-import { lerIndexCss, resolveTheme } from '../../scripts/design-tokens.mjs'
+import { lerComponentes, lerIndexCss, resolveTheme } from '../../scripts/design-tokens.mjs'
 
 /**
  * Fase 1 do design system: arquitetura de token em três camadas.
@@ -16,17 +17,17 @@ import { lerIndexCss, resolveTheme } from '../../scripts/design-tokens.mjs'
  */
 
 const DARK = {
-  '--c-bg': '9 9 11',
-  '--c-elevated': '18 18 20',
-  '--c-surface': '24 24 27',
-  '--c-card': '19 19 21',
-  '--c-card-high': '26 26 29',
-  '--c-card-highest': '33 33 37',
-  '--c-border': '39 39 42',
-  '--c-text': '250 250 250',
-  '--c-secondary': '161 161 170',
-  '--c-muted': '113 113 122',
-  '--c-disabled': '63 63 70',
+  '--c-bg': '2 2 2',
+  '--c-elevated': '8 8 8',
+  '--c-surface': '24 24 24',
+  '--c-card': '12 12 12',
+  '--c-card-high': '18 18 18',
+  '--c-card-highest': '32 32 32',
+  '--c-border': '37 37 37',
+  '--c-text': '255 255 255',
+  '--c-secondary': '181 181 181',
+  '--c-muted': '138 138 138',
+  '--c-disabled': '80 80 80',
   '--c-primary': '59 130 246',
   '--c-primary-light': '96 165 250',
   '--c-primary-dark': '37 99 235',
@@ -45,17 +46,17 @@ const DARK = {
 }
 
 const LIGHT = {
-  '--c-bg': '244 244 245',
+  '--c-bg': '243 244 246',
   '--c-elevated': '255 255 255',
-  '--c-surface': '249 250 251',
+  '--c-surface': '246 247 248',
   '--c-card': '255 255 255',
-  '--c-card-high': '243 244 246',
-  '--c-card-highest': '229 231 235',
-  '--c-border': '228 228 231',
-  '--c-text': '9 9 11',
-  '--c-secondary': '82 82 91',
-  '--c-muted': '113 113 122',
-  '--c-disabled': '212 212 216',
+  '--c-card-high': '255 255 255',
+  '--c-card-highest': '238 240 242',
+  '--c-border': '232 232 232',
+  '--c-text': '23 23 23',
+  '--c-secondary': '68 68 68',
+  '--c-muted': '109 109 109',
+  '--c-disabled': '165 165 165',
   '--c-primary': '37 99 235',
   '--c-primary-light': '59 130 246',
   '--c-primary-dark': '29 78 216',
@@ -127,5 +128,106 @@ describe('arquitetura de três camadas', () => {
     }
     const orfaos = Object.keys(tokens.primitivos).filter(nome => !usados.has(nome))
     expect(orfaos).toEqual([])
+  })
+})
+
+// Formula de luminancia relativa e de razao de contraste da WCAG 2.2,
+// definicoes 1.4.3 e 1.4.11. Os valores chegam como "9 9 11" do resolveTheme.
+function luminancia(rgb: string): number {
+  const [r, g, b] = rgb.split(' ').map(Number).map(v => {
+    const s = v / 255
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+function contraste(a: string, b: string): number {
+  const la = luminancia(a)
+  const lb = luminancia(b)
+  const [alto, baixo] = la > lb ? [la, lb] : [lb, la]
+  return (alto + 0.05) / (baixo + 0.05)
+}
+
+// Derivado do nome, nao escrito a mao: superficie nova entra na varredura
+// sozinha. As contagens minimas abaixo sao o que impede a lista de esvaziar
+// em silencio depois de um rename.
+const ehSuperficie = (n: string) => /^--c-(bg|elevated|surface|card)(-|$)/.test(n)
+const ehTextoAtivo = (n: string) => /^--c-(text|secondary|muted)$/.test(n)
+
+describe('contraste de texto sobre superficie', () => {
+  it.each(['dark', 'light'] as const)('%s: todo par atinge 4.5:1', tema => {
+    // O comentario do design system media cada texto contra UM fundo. O par
+    // que reprova e sempre o extremo: atenuado sobre a superficie ativa.
+    const resolvidos = resolveTheme(tokens, tema)
+    const superficies = Object.keys(resolvidos).filter(ehSuperficie)
+    const textos = Object.keys(resolvidos).filter(ehTextoAtivo)
+
+    expect(superficies.length, 'a varredura de superficie esvaziou').toBeGreaterThanOrEqual(6)
+    expect(textos.length, 'a varredura de texto esvaziou').toBe(3)
+
+    const reprovados: string[] = []
+    for (const t of textos) {
+      for (const s of superficies) {
+        const r = contraste(resolvidos[t], resolvidos[s])
+        if (r < 4.5) reprovados.push(`${t} sobre ${s}: ${r.toFixed(2)}:1`)
+      }
+    }
+    expect(reprovados).toEqual([])
+  })
+
+  it.each(['dark', 'light'] as const)('%s: a borda nao some dentro da superficie', tema => {
+    // Borda com o mesmo valor do fundo desaparece sem erro nenhum. Nao se
+    // cobra 3:1 aqui: medida, a borda fica em 1.06-1.35:1 nos dois temas, e
+    // e separador decorativo, nao o que identifica o componente.
+    const resolvidos = resolveTheme(tokens, tema)
+    const borda = resolvidos['--c-border']
+    for (const s of Object.keys(resolvidos).filter(ehSuperficie)) {
+      expect(resolvidos[s], `--c-border igual a ${s}`).not.toBe(borda)
+    }
+  })
+})
+
+describe('a camada semantica e o unico lugar', () => {
+  it('nenhum --c-* e declarado fora dos blocos marcados', () => {
+    // Um bloco :root sem marcacao, declarado depois, vence pelo cascade e
+    // torna a camada semantica ficcao. Aconteceu: o "Cabonnet Control Surface"
+    // de 2026-08-19 redeclarava 15 tokens em navy e atravessou as Fases 1 a 4
+    // sem ninguem notar, porque o parser so le os blocos marcados.
+    const css = readFileSync('src/index.css', 'utf8')
+    const marcados = [
+      /\/\* SEMANTICOS: DARK \*\/\s*:root\s*\{[\s\S]*?\n\}/,
+      /\/\* SEMANTICOS: LIGHT \*\/\s*\.light\s*\{[\s\S]*?\n\}/,
+      /\/\* COMPONENTE: DARK \*\/\s*:root\s*\{[\s\S]*?\n\}/,
+      /\/\* COMPONENTE: LIGHT \*\/\s*\.light\s*\{[\s\S]*?\n\}/,
+    ]
+    // Apaga os blocos legitimos; o que sobrar declarando --c-* e clandestino.
+    let resto = css
+    for (const bloco of marcados) resto = resto.replace(bloco, '')
+
+    const fugas = [...resto.matchAll(/^\s*(--c-[\w-]+)\s*:/gm)].map(m => m[1])
+    expect(fugas).toEqual([])
+  })
+})
+
+describe('sombra e a hierarquia do tema claro', () => {
+  it('os tres niveis existem nos dois temas', () => {
+    // No claro os tres primeiros niveis de superficie sao #FFFFFF: sem sombra,
+    // popover sobre card fica branco em branco. Token declarado num tema so
+    // herda o valor do outro pelo cascade, sem erro e sem aviso — foi o que
+    // aconteceu com os --c-grp-* antes da Fase 1.
+    const componentes = lerComponentes()
+    for (const nivel of ['--c-shadow-sm', '--c-shadow-md', '--c-shadow-lg']) {
+      expect(Object.keys(componentes.dark), `dark ${nivel}`).toContain(nivel)
+      expect(Object.keys(componentes.light), `light ${nivel}`).toContain(nivel)
+    }
+  })
+
+  it('o escuro zera as duas sombras pequenas', () => {
+    // No escuro a separacao vem de borda e luminosidade; sombra preta sobre
+    // #020202 nao aparece. So o nivel lg sobrevive, para modal e dropdown.
+    const componentes = lerComponentes()
+    expect(componentes.dark['--c-shadow-sm']).toBe('0 0 #0000')
+    expect(componentes.dark['--c-shadow-md']).toBe('0 0 #0000')
+    expect(componentes.dark['--c-shadow-lg']).not.toBe('0 0 #0000')
   })
 })
