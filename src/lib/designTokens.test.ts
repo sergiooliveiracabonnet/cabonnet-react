@@ -245,3 +245,59 @@ describe('contraste de acento', () => {
     expect(reprovados).toEqual([])
   })
 })
+
+describe('tinta de KPI e serie de grafico', () => {
+  it.each(['dark', 'light'] as const)('%s: a tinta de KPI passa sobre o acento', tema => {
+    // O par vem do sufixo: --c-kpi-ink-orange e medido contra --c-orange.
+    // A escolha nao e preferencia — a tinta oposta reprova nos oito casos.
+    const resolvidos = resolveTheme(tokens, tema)
+    const tintas = Object.keys(resolvidos).filter(n => n.startsWith('--c-kpi-ink-'))
+
+    expect(tintas.length, 'a varredura de tinta esvaziou').toBe(4)
+
+    for (const tinta of tintas) {
+      const acento = tinta.replace('--c-kpi-ink-', '--c-')
+      expect(resolvidos[acento], `${tinta} nao tem acento ${acento}`).toBeDefined()
+      const r = contraste(resolvidos[tinta], resolvidos[acento])
+      expect(r, `${tinta} sobre ${acento}: ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it.each(['dark', 'light'] as const)('%s: a serie de grafico se ve e se distingue', tema => {
+    // Serie nao e texto, entao nao vai a 4.5:1. Mas e objeto grafico necessario
+    // para entender o conteudo (WCAG 1.4.11), entao vai a 3:1 — o amarelo do
+    // design system dava 1.35:1 sobre branco, uma barra que nao aparecia.
+    const resolvidos = resolveTheme(tokens, tema)
+    const series = Object.keys(resolvidos).filter(n => /^--c-chart-\d$/.test(n))
+    const superficies = Object.keys(resolvidos).filter(ehSuperficie)
+
+    expect(series.length).toBe(6)
+    expect(new Set(series.map(s => resolvidos[s])).size, 'duas series com a mesma cor').toBe(6)
+
+    const invisiveis: string[] = []
+    for (const serie of series) {
+      for (const s of superficies) {
+        const r = contraste(resolvidos[serie], resolvidos[s])
+        if (r < 3) invisiveis.push(`${serie} sobre ${s}: ${r.toFixed(2)}:1`)
+      }
+    }
+    expect(invisiveis).toEqual([])
+  })
+
+  it('todo acento declarado e consumido por alguem', () => {
+    // Os --c-grp-* eram declarados, corrigidos pela Fase 1 e lidos por ninguem:
+    // as classes .grp-* do proprio index.css usam rgba cravado. Token sem
+    // leitor nao e sistema, e paisagem.
+    const css = readFileSync('src/index.css', 'utf8')
+    const config = readFileSync('tailwind.config.js', 'utf8')
+    const resolvidos = resolveTheme(tokens, 'dark')
+
+    const orfaos = Object.keys(resolvidos)
+      .filter(ehAcento)
+      .filter(nome => {
+        const usos = (css.match(new RegExp(`var\\(${nome}\\)`, 'g')) ?? []).length
+        return usos === 0 && !config.includes(`var(${nome})`)
+      })
+    expect(orfaos).toEqual([])
+  })
+})
