@@ -34,16 +34,17 @@ const FOOT_H = 10
 
 // ── Columns: { x, w, h } ─────────────────────────────────────────────────
 // x positions (ML=12 → last col ends at 285 = 297-12) ✓
+// A coluna Risco saiu daqui; os 18mm dela foram redistribuidos entre as quatro
+// colunas de texto que mais truncavam, para o invariante acima continuar valendo.
 const COLS = [
   { x: 12,  w: 18, h: 'Nº OS' },
   { x: 30,  w: 10, h: 'Dias', align: 'center' as const },
-  { x: 40,  w: 18, h: 'Risco', align: 'center' as const },
-  { x: 58,  w: 42, h: 'Cliente' },
-  { x: 100, w: 25, h: 'Cidade' },
-  { x: 125, w: 21, h: 'Bairro' },
-  { x: 146, w: 39, h: 'Endereço' },
-  { x: 185, w: 25, h: 'Tipo' },
-  { x: 210, w: 25, h: 'Equipe' },
+  { x: 40,  w: 48, h: 'Cliente' },
+  { x: 88,  w: 25, h: 'Cidade' },
+  { x: 113, w: 24, h: 'Bairro' },
+  { x: 137, w: 45, h: 'Endereço' },
+  { x: 182, w: 25, h: 'Tipo' },
+  { x: 207, w: 28, h: 'Equipe' },
   { x: 235, w: 32, h: 'Situação', align: 'center' as const },
   { x: 267, w: 18, h: 'Agd.', align: 'center' as const },
 ]
@@ -275,47 +276,41 @@ export function exportOrdensPDF(rows: OSRow[], filename: string): void {
     _doc.setFontSize(6)
     _doc.text(_fit(`${aging}d`, COLS[1]), COLS[1].x + COLS[1].w / 2, yT, { align: 'center' })
 
-    // Risco — muted normal
-    _doc.setFont('helvetica', 'normal')
-    _doc.setFontSize(6.5)
-    _doc.setTextColor(...SUB)
-    const _risco = row._riskScore != null ? String(row._riskScore) : ''
-    _doc.text(_fit(_risco, COLS[2]), COLS[2].x + COLS[2].w / 2, yT, { align: 'center' })
-
     // Cliente — white bold
     _doc.setFont('helvetica', 'bold')
+    _doc.setFontSize(6.5)
     _doc.setTextColor(...TEXT)
-    _doc.text(_fit(row.nomecliente, COLS[3]), COLS[3].x + 2, yT)
+    _doc.text(_fit(row.nomecliente, COLS[2]), COLS[2].x + 2, yT)
 
     // Cidade
     _doc.setFont('helvetica', 'normal')
     _doc.setTextColor(...SUB)
-    _doc.text(_fit(row.nomedacidade, COLS[4]), COLS[4].x + 2, yT)
+    _doc.text(_fit(row.nomedacidade, COLS[3]), COLS[3].x + 2, yT)
 
     // Bairro
-    _doc.text(_fit(row.bairro, COLS[5]), COLS[5].x + 2, yT)
+    _doc.text(_fit(row.bairro, COLS[4]), COLS[4].x + 2, yT)
 
     // Endereço
-    _doc.text(_fit(row.logradouro, COLS[6]), COLS[6].x + 2, yT)
+    _doc.text(_fit(row.logradouro, COLS[5]), COLS[5].x + 2, yT)
 
     // Tipo
-    _doc.text(_fit(row.tiposervico, COLS[7]), COLS[7].x + 2, yT)
+    _doc.text(_fit(row.tiposervico, COLS[6]), COLS[6].x + 2, yT)
 
     // Equipe — slightly brighter
     _doc.setFont('helvetica', 'bold')
     _doc.setTextColor(...TEXT)
-    _doc.text(_fit(shortEquipe(row.nomedaequipe ?? ''), COLS[8]), COLS[8].x + 2, yT)
+    _doc.text(_fit(shortEquipe(row.nomedaequipe ?? ''), COLS[7]), COLS[7].x + 2, yT)
 
     // Situação — filled color pill
     const sit = row._situacaoEfetiva ?? ''
-    _pill(_sitLabel(sit), _sitColor(sit), COLS[9])
+    _pill(_sitLabel(sit), _sitColor(sit), COLS[8])
 
     // Agendamento — small muted
     _doc.setFont('helvetica', 'normal')
     _doc.setFontSize(5.8)
     _doc.setTextColor(...MUTED)
     const agend = (row.dataagendamento ?? '').slice(0, 10) || '—'
-    _doc.text(_fit(agend, COLS[10]), COLS[10].x + COLS[10].w / 2, yT, { align: 'center' })
+    _doc.text(_fit(agend, COLS[9]), COLS[9].x + COLS[9].w / 2, yT, { align: 'center' })
 
     // Row bottom separator
     _doc.setFillColor(...BORDER)
