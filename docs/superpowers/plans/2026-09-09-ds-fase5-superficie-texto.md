@@ -291,7 +291,7 @@ Neste ponto `valores resolvidos não mudam` está vermelho, com 22 falhas. É es
 npx vitest run src/lib/designTokens.test.ts -t "valores resolvidos" 2>&1 | grep -c "AssertionError"
 ```
 
-Esperado: `22` — onze tokens em cada tema. Se for diferente de 22, algum token mudou fora do previsto ou algum não mudou: compare com as tabelas da spec antes de seguir.
+Esperado: `20`. São onze tokens no escuro e nove no claro — no claro, `--c-elevated` e `--c-card` já eram `var(--p-white)` e continuam sendo, então o valor resolvido não muda e a asserção não falha. Se for diferente de 20, algum token mudou fora do previsto ou algum não mudou: compare com as tabelas da spec antes de seguir.
 
 - [ ] **Step 8: Atualizar a trava**
 
