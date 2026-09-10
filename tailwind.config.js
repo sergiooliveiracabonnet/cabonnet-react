@@ -14,11 +14,12 @@ export default {
         'card-highest': 'rgb(var(--c-card-highest) / <alpha-value>)',
 
         primary:        'rgb(var(--c-primary) / <alpha-value>)',
-        'primary-light':'rgb(var(--c-primary-light) / <alpha-value>)',
         'primary-dark': 'rgb(var(--c-primary-dark) / <alpha-value>)',
         accent:         'rgb(var(--c-primary) / <alpha-value>)',
         accent2:        'rgb(var(--c-cyan) / <alpha-value>)',
         cyan:           'rgb(var(--c-cyan) / <alpha-value>)',
+        // Destino dos 198 usos informativos que a Fase 6b migra de primary.
+        blue:           'rgb(var(--c-blue) / <alpha-value>)',
 
         text:           'rgb(var(--c-text) / <alpha-value>)',
         secondary:      'rgb(var(--c-secondary) / <alpha-value>)',
@@ -30,8 +31,18 @@ export default {
         red:            'rgb(var(--c-red) / <alpha-value>)',
         orange:         'rgb(var(--c-orange) / <alpha-value>)',
         purple:         'rgb(var(--c-purple) / <alpha-value>)',
-        pink:           'rgb(var(--c-pink) / <alpha-value>)',
         teal:           'rgb(var(--c-teal) / <alpha-value>)',
+        // Escala categorica de grafico e tinta de KPI — a Fase 7 consome.
+        'chart-1':      'rgb(var(--c-chart-1) / <alpha-value>)',
+        'chart-2':      'rgb(var(--c-chart-2) / <alpha-value>)',
+        'chart-3':      'rgb(var(--c-chart-3) / <alpha-value>)',
+        'chart-4':      'rgb(var(--c-chart-4) / <alpha-value>)',
+        'chart-5':      'rgb(var(--c-chart-5) / <alpha-value>)',
+        'chart-6':      'rgb(var(--c-chart-6) / <alpha-value>)',
+        'kpi-ink-orange': 'rgb(var(--c-kpi-ink-orange) / <alpha-value>)',
+        'kpi-ink-blue':   'rgb(var(--c-kpi-ink-blue) / <alpha-value>)',
+        'kpi-ink-green':  'rgb(var(--c-kpi-ink-green) / <alpha-value>)',
+        'kpi-ink-yellow': 'rgb(var(--c-kpi-ink-yellow) / <alpha-value>)',
         // Token semântico de borda — substitui border-white/[0.07]
         border:         'rgb(var(--c-border) / <alpha-value>)',
       },

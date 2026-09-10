@@ -28,21 +28,16 @@ const DARK = {
   '--c-secondary': '181 181 181',
   '--c-muted': '138 138 138',
   '--c-disabled': '80 80 80',
-  '--c-primary': '59 130 246',
-  '--c-primary-light': '96 165 250',
-  '--c-primary-dark': '37 99 235',
+  '--c-primary': '80 132 240',
+  '--c-primary-dark': '31 97 236',
+  '--c-blue': '80 132 240',
   '--c-cyan': '34 211 238',
-  '--c-green': '74 222 128',
-  '--c-yellow': '250 204 21',
-  '--c-red': '248 113 113',
-  '--c-orange': '251 146 60',
-  '--c-purple': '167 139 250',
-  '--c-pink': '244 114 182',
+  '--c-green': '17 199 176',
+  '--c-yellow': '245 201 21',
+  '--c-red': '255 107 107',
+  '--c-orange': '255 90 31',
+  '--c-purple': '154 122 255',
   '--c-teal': '45 212 191',
-  '--c-grp-erp': '139 92 246',
-  '--c-grp-ops': '34 211 238',
-  '--c-grp-anal': '74 222 128',
-  '--c-grp-infra': '251 146 60',
 }
 
 const LIGHT = {
@@ -57,24 +52,16 @@ const LIGHT = {
   '--c-secondary': '68 68 68',
   '--c-muted': '109 109 109',
   '--c-disabled': '165 165 165',
-  '--c-primary': '37 99 235',
-  '--c-primary-light': '59 130 246',
-  '--c-primary-dark': '29 78 216',
-  '--c-cyan': '8 145 178',
-  '--c-green': '22 163 74',
-  '--c-yellow': '161 98 7',
-  '--c-red': '220 38 38',
-  '--c-orange': '194 65 12',
-  '--c-purple': '109 40 217',
-  '--c-pink': '190 24 93',
-  '--c-teal': '15 118 110',
-  // Acentos de grupo da sidebar: iguais nos dois temas de propósito. Antes da
-  // Fase 1 o tema claro simplesmente não os declarava e herdava o valor escuro
-  // por acidente do cascade — o resultado é o mesmo, a intenção não era.
-  '--c-grp-erp': '139 92 246',
-  '--c-grp-ops': '34 211 238',
-  '--c-grp-anal': '74 222 128',
-  '--c-grp-infra': '251 146 60',
+  '--c-primary': '31 97 236',
+  '--c-primary-dark': '31 97 236',
+  '--c-blue': '31 97 236',
+  '--c-cyan': '10 120 136',
+  '--c-green': '11 123 109',
+  '--c-yellow': '130 106 6',
+  '--c-red': '221 0 0',
+  '--c-orange': '203 53 0',
+  '--c-purple': '114 69 255',
+  '--c-teal': '25 122 109',
 }
 
 const tokens = lerIndexCss()
@@ -229,5 +216,88 @@ describe('sombra e a hierarquia do tema claro', () => {
     expect(componentes.dark['--c-shadow-sm']).toBe('0 0 #0000')
     expect(componentes.dark['--c-shadow-md']).toBe('0 0 #0000')
     expect(componentes.dark['--c-shadow-lg']).not.toBe('0 0 #0000')
+  })
+})
+
+// Acento e o que pinta significado: marca, estado e categoria. Derivado do
+// nome, como as superficies — acento novo entra na varredura sozinho.
+// Os --c-grp-* nao aparecem aqui porque a Task 2 os remove: ninguem os le.
+const ehAcento = (n: string) =>
+  /^--c-(primary|blue|green|yellow|red|orange|purple|cyan|teal)$/.test(n)
+
+describe('contraste de acento', () => {
+  it.each(['dark', 'light'] as const)('%s: todo acento atinge 4.5:1 como texto', tema => {
+    // Sao 198 text-primary no JSX: acento e texto com muita frequencia. A barra
+    // vale contra a pior superficie, nao contra o fundo base.
+    const resolvidos = resolveTheme(tokens, tema)
+    const acentos = Object.keys(resolvidos).filter(ehAcento)
+    const superficies = Object.keys(resolvidos).filter(ehSuperficie)
+
+    expect(acentos.length, 'a varredura de acento esvaziou').toBeGreaterThanOrEqual(8)
+
+    const reprovados: string[] = []
+    for (const a of acentos) {
+      for (const s of superficies) {
+        const r = contraste(resolvidos[a], resolvidos[s])
+        if (r < 4.5) reprovados.push(`${a} sobre ${s}: ${r.toFixed(2)}:1`)
+      }
+    }
+    expect(reprovados).toEqual([])
+  })
+})
+
+describe('tinta de KPI e serie de grafico', () => {
+  it.each(['dark', 'light'] as const)('%s: a tinta de KPI passa sobre o acento', tema => {
+    // O par vem do sufixo: --c-kpi-ink-orange e medido contra --c-orange.
+    // A escolha nao e preferencia — a tinta oposta reprova nos oito casos.
+    const resolvidos = resolveTheme(tokens, tema)
+    const tintas = Object.keys(resolvidos).filter(n => n.startsWith('--c-kpi-ink-'))
+
+    expect(tintas.length, 'a varredura de tinta esvaziou').toBe(4)
+
+    for (const tinta of tintas) {
+      const acento = tinta.replace('--c-kpi-ink-', '--c-')
+      expect(resolvidos[acento], `${tinta} nao tem acento ${acento}`).toBeDefined()
+      const r = contraste(resolvidos[tinta], resolvidos[acento])
+      expect(r, `${tinta} sobre ${acento}: ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it.each(['dark', 'light'] as const)('%s: a serie de grafico se ve e se distingue', tema => {
+    // Serie nao e texto, entao nao vai a 4.5:1. Mas e objeto grafico necessario
+    // para entender o conteudo (WCAG 1.4.11), entao vai a 3:1 — o amarelo do
+    // design system dava 1.35:1 sobre branco, uma barra que nao aparecia.
+    const resolvidos = resolveTheme(tokens, tema)
+    const series = Object.keys(resolvidos).filter(n => /^--c-chart-\d$/.test(n))
+    const superficies = Object.keys(resolvidos).filter(ehSuperficie)
+
+    expect(series.length).toBe(6)
+    expect(new Set(series.map(s => resolvidos[s])).size, 'duas series com a mesma cor').toBe(6)
+
+    const invisiveis: string[] = []
+    for (const serie of series) {
+      for (const s of superficies) {
+        const r = contraste(resolvidos[serie], resolvidos[s])
+        if (r < 3) invisiveis.push(`${serie} sobre ${s}: ${r.toFixed(2)}:1`)
+      }
+    }
+    expect(invisiveis).toEqual([])
+  })
+
+  it('todo acento declarado e consumido por alguem', () => {
+    // Os --c-grp-* eram declarados, corrigidos pela Fase 1 e lidos por ninguem:
+    // as classes .grp-* do proprio index.css usam rgba cravado. Token sem
+    // leitor nao e sistema, e paisagem.
+    const css = readFileSync('src/index.css', 'utf8')
+    const config = readFileSync('tailwind.config.js', 'utf8')
+    const resolvidos = resolveTheme(tokens, 'dark')
+
+    const orfaos = Object.keys(resolvidos)
+      .filter(ehAcento)
+      .filter(nome => {
+        const usos = (css.match(new RegExp(`var\\(${nome}\\)`, 'g')) ?? []).length
+        return usos === 0 && !config.includes(`var(${nome})`)
+      })
+    expect(orfaos).toEqual([])
   })
 })
