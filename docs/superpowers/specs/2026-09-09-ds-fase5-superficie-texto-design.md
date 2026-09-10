@@ -95,6 +95,21 @@ Migrar as superfícies sem as sombras deixaria popover branco sobre card branco,
 
 No escuro o DS zera `sm` e `md` — lá a separação vem de borda e luminosidade — e mantém só `lg` (`0 16px 40px rgba(0,0,0,.55)`) para modal e dropdown.
 
+## A paleta que está no ar já reprova
+
+Antes de comparar com o DS, vale medir o que está em produção hoje. A mesma varredura, aplicada à paleta atual:
+
+| Tema | Token | Pior caso | Sobre | Veredito |
+|---|---|---|---|---|
+| Escuro | `--c-muted` `#71717A` | **3.32:1** | `--c-card-highest` `#212125` | reprova AA |
+| Claro | `--c-muted` `#71717A` | **3.90:1** | `--c-card-highest` `#E5E7EB` | reprova AA |
+
+Os demais tokens passam com folga — `--c-text` fica acima de 15:1 e `--c-secondary` acima de 6:1 nos dois temas. O defeito está concentrado no texto atenuado sobre a superfície mais clara do escuro e mais escura do claro.
+
+A paleta do DS corrige os dois: `#8A8A8A` no escuro tem pior caso 4.72:1, e `#6D6D6D` no claro, 4.53:1.
+
+Isso muda o peso desta fase e a ordem das tasks. **O teste de contraste não pode nascer verde:** ele nasce vermelho documentando um defeito que está no ar, e a migração o leva ao verde. A Fase 5 não é só adoção de paleta — é a correção de um problema de acessibilidade existente.
+
 ## A correção de contraste
 
 O DS anotou a razão de contraste de cada token em comentário, e chegou a levantar dois valores por reprovarem AA (`--text-muted` no claro, `--blue` no escuro). Mas cada anotação mede o texto contra **um** fundo.
@@ -118,15 +133,25 @@ Vai em `src/lib/designTokens.test.ts`, não em arquivo novo: contraste é a meta
 
 Usa o `resolveTheme()` que já existe em `scripts/design-tokens.mjs`, então lê os valores finais em vez de reproduzir a tabela.
 
-Cobre **toda combinação texto vezes superfície nos dois temas** — 40 pares no total, contra os 4 que o comentário do DS mediu. `--c-disabled` fica isento por WCAG 1.4.3, que dispensa componente desabilitado.
+Cobre **toda combinação texto vezes superfície nos dois temas** — seis superfícies por três níveis de texto ativo, 18 pares por tema, **36 no total**, contra os 4 que o comentário do DS mediu. `--c-disabled` fica isento por WCAG 1.4.3, que dispensa componente desabilitado.
 
 Asserções:
 
 1. Todo par (texto ativo, superfície) atinge 4.5:1, nos dois temas.
-2. `--c-border` atinge 3:1 contra a superfície que ela separa — a barra de elemento de interface, WCAG 1.4.11.
+2. `--c-border` não é idêntica a nenhuma superfície que ela separa. Isso pega a classe de defeito em que a borda some por ter o mesmo valor do fundo.
 3. A lista de tokens de texto e de superfície é derivada dos nomes declarados, não escrita à mão: token de superfície novo entra na varredura sozinho.
 
 A asserção 3 é o que impede o teste de virar paisagem. Sem ela, um `--c-surface-4` futuro nasceria fora da cobertura sem ninguém perceber.
+
+### Por que a borda não é cobrada em 3:1
+
+Uma versão anterior desta spec exigia que `--c-border` atingisse 3:1 contra a superfície, citando WCAG 1.4.11. **Está errado, e a exigência era impossível de cumprir.**
+
+Medido, a borda do DS fica entre 1.06:1 e 1.35:1 contra as superfícies que separa, nos dois temas. As bordas de hoje são igualmente baixas — no escuro são `rgb(white / 0.05)` a `0.12`.
+
+O critério 1.4.11 cobre o que é *necessário para identificar* um componente ou seu estado. Uma borda sutil de card é separador decorativo: o card já se identifica pelo próprio fundo contra o `--c-bg`. Elevar a borda a 3:1 produziria um contorno cinza-médio em volta de cada card, destruindo o visual do DS para satisfazer um critério que não se aplica.
+
+Os valores medidos ficam registrados aqui para que ninguém "conserte" isso por engano mais tarde. O caso em que 1.4.11 vale de verdade é o anel de foco — que depende de cor de acento e é da Fase 6.
 
 ## O tripwire que vai disparar
 
