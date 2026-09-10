@@ -55,30 +55,44 @@
 
   --p-white:    255 255 255;
 
-  /* Azul de marca */
-  --p-blue-400:   96 165 250;
-  --p-blue-500:   59 130 246;
-  --p-blue-600:   37  99 235;
-  --p-blue-700:   29  78 216;
+  /* Acento: um valor por tema, cada um servindo aos dois papeis. O `vivid` e
+     texto legivel sobre superficie escura e aceita tinta quase-preta; o `deep`
+     e texto legivel sobre superficie clara e aceita tinta branca. O claro ja
+     era escurecido antes desta fase (--p-orange-700 e nao 400); o que muda e
+     o valor sair de medicao em vez de intuicao. */
+  --p-orange-vivid: 255  90  31;
+  --p-orange-deep:  203  53   0;
+  --p-blue-vivid:    80 132 240;
+  --p-blue-deep:     31  97 236;
+  --p-green-vivid:   17 199 176;
+  --p-green-deep:    11 123 109;
+  --p-yellow-vivid: 245 201  21;
+  --p-yellow-deep:  130 106   6;
+  --p-red-vivid:    255 107 107;
+  --p-red-deep:     221   0   0;
+  --p-purple-vivid: 154 122 255;
+  --p-purple-deep:  114  69 255;
+  --p-cyan-vivid:    34 211 238;
+  --p-cyan-deep:     10 120 136;
+  --p-teal-vivid:    45 212 191;
+  --p-teal-deep:     25 122 109;
 
-  /* Estado — degrau 400 legivel sobre fundo escuro, 600/700 sobre claro */
-  --p-cyan-400:   34 211 238;
-  --p-cyan-600:    8 145 178;
-  --p-green-400:  74 222 128;
-  --p-green-600:  22 163  74;
-  --p-yellow-400:250 204  21;
-  --p-yellow-700:161  98   7;
-  --p-red-400:   248 113 113;
-  --p-red-600:   220  38  38;
-  --p-orange-400:251 146  60;
-  --p-orange-700:194  65  12;
-  --p-violet-400:167 139 250;
-  --p-violet-500:139  92 246;
-  --p-violet-700:109  40 217;
-  --p-pink-400:  244 114 182;
-  --p-pink-700:  190  24  93;
-  --p-teal-400:   45 212 191;
-  --p-teal-700:   15 118 110;
+  /* Serie de grafico: escala categorica, independente da semantica. Nao e
+     texto, entao nao vai a 4.5:1 — mas e objeto grafico necessario para
+     entender o conteudo, entao vai a 3:1 (WCAG 1.4.11). Tres valores claros do
+     design system ficavam abaixo; o amarelo dava 1.35:1 sobre branco. */
+  --p-chart-1-vivid: 255  90  31;
+  --p-chart-1-deep:  255  69   2;
+  --p-chart-2-vivid:  74 128 240;
+  --p-chart-2-deep:   40 100 232;
+  --p-chart-3-vivid:  17 199 176;
+  --p-chart-3-deep:   14 155 137;
+  --p-chart-4-vivid: 245 201  21;
+  --p-chart-4-deep:  167 133   3;
+  --p-chart-5-vivid: 255 107 107;
+  --p-chart-5-deep:  224  49  49;
+  --p-chart-6-vivid: 154 122 255;
+  --p-chart-6-deep:  124  77 255;
 }
 
 /* SEMANTICOS: DARK */
@@ -99,26 +113,35 @@
   --c-muted:         var(--p-carbon-8);
   --c-disabled:      var(--p-carbon-7);
 
-  /* Marca */
-  --c-primary:       var(--p-blue-500);
-  --c-primary-light: var(--p-blue-400);
-  --c-primary-dark:  var(--p-blue-600);
-  --c-cyan:          var(--p-cyan-400);
+  /* Marca. O primary segue azul nesta fase: a virada para laranja e da 6b,
+     depois da auditoria dos 564 usos. */
+  --c-primary:       var(--p-blue-vivid);
+  --c-primary-dark:  var(--p-blue-deep);
+  --c-blue:          var(--p-blue-vivid);
+  --c-cyan:          var(--p-cyan-vivid);
 
   /* Estado */
-  --c-green:         var(--p-green-400);
-  --c-yellow:        var(--p-yellow-400);
-  --c-red:           var(--p-red-400);
-  --c-orange:        var(--p-orange-400);
-  --c-purple:        var(--p-violet-400);
-  --c-pink:          var(--p-pink-400);
-  --c-teal:          var(--p-teal-400);
+  --c-green:         var(--p-green-vivid);
+  --c-yellow:        var(--p-yellow-vivid);
+  --c-red:           var(--p-red-vivid);
+  --c-orange:        var(--p-orange-vivid);
+  --c-purple:        var(--p-purple-vivid);
+  --c-teal:          var(--p-teal-vivid);
 
-  /* Acentos de grupo da sidebar — iguais nos dois temas, de proposito */
-  --c-grp-erp:       var(--p-violet-500);
-  --c-grp-ops:       var(--p-cyan-400);
-  --c-grp-anal:      var(--p-green-400);
-  --c-grp-infra:     var(--p-orange-400);
+  /* Serie de grafico, para a Fase 7 */
+  --c-chart-1:       var(--p-chart-1-vivid);
+  --c-chart-2:       var(--p-chart-2-vivid);
+  --c-chart-3:       var(--p-chart-3-vivid);
+  --c-chart-4:       var(--p-chart-4-vivid);
+  --c-chart-5:       var(--p-chart-5-vivid);
+  --c-chart-6:       var(--p-chart-6-vivid);
+
+  /* Tinta sobre KPI preenchido. No escuro o acento e vivido, entao a tinta e
+     escura: branco reprova nos quatro, de 1.59:1 a 3.56:1. */
+  --c-kpi-ink-orange: var(--p-paper-7);
+  --c-kpi-ink-blue:   var(--p-paper-7);
+  --c-kpi-ink-green:  var(--p-paper-7);
+  --c-kpi-ink-yellow: var(--p-paper-7);
 }
 
 /* SEMANTICOS: LIGHT */
@@ -138,26 +161,34 @@
   --c-muted:         var(--p-paper-5);
   --c-disabled:      var(--p-paper-4);
 
-  --c-primary:       var(--p-blue-600);
-  --c-primary-light: var(--p-blue-500);
-  --c-primary-dark:  var(--p-blue-700);
-  --c-cyan:          var(--p-cyan-600);
+  /* O primary-dark aponta para o mesmo valor que o primary: a escala de tres
+     degraus do azul deixou de existir, e o unico consumidor de primary-dark
+     nao depende de ele ser mais escuro. A 6b decide se ele sobrevive. */
+  --c-primary:       var(--p-blue-deep);
+  --c-primary-dark:  var(--p-blue-deep);
+  --c-blue:          var(--p-blue-deep);
+  --c-cyan:          var(--p-cyan-deep);
 
-  --c-green:         var(--p-green-600);
-  --c-yellow:        var(--p-yellow-700);
-  --c-red:           var(--p-red-600);
-  --c-orange:        var(--p-orange-700);
-  --c-purple:        var(--p-violet-700);
-  --c-pink:          var(--p-pink-700);
-  --c-teal:          var(--p-teal-700);
+  --c-green:         var(--p-green-deep);
+  --c-yellow:        var(--p-yellow-deep);
+  --c-red:           var(--p-red-deep);
+  --c-orange:        var(--p-orange-deep);
+  --c-purple:        var(--p-purple-deep);
+  --c-teal:          var(--p-teal-deep);
 
-  /* Antes da Fase 1 estes quatro nao eram declarados aqui: o tema claro herdava
-     o valor escuro pelo cascade, sem erro e sem aviso. O valor final e o mesmo;
-     a intencao agora esta escrita. */
-  --c-grp-erp:       var(--p-violet-500);
-  --c-grp-ops:       var(--p-cyan-400);
-  --c-grp-anal:      var(--p-green-400);
-  --c-grp-infra:     var(--p-orange-400);
+  --c-chart-1:       var(--p-chart-1-deep);
+  --c-chart-2:       var(--p-chart-2-deep);
+  --c-chart-3:       var(--p-chart-3-deep);
+  --c-chart-4:       var(--p-chart-4-deep);
+  --c-chart-5:       var(--p-chart-5-deep);
+  --c-chart-6:       var(--p-chart-6-deep);
+
+  /* No claro o acento foi escurecido para passar como texto, entao a tinta e
+     branca: a escura reprova nos quatro, de 3.40:1 a 3.47:1. */
+  --c-kpi-ink-orange: var(--p-white);
+  --c-kpi-ink-blue:   var(--p-white);
+  --c-kpi-ink-green:  var(--p-white);
+  --c-kpi-ink-yellow: var(--p-white);
 }
 
 /* ═══════════════════════════════════════════════════════════════
