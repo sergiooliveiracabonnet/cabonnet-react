@@ -1,9 +1,10 @@
-export type PlannerModo = 'executado' | 'planejado'
+export type EscalaModo = 'grade' | 'timeline' | 'planner'
 
-export function PlannerModeToggle({ modo, onChange }: { modo: PlannerModo; onChange: (m: PlannerModo) => void }) {
-  const opcoes: { key: PlannerModo; label: string }[] = [
-    { key: 'executado', label: 'Executado' },
-    { key: 'planejado', label: 'Planejado' },
+export function EscalaModeToggle({ modo, onChange }: { modo: EscalaModo; onChange: (m: EscalaModo) => void }) {
+  const opcoes: { key: EscalaModo; label: string }[] = [
+    { key: 'grade',    label: 'Grade semanal' },
+    { key: 'timeline', label: 'Linha do tempo' },
+    { key: 'planner',  label: 'Planner' },
   ]
   return (
     <div className="flex gap-1 bg-elevated border border-subtle rounded-lg p-0.5">

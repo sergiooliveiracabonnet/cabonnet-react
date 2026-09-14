@@ -1,8 +1,8 @@
-import { useState, useMemo, type ComponentType } from 'react'
-import { Package, Wrench, Broadcast, X, CheckCircle, Clock, Check } from '@phosphor-icons/react'
+import { type ComponentType } from 'react'
+import { Package, Wrench, Broadcast, X, CheckCircle, Clock } from '@phosphor-icons/react'
 import type { OSRow } from '../../../lib/types'
-import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
-import { isCOPE, isReagend, isConcluida } from '../../../lib/transform'
+import { situacaoVariant } from '../../../lib/osFormat'
+import { isConcluida } from '../../../lib/transform'
 import { Badge } from '../../../components/ui/Badge'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -13,7 +13,6 @@ export interface WeekDay {
   dt: Date; key: string; label: string; dow: string
   isToday: boolean; isWeekend: boolean; isPast: boolean
 }
-export interface TeamSchedule { team: string; schedule: Record<string, OSRow[]>; weekTotal: number }
 export interface DrillState   { team: string; day: WeekDay; rows: OSRow[] }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -56,35 +55,19 @@ export function getWeekDays(weekOffset = 0): WeekDay[] {
   })
 }
 
-export function buildPlanner(allRows: OSRow[], days: WeekDay[]): TeamSchedule[] {
-  const keySet = new Set(days.map(d => d.key))
-  const base   = allRows.filter(r => !isCOPE(r) && !isReagend(r))
-
-  const teamMap = new Map<string, Record<string, OSRow[]>>()
-  for (const r of base) {
-    const dt = parseAgendDate(r)
-    if (!dt) continue
-    const key = toKey(dt)
-    if (!keySet.has(key)) continue
-    const team = shortEquipe(r.nomedaequipe) || 'Sem equipe'
-    if (!teamMap.has(team)) teamMap.set(team, {})
-    const td = teamMap.get(team)!
-    if (!td[key]) td[key] = []
-    td[key].push(r)
+/** Um único dia (hoje + offset), no mesmo formato de getWeekDays — usado por
+ *  visões que navegam dia a dia em vez de semana a semana (ex: linha do tempo). */
+export function getDay(dayOffset = 0): WeekDay {
+  const today = new Date(); today.setHours(0,0,0,0)
+  const d = new Date(today); d.setDate(today.getDate() + dayOffset)
+  return {
+    dt: d, key: toKey(d),
+    label: `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`,
+    dow: DAY_NAMES[d.getDay()],
+    isToday: toKey(d) === toKey(today),
+    isWeekend: d.getDay() === 0 || d.getDay() === 6,
+    isPast: d < today,
   }
-
-  for (const r of base) {
-    const team = shortEquipe(r.nomedaequipe) || 'Sem equipe'
-    if (!teamMap.has(team)) teamMap.set(team, {})
-  }
-
-  return [...teamMap.entries()]
-    .map(([team, schedule]) => ({
-      team, schedule,
-      weekTotal: days.reduce((s, d) => s + (schedule[d.key]?.length || 0), 0),
-    }))
-    .filter(t => t.weekTotal > 0)
-    .sort((a, b) => b.weekTotal - a.weekTotal)
 }
 
 export function tipoIcon(r: OSRow): { color: string; Icon: IconComp | null } {
@@ -92,14 +75,6 @@ export function tipoIcon(r: OSRow): { color: string; Icon: IconComp | null } {
   if (r._tipo === 'MANUTENCAO') return { color: '#f97316', Icon: Wrench  }
   if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Broadcast   }
   return { color: '#64748b', Icon: null }
-}
-
-export function loadColor(count: number): string | null {
-  if (count === 0) return null
-  if (count <= 2)  return '#4ade80'
-  if (count <= 4)  return '#facc15'
-  if (count <= 7)  return '#f97316'
-  return '#f87171'
 }
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
@@ -219,94 +194,5 @@ export function PlannerDrillModal({ drill, onClose }: { drill: DrillState | null
         </div>
       </div>
     </div>
-  )
-}
-
-// ─── PlannerCell ──────────────────────────────────────────────────────────────
-
-export function PlannerCell({ rows = [] as OSRow[], isPast, _isToday: _isToday = false, isWeekend, onClick }: {
-  rows?: OSRow[]; isPast: boolean; _isToday?: boolean; isWeekend: boolean; onClick: () => void
-}) {
-  const count = rows.length
-  const color = loadColor(count)
-  const [hover, setHover] = useState(false)
-
-  const tipos = useMemo(() => {
-    const inst  = rows.filter(r => r._tipo === 'INSTALACAO').length
-    const manut = rows.filter(r => r._tipo === 'MANUTENCAO').length
-    const other = count - inst - manut
-    return { inst, manut, other }
-  }, [count, rows])
-
-  const nConcl   = rows.filter(r => isConcluida(r.descsituacao)).length
-  const nPending = count - nConcl
-
-  if (count === 0) {
-    return (
-      <td className={`px-2 py-2 text-center border-r border-subtle last:border-r-0 w-[100px]
-                      ${isPast ? 'opacity-40' : ''} ${isWeekend ? 'bg-surface/20' : ''}`}>
-        <span className="text-caption text-muted/60">—</span>
-      </td>
-    )
-  }
-
-  return (
-    <td className={`relative px-2 py-2 border-r border-subtle last:border-r-0 w-[100px]
-                    ${isPast ? 'opacity-60' : ''} ${isWeekend ? 'bg-surface/20' : ''} cursor-pointer group`}
-        onClick={onClick}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}>
-      <div className="flex flex-col items-center gap-1">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-mono font-black text-subtitle tabular-nums
-                        group-hover:scale-110 transition-transform duration-150"
-             style={{ background: `${color}2e`, border: `1px solid ${color}66`, color: color ?? undefined }}>
-          {count}
-        </div>
-        <div className="flex items-center gap-0.5">
-          {tipos.inst  > 0 && <div className="w-1.5 h-1.5 rounded-full bg-[#3b82f6]" title={`${tipos.inst} inst`} />}
-          {tipos.manut > 0 && <div className="w-1.5 h-1.5 rounded-full bg-[#f97316]" title={`${tipos.manut} manut`} />}
-          {tipos.other > 0 && <div className="w-1.5 h-1.5 rounded-full bg-[#64748b]" title={`${tipos.other} serviços`} />}
-        </div>
-        {count > 0 && (
-          <div className="w-8 h-1 rounded-full overflow-hidden bg-surface flex">
-            {nConcl > 0 && (
-              <div className="h-full bg-green/60 transition-all duration-500"
-                   style={{ width: `${(nConcl / count) * 100}%` }} />
-            )}
-          </div>
-        )}
-      </div>
-
-      {hover && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2
-                        bg-elevated border border-subtle rounded-xl shadow-xl
-                        min-w-[200px] max-w-[260px] p-3 pointer-events-none">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-caption font-bold text-text">{count} OS</span>
-            <div className="flex gap-2 text-caption">
-              {nPending > 0 && <span className="text-yellow flex items-center gap-0.5"><Clock size={9}/>{nPending}</span>}
-              {nConcl   > 0 && <span className="text-green  flex items-center gap-0.5"><CheckCircle size={9}/>{nConcl}</span>}
-            </div>
-          </div>
-          <div className="space-y-1">
-            {rows.slice(0, 5).map(r => {
-              const { color: tc } = tipoIcon(r)
-              const concl = isConcluida(r.descsituacao)
-              return (
-                <div key={r.numos} className={`flex items-center gap-2 text-caption ${concl ? 'opacity-60' : ''}`}>
-                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: tc }} />
-                  <span className="text-text truncate flex-1">{r.nomecliente || r.numos}</span>
-                  <span className="text-muted flex-shrink-0">
-                    {concl ? <Check size={12} weight="bold" alt="Concluída" /> : r.nomedacidade || '—'}
-                  </span>
-                </div>
-              )
-            })}
-            {rows.length > 5  && <p className="text-caption text-muted/60 pt-0.5">+{rows.length - 5} OS · clique para ver todas</p>}
-            {rows.length <= 5 && <p className="text-caption text-primary/60 pt-1 text-center">Clique para ver detalhes</p>}
-          </div>
-        </div>
-      )}
-    </td>
   )
 }

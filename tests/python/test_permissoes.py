@@ -156,3 +156,21 @@ def test_migracao_nao_afeta_papel_sem_modulos_antigos():
     assert set(db._db_get_permissoes("operador")) == {"dashboard", "erp_fila"}
 
 
+def test_migra_erp_planner_para_erp_escala():
+    _insert_permissoes_direto("operador", ["dashboard", "erp_planner"])
+    db._db_migrate_onda3b_modulos()
+    modulos = db._db_get_permissoes("operador")
+    assert "erp_planner" not in modulos
+    assert "erp_escala" in modulos
+    assert "dashboard" in modulos
+
+
+def test_migracao_onda3b_e_idempotente_e_nao_duplica_modulo_ja_presente():
+    _insert_permissoes_direto("operador", ["erp_planner", "erp_escala"])
+    db._db_migrate_onda3b_modulos()
+    db._db_migrate_onda3b_modulos()  # roda de novo, não deve quebrar nem duplicar
+    modulos = db._db_get_permissoes("operador")
+    assert modulos.count("erp_escala") == 1
+    assert "erp_planner" not in modulos
+
+

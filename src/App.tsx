@@ -9,7 +9,7 @@ import { useUIStore } from './store/uiStore'
 import {
   ERPRelatoriosPage,
   ERPAlertasPage,
-  ERPPlannerPage, ERPFilaPage, ERPRankingTecnicosPage,
+  ERPFilaPage, ERPRankingTecnicosPage, ERPEscalaPage,
   DashboardPage, OrdensPage,
   GraficosPage, CidadesGerencialPage,
   FornecedorPage, JuniperPage, NivelSinalPage, NotFoundPage, NocPage, FechamentoPage,
@@ -64,8 +64,10 @@ export default function App() {
         <Route path="erp">
           <Route path="relatorios"    element={<RequireModulo modulo="erp_relatorios">   <ERPRelatoriosPage />   </RequireModulo>} />
           <Route path="alertas"       element={<RequireModulo modulo="erp_alertas">      <ERPAlertasPage />      </RequireModulo>} />
-          <Route path="produtividade" element={<Navigate to="/erp/planner" replace />} />
-          <Route path="planner"       element={<RequireModulo modulo="erp_planner">      <ERPPlannerPage />      </RequireModulo>} />
+          {/* /erp/produtividade e /erp/planner viraram a aba "Planner" dentro de /erp/escala */}
+          <Route path="produtividade" element={<Navigate to="/erp/escala" replace />} />
+          <Route path="planner"       element={<Navigate to="/erp/escala" replace />} />
+          <Route path="escala"        element={<RequireModulo modulo="erp_escala">       <ERPEscalaPage />       </RequireModulo>} />
           <Route path="fila"          element={<RequireModulo modulo="erp_fila">         <ERPFilaPage />         </RequireModulo>} />
           {/* /erp/vt virou a fila unica em /erp/fila */}
           <Route path="vt"            element={<Navigate to="/erp/fila" replace />} />

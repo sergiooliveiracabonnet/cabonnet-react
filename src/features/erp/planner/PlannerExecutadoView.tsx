@@ -1,7 +1,6 @@
 import { useMemo, useState, type ComponentType } from 'react'
 import { TrendUp, TrendDown, Minus, ChartBar, CaretDown, CaretUp, Package, Wrench, Broadcast, Gear, Sparkle, ArrowRight } from '@phosphor-icons/react'
 import { useERPRows } from '../useERPRows'
-import { useUIStore } from '../../../store/uiStore'
 import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
 import { isCOPE, isReagend, isConcluida } from '../../../lib/transform'
 import { Badge } from '../../../components/ui/Badge'
@@ -9,9 +8,11 @@ import type { OSRow } from '../../../lib/types'
 import { useAIProdutividade } from '../../../hooks/useAIProdutividade'
 import { SectionLabel } from './PlannerComponents'
 
-// Limite de colunas no grid de dias — ranges longos (mensal/anual/custom) mostram
-// só os dias mais recentes dentro do range, senão o grid quebra o layout.
-const MAX_GRID_DAYS = 31
+// Grid fixo de 14 dias (7 desta semana + 7 da anterior) — a visão é sempre
+// semanal. Não segue o filtro de data global (uiStore.dateFilter): esse filtro
+// é compartilhado com Dashboard/Ordens/etc. e pode estar em "hoje" ou "mensal"
+// em outra tela, o que quebrava o comparativo semana-atual-vs-anterior daqui.
+const GRID_DAYS = 14
 
 type IconComp = ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
 interface DayInfo { key: string; label: string; dow: string; isToday: boolean; isWeekend: boolean }
@@ -40,22 +41,11 @@ function toLabel(key: string): string { return key.slice(0, 5) }
 
 const DOW_LABELS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
-// Constrói o grid de dias a partir do range do filtro global (from/to), terminando
-// em `to` e limitado a `maxDays` colunas — ranges maiores mostram só os dias mais
-// recentes dentro do range escolhido.
-function getDayLabelsFromRange(from: Date | null | undefined, to: Date | null | undefined, maxDays = MAX_GRID_DAYS): DayInfo[] {
+function getDayLabels(): DayInfo[] {
   const today = new Date(); today.setHours(0,0,0,0)
-  const start = from ? new Date(from) : new Date(today.getTime() - 13 * 86_400_000)
-  const end   = to   ? new Date(to)   : today
-  start.setHours(0,0,0,0)
-  end.setHours(0,0,0,0)
-
-  const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1)
-  const n = Math.min(totalDays, maxDays)
-
   const days: DayInfo[] = []
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(end); d.setDate(end.getDate() - i)
+  for (let i = GRID_DAYS - 1; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i)
     const key = toKey(d)
     days.push({
       key,
@@ -421,15 +411,11 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
 
 export default function PlannerExecutadoView() {
   const { rows, isLoading } = useERPRows()
-  const { dateFilter } = useUIStore()
   const [expanded,    setExpanded]    = useState<string | null>(null)
   const [activeDrill, setActiveDrill] = useState<DrillInfo | null>(null)
   const [aiEnabled,   setAiEnabled]   = useState(false)
 
-  const days = useMemo(
-    () => getDayLabelsFromRange(dateFilter?.from, dateFilter?.to),
-    [dateFilter?.from, dateFilter?.to]
-  )
+  const days = useMemo(() => getDayLabels(), [])
   const { teams, globalMax } = useMemo(() => buildProdutividade(rows, days), [rows, days])
 
   const half     = Math.floor(days.length / 2)

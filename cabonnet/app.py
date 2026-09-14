@@ -637,9 +637,9 @@ _MODULO_LABELS = {
     "noc":                "NOC",
     "erp_relatorios":     "Relatórios",
     "erp_alertas":        "Alertas",
-    "erp_planner":        "Planner",
     "erp_fila":           "Fila de Prioridade",
     "erp_ranking":        "Ranking Técnicos",
+    "erp_escala":         "Escala",
 }
 _ROLES_VALIDOS = ("gestor", "supervisor", "operador", "viewer", "fornecedor")
 # Supervisor entra aqui: os modulos dele saem da tabela, nao do codigo, entao
@@ -1469,6 +1469,39 @@ async def delete_tecnico(codigo: str, _role: str = Depends(_require_modulo("erp_
     ok = _db_delete_tecnico(codigo)
     if not ok:
         raise HTTPException(404, "Técnico não encontrado")
+    return {"ok": True}
+
+
+@router.get("/api/escala")
+async def list_escala(dias: str = "", _role: str = Depends(_require_modulo("erp_escala"))):
+    from cabonnet.db import _db_list_escala
+    dias_list = [d.strip() for d in dias.split(",") if d.strip()]
+    return {"ok": True, "items": _db_list_escala(dias_list)}
+
+
+@router.post("/api/escala")
+async def upsert_escala(
+    request: Request,
+    _role: str = Depends(_require_modulo("erp_escala")),
+    sess: dict = Depends(_require_session),
+):
+    from cabonnet.db import _db_upsert_escala
+    body = await request.json()
+    team_code = str(body.get("team_code", "")).strip()
+    dia = str(body.get("dia", "")).strip()
+    if not team_code:
+        raise HTTPException(400, "team_code é obrigatório")
+    if not dia:
+        raise HTTPException(400, "dia é obrigatório")
+    ok = _db_upsert_escala(
+        team_code=team_code,
+        dia=dia,
+        local1=str(body.get("local1", "")).strip(),
+        local2=str(body.get("local2", "")).strip(),
+        updated_by=sess.get("username") or "",
+    )
+    if not ok:
+        raise HTTPException(500, "Falha ao salvar escala")
     return {"ok": True}
 
 

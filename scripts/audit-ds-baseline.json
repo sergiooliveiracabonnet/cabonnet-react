@@ -74,11 +74,6 @@
       "#64748b",
       "#f97316"
     ],
-    "src/features/erp/planner/PlannerPlanejadoView.tsx": [
-      "#374151",
-      "#64748b",
-      "#f97316"
-    ],
     "src/features/erp/planner/PlannerExecutadoView.tsx": [
       "#374151",
       "#475569",
@@ -146,10 +141,21 @@
     "src/features/ordens/TelegramOrdensModal.tsx": [
       "#94a3b8",
       "#f97316"
+    ],
+    "src/features/erp/escala/EscalaMindMapSvg.tsx": [
+      "#0f172a",
+      "#1e293b",
+      "#334155",
+      "#64748b",
+      "#93c5fd",
+      "#94a3b8",
+      "#e2e8f0",
+      "#f8fafc",
+      "#ffffff"
     ]
   },
   "tetos": {
-    "hexTolerados": 99,
-    "valoresArbitrarios": 293
+    "hexTolerados": 105,
+    "valoresArbitrarios": 276
   }
 }

@@ -15,7 +15,7 @@ export const MODULO_ROTA: Record<string, string> = {
   noc:               '/noc',
   erp_relatorios:    '/erp/relatorios',
   erp_alertas:       '/erp/alertas',
-  erp_planner:       '/erp/planner',
+  erp_escala:        '/erp/escala',
   erp_fila:          '/erp/fila',
   erp_ranking:       '/erp/ranking',
 }

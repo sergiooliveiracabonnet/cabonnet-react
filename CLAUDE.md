@@ -130,16 +130,16 @@ The bot isolates notifications by operator using team codes matched against `nom
 
 | Operator | Frentes | Telegram var |
 |---|---|---|
-| INSTACABLE | F01, F04, F05, F07, F20, F45, F46, F47, F48, F49, F50 | `TELEGRAM_CHAT_INSTACABLE` |
-| WES | F08, F11, F23, F36, F44 | `TELEGRAM_CHAT_WES` |
+| INSTACABLE | F01, F04, F20, F45, F47, F48, F50 | `TELEGRAM_CHAT_INSTACABLE` |
+| WES | F08, F11, F23, F36 | `TELEGRAM_CHAT_WES` |
 | THM | F12, F13, F14 | `TELEGRAM_CHAT_OPERACIONAL_THM` |
 | REDE | service starts with "REDE" | `TELEGRAM_CHAT_REDE` |
 
-19 frentes at present. `cabonnet/config.py` is the source of truth — every other list is a copy.
+14 frentes at present. `cabonnet/config.py` is the source of truth — every other list is a copy.
 
-**The mapping is duplicated in four places and has drifted before.** `cabonnet/config.py` (backend), `cabonnet/stats.py`, the AI prompt in `cabonnet/ai.py`, and `INST_EQS`/`WES_EQS`/`THM_EQS` in `src/features/fechamento/fechamentoUtils.ts` (frontend). The frontend copy sat on the pre-`9f0c7ca` mapping and the Fechamento tabs silently excluded F46, F47 and F23 from their operator's closing. Two tests pin it now: `tests/python/test_operator_team_consistency.py` for the three Python sources and `src/features/fechamento/fechamentoUtils.test.ts`, which reads `config.py` rather than repeating the list. Adding or retiring a frente means touching all four.
+**The mapping is duplicated in multiple places and has drifted before.** `cabonnet/config.py` (backend, source of truth), `cabonnet/stats.py`, the AI prompt in `cabonnet/ai.py` (reads `config.py` directly — nothing to edit there), `INST_EQS`/`WES_EQS`/`THM_EQS` in `src/features/fechamento/fechamentoUtils.ts`, and `INST_CODES`/`WES_CODES` in `src/lib/transform.ts` (`getFornecedor` — drives `_fornecedor` on every row, including SLA/fornecedor stats and Fechamento invoicing). The frontend copy sat on the pre-`9f0c7ca` mapping and the Fechamento tabs silently excluded F46, F47 and F23 from their operator's closing. Two tests pin the Python/Fechamento side: `tests/python/test_operator_team_consistency.py` for the three Python sources and `src/features/fechamento/fechamentoUtils.test.ts`, which reads `config.py` rather than repeating the list — `transform.ts` has no such test, so check it by hand. Adding or retiring a frente means touching `config.py`, `stats.py`, `fechamentoUtils.ts`, and `transform.ts`, plus `TEAMS`/`EQUIPE_NAMES` below.
 
-**F27 and F39 are retired** (confirmed 2026-08-03) — removed from `EQUIPE_NAMES`, `TEAMS` (`src/features/erp/erpConstants.ts`) and the Fechamento lists. Don't reintroduce them.
+**F27, F39, F05, F07, F44, F46 and F49 are retired** (F27/F39 confirmed 2026-08-03; F05/F07/F44/F46/F49 confirmed 2026-09-14) — removed from `EQUIPE_NAMES` (`src/lib/osFormat.ts`), `TEAMS` (`src/features/erp/erpConstants.ts`), and the Fechamento/`transform.ts` lists above. Don't reintroduce them.
 
 Each operator group receives only its own OS status changes. The Alertas group receives all changes from all operators plus THM's "Executadas Hoje" scheduled report.
 

@@ -33,13 +33,13 @@ describe('buildEquipeOptions', () => {
 
   it('extrai equipes únicas, formatadas com shortEquipe e ordenadas por label', () => {
     const rows = [
-      makeOS({ numos: 'A', nomedaequipe: 'INST F05' }),
+      makeOS({ numos: 'A', nomedaequipe: 'INST F20' }),
       makeOS({ numos: 'B', nomedaequipe: 'INST F01' }),
       makeOS({ numos: 'C', nomedaequipe: 'INST F01' }), // duplicata, deve aparecer uma vez
     ]
     expect(buildEquipeOptions(rows)).toEqual([
       { value: 'INST F01', label: 'INST F01 - FELIPE' },
-      { value: 'INST F05', label: 'INST F05 - JADIEL' },
+      { value: 'INST F20', label: 'INST F20 - LUCAS' },
     ])
   })
 

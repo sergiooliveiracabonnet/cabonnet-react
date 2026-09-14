@@ -29,7 +29,7 @@ ALL_MODULOS = [
     "dashboard", "ordens", "graficos", "cidades", "fornecedor", "juniper", "nivel_sinal",
     "fechamento", "mapa", "noc",
     "erp_relatorios", "erp_alertas",
-    "erp_planner", "erp_fila", "erp_ranking",
+    "erp_fila", "erp_ranking", "erp_escala",
 ]
 
 # Defaults semeados no bootstrap — só o ponto de partida, ajustável depois pela
@@ -37,7 +37,7 @@ ALL_MODULOS = [
 _DEFAULT_OPERADOR_MODULOS = [
     "dashboard", "ordens", "cidades", "mapa", "juniper", "nivel_sinal",
     "erp_relatorios", "erp_alertas",
-    "erp_planner", "erp_fila", "erp_ranking",
+    "erp_fila", "erp_ranking", "erp_escala",
 ]
 _DEFAULT_VIEWER_MODULOS = ["dashboard", "graficos", "cidades", "mapa"]
 # Supervisor nasce com tudo, como o gestor — a diferenca e que os modulos
@@ -53,6 +53,12 @@ _FORNECEDOR_MODULOS = ["dashboard", "ordens", "graficos", "cidades", "fornecedor
 _MODULOS_RENOMEADOS_ONDA3A = {
     "erp_produtividade": "erp_planner",
     "erp_acao":          "dashboard",
+}
+
+# Onda 3b (2026-09): Planner (execução) virou a 3ª aba dentro de Escala — não
+# é mais tela própria. Mesmo mecanismo da onda 3a, ver _db_migrate_onda3b_modulos().
+_MODULOS_RENOMEADOS_ONDA3B = {
+    "erp_planner": "erp_escala",
 }
 
 
@@ -283,10 +289,22 @@ def _db_init():
                 PRIMARY KEY(pon_key, onu_key)
             )
         """)
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS escala_status (
+                team_code  TEXT NOT NULL,
+                dia        TEXT NOT NULL,
+                local1     TEXT NOT NULL DEFAULT '',
+                local2     TEXT NOT NULL DEFAULT '',
+                updated_at TEXT NOT NULL,
+                updated_by TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY(team_code, dia)
+            )
+        """)
         con.commit()
         con.close()
 
     _db_migrate_onda3a_modulos()
+    _db_migrate_onda3b_modulos()
     _db_seed_supervisor()
 
 
@@ -573,6 +591,26 @@ def _db_migrate_onda3a_modulos():
     with state._db_lock:
         con = sqlite3.connect(_DB_PATH)
         for antigo, novo in _MODULOS_RENOMEADOS_ONDA3A.items():
+            papeis = [r[0] for r in con.execute(
+                "SELECT DISTINCT role FROM role_permissoes WHERE modulo=?", (antigo,)
+            ).fetchall()]
+            for papel in papeis:
+                con.execute(
+                    "INSERT OR IGNORE INTO role_permissoes (role, modulo) VALUES (?,?)",
+                    (papel, novo)
+                )
+            con.execute("DELETE FROM role_permissoes WHERE modulo=?", (antigo,))
+        con.commit()
+        con.close()
+
+
+def _db_migrate_onda3b_modulos():
+    """Migração idempotente da Onda 3b: quem tinha erp_planner ganha erp_escala
+    antes do módulo antigo sumir de ALL_MODULOS. Mesma lógica de
+    _db_migrate_onda3a_modulos, mapa próprio em _MODULOS_RENOMEADOS_ONDA3B."""
+    with state._db_lock:
+        con = sqlite3.connect(_DB_PATH)
+        for antigo, novo in _MODULOS_RENOMEADOS_ONDA3B.items():
             papeis = [r[0] for r in con.execute(
                 "SELECT DISTINCT role FROM role_permissoes WHERE modulo=?", (antigo,)
             ).fetchall()]
@@ -1110,6 +1148,58 @@ def _db_delete_tecnico(codigo):
         return affected > 0
     except Exception as ex:
         log_db.warning("Falha ao deletar tecnico %s: %s", codigo, ex)
+        return False
+
+
+def _db_list_escala(dias):
+    """Status/local de cada equipe nos dias informados (formato 'DD/MM/YYYY').
+
+    Dia sem linha na tabela = célula vazia — o dropdown fica em branco no
+    frontend, não é erro."""
+    if not dias:
+        return []
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            placeholders = ",".join("?" * len(dias))
+            rows = con.execute(
+                f"""SELECT team_code, dia, local1, local2, updated_at, updated_by
+                    FROM escala_status WHERE dia IN ({placeholders})""",
+                tuple(dias),
+            ).fetchall()
+            con.close()
+        return [
+            {"team_code": r[0], "dia": r[1], "local1": r[2], "local2": r[3],
+             "updated_at": r[4], "updated_by": r[5]}
+            for r in rows
+        ]
+    except Exception as ex:
+        log_db.warning("Falha ao listar escala: %s", ex)
+        return []
+
+
+def _db_upsert_escala(team_code, dia, local1="", local2="", updated_by=""):
+    """Grava o status de uma equipe num dia — substitui o valor anterior
+    daquela mesma equipe+dia (não acumula histórico, é um planejamento vivo)."""
+    updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        with state._db_lock:
+            con = sqlite3.connect(_DB_PATH)
+            con.execute(
+                """INSERT INTO escala_status (team_code, dia, local1, local2, updated_at, updated_by)
+                   VALUES (?,?,?,?,?,?)
+                   ON CONFLICT(team_code, dia) DO UPDATE SET
+                     local1=excluded.local1,
+                     local2=excluded.local2,
+                     updated_at=excluded.updated_at,
+                     updated_by=excluded.updated_by""",
+                (team_code, dia, local1, local2, updated_at, updated_by)
+            )
+            con.commit()
+            con.close()
+        return True
+    except Exception as ex:
+        log_db.warning("Falha ao salvar escala de %s em %s: %s", team_code, dia, ex)
         return False
 
 

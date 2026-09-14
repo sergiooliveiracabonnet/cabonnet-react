@@ -43,7 +43,7 @@ describe('classificação por operadora', () => {
   })
 
   it('não atribui operadora a frente aposentada', () => {
-    for (const frente of ['F27', 'F39']) {
+    for (const frente of ['F27', 'F39', 'F05', 'F07', 'F44', 'F46', 'F49']) {
       const os = osDaFrente(frente)
       expect(isInstacable(os), frente).toBe(false)
       expect(isWES(os), frente).toBe(false)

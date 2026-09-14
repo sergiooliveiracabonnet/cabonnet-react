@@ -280,8 +280,8 @@ export function isAgendamentoDesassistido(r: Pick<OSRow, 'dataagendamento'>, now
   return dt < hoje
 }
 
-const WES_CODES  = new Set(['F08', 'F11', 'F23', 'F36', 'F44'])
-const INST_CODES = new Set(['F01', 'F04', 'F05', 'F07', 'F20', 'F45', 'F46', 'F47', 'F48', 'F49', 'F50'])
+const WES_CODES  = new Set(['F08', 'F11', 'F23', 'F36'])
+const INST_CODES = new Set(['F01', 'F04', 'F20', 'F45', 'F47', 'F48', 'F50'])
 const THM_CODES  = new Set(['F12', 'F13', 'F14'])
 
 export function getFornecedor(equipe: string | undefined | null): Fornecedor {

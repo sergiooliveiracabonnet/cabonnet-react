@@ -114,6 +114,15 @@ export const tecnicos = {
   remove: (codigo: string) => request<{ ok: boolean }>(`/api/tecnicos/${encodeURIComponent(codigo)}`, { method: 'DELETE' }),
 }
 
+export interface EscalaItem { team_code: string; dia: string; local1: string; local2: string; updated_at: string; updated_by: string }
+
+export const escala = {
+  list: (dias: string[]) =>
+    request<{ ok: boolean; items: EscalaItem[] }>(`/api/escala?dias=${dias.map(encodeURIComponent).join(',')}`),
+  save: (body: { team_code: string; dia: string; local1?: string; local2?: string }) =>
+    request<{ ok: boolean }>('/api/escala', { method: 'POST', body: JSON.stringify(body) }),
+}
+
 export interface FornecedorConfig {
   ok:    boolean
   /** Custo mensal VIGENTE na data consultada, por operadora. */
@@ -262,7 +271,6 @@ export const ai = {
   // Ativos
   proximaOs:         (payload: unknown) => request('/ai/proxima-os',           { method: 'POST', body: JSON.stringify(payload) }),
   cidadesCluster:    (payload: unknown) => request('/ai/cidades-cluster',      { method: 'POST', body: JSON.stringify(payload) }),
-  planner:           (payload: unknown) => request('/ai/planner',              { method: 'POST', body: JSON.stringify(payload) }),
   juniperCorrelacao:     (payload: unknown) => request('/ai/juniper-correlacao',    { method: 'POST', body: JSON.stringify(payload) }),
   nivelSinal:            (payload: unknown) => request('/ai/nivel-sinal',           { method: 'POST', body: JSON.stringify(payload) }),
   revisitasCausa:        (payload: unknown) => request('/ai/revisitas-causa',       { method: 'POST', body: JSON.stringify(payload), timeoutMs: 75_000 }),

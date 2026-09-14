@@ -31,7 +31,7 @@ describe('cadastro de frentes', () => {
   })
 
   it('frentes aposentadas não têm cadastro em lugar nenhum', () => {
-    for (const frente of ['F27', 'F39']) {
+    for (const frente of ['F27', 'F39', 'F05', 'F07', 'F44', 'F46', 'F49']) {
       expect(frentes, frente).not.toContain(frente)
       expect(TEAMS.some(t => t.code === `INST ${frente}`), frente).toBe(false)
       expect(EQUIPE_NAMES[`INST ${frente}`], frente).toBeUndefined()

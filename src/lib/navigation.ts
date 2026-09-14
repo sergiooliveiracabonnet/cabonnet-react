@@ -1,5 +1,5 @@
 import { useMemo, type ComponentType, type CSSProperties } from 'react'
-import { SquaresFour, ClipboardText, ChartBar, ChartPie, MapPin, Lightning, Monitor, FileText, MapTrifold, Bell, CalendarDots, Shield, Siren, Medal, Users, WaveSine } from '@phosphor-icons/react'
+import { SquaresFour, ClipboardText, ChartBar, ChartPie, MapPin, Lightning, Monitor, FileText, MapTrifold, Bell, CalendarCheck, Shield, Siren, Medal, Users, WaveSine } from '@phosphor-icons/react'
 import { useAuthStore, type UserRole } from '../store/authStore'
 import { rotaParaModulo } from './modulos'
 
@@ -29,7 +29,7 @@ export const NAV_GROUPS: NavGroup[] = [
     key: 'operar', label: 'Operar', color: '#22d3ee',
     links: [
       { to: '/ordens',      label: 'Ordens',  icon: ClipboardText },
-      { to: '/erp/planner', label: 'Planner', icon: CalendarDots  },
+      { to: '/erp/escala',  label: 'Escala',  icon: CalendarCheck },
       { to: '/mapa',        label: 'Mapa',    icon: MapTrifold            },
     ],
   },

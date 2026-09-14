@@ -250,8 +250,8 @@ _OPERADORA_POR_PREFIXO = {"- ADA -": "ADA"}
 # (Adamantina tem F 01..F 10), entao casar so pelo numero misturaria os
 # clusters — por isso _operadora_da_os resolve o prefixo ANTES desta lista.
 _OPERADORA_GRUPOS = {
-    "INSTACABLE": ["F01", "F04", "F05", "F07", "F20", "F45", "F46", "F47", "F48", "F49", "F50"],
-    "WES":        ["F08", "F11", "F23", "F36", "F44"],
+    "INSTACABLE": ["F01", "F04", "F20", "F45", "F47", "F48", "F50"],
+    "WES":        ["F08", "F11", "F23", "F36"],
     "THM":        ["F12", "F13", "F14"],
 }
 
