@@ -32,6 +32,11 @@ const CIDADE_COLOR: Record<string, string> = {
 const COR_INDISPONIVEL = '#f87171'
 const COR_ATIVIDADE    = '#facc15'
 
+// A imagem mostra onde as equipes estão atendendo — quem não está atendendo
+// (folga, férias, treinamento) fica de fora por completo, não só escondido
+// num grupo à parte. Ausente/Plantão/Qualidade continuam aparecendo.
+const STATUS_FORA_DO_MAPA = new Set(['Folga', 'Férias', 'Treinamento'])
+
 function corDoGrupo(label: string, kind: GrupoKind): string {
   if (kind === 'cidade') return CIDADE_COLOR[label] ?? '#64748b'
   if (kind === 'indisponivel') return COR_INDISPONIVEL
@@ -53,7 +58,7 @@ export function buildMindMapGroups(items: EscalaItem[], dia: string): MindMapGro
 
   const add = (status: string, equipe: MindMapLeaf) => {
     const status_ = status.trim()
-    if (!status_) return
+    if (!status_ || STATUS_FORA_DO_MAPA.has(status_)) return
     if (!groups.has(status_)) {
       const kind = kindDoStatus(status_)
       groups.set(status_, { key: status_, label: status_, kind, color: corDoGrupo(status_, kind), equipes: [] })

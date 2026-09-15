@@ -149,13 +149,14 @@
       "#64748b",
       "#93c5fd",
       "#94a3b8",
+      "#cbd5e1",
       "#e2e8f0",
       "#f8fafc",
       "#ffffff"
     ]
   },
   "tetos": {
-    "hexTolerados": 105,
+    "hexTolerados": 106,
     "valoresArbitrarios": 276
   }
 }
