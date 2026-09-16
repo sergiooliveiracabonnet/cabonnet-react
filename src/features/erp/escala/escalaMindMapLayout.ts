@@ -3,7 +3,6 @@ import type { MindMapGroup, MindMapLeaf } from './escalaMindMap'
 export interface PositionedLeaf extends MindMapLeaf { x: number; y: number }
 export interface PositionedGroup extends MindMapGroup {
   x: number; y: number
-  side: 'left' | 'right'
   leaves: PositionedLeaf[]
 }
 export interface MindMapLayout {
@@ -29,11 +28,22 @@ const GAP_ROOT_GROUP = 110
 const GAP_GROUP_LEAF = 46
 const LEAF_ROW_GAP   = 24
 const LEAF_GAP_X     = 26
-const ROW_GAP         = 56    // espaço entre um grupo e o próximo, na mesma coluna
-const CARD_OFFSET     = 210   // distância do tronco central até o centro do card
-const MARGIN_X        = 90
-const MARGIN_TOP      = 60
-const MARGIN_BOTTOM   = 60
+const ROW_GAP          = 56    // espaço entre um grupo e o próximo, na mesma coluna
+const COLUMN_SPACING   = 420   // distância entre o centro de uma coluna e a próxima
+const MARGIN_X         = 90
+const MARGIN_TOP       = 60
+const MARGIN_BOTTOM    = 60
+
+// A imagem é pra ser vista pequena — colada num chat, numa miniatura. Uma
+// coluna só de altura ilimitada (2 colunas fixas, como na versão anterior)
+// virava um retrato bem comprido, que o WhatsApp/Teams encolhe tanto pra
+// caber que o texto fica ilegível. Em vez de crescer só pra baixo, o
+// organograma abre mais colunas conforme o dia tem mais gente escalada,
+// mirando uma altura de coluna confortável — a imagem cresce mais pros
+// lados e menos pra baixo à medida que o conteúdo aumenta.
+const TARGET_COLUMN_HEIGHT = 620
+const MIN_COLUNAS = 2
+const MAX_COLUNAS = 4
 
 function alturaDoGrupo(g: MindMapGroup): number {
   const n = g.equipes.length
@@ -43,22 +53,29 @@ function alturaDoGrupo(g: MindMapGroup): number {
   return GROUP_H + GAP_GROUP_LEAF + rows * LEAF_D + (rows - 1) * LEAF_ROW_GAP
 }
 
-/** Divide os grupos em coluna esquerda/direita balanceando a altura (não só a
- *  quantidade) — grupos já vêm ordenados por cidade→atividade→indisponível e
- *  por tamanho, então essa gulosa (bin-packing) deixa as duas colunas bem
- *  parecidas mesmo quando um grupo tem muito mais equipes que os outros. */
-function dividirColunas(groups: MindMapGroup[]): { left: MindMapGroup[]; right: MindMapGroup[] } {
-  const left: MindMapGroup[] = []
-  const right: MindMapGroup[] = []
-  let leftH = 0, rightH = 0
-  for (const g of groups) {
-    const h = alturaDoGrupo(g)
-    if (leftH <= rightH) { left.push(g); leftH += h + ROW_GAP } else { right.push(g); rightH += h + ROW_GAP }
-  }
-  return { left, right }
+function numeroDeColunas(groups: MindMapGroup[]): number {
+  const trabalhoTotal = groups.reduce((s, g) => s + alturaDoGrupo(g) + ROW_GAP, 0)
+  const ideal = Math.ceil(trabalhoTotal / TARGET_COLUMN_HEIGHT)
+  return Math.max(MIN_COLUNAS, Math.min(MAX_COLUNAS, ideal))
 }
 
-function layoutColuna(list: MindMapGroup[], side: 'left' | 'right', centerX: number, startY: number): {
+/** Divide os grupos em N colunas balanceando a ALTURA real (não só a
+ *  quantidade) — grupos já vêm ordenados por cidade→atividade→indisponível e
+ *  por tamanho, então essa gulosa (bin-packing) deixa as colunas parecidas
+ *  mesmo quando um grupo tem muito mais equipes que os outros. */
+function dividirColunas(groups: MindMapGroup[], n: number): MindMapGroup[][] {
+  const colunas: MindMapGroup[][] = Array.from({ length: n }, () => [])
+  const alturas = new Array(n).fill(0)
+  for (const g of groups) {
+    let idx = 0
+    for (let i = 1; i < n; i++) if (alturas[i] < alturas[idx]) idx = i
+    colunas[idx].push(g)
+    alturas[idx] += alturaDoGrupo(g) + ROW_GAP
+  }
+  return colunas
+}
+
+function layoutColuna(list: MindMapGroup[], centerX: number, startY: number): {
   positioned: PositionedGroup[]; bottomY: number
 } {
   let y = startY
@@ -80,34 +97,40 @@ function layoutColuna(list: MindMapGroup[], side: 'left' | 'right', centerX: num
     })
 
     y += alturaDoGrupo(g) + ROW_GAP
-    return { ...g, x: centerX, y: groupY, side, leaves }
+    return { ...g, x: centerX, y: groupY, leaves }
   })
 
   return { positioned, bottomY: y - ROW_GAP }
 }
 
-/** Organograma em duas colunas: metade dos grupos desce à esquerda do tronco
- *  central, metade à direita — em vez de uma única fileira horizontal, que
- *  ficava comprida demais com muitos grupos. Cada grupo ainda tem suas
- *  equipes num cluster compacto (2 colunas) logo abaixo dele. */
+/** Organograma em N colunas penduradas num tronco central — N cresce com a
+ *  quantidade de gente escalada (até um teto), pra imagem crescer mais pros
+ *  lados e menos pra baixo. Cada grupo ainda tem suas equipes num cluster
+ *  compacto (2 colunas) logo abaixo dele. */
 export function layoutMindMap(groups: MindMapGroup[]): MindMapLayout {
   const rootY = MARGIN_TOP + ROOT_R
   const startY = rootY + ROOT_R + GAP_ROOT_GROUP
 
   if (groups.length === 0) {
-    const width = 2 * (CARD_OFFSET + GROUP_W / 2) + MARGIN_X * 2
+    const width = COLUMN_SPACING + GROUP_W + MARGIN_X * 2
     return { width, height: 420, rootX: width / 2, rootY, trunkBottomY: rootY, groups: [] }
   }
 
-  const width = 2 * (CARD_OFFSET + GROUP_W / 2) + MARGIN_X * 2
+  const numColunas = numeroDeColunas(groups)
+  const width = (numColunas - 1) * COLUMN_SPACING + GROUP_W + MARGIN_X * 2
   const trunkX = width / 2
 
-  const { left, right } = dividirColunas(groups)
-  const { positioned: leftPos,  bottomY: leftBottom  } = layoutColuna(left,  'left',  trunkX - CARD_OFFSET, startY)
-  const { positioned: rightPos, bottomY: rightBottom } = layoutColuna(right, 'right', trunkX + CARD_OFFSET, startY)
+  const colunas = dividirColunas(groups, numColunas)
+  const resultados = colunas.map((lista, i) => {
+    const offset = (i - (numColunas - 1) / 2) * COLUMN_SPACING
+    return layoutColuna(lista, trunkX + offset, startY)
+  })
 
-  const trunkBottomY = Math.max(leftBottom, rightBottom, startY)
+  const trunkBottomY = Math.max(startY, ...resultados.map(r => r.bottomY))
   const height = trunkBottomY + MARGIN_BOTTOM
 
-  return { width, height, rootX: trunkX, rootY, trunkBottomY, groups: [...leftPos, ...rightPos] }
+  return {
+    width, height, rootX: trunkX, rootY, trunkBottomY,
+    groups: resultados.flatMap(r => r.positioned),
+  }
 }

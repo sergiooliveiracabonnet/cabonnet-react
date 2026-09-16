@@ -2,16 +2,14 @@ import { forwardRef } from 'react'
 import { layoutMindMap, ROOT_R, GROUP_W, GROUP_H, LEAF_D } from './escalaMindMapLayout'
 import type { MindMapGroup } from './escalaMindMap'
 import { EMPRESA_COLOR } from './escalaConstants'
+import { CABONNET_BLACK_LOGO } from '../../../lib/pdfBrand'
 
-const HEADER_H = 176
+const HEADER_H = 140
 const FOOTER_H = 64
 const PAD_X    = 44
 
 const KIND_LABEL: Record<MindMapGroup['kind'], string> = {
   cidade: 'Cidade', atividade: 'Atividade', indisponivel: 'Indisponível',
-}
-const KIND_DOT: Record<MindMapGroup['kind'], string> = {
-  cidade: '#3b82f6', atividade: '#facc15', indisponivel: '#f87171',
 }
 
 function firstName(nome: string): string {
@@ -100,25 +98,14 @@ export const EscalaMindMapSvg = forwardRef<SVGSVGElement, {
       <rect x={0} y={0} width={width} height={HEADER_H} fill="#f8fafc" />
       <rect x={0} y={HEADER_H - 4} width={width} height={4} fill="#1e293b" />
 
-      <text x={PAD_X} y={50} fontSize={14} fontWeight={700} letterSpacing={2} fill="#64748b">
-        CABONNET · ESCALA DO DIA
-      </text>
-      <text x={width - PAD_X} y={50} fontSize={13} fontWeight={600} fill="#64748b" textAnchor="end">
-        {groups.length} grupo{groups.length === 1 ? '' : 's'} · {totalEquipes} equipe{totalEquipes === 1 ? '' : 's'}
-      </text>
+      <image href={CABONNET_BLACK_LOGO} x={PAD_X} y={(HEADER_H - 92) / 2} width={184} height={92} />
 
-      <text x={PAD_X} y={124} fontSize={38} fontWeight={800} fill="#0f172a">
+      <text x={width - PAD_X} y={56} fontSize={13} fontWeight={600} letterSpacing={1.5} fill="#64748b" textAnchor="end">
+        ESCALA DO DIA · {groups.length} grupo{groups.length === 1 ? '' : 's'} · {totalEquipes} equipe{totalEquipes === 1 ? '' : 's'}
+      </text>
+      <text x={width - PAD_X} y={104} fontSize={38} fontWeight={800} fill="#0f172a" textAnchor="end">
         {dow} <tspan fill="#94a3b8" fontWeight={600} fontSize={30}>· {dateStr}</tspan>
       </text>
-
-      <g transform={`translate(${width - PAD_X}, 100)`} textAnchor="end">
-        {(['indisponivel', 'atividade', 'cidade'] as const).map((kind, i) => (
-          <g key={kind} transform={`translate(0, ${i * 24})`}>
-            <circle cx={-108} cy={-4} r={6} fill={KIND_DOT[kind]} />
-            <text x={0} y={0} fontSize={13} fontWeight={600} fill="#334155">{KIND_LABEL[kind]}</text>
-          </g>
-        ))}
-      </g>
 
       {/* ── Organograma ── */}
       {groups.length === 0 ? (
@@ -130,11 +117,14 @@ export const EscalaMindMapSvg = forwardRef<SVGSVGElement, {
           {/* Tronco central — raiz até a última linha de grupos */}
           <line x1={layout.rootX} y1={layout.rootY + rootAvatarR} x2={layout.rootX} y2={layout.trunkBottomY}
                 stroke="#cbd5e1" strokeWidth={2.5} />
-          {/* Ramo horizontal do tronco até a lateral de cada grupo (esquerda ou direita) */}
+          {/* Ramo horizontal do tronco até a lateral de cada grupo — a coluna
+              pode estar à esquerda, à direita ou (com número ímpar de
+              colunas) bem em cima do tronco, daí a checagem de igualdade. */}
           {layout.groups.map(g => (
             <line key={`rg-${g.key}`}
                   x1={layout.rootX} y1={g.y}
-                  x2={g.side === 'left' ? g.x + GROUP_W / 2 : g.x - GROUP_W / 2} y2={g.y}
+                  x2={g.x > layout.rootX ? g.x - GROUP_W / 2 : g.x < layout.rootX ? g.x + GROUP_W / 2 : g.x}
+                  y2={g.y}
                   stroke="#cbd5e1" strokeWidth={2.5} />
           ))}
 

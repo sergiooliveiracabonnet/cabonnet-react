@@ -11,7 +11,7 @@ function grupo(label: string, nEquipes: number): MindMapGroup {
   }
 }
 
-describe('layoutMindMap (organograma em duas colunas)', () => {
+describe('layoutMindMap (organograma em colunas)', () => {
   it('não quebra com zero grupos', () => {
     const layout = layoutMindMap([])
     expect(layout.groups).toHaveLength(0)
@@ -19,22 +19,19 @@ describe('layoutMindMap (organograma em duas colunas)', () => {
     expect(Number.isFinite(layout.height)).toBe(true)
   })
 
-  it('distribui os grupos entre coluna esquerda e direita do tronco', () => {
+  it('distribui os grupos em colunas ao redor do tronco (pelo menos 2)', () => {
     const layout = layoutMindMap([grupo('A', 1), grupo('B', 1), grupo('C', 1), grupo('D', 1)])
-    const lados = new Set(layout.groups.map(g => g.side))
-    expect(lados.has('left')).toBe(true)
-    expect(lados.has('right')).toBe(true)
-    for (const g of layout.groups) {
-      if (g.side === 'left')  expect(g.x).toBeLessThan(layout.rootX)
-      if (g.side === 'right') expect(g.x).toBeGreaterThan(layout.rootX)
-    }
+    const xs = new Set(layout.groups.map(g => g.x))
+    expect(xs.size).toBeGreaterThanOrEqual(2)
   })
 
-  it('a largura do canvas não cresce conforme mais grupos são adicionados (o que crescia era a altura)', () => {
+  it('abre mais colunas (mais largura, menos altura) quando há muito mais gente escalada', () => {
     const poucos  = layoutMindMap([grupo('A', 1), grupo('B', 1)])
-    const muitos  = layoutMindMap(Array.from({ length: 8 }, (_, i) => grupo(`G${i}`, 1)))
-    expect(muitos.width).toBe(poucos.width)
-    expect(muitos.height).toBeGreaterThan(poucos.height)
+    const muitos  = layoutMindMap(Array.from({ length: 10 }, (_, i) => grupo(`G${i}`, 6)))
+    expect(muitos.width).toBeGreaterThan(poucos.width)
+    // a proporção não pode disparar pra um retrato muito comprido — é o que
+    // ficava ilegível numa miniatura de chat.
+    expect(muitos.height / muitos.width).toBeLessThan(3)
   })
 
   it('as equipes de um grupo ficam centralizadas sob o nó do grupo', () => {
@@ -58,9 +55,10 @@ describe('layoutMindMap (organograma em duas colunas)', () => {
 
   it('grupos empilhados na mesma coluna não se sobrepõem verticalmente', () => {
     const layout = layoutMindMap([grupo('Grande', 8), grupo('A', 1), grupo('B', 1), grupo('C', 1)])
-    const porColuna = { left: layout.groups.filter(g => g.side === 'left'), right: layout.groups.filter(g => g.side === 'right') }
-    for (const lado of [porColuna.left, porColuna.right]) {
-      const ys = lado.map(g => g.y).sort((a, b) => a - b)
+    const porX = new Map<number, typeof layout.groups>()
+    for (const g of layout.groups) porX.set(g.x, [...(porX.get(g.x) ?? []), g])
+    for (const coluna of porX.values()) {
+      const ys = coluna.map(g => g.y).sort((a, b) => a - b)
       for (let i = 1; i < ys.length; i++) expect(ys[i]).toBeGreaterThan(ys[i - 1])
     }
   })
