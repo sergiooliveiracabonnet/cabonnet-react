@@ -135,6 +135,26 @@ describe('exportReincidenciasPDF', () => {
     expect(posicao('Leitura do lote 1.')).toBeGreaterThanOrEqual(0)
     expect(posicao('Leitura do lote 1.')).toBeLessThan(posicao('Detalhamento por cliente'))
   })
+
+  it('escreve "Feito" e "Faltou" do diagnóstico por par em blocos próprios, não numa linha concatenada', () => {
+    // Regressão: juntar os dois com " · " numa única string deixava a quebra
+    // automática do jsPDF orfanizar o rótulo no fim de uma linha, com o texto
+    // seguindo na próxima sem ele — parecia cortado no PDF exportado.
+    const comDiagnostico: AIReincidenciaAnalysis = {
+      ...analysis,
+      porPar: {
+        '9069512>9069513': {
+          chave: '9069512>9069513', cliente: 'Maria S. Oliveira', chaveCliente: '1001', cidade: 'Taubaté',
+          equipe: 'F04', diasEntre: 5, numosOrig: '9069512', numosRev: '9069513',
+          causa: 'Conectorização/Sinal', feitoPrimeira: 'Refez o conector na primeira visita', oQueFaltou: 'Não testou o sinal após a troca',
+        },
+      },
+    }
+    exportReincidenciasPDF([cliente], ['Todas as terceiras'], comDiagnostico)
+    expect(textos).toContain('Feito: Refez o conector na primeira visita')
+    expect(textos).toContain('Faltou: Não testou o sinal após a troca')
+    expect(textos.some(t => t.includes('Feito:') && t.includes('Faltou:'))).toBe(false)
+  })
 })
 
 describe('layout do PDF', () => {

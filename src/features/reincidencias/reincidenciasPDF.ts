@@ -188,11 +188,13 @@ export function exportReincidenciasPDF(clientes: ClienteReincidente[], filters: 
       const next = rows[index + 1]
       const diagnostico = next && analysis?.porPar[aiPairKey(row.numos, next.numos)]
       if (!diagnostico) return
-      const detalhe = [
-        diagnostico.feitoPrimeira && `Feito: ${diagnostico.feitoPrimeira}`,
-        diagnostico.oQueFaltou && `Faltou: ${diagnostico.oQueFaltou}`,
-      ].filter(Boolean).join(' · ')
-      escrever(`IA → ${diagnostico.causa} (revisita ${diagnostico.diasEntre}d depois, OS ${diagnostico.numosRev})${detalhe ? `. ${detalhe}` : ''}`, TIPO.ia, { indent: 4, gap: 2.4 })
+      // "Feito" e "Faltou" viram blocos próprios, como na tela — concatenados numa
+      // única string, a quebra automática do jsPDF podia deixar o rótulo sozinho
+      // no fim de uma linha e o texto seguir na próxima, parecendo cortado.
+      escrever(`IA → ${diagnostico.causa} (revisita ${diagnostico.diasEntre}d depois, OS ${diagnostico.numosRev})`, TIPO.ia,
+        { indent: 4, gap: diagnostico.feitoPrimeira || diagnostico.oQueFaltou ? 0.6 : 2.4 })
+      if (diagnostico.feitoPrimeira) escrever(`Feito: ${diagnostico.feitoPrimeira}`, TIPO.ia, { indent: 4, gap: diagnostico.oQueFaltou ? 0.6 : 2.4 })
+      if (diagnostico.oQueFaltou) escrever(`Faltou: ${diagnostico.oQueFaltou}`, TIPO.ia, { indent: 4, gap: 2.4 })
     })
   })
 
