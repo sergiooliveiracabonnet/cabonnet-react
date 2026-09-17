@@ -1089,6 +1089,7 @@ async def os_observacoes(request: Request, sess: dict = Depends(_require_session
     with state._query_cache_lock:
         cached = dict(state._query_cache)
     fornecedor_key = sess.get("fornecedor_key") if isinstance(sess, dict) else None
+    cluster_key = sess.get("cluster_key") if isinstance(sess, dict) else None
     parts = [
         _filter_csv_escopo(cached.get(key, ""), fornecedor_key, cluster_key)
         for key in ("pendente", "agendado", "futuro")

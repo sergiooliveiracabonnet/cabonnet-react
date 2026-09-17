@@ -38,10 +38,15 @@ export interface Churn {
 
 const DIA_MS = 86400000
 
-export function buildChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Date = new Date()): Churn {
-  const hoje  = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const corte = new Date(hoje)
-  corte.setDate(corte.getDate() - JANELA_DIAS)
+export function buildChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Date = new Date(), range: { from: Date; to: Date } | null = null): Churn {
+  // Painel do dashboard: janela fixa de 60 dias a partir de agora, para mostrar
+  // risco atual independente do filtro de data selecionado. Relatório dedicado
+  // (Reincidências): recebe `range` com o período escolhido no filtro global.
+  const hoje  = range ? new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate())
+                      : new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const corte = range ? new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
+                      : (() => { const c = new Date(hoje); c.setDate(c.getDate() - JANELA_DIAS); return c })()
+  const janelaDias = range ? Math.max(1, Math.round((hoje.getTime() - corte.getTime()) / DIA_MS)) : JANELA_DIAS
 
   const porCliente = new Map<string, { rows: OSRow[]; datas: Date[] }>()
 
@@ -52,6 +57,7 @@ export function buildChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Date = new
 
     const quando = parseDate((r.dataexecucao || r.databaixa || '').split(' ')[0])
     if (!quando || quando < corte) continue
+    if (range && quando > hoje) continue
 
     const chave = String(r.codigocliente || r.nomecliente || '').trim()
     if (!chave) continue
@@ -94,7 +100,7 @@ export function buildChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Date = new
     )
 
   return {
-    janelaDias: JANELA_DIAS,
+    janelaDias,
     clientes: clientes.slice(0, topo),
     totalReincidentes: clientes.length,
     totalBase,

@@ -77,14 +77,16 @@ export interface TeamRecurrenceRank {
   equipe: string; reincidentes: number; revisitas: number; base: number; taxa: number
 }
 
-export function buildTeamRecurrenceRanking(clientes: ClienteReincidente[], baseRows: OSRow[], now = new Date()): TeamRecurrenceRank[] {
-  const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  cutoff.setDate(cutoff.getDate() - 60)
+export function buildTeamRecurrenceRanking(clientes: ClienteReincidente[], baseRows: OSRow[], now = new Date(), range: { from: Date; to: Date } | null = null): TeamRecurrenceRank[] {
+  const upper = range ? new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate()) : null
+  const cutoff = range ? new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
+    : (() => { const c = new Date(now.getFullYear(), now.getMonth(), now.getDate()); c.setDate(c.getDate() - 60); return c })()
   const baseByTeam = new Map<string, Set<string>>()
   for (const row of baseRows) {
     if (isCOPE(row) || isReagend(row) || row._tipo !== 'MANUTENCAO' || !isExecucaoReal(row.descsituacao)) continue
     const date = parseDate((row.dataexecucao || row.databaixa || '').split(' ')[0])
     if (!date || date < cutoff) continue
+    if (upper && date > upper) continue
     const equipe = shortEquipe(row.nomedaequipe).split(' - ')[0]
     const client = String(row.codigocliente || row.nomecliente || '').trim()
     if (!equipe || equipe === '—' || !client) continue

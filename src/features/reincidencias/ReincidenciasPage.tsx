@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Brain, CaretDown, CaretRight, FilePdf, Funnel, UserMinus } from '@phosphor-icons/react'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { useOSDerived } from '../../contexts/OSDataContext'
+import { useUIStore } from '../../store/uiStore'
 import { buildChurn } from '../../lib/builders/churn'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { aiPairKey, useAIReincidencias } from '../../hooks/useAIReincidencias'
@@ -15,11 +16,13 @@ const FORNECEDORES = ['WES', 'Instacable', 'THM', 'REDE', 'MANUTENCAO', 'INTERNO
 
 export default function ReincidenciasPage() {
   const { allRows, isLoading } = useOSDerived()
+  const { dateFilter } = useUIStore()
   const [fornecedor, setFornecedor] = useState('')
   const [equipe, setEquipe] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [aiEnabled, setAIEnabled] = useState(false)
-  const churn = useMemo(() => buildChurn(allRows, Number.POSITIVE_INFINITY), [allRows])
+  const range = useMemo(() => (dateFilter.from && dateFilter.to ? { from: dateFilter.from, to: dateFilter.to } : null), [dateFilter.from, dateFilter.to])
+  const churn = useMemo(() => buildChurn(allRows, Number.POSITIVE_INFINITY, new Date(), range), [allRows, range])
   const reportOSNumbers = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => r.numos)))], [churn.clientes])
   const { data: observations, isLoading: observationsLoading, isError: observationsError } = useReincidenciaDetails(reportOSNumbers)
   const detailedClients = useMemo(() => mergeOSObservations(churn.clientes, observations), [churn.clientes, observations])
@@ -30,7 +33,7 @@ export default function ReincidenciasPage() {
     (!fornecedor || row._fornecedor === fornecedor) &&
     (!equipe || shortEquipe(row.nomedaequipe).startsWith(equipe)),
   ), [allRows, fornecedor, equipe])
-  const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows), [clientes, filteredBaseRows])
+  const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows, new Date(), range), [clientes, filteredBaseRows, range])
   const intervals = useMemo(() => buildIntervalDistribution(pares), [pares])
   const filtros = useMemo(() => [fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras', equipe ? `Equipe: ${equipe}` : 'Todas as equipes'], [fornecedor, equipe])
   const contexto = useMemo(() => ({ janelaDias: churn.janelaDias, filtros: filtros.join(' · ') }), [churn.janelaDias, filtros])
@@ -42,7 +45,7 @@ export default function ReincidenciasPage() {
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6">
       <PageHeader title="Relatório de Reincidências" icon={UserMinus}
-        description={`Manutenções repetidas nos últimos ${churn.janelaDias} dias · análise auditável por cliente`}
+        description={`Manutenções repetidas ${range ? `entre ${range.from.toLocaleDateString('pt-BR')} e ${range.to.toLocaleDateString('pt-BR')}` : `nos últimos ${churn.janelaDias} dias`} · análise auditável por cliente`}
         actions={<button type="button" disabled={!clientes.length} onClick={() => exportReincidenciasPDF(clientes, filtros, analysis)}
           className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 text-label font-semibold text-white transition-colors hover:bg-primary/85 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
           <FilePdf size={17} /> Exportar PDF
