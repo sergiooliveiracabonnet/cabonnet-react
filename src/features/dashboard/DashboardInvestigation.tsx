@@ -10,8 +10,8 @@ interface DashboardInvestigationProps {
 }
 
 const VIEWS = [
-  { id: 'operation', label: 'Operação', description: 'Capacidade e ritmo das equipes', icon: ChartLineUp },
-  { id: 'territory', label: 'Território e demanda', description: 'Cidades e motivos da fila', icon: MapTrifold },
+  { id: 'operation', label: 'Operação', description: 'Ritmo das equipes hoje', icon: ChartLineUp },
+  { id: 'territory', label: 'Território e demanda', description: 'Cidades, capacidade e motivos da fila', icon: MapTrifold },
   { id: 'quality', label: 'Qualidade e tendência', description: 'Metas, reincidência e fornecedores', icon: ShieldCheck },
 ] as const
 

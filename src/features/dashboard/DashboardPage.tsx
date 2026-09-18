@@ -21,11 +21,11 @@ import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
   MetaMesCard, ClustersBairroPanel, AgingPanel,
   RitmoEquipesPanel, MudancasStrip,
-  ParetoServicoPanel, CidadesValePanel, FornecedoresPanel, QualidadePeriodoCard,
+  ParetoServicoPanel, FornecedoresPanel, QualidadePeriodoCard,
 } from './DashboardPaineis'
 import { KpiModalTable } from './DashboardKpiModal'
 import { CoortePanel } from './CoortePanel'
-import { CapacidadePanel } from './CapacidadePanel'
+import { CidadesPanel } from './CidadesPanel'
 import { ChurnPanel } from './ChurnPanel'
 import { DashboardInvestigation } from './DashboardInvestigation'
 import {
@@ -283,15 +283,11 @@ export default function DashboardPage() {
         </section>
 
         <DashboardInvestigation
-          operation={(
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <CapacidadePanel horizonte={capacidade.horizonte} cidades={capacidade.cidades} />
-              <RitmoEquipesPanel semaforo={campo.semaforo} onOpen={openEquipe} />
-            </div>
-          )}
+          operation={<RitmoEquipesPanel semaforo={campo.semaforo} onOpen={openEquipe} />}
           territory={(
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <CidadesValePanel filaAtiva={filaAtiva} onOpen={(title, filtered) => setModal({ title, rows: filtered })} />
+              <CidadesPanel horizonte={capacidade.horizonte} capacidadeCidades={capacidade.cidades} filaAtiva={filaAtiva}
+                            onOpen={(title, filtered) => setModal({ title, rows: filtered })} />
               <ParetoServicoPanel filaAtiva={filaAtiva} onOpen={(title, filtered) => setModal({ title, rows: filtered })} />
             </div>
           )}
