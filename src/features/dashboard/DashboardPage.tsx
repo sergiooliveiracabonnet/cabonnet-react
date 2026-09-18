@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { WarningCircle, DownloadSimple, ChartBar, ArrowRight, Lightning, Gauge } from '@phosphor-icons/react'
 import type { OSRow, KPI, AccentColor } from '../../lib/types'
@@ -19,7 +19,7 @@ import { StatCard, accentToTone } from '../../components/ui/StatCard'
 import { SectionLabel } from './DashboardKpiPrimitives'
 import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
-  MetaMesCard, AlertaTopoBanner, ClustersBairroPanel, AgingPanel,
+  MetaMesCard, ClustersBairroPanel, AgingPanel,
   RitmoEquipesPanel, MudancasStrip,
   ParetoServicoPanel, CidadesValePanel, FornecedoresPanel, QualidadePeriodoCard,
 } from './DashboardPaineis'
@@ -39,8 +39,6 @@ export default function DashboardPage() {
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
   const taxaRevisitas = (revisitas as { taxa?: { geral?: number } } | null)?.taxa?.geral ?? null
   const { clustersAtivos = [] } = pulso
-  const clustersRef  = useRef<HTMLDivElement>(null)
-  const anomaliasRef = useRef<HTMLDivElement>(null)
   const [aiEnabled, setAiEnabled] = useState(false)
   const [observacao, setObservacao] = useState('')
   const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso: pulso as unknown as Record<string, unknown>, fornecedores, anomalias, observacao, enabled: aiEnabled })
@@ -200,13 +198,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-        <AlertaTopoBanner
-          clustersCount={clustersAtivos.length}
-          anomaliasCount={anomalias?.total ?? 0}
-          onScrollClusters={() => clustersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          onScrollAnomalias={() => anomaliasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-        />
-
           <DashboardCommandCenter
             priorities={riskKpis}
             projection={projecaoRisco}
@@ -217,22 +208,18 @@ export default function DashboardPage() {
 
         <MudancasStrip mudancas={mudancas} />
 
-        <div ref={clustersRef}>
-          <ClustersBairroPanel clusters={clustersAtivos} />
-        </div>
+        <ClustersBairroPanel clusters={clustersAtivos} />
 
         {anomalias?.total > 0 && (
-          <div ref={anomaliasRef}>
-            <AnomaliaSection
-              anomalias={anomalias}
-              contexto={{
-                total:     (kpis.find(k => k.id === 'total')?.value as number) ?? 0,
-                sla_pct:   pulso.slaFila ?? 0,
-                criticas:  pulso.criticasTotal ?? 0,
-                aging_med: pulso.agingMed ?? 0,
-              }}
-            />
-          </div>
+          <AnomaliaSection
+            anomalias={anomalias}
+            contexto={{
+              total:     (kpis.find(k => k.id === 'total')?.value as number) ?? 0,
+              sla_pct:   pulso.slaFila ?? 0,
+              criticas:  pulso.criticasTotal ?? 0,
+              aging_med: pulso.agingMed ?? 0,
+            }}
+          />
         )}
         </section>
 

@@ -6,8 +6,9 @@ import {
   MetaMesCard,
   QualidadePeriodoCard,
   RitmoEquipesPanel,
+  ClustersBairroPanel,
 } from './DashboardPaineis'
-import type { CampoSemaforo, Pulso, PulsoMetaMes } from '../../lib/types'
+import type { CampoSemaforo, ClusterAtivo, Pulso, PulsoMetaMes } from '../../lib/types'
 
 afterEach(cleanup)
 
@@ -134,5 +135,21 @@ describe('drill-downs comparativos', () => {
     expect(screen.getByText('Abrir OS')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Fornecedor WES.*Abrir OS/i }))
     expect(onOpen).toHaveBeenCalledWith('WES')
+  })
+})
+
+describe('ClustersBairroPanel', () => {
+  const clusters: ClusterAtivo[] = [{ bairro: 'Jardim das Nações', cidade: 'Taubaté', total: 5 }]
+
+  it('nasce fechado, mostrando só a contagem no cabeçalho', () => {
+    render(<ClustersBairroPanel clusters={clusters} />)
+    expect(screen.getByText('1 bairro')).toBeInTheDocument()
+    expect(screen.queryByText('Jardim das Nações')).not.toBeInTheDocument()
+  })
+
+  it('abre a lista de bairros ao clicar no cabeçalho', () => {
+    render(<ClustersBairroPanel clusters={clusters} />)
+    fireEvent.click(screen.getByRole('button', { name: /Clusters de Falha/i }))
+    expect(screen.getByText('Jardim das Nações')).toBeInTheDocument()
   })
 })

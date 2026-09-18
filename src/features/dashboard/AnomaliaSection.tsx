@@ -44,7 +44,9 @@ export function AnomaliaSection({ anomalias, contexto }: {
   anomalias: AnomaliasData; contexto: AnomaliaContextType
 }) {
   const { total = 0, picosDia = [], bairrosAnomalia = [], equipesAnomalia = [] } = anomalias ?? {}
-  const [open, setOpen] = useState(total > 0)
+  // Painel de exceção: nasce fechado, com a contagem já visível no cabeçalho —
+  // antes abria sozinho sempre que total > 0, o que na prática é quase sempre.
+  const [open, setOpen] = useState(false)
   const [aiEnabled, setAiEnabled] = useState(false)
 
   type HookAnomItem = { zScore: number; [k: string]: unknown }

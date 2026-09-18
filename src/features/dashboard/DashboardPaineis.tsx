@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Lightning, CheckCircle, MapPin, Clock, Gauge, Target, WarningCircle, Stack, Package, Pulse, TrendUp, TrendDown } from '@phosphor-icons/react'
+import { useMemo, useState } from 'react'
+import { Lightning, CheckCircle, MapPin, Clock, Gauge, Target, WarningCircle, Stack, Package, Pulse, TrendUp, TrendDown, CaretDown } from '@phosphor-icons/react'
 import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } from '../../lib/types'
 import { TrendPill } from '../../components/ui/StatCard'
 import { DashboardPanelHeader, SectionLabel } from './DashboardKpiPrimitives'
@@ -40,37 +40,11 @@ export function MudancasStrip({ mudancas }: { mudancas: DashMover[] }) {
   )
 }
 
-export function AlertaTopoBanner({ clustersCount, anomaliasCount, onScrollClusters, onScrollAnomalias }: {
-  clustersCount: number; anomaliasCount: number
-  onScrollClusters?: () => void; onScrollAnomalias?: () => void
-}) {
-  if (!clustersCount && !anomaliasCount) return null
-  return (
-    <div className="flex items-center gap-3 flex-wrap rounded-xl border border-red/25 bg-red/[0.06] px-4 py-2.5">
-      <WarningCircle size={13} className="text-red flex-shrink-0" />
-      <span className="text-label font-bold text-red">Atenção necessária:</span>
-      {clustersCount > 0 && (
-        <button
-          onClick={onScrollClusters}
-          className="text-label text-text underline-offset-2 hover:underline hover:text-red transition-colors"
-        >
-          {clustersCount} cluster{clustersCount !== 1 ? 's' : ''} de falha detectado{clustersCount !== 1 ? 's' : ''}
-        </button>
-      )}
-      {clustersCount > 0 && anomaliasCount > 0 && <span className="text-muted">·</span>}
-      {anomaliasCount > 0 && (
-        <button
-          onClick={onScrollAnomalias}
-          className="text-label text-text underline-offset-2 hover:underline hover:text-red transition-colors"
-        >
-          {anomaliasCount} anomalia{anomaliasCount !== 1 ? 's' : ''} detectada{anomaliasCount !== 1 ? 's' : ''}
-        </button>
-      )}
-    </div>
-  )
-}
-
 export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) {
+  // Painel de exceção: nasce fechado, com a contagem já visível no cabeçalho —
+  // o operador decide se abre, em vez de receber a lista sempre expandida.
+  const [open, setOpen] = useState(false)
+
   if (!clusters?.length) {
     return (
       <div className="h-full rounded-lg border border-border border-l-2 border-l-green bg-card p-5">
@@ -87,32 +61,42 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
 
   return (
     <div className="h-full rounded-lg border border-border border-l-2 border-l-red bg-card">
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-4">
-          <SectionLabel icon={Lightning} color="#f87171">Clusters de Falha</SectionLabel>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-3 p-5 text-left hover:bg-surface/15 transition-colors"
+      >
+        <SectionLabel icon={Lightning} color="#f87171">Clusters de Falha</SectionLabel>
+        <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-caption font-bold uppercase tracking-label bg-red/15 text-red
                            border border-red/25 rounded-full px-2.5 py-1">
-            ALERTA
+            {clusters.length} bairro{clusters.length !== 1 ? 's' : ''}
           </span>
+          <CaretDown size={13} className={`text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
         </div>
+      </button>
 
-        <p className="text-body font-semibold text-text mb-1">
-          {clusters.length} bairro{clusters.length !== 1 ? 's' : ''} com possível problema de infraestrutura
-        </p>
-        <p className="text-caption text-muted mb-4">4+ OS de manutenção abertas no mesmo bairro nas últimas 24h</p>
+      {open && (
+        <div className="px-5 pb-5 border-t border-red/[0.10]">
+          <p className="text-body font-semibold text-text mt-3 mb-1">
+            {clusters.length} bairro{clusters.length !== 1 ? 's' : ''} com possível problema de infraestrutura
+          </p>
+          <p className="text-caption text-muted mb-4">4+ OS de manutenção abertas no mesmo bairro nas últimas 24h</p>
 
-        <div className="space-y-2">
-          {clusters.map((cl, i) => (
-            <div key={i} className="flex items-center gap-3 bg-red/[0.04] border border-red/[0.12]
-                                    rounded-lg px-3 py-2.5">
-              <MapPin size={11} className="text-red/60 flex-shrink-0" />
-              <span className="text-label font-semibold text-text flex-1 truncate">{cl.bairro}</span>
-              <span className="text-caption text-muted">{cl.cidade}</span>
-              <span className="font-mono text-body font-bold text-red flex-shrink-0">{cl.total}</span>
-            </div>
-          ))}
+          <div className="space-y-2">
+            {clusters.map((cl, i) => (
+              <div key={i} className="flex items-center gap-3 bg-red/[0.04] border border-red/[0.12]
+                                      rounded-lg px-3 py-2.5">
+                <MapPin size={11} className="text-red/60 flex-shrink-0" />
+                <span className="text-label font-semibold text-text flex-1 truncate">{cl.bairro}</span>
+                <span className="text-caption text-muted">{cl.cidade}</span>
+                <span className="font-mono text-body font-bold text-red flex-shrink-0">{cl.total}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
