@@ -28,10 +28,12 @@ export interface GrafanaCidade {
 
 export const TIPO_MAX: Record<string, number> = { INSTALACAO: 18, MANUTENCAO: 12, REDE: 10 }
 
+// Tokens do design system (não hex cru) — cada severidade vira classes
+// Tailwind prontas, reaplicadas onde antes havia style inline com hex/rgba.
 export const SEV_CFG = {
-  CRITICO: { label: 'Crítico', color: '#f87171', glow: 'rgba(248,113,113,0.18)', bg: 'rgba(248,113,113,0.07)', dot: '#f87171' },
-  ALTO:    { label: 'Alto',    color: '#f97316', glow: 'rgba(249,115,22,0.18)',  bg: 'rgba(249,115,22,0.07)',  dot: '#f97316' },
-  MEDIO:   { label: 'Médio',   color: '#facc15', glow: 'rgba(250,204,21,0.18)',  bg: 'rgba(250,204,21,0.07)',  dot: '#facc15' },
+  CRITICO: { label: 'Crítico', tone: 'red',    text: 'text-red',    border: 'border-red/25',    borderL: 'border-l-red',    bg: 'bg-red/[0.07]',    dot: 'bg-red'    },
+  ALTO:    { label: 'Alto',    tone: 'orange', text: 'text-orange', border: 'border-orange/25', borderL: 'border-l-orange', bg: 'bg-orange/[0.07]', dot: 'bg-orange' },
+  MEDIO:   { label: 'Médio',   tone: 'yellow', text: 'text-yellow', border: 'border-yellow/25', borderL: 'border-l-yellow', bg: 'bg-yellow/[0.07]', dot: 'bg-yellow' },
 }
 
 export const SEV_CFG_MAP = SEV_CFG as Record<string, typeof SEV_CFG[SevKey]>
@@ -113,12 +115,12 @@ export function buildAlerts(
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
 
-export function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; color: string; children: React.ReactNode }) {
+export function SectionLabel({ icon: Icon, tone, children }: { icon: IconComp; tone: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ background: color }} />
-      <Icon size={12} style={{ color }} className="flex-shrink-0" />
-      <span className="text-caption font-bold uppercase tracking-label" style={{ color }}>{children}</span>
+    <div className={`flex items-center gap-2.5 ${tone}`}>
+      <div className="w-[3px] h-4 rounded-full flex-shrink-0 bg-current" />
+      <Icon size={12} className="flex-shrink-0" />
+      <span className="text-caption font-bold uppercase tracking-label">{children}</span>
     </div>
   )
 }
@@ -137,45 +139,37 @@ export function AlertCard({ alert, delay = 0, acknowledged = false, onToggleAckn
   const extra     = alert.items.length - PREVIEW
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border animate-card-enter"
-         style={{ borderColor: `${sev.color}28`, animationDelay: `${delay}ms` }}>
-      <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: `linear-gradient(90deg, ${sev.color}, ${sev.color}60, transparent)` }} />
-      <div className="absolute -top-12 -left-8 w-36 h-36 rounded-full blur-3xl pointer-events-none"
-           style={{ background: sev.glow }} />
+    <div className={`relative overflow-hidden rounded-2xl border border-l-2 ${sev.border} ${sev.borderL} bg-card animate-card-enter`}
+         style={{ animationDelay: `${delay}ms` }}>
 
       <button className="relative w-full flex items-center gap-4 p-5 text-left hover:bg-surface/20 transition-colors"
               onClick={() => setOpen(v => !v)} aria-expanded={open}>
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-             style={{ background: sev.bg, border: `1px solid ${sev.color}30` }}>
-          <AlertIcon size={20} style={{ color: sev.color }} />
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 border ${sev.bg} ${sev.border} ${sev.text}`}>
+          <AlertIcon size={20} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <p className="text-body font-semibold text-text">{alert.title}</p>
-            <span className="text-caption font-bold uppercase tracking-label px-2 py-0.5 rounded-full border flex-shrink-0"
-                  style={{ background: sev.bg, borderColor: `${sev.color}40`, color: sev.color }}>
+            <span className={`text-caption font-bold uppercase tracking-label px-2 py-0.5 rounded-full border flex-shrink-0 ${sev.bg} ${sev.border} ${sev.text}`}>
               {sev.label}
             </span>
           </div>
           <p className="text-label text-secondary">{alert.desc}</p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
-          <span className="font-mono font-black tabular-nums text-readout-lg leading-none" style={{ color: sev.color }}>
+          <span className={`font-mono font-black tabular-nums text-readout-lg leading-none ${sev.text}`}>
             {alert.count}
           </span>
-          <CaretDown size={14} className="text-muted transition-transform duration-200"
-                       style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+          <CaretDown size={14} className={`text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
         </div>
       </button>
 
       {open && (
-        <div className="border-t" style={{ borderColor: `${sev.color}15` }}>
-          <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+        <div className="border-t border-hairline">
+          <div className="divide-y divide-hairline">
             {alert.items.slice(0, PREVIEW).map((item: AlertItem) => (
               <div key={item.key} className="flex items-center gap-3 px-5 py-3 hover:bg-surface/20 transition-colors">
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                     style={{ background: sev.dot, boxShadow: `0 0 5px ${sev.dot}80` }} />
+                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sev.dot}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-label font-medium text-text truncate">{item.label}</p>
                   <p className="text-caption text-muted mt-0.5">{item.sub}</p>
@@ -184,8 +178,7 @@ export function AlertCard({ alert, delay = 0, acknowledged = false, onToggleAckn
             ))}
           </div>
           {extra > 0 && (
-            <p className="text-caption text-muted text-center py-3 border-t"
-               style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+            <p className="text-caption text-muted text-center py-3 border-t border-hairline">
               +{extra} item{extra > 1 ? 's' : ''} adicionais
             </p>
           )}
@@ -215,21 +208,18 @@ export function RuleCard({ rule, delay = 0, acknowledged = false, onToggleAcknow
   const RIcon  = RULE_ICONS[rule.metric] ?? Bell
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border animate-card-enter"
-         style={{ borderColor: `${sev.color}22`, animationDelay: `${delay}ms` }}>
-      <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: `linear-gradient(90deg, ${sev.color}80, transparent)` }} />
+    <div className={`relative overflow-hidden rounded-2xl border border-l-2 ${sev.border} ${sev.borderL} bg-card animate-card-enter`}
+         style={{ animationDelay: `${delay}ms` }}>
       <div className="relative flex items-center gap-4 p-4">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-             style={{ background: sev.bg, border: `1px solid ${sev.color}30` }}>
-          <RIcon size={17} style={{ color: sev.color }} />
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border ${sev.bg} ${sev.border} ${sev.text}`}>
+          <RIcon size={17} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-body font-semibold text-text">{rule.label}</p>
           <p className="text-caption text-secondary mt-0.5">{rule.desc}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="font-mono font-black tabular-nums text-readout leading-none" style={{ color: sev.color }}>
+          <p className={`font-mono font-black tabular-nums text-readout leading-none ${sev.text}`}>
             {rule.currentValue}
           </p>
           <p className="text-caption text-muted mt-0.5">{rule.operator} {rule.threshold}</p>
@@ -265,28 +255,24 @@ export function GrafanaCityStrip({ cidades, loading }: { cidades: GrafanaCidade[
       {cidades.map((c: GrafanaCidade, i: number) => {
         const pct    = Math.round(((c.pendentes ?? 0) / max) * 100)
         const isCrit = (c.aging_critico ?? 0) > 0
-        const barClr = isCrit ? '#f97316' : '#3b82f6'
+        const barCls = isCrit ? 'bg-orange' : 'bg-primary'
         return (
           <div key={c.cidade}
-               className="relative overflow-hidden rounded-xl border bg-card p-3 flex flex-col gap-1.5 animate-card-enter"
-               style={{ borderColor: isCrit ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.07)', animationDelay: `${i * 50}ms` }}>
-            {isCrit && (
-              <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: '#f97316' }} />
-            )}
+               className={`relative overflow-hidden rounded-xl border bg-card p-3 flex flex-col gap-1.5 animate-card-enter
+                          ${isCrit ? 'border-orange/25' : 'border-subtle'}`}
+               style={{ animationDelay: `${i * 50}ms` }}>
+            {isCrit && <div className="absolute top-0 left-0 right-0 h-[2px] bg-orange" />}
             <div className="flex items-center gap-1.5">
               <MapPin size={10} className="text-muted flex-shrink-0" />
               <p className="text-caption font-semibold text-secondary truncate">{c.cidade}</p>
             </div>
             <p className="font-mono font-black text-readout leading-none tabular-nums text-text">{c.pendentes ?? 0}</p>
             <div className="h-1.5 rounded-full bg-surface/40 overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-700"
-                   style={{ width: `${pct}%`, background: barClr, boxShadow: `0 0 6px ${barClr}60` }} />
+              <div className={`h-full rounded-full transition-all duration-700 ${barCls}`} style={{ width: `${pct}%` }} />
             </div>
             <div className="flex justify-between text-caption">
               <span className="text-muted">{c.fechados_7d ?? 0} fechados/7d</span>
-              {isCrit && (
-                <span className="font-semibold" style={{ color: '#f97316' }}>{c.aging_critico} aging</span>
-              )}
+              {isCrit && <span className="font-semibold text-orange">{c.aging_critico} aging</span>}
             </div>
           </div>
         )

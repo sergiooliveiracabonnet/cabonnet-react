@@ -23,10 +23,6 @@
       "#e2eeff",
       "#fca5a5"
     ],
-    "src/components/global/PicoAlertaModal.tsx": [
-      "#374151",
-      "#ef4444"
-    ],
     "src/components/ui/bar-chart.tsx": [
       "#27272a",
       "#e4e4e7"
@@ -60,12 +56,6 @@
     ],
     "src/features/dashboard/DashboardPaineis.tsx": [
       "#94a3b8"
-    ],
-    "src/features/erp/alertas/AlertasComponents.tsx": [
-      "#f97316"
-    ],
-    "src/features/erp/alertas/AlertasPage.tsx": [
-      "#f97316"
     ],
     "src/features/erp/fila/FilaPage.tsx": [
       "#ef4444"
@@ -156,7 +146,7 @@
     ]
   },
   "tetos": {
-    "hexTolerados": 106,
-    "valoresArbitrarios": 276
+    "hexTolerados": 102,
+    "valoresArbitrarios": 270
   }
 }
