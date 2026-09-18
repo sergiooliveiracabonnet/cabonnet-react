@@ -122,7 +122,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
   filaAtiva?: OSRow[]
   onOpen?: (title: string, rows: OSRow[]) => void
 }) {
-  const { agingDist, backlogDias } = pulso
+  const { agingDist } = pulso
   const agingTotals = agingDist as unknown as Record<string, number>
   const agingTotal  = Object.values(agingTotals).reduce((s, v) => s + v, 0)
 
@@ -156,10 +156,9 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
         color="#3b82f6"
         actionLabel={onOpen && filaAtiva ? 'Abrir OS' : undefined}
         meta={(
-          <span className="hidden tabular-nums sm:inline">
-          {agingTotal} abertas
-          {backlogDias != null && <> · ≈ <span className="font-semibold text-text">{backlogDias.toLocaleString('pt-BR')}d</span> de fila</>}
-          </span>
+          // Backlog em dias já é o "Backlog da fila" do PulsoHero (Nível 2) —
+          // repeti-lo aqui só duplicava o mesmo número dentro do mesmo grid.
+          <span className="hidden tabular-nums sm:inline">{agingTotal} abertas</span>
         )}
       >
         Fila Ativa — Prazo Consumido
@@ -561,12 +560,13 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
 // Qualidade do período — indicadores que antes viviam sempre-visíveis no Hero
 // (SLA/MTTR/Aging/Revisitas). Mesmo cálculo, agora como painel de Nível 5.
 export function QualidadePeriodoCard({ pulso, taxaRevisitas }: { pulso: Pulso; taxaRevisitas?: number | null }) {
-  const { slaFila, slaAtingimento, mttr, mttrP90, agingMed, semAgendamento } = pulso
+  const { slaAtingimento, mttr, mttrP90, agingMed, semAgendamento } = pulso
 
+  // "SLA da Fila" (estoque) não entra aqui: já é o primeiro sinal vital do
+  // PulsoHero, sempre visível no Nível 2 — repeti-lo atrás de uma aba só
+  // mostraria o mesmo número de novo, sem informação nova.
   type MiniStat = { label: string; value: string; sub?: string; hint?: string; warn: boolean; danger: boolean }
   const stats: MiniStat[] = [
-    { label: 'SLA da Fila',  value: `${slaFila}%`, hint: 'Estoque: % da fila atual ainda dentro do prazo',
-      warn: slaFila < 90, danger: slaFila < 75 },
     { label: 'SLA Atendido', value: slaAtingimento != null ? `${slaAtingimento}%` : '—',
       sub: 'das concluídas', hint: 'Fluxo: % das OS concluídas no período entregues dentro do SLA',
       warn: slaAtingimento != null && slaAtingimento < 90, danger: slaAtingimento != null && slaAtingimento < 75 },

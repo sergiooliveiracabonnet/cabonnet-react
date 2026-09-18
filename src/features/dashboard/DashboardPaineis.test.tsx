@@ -25,10 +25,11 @@ function makePulso(overrides: Partial<Pulso> = {}): Pulso {
 }
 
 describe('QualidadePeriodoCard', () => {
-  it('renderiza os 6 indicadores de qualidade do período', () => {
+  it('renderiza os 5 indicadores de qualidade do período', () => {
     render(<QualidadePeriodoCard pulso={makePulso()} taxaRevisitas={5.2} />)
     expect(screen.getByText('Qualidade do Período')).toBeInTheDocument()
-    expect(screen.getByText('87%')).toBeInTheDocument()
+    // "SLA da Fila" não aparece aqui — já é sinal vital sempre visível no PulsoHero (Nível 2).
+    expect(screen.queryByText('SLA da Fila')).not.toBeInTheDocument()
     expect(screen.getByText('91%')).toBeInTheDocument()
     expect(screen.getByText('2,1d')).toBeInTheDocument()
     expect(screen.getByText('3,4d')).toBeInTheDocument()
