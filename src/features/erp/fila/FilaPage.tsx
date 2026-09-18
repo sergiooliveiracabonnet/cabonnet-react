@@ -336,7 +336,7 @@ export default function FilaPage() {
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-label font-semibold
                          border transition-all duration-300
                          ${copiedImage
-                           ? 'border-green-500/50 text-green bg-green-500/10'
+                           ? 'border-green/50 text-green bg-green/10'
                            : 'border-green/30 text-green hover:bg-green/10'}`}
             >
               {copiedImage

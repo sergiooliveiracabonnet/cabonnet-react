@@ -10,10 +10,12 @@ interface DashboardCommandCenterProps {
   onProjection: (rows: OSRow[]) => void
 }
 
+// Fundo plano, sem gradiente — a spec do componente veda "gradientes
+// chamativos" (docs/superpowers/specs/2026-07-25-p1-dashboard-decision-hierarchy-design.md).
 const TONE_CLASSES: Record<string, string> = {
-  red: 'border-red/25 bg-gradient-to-br from-red/[0.10] to-red/[0.025] hover:border-red/45',
-  orange: 'border-orange/25 bg-gradient-to-br from-orange/[0.09] to-orange/[0.02] hover:border-orange/45',
-  yellow: 'border-yellow/25 bg-gradient-to-br from-yellow/[0.08] to-yellow/[0.02] hover:border-yellow/45',
+  red: 'border-red/25 bg-red/[0.06] hover:border-red/45',
+  orange: 'border-orange/25 bg-orange/[0.06] hover:border-orange/45',
+  yellow: 'border-yellow/25 bg-yellow/[0.06] hover:border-yellow/45',
 }
 
 const VALUE_CLASSES: Record<string, string> = {
