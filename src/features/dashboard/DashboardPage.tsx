@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { WarningCircle, DownloadSimple, ChartBar, ArrowRight, Lightning, Gauge } from '@phosphor-icons/react'
 import type { OSRow, KPI, AccentColor } from '../../lib/types'
 import { useOSDerived } from '../../contexts/OSDataContext'
+import { useAuthStore } from '../../store/authStore'
 import { useAINarrative } from '../../hooks/useAINarrative'
 import { useStats } from '../../hooks/useStats'
 import { exportCSV } from '../../lib/export'
@@ -43,6 +44,11 @@ export default function DashboardPage() {
   const [observacao, setObservacao] = useState('')
   const { data: aiData, isLoading: isLoadingAI } = useAINarrative({ kpis, pulso: pulso as unknown as Record<string, unknown>, fornecedores, anomalias, observacao, enabled: aiEnabled })
   const { data: stats } = useStats()
+  // Mesma checagem de RequireAcesso.tsx — o link "ver relatório completo" só
+  // aparece quando o destino existe para este usuário, evitando link morto.
+  const role    = useAuthStore(s => s.role)
+  const modulos = useAuthStore(s => s.modulos)
+  const temModulo = (modulo: string) => role === 'gestor' || modulos.includes(modulo)
   const navigate = useNavigate()
 
   const [modal,    setModal]    = useState<ModalState | null>(null)
@@ -172,7 +178,11 @@ export default function DashboardPage() {
   const kpiById = new Map(kpis.map(k => [k.id, k]))
   const pick    = (ids: string[]) => ids.map(id => kpiById.get(id)).filter((k): k is KPI => k != null)
   const riskKpis = pick(['criticas', 'criticasDesassist', 'semEq', 'pend', 'copeAguardando', 'reagendInviab', 'reagendMobile', 'reagendFutura'])
-  const perfKpis = pick(['atendHoje', 'atendAmanha', 'atendFutura', 'total', 'rede', 'concl', 'taxa'])
+  // 'concl'/'taxa' saíram desta grade — viram os stats "no período selecionado"
+  // dentro do ExecutadasHeroBlock, ao lado do "OS hoje" (sempre hoje, filtro à parte).
+  const perfKpis = pick(['atendHoje', 'atendAmanha', 'atendFutura', 'total', 'rede'])
+  const conclKpi = kpiById.get('concl')
+  const taxaKpi  = kpiById.get('taxa')
 
   return (
     <>
@@ -271,6 +281,9 @@ export default function DashboardPage() {
           projecao={projecaoHoje}
           ritmoIntradiario={pulso.ritmoIntradiario}
           onOpenModal={(title, filtered) => setModal({ title, rows: filtered })}
+          concl={conclKpi?.value as number | undefined}
+          taxa={typeof taxaKpi?.value === 'string' ? Number.parseInt(taxaKpi.value, 10) : undefined}
+          onOpenConcl={conclKpi ? () => openKpi(conclKpi) : undefined}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
@@ -287,7 +300,8 @@ export default function DashboardPage() {
           territory={(
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <CidadesPanel horizonte={capacidade.horizonte} capacidadeCidades={capacidade.cidades} filaAtiva={filaAtiva}
-                            onOpen={(title, filtered) => setModal({ title, rows: filtered })} />
+                            onOpen={(title, filtered) => setModal({ title, rows: filtered })}
+                            onOpenReport={temModulo('cidades') ? () => navigate('/cidades') : undefined} />
               <ParetoServicoPanel filaAtiva={filaAtiva} onOpen={(title, filtered) => setModal({ title, rows: filtered })} />
             </div>
           )}
@@ -304,7 +318,8 @@ export default function DashboardPage() {
                 onOpenReport={() => navigate('/relatorio-reincidencias')}
               />
               <MetaMesCard meta={pulso.metaMes} />
-              <FornecedoresPanel fornecedores={fornecedores} onOpen={openFornecedor} />
+              <FornecedoresPanel fornecedores={fornecedores} onOpen={openFornecedor}
+                                 onOpenReport={temModulo('fornecedor') ? () => navigate('/fornecedor') : undefined} />
               <QualidadePeriodoCard pulso={pulso} taxaRevisitas={taxaRevisitas} />
             </div>
           )}

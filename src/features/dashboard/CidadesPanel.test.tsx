@@ -67,4 +67,15 @@ describe('CidadesPanel', () => {
     render(<CidadesPanel horizonte={7} capacidadeCidades={[]} filaAtiva={[]} onOpen={vi.fn()} />)
     expect(screen.getByText(/Sem fila nem execuções/)).toBeInTheDocument()
   })
+
+  it('só mostra "ver relatório completo" quando o usuário tem acesso ao módulo', () => {
+    const filaAtiva = [row('Taubaté')]
+    const { rerender } = render(<CidadesPanel horizonte={7} capacidadeCidades={[capacidade()]} filaAtiva={filaAtiva} onOpen={vi.fn()} />)
+    expect(screen.queryByText('Ver relatório completo')).not.toBeInTheDocument()
+
+    const onOpenReport = vi.fn()
+    rerender(<CidadesPanel horizonte={7} capacidadeCidades={[capacidade()]} filaAtiva={filaAtiva} onOpen={vi.fn()} onOpenReport={onOpenReport} />)
+    fireEvent.click(screen.getByText('Ver relatório completo'))
+    expect(onOpenReport).toHaveBeenCalledTimes(1)
+  })
 })

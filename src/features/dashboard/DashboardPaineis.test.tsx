@@ -136,6 +136,17 @@ describe('drill-downs comparativos', () => {
     fireEvent.click(screen.getByRole('button', { name: /Fornecedor WES.*Abrir OS/i }))
     expect(onOpen).toHaveBeenCalledWith('WES')
   })
+
+  it('só mostra "ver relatório completo" quando o usuário tem acesso ao módulo', () => {
+    const fornecedores = [{ nome: 'WES', total: 12, concluidas: 9, sla: 88, conclPct: 75, cor: '#3b82f6' }]
+    const { rerender } = render(<FornecedoresPanel fornecedores={fornecedores} onOpen={vi.fn()} />)
+    expect(screen.queryByText('Ver relatório completo')).not.toBeInTheDocument()
+
+    const onOpenReport = vi.fn()
+    rerender(<FornecedoresPanel fornecedores={fornecedores} onOpen={vi.fn()} onOpenReport={onOpenReport} />)
+    fireEvent.click(screen.getByText('Ver relatório completo'))
+    expect(onOpenReport).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('ClustersBairroPanel', () => {

@@ -64,11 +64,17 @@ function RitmoIntradiarioBar({ r }: { r: PulsoRitmoIntradiario }) {
   )
 }
 
-export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenModal }: {
+export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenModal, concl, taxa, onOpenConcl }: {
   rows: OSRow[]
   projecao?: CampoProjecaoReal | null
   ritmoIntradiario?: PulsoRitmoIntradiario | null
   onOpenModal: (title: string, rows: OSRow[]) => void
+  /** Concluídas/taxa do PERÍODO selecionado no filtro global — diferente do
+   *  número "OS hoje" abaixo, que é sempre hoje, independente do filtro.
+   *  Rotulado à parte para não confundir as duas leituras. */
+  concl?: number
+  taxa?: number
+  onOpenConcl?: () => void
 }) {
   const hojeRows = useMemo(() => rows.filter(r => r._executadaHoje), [rows])
   const total    = hojeRows.length
@@ -100,9 +106,24 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
           )}
         </div>
 
-        {projecao && (
+        {(projecao || concl != null || taxa != null) && (
           <div className="flex items-center gap-4 flex-wrap mb-4 pb-3 border-b border-hairline">
-            <RitmoIndicator p={projecao} />
+            {projecao && <RitmoIndicator p={projecao} />}
+            {(concl != null || taxa != null) && (
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption sm:ml-auto">
+                <span className="text-muted">No período selecionado:</span>
+                {concl != null && (
+                  onOpenConcl ? (
+                    <button type="button" onClick={onOpenConcl} className="hover:text-green transition-colors">
+                      <span className="font-bold text-text">{concl}</span> concluídas
+                    </button>
+                  ) : (
+                    <span><span className="font-bold text-text">{concl}</span> concluídas</span>
+                  )
+                )}
+                {taxa != null && <span><span className="font-bold text-text">{taxa}%</span> taxa de conclusão</span>}
+              </span>
+            )}
           </div>
         )}
 

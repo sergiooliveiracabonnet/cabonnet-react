@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Lightning, CheckCircle, MapPin, Clock, Gauge, Target, WarningCircle, Stack, Package, Pulse, TrendUp, TrendDown, CaretDown } from '@phosphor-icons/react'
+import { Lightning, CheckCircle, MapPin, Clock, Gauge, Target, WarningCircle, Stack, Package, Pulse, TrendUp, TrendDown, CaretDown, ArrowRight } from '@phosphor-icons/react'
 import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } from '../../lib/types'
 import { TrendPill } from '../../components/ui/StatCard'
 import { DashboardPanelHeader, SectionLabel } from './DashboardKpiPrimitives'
@@ -291,9 +291,10 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
 }
 
 // Fornecedores — SLA do período em linhas, mesmo padrão visual de Cidades/Pareto
-export function FornecedoresPanel({ fornecedores, onOpen }: {
+export function FornecedoresPanel({ fornecedores, onOpen, onOpenReport }: {
   fornecedores: (DashFornCard & { slaTrend?: KPI['trend'] })[]
   onOpen: (fornecedor: string) => void
+  onOpenReport?: () => void
 }) {
   if (!fornecedores.length) return null
   const maxTotal = Math.max(...fornecedores.map(f => f.total), 1)
@@ -335,6 +336,12 @@ export function FornecedoresPanel({ fornecedores, onOpen }: {
           )
         })}
       </div>
+      {onOpenReport && (
+        <button type="button" onClick={onOpenReport}
+          className="mt-3 flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 text-label font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
+          Ver relatório completo <ArrowRight size={15} aria-hidden="true" />
+        </button>
+      )}
     </div>
   )
 }

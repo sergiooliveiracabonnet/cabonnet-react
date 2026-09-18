@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { MapPin } from '@phosphor-icons/react'
+import { ArrowRight, MapPin } from '@phosphor-icons/react'
 import type { OSRow } from '../../lib/types'
 import { DashboardPanelHeader } from './DashboardKpiPrimitives'
 
@@ -33,11 +33,12 @@ interface CidadeLinha {
  * mostrando a MESMA cidade com colunas diferentes — obrigava trocar de aba
  * para comparar. Aqui "Taubaté" aparece uma vez, com tudo que decide alocação.
  */
-export function CidadesPanel({ horizonte, capacidadeCidades, filaAtiva, onOpen }: {
+export function CidadesPanel({ horizonte, capacidadeCidades, filaAtiva, onOpen, onOpenReport }: {
   horizonte: number
   capacidadeCidades: CapacidadeCidadeView[]
   filaAtiva: OSRow[]
   onOpen: (title: string, rows: OSRow[]) => void
+  onOpenReport?: () => void
 }) {
   const linhas = useMemo(() => {
     const filaPorCidade = new Map<string, { rows: OSRow[]; slaExc: number; criticas: number }>()
@@ -177,6 +178,12 @@ export function CidadesPanel({ horizonte, capacidadeCidades, filaAtiva, onOpen }
           )
         })}
       </div>
+      {onOpenReport && (
+        <button type="button" onClick={onOpenReport}
+          className="mt-3 flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 text-label font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
+          Ver relatório completo <ArrowRight size={15} aria-hidden="true" />
+        </button>
+      )}
     </div>
   )
 }
