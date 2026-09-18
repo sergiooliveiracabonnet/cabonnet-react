@@ -73,10 +73,10 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
         {groups.map(([periodo, periodoRows], gi) => {
           const isManha = periodo.toLowerCase().includes('manh')
           const isTarde = periodo.toLowerCase().includes('tarde')
-          const color   = isManha ? 'text-yellow'          : isTarde ? 'text-indigo-400'          : 'text-secondary'
-          const bg      = isManha ? 'bg-yellow/[0.06]'     : isTarde ? 'bg-purple/[0.06]'     : 'bg-surface/30'
-          const dot     = isManha ? 'bg-yellow'            : isTarde ? 'bg-purple'            : 'bg-secondary'
-          const border  = isManha ? 'border-amber-400/[0.25]' : isTarde ? 'border-indigo-400/[0.25]' : 'border-subtle'
+          const color   = isManha ? 'text-yellow'      : isTarde ? 'text-purple'      : 'text-secondary'
+          const bg      = isManha ? 'bg-yellow/[0.06]' : isTarde ? 'bg-purple/[0.06]' : 'bg-surface/30'
+          const dot     = isManha ? 'bg-yellow'        : isTarde ? 'bg-purple'        : 'bg-secondary'
+          const border  = isManha ? 'border-yellow/[0.25]' : isTarde ? 'border-purple/[0.25]' : 'border-subtle'
 
           return (
             <div key={periodo}>

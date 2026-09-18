@@ -248,7 +248,7 @@ export default function GerencialPage() {
           variant="outline" size="sm"
           className={`gap-1.5 flex-shrink-0 transition-all duration-300
             ${copied
-              ? 'border-green-500/50 text-green bg-green-500/10'
+              ? 'border-green/50 text-green bg-green/10'
               : 'border-green/30 text-green hover:bg-green/10'}`}
           onClick={handleCopyProdutividade}
         >

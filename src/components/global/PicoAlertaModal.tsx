@@ -80,8 +80,8 @@ function AlertaPainel({
     <div className="space-y-4">
 
       {/* Info do pico */}
-      <div className="flex items-start gap-3 p-3 rounded-xl border border-red-500/20 bg-red-500/5">
-        <Warning size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 p-3 rounded-xl border border-red/20 bg-red/5">
+        <Warning size={14} className="text-red flex-shrink-0 mt-0.5" />
         <div>
           <p className="text-body font-bold text-text">
             {fmt(alerta.count_os)} OS abertas em {alerta.data}
@@ -104,7 +104,7 @@ function AlertaPainel({
           rows={2}
           className="w-full rounded-xl border border-subtle bg-surface/30 px-3 py-2.5
                      text-label text-text placeholder:text-muted/40 resize-none
-                     focus:outline-none focus:border-violet-500/40 transition-colors"
+                     focus:outline-none focus:border-purple/40 transition-colors"
         />
       </div>
 
@@ -115,7 +115,7 @@ function AlertaPainel({
           disabled={iaLoading}
           className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-label
                      transition-all disabled:opacity-50
-                     border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20">
+                     border-purple/40 bg-purple/10 text-purple hover:bg-purple/20">
           <Sparkle size={12} className={iaLoading ? 'animate-pulse' : ''} />
           {iaLoading ? 'Gerando…' : iaResult ? 'Regerar' : 'Gerar Justificativa (IA)'}
         </button>
@@ -125,7 +125,7 @@ function AlertaPainel({
             disabled={saving}
             className="flex items-center gap-2 px-4 py-2 rounded-xl border font-semibold text-label
                        transition-all disabled:opacity-50
-                       border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20">
+                       border-cyan/40 bg-cyan/10 text-cyan hover:bg-cyan/20">
             <Bookmark size={12} />
             {saving ? 'Salvando…' : 'Salvar e Fechar'}
           </button>
@@ -133,15 +133,15 @@ function AlertaPainel({
       </div>
 
       {iaError && (
-        <p className="text-caption text-red-400 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2">{iaError}</p>
+        <p className="text-caption text-red rounded-lg border border-red/20 bg-red/5 px-3 py-2">{iaError}</p>
       )}
 
       {/* Resultado IA expansível */}
       {iaResult && (
-        <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 overflow-hidden">
+        <div className="rounded-xl border border-purple/20 bg-purple/5 overflow-hidden">
           <button
             onClick={() => setExpanded(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-caption text-violet-300">
+            className="w-full flex items-center justify-between px-4 py-2.5 text-caption text-purple">
             <span className="flex items-center gap-1.5">
               <Sparkle size={11} />
               Resultado da análise
@@ -151,7 +151,7 @@ function AlertaPainel({
           {expanded && (
             <div className="px-4 pb-4 space-y-2.5 text-label">
               <div>
-                <p className="text-caption font-bold uppercase tracking-label text-violet-400/70 mb-0.5">Causa Principal</p>
+                <p className="text-caption font-bold uppercase tracking-label text-purple/70 mb-0.5">Causa Principal</p>
                 <p className="text-text leading-relaxed">{iaResult.causa_principal}</p>
               </div>
               <div>
@@ -164,15 +164,15 @@ function AlertaPainel({
                   <ul className="space-y-0.5">
                     {iaResult.acoes.map((a, i) => (
                       <li key={i} className="flex items-baseline gap-1.5 text-text">
-                        <Circle size={5} weight="fill" className="text-violet-400 flex-shrink-0 translate-y-[-2px]" />{a}
+                        <Circle size={5} weight="fill" className="text-purple flex-shrink-0 translate-y-[-2px]" />{a}
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
-              <div className="pt-2 border-t border-violet-500/10">
+              <div className="pt-2 border-t border-purple/10">
                 <p className="text-caption font-bold uppercase tracking-label text-muted mb-0.5">Recomendação para Gestão</p>
-                <p className="text-violet-200 font-medium">{iaResult.recomendacao_gestao}</p>
+                <p className="text-purple font-medium">{iaResult.recomendacao_gestao}</p>
               </div>
             </div>
           )}
@@ -234,12 +234,12 @@ export function PicoAlertaModal() {
       {/* Painel centralizado */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div className="w-full max-w-lg pointer-events-auto animate-in fade-in zoom-in-95 duration-200">
-          <div className="rounded-2xl border border-red-500/30 bg-card shadow-2xl shadow-black/60 overflow-hidden">
+          <div className="rounded-2xl border border-red/30 bg-card shadow-2xl shadow-black/60 overflow-hidden">
 
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-hairline bg-red-500/5">
+            <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-hairline bg-red/5">
               <div className="flex items-center gap-2.5">
-                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-red animate-pulse" />
                 <div>
                   <p className="text-body font-bold text-text">Pico de OS Detectado — 17h</p>
                   <p className="text-caption text-muted mt-0.5">
@@ -272,8 +272,7 @@ export function PicoAlertaModal() {
                   <button
                     key={i}
                     onClick={() => setIdx(i)}
-                    className="w-1.5 h-1.5 rounded-full transition-all"
-                    style={{ background: i === idx ? '#ef4444' : '#374151' }}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? 'bg-red' : 'bg-border'}`}
                   />
                 ))}
               </div>

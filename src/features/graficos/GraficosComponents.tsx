@@ -211,7 +211,7 @@ const CONF_STYLE = {
 }
 const TEND_STYLE = {
   crescente:   { cls: 'text-red',      Icon: TrendUp   },
-  estável:     { cls: 'text-cyan-400', Icon: Minus        },
+  estável:     { cls: 'text-cyan',     Icon: Minus        },
   decrescente: { cls: 'text-green',    Icon: TrendDown },
 }
 
@@ -410,7 +410,7 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
   const taxaDiaData     = toLV(d.taxaDia as ChartSeries | undefined)
   const summary = buildTendenciaSummary(evolucao as import('../../lib/types').EvolucaoData | undefined)
   const cards = [
-    { label: `Abertas · ${summary.dias} dias`, value: summary.abertas, sub: `média ${summary.mediaAbertas.toLocaleString('pt-BR')} por dia`, tone: 'text-blue-400' },
+    { label: `Abertas · ${summary.dias} dias`, value: summary.abertas, sub: `média ${summary.mediaAbertas.toLocaleString('pt-BR')} por dia`, tone: 'text-blue' },
     { label: 'Concluídas reais', value: summary.concluidas, sub: 'pela data de baixa/execução', tone: 'text-green' },
     { label: 'Saldo operacional', value: summary.saldo > 0 ? `+${summary.saldo}` : summary.saldo, sub: summary.saldo >= 0 ? 'conclusões acima das aberturas' : 'aberturas acima das conclusões', tone: summary.saldo >= 0 ? 'text-green' : 'text-red' },
     { label: 'Pico de abertura', value: summary.pico?.valor ?? 0, sub: summary.pico?.data ?? 'sem dados', tone: 'text-orange' },
@@ -488,7 +488,7 @@ export function TabTendencia({ d, rows, onDrill, totalAtivo = 0, fila = 0 }: {
         <div className="rounded-xl border border-subtle bg-card p-5">
           <p className="text-body font-bold text-text">Como interpretar</p>
           <div className="mt-4 space-y-3 text-label leading-relaxed text-secondary">
-            <p><span className="font-bold text-blue-400">Abertas</span> seguem a data de cadastro da OS.</p>
+            <p><span className="font-bold text-blue">Abertas</span> seguem a data de cadastro da OS.</p>
             <p><span className="font-bold text-green">Concluídas</span> consideram somente execução real e seguem a data de baixa ou execução.</p>
             <p><span className="font-bold text-red">SLA excedido</span> é associado ao mês de abertura da OS.</p>
             <p className="border-t border-subtle pt-3 text-muted">Os valores representam o recorte selecionado no cabeçalho e não reconstituem mudanças históricas de status.</p>
@@ -507,8 +507,8 @@ export function TabEstatistica({ d, rows, onDrill }: { d: Record<string,unknown>
   const { summary } = stats
   const cards = [
     { label: 'OS ativas analisadas', value: summary.total, sub: 'com aging válido', tone: 'text-text' },
-    { label: 'Aging médio', value: `${summary.media}d`, sub: 'média da amostra', tone: 'text-blue-400' },
-    { label: 'Mediana', value: `${summary.mediana}d`, sub: '50% estão abaixo', tone: 'text-cyan-400' },
+    { label: 'Aging médio', value: `${summary.media}d`, sub: 'média da amostra', tone: 'text-blue' },
+    { label: 'Mediana', value: `${summary.mediana}d`, sub: '50% estão abaixo', tone: 'text-cyan' },
     { label: 'Percentil 75', value: `${summary.p75}d`, sub: '75% estão abaixo', tone: 'text-orange' },
     { label: 'SLA excedido', value: summary.slaExcedido, sub: `${summary.slaPct}% das OS ativas`, tone: 'text-red' },
     { label: 'Maior aging', value: `${summary.maximo}d`, sub: 'máximo observado', tone: 'text-red' },
@@ -566,10 +566,10 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
   const taxaData = cohort.rows.map(item => ({ name: item.name, 'Encerramento total': item.taxa, 'No mesmo mês': item.mesmoMesPct }))
   const cards = [
     { label: 'Coortes', value: summary.coortes, sub: 'meses de abertura', tone: 'text-text' },
-    { label: 'OS acompanhadas', value: summary.total, sub: 'total das coortes', tone: 'text-blue-400' },
+    { label: 'OS acompanhadas', value: summary.total, sub: 'total das coortes', tone: 'text-blue' },
     { label: 'Encerradas', value: summary.encerradas, sub: `${summary.taxa}% do total`, tone: 'text-green' },
     { label: 'Ainda abertas', value: summary.abertas, sub: `${100 - summary.taxa}% do total`, tone: summary.abertas ? 'text-orange' : 'text-green' },
-    { label: 'No mesmo mês', value: `${summary.mesmoMesPct}%`, sub: 'sobre todas as OS', tone: 'text-purple-400' },
+    { label: 'No mesmo mês', value: `${summary.mesmoMesPct}%`, sub: 'sobre todas as OS', tone: 'text-purple' },
   ]
 
   return (
@@ -650,7 +650,7 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
                     <td className="px-4 py-2.5 font-mono">{item.total}</td>
                     <td className="px-4 py-2.5 font-mono text-green">{item.encerradas}</td>
                     <td className="px-4 py-2.5 font-mono text-orange">{item.abertas}</td>
-                    <td className="px-4 py-2.5 font-mono text-purple-400">{item.mesmoMes} <span className="text-muted">({item.mesmoMesPct}%)</span></td>
+                    <td className="px-4 py-2.5 font-mono text-purple">{item.mesmoMes} <span className="text-muted">({item.mesmoMesPct}%)</span></td>
                     <td className="px-4 py-2.5 font-mono font-semibold text-text">{item.taxa}%</td>
                     <td className="px-4 py-2.5 font-mono text-muted">{item.mttr}d</td>
                   </tr>

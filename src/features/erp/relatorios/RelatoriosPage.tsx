@@ -486,8 +486,8 @@ export default function RelatoriosPage() {
                         onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setDrill({ title: `Equipe ${entry.code} · ${teamRows.length} ordens`, rows: teamRows }) } }}
                         className="cursor-pointer transition-colors hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50">
                         <td className="px-4 py-3"><p className="font-bold text-text">{entry.code}</p><p className="text-caption text-muted">{entry.leader}</p></td>
-                        <td className="px-4 py-3 font-mono text-blue-400">{entry.execInst}</td><td className="px-4 py-3 font-mono text-orange">{entry.execManut}</td>
-                        <td className="px-4 py-3 font-mono text-green">{entry.execServico}</td><td className="px-4 py-3 font-mono text-purple-400">{entry.execRede}</td>
+                        <td className="px-4 py-3 font-mono text-blue">{entry.execInst}</td><td className="px-4 py-3 font-mono text-orange">{entry.execManut}</td>
+                        <td className="px-4 py-3 font-mono text-green">{entry.execServico}</td><td className="px-4 py-3 font-mono text-purple">{entry.execRede}</td>
                         <td className="px-4 py-3 font-mono font-bold text-text">{executed}</td><td className="px-4 py-3 font-mono text-text">{entry.queue}</td>
                         <td className="px-4 py-3 font-mono text-text">{entry.queue ? `${entry.sla}%` : '—'}</td><td className="px-4 py-3 font-mono text-red">{entry.criticas}</td>
                         <td className="px-4 py-3 font-mono text-muted">{entry.avgAging.toFixed(1)}d</td>
