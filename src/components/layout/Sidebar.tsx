@@ -9,6 +9,7 @@ import { api } from '../../lib/api'
 import { LogoIcon } from '../ui/LogoIcon'
 import { useVisibleNavGroups } from '../../lib/navigation'
 import { clusterExibido, clusterLabelCurto } from '../../lib/clusters'
+import { CABONNET_BLACK_LOGO } from '../../lib/pdfBrand'
 
 const ROLE_LABELS: Record<string, string> = {
   gestor:   'Gestor',
@@ -98,7 +99,7 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onN
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 export function Sidebar() {
-  const { sidebarOpen, setSidebar, cluster: clusterDoSeletor } = useUIStore()
+  const { sidebarOpen, setSidebar, cluster: clusterDoSeletor, theme } = useUIStore()
   const setUnauthed = useAuthStore(s => s.setUnauthed)
   const role        = useAuthStore(s => s.role)
   const clusterDaConta = useAuthStore(s => s.cluster)
@@ -156,26 +157,25 @@ export function Sidebar() {
                     : '-translate-x-full md:w-[64px] md:translate-x-0'}`}
     >
       {/* ── Logo / Branding ── */}
-      <div className={`relative flex-shrink-0 flex items-center h-[64px]
+      <div className={`relative flex-shrink-0 flex items-center justify-center h-[64px]
                        border-b border-border
-                       ${sidebarOpen ? 'gap-3 px-4' : 'justify-center'}`}>
-        <div
-          className="brand-mark w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(145deg, rgb(var(--c-primary)) 0%, rgb(var(--c-primary-dark)) 100%)',
-            boxShadow:  '0 0 0 1px rgba(96,165,250,0.28), 0 8px 24px rgba(29,78,216,0.24)',
-          }}
-        >
-          <LogoIcon className="w-[17px] h-[17px]" style={{ filter: 'brightness(0) invert(1)' }} />
-        </div>
-        {sidebarOpen && (
-          <div className="flex flex-col leading-none min-w-0">
-            <span className="font-headline font-extrabold text-title tracking-[0.08em] text-text">
-              CABONNET
-            </span>
-            <span className="text-caption font-medium text-muted mt-0.5">
-              Central de operações
-            </span>
+                       ${sidebarOpen ? 'px-4' : ''}`}>
+        {sidebarOpen ? (
+          <img
+            src={CABONNET_BLACK_LOGO}
+            alt="Cabonnet"
+            className="h-10 w-auto"
+            style={theme === 'dark' ? { filter: 'brightness(0) invert(1)' } : undefined}
+          />
+        ) : (
+          <div
+            className="brand-mark w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(145deg, rgb(var(--c-primary)) 0%, rgb(var(--c-primary-dark)) 100%)',
+              boxShadow:  '0 0 0 1px rgba(96,165,250,0.28), 0 8px 24px rgba(29,78,216,0.24)',
+            }}
+          >
+            <LogoIcon className="w-[17px] h-[17px]" style={{ filter: 'brightness(0) invert(1)' }} />
           </div>
         )}
       </div>

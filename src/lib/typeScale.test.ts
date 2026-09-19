@@ -104,9 +104,10 @@ describe('degraus e densidade', () => {
 })
 
 describe('tracking é token, não valor solto', () => {
-  // As tres excecoes vivas do sistema. Qualquer outro tracking-[ e fuga.
+  // As duas excecoes vivas do sistema. Qualquer outro tracking-[ e fuga.
+  // Sidebar.tsx saiu da lista quando o texto "CABONNET" que usava
+  // tracking-[0.08em] foi substituido pela logo (confirmado 2026-09-19).
   const TRACKING_PERMITIDO = new Map([
-    ['src/components/layout/Sidebar.tsx', 'tracking-[0.08em]'],
     ['src/components/layout/Navbar.tsx', 'tracking-[-0.015em]'],
     ['src/features/dashboard/DashboardCommandCenter.tsx', 'tracking-[-0.04em]'],
   ])
