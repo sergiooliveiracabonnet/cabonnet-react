@@ -48,7 +48,7 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
   if (!clusters?.length) {
     return (
       <div className="h-full rounded-lg border border-border border-l-2 border-l-green bg-card p-5">
-        <SectionLabel icon={Lightning} color="#4ade80">Clusters de Falha</SectionLabel>
+        <SectionLabel icon={Lightning} color="rgb(var(--c-green))">Clusters de Falha</SectionLabel>
         <div className="flex items-center gap-3 mt-4">
           <CheckCircle size={18} className="text-green flex-shrink-0" />
           <p className="text-body text-green font-semibold">
@@ -67,7 +67,7 @@ export function ClustersBairroPanel({ clusters }: { clusters: ClusterAtivo[] }) 
         aria-expanded={open}
         className="w-full flex items-center justify-between gap-3 p-5 text-left hover:bg-surface/15 transition-colors"
       >
-        <SectionLabel icon={Lightning} color="#f87171">Clusters de Falha</SectionLabel>
+        <SectionLabel icon={Lightning} color="rgb(var(--c-red))">Clusters de Falha</SectionLabel>
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-caption font-bold uppercase tracking-label bg-red/15 text-red
                            border border-red/25 rounded-full px-2.5 py-1">
@@ -137,7 +137,7 @@ export function AgingPanel({ pulso, filaAtiva, onOpen }: {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <DashboardPanelHeader
         icon={Clock}
-        color="#3b82f6"
+        color="rgb(var(--c-primary))"
         actionLabel={onOpen && filaAtiva ? 'Abrir OS' : undefined}
         meta={(
           // Backlog em dias já é o "Backlog da fila" do PulsoHero (Nível 2) —
@@ -249,7 +249,7 @@ export function ParetoServicoPanel({ filaAtiva, onOpen }: {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <DashboardPanelHeader
         icon={Stack}
-        color="#3b82f6"
+        color="rgb(var(--c-primary))"
         actionLabel="Abrir OS"
       >
         Composição da Fila — Tipo de Serviço
@@ -303,7 +303,7 @@ export function FornecedoresPanel({ fornecedores, onOpen, onOpenReport }: {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <DashboardPanelHeader
         icon={Package}
-        color="#c4b5fd"
+        color="rgb(var(--c-purple))"
         actionLabel="Abrir OS"
       >
         Fornecedores — SLA do Período
@@ -355,7 +355,7 @@ export function RitmoEquipesPanel({ semaforo, onOpen }: {
   if (!comRitmo.length) {
     return (
       <div className="h-full rounded-lg border border-border bg-card p-5">
-        <SectionLabel icon={Gauge} color="#22d3ee">Ritmo por Equipe — Hoje</SectionLabel>
+        <SectionLabel icon={Gauge} color="rgb(var(--c-cyan))">Ritmo por Equipe — Hoje</SectionLabel>
         <div className="flex items-center justify-center py-8">
           <p className="text-muted text-label">Ainda sem histórico de ritmo para comparar hoje</p>
         </div>
@@ -377,7 +377,7 @@ export function RitmoEquipesPanel({ semaforo, onOpen }: {
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <DashboardPanelHeader
         icon={Gauge}
-        color="#22d3ee"
+        color="rgb(var(--c-cyan))"
         actionLabel="Abrir OS"
       >
         Ritmo por Equipe — Hoje
@@ -420,7 +420,7 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
   if (meta.meta === 0) {
     return (
       <div className="h-full rounded-lg border border-border bg-card p-5">
-        <SectionLabel icon={Target} color="#94a3b8">Meta do Mês</SectionLabel>
+        <SectionLabel icon={Target} color="rgb(var(--c-muted))">Meta do Mês</SectionLabel>
         <p className="text-label text-muted/60 mt-3">
           {meta.concluidas} concluídas até agora · sem execuções suficientes para dimensionar a capacidade
         </p>
@@ -428,7 +428,7 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
     )
   }
 
-  const cor = meta.status === 'acima' ? '#4ade80' : meta.status === 'abaixo' ? '#facc15' : '#94a3b8'
+  const cor = meta.status === 'acima' ? 'rgb(var(--c-green))' : meta.status === 'abaixo' ? 'rgb(var(--c-yellow))' : 'rgb(var(--c-muted))'
   const pct = Math.min(100, meta.pct ?? 0)
   const diasLabel = meta.diasUteisRestantes === 1 ? '1 dia útil restante' : `${meta.diasUteisRestantes} dias úteis restantes`
 
@@ -503,7 +503,7 @@ export function QualidadePeriodoCard({ pulso, taxaRevisitas }: { pulso: Pulso; t
 
   return (
     <div className="h-full rounded-lg border border-border bg-card p-5">
-      <SectionLabel icon={Pulse} color="#a78bfa">Qualidade do Período</SectionLabel>
+      <SectionLabel icon={Pulse} color="rgb(var(--c-purple))">Qualidade do Período</SectionLabel>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
         {stats.map(s => (
           <div key={s.label} title={s.hint}

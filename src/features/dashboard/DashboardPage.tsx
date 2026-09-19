@@ -132,7 +132,7 @@ export default function DashboardPage() {
       return (
         <div className="space-y-4 max-w-[1600px]">
           <section>
-            <SectionLabel icon={WarningCircle} color="#f87171">Prioridades agora</SectionLabel>
+            <SectionLabel icon={WarningCircle} color="rgb(var(--c-red))">Prioridades agora</SectionLabel>
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
               {riskStats.map((k, i) => (
                 <StatCard
@@ -150,7 +150,7 @@ export default function DashboardPage() {
             </div>
           </section>
           <section>
-            <SectionLabel icon={ChartBar} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
+            <SectionLabel icon={ChartBar} color="rgb(var(--c-primary))">Capacidade &amp; Entrega</SectionLabel>
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
               {perfStats.map((k, i) => (
                 <StatCard
@@ -257,7 +257,7 @@ export default function DashboardPage() {
             })}
           />
 
-          <SectionLabel icon={ChartBar} color="#3b82f6">Capacidade &amp; Entrega</SectionLabel>
+          <SectionLabel icon={ChartBar} color="rgb(var(--c-primary))">Capacidade &amp; Entrega</SectionLabel>
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 mt-2">
             {perfKpis.map((k, i) => (
               <StatCard

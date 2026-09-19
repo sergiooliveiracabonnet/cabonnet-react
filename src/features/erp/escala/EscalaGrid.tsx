@@ -107,7 +107,7 @@ export function EscalaGrid({
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <SectionLabel icon={Rows} color="#3b82f6">
+        <SectionLabel icon={Rows} color="rgb(var(--c-primary))">
           Grade semanal — {ESCALA_EQUIPES.length} equipes
         </SectionLabel>
         <div className="flex items-center gap-2 flex-wrap">

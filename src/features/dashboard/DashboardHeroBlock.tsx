@@ -94,7 +94,7 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
     <div className="rounded-lg border border-border border-l-2 border-l-green bg-card">
       <div className="p-5">
         <div className="flex items-start justify-between mb-3">
-          <SectionLabel icon={CheckCircle} color="#4ade80">Executadas Hoje</SectionLabel>
+          <SectionLabel icon={CheckCircle} color="rgb(var(--c-green))">Executadas Hoje</SectionLabel>
           {total > 0 && (
             <button
               onClick={() => onOpenModal('Executadas Hoje', hojeRows)}

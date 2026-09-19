@@ -59,7 +59,7 @@ export function EscalaSummaryPanel({ days, items }: { days: WeekDay[]; items: Es
 
   return (
     <section className="space-y-2">
-      <SectionLabel icon={ChartBar} color="#c4b5fd">Cobertura e disponibilidade</SectionLabel>
+      <SectionLabel icon={ChartBar} color="rgb(var(--c-purple))">Cobertura e disponibilidade</SectionLabel>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="rounded-xl border border-subtle bg-card p-4">

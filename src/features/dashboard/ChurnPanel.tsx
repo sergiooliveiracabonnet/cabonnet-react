@@ -30,7 +30,7 @@ export function ChurnPanel({ janelaDias, clientes, totalReincidentes, totalBase,
   if (!clientes.length) {
     return (
       <div className="h-full rounded-lg border border-border border-l-2 border-l-green bg-card p-5">
-        <DashboardPanelHeader icon={UserMinus} color="#4ade80">Risco de Churn — Reincidência</DashboardPanelHeader>
+        <DashboardPanelHeader icon={UserMinus} color="rgb(var(--c-green))">Risco de Churn — Reincidência</DashboardPanelHeader>
         <p className="mt-3 text-body font-semibold text-green">
           Nenhum cliente com manutenção repetida nos últimos {janelaDias} dias
         </p>
@@ -42,7 +42,7 @@ export function ChurnPanel({ janelaDias, clientes, totalReincidentes, totalBase,
     <div className="h-full rounded-lg border border-border border-l-2 border-l-orange bg-card p-5">
       <DashboardPanelHeader
         icon={UserMinus}
-        color="#fb923c"
+        color="rgb(var(--c-orange))"
         actionLabel="Abrir OS"
         meta={<span className="hidden sm:inline tabular-nums">{pctReincidencia}% da base</span>}
       >

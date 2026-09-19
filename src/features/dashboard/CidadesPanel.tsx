@@ -88,7 +88,7 @@ export function CidadesPanel({ horizonte, capacidadeCidades, filaAtiva, onOpen, 
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <DashboardPanelHeader
         icon={MapPin}
-        color="#3b82f6"
+        color="rgb(var(--c-primary))"
         actionLabel="Abrir OS"
         meta={(
           <span className={`hidden sm:inline tabular-nums ${acumulando.length ? 'text-orange' : 'text-green'}`}>
@@ -107,7 +107,7 @@ export function CidadesPanel({ horizonte, capacidadeCidades, filaAtiva, onOpen, 
       <div className="space-y-2">
         {linhas.map(l => {
           const cap = l.capacidade
-          const cor = cap?.status === 'nao_zera' ? '#fb923c' : cap?.status === 'atencao' ? '#facc15' : '#4ade80'
+          const cor = cap?.status === 'nao_zera' ? 'rgb(var(--c-orange))' : cap?.status === 'atencao' ? 'rgb(var(--c-yellow))' : 'rgb(var(--c-green))'
           const slaCls = l.sla >= 90 ? 'text-green bg-green/10' : l.sla >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
           const wCrit = l.rows.length > 0 ? l.criticas / l.rows.length : 0
           const clicavel = l.rows.length > 0

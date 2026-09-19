@@ -36,7 +36,7 @@ export function CoortePanel({ buckets, linhas }: { buckets: number[]; linhas: Co
     <div className="h-full rounded-lg border border-border bg-card p-5">
       <DashboardPanelHeader
         icon={CalendarBlank}
-        color="#a78bfa"
+        color="rgb(var(--c-purple))"
         meta={<span className="hidden sm:inline">{linhas.length} semanas</span>}
       >
         Coorte de Resolução — por semana de abertura
