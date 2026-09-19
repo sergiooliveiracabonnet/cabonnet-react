@@ -16,13 +16,13 @@ import { useIsFornecedor, useIsGestor } from '../../hooks/useRole'
 import { useAIFornecedor } from '../../hooks/useAIFornecedor'
 
 const FORNECEDORES = [
-  { value: '',           label: 'Todos',              color: '#3b82f6' },
-  { value: 'WES',        label: 'WES (Instalação)',   color: '#c4b5fd' },
-  { value: 'Instacable', label: 'Instacable',         color: '#facc15' },
-  { value: 'THM',        label: 'THM (Instalação)',   color: '#22d3ee' },
-  { value: 'REDE',       label: 'Rede',               color: '#4ade80' },
-  { value: 'MANUTENCAO', label: 'Manutenção',         color: '#f97316' },
-  { value: 'INTERNO',    label: 'Interno (COPE)',     color: '#94a3b8' },
+  { value: '',           label: 'Todos',              color: 'rgb(var(--c-primary))' },
+  { value: 'WES',        label: 'WES (Instalação)',   color: 'rgb(var(--c-purple))'  },
+  { value: 'Instacable', label: 'Instacable',         color: 'rgb(var(--c-yellow))'  },
+  { value: 'THM',        label: 'THM (Instalação)',   color: 'rgb(var(--c-cyan))'    },
+  { value: 'REDE',       label: 'Rede',               color: 'rgb(var(--c-green))'   },
+  { value: 'MANUTENCAO', label: 'Manutenção',         color: 'rgb(var(--c-orange))'  },
+  { value: 'INTERNO',    label: 'Interno (COPE)',     color: 'rgb(var(--c-muted))'   },
 ]
 
 function fmtCusto(v: number | null | undefined): string {

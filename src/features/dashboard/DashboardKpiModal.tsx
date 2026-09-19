@@ -262,7 +262,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                         <span
                           title={`${catLabel} · ${os.tiposervico || os.servico || ''}`}
                           className="text-caption font-bold uppercase tracking-wide px-2 py-1 rounded-full leading-none"
-                          style={{ color: catColor, background: `${catColor}1a`, border: `1px solid ${catColor}40` }}
+                          style={{ color: catColor, background: `color-mix(in srgb, ${catColor} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${catColor} 25%, transparent)` }}
                         >
                           {catLabel}
                         </span>

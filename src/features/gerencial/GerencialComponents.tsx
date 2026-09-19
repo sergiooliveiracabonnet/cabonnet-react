@@ -20,7 +20,7 @@ export function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; 
 
 // ─── OSListModal ──────────────────────────────────────────────────────────────
 
-export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color = '#3b82f6' }: {
+export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color = 'rgb(var(--c-primary))' }: {
   open: boolean; onClose: () => void; title: string; rows?: OSRow[]; color?: string
 }) {
   if (!open) return null
@@ -70,7 +70,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
                 const aging = r._aging ?? 0
                 // Régua relativa ao SLA da OS: manutenção com 2d (limite 1d) já estourou
                 const ratio = r._slaLimite > 0 ? aging / r._slaLimite : aging
-                const agClr = ratio > 2 ? '#f87171' : ratio > 1 ? '#f97316' : '#94a3b8'
+                const agClr = ratio > 2 ? 'rgb(var(--c-red))' : ratio > 1 ? 'rgb(var(--c-orange))' : 'rgb(var(--c-muted))'
                 const sitVariant = situacaoVariant(r.descsituacao)
                 return (
                   <div key={r.numos}
@@ -117,12 +117,12 @@ export function HeroCount({ value, label, sub, color, onClick }: {
   return (
     <div className={`relative overflow-hidden rounded-2xl border animate-card-enter
                      ${clickable ? 'cursor-pointer transition-transform hover:-translate-y-0.5' : ''}`}
-         style={{ borderColor: `${color}25` }}
+         style={{ borderColor: `color-mix(in srgb, ${color} 15%, transparent)` }}
          onClick={onClick}>
       <div className="absolute top-0 left-0 right-0 h-[2.5px]"
-           style={{ background: `linear-gradient(90deg, ${color}, ${color}60, transparent)` }} />
+           style={{ background: `linear-gradient(90deg, ${color}, color-mix(in srgb, ${color} 38%, transparent), transparent)` }} />
       <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl pointer-events-none"
-           style={{ background: `${color}14` }} />
+           style={{ background: `color-mix(in srgb, ${color} 8%, transparent)` }} />
       <div className="relative p-5">
         <p className="font-mono font-black tabular-nums leading-none"
            style={{ fontSize: 'clamp(40px, 5vw, 52px)', color }}>
@@ -133,7 +133,7 @@ export function HeroCount({ value, label, sub, color, onClick }: {
         {clickable && (
           <span className="absolute bottom-3 right-3 flex items-center gap-0.5
                            text-caption font-semibold uppercase tracking-wide"
-                style={{ color: `${color}90` }}>
+                style={{ color: `color-mix(in srgb, ${color} 56%, transparent)` }}>
             Ver OS <CaretRight size={10} />
           </span>
         )}
@@ -182,7 +182,7 @@ export function CidadeTable({ rows: cidades, color, emptyMsg = 'Nenhuma OS no pe
               <div className="flex-1 h-1.5 bg-surface/40 rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-700"
                      style={{ width: `${pct}%`, background: color,
-                              boxShadow: `0 0 6px ${color}60` }} />
+                              boxShadow: `0 0 6px color-mix(in srgb, ${color} 38%, transparent)` }} />
               </div>
               <span className="font-mono font-bold text-body w-8 text-right flex-shrink-0"
                     style={{ color }}>
@@ -224,7 +224,7 @@ export function EmRotaCard({ rows, color }: { rows: OSRow[]; color: string }) {
           const aging = r._agingAbertura ?? 0
           const pct   = Math.round((aging / max) * 100)
           const ratio = r._slaLimite > 0 ? aging / r._slaLimite : aging
-          const agClr = ratio > 2 ? '#f87171' : ratio > 1 ? '#f97316' : color
+          const agClr = ratio > 2 ? 'rgb(var(--c-red))' : ratio > 1 ? 'rgb(var(--c-orange))' : color
           return (
             <div key={r.numos} className="grid grid-cols-[1fr_1fr_80px] gap-3 px-4 py-2.5
                                           hover:bg-surface/20 transition-colors items-center">
@@ -309,7 +309,7 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
               {results.map(r => {
                 const aging = r._agingAbertura ?? 0
                 const ratio = r._slaLimite > 0 ? aging / r._slaLimite : aging
-                const agClr = ratio > 2 ? '#f87171' : ratio > 1 ? '#f97316' : color
+                const agClr = ratio > 2 ? 'rgb(var(--c-red))' : ratio > 1 ? 'rgb(var(--c-orange))' : color
                 return (
                   <div
                     key={r.numos}
@@ -380,7 +380,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
                    const filtered = sourceRows.filter(r =>
                      shortEquipe(r.nomedaequipe) === e.equipe
                    )
-                   onDrillDown({ title: `${e.equipe} — ${e.total} OS`, rows: filtered, color: '#3b82f6' })
+                   onDrillDown({ title: `${e.equipe} — ${e.total} OS`, rows: filtered, color: 'rgb(var(--c-primary))' })
                  } : undefined}>
               <div className="min-w-0">
                 <p className="text-label font-semibold text-text truncate">{e.equipe}</p>

@@ -279,7 +279,7 @@ export default function RelatoriosPage() {
         onClose={() => setDrill(null)}
         title={drill?.title ?? ''}
         rows={drill?.rows ?? []}
-        color={drill?.color ?? '#3b82f6'}
+        color={drill?.color ?? 'rgb(var(--c-primary))'}
         onOS={row => { setDrill(null); setDrawerOS(row) }}
       />
       <OSDrawer os={drawerOS} onClose={() => setDrawerOS(null)} />
@@ -287,10 +287,10 @@ export default function RelatoriosPage() {
       {/* ── KPIs ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total de OS',  value: kpis.total,                     Icon: ChartBar,     colorCls: 'text-primary',     bgCls: 'bg-primary/10',    rows: drillTotal,   color: '#3b82f6' },
-          { label: 'SLA Vencido',  value: kpis.criticas,                  Icon: Warning, colorCls: 'text-red',     bgCls: 'bg-red/10',    rows: drillSlaVenc, color: '#f87171' },
-          { label: 'Sem Equipe',   value: kpis.semEquipe,                 Icon: Clock,         colorCls: 'text-orange',  bgCls: 'bg-orange/10', rows: drillSemEq,   color: '#f97316' },
-          { label: 'Aging Médio',  value: `${kpis.avgAging.toFixed(1)}d`, Icon: TrendUp,    colorCls: 'text-green', bgCls: 'bg-green/10',rows: drillAging,   color: '#4ade80' },
+          { label: 'Total de OS',  value: kpis.total,                     Icon: ChartBar,     colorCls: 'text-primary',     bgCls: 'bg-primary/10',    rows: drillTotal,   color: 'rgb(var(--c-primary))' },
+          { label: 'SLA Vencido',  value: kpis.criticas,                  Icon: Warning, colorCls: 'text-red',     bgCls: 'bg-red/10',    rows: drillSlaVenc, color: 'rgb(var(--c-red))' },
+          { label: 'Sem Equipe',   value: kpis.semEquipe,                 Icon: Clock,         colorCls: 'text-orange',  bgCls: 'bg-orange/10', rows: drillSemEq,   color: 'rgb(var(--c-orange))' },
+          { label: 'Aging Médio',  value: `${kpis.avgAging.toFixed(1)}d`, Icon: TrendUp,    colorCls: 'text-green', bgCls: 'bg-green/10',rows: drillAging,   color: 'rgb(var(--c-green))' },
         ].map(k => {
           const KIcon = k.Icon
           return (
@@ -331,7 +331,7 @@ export default function RelatoriosPage() {
                 {/* Total */}
                 <div className="relative overflow-hidden rounded-xl border border-subtle bg-card px-5 py-4
                                 flex flex-col justify-between cursor-pointer hover:bg-surface/30 transition-colors"
-                     onClick={() => setDrill({ title: `Total Executado — ${drillConcl.length} ordens`, rows: drillConcl, color: '#3b82f6' })}>
+                     onClick={() => setDrill({ title: `Total Executado — ${drillConcl.length} ordens`, rows: drillConcl, color: 'rgb(var(--c-primary))' })}>
                   <div className="absolute top-0 left-0 right-0 h-[2px] bg-surface/200" />
                   <p className="text-caption font-bold uppercase tracking-widest text-muted mb-2">Total Executado</p>
                   <p className="font-mono font-black tabular-nums leading-none text-text" style={{ fontSize: 'clamp(36px,4vw,48px)' }}>
@@ -342,15 +342,15 @@ export default function RelatoriosPage() {
 
                 {/* Por tipo */}
                 {[
-                  { label: 'Instalações', value: totals.execInst,    pct: totals.pctInst,    color: '#60a5fa', rows: drillConclInst },
-                  { label: 'Manutenções', value: totals.execManut,   pct: totals.pctManut,   color: '#fb923c', rows: drillConclMt  },
-                  { label: 'Serviços',    value: totals.execServico, pct: totals.pctServico, color: '#34d399', rows: drillConclSv  },
-                  { label: 'Rede',        value: totals.execRede,    pct: totals.pctRede,    color: '#c4b5fd', rows: drillConclRede },
+                  { label: 'Instalações', value: totals.execInst,    pct: totals.pctInst,    color: 'rgb(var(--c-chart-2))', rows: drillConclInst },
+                  { label: 'Manutenções', value: totals.execManut,   pct: totals.pctManut,   color: 'rgb(var(--c-chart-1))', rows: drillConclMt  },
+                  { label: 'Serviços',    value: totals.execServico, pct: totals.pctServico, color: 'rgb(var(--c-chart-3))', rows: drillConclSv  },
+                  { label: 'Rede',        value: totals.execRede,    pct: totals.pctRede,    color: 'rgb(var(--c-chart-6))', rows: drillConclRede },
                 ].map(s => (
                   <div key={s.label}
                        className="relative overflow-hidden rounded-xl border bg-card px-5 py-4
                                   flex flex-col justify-between cursor-pointer hover:bg-surface/30 transition-colors"
-                       style={{ borderColor: `${s.color}25` }}
+                       style={{ borderColor: `color-mix(in srgb, ${s.color} 15%, transparent)` }}
                        onClick={() => setDrill({ title: `${s.label} Executadas — ${s.rows.length} ordens`, rows: s.rows, color: s.color })}>
                     <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: s.color }} />
                     <p className="text-caption font-bold uppercase tracking-widest text-muted mb-2">{s.label}</p>
@@ -363,7 +363,7 @@ export default function RelatoriosPage() {
                     </div>
                     <div className="mt-1.5 h-1 bg-surface rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-700"
-                           style={{ width: `${s.pct}%`, background: s.color, boxShadow: `0 0 6px ${s.color}60` }} />
+                           style={{ width: `${s.pct}%`, background: s.color, boxShadow: `0 0 6px color-mix(in srgb, ${s.color} 38%, transparent)` }} />
                     </div>
                   </div>
                 ))}
@@ -373,17 +373,17 @@ export default function RelatoriosPage() {
               <div className="px-5 pb-5">
                 <p className="text-caption font-bold uppercase tracking-widest text-muted mb-2">Proporção da produção</p>
                 <div className="flex h-3 rounded-full overflow-hidden gap-px">
-                  {totals.pctInst    > 0 && <div className="transition-all duration-700" style={{ width: `${totals.pctInst}%`,    background: '#60a5fa' }} title={`Instalações ${totals.pctInst}%`} />}
-                  {totals.pctManut   > 0 && <div className="transition-all duration-700" style={{ width: `${totals.pctManut}%`,   background: '#fb923c' }} title={`Manutenções ${totals.pctManut}%`} />}
-                  {totals.pctServico > 0 && <div className="transition-all duration-700" style={{ width: `${totals.pctServico}%`, background: '#34d399' }} title={`Serviços ${totals.pctServico}%`} />}
-                  {totals.pctRede    > 0 && <div className="transition-all duration-700" style={{ width: `${totals.pctRede}%`,    background: '#c4b5fd' }} title={`Rede ${totals.pctRede}%`} />}
+                  {totals.pctInst    > 0 && <div className="transition-all duration-700" style={{ width: `${totals.pctInst}%`,    background: 'rgb(var(--c-chart-2))' }} title={`Instalações ${totals.pctInst}%`} />}
+                  {totals.pctManut   > 0 && <div className="transition-all duration-700" style={{ width: `${totals.pctManut}%`,   background: 'rgb(var(--c-chart-1))' }} title={`Manutenções ${totals.pctManut}%`} />}
+                  {totals.pctServico > 0 && <div className="transition-all duration-700" style={{ width: `${totals.pctServico}%`, background: 'rgb(var(--c-chart-3))' }} title={`Serviços ${totals.pctServico}%`} />}
+                  {totals.pctRede    > 0 && <div className="transition-all duration-700" style={{ width: `${totals.pctRede}%`,    background: 'rgb(var(--c-chart-6))' }} title={`Rede ${totals.pctRede}%`} />}
                 </div>
                 <div className="flex items-center gap-5 mt-2">
                   {[
-                    { label: 'Instalações', color: '#60a5fa', pct: totals.pctInst    },
-                    { label: 'Manutenções', color: '#fb923c', pct: totals.pctManut   },
-                    { label: 'Serviços',    color: '#34d399', pct: totals.pctServico },
-                    { label: 'Rede',        color: '#c4b5fd', pct: totals.pctRede    },
+                    { label: 'Instalações', color: 'rgb(var(--c-chart-2))', pct: totals.pctInst    },
+                    { label: 'Manutenções', color: 'rgb(var(--c-chart-1))', pct: totals.pctManut   },
+                    { label: 'Serviços',    color: 'rgb(var(--c-chart-3))', pct: totals.pctServico },
+                    { label: 'Rede',        color: 'rgb(var(--c-chart-6))', pct: totals.pctRede    },
                   ].map(s => (
                     <span key={s.label} className="flex items-center gap-1.5 text-caption text-muted">
                       <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />

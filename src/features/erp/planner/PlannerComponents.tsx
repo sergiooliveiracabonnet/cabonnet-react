@@ -71,10 +71,10 @@ export function getDay(dayOffset = 0): WeekDay {
 }
 
 export function tipoIcon(r: OSRow): { color: string; Icon: IconComp | null } {
-  if (r._tipo === 'INSTALACAO') return { color: '#3b82f6', Icon: Package }
-  if (r._tipo === 'MANUTENCAO') return { color: '#f97316', Icon: Wrench  }
-  if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Broadcast   }
-  return { color: '#64748b', Icon: null }
+  if (r._tipo === 'INSTALACAO') return { color: 'rgb(var(--c-primary))', Icon: Package }
+  if (r._tipo === 'MANUTENCAO') return { color: 'rgb(var(--c-orange))',  Icon: Wrench  }
+  if (r._tipo === 'REDE')       return { color: 'rgb(var(--c-purple))',  Icon: Broadcast   }
+  return { color: 'rgb(var(--c-muted))', Icon: null }
 }
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ export function OsRowItem({ r }: { r: OSRow }) {
                      last:border-b-0 hover:bg-surface/20 transition-colors
                      ${concl ? 'opacity-80' : ''}`}>
       <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
-           style={{ background: `${color}22` }}>
+           style={{ background: `color-mix(in srgb, ${color} 13%, transparent)` }}>
         {Icon && <Icon size={11} style={{ color }} />}
       </div>
       <div className="flex-1 min-w-0">

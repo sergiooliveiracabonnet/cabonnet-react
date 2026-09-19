@@ -197,10 +197,10 @@ export const CATEGORIA_LABEL: Record<Categoria, string> = {
 }
 
 export const CATEGORIA_COLOR: Record<Categoria, string> = {
-  INSTALACAO:    '#3b82f6',
-  VT_MANUTENCAO: '#fb923c',
-  SERVICO:       '#c4b5fd',
-  REDE:          '#71717a',
+  INSTALACAO:    'rgb(var(--c-primary))',
+  VT_MANUTENCAO: 'rgb(var(--c-orange))',
+  SERVICO:       'rgb(var(--c-purple))',
+  REDE:          'rgb(var(--c-muted))',
 }
 
 export const FORN_LABEL: Record<Fornecedor, string> = {

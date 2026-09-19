@@ -6,10 +6,10 @@ import type { CatCfgItem, CampoProjecaoReal } from './DashboardTypes'
 
 // Categorias de negócio do provedor — usa _categoria (calculado em enrichRows)
 const CAT_CFG: CatCfgItem[] = [
-  { cat: 'INSTALACAO',    label: 'Instalação',      icon: Package, color: '#3b82f6' },
-  { cat: 'VT_MANUTENCAO', label: 'VT / Manutenção', icon: Wrench,  color: '#fb923c' },
-  { cat: 'SERVICO',       label: 'Serviço',          icon: null,    color: '#c4b5fd' },
-  { cat: 'REDE',          label: 'Rede',             icon: Broadcast,   color: '#71717a' },
+  { cat: 'INSTALACAO',    label: 'Instalação',      icon: Package, color: 'rgb(var(--c-primary))' },
+  { cat: 'VT_MANUTENCAO', label: 'VT / Manutenção', icon: Wrench,  color: 'rgb(var(--c-orange))'  },
+  { cat: 'SERVICO',       label: 'Serviço',          icon: null,    color: 'rgb(var(--c-purple))'  },
+  { cat: 'REDE',          label: 'Rede',             icon: Broadcast,   color: 'rgb(var(--c-muted))'   },
 ]
 
 function RitmoIndicator({ p }: { p: CampoProjecaoReal }) {

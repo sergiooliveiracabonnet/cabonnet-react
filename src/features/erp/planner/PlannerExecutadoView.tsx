@@ -59,10 +59,10 @@ function getDayLabels(): DayInfo[] {
 }
 
 function tipoIcon(r: { _tipo?: string }): { color: string; Icon: IconComp; label: string } {
-  if (r._tipo === 'INSTALACAO') return { color: '#3b82f6', Icon: Package,  label: 'Instalação'  }
-  if (r._tipo === 'MANUTENCAO') return { color: '#f97316', Icon: Wrench,   label: 'Manutenção'  }
-  if (r._tipo === 'REDE')       return { color: '#c4b5fd', Icon: Broadcast,    label: 'Rede'        }
-  return                               { color: '#64748b', Icon: Gear, label: 'Serviço'     }
+  if (r._tipo === 'INSTALACAO') return { color: 'rgb(var(--c-primary))', Icon: Package,  label: 'Instalação'  }
+  if (r._tipo === 'MANUTENCAO') return { color: 'rgb(var(--c-orange))',  Icon: Wrench,   label: 'Manutenção'  }
+  if (r._tipo === 'REDE')       return { color: 'rgb(var(--c-purple))',  Icon: Broadcast,    label: 'Rede'        }
+  return                               { color: 'rgb(var(--c-muted))',   Icon: Gear, label: 'Serviço'     }
 }
 
 // ─── Build ────────────────────────────────────────────────────────────────────
@@ -111,12 +111,12 @@ function buildProdutividade(allRows: OSRow[], days: DayInfo[]): { teams: TeamEnt
 // ─── DeltaBadge ───────────────────────────────────────────────────────────────
 
 function DeltaBadge({ delta }: { delta: number }) {
-  const color  = delta > 0 ? '#4ade80' : delta < 0 ? '#f87171' : '#6b7280'
+  const color  = delta > 0 ? 'rgb(var(--c-green))' : delta < 0 ? 'rgb(var(--c-red))' : 'rgb(var(--c-muted))'
   const Icon   = delta > 0 ? TrendUp : delta < 0 ? TrendDown : Minus
   const prefix = delta > 0 ? '+' : ''
   return (
     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-caption font-bold border"
-          style={{ background: `${color}12`, borderColor: `${color}30`, color }}>
+          style={{ background: `color-mix(in srgb, ${color} 7%, transparent)`, borderColor: `color-mix(in srgb, ${color} 19%, transparent)`, color }}>
       <Icon size={8} />{prefix}{delta}
     </span>
   )
@@ -170,7 +170,7 @@ function OSInlineTable({ rows, dayLabel }: { rows: OSRow[]; dayLabel: string }) 
         {cats.map(c => (
           <span key={c.label}
                 className="flex items-center gap-1.5 text-caption font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: `${c.color}18`, color: c.color }}>
+                style={{ background: `color-mix(in srgb, ${c.color} 9%, transparent)`, color: c.color }}>
             <c.Icon size={11} />
             {c.label}
             <span className="font-mono font-black">{c.count}</span>
@@ -268,7 +268,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
         <td className="px-4 py-3 w-10">
           {rank <= 3 ? (
             <span className="font-mono font-black text-body"
-                  style={{ color: ['#fbbf24','#94a3b8','#cd7c3c'][rank-1] }}>
+                  style={{ color: ['rgb(var(--c-yellow))','rgb(var(--c-muted))','rgb(var(--c-orange))'][rank-1] }}>
               #{rank}
             </span>
           ) : (
@@ -287,12 +287,12 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
             {days.map((d: DayInfo) => {
               const val   = cnt(d.key)
               const pct   = globalMax > 0 ? (val / globalMax) * 100 : 0
-              const color = d.isToday ? '#3b82f6' : d.isWeekend ? '#374151' : '#3b82f6'
+              const color = d.isWeekend ? 'rgb(var(--c-muted))' : 'rgb(var(--c-primary))'
               return (
                 <div key={d.key} className="relative group flex-1 flex items-end">
                   <div className="w-full rounded-sm transition-all"
                        style={{ height: `${Math.max(val > 0 ? 15 : 2, pct * 0.28)}px`,
-                                background: val > 0 ? color : 'rgba(255,255,255,0.06)' }} />
+                                background: val > 0 ? color : 'rgb(var(--c-disabled))' }} />
                   {val > 0 && (
                     <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2
                                     bg-elevated border border-subtle text-text text-caption
@@ -346,10 +346,10 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                 const isActive  = activeDayKey === d.key
                 const clickable = val > 0
                 const color = val === 0
-                  ? 'rgba(255,255,255,0.06)'
-                  : val >= peak * 0.8 ? '#4ade80'
-                  : val >= peak * 0.4 ? '#3b82f6'
-                  : '#475569'
+                  ? 'rgb(var(--c-disabled))'
+                  : val >= peak * 0.8 ? 'rgb(var(--c-green))'
+                  : val >= peak * 0.4 ? 'rgb(var(--c-primary))'
+                  : 'rgb(var(--c-muted))'
 
                 return (
                   <div
@@ -364,8 +364,8 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                         : clickable ? 'hover:scale-105 active:scale-95' : '',
                     ].join(' ')}
                     style={{
-                      background:   isActive ? `${color}28` : `${color}14`,
-                      borderColor:  isActive ? color         : `${color}30`,
+                      background:   isActive ? `color-mix(in srgb, ${color} 16%, transparent)` : `color-mix(in srgb, ${color} 8%, transparent)`,
+                      borderColor:  isActive ? color         : `color-mix(in srgb, ${color} 19%, transparent)`,
                       ['--ring-color' as string]: color,
                       minWidth: '44px',
                     } as React.CSSProperties}
@@ -376,7 +376,7 @@ function TeamRow({ rank, entry, days, thisLen, prevLen, globalMax, isExpanded, o
                     </span>
                     <span className="text-caption text-muted">{d.label}</span>
                     <span className="font-mono font-black text-headline leading-none"
-                          style={{ color: val > 0 ? color : 'rgba(255,255,255,0.15)' }}>
+                          style={{ color }}>
                       {val}
                     </span>
                     {/* Seta indicadora */}
@@ -487,16 +487,16 @@ export default function PlannerExecutadoView() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: `Executadas (últimos ${thisLen}d)`, value: totalThis,  sub: `${totalPrev} nos ${prevLen}d anteriores`,  color: '#3b82f6', delta: totalDelta },
-          { label: 'Equipes melhoraram',       value: melhorou,  sub: `${piorou} reduziram · ${teams.length - melhorou - piorou} estáveis`, color: '#4ade80' },
-          { label: 'Pior queda',               value: piorou,    sub: 'equipes com redução',              color: '#f87171' },
+          { label: `Executadas (últimos ${thisLen}d)`, value: totalThis,  sub: `${totalPrev} nos ${prevLen}d anteriores`,  color: 'rgb(var(--c-primary))', delta: totalDelta },
+          { label: 'Equipes melhoraram',       value: melhorou,  sub: `${piorou} reduziram · ${teams.length - melhorou - piorou} estáveis`, color: 'rgb(var(--c-green))' },
+          { label: 'Pior queda',               value: piorou,    sub: 'equipes com redução',              color: 'rgb(var(--c-red))' },
           topTeam
-            ? { label: `Líder (${thisLen}d)`, value: topTeam.thisWeek, sub: topTeam.team, color: '#f59e0b' }
-            : { label: '—', value: '—', sub: '', color: '#6b7280' },
+            ? { label: `Líder (${thisLen}d)`, value: topTeam.thisWeek, sub: topTeam.team, color: 'rgb(var(--c-yellow))' }
+            : { label: '—', value: '—', sub: '', color: 'rgb(var(--c-muted))' },
         ].map((k, i) => (
           <div key={i}
                className="relative overflow-hidden rounded-xl border bg-card"
-               style={{ borderColor: `${k.color}22` }}>
+               style={{ borderColor: `color-mix(in srgb, ${k.color} 13%, transparent)` }}>
             <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: k.color }} />
             <div className="p-4">
               <p className="text-caption text-muted mb-2">{k.label}</p>
@@ -513,7 +513,7 @@ export default function PlannerExecutadoView() {
 
       {/* Tabela */}
       <section className="space-y-2">
-        <SectionLabel icon={ChartBar} color="#3b82f6">Ranking — {teams.length} equipes · {days.length} dias</SectionLabel>
+        <SectionLabel icon={ChartBar} color="rgb(var(--c-primary))">Ranking — {teams.length} equipes · {days.length} dias</SectionLabel>
 
         {teams.length === 0 ? (
           <div className="rounded-2xl border border-subtle bg-card px-4 py-12 text-center">
@@ -637,7 +637,7 @@ export default function PlannerExecutadoView() {
 
       {/* Legenda */}
       <div className="flex items-center gap-4 text-caption text-muted flex-wrap">
-        {[['#3b82f6','Hoje'], ['#3b82f6','Dias úteis'], ['rgba(255,255,255,0.06)','Sem OS']].map(([c,l]) => (
+        {[['rgb(var(--c-primary))','Hoje'], ['rgb(var(--c-primary))','Dias úteis'], ['rgb(var(--c-disabled))','Sem OS']].map(([c,l]) => (
           <span key={l} className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-sm" style={{ background: c }} />{l}
           </span>

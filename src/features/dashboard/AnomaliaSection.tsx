@@ -35,9 +35,9 @@ function ComposicaoLine({ composicao }: { composicao: Composicao }) {
 }
 
 const PRIORIDADE_STYLE = {
-  alta:  { color: '#f87171', bg: 'rgba(248,113,113,0.08)',   border: 'rgba(248,113,113,0.25)'   },
-  média: { color: '#facc15', bg: 'rgba(250,204,21,0.08)',   border: 'rgba(250,204,21,0.25)'   },
-  baixa: { color: '#4ade80', bg: 'rgba(74,222,128,0.08)',   border: 'rgba(74,222,128,0.25)'   },
+  alta:  { color: 'rgb(var(--c-red))',    bg: 'rgb(var(--c-red) / 0.08)',    border: 'rgb(var(--c-red) / 0.25)'    },
+  média: { color: 'rgb(var(--c-yellow))', bg: 'rgb(var(--c-yellow) / 0.08)', border: 'rgb(var(--c-yellow) / 0.25)' },
+  baixa: { color: 'rgb(var(--c-green))',  bg: 'rgb(var(--c-green) / 0.08)',  border: 'rgb(var(--c-green) / 0.25)'  },
 }
 
 export function AnomaliaSection({ anomalias, contexto }: {
@@ -64,7 +64,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-yellow/20 bg-card">
       <div className="absolute top-0 left-0 right-0 h-[2px]"
-           style={{ background: 'linear-gradient(90deg, transparent, rgba(250,204,21,0.5), transparent)' }} />
+           style={{ background: 'linear-gradient(90deg, transparent, rgb(var(--c-yellow) / 0.5), transparent)' }} />
 
       <button
         onClick={() => setOpen(o => !o)}

@@ -9,6 +9,9 @@ import type { OSRow }     from '../../lib/types'
 
 interface FornecedorOpt { value: string; label: string; color: string }
 
+// Cores literais (nao tokens): accentColor vira ctx.fillStyle no canvas de
+// captureOSTable.ts (imagem exportada pro Telegram) - Canvas2D nao resolve
+// var(--x), so aceita cor final. A imagem enviada e estatica e sem tema.
 const FORNECEDOR_OPTS: FornecedorOpt[] = [
   { value: 'WES',        label: 'WES',        color: '#c4b5fd' },
   { value: 'Instacable', label: 'Instacable',  color: '#facc15' },

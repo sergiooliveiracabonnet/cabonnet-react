@@ -5,7 +5,7 @@ import { shortEquipe, situacaoVariant } from '../../../lib/osFormat'
 import type { OSRow } from '../../../lib/types'
 
 
-export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color = '#3b82f6', onOS }: {
+export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color = 'rgb(var(--c-primary))', onOS }: {
   open: boolean; onClose: () => void; title: string; rows?: OSRow[]; color?: string; onOS?: (row: OSRow) => void
 }) {
   if (!open) return null
@@ -29,7 +29,7 @@ export function OSListModal({ open, onClose, title, rows = [] as OSRow[], color 
             : <div className="divide-y divide-hairline">
                 {rows.map(r => {
                   const aging = r._agingAbertura ?? 0
-                  const agClr = aging >= 6 ? '#f87171' : aging >= 3 ? '#f97316' : '#94a3b8'
+                  const agClr = aging >= 6 ? 'rgb(var(--c-red))' : aging >= 3 ? 'rgb(var(--c-orange))' : 'rgb(var(--c-muted))'
                   return (
                     <div key={r.numos}
                          className="grid grid-cols-[80px_1fr_110px_110px_55px] gap-3

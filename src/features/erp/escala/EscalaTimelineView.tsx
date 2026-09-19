@@ -50,7 +50,7 @@ export function EscalaTimelineView() {
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <SectionLabel icon={Clock} color="#3b82f6">
+        <SectionLabel icon={Clock} color="rgb(var(--c-primary))">
           Linha do tempo — 08h às 18h · 1h por OS
         </SectionLabel>
         <div className="flex items-center gap-2 flex-wrap">
@@ -79,11 +79,11 @@ export function EscalaTimelineView() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
-          { label: 'OS no dia',           value: totalOS,      color: '#3b82f6' },
-          { label: 'Equipes com OS',      value: teams.length, color: '#4ade80' },
-          { label: 'Conflitos de horário', value: conflitos,   color: conflitos > 0 ? '#f87171' : '#4ade80' },
+          { label: 'OS no dia',           value: totalOS,      color: 'rgb(var(--c-primary))' },
+          { label: 'Equipes com OS',      value: teams.length, color: 'rgb(var(--c-green))' },
+          { label: 'Conflitos de horário', value: conflitos,   color: conflitos > 0 ? 'rgb(var(--c-red))' : 'rgb(var(--c-green))' },
         ].map((k, i) => (
-          <div key={i} className="relative overflow-hidden rounded-xl border bg-card" style={{ borderColor: `${k.color}22` }}>
+          <div key={i} className="relative overflow-hidden rounded-xl border bg-card" style={{ borderColor: `color-mix(in srgb, ${k.color} 13%, transparent)` }}>
             <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: k.color }} />
             <div className="p-4">
               <p className="text-caption text-muted mb-1.5">{k.label}</p>

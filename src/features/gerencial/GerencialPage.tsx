@@ -223,7 +223,7 @@ export default function GerencialPage() {
         onClose={() => setDrillDown(null)}
         title={drillDown?.title ?? ''}
         rows={drillDown?.rows ?? []}
-        color={drillDown?.color ?? '#3b82f6'}
+        color={drillDown?.color ?? 'rgb(var(--c-primary))'}
       />
 
       {/* Header */}
@@ -262,7 +262,7 @@ export default function GerencialPage() {
 
       {/* ── 1. Instalação ──────────────────────────────────────────────────── */}
       <section className="space-y-3">
-        <SectionLabel icon={Package} color="#3b82f6">
+        <SectionLabel icon={Package} color="rgb(var(--c-primary))">
           Instalações — executadas · {periodoLabel}
         </SectionLabel>
 
@@ -272,13 +272,13 @@ export default function GerencialPage() {
               value={instConclRows.length}
               label="Instalações Concluídas"
               sub={`${instAtivos.length} em aberto · ${instRows.length} no total`}
-              color="#3b82f6"
-              onClick={() => openDrill({ title: `Instalações Concluídas — ${instConclRows.length} ordens`, rows: instConclRows, color: '#3b82f6' })}
+              color="rgb(var(--c-primary))"
+              onClick={() => openDrill({ title: `Instalações Concluídas — ${instConclRows.length} ordens`, rows: instConclRows, color: 'rgb(var(--c-primary))' })}
             />
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Em aberto', drillRows: instAtivos, color: '#facc15' },
-                { label: 'Total',     drillRows: instRows,   color: '#3b82f6' },
+                { label: 'Em aberto', drillRows: instAtivos, color: 'rgb(var(--c-yellow))' },
+                { label: 'Total',     drillRows: instRows,   color: 'rgb(var(--c-primary))' },
               ].map(s => (
                 <div key={s.label}
                      className="rounded-xl border border-subtle bg-card px-3 py-3
@@ -298,7 +298,7 @@ export default function GerencialPage() {
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
-                rows={instAtivosCidades} color="#facc15" emptyMsg="Nenhuma instalação em aberto"
+                rows={instAtivosCidades} color="rgb(var(--c-yellow))" emptyMsg="Nenhuma instalação em aberto"
                 sourceRows={instAtivos}
                 onDrillDown={openDrill}
               />
@@ -308,7 +308,7 @@ export default function GerencialPage() {
                 <MapPin size={10} /> Concluídas por cidade
               </p>
               <CidadeTable
-                rows={instCidades} color="#3b82f6" emptyMsg="Nenhuma instalação no período"
+                rows={instCidades} color="rgb(var(--c-primary))" emptyMsg="Nenhuma instalação no período"
                 sourceRows={instConclRows}
                 onDrillDown={openDrill}
               />
@@ -319,7 +319,7 @@ export default function GerencialPage() {
 
       {/* ── 2. VT / Manutenção ─────────────────────────────────────────────── */}
       <section className="space-y-3">
-        <SectionLabel icon={Wrench} color="#f97316">
+        <SectionLabel icon={Wrench} color="rgb(var(--c-orange))">
           VT / Manutenção — executadas · {periodoLabel}
         </SectionLabel>
         <p className="text-caption text-muted -mt-2">
@@ -332,13 +332,13 @@ export default function GerencialPage() {
               value={vtManutConclRows.length}
               label="VT / Manutenção Concluídas"
               sub={`${vtManutAtivos.length} em aberto · ${vtManutRows.length} no total`}
-              color="#f97316"
-              onClick={() => openDrill({ title: `VT / Manutenção Concluídas — ${vtManutConclRows.length} ordens`, rows: vtManutConclRows, color: '#f97316' })}
+              color="rgb(var(--c-orange))"
+              onClick={() => openDrill({ title: `VT / Manutenção Concluídas — ${vtManutConclRows.length} ordens`, rows: vtManutConclRows, color: 'rgb(var(--c-orange))' })}
             />
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Em aberto', drillRows: vtManutAtivos, color: '#facc15' },
-                { label: 'Total',     drillRows: vtManutRows,   color: '#f97316' },
+                { label: 'Em aberto', drillRows: vtManutAtivos, color: 'rgb(var(--c-yellow))' },
+                { label: 'Total',     drillRows: vtManutRows,   color: 'rgb(var(--c-orange))' },
               ].map(s => (
                 <div key={s.label}
                      className="rounded-xl border border-subtle bg-card px-3 py-3
@@ -358,7 +358,7 @@ export default function GerencialPage() {
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
-                rows={vtManutAtivosCidades} color="#facc15" emptyMsg="Nenhuma VT/Manutenção em aberto"
+                rows={vtManutAtivosCidades} color="rgb(var(--c-yellow))" emptyMsg="Nenhuma VT/Manutenção em aberto"
                 sourceRows={vtManutAtivos}
                 onDrillDown={openDrill}
               />
@@ -368,7 +368,7 @@ export default function GerencialPage() {
                 <MapPin size={10} /> Concluídas por cidade
               </p>
               <CidadeTable
-                rows={vtManutCidades} color="#f97316" emptyMsg="Nenhuma VT/Manutenção no período"
+                rows={vtManutCidades} color="rgb(var(--c-orange))" emptyMsg="Nenhuma VT/Manutenção no período"
                 sourceRows={vtManutConclRows}
                 onDrillDown={openDrill}
               />
@@ -379,7 +379,7 @@ export default function GerencialPage() {
 
       {/* ── 3. Serviço ─────────────────────────────────────────────────────── */}
       <section className="space-y-3">
-        <SectionLabel icon={Briefcase} color="#c4b5fd">
+        <SectionLabel icon={Briefcase} color="rgb(var(--c-purple))">
           Serviço — executados · {periodoLabel}
         </SectionLabel>
         <p className="text-caption text-muted -mt-2">
@@ -392,13 +392,13 @@ export default function GerencialPage() {
               value={servConclRows.length}
               label="Serviços Concluídos"
               sub={`${servAtivos.length} em aberto · ${servRows.length} no total`}
-              color="#c4b5fd"
-              onClick={() => openDrill({ title: `Serviços Concluídos — ${servConclRows.length} ordens`, rows: servConclRows, color: '#c4b5fd' })}
+              color="rgb(var(--c-purple))"
+              onClick={() => openDrill({ title: `Serviços Concluídos — ${servConclRows.length} ordens`, rows: servConclRows, color: 'rgb(var(--c-purple))' })}
             />
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Em aberto', drillRows: servAtivos, color: '#facc15' },
-                { label: 'Total',     drillRows: servRows,   color: '#c4b5fd' },
+                { label: 'Em aberto', drillRows: servAtivos, color: 'rgb(var(--c-yellow))' },
+                { label: 'Total',     drillRows: servRows,   color: 'rgb(var(--c-purple))' },
               ].map(s => (
                 <div key={s.label}
                      className="rounded-xl border border-subtle bg-card px-3 py-3
@@ -418,7 +418,7 @@ export default function GerencialPage() {
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
-                rows={servAtivosCidades} color="#facc15" emptyMsg="Nenhum serviço em aberto"
+                rows={servAtivosCidades} color="rgb(var(--c-yellow))" emptyMsg="Nenhum serviço em aberto"
                 sourceRows={servAtivos}
                 onDrillDown={openDrill}
               />
@@ -428,7 +428,7 @@ export default function GerencialPage() {
                 <MapPin size={10} /> Concluídos por cidade
               </p>
               <CidadeTable
-                rows={servCidades} color="#c4b5fd" emptyMsg="Nenhum serviço no período"
+                rows={servCidades} color="rgb(var(--c-purple))" emptyMsg="Nenhum serviço no período"
                 sourceRows={servConclRows}
                 onDrillDown={openDrill}
               />
@@ -441,7 +441,7 @@ export default function GerencialPage() {
 
       {/* ── Em Rota — snapshot atual ────────────────────────────────────────── */}
       <section className="space-y-3">
-        <SectionLabel icon={Clock} color="#4ade80">
+        <SectionLabel icon={Clock} color="rgb(var(--c-green))">
           Em Rota agora — snapshot operacional (sem filtro de data)
         </SectionLabel>
 
@@ -449,10 +449,10 @@ export default function GerencialPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-[3px] h-3.5 rounded-full" style={{ background: '#3b82f6' }} />
-              <Package size={11} style={{ color: '#3b82f6' }} />
+              <div className="w-[3px] h-3.5 rounded-full" style={{ background: 'rgb(var(--c-primary))' }} />
+              <Package size={11} style={{ color: 'rgb(var(--c-primary))' }} />
               <span className="text-caption font-bold uppercase tracking-label"
-                    style={{ color: '#3b82f6' }}>
+                    style={{ color: 'rgb(var(--c-primary))' }}>
                 Instalação em rota
               </span>
             </div>
@@ -461,7 +461,7 @@ export default function GerencialPage() {
                 <button
                   className="text-caption font-semibold text-muted hover:text-secondary border border-subtle
                              rounded-full px-2.5 py-1 transition-colors"
-                  onClick={() => openDrill({ title: `Instalação atribuída p/ datas futuras — ${rotaInstSplit.futuras.length} ordens`, rows: rotaInstSplit.futuras, color: '#3b82f6' })}
+                  onClick={() => openDrill({ title: `Instalação atribuída p/ datas futuras — ${rotaInstSplit.futuras.length} ordens`, rows: rotaInstSplit.futuras, color: 'rgb(var(--c-primary))' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
                   +{rotaInstSplit.futuras.length} p/ datas futuras
                 </button>
@@ -469,8 +469,8 @@ export default function GerencialPage() {
               <button
                 className="flex items-center gap-1.5 font-mono font-black text-headline leading-none
                            hover:opacity-80 transition-opacity"
-                style={{ color: '#3b82f6' }}
-                onClick={() => openDrill({ title: `Instalação em Rota hoje — ${rotaInst.length} ordens`, rows: rotaInst, color: '#3b82f6' })}
+                style={{ color: 'rgb(var(--c-primary))' }}
+                onClick={() => openDrill({ title: `Instalação em Rota hoje — ${rotaInst.length} ordens`, rows: rotaInst, color: 'rgb(var(--c-primary))' })}
                 title="Ver todas as OS na rua hoje">
                 {rotaInst.length}
                 <CaretRight size={14} className="mt-0.5 opacity-60" />
@@ -482,17 +482,17 @@ export default function GerencialPage() {
               <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <MapPin size={9} /> Por cidade
               </p>
-              <CidadeTable rows={rotaInstCidades} color="#3b82f6"
+              <CidadeTable rows={rotaInstCidades} color="rgb(var(--c-primary))"
                            emptyMsg="Nenhuma instalação em rota"
                            sourceRows={rotaInst}
                            onDrillDown={openDrill} />
-              <ClienteSearch rows={rotaInst} color="#3b82f6" onDrillDown={openDrill} />
+              <ClienteSearch rows={rotaInst} color="rgb(var(--c-primary))" onDrillDown={openDrill} />
             </div>
             <div className="lg:col-span-3">
               <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <Clock size={9} /> Detalhe · aging
               </p>
-              <EmRotaCard rows={rotaInst} color="#3b82f6" />
+              <EmRotaCard rows={rotaInst} color="rgb(var(--c-primary))" />
             </div>
           </div>
         </div>
@@ -501,10 +501,10 @@ export default function GerencialPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-[3px] h-3.5 rounded-full" style={{ background: '#f97316' }} />
-              <Wrench size={11} style={{ color: '#f97316' }} />
+              <div className="w-[3px] h-3.5 rounded-full" style={{ background: 'rgb(var(--c-orange))' }} />
+              <Wrench size={11} style={{ color: 'rgb(var(--c-orange))' }} />
               <span className="text-caption font-bold uppercase tracking-label"
-                    style={{ color: '#f97316' }}>
+                    style={{ color: 'rgb(var(--c-orange))' }}>
                 VT / Manutenção em rota
               </span>
             </div>
@@ -513,7 +513,7 @@ export default function GerencialPage() {
                 <button
                   className="text-caption font-semibold text-muted hover:text-secondary border border-subtle
                              rounded-full px-2.5 py-1 transition-colors"
-                  onClick={() => openDrill({ title: `VT/Manutenção atribuída p/ datas futuras — ${rotaVTManutSplit.futuras.length} ordens`, rows: rotaVTManutSplit.futuras, color: '#f97316' })}
+                  onClick={() => openDrill({ title: `VT/Manutenção atribuída p/ datas futuras — ${rotaVTManutSplit.futuras.length} ordens`, rows: rotaVTManutSplit.futuras, color: 'rgb(var(--c-orange))' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
                   +{rotaVTManutSplit.futuras.length} p/ datas futuras
                 </button>
@@ -521,8 +521,8 @@ export default function GerencialPage() {
               <button
                 className="flex items-center gap-1.5 font-mono font-black text-headline leading-none
                            hover:opacity-80 transition-opacity"
-                style={{ color: '#f97316' }}
-                onClick={() => openDrill({ title: `VT/Manutenção em Rota hoje — ${rotaVTManut.length} ordens`, rows: rotaVTManut, color: '#f97316' })}
+                style={{ color: 'rgb(var(--c-orange))' }}
+                onClick={() => openDrill({ title: `VT/Manutenção em Rota hoje — ${rotaVTManut.length} ordens`, rows: rotaVTManut, color: 'rgb(var(--c-orange))' })}
                 title="Ver todas as OS na rua hoje">
                 {rotaVTManut.length}
                 <CaretRight size={14} className="mt-0.5 opacity-60" />
@@ -534,17 +534,17 @@ export default function GerencialPage() {
               <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <MapPin size={9} /> Por cidade
               </p>
-              <CidadeTable rows={rotaVTManutCidades} color="#f97316"
+              <CidadeTable rows={rotaVTManutCidades} color="rgb(var(--c-orange))"
                            emptyMsg="Nenhuma VT/Manutenção em rota"
                            sourceRows={rotaVTManut}
                            onDrillDown={openDrill} />
-              <ClienteSearch rows={rotaVTManut} color="#f97316" onDrillDown={openDrill} />
+              <ClienteSearch rows={rotaVTManut} color="rgb(var(--c-orange))" onDrillDown={openDrill} />
             </div>
             <div className="lg:col-span-3">
               <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <Clock size={9} /> Detalhe · aging
               </p>
-              <EmRotaCard rows={rotaVTManut} color="#f97316" />
+              <EmRotaCard rows={rotaVTManut} color="rgb(var(--c-orange))" />
             </div>
           </div>
         </div>
@@ -553,11 +553,11 @@ export default function GerencialPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-[3px] h-3.5 rounded-full" style={{ background: '#c4b5fd' }} />
+              <div className="w-[3px] h-3.5 rounded-full" style={{ background: 'rgb(var(--c-purple))' }} />
 
-              <Briefcase size={11} style={{ color: '#c4b5fd' }} />
+              <Briefcase size={11} style={{ color: 'rgb(var(--c-purple))' }} />
               <span className="text-caption font-bold uppercase tracking-label"
-                    style={{ color: '#c4b5fd' }}>
+                    style={{ color: 'rgb(var(--c-purple))' }}>
                 Serviço em rota
               </span>
             </div>
@@ -566,7 +566,7 @@ export default function GerencialPage() {
                 <button
                   className="text-caption font-semibold text-muted hover:text-secondary border border-subtle
                              rounded-full px-2.5 py-1 transition-colors"
-                  onClick={() => openDrill({ title: `Serviço atribuído p/ datas futuras — ${rotaServSplit.futuras.length} ordens`, rows: rotaServSplit.futuras, color: '#c4b5fd' })}
+                  onClick={() => openDrill({ title: `Serviço atribuído p/ datas futuras — ${rotaServSplit.futuras.length} ordens`, rows: rotaServSplit.futuras, color: 'rgb(var(--c-purple))' })}
                   title="Em Atendimento com agendamento futuro — atribuídas, mas ainda não na rua">
                   +{rotaServSplit.futuras.length} p/ datas futuras
                 </button>
@@ -574,8 +574,8 @@ export default function GerencialPage() {
               <button
                 className="flex items-center gap-1.5 font-mono font-black text-headline leading-none
                            hover:opacity-80 transition-opacity"
-                style={{ color: '#c4b5fd' }}
-                onClick={() => openDrill({ title: `Serviço em Rota hoje — ${rotaServ.length} ordens`, rows: rotaServ, color: '#c4b5fd' })}
+                style={{ color: 'rgb(var(--c-purple))' }}
+                onClick={() => openDrill({ title: `Serviço em Rota hoje — ${rotaServ.length} ordens`, rows: rotaServ, color: 'rgb(var(--c-purple))' })}
                 title="Ver todas as OS na rua hoje">
                 {rotaServ.length}
                 <CaretRight size={14} className="mt-0.5 opacity-60" />
@@ -588,17 +588,17 @@ export default function GerencialPage() {
               <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <MapPin size={9} /> Por cidade
               </p>
-              <CidadeTable rows={rotaServCidades} color="#c4b5fd"
+              <CidadeTable rows={rotaServCidades} color="rgb(var(--c-purple))"
                            emptyMsg="Nenhum serviço em rota"
                            sourceRows={rotaServ}
                            onDrillDown={openDrill} />
-              <ClienteSearch rows={rotaServ} color="#c4b5fd" onDrillDown={openDrill} />
+              <ClienteSearch rows={rotaServ} color="rgb(var(--c-purple))" onDrillDown={openDrill} />
             </div>
             <div className="lg:col-span-3">
               <p className="text-caption text-muted mb-1.5 flex items-center gap-1">
                 <Clock size={9} /> Detalhe · aging
               </p>
-              <EmRotaCard rows={rotaServ} color="#c4b5fd" />
+              <EmRotaCard rows={rotaServ} color="rgb(var(--c-purple))" />
             </div>
           </div>
         </div>
@@ -608,7 +608,7 @@ export default function GerencialPage() {
       {/* ── 5. Volume Total por Equipe ─────────────────────────────────────── */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <SectionLabel icon={Users} color="#4ade80">
+          <SectionLabel icon={Users} color="rgb(var(--c-green))">
             Volume Total por Equipe
           </SectionLabel>
           <span className="text-caption text-muted">{equipes.length} equipes · concluídas por data de execução</span>
@@ -617,15 +617,15 @@ export default function GerencialPage() {
         {/* KPI strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
-            { label: 'Concluídas no período',            drillRows: kpiConcluidas, color: '#4ade80' },
-            { label: 'Pendentes cadastradas no período', drillRows: kpiPendentes,  color: '#facc15' },
-            { label: 'Em Atendimento',                   drillRows: kpiAtendendo,  color: '#22d3ee' },
-            { label: 'Total OS período',                 drillRows: baseRows,      color: '#3b82f6' },
+            { label: 'Concluídas no período',            drillRows: kpiConcluidas, color: 'rgb(var(--c-green))' },
+            { label: 'Pendentes cadastradas no período', drillRows: kpiPendentes,  color: 'rgb(var(--c-yellow))' },
+            { label: 'Em Atendimento',                   drillRows: kpiAtendendo,  color: 'rgb(var(--c-cyan))' },
+            { label: 'Total OS período',                 drillRows: baseRows,      color: 'rgb(var(--c-primary))' },
           ].map(s => (
             <div key={s.label}
                  className="relative overflow-hidden rounded-xl border bg-card px-4 py-3 animate-card-enter
                             cursor-pointer hover:bg-surface/20 transition-colors"
-                 style={{ borderColor: `${s.color}20` }}
+                 style={{ borderColor: `color-mix(in srgb, ${s.color} 13%, transparent)` }}
                  onClick={() => openDrill({ title: `${s.label} — ${s.drillRows.length} ordens`, rows: s.drillRows, color: s.color })}>
               <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: s.color }} />
               <p className="font-mono font-black tabular-nums text-readout leading-none"
