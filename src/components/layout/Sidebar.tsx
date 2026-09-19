@@ -198,7 +198,7 @@ export function Sidebar() {
               </div>
             ) : gi > 0 ? (
               <div className="flex justify-center py-2">
-                <div className="w-1 h-1 rounded-full" style={{ background: group.color + '99' }} />
+                <div className="w-1 h-1 rounded-full" style={{ background: group.color, opacity: 0.6 }} />
               </div>
             ) : (
               <div className="py-1.5" />

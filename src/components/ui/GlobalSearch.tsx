@@ -181,7 +181,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                         <div className="w-1 h-3 rounded-full flex-shrink-0" style={{ background: group.color }} />
                         <span
                           className="text-caption font-semibold uppercase tracking-label"
-                          style={{ color: group.color + 'aa' }}
+                          style={{ color: group.color, opacity: 0.67 }}
                         >
                           {group.label}
                         </span>

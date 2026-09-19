@@ -457,15 +457,15 @@ body {
 .nav-link-infra {
   transition: background 150ms ease, color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
-.nav-link-agora.active    { background: rgba(139,92,246,0.14); color: #d8cffb; border-color: transparent; font-weight: 500; }
-.nav-link-operar.active   { background: rgba(34,211,238,0.12); color: #b0f0fa; border-color: transparent; font-weight: 500; }
-.nav-link-analisar.active { background: rgba(74,222,128,0.12); color: #b3f5c9; border-color: transparent; font-weight: 500; }
-.nav-link-infra.active    { background: rgba(251,146,60,0.13); color: #fdd0a8; border-color: transparent; font-weight: 500; }
+.nav-link-agora.active    { background: rgb(var(--c-purple) / 0.14); color: rgb(var(--c-purple)); border-color: transparent; font-weight: 500; }
+.nav-link-operar.active   { background: rgb(var(--c-cyan)   / 0.12); color: rgb(var(--c-cyan));   border-color: transparent; font-weight: 500; }
+.nav-link-analisar.active { background: rgb(var(--c-green)  / 0.12); color: rgb(var(--c-green));  border-color: transparent; font-weight: 500; }
+.nav-link-infra.active    { background: rgb(var(--c-orange) / 0.13); color: rgb(var(--c-orange)); border-color: transparent; font-weight: 500; }
 
-.nav-link-agora:hover:not(.active)    { background: rgba(139,92,246,0.08); color: #ddd6fe; }
-.nav-link-operar:hover:not(.active)   { background: rgba(34,211,238,0.08); color: #a5f3fc; }
-.nav-link-analisar:hover:not(.active) { background: rgba(74,222,128,0.08); color: #bbf7d0; }
-.nav-link-infra:hover:not(.active)    { background: rgba(251,146,60,0.09); color: #fed7aa; }
+.nav-link-agora:hover:not(.active)    { background: rgb(var(--c-purple) / 0.08); color: rgb(var(--c-purple)); }
+.nav-link-operar:hover:not(.active)   { background: rgb(var(--c-cyan)   / 0.08); color: rgb(var(--c-cyan)); }
+.nav-link-analisar:hover:not(.active) { background: rgb(var(--c-green)  / 0.08); color: rgb(var(--c-green)); }
+.nav-link-infra:hover:not(.active)    { background: rgb(var(--c-orange) / 0.09); color: rgb(var(--c-orange)); }
 
 /* Fallback active nav */
 .nav-active {
