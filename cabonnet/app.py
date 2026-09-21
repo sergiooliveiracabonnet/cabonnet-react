@@ -16,6 +16,7 @@ import logging
 import os
 import queue as _queue
 import re
+import sqlite3
 import threading
 import time as _time_mod
 import unicodedata
@@ -676,8 +677,13 @@ async def create_usuario(request: Request, _role: str = Depends(_require_gestor)
         fornecedor_key = None
     try:
         uid = _db_create_usuario(username, _hash_password(password), role, fornecedor_key, cluster_key)
-    except Exception:
-        raise HTTPException(409, "Já existe um usuário com esse username")
+    except sqlite3.IntegrityError as ex:
+        raise HTTPException(409, "Já existe um usuário com esse username") from ex
+    except Exception as ex:
+        # Sem isso, qualquer falha (banco travado, disco cheio, etc.) virava
+        # "usuário já existe" e escondia o erro real — inclusive de quem administra.
+        log.exception("[Usuarios] Falha ao criar usuário — username: %s", username)
+        raise HTTPException(500, f"Falha ao criar usuário: {ex}") from ex
     log.info("[Usuarios] Criado — username: %s role: %s", username, role)
     return {"ok": True, "id": uid}
 
