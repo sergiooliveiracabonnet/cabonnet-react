@@ -39,12 +39,15 @@ interface TimelineStepProps {
   date?:   string | null
   equipe?: string | null
   obs?:    string | null
+  /** Quando a ação foi de fato registrada (polling) — distinto de `date`, que é
+   *  a data/hora para a qual a OS ficou agendada e costuma vir sem horário. */
+  registradoEm?: string | null
   details?: StepDetails
   isLast?: boolean
   done?:   boolean
 }
 
-export function TimelineStep({ icon, color, label, date, equipe, obs, details, isLast, done }: TimelineStepProps) {
+export function TimelineStep({ icon, color, label, date, equipe, obs, registradoEm, details, isLast, done }: TimelineStepProps) {
   const [open, setOpen] = useState(false)
 
   const d = details || {}
@@ -103,6 +106,14 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, details, i
             </span>
           )}
         </div>
+
+        {/* Hora real do registro — distinta da data agendada, que costuma vir sem horário */}
+        {registradoEm && (
+          <p className="mt-0.5 text-caption text-muted/70 flex items-center gap-1">
+            <Clock size={9} className="opacity-50 flex-shrink-0" />
+            registrado em {registradoEm}
+          </p>
+        )}
 
         {/* Obs inline quando fechado */}
         {obs && !open && (

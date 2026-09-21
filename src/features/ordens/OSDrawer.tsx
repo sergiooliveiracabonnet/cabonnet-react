@@ -11,6 +11,7 @@ interface StepItem {
   equipe?:  string
   done?:    boolean
   obs?:     string | null
+  registradoEm?: string | null
   details?: Record<string, unknown>
 }
 import { Drawer }        from '../../components/ui/Drawer'
@@ -116,6 +117,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
           equipe: shortEquipe(item.equipe) || undefined,
           done: !item.isCurrent || isConcluida || isAtendimento,
           obs: item.observacao,
+          registradoEm: item.registradoEm,
           details: item.isCurrent ? {
             hora:          os.horaatendimento || null,
             periodo:       os.periodo         || null,
@@ -423,6 +425,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                     date={s.date}
                     equipe={s.equipe}
                     obs={s.obs}
+                    registradoEm={s.registradoEm}
                     details={s.details}
                     done={s.done}
                     isLast={i === steps.length - 1}

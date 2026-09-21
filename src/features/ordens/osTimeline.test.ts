@@ -65,6 +65,29 @@ describe('buildAgendamentoSequence', () => {
     expect(result[0].label).toBe('1º Agendamento')
   })
 
+  it('preenche registradoEm com o horário real do polling, distinto da data agendada', () => {
+    const ts = Math.floor(Date.parse('2024-11-20T08:04:00') / 1000) // hora local do runner, sem depender de fuso fixo
+    const d = new Date(ts * 1000)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const esperado = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+
+    const result = buildAgendamentoSequence({
+      dataatendimento: '18/11/2024',
+      dataagendamento: '20/11/2024',
+      equipeAgendada: 'F08',
+      historico: [
+        { numos: '1', dataagendamento: '18/11/2024', nomedaequipe: 'F11', descsituacao: 'Pendente', ts: ts - 86400 },
+        { numos: '1', dataagendamento: '20/11/2024', nomedaequipe: 'F08', descsituacao: 'Pendente', ts },
+      ],
+    })
+
+    // O 1º evento (dataatendimento) é sintético, sem ts no histórico — não tem "quando aconteceu" registrado.
+    expect(result[0].registradoEm).toBeNull()
+    expect(result[1].registradoEm).toBe(esperado)
+    // A data agendada (`date`) continua sendo a data-alvo, não o momento do reagendamento.
+    expect(result[1].date).toBe('20/11/2024')
+  })
+
   it('mantém Agendamento como primeiro rótulo quando não existe dataatendimento', () => {
     const result = buildAgendamentoSequence({
       dataatendimento: null,

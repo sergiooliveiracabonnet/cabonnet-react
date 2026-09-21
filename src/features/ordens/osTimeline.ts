@@ -6,6 +6,12 @@ export interface AgendamentoSequenceItem {
   equipe: string | null
   observacao: string | null
   isCurrent: boolean
+  /** Momento em que o polling (cache.py) detectou a troca — quando a ação
+   *  aconteceu de fato, não a data/hora para a qual a OS foi agendada (`date`,
+   *  que muitas vezes vem sem hora, só a data). Nulo nos dois eventos
+   *  sintéticos (1º atendimento e agendamento atual), que vêm direto da OS, não
+   *  do histórico persistido. */
+  registradoEm: string | null
 }
 
 interface BuildAgendamentoSequenceInput {
@@ -18,6 +24,16 @@ interface BuildAgendamentoSequenceInput {
 
 const datePart = (value?: string | null) => (value ?? '').trim().split(/[ T]/)[0]
 const teamKey = (value?: string | null) => (value ?? '').trim().toUpperCase()
+
+// `ts` é epoch em segundos (Python datetime.now().timestamp(), tz local
+// correta) — usa os getters locais do Date, não toISOString/fmtDate, senão a
+// exibição vira UTC e volta a errar o horário por 3h.
+function formatRegistradoEm(ts: number | null | undefined): string | null {
+  if (!ts) return null
+  const date = new Date(ts * 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
 
 const sameSchedule = (
   left: Pick<AgendamentoSequenceItem, 'date' | 'equipe'>,
@@ -32,11 +48,11 @@ export function buildAgendamentoSequence({
   observacoesReagendamento = [],
 }: BuildAgendamentoSequenceInput): AgendamentoSequenceItem[] {
   const orderedHistory = [...historico].sort((a, b) => a.ts - b.ts)
-  const events: Array<Pick<AgendamentoSequenceItem, 'date' | 'equipe' | 'observacao'>> = []
+  const events: Array<Pick<AgendamentoSequenceItem, 'date' | 'equipe' | 'observacao' | 'registradoEm'>> = []
   const firstPersistedTeam = orderedHistory[0]?.nomedaequipe || equipeAgendada || null
 
   if (dataatendimento?.trim()) {
-    events.push({ date: dataatendimento, equipe: firstPersistedTeam, observacao: null })
+    events.push({ date: dataatendimento, equipe: firstPersistedTeam, observacao: null, registradoEm: null })
   }
 
   for (const entry of orderedHistory) {
@@ -44,12 +60,13 @@ export function buildAgendamentoSequence({
       date: entry.dataagendamento,
       equipe: entry.nomedaequipe,
       observacao: entry.observacoes || entry.observacaocritica || null,
+      registradoEm: formatRegistradoEm(entry.ts),
     }
     if (!events.some(existing => sameSchedule(existing, event))) events.push(event)
   }
 
   if (dataagendamento?.trim()) {
-    const current = { date: dataagendamento, equipe: equipeAgendada ?? null, observacao: null }
+    const current = { date: dataagendamento, equipe: equipeAgendada ?? null, observacao: null, registradoEm: null }
     if (!events.some(existing => sameSchedule(existing, current))) events.push(current)
   }
 
