@@ -378,7 +378,10 @@ def _db_store_signal_import_chunk(upload_id, chunk_index, chunk_total, payload, 
     with state._db_lock:
         con = sqlite3.connect(_DB_PATH)
         try:
-            con.execute("DELETE FROM signal_import_chunks WHERE created_at < datetime('now', '-1 day')")
+            # created_at é gravado em hora local (datetime.now() do Python); sem
+            # 'localtime' aqui o datetime('now') do SQLite compara em UTC e poda
+            # bloco com ~21h, não as 24h pretendidas (SP é UTC-3).
+            con.execute("DELETE FROM signal_import_chunks WHERE created_at < datetime('now', 'localtime', '-1 day')")
             con.execute("""
                 INSERT INTO signal_import_chunks(upload_id,chunk_index,chunk_total,payload,created_at,created_by)
                 VALUES(?,?,?,?,?,?)
