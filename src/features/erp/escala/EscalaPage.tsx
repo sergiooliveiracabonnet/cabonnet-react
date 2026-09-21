@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Image } from '@phosphor-icons/react'
+import { Image, Warning, X } from '@phosphor-icons/react'
 import { PageHeader } from '../../../components/ui/PageHeader'
 import { getWeekDays } from '../planner/PlannerComponents'
 import { useEscalaSemana, useEscalaActions } from '../../../hooks/useEscala'
@@ -20,11 +20,23 @@ export default function EscalaPage() {
   const [modo, setModo] = useState<EscalaModo>('grade')
   const [weekOffset, setWeekOffset] = useState(0)
   const [mindMapOpen, setMindMapOpen] = useState(false)
+  const [error, setError] = useState('')
   const days = useMemo(() => getWeekDays(weekOffset), [weekOffset])
   const dias = useMemo(() => days.map(d => d.key), [days])
 
   const { data: items = [], isLoading } = useEscalaSemana(dias)
   const { setStatus } = useEscalaActions(dias)
+
+  // setStatus falhava em silêncio (promise sem catch): a célula selecionava e
+  // voltava ao valor antigo sem nenhum aviso do motivo. Agora o erro aparece.
+  async function handleChangeStatus(body: { team_code: string; dia: string; local1?: string; local2?: string }) {
+    try {
+      await setStatus(body)
+      setError('')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Não foi possível salvar a escala.')
+    }
+  }
 
   return (
     <div className="space-y-4 max-w-[1600px]">
@@ -44,6 +56,12 @@ export default function EscalaPage() {
           </div>
         }
       />
+      {error && (
+        <div role="alert" className="flex items-center gap-3 rounded-xl border border-red/30 bg-red/[0.07] px-4 py-3 text-label text-red">
+          <Warning size={17} /><span className="flex-1">{error}</span>
+          <button aria-label="Fechar aviso" onClick={() => setError('')}><X size={15} /></button>
+        </div>
+      )}
       {modo === 'grade' && (
         <>
           <EscalaGrid
@@ -52,7 +70,7 @@ export default function EscalaPage() {
             onWeekOffsetChange={setWeekOffset}
             items={items}
             isLoading={isLoading}
-            onChangeStatus={setStatus}
+            onChangeStatus={handleChangeStatus}
           />
           <EscalaSummaryPanel days={days} items={items} />
         </>
