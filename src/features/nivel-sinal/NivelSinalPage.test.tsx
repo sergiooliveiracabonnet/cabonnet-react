@@ -1,6 +1,15 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import NivelSinalPage from './NivelSinalPage'
+
+// Cada teste ganha um QueryClient novo: o cache do React Query agora persiste
+// entre trocas de página, então sem isolamento um teste vazaria dados para o
+// próximo (mesma motivação de useNivelSinalData.ts).
+function renderPage() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(<QueryClientProvider client={queryClient}><NivelSinalPage /></QueryClientProvider>)
+}
 
 describe('NivelSinalPage', () => {
   beforeEach(() => {
@@ -21,7 +30,7 @@ describe('NivelSinalPage', () => {
   })
 
   it('mantém a análise como aba principal e abre o controle de ocorrências', () => {
-    render(<NivelSinalPage />)
+    renderPage()
 
     expect(screen.getByRole('tab', { name: 'Análise de sinal' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByText('Carregue o relatório de sinais das ONUs')).toBeInTheDocument()
@@ -34,7 +43,7 @@ describe('NivelSinalPage', () => {
   })
 
   it('começa sem ocorrências e cria uma ocorrência automaticamente pelo CSV', async () => {
-    const { container } = render(<NivelSinalPage />)
+    const { container } = renderPage()
     fireEvent.click(screen.getByRole('tab', { name: 'Controle de ocorrências' }))
     expect(screen.getByText('Nenhuma ocorrência registrada.')).toBeInTheDocument()
 
@@ -56,14 +65,14 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
   })
 
   it('usa a estrutura nativa do projeto sem documento incorporado', () => {
-    render(<NivelSinalPage />)
+    renderPage()
     expect(screen.getByRole('heading', { name: 'Nível de Sinal' })).toBeInTheDocument()
     expect(screen.getByText('Carregue o relatório de sinais das ONUs')).toBeInTheDocument()
     expect(screen.queryByTitle(/console óptico/i)).not.toBeInTheDocument()
   })
 
   it('exibe todos os blocos analíticos após importar o CSV', async () => {
-    const { container } = render(<NivelSinalPage />)
+    const { container } = renderPage()
     const csv = `Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo\nTaubaté;Centro;OLT TBT;Huawei;1;1/2;7;Cliente A;Conectado;Online;Crítico;-31,5;HG8145`
     const input = container.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(input, { target: { files: [new File([csv], 'sinais.csv', { type: 'text/csv' })] } })
@@ -109,7 +118,7 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
       return { ok: true, status: 200, headers: new Headers({ 'content-type': 'application/json' }), json: async () => ({ ok: true, items, import_id: 1 }) } as Response
     }))
 
-    const { container } = render(<NivelSinalPage />)
+    const { container } = renderPage()
     const header = 'Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo;Serial'
     const linhas = Array.from({ length: 4 }, (_, index) =>
       `Taubaté;Centro;OLT TBT;Huawei;1;1/2;${index};Cliente ${index};Conectado;Online;Crítico;-3${index},5;HG8145;SN${index}`)
@@ -146,7 +155,7 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
   })
 
   it('recusa potência fora da faixa plausível em vez de gravar dedo trocado', async () => {
-    const { container } = render(<NivelSinalPage />)
+    const { container } = renderPage()
     const header = 'Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo;Serial'
     const linhas = Array.from({ length: 4 }, (_, index) =>
       `Taubaté;Centro;OLT TBT;Huawei;1;1/2;${index};Cliente ${index};Conectado;Online;Crítico;-3${index},5;HG8145;SN${index}`)
@@ -162,7 +171,7 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
   })
 
   it('classifica a nova potência de quem não tinha leitura anterior no CSV', async () => {
-    const { container } = render(<NivelSinalPage />)
+    const { container } = renderPage()
     const header = 'Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo;Serial'
     const linhas = Array.from({ length: 4 }, (_, index) =>
       `Taubaté;Centro;OLT TBT;Huawei;1;1/2;${index};Cliente ${index};Conectado;Online;Crítico;-3${index},5;HG8145;SN${index}`)
@@ -187,7 +196,7 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
   })
 
   it('pagina os hotspots em uma matriz de doze PONs', async () => {
-    const { container } = render(<NivelSinalPage />)
+    const { container } = renderPage()
     const header = 'Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Modelo'
     const data = Array.from({ length: 13 }, (_, ponIndex) =>
       Array.from({ length: 4 }, (_, onuIndex) =>

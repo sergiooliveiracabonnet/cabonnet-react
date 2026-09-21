@@ -16,6 +16,7 @@ import { PonMedicoesModal } from './PonMedicoesModal'
 import { buildMedicaoDrafts, type MedicaoDraft, type PonMedicao } from './ponMedicoes'
 import { buildTreatedPons, snapshotFromHotspot, splitHotspots, treatedPonKeys, treatmentsByKey, type PonTreatment, type TreatedPon } from './ponTreatments'
 import { ponTreatmentsApi, signalOccurrencesApi } from '../../lib/api'
+import { NIVEL_SINAL_KEYS, useNivelSinalData } from './useNivelSinalData'
 
 const optionList = (values: string[]) => [...new Set(values.filter(value => value && value !== '—'))]
   .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true })).map(value => ({ value, label: value }))
@@ -37,15 +38,12 @@ interface MedicaoTarget {
 
 export default function NivelSinalPage() {
   const [activeTab, setActiveTab] = useState('analise')
-  const [occurrences, setOccurrences] = useState<SignalOccurrence[]>([])
+  // Ocorrências, tratativas e o CSV importado (e seu parse) ficam no cache do
+  // React Query, que sobrevive a trocar de página — ver useNivelSinalData.
+  const { occurrences, treatments, allRows, fileName, loadError, queryClient } = useNivelSinalData()
   const [importResult, setImportResult] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
-  // Um parse só por CSV: guardamos o snapshot completo e derivamos o recorte
-  // de alerta em memória, em vez de parsear o arquivo duas vezes.
-  const [allRows, setAllRows] = useState<SignalRow[]>([])
-  const [treatments, setTreatments] = useState<PonTreatment[]>([])
   const [busyPon, setBusyPon] = useState('')
-  const [fileName, setFileName] = useState('')
   const [error, setError] = useState('')
   const [filters, setFilters] = useState<SignalFilters>(EMPTY_FILTERS)
   const [detail, setDetail] = useState<DetailState | null>(null)
@@ -78,21 +76,7 @@ export default function NivelSinalPage() {
   const hasFilters = Boolean(filters.query || filters.cidade || filters.olt || filters.pon || filters.slot || filters.tipo || filters.situacao || filters.severities?.length || filters.offline || filters.hotspotsOnly)
 
   useEffect(() => setHotspotPage(0), [filters.cidade, filters.olt, filters.pon])
-  useEffect(() => {
-    signalOccurrencesApi.list<SignalOccurrence>()
-      .then(response => setOccurrences(response.items))
-      .catch(() => setError('Não foi possível carregar as ocorrências salvas no servidor.'))
-    ponTreatmentsApi.list<PonTreatment>()
-      .then(response => setTreatments(response.items))
-      .catch(() => setError('Não foi possível carregar as PONs tratadas salvas no servidor.'))
-    signalOccurrencesApi.latestImport()
-      .then(response => {
-        if (!response.item) return
-        setAllRows(parseSignalCsv(response.item.csv_text, { includeNonAlerts: true }))
-        setFileName(response.item.file_name)
-      })
-      .catch(() => setError('Não foi possível carregar o último CSV importado no servidor.'))
-  }, [])
+  useEffect(() => { if (loadError) setError(loadError) }, [loadError])
 
   const setFilter = <K extends keyof SignalFilters>(key: K, value: SignalFilters[K]) => setFilters(current => ({ ...current, [key]: value }))
   const show = (title: string, subtitle: string, detailRows: SignalRow[]) => setDetail({ title, subtitle, rows: detailRows })
@@ -124,9 +108,16 @@ export default function NivelSinalPage() {
         const updatedCount = synced.filter(item => previousIds.has(item.id) && item.status !== 'Concluído' && item.missedSnapshots === 0).length
         const missingCount = synced.filter(item => item.status !== 'Concluído' && item.missedSnapshots > 0).length
         const saved = await signalOccurrencesApi.sync<SignalOccurrence>({ file_name: file.name, csv_text: content, occurrences: synced })
-        setOccurrences(saved.items)
+        queryClient.setQueryData(NIVEL_SINAL_KEYS.ocorrencias, { ok: true, items: saved.items })
+        // O snapshot já foi parseado acima: guardamos direto no cache em vez de
+        // deixar o hook reparsear o mesmo CSV que acabamos de processar.
+        queryClient.setQueryData(NIVEL_SINAL_KEYS.importLatest, {
+          ok: true,
+          item: { id: saved.import_id, file_name: file.name, csv_text: content, created_at: new Date().toISOString(), created_by: '' },
+        })
+        queryClient.setQueryData(NIVEL_SINAL_KEYS.parsedRows(saved.import_id), snapshot)
         setImportResult(`${newCount} nova(s) · ${updatedCount} atualizada(s) · ${resolvedCount} normalizada(s) · ${missingCount} não localizada(s) · salvo no banco`)
-        setAllRows(snapshot); setFileName(file.name); setError(''); setFilters(EMPTY_FILTERS); setHotspotPage(0)
+        setError(''); setFilters(EMPTY_FILTERS); setHotspotPage(0)
       } catch (cause) {
         const detail = cause instanceof Error ? ` Motivo: ${cause.message}` : ''
         setError(`Não foi possível processar e salvar a importação.${detail}`)
@@ -162,7 +153,8 @@ export default function NivelSinalPage() {
       const saved = target.modo === 'tratar' && target.hotspot
         ? await ponTreatmentsApi.treat<PonTreatment>({ pon_key: target.ponKey, snapshot: snapshotFromHotspot(target.hotspot), medicoes })
         : await ponTreatmentsApi.saveMedicoes<PonTreatment>({ pon_key: target.ponKey, medicoes })
-      setTreatments(saved.items); setError(''); setMedicaoTarget(null)
+      queryClient.setQueryData(NIVEL_SINAL_KEYS.tratadas, { ok: true, items: saved.items })
+      setError(''); setMedicaoTarget(null)
     } catch {
       setError(target.modo === 'tratar'
         ? 'Não foi possível marcar a PON como tratada no banco de dados.'
@@ -179,7 +171,8 @@ export default function NivelSinalPage() {
       // PON, é esse número que interessa; senão preserva o do último OK.
       const snapshot = item.atual ? snapshotFromHotspot(item.atual) : item.snapshot
       const saved = await ponTreatmentsApi.reopen<PonTreatment>({ pon_key: item.pon_key, snapshot })
-      setTreatments(saved.items); setError('')
+      queryClient.setQueryData(NIVEL_SINAL_KEYS.tratadas, { ok: true, items: saved.items })
+      setError('')
     } catch {
       setError('Não foi possível reabrir a PON no banco de dados.')
     } finally {
@@ -202,7 +195,8 @@ export default function NivelSinalPage() {
       if (!changed) return
       try {
         const saved = await signalOccurrencesApi.update<SignalOccurrence>(changed)
-        setOccurrences(saved.items); setError('')
+        queryClient.setQueryData(NIVEL_SINAL_KEYS.ocorrencias, { ok: true, items: saved.items })
+        setError('')
       } catch (cause) {
         setError('Não foi possível salvar a tratativa no banco de dados.')
         throw cause
