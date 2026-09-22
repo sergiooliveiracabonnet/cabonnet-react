@@ -50,7 +50,7 @@ describe('relatório de reincidências', () => {
 
   it('usa a base de INSTALACAO em vez de MANUTENCAO quando tipoBase pede', () => {
     const clienteInst = cliente([row('1', 'INST F08', 'WES', '01/08/2026'), row('2', 'INST F11', 'WES', '05/08/2026')])
-    clienteInst.rows.forEach((r, i) => Object.assign(r, { codigocliente: '1', _tipo: 'INSTALACAO', descsituacao: 'Concluída' }))
+    clienteInst.rows.forEach(r => Object.assign(r, { codigocliente: '1', _tipo: 'INSTALACAO', descsituacao: 'Concluída' }))
     const base = [
       ...clienteInst.rows,
       // Manutenção não deve contar na base quando tipoBase='INSTALACAO'.
