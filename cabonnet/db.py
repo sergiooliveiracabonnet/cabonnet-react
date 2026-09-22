@@ -62,10 +62,27 @@ _MODULOS_RENOMEADOS_ONDA3B = {
 }
 
 
+def _connect():
+    """Conexão padrão do projeto — usar em vez de sqlite3.connect(_DB_PATH) direto.
+
+    timeout=30 (default do sqlite3 é 5s): com dezenas de writers no mesmo
+    processo (bot, monitors, auto-refresh a cada 3min, rotas da API), uma
+    escrita grande (ex.: csv_text de alguns MB em signal_imports) podia segurar
+    o lock por mais que 5s e estourar "database is locked" em outra rota —
+    sintoma real visto na criação de usuário depois que o 409 genérico parou de
+    mascarar o erro. 30s deixa o SQLite esperar a vez em vez de desistir cedo.
+    """
+    return sqlite3.connect(_DB_PATH, timeout=30)
+
+
 def _db_init():
     """Cria as tabelas SQLite se não existirem. Chamada uma vez no startup."""
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
+        # WAL: leitores não bloqueiam escritores nem vice-versa (mais tolerante
+        # a concorrência que o journal mode padrão). Fica gravado no arquivo —
+        # só precisa ser setado uma vez, mas repetir é barato e idempotente.
+        con.execute("PRAGMA journal_mode=WAL")
         con.execute("""
             CREATE TABLE IF NOT EXISTS query_cache (
                 chave  TEXT PRIMARY KEY,
@@ -316,7 +333,7 @@ def _db_seed_supervisor():
     sem nenhum modulo."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             ja_feito = con.execute(
                 "SELECT 1 FROM app_meta WHERE chave='seed_supervisor'"
             ).fetchone()
@@ -339,7 +356,7 @@ def _db_sync_signal_occurrences(file_name, csv_text, occurrences, username=""):
     """Persiste o CSV original e o estado sincronizado da fila na mesma transação."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         try:
             cur = con.execute(
                 "INSERT INTO signal_imports(file_name,csv_text,created_at,created_by) VALUES(?,?,?,?)",
@@ -376,7 +393,7 @@ def _db_store_signal_import_chunk(upload_id, chunk_index, chunk_total, payload, 
     """Guarda um bloco e devolve o payload completo quando todos chegaram."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         try:
             # created_at é gravado em hora local (datetime.now() do Python); sem
             # 'localtime' aqui o datetime('now') do SQLite compara em UTC e poda
@@ -403,7 +420,7 @@ def _db_store_signal_import_chunk(upload_id, chunk_index, chunk_total, payload, 
 
 def _db_delete_signal_import_chunks(upload_id):
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         con.execute("DELETE FROM signal_import_chunks WHERE upload_id=?", (upload_id,))
         con.commit()
         con.close()
@@ -411,7 +428,7 @@ def _db_delete_signal_import_chunks(upload_id):
 
 def _db_list_signal_occurrences():
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         rows = con.execute("SELECT payload FROM signal_occurrences WHERE deleted_at IS NULL ORDER BY created_at, id").fetchall()
         con.close()
     return [json.loads(row[0]) for row in rows]
@@ -424,7 +441,7 @@ def _db_update_signal_occurrence(item, username=""):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     payload = json.dumps(item, ensure_ascii=False, separators=(",", ":"))
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         cur = con.execute(
             "UPDATE signal_occurrences SET payload=?,updated_at=?,updated_by=? WHERE id=? AND deleted_at IS NULL",
             (payload, now, username, occurrence_id),
@@ -438,7 +455,7 @@ def _db_list_pon_treatments():
     de ciclo revelam reincidencia (a PON so reabre na mao, entao sem isso um
     problema recorrente ficaria invisivel)."""
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         rows = con.execute(
             "SELECT pon_key,action,snapshot,created_at,created_by "
             "FROM signal_pon_treatments ORDER BY pon_key, id"
@@ -491,7 +508,7 @@ def _normalize_medicao(item):
 def _db_list_pon_medicoes():
     """Potencia por cliente da PON — estado atual, reescrito a cada salvamento."""
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         rows = con.execute(
             "SELECT pon_key,payload,updated_at,updated_by FROM signal_pon_medicoes ORDER BY pon_key, position, onu_key"
         ).fetchall()
@@ -522,7 +539,7 @@ def _db_save_pon_medicoes(pon_key, medicoes, username=""):
             normalized.setdefault(item["onu_key"], item)
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         try:
             con.execute("DELETE FROM signal_pon_medicoes WHERE pon_key=?", (pon_key[:255],))
             con.executemany(
@@ -552,7 +569,7 @@ def _db_add_pon_treatment(pon_key, action, snapshot, username=""):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     payload = json.dumps(snapshot if isinstance(snapshot, dict) else {}, ensure_ascii=False, separators=(",", ":"))
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         con.execute(
             "INSERT INTO signal_pon_treatments(pon_key,action,snapshot,created_at,created_by) VALUES(?,?,?,?,?)",
             (pon_key[:255], action, payload, now, username),
@@ -564,7 +581,7 @@ def _db_add_pon_treatment(pon_key, action, snapshot, username=""):
 
 def _db_get_signal_import(import_id):
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         row = con.execute("SELECT id,file_name,csv_text,created_at,created_by FROM signal_imports WHERE id=?", (import_id,)).fetchone()
         con.close()
     if not row:
@@ -575,7 +592,7 @@ def _db_get_signal_import(import_id):
 def _db_get_latest_signal_import():
     """Última importação de CSV, para restaurar a análise ao recarregar a página."""
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         row = con.execute(
             "SELECT id,file_name,csv_text,created_at,created_by FROM signal_imports ORDER BY id DESC LIMIT 1"
         ).fetchone()
@@ -592,7 +609,7 @@ def _db_migrate_onda3a_modulos():
     Roda no startup, toda vez — tabela pequena, no-op barato quando já migrado.
     Ver docs/superpowers/specs/2026-07-18-onda3a-fusoes-erp-design.md §4.4."""
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         for antigo, novo in _MODULOS_RENOMEADOS_ONDA3A.items():
             papeis = [r[0] for r in con.execute(
                 "SELECT DISTINCT role FROM role_permissoes WHERE modulo=?", (antigo,)
@@ -612,7 +629,7 @@ def _db_migrate_onda3b_modulos():
     antes do módulo antigo sumir de ALL_MODULOS. Mesma lógica de
     _db_migrate_onda3a_modulos, mapa próprio em _MODULOS_RENOMEADOS_ONDA3B."""
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         for antigo, novo in _MODULOS_RENOMEADOS_ONDA3B.items():
             papeis = [r[0] for r in con.execute(
                 "SELECT DISTINCT role FROM role_permissoes WHERE modulo=?", (antigo,)
@@ -631,7 +648,7 @@ def _db_save_cache(chave, csv_text, ts):
     """Persiste um CSV de /query no SQLite para sobreviver a restarts."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             con.execute("INSERT OR REPLACE INTO query_cache(chave,csv,ts) VALUES(?,?,?)",
                         (chave, csv_text, int(ts)))
             con.commit()
@@ -644,7 +661,7 @@ def _db_load_cache(chave):
     """Carrega CSV persistido do SQLite. Retorna (csv_text, ts) ou ('', 0)."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             row = con.execute("SELECT csv, ts FROM query_cache WHERE chave=?", (chave,)).fetchone()
             con.close()
         return (row[0], row[1]) if row else ("", 0)
@@ -661,7 +678,7 @@ def _db_save_justificativa(data_pico, periodo_inicio, periodo_fim, count_os, zsc
     acoes_json = _json.dumps(acoes, ensure_ascii=False) if isinstance(acoes, list) else (acoes or "[]")
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             cur = con.execute(
                 """INSERT INTO justificativas
                    (data_pico, periodo_inicio, periodo_fim, count_os, zscore,
@@ -684,7 +701,7 @@ def _db_list_justificativas(limit=100):
     import json as _json
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             rows = con.execute(
                 "SELECT id,data_pico,periodo_inicio,periodo_fim,count_os,zscore,"
                 "contexto_real,causa_principal,impacto,contexto_ia,acoes,recomendacao,criado_em "
@@ -711,7 +728,7 @@ def _db_delete_justificativa(jid):
     """Remove justificativa por ID. Retorna True se removeu."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             cur = con.execute("DELETE FROM justificativas WHERE id=?", (jid,))
             affected = cur.rowcount
             con.commit()
@@ -727,7 +744,7 @@ def _db_save_pico_alerta(data_str, count_os, zscore):
     criado_em = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             con.execute(
                 "INSERT OR IGNORE INTO pico_alertas(data, count_os, zscore, status, criado_em) VALUES(?,?,?,?,?)",
                 (data_str, count_os, round(zscore, 2), "pending", criado_em)
@@ -743,7 +760,7 @@ def _db_list_pico_alertas_pending():
     """Lista alertas com status='pending'."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             rows = con.execute(
                 "SELECT id, data, count_os, zscore, status, criado_em FROM pico_alertas WHERE status='pending' ORDER BY data DESC"
             ).fetchall()
@@ -758,7 +775,7 @@ def _db_update_pico_alerta_status(alerta_id, status):
     """Atualiza status de um alerta (dismissed | justified)."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             con.execute("UPDATE pico_alertas SET status=? WHERE id=?", (status, alerta_id))
             con.commit()
             con.close()
@@ -780,7 +797,7 @@ def _db_save_status_changes(changes):
     ]
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             con.executemany(
                 "INSERT INTO status_history(numos,de,para,ts,nomedaequipe,nomedacidade,tiposervico,revisita_motivo) VALUES(?,?,?,?,?,?,?,?)",
                 rows
@@ -807,7 +824,7 @@ def _db_save_agendamento_changes(rows):
     ]
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             con.executemany(
                 "INSERT INTO agendamento_history"
                 "(numos,nomedaequipe,equipeexecutou,dataagendamento,descsituacao,nomedacidade,tiposervico,observacoes,observacaocritica,ts) "
@@ -827,7 +844,7 @@ def _db_seed_agendamento_initial(rows):
     ts = int(datetime.now().timestamp())
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             for r in rows:
                 con.execute(
                     "INSERT INTO agendamento_history"
@@ -849,7 +866,7 @@ def _db_get_agendamento_history(numos):
     """Histórico de agendamentos de uma OS, do mais antigo pro mais recente."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             con.row_factory = sqlite3.Row
             rows = con.execute(
                 "SELECT numos, nomedaequipe, equipeexecutou, dataagendamento, descsituacao, "
@@ -884,7 +901,7 @@ def _db_list_revisita_motivos(dias=90):
     criado_min = (datetime.now() - timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S")
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             tg_rows = con.execute(
                 """SELECT numos, revisita_motivo, MAX(ts) as ts, nomedaequipe, nomedacidade
                    FROM status_history
@@ -940,7 +957,7 @@ def _db_save_motivo_encerramento(numos, motivo, observacao="", nomedaequipe="", 
     criado_em = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             con.execute(
                 """INSERT OR REPLACE INTO motivo_encerramento
                    (numos, motivo, observacao, nomedaequipe, nomedacidade, criado_em)
@@ -959,7 +976,7 @@ def _db_get_motivo_encerramento(numos):
     """Retorna a classificação manual salva para uma OS, se existir."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             row = con.execute(
                 "SELECT motivo, observacao, criado_em FROM motivo_encerramento WHERE numos=?",
                 (numos,)
@@ -977,7 +994,7 @@ def _db_list_tecnicos():
     """Lista o cadastro de técnicos (código de frente → nome real/contato)."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             rows = con.execute(
                 "SELECT codigo, nome_real, contato, ativo, atualizado_em FROM tecnicos ORDER BY codigo"
             ).fetchall()
@@ -995,7 +1012,7 @@ def _db_get_fornecedor_custo(data_ref):
     """Custo mensal vigente na data de referência (YYYY-MM-DD), por operadora."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             rows = con.execute(
                 """SELECT forn_key, custo_mensal FROM fornecedor_custo
                    WHERE vigente_de <= ? AND (vigente_ate IS NULL OR vigente_ate >= ?)""",
@@ -1012,7 +1029,7 @@ def _db_list_fornecedor_custo_historico(forn_key):
     """Todas as vigências de uma operadora, da mais antiga para a mais recente."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             rows = con.execute(
                 """SELECT custo_mensal, vigente_de, vigente_ate, atualizado_em, atualizado_por
                    FROM fornecedor_custo WHERE forn_key = ? ORDER BY vigente_de""",
@@ -1043,7 +1060,7 @@ def _db_set_fornecedor_custo(forn_key, custo_mensal, vigente_de, usuario=""):
     vespera = (datetime.strptime(vigente_de, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             existente = con.execute(
                 "SELECT id FROM fornecedor_custo WHERE forn_key = ? AND vigente_de = ?",
                 (forn_key, vigente_de)
@@ -1080,7 +1097,7 @@ def _db_get_fornecedor_meta():
     """Meta de SLA por operadora. Operadora sem meta definida não aparece."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             rows = con.execute(
                 "SELECT forn_key, meta_sla FROM fornecedor_meta WHERE meta_sla IS NOT NULL"
             ).fetchall()
@@ -1097,7 +1114,7 @@ def _db_set_fornecedor_meta(forn_key, meta_sla, usuario=""):
     atualizado_em = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             con.execute(
                 """INSERT INTO fornecedor_meta (forn_key, meta_sla, atualizado_em, atualizado_por)
                    VALUES (?,?,?,?)
@@ -1120,7 +1137,7 @@ def _db_upsert_tecnico(codigo, nome_real="", contato="", ativo=True):
     atualizado_em = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             con.execute(
                 """INSERT INTO tecnicos (codigo, nome_real, contato, ativo, atualizado_em)
                    VALUES (?,?,?,?,?)
@@ -1143,7 +1160,7 @@ def _db_delete_tecnico(codigo):
     """Remove o cadastro de um técnico (não afeta o histórico de OS, só o metadado)."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             cur = con.execute("DELETE FROM tecnicos WHERE codigo=?", (codigo,))
             affected = cur.rowcount
             con.commit()
@@ -1163,7 +1180,7 @@ def _db_list_escala(dias):
         return []
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             placeholders = ",".join("?" * len(dias))
             rows = con.execute(
                 f"""SELECT team_code, dia, local1, local2, updated_at, updated_by
@@ -1187,7 +1204,7 @@ def _db_upsert_escala(team_code, dia, local1="", local2="", updated_by=""):
     updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             con.execute(
                 """INSERT INTO escala_status (team_code, dia, local1, local2, updated_at, updated_by)
                    VALUES (?,?,?,?,?,?)
@@ -1247,7 +1264,7 @@ def _db_list_usuarios():
     """Lista usuários cadastrados. Nunca inclui senha_hash."""
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             rows = con.execute(
                 "SELECT id, username, role, ativo, criado_em, atualizado_em, fornecedor_key, cluster_key "
                 "FROM usuarios ORDER BY username COLLATE NOCASE"
@@ -1267,7 +1284,7 @@ def _db_list_usuarios():
 def _db_get_usuario_by_username(username):
     """Uso interno de login — inclui senha_hash e ativo. Não expor via API."""
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         row = con.execute(
             "SELECT id, username, senha_hash, role, ativo, fornecedor_key, cluster_key FROM usuarios WHERE username=?",
             (username,)
@@ -1281,7 +1298,7 @@ def _db_get_usuario_by_username(username):
 
 def _db_get_usuario_by_id(uid):
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         row = con.execute(
             "SELECT id, username, role, ativo, fornecedor_key, cluster_key FROM usuarios WHERE id=?", (uid,)
         ).fetchone()
@@ -1297,7 +1314,7 @@ def _db_create_usuario(username, senha_hash, role, fornecedor_key=None, cluster_
     (COLLATE NOCASE) — o endpoint traduz isso para HTTP 409."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         try:
             cur = con.execute(
                 "INSERT INTO usuarios (username, senha_hash, role, ativo, criado_em, atualizado_em, fornecedor_key, cluster_key) "
@@ -1332,7 +1349,7 @@ def _db_update_usuario(uid, role=None, ativo=None, fornecedor_key=..., cluster_k
     values.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     values.append(uid)
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         con.execute(f"UPDATE usuarios SET {', '.join(fields)} WHERE id=?", values)
         con.commit()
         con.close()
@@ -1341,7 +1358,7 @@ def _db_update_usuario(uid, role=None, ativo=None, fornecedor_key=..., cluster_k
 
 def _db_set_password(uid, senha_hash):
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         cur = con.execute(
             "UPDATE usuarios SET senha_hash=?, atualizado_em=? WHERE id=?",
             (senha_hash, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), uid)
@@ -1356,7 +1373,7 @@ def _db_count_usuarios():
     """Total de usuários cadastrados (qualquer status) — usado no bootstrap
     e em _auth_enabled()."""
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         n = con.execute("SELECT COUNT(*) FROM usuarios").fetchone()[0]
         con.close()
     return n
@@ -1366,7 +1383,7 @@ def _db_count_ativos_por_role(role):
     """Quantos usuários ATIVOS existem com o papel dado — usado no guard
     'não desative/rebaixe o último gestor ativo'."""
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         n = con.execute(
             "SELECT COUNT(*) FROM usuarios WHERE role=? AND ativo=1", (role,)
         ).fetchone()[0]
@@ -1384,7 +1401,7 @@ def _db_get_permissoes(role):
         return list(_FORNECEDOR_MODULOS)
     try:
         with state._db_lock:
-            con = sqlite3.connect(_DB_PATH)
+            con = _connect()
             rows = con.execute(
                 "SELECT modulo FROM role_permissoes WHERE role=?", (role,)
             ).fetchall()
@@ -1403,7 +1420,7 @@ def _db_set_permissoes(role, modulos):
         raise ValueError("Permissões do papel gestor não são editáveis")
     validos = [m for m in modulos if m in ALL_MODULOS]
     with state._db_lock:
-        con = sqlite3.connect(_DB_PATH)
+        con = _connect()
         con.execute("DELETE FROM role_permissoes WHERE role=?", (role,))
         if validos:
             con.executemany(

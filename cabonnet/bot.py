@@ -4,7 +4,6 @@ cabonnet/bot.py — Telegram bot: polling de atualizações + dispatch de comand
 """
 
 import logging
-import sqlite3
 import threading
 import time as _time_mod
 from datetime import datetime
@@ -15,10 +14,11 @@ from cabonnet.config import (
     TELEGRAM_CHAT_ALERTAS, TELEGRAM_CHAT_REDE,
     TELEGRAM_CHAT_OPERACIONAL_THM,
     TELEGRAM_CHAT_ADAMANTINA,
-    _DB_PATH, _OPERADORA_LABEL,
+    _OPERADORA_LABEL,
 )
 from cabonnet import state
 from cabonnet.cache import _dados_cache_update
+from cabonnet.db import _connect
 from cabonnet.telegram import (
     _telegram_enabled, _tg_get_session, _telegram_send, _telegram_send_long,
     _tg_esc, _operadora_for_chat, _TG_DIV,
@@ -370,7 +370,7 @@ def _telegram_poll_loop_inner():
                         def _salvar_revisita(numos=numos, motivo=motivo, cc=cq_chat):
                             try:
                                 with state._db_lock:
-                                    con = sqlite3.connect(_DB_PATH)
+                                    con = _connect()
                                     con.execute(
                                         "UPDATE status_history SET revisita_motivo=? WHERE numos=? AND revisita_motivo IS NULL",
                                         (motivo, numos)
