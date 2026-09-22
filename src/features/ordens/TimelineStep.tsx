@@ -1,5 +1,7 @@
 import { useState, type ComponentType } from 'react'
-import { Calendar, Users, Clock, CaretDown, CaretRight, Wrench, Package, ArrowCounterClockwise, ChatText } from '@phosphor-icons/react'
+import { CaretRight, Calendar, Users, Clock, Package, ArrowCounterClockwise, ChatText, ArrowRight } from '@phosphor-icons/react'
+import { Badge } from '../../components/ui/Badge'
+
 interface TimelineNodeProps {
   icon:    ComponentType<{ size?: number; className?: string }>
   color:   string
@@ -51,13 +53,21 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, registrado
   const [open, setOpen] = useState(false)
 
   const d = details || {}
-  const hasExtra = !!(
-    d.obs || d.nomeTecnico || d.equipeAgendada || d.duracao ||
-    d.periodo || d.hora || d.servico || d.contrato ||
-    d.equipeReagend || d.reagendada === true ||
+  // Fatos rápidos ficam sempre visíveis, como pills — só o que é lista longa ou
+  // texto extenso (serviço, histórico, materiais) fica atrás de "Ver detalhes".
+  const pills: { label: string; value: string; mono?: boolean }[] = []
+  if (d.nomeTecnico) pills.push({ label: 'Técnico',  value: d.nomeTecnico })
+  if (d.duracao)     pills.push({ label: 'Duração',  value: d.duracao })
+  if (d.hora)        pills.push({ label: 'Hora',     value: d.hora })
+  if (d.periodo)     pills.push({ label: 'Período',  value: d.periodo })
+  if (d.contrato)    pills.push({ label: 'Contrato', value: d.contrato, mono: true })
+
+  const hasMore = !!(
+    d.servico ||
     ((d.historico?.length ?? 0) > 0) ||
     ((d.materiais?.length ?? 0) > 0) || ((d.matRetirados?.length ?? 0) > 0)
   )
+  const timestamp = registradoEm || date
 
   return (
     <div className="flex gap-3">
@@ -69,86 +79,83 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, registrado
         )}
       </div>
 
-      {/* Conteúdo */}
-      <div className={`flex-1 min-w-0 ${isLast ? 'pb-0' : 'pb-4'}`}>
+      {/* Cartão do evento */}
+      <div className={`flex-1 min-w-0 rounded-xl border border-subtle bg-surface/20 px-3.5 py-3 ${isLast ? 'mb-0' : 'mb-3'}`}>
 
-        {/* Cabeçalho — clicável se há detalhes */}
-        <button
-          onClick={() => hasExtra && setOpen(v => !v)}
-          disabled={!hasExtra}
-          className={`w-full text-left flex items-center gap-1 ${hasExtra ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
-        >
-          <p className={`text-label font-semibold leading-snug flex-1 ${done ? `text-${color}` : 'text-muted'}`}>
+        {/* Cabeçalho: título + horário */}
+        <div className="flex items-start justify-between gap-3">
+          <p className={`text-label font-semibold leading-snug ${done ? `text-${color}` : 'text-muted'}`}>
             {label}
-            {d.reagendada === true && (
-              <span className="ml-1.5 text-caption font-bold text-orange/80 uppercase tracking-wide">· reagendada</span>
-            )}
           </p>
-          {hasExtra && (
-            open
-              ? <CaretDown  size={11} className="text-muted/50 flex-shrink-0" />
-              : <CaretRight size={11} className="text-muted/50 flex-shrink-0" />
-          )}
-        </button>
-
-        {/* Data + equipe */}
-        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-          {date && (
-            <span className="font-mono text-caption text-secondary flex items-center gap-1">
-              <Calendar size={9} className="opacity-50 flex-shrink-0" />
-              {date}
-            </span>
-          )}
-          {equipe && (
-            <span className="text-caption text-muted flex items-center gap-1">
-              <Users size={9} className="opacity-50 flex-shrink-0" />
-              {equipe}
+          {timestamp && (
+            <span className="flex-shrink-0 font-mono text-caption text-muted/70 whitespace-nowrap">
+              {timestamp}
             </span>
           )}
         </div>
 
-        {/* Hora real do registro — distinta da data agendada, que costuma vir sem horário */}
-        {registradoEm && (
-          <p className="mt-0.5 text-caption text-muted/70 flex items-center gap-1">
-            <Clock size={9} className="opacity-50 flex-shrink-0" />
-            registrado em {registradoEm}
-          </p>
+        {/* Subtítulo: equipe · data-alvo (quando difere do horário registrado) · badges */}
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {equipe && (
+            <span className="inline-flex items-center gap-1 text-caption text-secondary">
+              <Users size={9} className="opacity-50 flex-shrink-0" />
+              {equipe}
+            </span>
+          )}
+          {date && registradoEm && date !== registradoEm && (
+            <>
+              {equipe && <span className="text-muted/30">·</span>}
+              <span className="inline-flex items-center gap-1 text-caption text-muted">
+                <Calendar size={9} className="opacity-50 flex-shrink-0" />
+                agendado p/ {date}
+              </span>
+            </>
+          )}
+          {d.reagendada === true && <Badge variant="orange" dot={false}>reagendada</Badge>}
+        </div>
+
+        {/* Pills de fatos rápidos */}
+        {pills.length > 0 && (
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            {pills.map(p => <InfoPill key={p.label} {...p} />)}
+          </div>
         )}
 
-        {/* Obs inline quando fechado */}
-        {obs && !open && (
-          <div className="mt-1.5 bg-surface/30 border border-subtle rounded-xl px-3 py-2">
+        {/* Troca de equipe — agendada vs. executante */}
+        {d.equipeAgendada && (
+          <div className="mt-2.5 bg-yellow/[0.07] border border-yellow/20 rounded-xl px-3 py-2.5">
+            <p className="text-caption font-bold uppercase tracking-label text-yellow/80 mb-1.5 flex items-center gap-1.5">
+              <Users size={10} /> Equipe diferente da agendada
+            </p>
+            <div className="flex items-center gap-2 text-caption">
+              <span className="text-secondary font-medium">{d.equipeAgendada}</span>
+              <ArrowRight size={10} className="text-muted/50" />
+              <span className="text-secondary font-medium">{equipe ?? '—'}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Obs inline */}
+        {obs && (
+          <div className="mt-2.5 bg-surface/30 border border-subtle rounded-xl px-3 py-2">
             <p className="text-caption text-secondary leading-relaxed">{obs}</p>
           </div>
         )}
 
+        {/* Ver detalhes */}
+        {hasMore && (
+          <button
+            onClick={() => setOpen(v => !v)}
+            className="mt-2.5 inline-flex items-center gap-1 text-caption font-semibold text-primary hover:text-primary/80 transition-colors"
+          >
+            {open ? 'Ocultar detalhes' : 'Ver detalhes'}
+            <CaretRight size={10} className={`transition-transform ${open ? 'rotate-90' : ''}`} />
+          </button>
+        )}
+
         {/* Painel expandido */}
-        {open && hasExtra && (
-          <div className="mt-2 space-y-2.5">
-
-            {/* Metadados em linha */}
-            {(d.nomeTecnico || d.duracao || d.hora || d.periodo || d.contrato) && (
-              <div className="bg-surface/30 border border-subtle rounded-xl px-3 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
-                {d.nomeTecnico && <Meta icon={Wrench}    label="Técnico"   value={d.nomeTecnico} />}
-                {d.duracao     && <Meta icon={Clock}     label="Duração"   value={d.duracao} />}
-                {d.hora        && <Meta icon={Clock}     label="Hora"      value={d.hora} />}
-                {d.periodo     && <Meta icon={Clock}     label="Período"   value={d.periodo} />}
-                {d.contrato    && <Meta icon={Calendar}  label="Contrato"  value={d.contrato} mono />}
-              </div>
-            )}
-
-            {/* Troca de equipe — agendada vs. executante */}
-            {d.equipeAgendada && (
-              <div className="bg-yellow/[0.07] border border-yellow/20 rounded-xl px-3 py-2.5">
-                <p className="text-caption font-bold uppercase tracking-label text-yellow/80 mb-1.5 flex items-center gap-1.5">
-                  <Users size={10} /> Equipe diferente da agendada
-                </p>
-                <div className="flex items-center gap-3 text-caption">
-                  <span className="text-muted">Agendada:</span>
-                  <span className="text-secondary font-medium">{d.equipeAgendada}</span>
-                </div>
-              </div>
-            )}
+        {open && hasMore && (
+          <div className="mt-2.5 space-y-2.5">
 
             {/* Serviço */}
             {d.servico && (
@@ -196,11 +203,6 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, registrado
               </div>
             )}
 
-            {/* O que o técnico fez */}
-            {d.obs && (
-              <InfoBlock label="O que foi feito" text={d.obs!} />
-            )}
-
             {/* Materiais utilizados */}
             {(d.materiais?.length ?? 0) > 0 && (
               <div className="bg-surface/30 border border-subtle rounded-xl px-3 py-2.5">
@@ -244,14 +246,13 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, registrado
   )
 }
 
-interface MetaProps { icon: ComponentType<{ size?: number; className?: string }>; label: string; value: string; mono?: boolean }
-function Meta({ icon: Icon, label, value, mono }: MetaProps) {
+function InfoPill({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <Icon size={10} className="text-muted/40 flex-shrink-0" />
-      <span className="text-caption font-bold uppercase tracking-label text-muted">{label}:</span>
-      <span className={`text-caption text-secondary font-medium ${mono ? 'font-mono' : ''}`}>{value}</span>
-    </div>
+    <span className="inline-flex items-center gap-1.5 rounded-pill border border-subtle bg-surface/40 px-2.5 py-1 text-caption">
+      <Clock size={9} className="text-muted/40 flex-shrink-0" />
+      <span className="text-muted">{label}</span>
+      <span className={`font-semibold text-text ${mono ? 'font-mono' : ''}`}>{value}</span>
+    </span>
   )
 }
 
