@@ -35,7 +35,11 @@ export interface StatsData {
 
 export function useStats() {
   const fornecedorKey = useAuthStore(s => s.fornecedorKey)
-  const dataScope = fornecedorKey ? `fornecedor:${fornecedorKey}` : 'interno'
+  const cluster = useAuthStore(s => s.cluster)
+  // Mesmo motivo do useOSData: /stats é filtrado por cluster no servidor, e o
+  // cache do React Query precisa refletir isso pra não vazar entre usuários
+  // de clusters diferentes no mesmo navegador.
+  const dataScope = `${fornecedorKey ? `fornecedor:${fornecedorKey}` : 'interno'}:${cluster}`
   return useQuery<StatsData>({
     queryKey:  ['stats', dataScope],
     queryFn:   () => api.get<StatsData>(endpoints.stats),

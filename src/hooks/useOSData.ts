@@ -16,7 +16,12 @@ export function useOSData() {
   const { slaLimits }  = useAlertStore()
   const queryClient    = useQueryClient()
   const fornecedorKey = useAuthStore(s => s.fornecedorKey)
-  const dataScope      = fornecedorKey ? `fornecedor:${fornecedorKey}` : 'interno'
+  const cluster        = useAuthStore(s => s.cluster)
+  // O servidor já filtra /query pelo cluster da sessão (_filter_csv_escopo) —
+  // sem o cluster aqui, dois usuários de clusters diferentes no MESMO navegador
+  // (localStorage/BroadcastChannel são globais à origem, sobrevivem a
+  // logout/login) compartilhavam o mesmo cache e um via o recorte do outro.
+  const dataScope      = `${fornecedorKey ? `fornecedor:${fornecedorKey}` : 'interno'}:${cluster}`
 
   // Recebe dados frescos de outras abas via BroadcastChannel.
   // Só quem recebe do servidor faz broadcast — sem loops.

@@ -6,7 +6,11 @@ import { useAuthStore } from '../store/authStore'
 
 export function useRevisitasData() {
   const fornecedorKey = useAuthStore(s => s.fornecedorKey)
-  const dataScope = fornecedorKey ? `fornecedor:${fornecedorKey}` : 'interno'
+  const cluster = useAuthStore(s => s.cluster)
+  // Mesmo motivo do useOSData: o servidor filtra /revisitas pelo cluster da
+  // sessão, então o cache do React Query precisa ser por cluster também, senão
+  // troca de usuário no mesmo navegador vaza o recorte do usuário anterior.
+  const dataScope = `${fornecedorKey ? `fornecedor:${fornecedorKey}` : 'interno'}:${cluster}`
   const { data, isLoading, error } = useQuery({
     queryKey:  ['revisitas', dataScope],
     queryFn:   () => api.get(endpoints.revisitas),
