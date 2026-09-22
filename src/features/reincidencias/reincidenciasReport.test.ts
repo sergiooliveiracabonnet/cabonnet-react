@@ -17,8 +17,21 @@ describe('relatório de reincidências', () => {
   it('filtra terceira e equipe sem perder o histórico completo do cliente selecionado', () => {
     const a = cliente([row('1', 'INST F08', 'WES', '01/08/2026'), row('2', 'INST F11', 'WES', '05/08/2026')])
     const b = { ...cliente([row('3', 'INST F12', 'THM', '02/08/2026'), row('4', 'INST F12', 'THM', '06/08/2026')]), chave: '2' }
-    expect(filterReincidentes([a, b], { fornecedor: 'WES', equipe: '' })).toEqual([a])
-    expect(filterReincidentes([a, b], { fornecedor: '', equipe: 'INST F12' })).toEqual([b])
+    expect(filterReincidentes([a, b], { fornecedor: 'WES', equipe: '', cidade: '' })).toEqual([a])
+    expect(filterReincidentes([a, b], { fornecedor: '', equipe: 'INST F12', cidade: '' })).toEqual([b])
+  })
+
+  it('filtra por cidade sem perder o histórico completo do cliente selecionado', () => {
+    const a = cliente([row('1', 'INST F08', 'WES', '01/08/2026'), row('2', 'INST F11', 'WES', '05/08/2026')])
+    const b = {
+      ...cliente([
+        { ...row('3', 'INST F12', 'THM', '02/08/2026'), nomedacidade: 'Pindamonhangaba' } as OSRow,
+        { ...row('4', 'INST F12', 'THM', '06/08/2026'), nomedacidade: 'Pindamonhangaba' } as OSRow,
+      ]),
+      chave: '2',
+    }
+    expect(filterReincidentes([a, b], { fornecedor: '', equipe: '', cidade: 'Taubaté' })).toEqual([a])
+    expect(filterReincidentes([a, b], { fornecedor: '', equipe: '', cidade: 'Pindamonhangaba' })).toEqual([b])
   })
 
   it('monta pares consecutivos em ordem cronológica para a IA', () => {

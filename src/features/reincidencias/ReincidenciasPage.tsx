@@ -39,6 +39,7 @@ export default function ReincidenciasPage() {
   const [aba, setAba] = useState<AbaRevisita>('manutencao')
   const [fornecedor, setFornecedor] = useState('')
   const [equipe, setEquipe] = useState('')
+  const [cidade, setCidade] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [aiEnabled, setAIEnabled] = useState(false)
   const cfg = ABA_CONFIG[aba]
@@ -51,15 +52,21 @@ export default function ReincidenciasPage() {
   const { data: observations, isLoading: observationsLoading, isError: observationsError } = useReincidenciaDetails(reportOSNumbers)
   const detailedClients = useMemo(() => mergeOSObservations(churn.clientes, observations), [churn.clientes, observations])
   const equipes = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => shortEquipe(r.nomedaequipe).split(' - ')[0])))].filter(v => v && v !== '—').sort(), [churn.clientes])
-  const clientes = useMemo(() => filterReincidentes(detailedClients, { fornecedor, equipe }), [detailedClients, fornecedor, equipe])
+  const cidades = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => r.nomedacidade)))].filter((v): v is string => Boolean(v)).sort(), [churn.clientes])
+  const clientes = useMemo(() => filterReincidentes(detailedClients, { fornecedor, equipe, cidade }), [detailedClients, fornecedor, equipe, cidade])
   const pares = useMemo(() => buildReincidenciaPairs(clientes), [clientes])
   const filteredBaseRows = useMemo(() => allRows.filter(row =>
     (!fornecedor || row._fornecedor === fornecedor) &&
-    (!equipe || shortEquipe(row.nomedaequipe).startsWith(equipe)),
-  ), [allRows, fornecedor, equipe])
+    (!equipe || shortEquipe(row.nomedaequipe).startsWith(equipe)) &&
+    (!cidade || row.nomedacidade === cidade),
+  ), [allRows, fornecedor, equipe, cidade])
   const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows, new Date(), range, cfg.tipoBase), [clientes, filteredBaseRows, range, cfg.tipoBase])
   const intervals = useMemo(() => buildIntervalDistribution(pares), [pares])
-  const filtros = useMemo(() => [fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras', equipe ? `Equipe: ${equipe}` : 'Todas as equipes'], [fornecedor, equipe])
+  const filtros = useMemo(() => [
+    fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras',
+    equipe ? `Equipe: ${equipe}` : 'Todas as equipes',
+    cidade ? `Cidade: ${cidade}` : 'Todas as cidades',
+  ], [fornecedor, equipe, cidade])
   const contexto = useMemo(() => ({ janelaDias: churn.janelaDias, filtros: filtros.join(' · ') }), [churn.janelaDias, filtros])
   const { data: analysis, isFetching: aiLoading, isError: aiError, errorMessage } = useAIReincidencias(pares, aiEnabled, contexto)
   const osCount = clientes.reduce((sum, c) => sum + c.rows.length, 0)
@@ -67,7 +74,7 @@ export default function ReincidenciasPage() {
   const resetAI = (setter: (value: string) => void) => (value: string) => { setter(value); setAIEnabled(false) }
   const trocarAba = (id: string) => {
     setAba(id as AbaRevisita)
-    setFornecedor(''); setEquipe(''); setExpanded(null); setAIEnabled(false)
+    setFornecedor(''); setEquipe(''); setCidade(''); setExpanded(null); setAIEnabled(false)
   }
 
   return (
@@ -93,7 +100,8 @@ export default function ReincidenciasPage() {
         <Funnel size={18} className="mb-3 text-muted" />
         <Filter label="Terceira" value={fornecedor} onChange={resetAI(setFornecedor)} options={FORNECEDORES} all="Todas as terceiras" />
         <Filter label="Equipe" value={equipe} onChange={resetAI(setEquipe)} options={equipes} all="Todas as equipes" />
-        {(fornecedor || equipe) && <button type="button" onClick={() => { setFornecedor(''); setEquipe(''); setAIEnabled(false) }} className="min-h-11 cursor-pointer rounded-lg px-3 text-label font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">Limpar filtros</button>}
+        <Filter label="Cidade" value={cidade} onChange={resetAI(setCidade)} options={cidades} all="Todas as cidades" />
+        {(fornecedor || equipe || cidade) && <button type="button" onClick={() => { setFornecedor(''); setEquipe(''); setCidade(''); setAIEnabled(false) }} className="min-h-11 cursor-pointer rounded-lg px-3 text-label font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">Limpar filtros</button>}
       </section>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

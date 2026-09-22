@@ -3,7 +3,7 @@ import { isCOPE, isExecucaoReal, isReagend, parseDate, parseDateTime } from '../
 import type { OSRow } from '../../lib/types'
 import { shortEquipe } from '../../lib/osFormat'
 
-export interface ReincidenciaFilters { fornecedor: string; equipe: string }
+export interface ReincidenciaFilters { fornecedor: string; equipe: string; cidade: string }
 
 export function summarizeOSObservation(raw: string): string {
   const text = raw.replace(/\r\n?/g, '\n').trim()
@@ -37,7 +37,8 @@ export function filterReincidentes(clientes: ClienteReincidente[], filters: Rein
   return clientes.filter(cliente => {
     const fornecedorOk = !filters.fornecedor || cliente.rows.some(row => row._fornecedor === filters.fornecedor)
     const equipeOk = !filters.equipe || cliente.rows.some(row => shortEquipe(row.nomedaequipe).startsWith(filters.equipe))
-    return fornecedorOk && equipeOk
+    const cidadeOk = !filters.cidade || cliente.rows.some(row => row.nomedacidade === filters.cidade)
+    return fornecedorOk && equipeOk && cidadeOk
   })
 }
 
