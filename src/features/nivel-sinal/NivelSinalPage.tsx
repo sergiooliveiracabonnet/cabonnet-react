@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import { Broadcast, CheckCircle, DownloadSimple, FileCsv, MagnifyingGlass, Radio, UploadSimple, WarningCircle, WaveSine, X } from '@phosphor-icons/react'
+import { Broadcast, ChartBar, CheckCircle, DownloadSimple, FileCsv, MagnifyingGlass, Radio, UploadSimple, WarningCircle, WaveSine, X } from '@phosphor-icons/react'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { TabBar } from '../../components/ui/TabBar'
+import { useOSDerived } from '../../contexts/OSDataContext'
 import { alertRows, buildHotspots, filterSignals, groupBySeverity, parseSignalCsv, rankedCounts, signalPonKey, signalSummary, type SignalFilters, type SignalHotspot, type SignalRow, type SignalSeverity } from './nivelSinal'
 import { HotspotGrid, KpiAction, Panel, RankedList, SeverityBars, SignalDetailModal, SignalHistogram, SignalTable, type DetailState } from './NivelSinalComponents'
 import { NivelSinalAI } from './NivelSinalAI'
 import { OcorrenciasSinal } from './OcorrenciasSinal'
 import { syncSignalOccurrences, type SignalOccurrence } from './signalOccurrenceModel'
 import { PonsTratadas } from './PonsTratadas'
+import { ComparativoOSSinal } from './ComparativoOSSinal'
 import { PonMedicoesModal } from './PonMedicoesModal'
 import { buildMedicaoDrafts, type MedicaoDraft, type PonMedicao } from './ponMedicoes'
 import { buildTreatedPons, snapshotFromHotspot, splitHotspots, treatedPonKeys, treatmentsByKey, type PonTreatment, type TreatedPon } from './ponTreatments'
@@ -41,6 +43,9 @@ export default function NivelSinalPage() {
   // Ocorrências, tratativas e o CSV importado (e seu parse) ficam no cache do
   // React Query, que sobrevive a trocar de página — ver useNivelSinalData.
   const { occurrences, treatments, allRows, fileName, loadError, queryClient } = useNivelSinalData()
+  // Lado OS do comparativo "OS × Sinal" — respeita o mesmo filtro de data/cluster
+  // usado no resto do dashboard, via OSDataContext.
+  const { rows: osRows } = useOSDerived()
   const [importResult, setImportResult] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const [busyPon, setBusyPon] = useState('')
@@ -188,8 +193,14 @@ export default function NivelSinalPage() {
   }
 
   return <div className="space-y-4 animate-fade-in">
-    <TabBar tabs={[{ id: 'analise', label: 'Análise de sinal', icon: WaveSine }, { id: 'tratadas', label: `PONs tratadas${treatedPons.length ? ` (${treatedPons.length})` : ''}`, icon: CheckCircle }, { id: 'ocorrencias', label: 'Controle de ocorrências', icon: WarningCircle }]} active={activeTab} onChange={setActiveTab} />
+    <TabBar tabs={[
+      { id: 'analise', label: 'Análise de sinal', icon: WaveSine },
+      { id: 'tratadas', label: `PONs tratadas${treatedPons.length ? ` (${treatedPons.length})` : ''}`, icon: CheckCircle },
+      { id: 'ocorrencias', label: 'Controle de ocorrências', icon: WarningCircle },
+      { id: 'comparativo', label: 'OS × Sinal', icon: ChartBar },
+    ]} active={activeTab} onChange={setActiveTab} />
     {activeTab === 'tratadas' ? <PonsTratadas treated={treatedPons} hasCsv={rows.length > 0} onReopen={reopenPon} onEditMedicoes={openEditarMedicoes} busyKey={busyPon} />
+    : activeTab === 'comparativo' ? <ComparativoOSSinal osRows={osRows} signalRows={rows} hasCsv={rows.length > 0} />
     : activeTab === 'ocorrencias' ? <OcorrenciasSinal occurrences={occurrences} onChange={async updated => {
       const changed = updated.find(item => occurrences.find(previous => previous.id === item.id) !== item)
       if (!changed) return
