@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { enrichRows } from '../transform'
-import { buildChurn } from './churn'
+import { buildChurn, buildInstallChurn } from './churn'
 import type { OSRow } from '../types'
 
 const HOJE = new Date(2026, 6, 29, 12, 0, 0)
@@ -114,5 +114,59 @@ describe('buildChurn', () => {
   it('anexa as OS do cliente para drill-down', () => {
     const rows = enrichRows([manut('D', 10), manut('D', 30)])
     expect(buildChurn(rows, 12, HOJE).clientes[0].rows).toHaveLength(2)
+  })
+})
+
+/** Instalação concluída para um cliente, executada há `quando` dias. */
+function inst(codigo: string, quando: number, extra: Record<string, unknown> = {}): OSRow {
+  const dia = diasAtras(quando)
+  return {
+    numos: `${codigo}${quando}`.padStart(7, '8'),
+    nomecliente: `Cliente ${codigo}`, codigocliente: codigo,
+    nomedacidade: 'TAUBATE', bairro: 'CENTRO',
+    nomedaequipe: 'INST F01', tiposervico: 'INSTALACAO', servico: 'INSTALACAO',
+    descsituacao: 'Concluída',
+    datacadastro: diasAtras(quando + 1), dataagendamento: null,
+    dataexecucao: dia, databaixa: dia,
+    ...extra,
+  } as unknown as OSRow
+}
+
+describe('buildInstallChurn', () => {
+  it('conta como revisita qualquer OS dentro de 30 dias após a instalação', () => {
+    const rows = enrichRows([inst('A', 40), manut('A', 20)]) // instalação há 40d, retorno 20d depois
+    const { clientes, totalReincidentes, totalBase } = buildInstallChurn(rows, 12, HOJE)
+    expect(totalBase).toBe(1)
+    expect(totalReincidentes).toBe(1)
+    expect(clientes[0].chave).toBe('A')
+    expect(clientes[0].rows.map(r => r.numos)).toEqual(expect.arrayContaining([inst('A', 40).numos, manut('A', 20).numos]))
+  })
+
+  it('ignora instalação sem nenhuma OS seguinte', () => {
+    const rows = enrichRows([inst('B', 10)])
+    expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(0)
+    expect(buildInstallChurn(rows, 12, HOJE).totalBase).toBe(1) // aparece na base, só não reincidiu
+  })
+
+  it('não conta OS depois de 30 dias da instalação', () => {
+    const rows = enrichRows([inst('C', 40), manut('C', 5)]) // retorno 35 dias depois da instalação
+    expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(0)
+  })
+
+  it('não conta OS anterior à instalação como revisita dela', () => {
+    const rows = enrichRows([manut('D', 45), inst('D', 40)]) // atendimento antes da instalação
+    expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(0)
+  })
+
+  it('conta outra instalação como revisita — o tipo da OS seguinte não importa', () => {
+    const rows = enrichRows([inst('E', 40), inst('E', 30)])
+    expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(1)
+  })
+
+  it('ignora instalação fora da janela de 60 dias', () => {
+    const rows = enrichRows([inst('F', 90), manut('F', 70)])
+    const { totalReincidentes, totalBase } = buildInstallChurn(rows, 12, HOJE)
+    expect(totalBase).toBe(0)
+    expect(totalReincidentes).toBe(0)
   })
 })

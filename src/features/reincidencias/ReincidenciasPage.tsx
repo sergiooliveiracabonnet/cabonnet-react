@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Brain, CaretDown, CaretRight, FilePdf, Funnel, UserMinus } from '@phosphor-icons/react'
+import { Brain, CaretDown, CaretRight, FilePdf, Funnel, House, UserMinus, Wrench } from '@phosphor-icons/react'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { TabBar } from '../../components/ui/TabBar'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useUIStore } from '../../store/uiStore'
-import { buildChurn } from '../../lib/builders/churn'
+import { buildChurn, buildInstallChurn } from '../../lib/builders/churn'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { aiPairKey, useAIReincidencias } from '../../hooks/useAIReincidencias'
 import { useReincidenciaDetails } from '../../hooks/useReincidenciaDetails'
@@ -14,15 +15,38 @@ import { ReincidenciasAIPanel } from './ReincidenciasAIPanel'
 
 const FORNECEDORES = ['WES', 'Instacable', 'THM', 'REDE', 'MANUTENCAO', 'INTERNO', 'OUTRO']
 
+type AbaRevisita = 'manutencao' | 'instalacao'
+
+const ABA_CONFIG: Record<AbaRevisita, {
+  label: string; tipoBase: 'MANUTENCAO' | 'INSTALACAO'; reportType: string
+  descricaoJanela: (dias: number) => string; kpiOrdens: string; kpiIntervalo: string
+}> = {
+  manutencao: {
+    label: 'Revisita de manutenção', tipoBase: 'MANUTENCAO', reportType: 'Relatório de Reincidências — Manutenção',
+    descricaoJanela: dias => `Manutenções repetidas nos últimos ${dias} dias`,
+    kpiOrdens: 'manutenções concluídas', kpiIntervalo: 'entre atendimentos',
+  },
+  instalacao: {
+    label: 'Revisita de instalação', tipoBase: 'INSTALACAO', reportType: 'Relatório de Reincidências — Instalação',
+    descricaoJanela: dias => `Instalações com retorno em até 30 dias, nos últimos ${dias} dias`,
+    kpiOrdens: 'ordens após a instalação', kpiIntervalo: 'até o retorno',
+  },
+}
+
 export default function ReincidenciasPage() {
   const { allRows, isLoading } = useOSDerived()
   const { dateFilter } = useUIStore()
+  const [aba, setAba] = useState<AbaRevisita>('manutencao')
   const [fornecedor, setFornecedor] = useState('')
   const [equipe, setEquipe] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [aiEnabled, setAIEnabled] = useState(false)
+  const cfg = ABA_CONFIG[aba]
   const range = useMemo(() => (dateFilter.from && dateFilter.to ? { from: dateFilter.from, to: dateFilter.to } : null), [dateFilter.from, dateFilter.to])
-  const churn = useMemo(() => buildChurn(allRows, Number.POSITIVE_INFINITY, new Date(), range), [allRows, range])
+  const churn = useMemo(
+    () => (aba === 'instalacao' ? buildInstallChurn : buildChurn)(allRows, Number.POSITIVE_INFINITY, new Date(), range),
+    [allRows, range, aba],
+  )
   const reportOSNumbers = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => r.numos)))], [churn.clientes])
   const { data: observations, isLoading: observationsLoading, isError: observationsError } = useReincidenciaDetails(reportOSNumbers)
   const detailedClients = useMemo(() => mergeOSObservations(churn.clientes, observations), [churn.clientes, observations])
@@ -33,7 +57,7 @@ export default function ReincidenciasPage() {
     (!fornecedor || row._fornecedor === fornecedor) &&
     (!equipe || shortEquipe(row.nomedaequipe).startsWith(equipe)),
   ), [allRows, fornecedor, equipe])
-  const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows, new Date(), range), [clientes, filteredBaseRows, range])
+  const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows, new Date(), range, cfg.tipoBase), [clientes, filteredBaseRows, range, cfg.tipoBase])
   const intervals = useMemo(() => buildIntervalDistribution(pares), [pares])
   const filtros = useMemo(() => [fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras', equipe ? `Equipe: ${equipe}` : 'Todas as equipes'], [fornecedor, equipe])
   const contexto = useMemo(() => ({ janelaDias: churn.janelaDias, filtros: filtros.join(' · ') }), [churn.janelaDias, filtros])
@@ -41,15 +65,28 @@ export default function ReincidenciasPage() {
   const osCount = clientes.reduce((sum, c) => sum + c.rows.length, 0)
   const avgGap = clientes.length ? Math.round(clientes.reduce((sum, c) => sum + c.intervaloMedio, 0) / clientes.length * 10) / 10 : 0
   const resetAI = (setter: (value: string) => void) => (value: string) => { setter(value); setAIEnabled(false) }
+  const trocarAba = (id: string) => {
+    setAba(id as AbaRevisita)
+    setFornecedor(''); setEquipe(''); setExpanded(null); setAIEnabled(false)
+  }
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6">
       <PageHeader title="Relatório de Reincidências" icon={UserMinus}
-        description={`Manutenções repetidas ${range ? `entre ${range.from.toLocaleDateString('pt-BR')} e ${range.to.toLocaleDateString('pt-BR')}` : `nos últimos ${churn.janelaDias} dias`} · análise auditável por cliente`}
-        actions={<button type="button" disabled={!clientes.length} onClick={() => exportReincidenciasPDF(clientes, filtros, analysis)}
+        description={`${cfg.descricaoJanela(churn.janelaDias)}${range ? ` (${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')})` : ''} · análise auditável por cliente`}
+        actions={<button type="button" disabled={!clientes.length} onClick={() => exportReincidenciasPDF(clientes, filtros, analysis, cfg.reportType)}
           className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 text-label font-semibold text-white transition-colors hover:bg-primary/85 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
           <FilePdf size={17} /> Exportar PDF
         </button>}
+      />
+
+      <TabBar
+        tabs={[
+          { id: 'manutencao', label: ABA_CONFIG.manutencao.label, icon: Wrench },
+          { id: 'instalacao', label: ABA_CONFIG.instalacao.label, icon: House },
+        ]}
+        active={aba}
+        onChange={trocarAba}
       />
 
       <section aria-label="Filtros do relatório" className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
@@ -61,8 +98,8 @@ export default function ReincidenciasPage() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KPI label="Clientes reincidentes" value={clientes.length} detail={`${churn.totalBase} clientes na base`} />
-        <KPI label="Ordens analisadas" value={osCount} detail="manutenções concluídas" />
-        <KPI label="Intervalo médio" value={`${avgGap.toLocaleString('pt-BR')}d`} detail="entre atendimentos" />
+        <KPI label="Ordens analisadas" value={osCount} detail={cfg.kpiOrdens} />
+        <KPI label="Intervalo médio" value={`${avgGap.toLocaleString('pt-BR')}d`} detail={cfg.kpiIntervalo} />
         <KPI label="Taxa geral" value={`${churn.pctReincidencia}%`} detail="da base atendida" />
       </div>
 

@@ -41,12 +41,12 @@ const COLUNA_SEVERIDADE = 17
 const RODAPE_Y = 290
 const FIM_CONTEUDO = 275
 
-export function exportReincidenciasPDF(clientes: ClienteReincidente[], filters: string[], analysis?: AIReincidenciaAnalysis | null) {
+export function exportReincidenciasPDF(clientes: ClienteReincidente[], filters: string[], analysis?: AIReincidenciaAnalysis | null, reportType = 'Relatório de Reincidências') {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const width = 210, margin = 15, usable = width - margin * 2
   let page = 1, y = 0
 
-  const addHeader = () => { y = drawPDFHeader(doc, { reportType: 'Relatório de Reincidências', pageWidth: width, margin }) + 4 }
+  const addHeader = () => { y = drawPDFHeader(doc, { reportType, pageWidth: width, margin }) + 4 }
   const footer = () => {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...MUTED)
     doc.text(`Página ${page}`, width - margin, RODAPE_Y, { align: 'right' })

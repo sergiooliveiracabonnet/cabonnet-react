@@ -48,6 +48,19 @@ describe('relatório de reincidências', () => {
     })
   })
 
+  it('usa a base de INSTALACAO em vez de MANUTENCAO quando tipoBase pede', () => {
+    const clienteInst = cliente([row('1', 'INST F08', 'WES', '01/08/2026'), row('2', 'INST F11', 'WES', '05/08/2026')])
+    clienteInst.rows.forEach((r, i) => Object.assign(r, { codigocliente: '1', _tipo: 'INSTALACAO', descsituacao: 'Concluída' }))
+    const base = [
+      ...clienteInst.rows,
+      // Manutenção não deve contar na base quando tipoBase='INSTALACAO'.
+      { ...row('9', 'INST F08', 'WES', '01/08/2026'), codigocliente: '9', _tipo: 'MANUTENCAO', descsituacao: 'Concluída' },
+    ] as OSRow[]
+
+    const ranking = buildTeamRecurrenceRanking([clienteInst], base, new Date(2026, 7, 20), null, 'INSTALACAO')
+    expect(ranking[0]).toMatchObject({ equipe: 'INST F08', base: 1 })
+  })
+
   it('distribui o intervalo entre visitas em faixas operacionais', () => {
     expect(buildIntervalDistribution([
       { dias_entre: 2 }, { dias_entre: 7 }, { dias_entre: 12 }, { dias_entre: 25 }, { dias_entre: 45 },
