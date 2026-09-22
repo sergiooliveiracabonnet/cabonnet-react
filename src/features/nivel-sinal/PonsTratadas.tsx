@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowUUpLeft, Broadcast, CheckCircle, MagnifyingGlass, PencilSimple, Repeat, WarningCircle, WaveSine, X } from '@phosphor-icons/react'
+import { ArrowUUpLeft, Broadcast, CheckCircle, FilePdf, MagnifyingGlass, PencilSimple, Repeat, WarningCircle, WaveSine, X } from '@phosphor-icons/react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -8,6 +8,7 @@ import { FilterSelect } from '../../components/ui/FilterSelect'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { medicoesProgresso, treatedSummary, type TreatedPon } from './ponTreatments'
+import { exportPonsTratadasPDF } from './ponsTratadasPDF'
 
 interface PonsTratadasProps {
   treated: TreatedPon[]
@@ -52,7 +53,10 @@ export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKe
 
   return <div className="space-y-4">
     <PageHeader title="PONs tratadas" icon={CheckCircle}
-      description="PONs que saíram da pendência por confirmação manual — só voltam se você reabrir" />
+      description="PONs que saíram da pendência por confirmação manual — só voltam se você reabrir"
+      actions={<Button variant="ghost" disabled={!visible.length} onClick={() => exportPonsTratadasPDF(visible, hasCsv)}>
+        <FilePdf size={15} /> Exportar PDF
+      </Button>} />
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
       <StatCard title="Tratadas" value={summary.total} sub="fora da fila de pendência" tone="ok" icon={CheckCircle} />
