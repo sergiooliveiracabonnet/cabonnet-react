@@ -7,8 +7,8 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { TabBar } from '../../components/ui/TabBar'
 import { useOSDerived } from '../../contexts/OSDataContext'
-import { alertRows, buildHotspots, filterSignals, groupBySeverity, parseSignalCsv, rankedCounts, signalPonKey, signalSummary, type SignalFilters, type SignalHotspot, type SignalRow, type SignalSeverity } from './nivelSinal'
-import { HotspotGrid, KpiAction, Panel, RankedList, SeverityBars, SignalDetailModal, SignalHistogram, SignalTable, type DetailState } from './NivelSinalComponents'
+import { alertRows, buildHotspots, filterSignals, groupBySeverity, oltParqueRanking, parseSignalCsv, rankedCounts, signalPonKey, signalSummary, type SignalFilters, type SignalHotspot, type SignalRow, type SignalSeverity } from './nivelSinal'
+import { HotspotGrid, KpiAction, OLT_PARQUE_LEGENDA, OltParqueTable, Panel, RankedList, SeverityBars, SignalDetailModal, SignalHistogram, SignalTable, type DetailState } from './NivelSinalComponents'
 import { NivelSinalAI } from './NivelSinalAI'
 import { OcorrenciasSinal } from './OcorrenciasSinal'
 import { syncSignalOccurrences, type SignalOccurrence } from './signalOccurrenceModel'
@@ -69,6 +69,8 @@ export default function NivelSinalPage() {
   // filtros de local/busca; severidade e hotspot só fazem sentido no recorte de alerta.
   const parqueRows = useMemo(() => filterSignals(allRows, { ...filters, severities: [], hotspotsOnly: false }), [allRows, filters])
   const sinalBomRows = useMemo(() => parqueRows.filter(row => !row.alertaRx), [parqueRows])
+  const [oltSort, setOltSort] = useState<'fora' | 'pct'>('fora')
+  const oltParque = useMemo(() => oltParqueRanking(parqueRows, oltSort), [parqueRows, oltSort])
   const validRx = filtered.map(row => row.rx).filter((value): value is number => value != null)
   const rxAverage = validRx.length ? validRx.reduce((sum, value) => sum + value, 0) / validRx.length : null
   const worstRx = validRx.length ? Math.min(...validRx) : null
@@ -196,7 +198,8 @@ export default function NivelSinalPage() {
     const link = document.createElement('a'); link.href = url; link.download = `nivel-sinal-${new Date().toISOString().slice(0, 10)}.csv`; link.click(); URL.revokeObjectURL(url)
   }
 
-  return <div className="space-y-4 animate-fade-in">
+  // sinal-cores: paleta própria de bom/atenção/crítico, só nesta página (index.css).
+  return <div className="sinal-cores space-y-4 animate-fade-in">
     <TabBar tabs={[
       { id: 'analise', label: 'Análise de sinal', icon: WaveSine },
       { id: 'tratadas', label: `PONs tratadas${treatedPons.length ? ` (${treatedPons.length})` : ''}`, icon: CheckCircle },
@@ -253,6 +256,14 @@ export default function NivelSinalPage() {
       <NivelSinalAI rows={filtered} filters={filters} />
 
       <div className="grid gap-4 xl:grid-cols-2"><Panel title="Distribuição de potência RX" hint="faixas de 0,5 dBm"><SignalHistogram rows={filtered} onOpen={setDetail} /></Panel><Panel title="Ranking de OLTs" hint="crítico / atenção"><SeverityBars groups={groupBySeverity(filtered, row => row.olt, 12)} label="OLT" onOpen={setDetail} /></Panel></div>
+      <Panel title="OLTs — sinal das ONUs por OLT" hint={`${oltParque.length} OLT${oltParque.length === 1 ? '' : 's'}`}>
+        <p className="mb-3 text-caption text-muted">Cada linha soma todas as ONUs da OLT no relatório importado: <b className="text-text">Total = Sinal bom + Atenção + Crítico</b>. A barra mostra a proporção de cada faixa dentro da OLT. Clique em um número para ver as ONUs.</p>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-caption text-muted">{OLT_PARQUE_LEGENDA.map(item => <li key={item.label} className="flex items-center gap-1.5"><i className={`h-2.5 w-2.5 rounded-full ${item.cor}`} /><b className="text-text">{item.label}</b> {item.texto}</li>)}<li><b className="text-text">% fora do padrão</b> (Atenção + Crítico) ÷ Total. Em vermelho a partir de 10%.</li></ul>
+          <div className="flex gap-1">{([['fora', 'Mais ONUs fora'], ['pct', 'Maior %']] as const).map(([value, label]) => <button key={value} aria-pressed={oltSort === value} onClick={() => setOltSort(value)} className={`rounded-full border px-3 py-1 text-caption font-semibold transition-colors ${oltSort === value ? 'border-primary/40 bg-primary/15 text-primary' : 'border-border text-muted hover:text-text'}`}>{label}</button>)}</div>
+        </div>
+        <OltParqueTable items={oltParque} onOpen={setDetail} />
+      </Panel>
       <div className="grid gap-4 xl:grid-cols-[1.25fr_.75fr]"><Panel title="Distribuição por cidade" hint="crítico / atenção"><SeverityBars groups={groupBySeverity(filtered, row => row.cidade, 8)} label="Cidade" onOpen={setDetail} /></Panel><Panel title="Causa / status"><RankedList items={rankedCounts(filtered, row => row.status.toLocaleLowerCase('pt-BR') !== 'online' ? `⚠ ${row.status}` : row.causa !== '—' ? row.causa : 'sem causa reportada', 6)} label="Causa/status" onOpen={setDetail} /></Panel></div>
       <Panel title="Hotspots de PON — prioridade de campo" hint={`${matchingHotspots.length} PON${matchingHotspots.length === 1 ? '' : 's'} priorizada${matchingHotspots.length === 1 ? '' : 's'}`}>
         <p className="mb-4 text-caption text-muted">PONs ordenadas da maior para a menor quantidade de ONUs críticas. Ao marcar “Tratada” a PON sai desta fila e vai para a aba PONs tratadas.</p>

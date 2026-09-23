@@ -10,10 +10,12 @@ interface ModalProps {
   subtitle?:     string
   maxWidth?:     string
   headerAction?: ReactNode
+  /** Classe extra no backdrop — o portal não herda o escopo de CSS da página. */
+  className?:    string
   children:      ReactNode
 }
 
-export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', headerAction, children }: ModalProps) {
+export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', headerAction, className = '', children }: ModalProps) {
   const dialogRef    = useRef<HTMLDivElement>(null)
   const prevFocusRef = useRef<Element | null>(null)
   // Callers costumam passar onClose como função inline (ex: () => { reset(); onClose() }),
@@ -70,8 +72,8 @@ export function Modal({ open, onClose, title, subtitle, maxWidth = '960px', head
         if (e.target === e.currentTarget && mouseDownOnBackdrop.current) onClose?.()
         mouseDownOnBackdrop.current = false
       }}
-      className="fixed inset-0 bg-black/65 backdrop-blur-[4px] z-modal
-                 flex items-center justify-center p-5 animate-fade-in"
+      className={`fixed inset-0 bg-black/65 backdrop-blur-[4px] z-modal
+                 flex items-center justify-center p-5 animate-fade-in ${className}`}
     >
       <div
         ref={dialogRef}

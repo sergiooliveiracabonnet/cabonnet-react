@@ -298,6 +298,26 @@ export function groupBySeverity(rows: SignalRow[], keyFn: (row: SignalRow) => st
   return limit ? sorted.slice(0, limit) : sorted
 }
 
+export interface OltParqueItem { key: string; total: number; bom: number; fora: number; criticos: number; atencao: number; pct: number; rows: SignalRow[]; foraRows: SignalRow[] }
+
+/** Parque por OLT: total de ONUs do snapshot contra as que caíram no alerta de RX. */
+export function oltParqueRanking(rows: SignalRow[], sortBy: 'fora' | 'pct' = 'fora') {
+  const groups = new Map<string, OltParqueItem>()
+  rows.forEach(row => {
+    if (!row.olt || row.olt === '—') return
+    const item = groups.get(row.olt) ?? { key: row.olt, total: 0, bom: 0, fora: 0, criticos: 0, atencao: 0, pct: 0, rows: [], foraRows: [] }
+    item.total++; item.rows.push(row)
+    if (row.alertaRx) {
+      item.fora++; item.foraRows.push(row)
+      if (row.classificacao === 'Crítico') item.criticos++
+      else item.atencao++
+    } else item.bom++
+    groups.set(row.olt, item)
+  })
+  const items = [...groups.values()].map(item => ({ ...item, pct: item.total ? item.fora / item.total * 100 : 0 }))
+  return items.sort((a, b) => sortBy === 'pct' ? b.pct - a.pct || b.fora - a.fora : b.fora - a.fora || b.pct - a.pct)
+}
+
 export function rankedCounts(rows: SignalRow[], keyFn: (row: SignalRow) => string, limit: number, skip: string[] = []) {
   const groups = new Map<string, SignalRow[]>()
   rows.forEach(row => {

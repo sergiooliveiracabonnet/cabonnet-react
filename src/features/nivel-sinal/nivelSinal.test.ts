@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alertRows, buildAIContext, buildHistogram, buildHotspots, filterSignals, groupBySeverity, parseSignalCsv, signalSummary, sortSignals, type SignalSeverity } from './nivelSinal'
+import { alertRows, buildAIContext, buildHistogram, buildHotspots, filterSignals, groupBySeverity, oltParqueRanking, parseSignalCsv, signalSummary, sortSignals, type SignalSeverity } from './nivelSinal'
 
 const csv = `Cidade;Bairro;OLT;Tipo;Slot;PON;ONU ID;Cliente;Situação;Status;Classificação;RX dBm;Serial
 Taubaté;Centro;OLT Taubaté;Huawei;1;1/2;7;Cliente A;Conectado;Online;Crítico;-31,5;ABC
@@ -143,5 +143,27 @@ Taubaté;OLT TBT;1/1;3;Cliente Sem RX;;Sim`
     expect(serialized).not.toContain('ABC')
     expect(serialized).not.toContain('pppoe')
     expect(context.por_cidade).toContainEqual(expect.objectContaining({ nome: 'Caçapava', total: 1 }))
+  })
+})
+
+describe('oltParqueRanking', () => {
+  const report = `Cidade;OLT;PON;ONU ID;Cliente;RX dBm;Alerta RX
+Taubaté;OLT A;1/1;1;C1;-28;Sim
+Taubaté;OLT A;1/1;2;C2;-26;Sim
+Taubaté;OLT A;1/1;3;C3;-20;Não
+Taubaté;OLT A;1/1;4;C4;-19;Não
+Taubaté;OLT B;1/1;5;C5;-28;Sim
+Taubaté;OLT B;1/1;6;C6;-20;Não`
+
+  it('cruza total de ONUs da OLT com as que estão no alerta de RX', () => {
+    const ranking = oltParqueRanking(parseSignalCsv(report, { includeNonAlerts: true }))
+    expect(ranking[0]).toMatchObject({ key: 'OLT A', total: 4, bom: 2, fora: 2, criticos: 1, atencao: 1, pct: 50 })
+    expect(ranking[1]).toMatchObject({ key: 'OLT B', total: 2, bom: 1, fora: 1, pct: 50 })
+  })
+
+  it('ordena por percentual quando pedido', () => {
+    const rows = parseSignalCsv(`${report}
+Taubaté;OLT B;1/1;7;C7;-28;Sim`, { includeNonAlerts: true })
+    expect(oltParqueRanking(rows, 'pct').map(item => item.key)).toEqual(['OLT B', 'OLT A'])
   })
 })

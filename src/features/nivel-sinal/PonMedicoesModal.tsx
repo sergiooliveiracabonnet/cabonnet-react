@@ -47,7 +47,7 @@ export function PonMedicoesModal({ titulo, subtitulo, modo, drafts, hasCsv, busy
   const editar = (onuKey: string, campo: 'valor' | 'observacao', valor: string) =>
     setLinhas(atual => atual.map(linha => linha.onu_key === onuKey ? { ...linha, [campo]: valor } : linha))
 
-  return <Modal open onClose={busy ? undefined : onCancel} title={titulo} subtitle={subtitulo} maxWidth="1080px"
+  return <Modal open onClose={busy ? undefined : onCancel} title={titulo} subtitle={subtitulo} maxWidth="1080px" className="sinal-cores"
     headerAction={<Badge variant={resumo.pendentes ? 'orange' : 'green'}>{resumo.preenchidas} de {resumo.total} medidas</Badge>}>
 
     <div className="grid grid-cols-2 gap-2 border-b border-border p-4 sm:grid-cols-4">

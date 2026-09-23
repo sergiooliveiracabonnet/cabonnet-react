@@ -4,7 +4,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Modal } from '../../components/ui/Modal'
-import { buildHistogram, type SignalHotspot, type SignalRow, type SignalSeverity, sortSignals, type SignalSortKey, type SortDirection } from './nivelSinal'
+import { buildHistogram, type OltParqueItem, type SignalHotspot, type SignalRow, type SignalSeverity, sortSignals, type SignalSortKey, type SortDirection } from './nivelSinal'
 import type { PonTreatment } from './ponTreatments'
 
 export function severityVariant(value: SignalSeverity) {
@@ -38,7 +38,7 @@ export function SignalDetailModal({ detail, onClose }: { detail: DetailState | n
   }
 
   return (
-    <Modal open onClose={onClose} title={detail.title} subtitle={detail.subtitle} maxWidth="1100px"
+    <Modal open onClose={onClose} title={detail.title} subtitle={detail.subtitle} maxWidth="1100px" className="sinal-cores"
       headerAction={detail.action && <Button size="sm" onClick={() => { detail.action?.run(); onClose() }}>{detail.action.label}</Button>}>
       <div className="grid grid-cols-2 gap-2 border-b border-border p-4 sm:grid-cols-4">
         {[['Registros', detail.rows.length], ['Críticos', criticos], ['Offline', offline], ['RX médio', avg == null ? '—' : `${avg.toFixed(2)} dBm`]].map(([label, value]) => (
@@ -94,6 +94,47 @@ export function SeverityBars({ groups, label, onOpen }: { groups: SeverityGroup[
       <span className="text-right text-caption tabular-nums text-muted"><b className="text-text">{group.total}</b> · <span className="text-red">{group.criticos}</span></span>
     </button>
   )) : <p className="py-8 text-center text-label text-muted">Sem dados</p>}</div>
+}
+
+/** Legenda das faixas usadas no parque por OLT e nos cards do topo. */
+export const OLT_PARQUE_LEGENDA = [
+  { cor: 'bg-green', label: 'Sinal bom', texto: 'ONU fora do alerta de RX do relatório' },
+  { cor: 'bg-atencao', label: 'Atenção', texto: 'no alerta, RX entre −27 e −25 dBm' },
+  { cor: 'bg-red', label: 'Crítico', texto: 'no alerta, RX igual ou abaixo de −27 dBm' },
+] as const
+
+export function OltParqueTable({ items, onOpen }: { items: OltParqueItem[]; onOpen: (detail: DetailState) => void }) {
+  if (!items.length) return <p className="py-8 text-center text-label text-muted">Sem dados</p>
+  const open = (item: OltParqueItem, faixa: string, rows: SignalRow[]) => onOpen({ title: `OLT ${item.key} · ${faixa}`, subtitle: `${rows.length} de ${item.total} ONUs da OLT.`, rows })
+  const cell = (item: OltParqueItem, faixa: string, value: number, rows: SignalRow[], color = 'text-text') => (
+    <td className="px-3 py-2 text-right"><button disabled={!value} onClick={() => open(item, faixa, rows)} className={`tabular-nums font-semibold hover:underline disabled:no-underline disabled:opacity-40 ${color}`}>{value}</button></td>
+  )
+  return <div className="overflow-x-auto">
+    <table className="w-full text-label">
+      <thead className="border-y border-border bg-surface/20 text-caption uppercase tracking-wide text-muted"><tr>
+        <th className="px-3 py-2 text-left">OLT</th>
+        <th className="hidden w-2/5 px-3 py-2 text-left md:table-cell">Distribuição</th>
+        <th className="px-3 py-2 text-right">Total de ONUs</th>
+        <th className="px-3 py-2 text-right text-green">Sinal bom</th>
+        <th className="px-3 py-2 text-right text-atencao-ink">Atenção</th>
+        <th className="px-3 py-2 text-right text-red">Crítico</th>
+        <th className="px-3 py-2 text-right">% fora do padrão</th>
+      </tr></thead>
+      <tbody className="divide-y divide-border">{items.map(item => (
+        <tr key={item.key} className="hover:bg-surface/40">
+          <td className="max-w-48 truncate px-3 py-2 text-secondary">{item.key}</td>
+          <td className="hidden px-3 py-2 md:table-cell"><span className="flex h-2.5 overflow-hidden rounded-full bg-surface" title={`${item.bom} bom · ${item.atencao} atenção · ${item.criticos} crítico`}>
+            <i className="bg-green" style={{ width: `${item.bom / item.total * 100}%` }} /><i className="bg-atencao" style={{ width: `${item.atencao / item.total * 100}%` }} /><i className="bg-red" style={{ width: `${item.criticos / item.total * 100}%` }} />
+          </span></td>
+          {cell(item, 'Todas as ONUs', item.total, item.rows)}
+          {cell(item, 'Sinal bom', item.bom, item.rows.filter(row => !row.alertaRx), 'text-green')}
+          {cell(item, 'Atenção', item.atencao, item.foraRows.filter(row => row.classificacao !== 'Crítico'), 'text-atencao-ink')}
+          {cell(item, 'Crítico', item.criticos, item.foraRows.filter(row => row.classificacao === 'Crítico'), 'text-red')}
+          <td className={`px-3 py-2 text-right tabular-nums ${item.pct >= 10 ? 'font-semibold text-red' : 'text-muted'}`}>{item.pct.toFixed(1)}%</td>
+        </tr>
+      ))}</tbody>
+    </table>
+  </div>
 }
 
 export interface RankItem { key: string; total: number; pct: number; rows: SignalRow[] }
