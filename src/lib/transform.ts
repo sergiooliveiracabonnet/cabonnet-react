@@ -134,6 +134,28 @@ const SERVICOS_EXCLUIR = [
   'RETIRADA DE EQUIPAMENTO', 'CONTRATO - UPGRADE',
 ]
 
+// OS de rotina administrativa (régua de cobrança, reconexão automática,
+// troca de programação...) — não é atendimento de campo. Some da base
+// operacional no parseCSV; na visão do cliente aparece à parte.
+export function isOSAdministrativa(r: { nomedaequipe?: string | null; servico?: string | null }): boolean {
+  const eq = (r.nomedaequipe || '').toUpperCase().trim()
+  const sv = (r.servico || '').toUpperCase().trim()
+  return EQUIPES_EXCLUIR.has(eq) || SERVICOS_EXCLUIR.some(x => sv.includes(x))
+}
+
+// OS que nunca entram no cálculo de revisita — nem como retorno, nem como a
+// visita de origem de um retorno:
+// - Transferência de endereço: o ERP abre duas OS por transferência, uma de
+//   conexão no endereço novo e outra de desconexão no antigo (mesmo contrato,
+//   mesmo dia). O par é um atendimento só.
+// - Troca de cabeamento: sai junto com a VT que a diagnosticou (1.758 das 1.931
+//   do Vale em 12 meses tinham VT aberta no mesmo intervalo de 3 dias).
+// Regra de negócio confirmada pela operação em 2026-09-23.
+export function isForaDeRevisita(r: { servico?: string | null }): boolean {
+  const sv = (r.servico || '').toUpperCase()
+  return /TRANSF(?:\.|ERENCIA)?\s*(?:DE\s+)?ENDERE/.test(sv) || sv.includes('CABEAMENTO')
+}
+
 // Array augmentado com metadados de qualidade
 type ParsedCSVResult = OSRow[] & { _discarded: number; _duplicados: number }
 
@@ -169,8 +191,7 @@ export function parseCSV(text: string): ParsedCSVResult {
     const eq = (r['nomedaequipe'] || '').toUpperCase().trim()
     const sv = (r['servico'] || '').toUpperCase().trim()
     if (!isCidadeValida(r['nomedacidade'] ?? '')) return false
-    if (EQUIPES_EXCLUIR.has(eq)) return false
-    if (SERVICOS_EXCLUIR.some(x => sv.includes(x))) return false
+    if (isOSAdministrativa(r)) return false
     const isTransfEndereco = sv.includes('TRANSF') && sv.includes('ENDERECO SINGLE')
     if (isTransfEndereco && eq.includes('COPE') && !isConcluida(r['descsituacao'])) return false
     return true

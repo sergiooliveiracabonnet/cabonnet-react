@@ -12,6 +12,7 @@ export const MODULO_ROTA: Record<string, string> = {
   nivel_sinal:       '/nivel-sinal',
   fechamento:        '/fechamento',
   mapa:              '/mapa',
+  cliente:           '/clientes',
   noc:               '/noc',
   erp_relatorios:    '/erp/relatorios',
   erp_alertas:       '/erp/alertas',

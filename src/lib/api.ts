@@ -291,3 +291,86 @@ export const telegram = {
   sendNow:   ()                                                            => request('/notify/telegram/status_now', { method: 'POST', body: JSON.stringify({}) }),
   sendPhoto: (photo: string, caption: string, chat?: string, asDocument = false) => request('/notify/telegram/photo', { method: 'POST', body: JSON.stringify({ photo, caption, ...(chat && { chat }), ...(asDocument && { as_document: true }) }) }),
 }
+
+// ── Cliente (visão analítica) ────────────────────────────────────────────────
+// O documento já chega mascarado do servidor — o CPF inteiro nunca sai do Python.
+
+export interface ClienteBuscaItem {
+  codigocliente:    string
+  nome:             string
+  nomefantasia:     string
+  documento:        string
+  tipopessoa:       'PF' | 'PJ' | null
+  bairro:           string
+  nomedacidade:     string
+  contratos:        number
+  contratos_ativos: number
+}
+
+export interface ClienteEndereco {
+  logradouro:  string
+  numero:      string
+  complemento: string
+  bairro:      string
+  cep:         string
+  cidade?:     string
+}
+
+export interface ClienteCadastro {
+  codigocliente:     string
+  nome:              string
+  nome_social:       string
+  nomefantasia:      string
+  documento:         string
+  tipopessoa:        'PF' | 'PJ' | null
+  email:             string
+  endereco:          ClienteEndereco
+  cliente_desde:     string | null
+  atualizado_em:     string | null
+  dia_vencimento:    number | null
+  vip:               boolean
+  bloqueio_juridico: boolean
+  observacao:        string
+}
+
+// Extraído da ficha de venda (texto livre) — a tabela de programação não está
+// liberada. Qualquer campo pode faltar quando o vendedor fugiu do formato.
+export interface ClientePlano {
+  descricao:        string
+  velocidade_mb:    number | null
+  valor:            number | null
+  promocional:      boolean
+  fidelidade_meses: number | null
+}
+
+export interface ClienteContrato {
+  contrato:             string
+  situacao:             number | null
+  situacaoanterior:     number | null
+  datasituacaoanterior: string | null
+  valor:                number | null
+  datavenda:            string | null
+  datainstalacao:       string | null
+  empresa:              string
+  apelido:              string
+  pontoreferencia:      string
+  iniciopromocao:       string | null
+  plano:                ClientePlano | null
+  /** Só vem preenchida quando difere da observação do cadastro do cliente. */
+  observacao:           string
+  endereco:             ClienteEndereco
+}
+
+export interface ClienteDetalhe {
+  ok:               boolean
+  cliente:          ClienteCadastro
+  contratos:        ClienteContrato[]
+  ordens:           Record<string, string>[]
+  ordens_truncadas: boolean
+  auditoria_ok:     boolean
+}
+
+export const clientesApi = {
+  busca:   (q: string)      => request<{ ok: boolean; items: ClienteBuscaItem[] }>(`/api/clientes/busca?q=${encodeURIComponent(q)}`),
+  detalhe: (codigo: string) => request<ClienteDetalhe>(`/api/clientes/${encodeURIComponent(codigo)}`),
+}

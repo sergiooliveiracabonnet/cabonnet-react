@@ -304,9 +304,9 @@ export interface DistItem {
   pct:   number
 }
 
-// codigocliente sozinho não é pesquisável em lugar nenhum da UI (ver GlobalSearch,
-// que busca por numos/nomecliente/bairro/cidade/equipe) — por isso carrega o nome
-// e as OS onde o cliente aparece, que são o que dá pra colar na busca do header.
+// A busca local do GlobalSearch (OS carregadas) não casa por codigocliente — só a
+// busca de clientes no ERP (módulo "cliente") casa, e nem todo papel a tem. Por
+// isso carrega o nome e as OS onde o cliente aparece, que servem a qualquer um.
 export interface ClienteRecorrente {
   codigocliente: string
   nomecliente:   string

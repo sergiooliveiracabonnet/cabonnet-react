@@ -15,6 +15,7 @@ import {
   FornecedorPage, JuniperPage, NivelSinalPage, NotFoundPage, NocPage, FechamentoPage,
   MapaPage, UsuariosPage,
   ReincidenciasPage,
+  ClientePage,
 } from './pages/index'
 
 export default function App() {
@@ -86,6 +87,8 @@ export default function App() {
         <Route path="juniper"    element={<RequireModulo modulo="juniper">   <JuniperPage />              </RequireModulo>} />
         <Route path="nivel-sinal" element={<RequireModulo modulo="nivel_sinal"><NivelSinalPage />         </RequireModulo>} />
         <Route path="fechamento" element={<RequireModulo modulo="fechamento"><FechamentoPage />          </RequireModulo>} />
+        <Route path="clientes"   element={<RequireModulo modulo="cliente">   <ClientePage />             </RequireModulo>} />
+        <Route path="clientes/:codigo" element={<RequireModulo modulo="cliente"><ClientePage />             </RequireModulo>} />
         <Route path="mapa"       element={<RequireModulo modulo="mapa">      <MapaPage />                </RequireModulo>} />
         {/* /gerencial virou a aba "Por Categoria" dentro de /cidades */}
         <Route path="gerencial" element={<Navigate to="/cidades" replace />} />

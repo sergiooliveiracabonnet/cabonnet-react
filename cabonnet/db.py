@@ -27,7 +27,7 @@ _SIGNAL_IMPORT_HISTORY = 5
 # Mapeados 1:1 com as rotas do Sidebar (src/components/layout/Sidebar.tsx).
 ALL_MODULOS = [
     "dashboard", "ordens", "graficos", "cidades", "fornecedor", "juniper", "nivel_sinal",
-    "fechamento", "mapa", "noc",
+    "fechamento", "mapa", "noc", "cliente",
     "erp_relatorios", "erp_alertas",
     "erp_fila", "erp_ranking", "erp_escala",
 ]
@@ -323,6 +323,7 @@ def _db_init():
     _db_migrate_onda3a_modulos()
     _db_migrate_onda3b_modulos()
     _db_seed_supervisor()
+    _db_seed_modulo_novo_supervisor("cliente")
 
 
 def _db_seed_supervisor():
@@ -350,6 +351,31 @@ def _db_seed_supervisor():
             con.close()
     except Exception as ex:
         log_db.warning("Falha ao semear permissoes de supervisor: %s", ex)
+
+
+def _db_seed_modulo_novo_supervisor(modulo):
+    """Libera ao supervisor um modulo criado depois do seed inicial, uma unica vez.
+
+    _db_seed_supervisor so roda na primeira subida; sem isto o supervisor de
+    uma base existente nunca ganharia o modulo novo. A marca por modulo em
+    app_meta preserva o corte, se o gestor retirar o modulo depois."""
+    chave = "seed_supervisor_" + modulo
+    try:
+        with state._db_lock:
+            con = _connect()
+            if not con.execute("SELECT 1 FROM app_meta WHERE chave=?", (chave,)).fetchone():
+                con.execute(
+                    "INSERT OR IGNORE INTO role_permissoes (role, modulo) VALUES ('supervisor', ?)",
+                    (modulo,),
+                )
+                con.execute(
+                    "INSERT INTO app_meta (chave, valor) VALUES (?, ?)",
+                    (chave, datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                )
+                con.commit()
+            con.close()
+    except Exception as ex:
+        log_db.warning("Falha ao liberar %s para supervisor: %s", modulo, ex)
 
 
 def _db_sync_signal_occurrences(file_name, csv_text, occurrences, username=""):

@@ -24,6 +24,12 @@ describe('visibleNavGroups', () => {
     expect(links).toEqual(['/nivel-sinal'])
   })
 
+  it('exibe clientes so com o modulo cliente liberado', () => {
+    const links = (m: string[]) => visibleNavGroups('operador', m).flatMap(g => g.links.map(l => l.to))
+    expect(links(['cliente'])).toEqual(['/clientes'])
+    expect(links(['ordens'])).not.toContain('/clientes')
+  })
+
   it('remove grupos sem nenhum link visivel', () => {
     const groups = visibleNavGroups('viewer', ['dashboard'])
     expect(groups.every(g => g.links.length > 0)).toBe(true)

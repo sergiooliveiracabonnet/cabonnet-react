@@ -214,3 +214,15 @@ export const FORN_LABEL: Record<Fornecedor, string> = {
   INTERNO:    'COPE Interno',
   OUTRO:      '—',
 }
+
+// contratos.situacao do ERP. 7 fica sem nome: nos dados ele concentra OS de
+// "INADIMPLENCIA - REDUCAO DE VELOCIDADE", mas o rótulo oficial não foi
+// confirmado — a tabela de descrições não está liberada para o Grafana.
+export const SITUACAO_CONTRATO: Record<number, string> = {
+  1: 'Prospecto', 2: 'Ativo', 3: 'Suspenso', 4: 'Bloqueado', 5: 'Cancelado', 6: 'Desistência',
+}
+
+export function situacaoContratoLabel(situacao: number | null | undefined): string | null {
+  if (situacao == null) return null
+  return SITUACAO_CONTRATO[situacao] ?? `Código ${situacao}`
+}

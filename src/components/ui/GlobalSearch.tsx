@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MagnifyingGlass, X, ArrowUp, ArrowDown, ArrowElbowDownLeft } from '@phosphor-icons/react'
+import { MagnifyingGlass, X, ArrowUp, ArrowDown, ArrowElbowDownLeft, IdentificationCard } from '@phosphor-icons/react'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import OSDrawer from '../../features/ordens/OSDrawer'
 import { Badge } from './Badge'
@@ -8,6 +8,8 @@ import { osDataRelevante, shortEquipe, situacaoVariant } from '../../lib/osForma
 import { useVisibleNavGroups } from '../../lib/navigation'
 import type { NavGroup, NavLinkDef } from '../../lib/navigation'
 import type { OSRow } from '../../lib/types'
+import type { ClienteBuscaItem } from '../../lib/api'
+import { useClienteBusca, useTemModuloCliente } from '../../hooks/useCliente'
 
 const digits = (value: unknown) => String(value ?? '').replace(/\D/g, '')
 
@@ -71,6 +73,7 @@ export function matchPages(groups: NavGroup[], query: string): NavLinkDef[] {
 type NavigableItem =
   | { type: 'page'; data: NavLinkDef }
   | { type: 'os';   data: OSRow }
+  | { type: 'cliente'; data: ClienteBuscaItem }
 
 interface GlobalSearchProps {
   open:    boolean
@@ -85,6 +88,10 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
   const [activeIdx,  setActiveIdx]  = useState(-1)
   const [selectedOS, setSelectedOS] = useState<OSRow | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  // Clientes vêm do ERP (base inteira), não das OS carregadas — só para quem
+  // tem o módulo, senão a rota responde 403 a cada tecla.
+  const temCliente = useTemModuloCliente()
+  const { items: clientes, isLoading: buscandoClientes } = useClienteBusca(query, open && temCliente)
 
   const results = useMemo(() => {
     if (!query.trim()) return { pages: [] as NavLinkDef[], os: [] as OSRow[] }
@@ -100,11 +107,12 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
     }
     return [
       ...results.pages.map(p => ({ type: 'page' as const, data: p })),
+      ...clientes.map(c => ({ type: 'cliente' as const, data: c })),
       ...results.os.map(o => ({ type: 'os' as const, data: o })),
     ]
-  }, [query, groups, results])
+  }, [query, groups, results, clientes])
 
-  const showSectionHeaders = results.pages.length > 0 && results.os.length > 0
+  const showSectionHeaders = [results.pages.length, clientes.length, results.os.length].filter(n => n > 0).length > 1
 
   useEffect(() => {
     if (open) {
@@ -118,6 +126,9 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
   function selectItem(item: NavigableItem) {
     if (item.type === 'page') {
       navigate(item.data.to)
+      onClose()
+    } else if (item.type === 'cliente') {
+      navigate(`/clientes/${item.data.codigocliente}`)
       onClose()
     } else {
       setSelectedOS(item.data)
@@ -234,7 +245,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                 </div>
               )}
 
-              {query.trim().length > 0 && results.pages.length === 0 && results.os.length === 0 && (
+              {query.trim().length > 0 && results.pages.length === 0 && results.os.length === 0 && clientes.length === 0 && !buscandoClientes && (
                 <div className="px-5 py-10 text-center">
                   <p className="text-body text-muted">Nenhum resultado para <span className="text-text font-semibold">"{query}"</span></p>
                   <p className="text-caption text-muted/50 mt-1">Tente nº da OS, cliente, contrato, CPF, cidade ou página</p>
@@ -261,6 +272,45 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                         >
                           <Icon size={14} className="text-muted flex-shrink-0" />
                           <span className="text-body text-text font-medium flex-1">{page.label}</span>
+                          {isActive && (
+                            <kbd className="text-caption font-mono bg-surface border border-subtle rounded px-1.5 py-0.5 flex-shrink-0 text-muted leading-none">
+                              <ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />
+                            </kbd>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {clientes.length > 0 && (
+                <div>
+                  {showSectionHeaders && (
+                    <p className="px-4 pt-3 pb-1 text-caption font-semibold text-muted uppercase tracking-label">Clientes</p>
+                  )}
+                  <div className="divide-y divide-hairline">
+                    {clientes.map(c => {
+                      const globalIdx = navigableItems.findIndex(it => it.type === 'cliente' && it.data.codigocliente === c.codigocliente)
+                      const isActive = globalIdx === activeIdx
+                      return (
+                        <button
+                          key={c.codigocliente}
+                          onClick={() => selectItem({ type: 'cliente', data: c })}
+                          onMouseEnter={() => setActiveIdx(globalIdx)}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors
+                                      ${isActive ? 'bg-surface' : 'hover:bg-surface/30'}`}
+                        >
+                          <IdentificationCard size={14} className="text-muted flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-body text-text font-semibold truncate">{c.nome || c.nomefantasia || '—'}</span>
+                              {c.contratos_ativos > 0 && <Badge variant="green">Ativo</Badge>}
+                            </div>
+                            <p className="text-caption text-muted truncate">
+                              {[`Cód. ${c.codigocliente}`, c.documento, c.nomedacidade, c.bairro].filter(Boolean).join(' · ')}
+                            </p>
+                          </div>
                           {isActive && (
                             <kbd className="text-caption font-mono bg-surface border border-subtle rounded px-1.5 py-0.5 flex-shrink-0 text-muted leading-none">
                               <ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />

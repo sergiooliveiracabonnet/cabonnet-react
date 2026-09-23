@@ -42,6 +42,10 @@ from cabonnet.ai import _ai_narrative, _ai_revisitas
 from cabonnet.auth import _auth_enabled, _authenticate, _create_session, _role_from_cookie, _session_from_cookie
 from cabonnet.builders import _build_status_text
 from cabonnet.cache import _dados_cache_update
+from cabonnet.clientes import (
+    cidades_da_sessao, montar_busca, montar_cliente,
+    sql_auditoria_cliente, sql_busca_clientes, sql_cliente, sql_contratos, sql_ordens_cliente,
+)
 from cabonnet.config import (
     CLUSTERS, CLUSTER_DE_CIDADE, TELEGRAM_CHAT_ADAMANTINA,
     _ATE_CACHE_TTL,
@@ -428,7 +432,7 @@ _PROTECTED_PREFIXES = (
     "/atendimento", "/detalhes", "/erp", "/notify", "/juniper", "/ai",
     "/grafana", "/events", "/api/v1", "/api/fornecedor", "/api/motivo",
     "/api/justificativas", "/api/pico-alertas", "/api/tecnicos", "/api/usuarios",
-    "/api/permissoes",
+    "/api/permissoes", "/api/clientes",
 )
 _FORNECEDOR_GET_PATHS = (
     "/query", "/stats", "/revisitas", "/detalhes", "/events",
@@ -633,6 +637,7 @@ _MODULO_LABELS = {
     "fornecedor":         "Fornecedor",
     "juniper":            "Juniper",
     "nivel_sinal":        "Nível de Sinal",
+    "cliente":            "Cliente (visão analítica)",
     "fechamento":         "Fechamento",
     "mapa":               "Mapa",
     "noc":                "NOC",
@@ -1220,6 +1225,62 @@ def detalhes(numos: str = "", sess: dict = Depends(_require_session)):
     except Exception as ex:
         log.exception("Erro /detalhes numos=%s", numos)
         raise HTTPException(502, str(ex))
+
+
+# ── Cliente (visão analítica) ────────────────────────────────────────────────
+# Dados pessoais: a rota exige o módulo "cliente" (fora dos defaults de operador
+# e viewer), recorta pelas cidades do cluster da sessão e nunca devolve o CPF
+# inteiro. Fornecedor já é barrado no middleware; o 403 aqui é a segunda camada.
+
+def _sessao_cliente(sess: dict) -> list[str]:
+    if sess.get("fornecedor_key") or sess.get("role") == "fornecedor":
+        raise HTTPException(403, "Recurso nao permitido para fornecedor")
+    cidades = cidades_da_sessao(sess)
+    if not cidades:
+        raise HTTPException(403, "Sessao sem cidades permitidas")
+    return cidades
+
+
+@router.get("/api/clientes/busca")
+def clientes_busca(q: str = "", _role: str = Depends(_require_modulo("cliente")),
+                   sess: dict = Depends(_require_session)):
+    cidades = _sessao_cliente(sess)
+    sql = sql_busca_clientes(q, cidades)
+    if sql is None:
+        return {"ok": True, "items": []}
+    try:
+        rows = frames_to_dict_list(grafana_post(sql))
+    except Exception as ex:
+        log.exception("Erro /api/clientes/busca")
+        raise HTTPException(502, str(ex))
+    return {"ok": True, "items": montar_busca(rows)}
+
+
+@router.get("/api/clientes/{codigo}")
+def cliente_detalhe(codigo: str, _role: str = Depends(_require_modulo("cliente")),
+                    sess: dict = Depends(_require_session)):
+    if not codigo.strip().isdigit() or len(codigo.strip()) > 9:
+        raise HTTPException(400, "Código de cliente inválido.")
+    cidades = _sessao_cliente(sess)
+    try:
+        rows = frames_to_dict_list(grafana_post(sql_cliente(codigo, cidades)))
+        if not rows:
+            raise HTTPException(404, f"Cliente {codigo} não encontrado.")
+        cli = rows[0]
+        contratos = frames_to_dict_list(grafana_post(sql_contratos(codigo, cli["codcidade"])))
+        ordens = frames_to_dict_list(grafana_post(sql_ordens_cliente(codigo, cli["codcidade"])))
+    except HTTPException:
+        raise
+    except Exception as ex:
+        log.exception("Erro /api/clientes/%s", codigo)
+        raise HTTPException(502, str(ex))
+    # Auditoria é complemento: se a consulta falhar, o dash abre sem as contagens.
+    auditoria = None
+    try:
+        auditoria = frames_to_dict_list(grafana_post(sql_auditoria_cliente(codigo, cli["codcidade"])))
+    except Exception:
+        log.warning("Falha ao buscar auditoria do cliente %s", codigo, exc_info=True)
+    return {"ok": True, **montar_cliente(cli, contratos, ordens, auditoria)}
 
 
 _FOTO_EXT_PERMITIDAS = {"jpg", "jpeg", "png", "gif", "webp", "bmp"}

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle, Clock, Calendar, ArrowSquareOut, ArrowRight, MapPin, Users, Wrench, Warning, Hash, Check, Funnel, FileText, Copy, ClipboardText } from '@phosphor-icons/react'
+import { CheckCircle, Clock, Calendar, ArrowSquareOut, ArrowRight, MapPin, Users, Wrench, Warning, Hash, Check, Funnel, FileText, Copy, ClipboardText, IdentificationCard } from '@phosphor-icons/react'
 import type { OSRow, Fornecedor } from '../../lib/types'
 
 interface StepItem {
@@ -16,11 +16,12 @@ interface StepItem {
 }
 import { Drawer }        from '../../components/ui/Drawer'
 import { Badge }         from '../../components/ui/Badge'
-import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, calcDuracao, buildOSWhatsApp } from '../../lib/osFormat'
+import { fmtDate, situacaoVariant, FORN_LABEL, shortEquipe, calcDuracao, buildOSWhatsApp, situacaoContratoLabel } from '../../lib/osFormat'
 import { TimelineStep }  from './TimelineStep'
 import { OSDetailModal } from './OSDetailModal'
 import { useOSDetails }  from '../../hooks/useOSDetails'
 import { useAgendamentoHistorico } from '../../hooks/useAgendamentoHistorico'
+import { useTemModuloCliente } from '../../hooks/useCliente'
 import { ClassificarEncerramento } from './ClassificarEncerramento'
 import { buildAgendamentoSequence } from './osTimeline'
 
@@ -30,6 +31,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   const navigate = useNavigate()
   const { details: osDetails, isLoading: loadingDetails } = useOSDetails(osMaybe?.numos)
   const { historico: agendamentoHistorico } = useAgendamentoHistorico(osMaybe?.numos)
+  const temCliente = useTemModuloCliente()
 
   if (!osMaybe) return null
   // Alias não-nulo — TypeScript não estreita em closures, então criamos uma const local
@@ -45,6 +47,12 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
     const addr = [os.logradouro || os.enderecoconexao, os.numero, os.bairro, os.nomedacidade].filter(Boolean).join(', ')
     if (!addr) return
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`, '_blank')
+  }
+
+  function handleVerCliente() {
+    if (!os.codigocliente) return
+    onClose()
+    navigate(`/clientes/${os.codigocliente}`)
   }
 
   function handleVerEquipe() {
@@ -86,12 +94,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   const situacaoContrato = d?.situacaocontrato ?? null
   const valorContrato    = d?.valorcontrato    ?? null
 
-  const SITUACAO_CONTRATO: Record<number, string> = {
-    1: 'Prospecto', 2: 'Ativo', 3: 'Suspenso', 4: 'Bloqueado', 5: 'Cancelado', 6: 'Desistência',
-  }
-  const situacaoContratoLabel = situacaoContrato != null
-    ? (SITUACAO_CONTRATO[situacaoContrato] ?? `Código ${situacaoContrato}`)
-    : null
+  const situacaoContratoTexto = situacaoContratoLabel(situacaoContrato)
 
   // Equipes por papel — vindas do /detalhes (mais precisas) ou fallback do CSV
   const eqAgendada = shortEquipe((d?.equipeAgendada || os.nomedaequipe) as string)
@@ -197,6 +200,11 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
             <ActionBtn title="Abrir no Google Maps" onClick={openMaps}>
               <MapPin size={13} />
             </ActionBtn>
+            {temCliente && !!os.codigocliente && (
+              <ActionBtn title="Ver visão do cliente" onClick={handleVerCliente}>
+                <IdentificationCard size={13} />
+              </ActionBtn>
+            )}
             {os.nomedaequipe && (
               <ActionBtn title={`Filtrar OS da equipe`} onClick={handleVerEquipe}>
                 <Funnel size={13} />
@@ -356,7 +364,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
             )}
 
             {/* ── 4. Contrato do Cliente ───────────────────────────────── */}
-            {(loadingDetails || dataContratacao || dataInstalacao || situacaoContratoLabel) && (
+            {(loadingDetails || dataContratacao || dataInstalacao || situacaoContratoTexto) && (
               <Section label="Contrato do cliente">
                 {loadingDetails ? (
                   <p className="text-label text-muted/60 italic px-1">Carregando dados do contrato…</p>
@@ -384,9 +392,9 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                         </div>
                       )}
                     </div>
-                    {(situacaoContratoLabel || (valorContrato != null && valorContrato > 0)) && (
+                    {(situacaoContratoTexto || (valorContrato != null && valorContrato > 0)) && (
                       <div className="border-t border-hairline grid grid-cols-2 divide-x divide-hairline">
-                        {situacaoContratoLabel && (
+                        {situacaoContratoTexto && (
                           <div className="px-4 py-3 flex flex-col gap-1">
                             <span className="text-caption font-bold uppercase tracking-label text-muted">Situação</span>
                             <span className={`text-label font-semibold ${
@@ -394,7 +402,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                               situacaoContrato === 5 ? 'text-red' :
                               situacaoContrato === 3 || situacaoContrato === 4 ? 'text-yellow' : 'text-secondary'
                             }`}>
-                              {situacaoContratoLabel}
+                              {situacaoContratoTexto}
                             </span>
                           </div>
                         )}
