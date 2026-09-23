@@ -65,6 +65,10 @@ export default function NivelSinalPage() {
   const hotspotKeys = useMemo(() => new Set(pendingHotspots.map(item => item.key)), [pendingHotspots])
   const filtered = useMemo(() => filterSignals(rows, filters, hotspotKeys), [rows, filters, hotspotKeys])
   const summary = useMemo(() => signalSummary(filtered), [filtered])
+  // Parque inteiro do snapshot (dentro e fora do alerta de RX) sob os mesmos
+  // filtros de local/busca; severidade e hotspot só fazem sentido no recorte de alerta.
+  const parqueRows = useMemo(() => filterSignals(allRows, { ...filters, severities: [], hotspotsOnly: false }), [allRows, filters])
+  const sinalBomRows = useMemo(() => parqueRows.filter(row => !row.alertaRx), [parqueRows])
   const validRx = filtered.map(row => row.rx).filter((value): value is number => value != null)
   const rxAverage = validRx.length ? validRx.reduce((sum, value) => sum + value, 0) / validRx.length : null
   const worstRx = validRx.length ? Math.min(...validRx) : null
@@ -235,10 +239,12 @@ export default function NivelSinalPage() {
         <span className="ml-auto text-caption text-muted">{filtered.length.toLocaleString('pt-BR')} de {rows.length.toLocaleString('pt-BR')} registros</span>{hasFilters && <Button variant="ghost" size="sm" onClick={() => setFilters(EMPTY_FILTERS)}><X size={13} /> Limpar</Button>}
       </div></section>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
-        <KpiAction onClick={() => show('Total fora do padrão', 'ONUs no recorte de alerta de RX do CSV, dentro dos filtros ativos.', filtered)}><StatCard title="Total fora do padrão" value={summary.total} sub={`${summary.criticos} crítico · ${summary.atencao} atenção${summary.outros ? ` · ${summary.outros} sem classificação` : ''}`} icon={WaveSine} /></KpiAction>
-        <KpiAction onClick={() => show('Crítico', 'ONUs com potência RX igual ou abaixo de −27 dBm. A régua é nossa: o CSV não traz coluna de classificação.', filtered.filter(row => row.classificacao === 'Crítico'))}><StatCard title="Crítico" value={summary.criticos} sub={`RX ≤ −27 dBm · ${summary.total ? (summary.criticos / summary.total * 100).toFixed(1) : '0.0'}%`} tone="critical" icon={WarningCircle} /></KpiAction>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
+        <KpiAction onClick={() => show('Total de ONUs', 'Todas as ONUs do CSV importado, dentro dos filtros de local e busca.', parqueRows)}><StatCard title="Total de ONUs" value={parqueRows.length} sub={`${summary.total} fora do padrão`} icon={Radio} /></KpiAction>
+        <KpiAction onClick={() => show('Sinal bom', 'ONUs fora do recorte de alerta de RX do CSV, dentro dos filtros de local e busca.', sinalBomRows)}><StatCard title="Sinal bom" value={sinalBomRows.length} sub={`sem alerta de RX · ${parqueRows.length ? (sinalBomRows.length / parqueRows.length * 100).toFixed(1) : '0.0'}%`} tone="ok" icon={CheckCircle} /></KpiAction>
         <KpiAction onClick={() => show('Atenção', 'ONUs com potência RX entre −27 e −25 dBm. A régua é nossa: o CSV não traz coluna de classificação.', filtered.filter(row => row.classificacao === 'Atenção'))}><StatCard title="Atenção" value={summary.atencao} sub={`RX entre −27 e −25 dBm · ${summary.total ? (summary.atencao / summary.total * 100).toFixed(1) : '0.0'}%`} tone="warning" icon={Radio} /></KpiAction>
+        <KpiAction onClick={() => show('Crítico', 'ONUs com potência RX igual ou abaixo de −27 dBm. A régua é nossa: o CSV não traz coluna de classificação.', filtered.filter(row => row.classificacao === 'Crítico'))}><StatCard title="Crítico" value={summary.criticos} sub={`RX ≤ −27 dBm · ${summary.total ? (summary.criticos / summary.total * 100).toFixed(1) : '0.0'}%`} tone="critical" icon={WarningCircle} /></KpiAction>
+        <KpiAction onClick={() => show('Total fora do padrão', 'ONUs no recorte de alerta de RX do CSV, dentro dos filtros ativos.', filtered)}><StatCard title="Total fora do padrão" value={summary.total} sub={`${summary.criticos} crítico · ${summary.atencao} atenção${summary.outros ? ` · ${summary.outros} sem classificação` : ''}`} icon={WaveSine} /></KpiAction>
         <KpiAction onClick={() => show('Hotspots de PON', 'Registros das PONs ainda pendentes de tratativa.', filtered.filter(row => hotspotKeys.has(signalPonKey(row))))}><StatCard title="Hotspots de PON" value={matchingHotspots.length} sub={treatedPons.length ? `pendentes · ${treatedPons.length} já tratada${treatedPons.length === 1 ? '' : 's'}` : 'PONs para ação de campo'} tone="critical" icon={Broadcast} /></KpiAction>
         <KpiAction onClick={() => show('RX médio', 'Medições utilizadas no cálculo da potência RX média.', filtered.filter(row => row.rx != null))}><StatCard title="RX médio" value={rxAverage == null ? '—' : rxAverage.toFixed(2)} sub={`pior: ${worstRx?.toFixed(2) ?? '—'} dBm`} tone="info" icon={WaveSine} /></KpiAction>
         <KpiAction onClick={() => show('Alcance', 'Cobertura dos registros: PONs, OLTs, bairros e equipamentos offline.', filtered)}><StatCard title="Alcance" value={summary.pons} sub={`${reach.olts} OLT · ${reach.bairros} bairros · ${summary.offline} offline c/ alerta`} icon={Radio} /></KpiAction>
