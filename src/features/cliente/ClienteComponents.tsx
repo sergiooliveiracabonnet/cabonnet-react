@@ -130,6 +130,22 @@ export function ClienteAlertas({ alertas }: { alertas: ClienteAlerta[] }) {
   )
 }
 
+// ── Painéis ──────────────────────────────────────────────────────────────────
+// Os painéis ficam lado a lado em linhas de grid que esticam cada card até a
+// altura do mais alto da linha. O cabeçalho é o mesmo em todos (título + uma
+// linha de apoio) para o conteúdo também começar na mesma altura.
+
+const PAINEL = 'p-4 h-full flex flex-col'
+
+function PainelTitulo({ titulo, sub }: { titulo: string; sub: string }) {
+  return (
+    <div className="mb-3">
+      <p className="text-label font-semibold text-text">{titulo}</p>
+      <p className="text-caption text-muted">{sub}</p>
+    </div>
+  )
+}
+
 // ── Contratos ────────────────────────────────────────────────────────────────
 
 function PlanoContrato({ contrato: c, fidelidade }: { contrato: ClienteContrato; fidelidade?: ContratoFidelidade }) {
@@ -137,7 +153,7 @@ function PlanoContrato({ contrato: c, fidelidade }: { contrato: ClienteContrato;
   if (!p) return null
   const resumo = [p.velocidade_mb && `${p.velocidade_mb} Mega`, p.valor != null && brl(p.valor)].filter(Boolean).join(' · ')
   return (
-    <div className="mt-3 rounded-lg border border-subtle bg-surface/40 px-3 py-2" title={p.descricao}>
+    <div className="mt-3 rounded-lg bg-surface/40 px-3 py-2" title={p.descricao}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-caption uppercase tracking-label text-muted">Plano</span>
         <span className="text-body font-semibold text-text">{resumo || p.descricao}</span>
@@ -158,14 +174,14 @@ export function ClienteContratos({ contratos, enderecoCliente, fidelidades }: {
   contratos: ClienteContrato[]; enderecoCliente: string; fidelidades: ContratoFidelidade[]
 }) {
   return (
-    <section>
-      <SectionTitle icon={FileText} className="mt-0">Contratos ({contratos.length})</SectionTitle>
+    <Card className={PAINEL}>
+      <PainelTitulo titulo={`Contratos (${contratos.length})`} sub="Situação, plano e fidelidade" />
       {contratos.length === 0 && <p className="text-label text-muted">Nenhum contrato encontrado.</p>}
-      <div className="space-y-2">
+      <div className="divide-y divide-hairline">
         {contratos.map(c => {
           const endereco = enderecoTexto(c.endereco, false)
           return (
-            <Card key={c.contrato} className="p-4">
+            <div key={c.contrato} className="py-3 first:pt-0 last:pb-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-body font-bold text-text">{c.contrato}</span>
@@ -199,11 +215,11 @@ export function ClienteContratos({ contratos, enderecoCliente, fidelidades }: {
                 </p>
               )}
               {c.observacao && <ObservacaoTexto titulo="Observação do contrato" texto={c.observacao} />}
-            </Card>
+            </div>
           )
         })}
       </div>
-    </section>
+    </Card>
   )
 }
 
@@ -215,10 +231,9 @@ export function OSPorMes({ porMes }: { porMes: ClienteResumo['porMes'] }) {
   const max = Math.max(1, ...porMes.map(p => p.n))
   const [ativo, setAtivo] = useState<number | null>(null)
   return (
-    <Card className="p-4">
-      <p className="text-label font-semibold text-text">OS técnicas por mês</p>
-      <p className="text-caption text-muted mb-3">Pela data de abertura, últimos 12 meses</p>
-      <div className="flex h-28 items-end gap-0.5" role="img"
+    <Card className={PAINEL}>
+      <PainelTitulo titulo="OS técnicas por mês" sub="Pela data de abertura, últimos 12 meses" />
+      <div className="flex min-h-28 flex-1 items-end gap-0.5" role="img"
            aria-label={porMes.map(p => `${p.mes}: ${p.n}`).join(', ')}>
         {porMes.map((p, i) => (
           <div key={p.mes} className="relative flex h-full flex-1 items-end justify-center"
@@ -246,11 +261,11 @@ export function OSPorMes({ porMes }: { porMes: ClienteResumo['porMes'] }) {
   )
 }
 
-export function Ranking({ titulo, itens }: { titulo: string; itens: { label: string; n: number }[] }) {
+export function Ranking({ titulo, sub, itens }: { titulo: string; sub: string; itens: { label: string; n: number }[] }) {
   const max = Math.max(1, ...itens.map(i => i.n))
   return (
-    <Card className="p-4">
-      <p className="text-label font-semibold text-text mb-2">{titulo}</p>
+    <Card className={PAINEL}>
+      <PainelTitulo titulo={titulo} sub={sub} />
       {itens.length === 0 && <p className="text-caption text-muted">Sem dados.</p>}
       <ul className="space-y-1.5">
         {itens.map(i => (
@@ -271,14 +286,13 @@ export function Ranking({ titulo, itens }: { titulo: string; itens: { label: str
 
 // ── Observação do cadastro ───────────────────────────────────────────────────
 
-function ObservacaoTexto({ titulo, dica, texto }: { titulo: string; dica?: string; texto: string }) {
+function ObservacaoTexto({ titulo, texto }: { titulo: string; texto: string }) {
   const [aberto, setAberto] = useState(false)
   return (
     <div className="mt-2">
       <button onClick={() => setAberto(v => !v)} className="flex w-full items-center gap-2 text-left">
         {aberto ? <CaretDown size={12} className="text-muted" /> : <CaretRight size={12} className="text-muted" />}
         <span className="text-label font-semibold text-text">{titulo}</span>
-        {dica && <span className="text-caption text-muted">{dica}</span>}
       </button>
       {aberto && <pre className="mt-2 whitespace-pre-wrap font-sans text-label text-secondary">{texto.trim()}</pre>}
     </div>
@@ -288,8 +302,10 @@ function ObservacaoTexto({ titulo, dica, texto }: { titulo: string; dica?: strin
 export function ObservacaoCadastro({ texto }: { texto: string }) {
   if (!texto.trim()) return null
   return (
-    <Card className="px-4 pb-4 pt-2">
-      <ObservacaoTexto titulo="Observação do cadastro" dica="ficha de venda: plano, fidelidade, contato" texto={texto} />
+    <Card className={PAINEL}>
+      <PainelTitulo titulo="Observação do cadastro" sub="Ficha de venda: plano, fidelidade, contato" />
+      {/* Altura limitada: uma ficha longa não estica a linha inteira de painéis. */}
+      <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap font-sans text-label text-secondary">{texto.trim()}</pre>
     </Card>
   )
 }

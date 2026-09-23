@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Calendar, CalendarX, ClipboardText, IdentificationCard, MagnifyingGlass, Repeat, Timer, Wrench, ArrowLeft } from '@phosphor-icons/react'
+import { IdentificationCard, MagnifyingGlass, ArrowLeft } from '@phosphor-icons/react'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { SearchBox } from '../../components/ui/SearchBox'
 import { Card } from '../../components/ui/Card'
@@ -59,7 +59,7 @@ function ClienteDetalhe({ codigo }: { codigo: string }) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-32 w-full rounded-xl" />
-        <KPIGridSkeleton count={8} />
+        <KPIGridSkeleton count={7} />
         <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     )
@@ -71,44 +71,55 @@ function ClienteDetalhe({ codigo }: { codigo: string }) {
 
   const { cliente, contratos } = data
   const ultima = resumo.ultimaVisita
+  const temObservacao = cliente.observacao.trim().length > 0
 
   return (
     <div className="space-y-5">
       <ClienteHeader cliente={cliente} localizacao={resumo.localizacao} />
       <ClienteAlertas alertas={resumo.alertas} />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard title="OS em 12 meses" value={resumo.os12m} icon={ClipboardText}
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2">
+        <StatCard size="sm" outlined title="OS em 12 meses" value={resumo.os12m}
                   sub={`${resumo.tecnicas.length} no histórico`} />
-        <StatCard title="Visitas executadas" value={resumo.visitas12m} icon={Wrench} sub="últimos 12 meses" />
-        <StatCard title="Reincidências" value={resumo.reincidencias12m} icon={Repeat}
+        <StatCard size="sm" outlined title="Visitas" value={resumo.visitas12m} sub="executadas · 12m" />
+        <StatCard size="sm" outlined title="Reincidências" value={resumo.reincidencias12m}
                   tone={resumo.reincidencias12m >= 2 ? 'critical' : resumo.reincidencias12m === 1 ? 'warning' : 'neutral'}
-                  sub="marcadas pelo ERP · 12 meses" />
-        <StatCard title="Reagendamentos" icon={CalendarX}
+                  sub="ERP · 12m" />
+        <StatCard size="sm" outlined title="Reagendamentos"
                   value={resumo.reagendamentos12m ?? '—'}
                   tone={(resumo.reagendamentos12m ?? 0) >= 3 ? 'warning' : 'neutral'}
-                  sub={resumo.reagendamentos12m == null ? 'auditoria indisponível' : 'auditoria do ERP · 12 meses'} />
-        <StatCard title="Última visita" value={ultima ? fmtDia(ultima.data) : '—'} icon={Calendar}
-                  sub={ultima ? (ultima.tecnico || ultima.equipe) : 'nenhuma execução'} />
-        <StatCard title="Intervalo mediano" icon={Timer}
+                  sub={resumo.reagendamentos12m == null ? 'auditoria indisponível' : 'auditoria · 12m'} />
+        <StatCard size="sm" outlined title="Última visita" value={ultima ? fmtDia(ultima.data) : '—'}
+                  sub={ultima ? ultima.equipe : 'nenhuma execução'} />
+        <StatCard size="sm" outlined title="Intervalo mediano"
                   value={resumo.intervaloMedianoDias != null ? `${resumo.intervaloMedianoDias} d` : '—'}
                   sub="entre visitas" />
-        <StatCard title="OS abertas" value={resumo.abertas.length} icon={ClipboardText}
+        <StatCard size="sm" outlined title="OS abertas" value={resumo.abertas.length}
                   tone={resumo.abertas.length ? 'warning' : 'neutral'}
                   sub={resumo.abertas[0] ? `mais antiga: ${resumo.abertas[0].numos}` : 'nenhuma na fila'}
                   onClick={resumo.abertas[0] ? () => setSelecionada(resumo.abertas[0]) : undefined} />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-5">
-        <div className="lg:col-span-2 space-y-3">
+      {/* Duas linhas de grid: cada linha estica os painéis até a mesma altura,
+          então topo e base ficam alinhados mesmo com conteúdos de tamanhos diferentes. */}
+      <div className="grid gap-3 lg:grid-cols-5">
+        <div className="lg:col-span-2">
           <ClienteContratos contratos={contratos} enderecoCliente={enderecoTexto(cliente.endereco, false)}
                             fidelidades={resumo.fidelidades} />
-          <ObservacaoCadastro texto={cliente.observacao} />
         </div>
-        <div className="lg:col-span-3 grid gap-3 sm:grid-cols-2 content-start">
-          <div className="sm:col-span-2"><OSPorMes porMes={resumo.porMes} /></div>
-          <Ranking titulo="Serviços mais frequentes" itens={resumo.servicosFrequentes.map(s => ({ label: s.servico, n: s.n }))} />
-          <Ranking titulo="Equipes que atenderam" itens={resumo.equipes.map(e => ({ label: e.equipe, n: e.n }))} />
+        <div className="lg:col-span-3">
+          <OSPorMes porMes={resumo.porMes} />
+        </div>
+        {temObservacao && (
+          <div className="lg:col-span-2">
+            <ObservacaoCadastro texto={cliente.observacao} />
+          </div>
+        )}
+        <div className={`grid gap-3 sm:grid-cols-2 ${temObservacao ? 'lg:col-span-3' : 'lg:col-span-5'}`}>
+          <Ranking titulo="Serviços mais frequentes" sub="OS técnicas, todo o histórico"
+                   itens={resumo.servicosFrequentes.map(s => ({ label: s.servico, n: s.n }))} />
+          <Ranking titulo="Equipes que atenderam" sub="Visitas executadas, todo o histórico"
+                   itens={resumo.equipes.map(e => ({ label: e.equipe, n: e.n }))} />
         </div>
       </div>
 
