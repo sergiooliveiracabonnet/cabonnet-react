@@ -1,5 +1,5 @@
 import type { ClienteReincidente } from '../../lib/builders/churn'
-import { isCOPE, isExecucaoReal, isReagend, parseDate, parseDateTime } from '../../lib/transform'
+import { isCOPE, isExecucaoReal, isForaDeRevisita, isReagend, parseDate, parseDateTime } from '../../lib/transform'
 import type { OSRow } from '../../lib/types'
 import { shortEquipe } from '../../lib/osFormat'
 
@@ -84,7 +84,7 @@ export function buildTeamRecurrenceRanking(clientes: ClienteReincidente[], baseR
     : (() => { const c = new Date(now.getFullYear(), now.getMonth(), now.getDate()); c.setDate(c.getDate() - 60); return c })()
   const baseByTeam = new Map<string, Set<string>>()
   for (const row of baseRows) {
-    if (isCOPE(row) || isReagend(row) || row._tipo !== tipoBase || !isExecucaoReal(row.descsituacao)) continue
+    if (isCOPE(row) || isReagend(row) || isForaDeRevisita(row) || row._tipo !== tipoBase || !isExecucaoReal(row.descsituacao)) continue
     const date = parseDate((row.dataexecucao || row.databaixa || '').split(' ')[0])
     if (!date || date < cutoff) continue
     if (upper && date > upper) continue

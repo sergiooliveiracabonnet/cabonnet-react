@@ -457,3 +457,30 @@ describe('buildRevisitas — cenário de domínio: WES/Instacable/THM/REDE fazem
     expect(r.porEquipe.find(e => e.equipe === '03-VAL - REDE FIBRA')).toBeUndefined()
   })
 })
+
+// ─── Transferência de endereço e troca de cabeamento ────────────────────────
+// Regra da operação: a transferência abre duas OS (conexão no endereço novo e
+// desconexão no antigo) e a troca de cabeamento sai junto com a VT que a
+// diagnosticou. Nenhuma das duas é revisita — nem origem de uma.
+
+describe('buildRevisitas — transferência de endereço e troca de cabeamento não são revisita', () => {
+  it('troca de cabeamento no mês de uma VT não transforma a VT em revisita', () => {
+    const rows = enrichRows([
+      makeOS({ numos: '1', tiposervico: 'SERVICOS', servico: 'TROCAR CABEAMENTO', dataexecucao: '02/03/2026' }),
+      makeOS({ numos: '2', tiposervico: 'MANUTENCAO', servico: 'ASSISTENCIA - VT 24H', dataexecucao: '03/03/2026' }),
+    ])
+    const r = buildRevisitas(rows)
+    expect(r.revServ).toBe(0)
+  })
+
+  it('o par de OS da transferência de endereço não gera revisita', () => {
+    const rows = enrichRows([
+      makeOS({ numos: '1', tiposervico: 'SERVICOS', servico: 'TRANSF. DE ENDERECO SINGLE ', dataexecucao: '02/03/2026' }),
+      makeOS({ numos: '2', tiposervico: 'SERVICOS', servico: 'TRANSF. DE ENDERECO SINGLE ', dataexecucao: '02/03/2026' }),
+      makeOS({ numos: '3', tiposervico: 'MANUTENCAO', servico: 'ASSISTENCIA - VT 24H', dataexecucao: '20/03/2026' }),
+    ])
+    const r = buildRevisitas(rows)
+    expect(r.revServ).toBe(0)
+    expect(r.revManut).toBe(0)
+  })
+})

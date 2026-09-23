@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { OSRow, DateFilter } from './types'
-import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, parseDateTime, isConcluida, isExecucaoReal, isFilaAtiva, isFornecedorVisibleRow } from './transform.js'
+import { enrichRows, getFornecedor, parseCSV, applyDateFilter, parseDate, parseDateTime, isConcluida, isExecucaoReal, isFilaAtiva, isFornecedorVisibleRow, isForaDeRevisita } from './transform.js'
 import { buildDashboard, buildSla, buildAnomalias, buildCidades } from './builders.js'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1028,5 +1028,27 @@ describe('escopo de fornecedor por cidade', () => {
     expect(isFornecedorVisibleRow(sharedDone, 'Instacable')).toBe(false)
     expect(isFornecedorVisibleRow(sharedPending, 'WES')).toBe(false)
     expect(isFornecedorVisibleRow(ownDone, 'WES')).toBe(true)
+  })
+})
+
+describe('isForaDeRevisita', () => {
+  it.each([
+    'TRANSF. DE ENDERECO SINGLE ',
+    'TRANSF. DE ENDERECO ENTRE CIDADES',
+    'CONEXAO - TRANSF. DE ENDERECO CIDADES',
+    'TRANSFERENCIA DE ENDERECO',
+    'TROCAR CABEAMENTO',
+  ])('%s não entra no cálculo de revisita', servico => {
+    expect(isForaDeRevisita({ servico })).toBe(true)
+  })
+
+  it.each([
+    'ASSISTENCIA - VT 24H',
+    'CONTRATO - TRANSF. TITULARIDADE',   // troca de titular não é mudança de endereço
+    'TRANSF. MIGRACAO - SINGLE',
+    'EQUIPAMENTO - TROCA',
+    '',
+  ])('%s continua contando', servico => {
+    expect(isForaDeRevisita({ servico })).toBe(false)
   })
 })

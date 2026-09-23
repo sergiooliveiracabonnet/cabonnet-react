@@ -132,6 +132,14 @@ function inst(codigo: string, quando: number, extra: Record<string, unknown> = {
   } as unknown as OSRow
 }
 
+describe('buildChurn — troca de cabeamento', () => {
+  it('troca de cabeamento feita por equipe de manutenção não soma visita de reincidência', () => {
+    const cabo = manut('Z', 12, { servico: 'TROCAR CABEAMENTO' })
+    const rows = enrichRows([manut('Z', 10), cabo])
+    expect(buildChurn(rows, 12, HOJE).totalReincidentes).toBe(0)
+  })
+})
+
 describe('buildInstallChurn', () => {
   it('conta como revisita qualquer OS dentro de 30 dias após a instalação', () => {
     const rows = enrichRows([inst('A', 40), manut('A', 20)]) // instalação há 40d, retorno 20d depois
@@ -161,6 +169,23 @@ describe('buildInstallChurn', () => {
   it('conta outra instalação como revisita — o tipo da OS seguinte não importa', () => {
     const rows = enrichRows([inst('E', 40), inst('E', 30)])
     expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(1)
+  })
+
+  it('a OS da transferência de endereço não é revisita da instalação', () => {
+    const transf = manut('G', 25, { tiposervico: 'SERVICOS', servico: 'TRANSF. DE ENDERECO SINGLE ', nomedaequipe: '03- VAL - INSTALACAO F01' })
+    const rows = enrichRows([inst('G', 40), transf])
+    expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(0)
+  })
+
+  it('troca de cabeamento depois da instalação não é revisita', () => {
+    const cabo = manut('H', 25, { tiposervico: 'SERVICOS', servico: 'TROCAR CABEAMENTO', nomedaequipe: '03- VAL - INSTALACAO F01' })
+    expect(buildInstallChurn(enrichRows([inst('H', 40), cabo]), 12, HOJE).totalReincidentes).toBe(0)
+  })
+
+  it('conexão de transferência entre cidades não conta como instalação nova', () => {
+    const conexao = inst('I', 40, { servico: 'CONEXAO - TRANSF. DE ENDERECO CIDADES' })
+    const { totalBase } = buildInstallChurn(enrichRows([conexao, manut('I', 30)]), 12, HOJE)
+    expect(totalBase).toBe(0)
   })
 
   it('ignora instalação fora da janela de 60 dias', () => {

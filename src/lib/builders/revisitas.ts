@@ -1,4 +1,4 @@
-import { isCOPE, isReagend, parseDate } from '../transform'
+import { isCOPE, isReagend, isForaDeRevisita, parseDate } from '../transform'
 import type { OSRow, Fornecedor } from '../types'
 
 // ─── Revisitas — helpers internos ───────────────────────────────────────────
@@ -18,7 +18,7 @@ function _execMonth(r: OSRow): string | null {
 }
 
 function _buildRevisitaTaxa(rows: OSRow[]): number {
-  const base = rows.filter(r => !isCOPE(r) && !isReagend(r))
+  const base = rows.filter(r => !isCOPE(r) && !isReagend(r) && !isForaDeRevisita(r))
   if (!base.length) return 0
   const cmMap = new Map<string, { inst: number; manut: number; serv: number }>()
   for (const r of base) {
@@ -58,7 +58,7 @@ interface RevisitEvent {
 }
 
 export function buildRevisitas(rows: OSRow[], prevRows: OSRow[] = []) {
-  const base = rows.filter(r => !isCOPE(r) && !isReagend(r))
+  const base = rows.filter(r => !isCOPE(r) && !isReagend(r) && !isForaDeRevisita(r))
 
   interface ClienteMonthEntry {
     inst: OSRow[]; manut: OSRow[]; serv: OSRow[]

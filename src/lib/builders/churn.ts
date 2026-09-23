@@ -1,4 +1,4 @@
-import { isCOPE, isReagend, isExecucaoReal, parseDate } from '../transform'
+import { isCOPE, isReagend, isExecucaoReal, isForaDeRevisita, parseDate } from '../transform'
 import type { OSRow } from '../types'
 
 // ─── Risco de churn por reincidência ──────────────────────────────────────────
@@ -51,7 +51,7 @@ export function buildChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Date = new
   const porCliente = new Map<string, { rows: OSRow[]; datas: Date[] }>()
 
   for (const r of allRows) {
-    if (isCOPE(r) || isReagend(r)) continue
+    if (isCOPE(r) || isReagend(r) || isForaDeRevisita(r)) continue
     if (r._tipo !== 'MANUTENCAO') continue
     if (!isExecucaoReal(r.descsituacao)) continue
 
@@ -128,7 +128,9 @@ export function buildInstallChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Dat
   // instalação pode ser outra instalação, uma manutenção, o que vier depois.
   const execByClient = new Map<string, { row: OSRow; data: Date }[]>()
   for (const r of allRows) {
-    if (isCOPE(r) || isReagend(r)) continue
+    // A conexão de uma transferência de endereço é INSTALACAO PRINCIPAL no ERP,
+    // mas não é instalação nova — e a desconexão do endereço antigo não é retorno.
+    if (isCOPE(r) || isReagend(r) || isForaDeRevisita(r)) continue
     if (!isExecucaoReal(r.descsituacao)) continue
     const quando = parseDate((r.dataexecucao || r.databaixa || '').split(' ')[0])
     if (!quando) continue
