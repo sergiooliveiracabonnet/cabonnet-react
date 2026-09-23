@@ -11,23 +11,11 @@ from datetime import datetime
 import requests
 
 from cabonnet.config import (
-    CONFIG, GRAFANA_URL, USERNAME, PASSWORD, DS_UID, GRAFANA_VERIFY,
+    CONFIG, GRAFANA_URL, USERNAME, PASSWORD, DS_UID,
     _ATE_ATENDENTES, _ATE_CACHE_TTL, CIDADES_ATENDIDAS,
 )
 
 log = logging.getLogger("CaboNetServer")
-
-# Se a validacao TLS foi explicitamente desligada (cert self-signed legado),
-# silencia o warning repetido do urllib3 e deixa UM aviso claro no log — a
-# credencial compartilhada trafega sem canal autenticado nesse modo.
-if GRAFANA_VERIFY is False:
-    try:
-        import urllib3
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    except Exception:
-        pass
-    log.warning("[TLS] GRAFANA_VERIFY_TLS desligado — chamada ao Grafana SEM "
-                "validacao de certificado. Use um CA bundle assim que possivel.")
 
 
 # As cidades atendidas apareciam cravadas em 15 pontos deste arquivo. Agora
@@ -1056,7 +1044,7 @@ def grafana_post(sql, ref_id="A"):
         resp = requests.post(
             url, json=body,
             auth=(USERNAME, PASSWORD),
-            verify=GRAFANA_VERIFY,
+            verify=False,
             timeout=CONFIG["timeout_s"],
         )
     except requests.exceptions.ReadTimeout:
