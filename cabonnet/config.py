@@ -64,6 +64,26 @@ def _env(key, default=""):
     return os.environ.get(key, default)
 
 
+def _resolve_verify(env_val: str):
+    """Interpreta GRAFANA_VERIFY_TLS para o parametro `verify` do requests.
+
+    Seguro por padrao: sem a variavel (ou 'true'/'1'), o certificado TLS do
+    Grafana e validado contra as CAs do sistema — fecha o MITM que capturaria
+    a credencial compartilhada em transito. 'false'/'0' desliga a validacao
+    (apenas para cert self-signed legado, com aviso no log). Um caminho de
+    arquivo e usado como CA bundle proprio (rota recomendada para self-signed).
+    """
+    v = (env_val or "").strip()
+    if not v:
+        return True
+    low = v.lower()
+    if low in ("true", "1", "yes", "on"):
+        return True
+    if low in ("false", "0", "no", "off"):
+        return False
+    return v  # caminho de um CA bundle
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  CONFIG
 # ══════════════════════════════════════════════════════════════════════════════
@@ -140,6 +160,9 @@ USERNAME     = CONFIG["username"]
 PASSWORD     = CONFIG["password"]
 DS_UID       = CONFIG["ds_uid"]
 PORT         = CONFIG["port"]
+# Validacao TLS na chamada ao Grafana (por onde passam os dados do i-Manager).
+# True por padrao; ver _resolve_verify. Configuravel por GRAFANA_VERIFY_TLS.
+GRAFANA_VERIFY = _resolve_verify(_env("GRAFANA_VERIFY_TLS"))
 
 MONITOR_URL    = _env("MONITOR_URL",    "")
 MONITOR_USER   = _env("MONITOR_USER",   "")
