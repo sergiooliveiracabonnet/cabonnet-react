@@ -32,9 +32,9 @@ export function ComparativoOSSinal({ osRows, signalRows, hasCsv }: ComparativoOS
         description="Sem ordens de manutenção com bairro preenchido no período selecionado (filtro de data no topo do sistema), ou sem alerta de sinal no bairro." /></Card>
     ) : <>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <StatCard title="Bairros com OS de manutenção" value={comOS} sub="no período selecionado" icon={ChartBar} />
-        <StatCard title="Bairros com alerta de sinal" value={comSinal} sub="no CSV carregado" icon={WarningCircle} />
-        <StatCard title="Bairros nos dois" value={emAmbos} sub="OS de manutenção + alerta de sinal" tone={emAmbos ? 'critical' : 'ok'} icon={MapPin} />
+        <StatCard palette="sinal" title="Bairros com OS de manutenção" value={comOS} sub="no período selecionado" icon={ChartBar} />
+        <StatCard palette="sinal" title="Bairros com alerta de sinal" value={comSinal} sub="no CSV carregado" icon={WarningCircle} />
+        <StatCard palette="sinal" title="Bairros nos dois" value={emAmbos} sub="OS de manutenção + alerta de sinal" tone={emAmbos ? 'critical' : 'ok'} icon={MapPin} />
       </div>
 
       <Card className="overflow-hidden">
@@ -50,15 +50,15 @@ export function ComparativoOSSinal({ osRows, signalRows, hasCsv }: ComparativoOS
             </tr></thead>
             <tbody>{comparativo.map(item => (
               <tr key={`${item.cidade}|${item.bairro}`}
-                className={`border-t border-border transition-colors hover:bg-surface/50 ${item.osCount > 0 && item.sinalCriticos > 0 ? 'bg-red/[0.05]' : ''}`}>
+                className={`border-t border-border transition-colors hover:bg-surface/50 ${item.osCount > 0 && item.sinalCriticos > 0 ? 'bg-sinal-critico/[0.05]' : ''}`}>
                 <td className="px-4 py-3"><span className="block text-text">{item.bairro}</span><span className="text-caption text-muted">{item.cidade}</span></td>
                 <td className="px-4 py-3 tabular-nums">
                   {item.osCount > 0 ? <span className="block font-semibold text-text">{item.osCount}</span> : <span className="text-muted">—</span>}
-                  {item.osCriticas > 0 && <span className="block text-caption text-red">{item.osCriticas} SLA crítico</span>}
+                  {item.osCriticas > 0 && <span className="block text-caption text-sinal-critico">{item.osCriticas} SLA crítico</span>}
                 </td>
                 <td className="px-4 py-3 tabular-nums text-text">{item.sinalTotal || <span className="text-muted">—</span>}</td>
-                <td className="px-4 py-3 tabular-nums">{item.sinalCriticos > 0 ? <span className="font-semibold text-red">{item.sinalCriticos}</span> : <span className="text-muted">—</span>}</td>
-                <td className="px-4 py-3 tabular-nums">{item.sinalAtencao > 0 ? <span className="font-semibold text-orange">{item.sinalAtencao}</span> : <span className="text-muted">—</span>}</td>
+                <td className="px-4 py-3 tabular-nums">{item.sinalCriticos > 0 ? <span className="font-semibold text-sinal-critico">{item.sinalCriticos}</span> : <span className="text-muted">—</span>}</td>
+                <td className="px-4 py-3 tabular-nums">{item.sinalAtencao > 0 ? <span className="font-semibold text-sinal-atencao">{item.sinalAtencao}</span> : <span className="text-muted">—</span>}</td>
                 <td className="px-4 py-3 tabular-nums text-secondary">{item.rxMedio != null ? `${item.rxMedio} dBm` : '—'}</td>
               </tr>
             ))}</tbody>

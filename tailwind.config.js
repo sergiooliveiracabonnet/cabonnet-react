@@ -28,8 +28,9 @@ export default {
 
         green:          'rgb(var(--c-green) / <alpha-value>)',
         yellow:         'rgb(var(--c-yellow) / <alpha-value>)',
-        atencao:        'rgb(var(--c-atencao) / <alpha-value>)',
-        'atencao-ink':  'rgb(var(--c-atencao-ink) / <alpha-value>)',
+        'sinal-bom':     'rgb(var(--c-sinal-bom) / <alpha-value>)',
+        'sinal-atencao': 'rgb(var(--c-sinal-atencao) / <alpha-value>)',
+        'sinal-critico': 'rgb(var(--c-sinal-critico) / <alpha-value>)',
         red:            'rgb(var(--c-red) / <alpha-value>)',
         orange:         'rgb(var(--c-orange) / <alpha-value>)',
         purple:         'rgb(var(--c-purple) / <alpha-value>)',

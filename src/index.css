@@ -127,8 +127,10 @@
   /* Estado */
   --c-green:         var(--p-green-vivid);
   --c-yellow:        var(--p-yellow-vivid);
-  --c-atencao:       var(--p-sinal-atencao);
-  --c-atencao-ink:   var(--p-sinal-atencao);
+  /* Faixas do Nível de Sinal — mesma cor nos dois temas, pedido do usuário. */
+  --c-sinal-bom:     var(--p-sinal-bom);
+  --c-sinal-atencao: var(--p-sinal-atencao);
+  --c-sinal-critico: var(--p-sinal-critico);
   --c-red:           var(--p-red-vivid);
   --c-orange:        var(--p-orange-vivid);
   --c-purple:        var(--p-purple-vivid);
@@ -177,6 +179,10 @@
 
   --c-green:         var(--p-green-deep);
   --c-yellow:        var(--p-yellow-deep);
+  /* Faixas do Nível de Sinal — mesma cor nos dois temas, pedido do usuário. */
+  --c-sinal-bom:     var(--p-sinal-bom);
+  --c-sinal-atencao: var(--p-sinal-atencao);
+  --c-sinal-critico: var(--p-sinal-critico);
   --c-red:           var(--p-red-deep);
   --c-orange:        var(--p-orange-deep);
   --c-purple:        var(--p-purple-deep);
@@ -497,21 +503,6 @@ body {
 .grp-dot-infra { background: rgb(251,146,60);  }
 
 /* ── Semantic badges ── */
-/* Nível de Sinal: paleta própria das faixas bom/atenção/crítico, nos dois temas.
-   Fica no container da página e nos modais dela (que vão por portal). */
-.sinal-cores {
-  --c-green:       var(--p-sinal-bom);
-  --c-yellow:      var(--p-sinal-atencao);
-  --c-orange:      var(--p-sinal-atencao);
-  --c-atencao:     var(--p-sinal-atencao);
-  --c-atencao-ink: var(--p-sinal-atencao);
-  --c-red:         var(--p-sinal-critico);
-}
-.sinal-cores .badge-green  { background: rgb(var(--c-green)  / 0.12); }
-.sinal-cores .badge-yellow { background: rgb(var(--c-yellow) / 0.12); }
-.sinal-cores .badge-orange { background: rgb(var(--c-orange) / 0.12); }
-.sinal-cores .badge-red    { background: rgb(var(--c-red)    / 0.12); }
-
 .badge-green  { background: rgba(74,  222, 128, 0.12); color: rgb(var(--c-green)); }
 .badge-red    { background: rgba(248, 113, 113, 0.12); color: rgb(var(--c-red));   }
 .badge-yellow { background: rgba(250, 204,  21, 0.12); color: rgb(var(--c-yellow));}
@@ -527,6 +518,13 @@ body {
 .light .badge-purple { background: rgba(109,  40, 217, 0.10); color: rgb(var(--c-purple));}
 .light .badge-cyan   { background: rgba(8,   145, 178, 0.10); color: rgb(var(--c-cyan));  }
 .light .badge-teal   { background: rgba(15,  118, 110, 0.10); color: rgb(var(--c-teal));  }
+
+/* Nível de Sinal: badges na paleta própria das faixas. Fica no container da
+   página e nos modais dela (que vão por portal). */
+.sinal-cores .badge-green { color: rgb(var(--c-sinal-bom)); background: rgb(var(--c-sinal-bom) / 0.12); }
+.sinal-cores .badge-yellow { color: rgb(var(--c-sinal-atencao)); background: rgb(var(--c-sinal-atencao) / 0.12); }
+.sinal-cores .badge-orange { color: rgb(var(--c-sinal-atencao)); background: rgb(var(--c-sinal-atencao) / 0.12); }
+.sinal-cores .badge-red { color: rgb(var(--c-sinal-critico)); background: rgb(var(--c-sinal-critico) / 0.12); }
 
 /* ── Gradients ── */
 .gradient-sep {

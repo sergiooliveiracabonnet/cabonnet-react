@@ -29,6 +29,14 @@ const TONE_COLOR: Record<Exclude<StatTone, 'neutral'>, string> = {
   info:     'rgb(var(--c-primary))',
 }
 
+// Paleta própria do Nível de Sinal (bom/atenção/crítico); info segue o padrão.
+const TONE_COLOR_SINAL: Record<Exclude<StatTone, 'neutral'>, string> = {
+  critical: 'rgb(var(--c-sinal-critico))',
+  warning:  'rgb(var(--c-sinal-atencao))',
+  ok:       'rgb(var(--c-sinal-bom))',
+  info:     TONE_COLOR.info,
+}
+
 /** Converte o AccentColor legado para tone. Accents decorativos viram neutral. */
 // eslint-disable-next-line react-refresh/only-export-components -- helper de mapeamento faz parte do contrato público do StatCard (usado pelas Tasks 4-6)
 export function accentToTone(accent?: string): StatTone {
@@ -63,6 +71,8 @@ export interface StatCardProps {
   sub?:       string
   icon?:      ComponentType<{ size?: number; className?: string }>
   tone?:      StatTone
+  /** 'sinal': bom/atenção/crítico na paleta do Nível de Sinal. */
+  palette?:   'padrao' | 'sinal'
   trend?:     StatTrend | null
   scope?:     StatScope
   size?:      StatSize
@@ -76,10 +86,10 @@ export interface StatCardProps {
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
 
 export function StatCard({
-  title, value, sub, icon: Icon, tone = 'neutral', trend, scope,
+  title, value, sub, icon: Icon, tone = 'neutral', palette = 'padrao', trend, scope,
   size = 'md', outlined = false, onClick, delay = 0, className = '', sparkline,
 }: StatCardProps) {
-  const statusColor = tone !== 'neutral' ? TONE_COLOR[tone] : undefined
+  const statusColor = tone !== 'neutral' ? (palette === 'sinal' ? TONE_COLOR_SINAL : TONE_COLOR)[tone] : undefined
   // ok mantém o valor neutro (padrão aprovado do dashboard): a borda já sinaliza.
   const valColor = (tone === 'critical' || tone === 'warning' || tone === 'info')
     ? statusColor! : 'rgb(var(--c-text))'

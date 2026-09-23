@@ -63,7 +63,7 @@ export function NivelSinalAI({ rows, filters }: { rows: SignalRow[]; filters: Si
       <Button onClick={analyze} disabled={analyzing}>{analyzing ? <CircleNotch size={14} className="animate-spin" /> : <ChartLineUp size={14} />}{analysis ? 'Reanalisar' : 'Analisar relatório'}</Button>
     </div>
 
-    {error && <div role="alert" className="m-4 flex items-center gap-2 rounded-lg border border-red/20 bg-red/[0.07] px-3 py-2 text-label text-red"><WarningCircle size={14} />{error}</div>}
+    {error && <div role="alert" className="m-4 flex items-center gap-2 rounded-lg border border-sinal-critico/20 bg-sinal-critico/[0.07] px-3 py-2 text-label text-sinal-critico"><WarningCircle size={14} />{error}</div>}
 
     {!analysis && !analyzing ? <div className="grid gap-4 p-5 lg:grid-cols-[1fr_1.2fr]"><div className="rounded-xl border border-border bg-surface/20 p-5"><ChartLineUp size={24} className="text-secondary" /><p className="mt-3 text-body font-semibold text-text">Transforme o relatório em decisão operacional</p><p className="mt-1 text-label leading-relaxed text-muted">A análise cruza severidade, RX, OLTs, PONs, cidades, hotspots, causas e modelos. Nenhum nome, PPPoE, código ou serial é enviado.</p></div><div><Conversation messages={messages} /><QuestionBox question={question} setQuestion={setQuestion} ask={ask} answering={answering} suggestions={SUGGESTIONS} /></div></div> : null}
 
@@ -75,7 +75,7 @@ export function NivelSinalAI({ rows, filters }: { rows: SignalRow[]; filters: Si
         <div><h3 className="mb-2 text-label font-bold uppercase tracking-wide text-muted">Prioridades</h3><div className="space-y-2">{analysis.prioridades.map((item, index) => <div key={item} className="flex gap-3 rounded-lg border border-border bg-surface/20 p-3"><span className="font-mono text-caption font-bold text-primary">{String(index + 1).padStart(2, '0')}</span><span className="text-label text-text">{item}</span></div>)}</div></div>
         <div><h3 className="mb-2 text-label font-bold uppercase tracking-wide text-muted">Plano de ação</h3><div className="space-y-2">{analysis.plano_acao.map((item, index) => <div key={`${item.prazo}-${index}`} className="grid gap-2 rounded-lg border border-border bg-surface/20 p-3 sm:grid-cols-[90px_1fr_100px]"><span className="text-caption font-bold text-primary">{item.prazo}</span><div><p className="text-label font-semibold text-text">{item.acao}</p><p className="mt-1 flex items-center gap-1 text-caption text-muted"><CheckCircle size={11} />{item.criterio}</p></div><span className="text-caption font-semibold text-secondary">{item.responsavel}</span></div>)}</div></div>
       </div>
-      {analysis.riscos.length > 0 && <div className="flex flex-wrap gap-2">{analysis.riscos.map(item => <span key={item} className="rounded-full border border-orange/20 bg-orange/[0.07] px-3 py-1 text-caption text-orange">{item}</span>)}</div>}
+      {analysis.riscos.length > 0 && <div className="flex flex-wrap gap-2">{analysis.riscos.map(item => <span key={item} className="rounded-full border border-sinal-atencao/20 bg-sinal-atencao/[0.07] px-3 py-1 text-caption text-sinal-atencao">{item}</span>)}</div>}
       <div className="border-t border-border pt-5"><Conversation messages={messages} /><QuestionBox question={question} setQuestion={setQuestion} ask={ask} answering={answering} suggestions={SUGGESTIONS} /></div>
     </div>}
   </section>

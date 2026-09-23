@@ -62,9 +62,9 @@ export function PonMedicoesModal({ titulo, subtitulo, modo, drafts, hasCsv, busy
           className="h-9 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-label text-text outline-none placeholder:text-muted focus:border-primary/50" />
       </label>
       <button aria-pressed={soAlerta} onClick={() => setSoAlerta(value => !value)}
-        className={`rounded-full border px-3 py-1.5 text-caption font-semibold transition-colors ${soAlerta ? 'border-red/40 bg-red/15 text-red' : 'border-border text-muted hover:text-text'}`}>Só quem estava fora do padrão</button>
+        className={`rounded-full border px-3 py-1.5 text-caption font-semibold transition-colors ${soAlerta ? 'border-sinal-critico/40 bg-sinal-critico/15 text-sinal-critico' : 'border-border text-muted hover:text-text'}`}>Só quem estava fora do padrão</button>
       {invalidas > 0 && <button aria-pressed={soInvalidas} onClick={() => setSoInvalidas(value => !value)}
-        className={`rounded-full border px-3 py-1.5 text-caption font-semibold transition-colors ${soInvalidas ? 'border-red/40 bg-red/15 text-red' : 'border-red/30 text-red hover:bg-red/10'}`}>Só valores inválidos ({invalidas})</button>}
+        className={`rounded-full border px-3 py-1.5 text-caption font-semibold transition-colors ${soInvalidas ? 'border-sinal-critico/40 bg-sinal-critico/15 text-sinal-critico' : 'border-sinal-critico/30 text-sinal-critico hover:bg-sinal-critico/10'}`}>Só valores inválidos ({invalidas})</button>}
       <span className="ml-auto text-caption text-muted">{visiveis.length} de {linhas.length} clientes</span>
     </div>
 
@@ -88,13 +88,13 @@ export function PonMedicoesModal({ titulo, subtitulo, modo, drafts, hasCsv, busy
             <td className="px-4 py-2">
               <input inputMode="decimal" value={linha.valor} onChange={event => editar(linha.onu_key, 'valor', event.target.value)}
                 aria-label={`Nova potência de ${linha.cliente}`} aria-invalid={invalido} placeholder="—"
-                className={`h-9 w-28 rounded-md border bg-surface px-3 text-label font-mono tabular-nums text-text outline-none placeholder:text-muted ${invalido ? 'border-red/60 text-red' : 'border-border focus:border-primary/50'}`} />
+                className={`h-9 w-28 rounded-md border bg-surface px-3 text-label font-mono tabular-nums text-text outline-none placeholder:text-muted ${invalido ? 'border-sinal-critico/60 text-sinal-critico' : 'border-border focus:border-primary/50'}`} />
             </td>
             {/* Sem RX de antes não há delta, mas a medição existe: quem tem valor
                 digitado é classificado, senão a linha contradiz o contador do topo. */}
-            <td className="whitespace-nowrap px-4 py-2">{invalido ? <span className="text-caption font-semibold text-red">valor inválido</span>
+            <td className="whitespace-nowrap px-4 py-2">{invalido ? <span className="text-caption font-semibold text-sinal-critico">valor inválido</span>
               : nivelDepois !== '—' ? <span className="flex items-center gap-2"><Badge variant={severityVariant(nivelDepois)} dot={false}>{nivelDepois}</Badge>
-                {delta && <span className={`text-caption font-semibold tabular-nums ${delta.melhorou ? 'text-green' : 'text-orange'}`}>{delta.texto}</span>}</span>
+                {delta && <span className={`text-caption font-semibold tabular-nums ${delta.melhorou ? 'text-sinal-bom' : 'text-sinal-atencao'}`}>{delta.texto}</span>}</span>
               : <span className="text-caption text-muted">a medir</span>}</td>
             <td className="px-4 py-2"><input value={linha.observacao} onChange={event => editar(linha.onu_key, 'observacao', event.target.value)}
               aria-label={`Observação de ${linha.cliente}`} placeholder="opcional"
@@ -111,7 +111,7 @@ export function PonMedicoesModal({ titulo, subtitulo, modo, drafts, hasCsv, busy
 
     <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 border-t border-border bg-elevated px-4 py-3">
       <p className="flex items-center gap-2 text-caption text-muted">
-        {invalidas ? <><WarningCircle size={14} className="text-red" /><span className="text-red">{invalidas} potência(s) com valor inválido — corrija antes de salvar.</span></>
+        {invalidas ? <><WarningCircle size={14} className="text-sinal-critico" /><span className="text-sinal-critico">{invalidas} potência(s) com valor inválido — corrija antes de salvar.</span></>
           : <><WaveSine size={14} /><span>Pode deixar em branco quem ainda não foi medido: dá para completar depois na aba PONs tratadas.</span></>}
       </p>
       <div className="ml-auto flex gap-2">

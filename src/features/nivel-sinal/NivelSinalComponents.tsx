@@ -79,7 +79,7 @@ export function SignalHistogram({ rows, onOpen }: { rows: SignalRow[]; onOpen: (
       onClick={() => onOpen({ title: `Potência RX: ${bin.label} dBm`, subtitle: bin.overflow ? 'Faixa de ponta: recolhe também tudo que cai fora do eixo.' : 'ONUs posicionadas nesta faixa do histograma.', rows: bin.rows })}
       className="group flex h-full flex-1 flex-col justify-end focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
       <span className="mb-1 text-caption tabular-nums text-muted opacity-0 transition-opacity group-hover:opacity-100">{bin.total || ''}</span>
-      <span style={{ height: `${bin.total / max * 100}%` }} className={`min-h-px w-full rounded-t-sm transition-opacity group-hover:opacity-75 ${bin.start < -26.5 ? 'bg-red' : 'bg-orange'}`} />
+      <span style={{ height: `${bin.total / max * 100}%` }} className={`min-h-px w-full rounded-t-sm transition-opacity group-hover:opacity-75 ${bin.start < -26.5 ? 'bg-sinal-critico' : 'bg-sinal-atencao'}`} />
     </button>
   ))}</div><div className="mt-2 flex justify-between text-caption font-mono text-muted">{['-38', '-36', '-34', '-32', '-30', '-28', '-26', '-24 dBm'].map(tick => <span key={tick}>{tick}</span>)}</div></div>
 }
@@ -90,17 +90,17 @@ export function SeverityBars({ groups, label, onOpen }: { groups: SeverityGroup[
   return <div className="space-y-3">{groups.length ? groups.map(group => (
     <button key={group.key} onClick={() => onOpen({ title: `${label}: ${group.key}`, subtitle: `${group.total} registros · ${group.criticos} críticos.`, rows: group.rows })} className="grid w-full grid-cols-[minmax(90px,1fr)_2fr_62px] items-center gap-3 text-left group">
       <span className="truncate text-label text-secondary group-hover:text-text">{group.key}</span>
-      <span className="flex h-2 overflow-hidden rounded-full bg-surface"><i className="bg-red" style={{ width: `${group.criticos / max * 100}%` }} /><i className="bg-orange" style={{ width: `${group.atencao / max * 100}%` }} /></span>
-      <span className="text-right text-caption tabular-nums text-muted"><b className="text-text">{group.total}</b> · <span className="text-red">{group.criticos}</span></span>
+      <span className="flex h-2 overflow-hidden rounded-full bg-surface"><i className="bg-sinal-critico" style={{ width: `${group.criticos / max * 100}%` }} /><i className="bg-sinal-atencao" style={{ width: `${group.atencao / max * 100}%` }} /></span>
+      <span className="text-right text-caption tabular-nums text-muted"><b className="text-text">{group.total}</b> · <span className="text-sinal-critico">{group.criticos}</span></span>
     </button>
   )) : <p className="py-8 text-center text-label text-muted">Sem dados</p>}</div>
 }
 
 /** Legenda das faixas usadas no parque por OLT e nos cards do topo. */
 export const OLT_PARQUE_LEGENDA = [
-  { cor: 'bg-green', label: 'Sinal bom', texto: 'ONU fora do alerta de RX do relatório' },
-  { cor: 'bg-atencao', label: 'Atenção', texto: 'no alerta, RX entre −27 e −25 dBm' },
-  { cor: 'bg-red', label: 'Crítico', texto: 'no alerta, RX igual ou abaixo de −27 dBm' },
+  { cor: 'bg-sinal-bom', label: 'Sinal bom', texto: 'ONU fora do alerta de RX do relatório' },
+  { cor: 'bg-sinal-atencao', label: 'Atenção', texto: 'no alerta, RX entre −27 e −25 dBm' },
+  { cor: 'bg-sinal-critico', label: 'Crítico', texto: 'no alerta, RX igual ou abaixo de −27 dBm' },
 ] as const
 
 export function OltParqueTable({ items, onOpen }: { items: OltParqueItem[]; onOpen: (detail: DetailState) => void }) {
@@ -115,22 +115,22 @@ export function OltParqueTable({ items, onOpen }: { items: OltParqueItem[]; onOp
         <th className="px-3 py-2 text-left">OLT</th>
         <th className="hidden w-2/5 px-3 py-2 text-left md:table-cell">Distribuição</th>
         <th className="px-3 py-2 text-right">Total de ONUs</th>
-        <th className="px-3 py-2 text-right text-green">Sinal bom</th>
-        <th className="px-3 py-2 text-right text-atencao-ink">Atenção</th>
-        <th className="px-3 py-2 text-right text-red">Crítico</th>
+        <th className="px-3 py-2 text-right text-sinal-bom">Sinal bom</th>
+        <th className="px-3 py-2 text-right text-sinal-atencao">Atenção</th>
+        <th className="px-3 py-2 text-right text-sinal-critico">Crítico</th>
         <th className="px-3 py-2 text-right">% fora do padrão</th>
       </tr></thead>
       <tbody className="divide-y divide-border">{items.map(item => (
         <tr key={item.key} className="hover:bg-surface/40">
           <td className="max-w-48 truncate px-3 py-2 text-secondary">{item.key}</td>
           <td className="hidden px-3 py-2 md:table-cell"><span className="flex h-2.5 overflow-hidden rounded-full bg-surface" title={`${item.bom} bom · ${item.atencao} atenção · ${item.criticos} crítico`}>
-            <i className="bg-green" style={{ width: `${item.bom / item.total * 100}%` }} /><i className="bg-atencao" style={{ width: `${item.atencao / item.total * 100}%` }} /><i className="bg-red" style={{ width: `${item.criticos / item.total * 100}%` }} />
+            <i className="bg-sinal-bom" style={{ width: `${item.bom / item.total * 100}%` }} /><i className="bg-sinal-atencao" style={{ width: `${item.atencao / item.total * 100}%` }} /><i className="bg-sinal-critico" style={{ width: `${item.criticos / item.total * 100}%` }} />
           </span></td>
           {cell(item, 'Todas as ONUs', item.total, item.rows)}
-          {cell(item, 'Sinal bom', item.bom, item.rows.filter(row => !row.alertaRx), 'text-green')}
-          {cell(item, 'Atenção', item.atencao, item.foraRows.filter(row => row.classificacao !== 'Crítico'), 'text-atencao-ink')}
-          {cell(item, 'Crítico', item.criticos, item.foraRows.filter(row => row.classificacao === 'Crítico'), 'text-red')}
-          <td className={`px-3 py-2 text-right tabular-nums ${item.pct >= 10 ? 'font-semibold text-red' : 'text-muted'}`}>{item.pct.toFixed(1)}%</td>
+          {cell(item, 'Sinal bom', item.bom, item.rows.filter(row => !row.alertaRx), 'text-sinal-bom')}
+          {cell(item, 'Atenção', item.atencao, item.foraRows.filter(row => row.classificacao !== 'Crítico'), 'text-sinal-atencao')}
+          {cell(item, 'Crítico', item.criticos, item.foraRows.filter(row => row.classificacao === 'Crítico'), 'text-sinal-critico')}
+          <td className={`px-3 py-2 text-right tabular-nums ${item.pct >= 10 ? 'font-semibold text-sinal-critico' : 'text-muted'}`}>{item.pct.toFixed(1)}%</td>
         </tr>
       ))}</tbody>
     </table>
@@ -167,10 +167,10 @@ export function HotspotGrid({ hotspots, rows, onOpen, onApply, onTreat, treatmen
         {hotspot.tempMax != null && <span className="flex items-center gap-1"><Thermometer size={11} /> {hotspot.tempMax.toFixed(0)}°C máx</span>}
       </p>
       <div className="mt-4 grid grid-cols-4 gap-2 text-center"><Metric label="Críticas" value={hotspot.criticos} critical /><Metric label="Total" value={hotspot.total} /><Metric label="Concentr." value={`${(hotspot.concentracao * 100).toFixed(0)}%`} /><Metric label="RX med." value={hotspot.rxMediano?.toFixed(1) ?? '—'} /></div>
-      <div className="mt-3 h-1 overflow-hidden rounded-full bg-surface"><div className="h-full bg-red" style={{ width: `${hotspot.concentracao * 100}%` }} /></div>
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-surface"><div className="h-full bg-sinal-critico" style={{ width: `${hotspot.concentracao * 100}%` }} /></div>
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
         {cycles && cycles.treated_count > 0
-          ? <span className="text-caption text-orange">Reaberta · já tratada {cycles.treated_count}×</span>
+          ? <span className="text-caption text-sinal-atencao">Reaberta · já tratada {cycles.treated_count}×</span>
           : <span className="text-caption text-muted">Pendente de tratativa</span>}
         <Button variant="ghost" size="sm" disabled={busyKey === hotspot.key} aria-label={`Marcar PON ${hotspot.pon} da ${hotspot.olt} como tratada`}
           onClick={event => { event.stopPropagation(); onTreat(hotspot) }}><Check size={13} /> Tratar</Button>
@@ -182,7 +182,7 @@ export function HotspotGrid({ hotspots, rows, onOpen, onApply, onTreat, treatmen
 export const treatedIcons = { reopen: ArrowUUpLeft }
 
 function Metric({ label, value, critical }: { label: string; value: ReactNode; critical?: boolean }) {
-  return <div><span className="text-caption uppercase tracking-wide text-muted">{label}</span><strong className={`mt-1 block text-body tabular-nums ${critical ? 'text-red' : 'text-text'}`}>{value}</strong></div>
+  return <div><span className="text-caption uppercase tracking-wide text-muted">{label}</span><strong className={`mt-1 block text-body tabular-nums ${critical ? 'text-sinal-critico' : 'text-text'}`}>{value}</strong></div>
 }
 
 export function KpiAction({ children, onClick }: { children: ReactNode; onClick: () => void }) {
@@ -197,20 +197,20 @@ const divergentCity = (row: SignalRow) =>
 
 const TABLE_COLUMNS: { key: SignalSortKey; label: string; render: (row: SignalRow) => ReactNode }[] = [
   { key: 'classificacao', label: 'Sev', render: row => <Badge variant={severityVariant(row.classificacao)}>{row.classificacao}</Badge> },
-  { key: 'rx', label: 'RX dBm', render: row => <b className={row.classificacao === 'Crítico' ? 'text-red' : 'text-orange'}>{row.rx?.toFixed(2) ?? '—'}</b> },
+  { key: 'rx', label: 'RX dBm', render: row => <b className={row.classificacao === 'Crítico' ? 'text-sinal-critico' : 'text-sinal-atencao'}>{row.rx?.toFixed(2) ?? '—'}</b> },
   { key: 'oltRx', label: 'OLT RX', render: row => row.oltRx?.toFixed(2) ?? '—' },
   { key: 'tx', label: 'TX dBm', render: row => row.tx?.toFixed(2) ?? '—' },
   { key: 'cliente', label: 'Cliente', render: row => <span className="block max-w-52 truncate font-semibold text-text" title={row.cliente}>{row.cliente}</span> },
   { key: 'cidade', label: 'Cidade (OLT)', render: row => row.cidade },
   // A Cidade do CSV e a da OLT; a do cliente diverge em alguns casos e ficava invisivel.
-  { key: 'cidadeCliente', label: 'Cidade (cliente)', render: row => <span className={divergentCity(row) ? 'font-semibold text-orange' : ''} title={divergentCity(row) ? 'Cliente atendido por OLT de outra cidade' : undefined}>{row.cidadeCliente}</span> },
+  { key: 'cidadeCliente', label: 'Cidade (cliente)', render: row => <span className={divergentCity(row) ? 'font-semibold text-sinal-atencao' : ''} title={divergentCity(row) ? 'Cliente atendido por OLT de outra cidade' : undefined}>{row.cidadeCliente}</span> },
   { key: 'bairro', label: 'Bairro', render: row => row.bairro },
   { key: 'olt', label: 'OLT', render: row => row.olt }, { key: 'pon', label: 'PON', render: row => <span className="font-mono">{row.pon}</span> },
   { key: 'onu', label: 'ONU', render: row => <span className="font-mono">{row.onu}</span> }, { key: 'modelo', label: 'Modelo', render: row => row.modelo },
   { key: 'serial', label: 'Serial', render: row => <span className="font-mono">{row.serial || '—'}</span> },
   { key: 'distancia', label: 'Dist (m)', render: row => row.distancia?.toLocaleString('pt-BR') ?? '—' },
-  { key: 'temperatura', label: 'Temp °C', render: row => row.temperatura == null ? '—' : <span className={row.temperatura >= 60 ? 'font-semibold text-red' : ''}>{row.temperatura.toFixed(1)}</span> },
-  { key: 'status', label: 'Status', render: row => <span className={row.status.toLocaleLowerCase('pt-BR') !== 'online' ? 'font-semibold text-red' : ''}>{row.status}</span> },
+  { key: 'temperatura', label: 'Temp °C', render: row => row.temperatura == null ? '—' : <span className={row.temperatura >= 60 ? 'font-semibold text-sinal-critico' : ''}>{row.temperatura.toFixed(1)}</span> },
+  { key: 'status', label: 'Status', render: row => <span className={row.status.toLocaleLowerCase('pt-BR') !== 'online' ? 'font-semibold text-sinal-critico' : ''}>{row.status}</span> },
   { key: 'situacao', label: 'Situação', render: row => row.situacao }, { key: 'causa', label: 'Causa', render: row => row.causa },
 ]
 

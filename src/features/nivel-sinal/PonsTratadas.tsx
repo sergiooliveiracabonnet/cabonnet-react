@@ -59,14 +59,14 @@ export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKe
       </Button>} />
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-      <StatCard title="Tratadas" value={summary.total} sub="fora da fila de pendência" tone="ok" icon={CheckCircle} />
-      <StatCard title="Ainda críticas" value={summary.aindaCriticas} tone={summary.aindaCriticas ? 'critical' : 'neutral'} icon={WarningCircle}
+      <StatCard palette="sinal" title="Tratadas" value={summary.total} sub="fora da fila de pendência" tone="ok" icon={CheckCircle} />
+      <StatCard palette="sinal" title="Ainda críticas" value={summary.aindaCriticas} tone={summary.aindaCriticas ? 'critical' : 'neutral'} icon={WarningCircle}
         sub={hasCsv ? 'batem o critério no CSV atual' : 'sem CSV carregado'} />
-      <StatCard title="Normalizadas" value={summary.normalizadas} tone="ok" icon={Broadcast}
+      <StatCard palette="sinal" title="Normalizadas" value={summary.normalizadas} tone="ok" icon={Broadcast}
         sub={hasCsv ? 'saíram do critério no CSV atual' : 'sem CSV carregado'} />
-      <StatCard title="Potências pendentes" value={summary.potenciasPendentes} sub="PONs com cliente ainda sem nova medição"
+      <StatCard palette="sinal" title="Potências pendentes" value={summary.potenciasPendentes} sub="PONs com cliente ainda sem nova medição"
         tone={summary.potenciasPendentes ? 'warning' : 'ok'} icon={WaveSine} />
-      <StatCard title="Reincidentes" value={summary.reincidentes} sub="já foram reabertas ao menos uma vez" tone="warning" icon={Repeat} />
+      <StatCard palette="sinal" title="Reincidentes" value={summary.reincidentes} sub="já foram reabertas ao menos uma vez" tone="warning" icon={Repeat} />
     </div>
 
     {!treated.length ? <Card><EmptyState icon={CheckCircle} title="Nenhuma PON tratada ainda"
@@ -108,15 +108,15 @@ export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKe
               <td className="px-4 py-3 font-mono"><span className="block font-semibold text-text">{item.snapshot.pon}</span><span className="text-caption text-muted">{item.snapshot.olt}</span></td>
               <td className="px-4 py-3"><span className="block text-text">{item.snapshot.cidade}</span><span className="text-caption text-muted">{item.snapshot.bairro}</span></td>
               <td className="px-4 py-3 tabular-nums text-secondary">
-                <span className="block"><b className="text-red">{item.snapshot.criticos}</b> críticas de {item.snapshot.total} · {(item.snapshot.concentracao * 100).toFixed(0)}%</span>
+                <span className="block"><b className="text-sinal-critico">{item.snapshot.criticos}</b> críticas de {item.snapshot.total} · {(item.snapshot.concentracao * 100).toFixed(0)}%</span>
                 <span className="text-caption text-muted">RX med. {item.snapshot.rxMediano?.toFixed(1) ?? '—'}{item.snapshot.tempMax != null ? ` · ${item.snapshot.tempMax.toFixed(0)}°C máx` : ''}</span>
               </td>
               <td className="px-4 py-3 text-secondary"><span className="block">{formatMoment(item.created_at)}</span><span className="text-caption text-muted">{item.created_by || 'sem usuário'}</span></td>
-              <td className="px-4 py-3 tabular-nums text-secondary">{item.treated_count}× tratada{item.reopened_count ? <span className="block text-caption text-orange">{item.reopened_count}× reaberta</span> : null}</td>
+              <td className="px-4 py-3 tabular-nums text-secondary">{item.treated_count}× tratada{item.reopened_count ? <span className="block text-caption text-sinal-atencao">{item.reopened_count}× reaberta</span> : null}</td>
               <td className="px-4 py-3">{medicoesProgresso(item).total
                 ? <><span className="block tabular-nums text-text">{medicoesProgresso(item).preenchidas}/{medicoesProgresso(item).total} medidas</span>
                   {medicoesProgresso(item).pendentes
-                    ? <span className="text-caption text-orange">{medicoesProgresso(item).pendentes} sem potência</span>
+                    ? <span className="text-caption text-sinal-atencao">{medicoesProgresso(item).pendentes} sem potência</span>
                     : <span className="text-caption text-muted">cadastro completo</span>}</>
                 : <span className="text-caption text-muted">sem clientes registrados</span>}</td>
               <td className="px-4 py-3">{!hasCsv

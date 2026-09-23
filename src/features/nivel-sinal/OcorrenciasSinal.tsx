@@ -28,10 +28,10 @@ function QuickSignalConfirm({ client, onConfirm }: { client: string; onConfirm: 
 }
 
 const STATUS_STYLE: Record<OccurrenceStatus, string> = {
-  'Aberto': 'border-red/25 bg-red/10 text-red',
-  'Em atendimento': 'border-orange/25 bg-orange/10 text-orange',
+  'Aberto': 'border-sinal-critico/25 bg-sinal-critico/10 text-sinal-critico',
+  'Em atendimento': 'border-sinal-atencao/25 bg-sinal-atencao/10 text-sinal-atencao',
   'Aguardando material': 'border-purple/25 bg-purple/10 text-purple',
-  'Concluído': 'border-green/25 bg-green/10 text-green',
+  'Concluído': 'border-sinal-bom/25 bg-sinal-bom/10 text-sinal-bom',
 }
 
 function SignalBadge({ status }: { status: OccurrenceStatus }) {
@@ -133,10 +133,10 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
     <PageHeader title="Controle de Ocorrências de Sinal" description="Ocorrências criadas automaticamente a partir do CSV e mantidas até a normalização" icon={ClipboardText} />
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatCard title="Backlog ativo" value={open} sub={`${occurrences.filter(item => item.severity === 'Crítico' && item.status !== 'Concluído').length} críticas`} tone={open ? 'critical' : 'neutral'} icon={ClipboardText} />
-      <StatCard title="Em atendimento" value={inWork} sub="aguardando conclusão" tone="warning" icon={Wrench} />
-      <StatCard title="Concluídas" value={concluded} sub={`${occurrences.length ? Math.round(concluded / occurrences.length * 100) : 0}% de resolução`} tone="ok" icon={CheckCircle} />
-      <StatCard title="Melhora média" value={average == null ? '—' : `${average.toFixed(1)} dB`} sub="após a tratativa" tone="info" icon={ChartBar} />
+      <StatCard palette="sinal" title="Backlog ativo" value={open} sub={`${occurrences.filter(item => item.severity === 'Crítico' && item.status !== 'Concluído').length} críticas`} tone={open ? 'critical' : 'neutral'} icon={ClipboardText} />
+      <StatCard palette="sinal" title="Em atendimento" value={inWork} sub="aguardando conclusão" tone="warning" icon={Wrench} />
+      <StatCard palette="sinal" title="Concluídas" value={concluded} sub={`${occurrences.length ? Math.round(concluded / occurrences.length * 100) : 0}% de resolução`} tone="ok" icon={CheckCircle} />
+      <StatCard palette="sinal" title="Melhora média" value={average == null ? '—' : `${average.toFixed(1)} dB`} sub="após a tratativa" tone="info" icon={ChartBar} />
     </div>
 
     <div className="grid gap-4 xl:grid-cols-[1.45fr_.8fr]">
@@ -150,14 +150,14 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
       <div className="mb-5 flex items-center justify-between"><h2 className="text-body font-semibold text-text">Evolução do sinal médio</h2><span className="text-caption text-muted">antes × depois da manutenção, últimos 7 dias</span></div>
       <div className="flex h-48 items-end gap-2 border-b border-border px-1 sm:gap-4">{progressDays.map(day => <div key={day.key} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
         {day.avgBefore != null && day.avgAfter != null ? <div className="flex h-full w-full items-end justify-center gap-1">
-          <div title={`Antes: ${day.avgBefore.toFixed(1)} dBm`} className="w-full max-w-5 rounded-t-md bg-red/40 transition-colors hover:bg-red/60" style={{ height: `${barHeight(day.avgBefore)}%` }} />
-          <div title={`Depois: ${day.avgAfter.toFixed(1)} dBm`} className="w-full max-w-5 rounded-t-md bg-green/70 transition-colors hover:bg-green" style={{ height: `${barHeight(day.avgAfter)}%` }} />
+          <div title={`Antes: ${day.avgBefore.toFixed(1)} dBm`} className="w-full max-w-5 rounded-t-md bg-sinal-critico/40 transition-colors hover:bg-sinal-critico/60" style={{ height: `${barHeight(day.avgBefore)}%` }} />
+          <div title={`Depois: ${day.avgAfter.toFixed(1)} dBm`} className="w-full max-w-5 rounded-t-md bg-sinal-bom/70 transition-colors hover:bg-sinal-bom" style={{ height: `${barHeight(day.avgAfter)}%` }} />
         </div> : <span className="text-caption text-muted">—</span>}
         <span className="mb-2 truncate text-caption capitalize text-muted">{day.label}</span>
       </div>)}</div>
       <div className="mt-3 flex items-center gap-4 text-caption text-muted">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-red/40" /> Antes</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-green/70" /> Depois</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-sinal-critico/40" /> Antes</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-sinal-bom/70" /> Depois</span>
         <span className="ml-auto">{progressDays.reduce((sum, day) => sum + day.count, 0)} confirmação(ões) no período</span>
       </div>
     </Card>
@@ -175,7 +175,7 @@ export function OcorrenciasSinal({ occurrences, onChange }: OcorrenciasSinalProp
     </Card>
 
     <Card className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><h2 className="text-body font-semibold text-text">Fila de tratativas</h2><p className="mt-0.5 text-caption text-muted">Ordenada conforme os filtros de priorização</p></div></div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[1080px] text-left text-label"><thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>{['Detecção', 'Cliente / ponto', 'OLT / PON / ONU', 'Cidade / bairro', 'Severidade', 'Sinal', 'Equipe', 'Status', 'Ação'].map(label => <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}</tr></thead><tbody>{visible.map(item => <tr key={item.id} className="border-t border-border transition-colors hover:bg-surface/50"><td className="px-4 py-3 text-muted"><span className="block">{new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR')}</span><span className="text-caption">{item.detections} leitura(s){item.missedSnapshots ? ` · ${item.missedSnapshots} ausente(s)` : ''}</span></td><td className="px-4 py-3 font-semibold text-text">{item.client}</td><td className="px-4 py-3 font-mono text-caption text-secondary"><span className="block">{item.olt}</span><span>{item.pon} · ONU {item.onu || '—'}</span></td><td className="px-4 py-3"><span className="block text-text">{item.city}</span><span className="text-caption text-muted">{item.region}</span></td><td className={`px-4 py-3 font-semibold ${item.severity === 'Crítico' ? 'text-red' : 'text-orange'}`}>{item.severity}</td><td className="px-4 py-3 font-mono text-text"><div>{item.before.toFixed(1)}{item.after != null ? <span className="text-green"> → {item.after.toFixed(1)}</span> : item.current !== item.before ? <span className="text-orange"> → {item.current.toFixed(1)}</span> : null}</div>{item.status !== 'Concluído' && <QuickSignalConfirm client={item.client} onConfirm={value => confirmSignal(item, value)} />}</td><td className="px-4 py-3 text-secondary">{item.team || '—'}</td><td className="px-4 py-3"><SignalBadge status={item.status} /></td><td className="px-4 py-3"><Button variant="ghost" size="sm" aria-label={`Registrar tratativa de ${item.client}`} onClick={() => setSelected(item)}>Tratar</Button></td></tr>)}{!visible.length && <tr><td colSpan={9} className="px-4 py-12 text-center text-muted">{occurrences.length ? 'Nenhuma ocorrência corresponde aos filtros.' : 'Nenhuma ocorrência registrada.'}</td></tr>}</tbody></table></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[1080px] text-left text-label"><thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>{['Detecção', 'Cliente / ponto', 'OLT / PON / ONU', 'Cidade / bairro', 'Severidade', 'Sinal', 'Equipe', 'Status', 'Ação'].map(label => <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}</tr></thead><tbody>{visible.map(item => <tr key={item.id} className="border-t border-border transition-colors hover:bg-surface/50"><td className="px-4 py-3 text-muted"><span className="block">{new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR')}</span><span className="text-caption">{item.detections} leitura(s){item.missedSnapshots ? ` · ${item.missedSnapshots} ausente(s)` : ''}</span></td><td className="px-4 py-3 font-semibold text-text">{item.client}</td><td className="px-4 py-3 font-mono text-caption text-secondary"><span className="block">{item.olt}</span><span>{item.pon} · ONU {item.onu || '—'}</span></td><td className="px-4 py-3"><span className="block text-text">{item.city}</span><span className="text-caption text-muted">{item.region}</span></td><td className={`px-4 py-3 font-semibold ${item.severity === 'Crítico' ? 'text-sinal-critico' : 'text-sinal-atencao'}`}>{item.severity}</td><td className="px-4 py-3 font-mono text-text"><div>{item.before.toFixed(1)}{item.after != null ? <span className="text-sinal-bom"> → {item.after.toFixed(1)}</span> : item.current !== item.before ? <span className="text-sinal-atencao"> → {item.current.toFixed(1)}</span> : null}</div>{item.status !== 'Concluído' && <QuickSignalConfirm client={item.client} onConfirm={value => confirmSignal(item, value)} />}</td><td className="px-4 py-3 text-secondary">{item.team || '—'}</td><td className="px-4 py-3"><SignalBadge status={item.status} /></td><td className="px-4 py-3"><Button variant="ghost" size="sm" aria-label={`Registrar tratativa de ${item.client}`} onClick={() => setSelected(item)}>Tratar</Button></td></tr>)}{!visible.length && <tr><td colSpan={9} className="px-4 py-12 text-center text-muted">{occurrences.length ? 'Nenhuma ocorrência corresponde aos filtros.' : 'Nenhuma ocorrência registrada.'}</td></tr>}</tbody></table></div>
     </Card>
 
     <Modal open={!!selected} onClose={() => setSelected(null)} title="Registrar tratativa" subtitle={selected ? `${selected.client} · leitura inicial ${selected.before.toFixed(1)} dBm` : ''} maxWidth="620px" className="sinal-cores">{selected && <form key={selected.id} onSubmit={save} className="p-6"><div className="grid gap-4 sm:grid-cols-2">
