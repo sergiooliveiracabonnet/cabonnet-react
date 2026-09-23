@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
-import { CaretDown, CaretRight, Envelope, FileText, House, MapPin, Warning, Info, WarningOctagon, Crosshair, Signpost } from '@phosphor-icons/react'
+import { CaretDown, CaretRight, Envelope, FileText, House, MapPin, Warning, Info, WarningOctagon, Crosshair, Signpost, ArrowSquareOut } from '@phosphor-icons/react'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import L from 'leaflet'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { SectionTitle } from '../../components/ui/SectionTitle'
@@ -53,6 +55,46 @@ export function ResultadoBusca({ item, onSelect }: { item: ClienteBuscaItem; onS
   )
 }
 
+// ── Mini-mapa da localização de campo ────────────────────────────────────────
+// Coordenada registrada pelo app de campo no início da execução (resumo.localizacao).
+// Mesmo tile escuro do /mapa; sem scroll-zoom para não sequestrar a rolagem da página.
+
+const pinoCampo = L.divIcon({
+  className: 'cliente-campo-pin',
+  html: `<div style="
+    width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+    background:rgb(var(--c-cyan));border:2px solid rgb(var(--c-bg));box-shadow:0 2px 8px rgba(0,0,0,.5);
+  "></div>`,
+  iconSize: [22, 22],
+  iconAnchor: [11, 22],
+})
+
+function MapaCampo({ localizacao }: { localizacao: ClienteLocalizacao }) {
+  const centro: [number, number] = [localizacao.lat, localizacao.lng]
+  const gmaps = `https://www.google.com/maps/search/?api=1&query=${localizacao.lat},${localizacao.lng}`
+  return (
+    <div className="sm:col-span-2 mt-1">
+      <div className="relative h-40 overflow-hidden rounded-lg border border-subtle">
+        <MapContainer center={centro} zoom={16} scrollWheelZoom
+                      dragging zoomControl attributionControl={false}
+                      style={{ height: '100%', width: '100%', background: 'rgb(var(--c-bg))' }}>
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" />
+          <Marker position={centro} icon={pinoCampo} />
+        </MapContainer>
+        <a href={gmaps} target="_blank" rel="noreferrer"
+           className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-md bg-surface/90 px-2 py-1 text-caption font-semibold text-primary shadow-lg hover:bg-surface"
+           title="Abrir no Google Maps">
+          <ArrowSquareOut size={12} weight="bold" /> Google Maps
+        </a>
+      </div>
+      <p className="mt-1 flex items-center gap-1.5 text-caption text-muted">
+        <Crosshair size={12} className="flex-shrink-0" />
+        Localização confirmada em campo · OS {localizacao.numos} em {localizacao.data.toLocaleDateString('pt-BR')}
+      </p>
+    </div>
+  )
+}
+
 // ── Cabeçalho ────────────────────────────────────────────────────────────────
 
 export function ClienteHeader({ cliente, localizacao }: { cliente: ClienteCadastro; localizacao: ClienteLocalizacao | null }) {
@@ -79,6 +121,9 @@ export function ClienteHeader({ cliente, localizacao }: { cliente: ClienteCadast
         <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-label">
           <dt className="text-muted">Cliente desde</dt><dd className="text-text font-mono">{cliente.cliente_desde ?? '—'}</dd>
           <dt className="text-muted">Vencimento</dt><dd className="text-text font-mono">{cliente.dia_vencimento ? `dia ${cliente.dia_vencimento}` : '—'}</dd>
+          {cliente.atualizado_em && (
+            <><dt className="text-muted">Atualizado em</dt><dd className="text-text font-mono">{cliente.atualizado_em}</dd></>
+          )}
         </dl>
       </div>
       <div className="mt-4 grid gap-2 sm:grid-cols-2 text-label">
@@ -90,17 +135,7 @@ export function ClienteHeader({ cliente, localizacao }: { cliente: ClienteCadast
           <Envelope size={14} className="text-muted flex-shrink-0 mt-0.5" />
           <span className="break-all">{cliente.email || 'E-mail não informado'}</span>
         </p>
-        {localizacao && (
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${localizacao.lat},${localizacao.lng}`}
-            target="_blank" rel="noreferrer"
-            className="flex items-start gap-2 text-primary hover:underline sm:col-span-2"
-            title="Coordenada registrada pelo app de campo no início da execução"
-          >
-            <Crosshair size={14} className="flex-shrink-0 mt-0.5" />
-            <span>Localização confirmada em campo · OS {localizacao.numos} em {localizacao.data.toLocaleDateString('pt-BR')}</span>
-          </a>
-        )}
+        {localizacao && <MapaCampo localizacao={localizacao} />}
       </div>
     </Card>
   )
