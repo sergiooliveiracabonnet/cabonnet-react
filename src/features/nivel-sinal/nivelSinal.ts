@@ -49,12 +49,13 @@ export interface SignalHotspot {
   bairro: string
   total: number
   criticos: number
+  atencao: number
   concentracao: number
   rxMediano: number | null
   piorRx: number | null
   /** Maior temperatura entre as ONUs da PON - troco degradado costuma esquentar. */
   tempMax: number | null
-  nivel: 'alto' | 'medio'
+  nivel: 'alto' | 'medio' | 'baixo'
   score: number
 }
 
@@ -243,8 +244,11 @@ export function buildHotspots(rows: SignalRow[]): SignalHotspot[] {
   })
   return [...groups.entries()].flatMap(([key, items]) => {
     const criticos = items.filter(item => item.classificacao === 'Crítico').length
+    const atencao = items.filter(item => item.classificacao === 'Atenção').length
     const concentracao = items.length ? criticos / items.length : 0
-    if (criticos < 4 || concentracao < 0.3) return []
+    // Toda PON com cliente crítico ou em atenção entra na fila de tratativa — o
+    // limiar antigo (≥4 críticas e ≥30%) virou só o corte do nível "alto/médio".
+    if (criticos === 0 && atencao === 0) return []
     const rxs = items.map(item => item.rx).filter((value): value is number => value != null).sort((a, b) => a - b)
     const temps = items.map(item => item.temperatura).filter((value): value is number => value != null)
     const bairros = new Map<string, number>()
@@ -252,9 +256,9 @@ export function buildHotspots(rows: SignalRow[]): SignalHotspot[] {
     const bairro = [...bairros.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'
     return [{
       key, olt: items[0].olt, pon: items[0].pon, cidade: items[0].cidade, bairro,
-      total: items.length, criticos, concentracao, rxMediano: rxs.length ? rxs[Math.floor(rxs.length / 2)] : null,
+      total: items.length, criticos, atencao, concentracao, rxMediano: rxs.length ? rxs[Math.floor(rxs.length / 2)] : null,
       piorRx: rxs[0] ?? null, tempMax: temps.length ? Math.max(...temps) : null,
-      nivel: criticos >= 8 && concentracao >= 0.45 ? 'alto' : 'medio',
+      nivel: criticos >= 8 && concentracao >= 0.45 ? 'alto' : criticos >= 4 && concentracao >= 0.3 ? 'medio' : 'baixo',
       score: criticos * concentracao,
     } satisfies SignalHotspot]
   }).sort((a, b) => b.criticos - a.criticos || b.concentracao - a.concentracao || b.total - a.total)
@@ -296,6 +300,25 @@ export function groupBySeverity(rows: SignalRow[], keyFn: (row: SignalRow) => st
   })
   const sorted = [...groups.values()].sort((a, b) => b.total - a.total)
   return limit ? sorted.slice(0, limit) : sorted
+}
+
+/**
+ * Como groupBySeverity, mas "atencao" é a classificação Atenção de verdade — não
+ * "tudo que não é crítico" (útil pra preencher a barra de 2 cores da tela, mas
+ * enganoso num relatório onde o número da coluna precisa bater com o rótulo).
+ */
+export function severityBreakdown(rows: SignalRow[], keyFn: (row: SignalRow) => string, limit?: number) {
+  const groups = new Map<string, { key: string; total: number; criticos: number; atencao: number }>()
+  rows.forEach(row => {
+    const key = keyFn(row)
+    if (!key || key === '—') return
+    const group = groups.get(key) ?? { key, total: 0, criticos: 0, atencao: 0 }
+    group.total++
+    if (row.classificacao === 'Crítico') group.criticos++
+    else if (row.classificacao === 'Atenção') group.atencao++
+    groups.set(key, group)
+  })
+  return [...groups.values()].sort((a, b) => b.total - a.total).slice(0, limit ?? Infinity)
 }
 
 export interface OltParqueItem { key: string; total: number; bom: number; fora: number; criticos: number; atencao: number; pct: number; rows: SignalRow[]; foraRows: SignalRow[] }

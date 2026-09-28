@@ -160,13 +160,13 @@ export function HotspotGrid({ hotspots, rows, onOpen, onApply, onTreat, treatmen
   return <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{hotspots.length ? hotspots.map(hotspot => {
     const related = rows.filter(row => `${row.olt} · ${row.pon}` === hotspot.key)
     const cycles = treatments.get(hotspot.key)
-    return <Card key={hotspot.key} onClick={() => onOpen({ title: `Hotspot ${hotspot.pon} · ${hotspot.olt}`, subtitle: `${hotspot.cidade} · ${hotspot.bairro} · ${hotspot.criticos} críticas em ${hotspot.total} ONUs.`, rows: related, action: { label: 'Aplicar este filtro', run: () => onApply(hotspot) } })} className="p-4">
-      <div className="flex items-start justify-between gap-2"><div><p className="font-mono text-title font-bold text-text">{hotspot.pon}</p><p className="mt-0.5 text-caption text-muted">{hotspot.olt}</p></div><Badge variant={hotspot.nivel === 'alto' ? 'red' : 'orange'}>{hotspot.nivel === 'alto' ? 'Risco alto' : 'Risco médio'}</Badge></div>
+    return <Card key={hotspot.key} onClick={() => onOpen({ title: `Hotspot ${hotspot.pon} · ${hotspot.olt}`, subtitle: `${hotspot.cidade} · ${hotspot.bairro} · ${hotspot.criticos} críticas e ${hotspot.atencao} em atenção de ${hotspot.total} ONUs.`, rows: related, action: { label: 'Aplicar este filtro', run: () => onApply(hotspot) } })} className="p-4">
+      <div className="flex items-start justify-between gap-2"><div><p className="font-mono text-title font-bold text-text">{hotspot.pon}</p><p className="mt-0.5 text-caption text-muted">{hotspot.olt}</p></div><Badge variant={hotspot.nivel === 'alto' ? 'red' : hotspot.nivel === 'medio' ? 'orange' : 'yellow'}>{hotspot.nivel === 'alto' ? 'Risco alto' : hotspot.nivel === 'medio' ? 'Risco médio' : 'Risco baixo'}</Badge></div>
       <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-muted">
         <span className="flex items-center gap-1"><MapPin size={11} /> {hotspot.cidade} · {hotspot.bairro}</span>
         {hotspot.tempMax != null && <span className="flex items-center gap-1"><Thermometer size={11} /> {hotspot.tempMax.toFixed(0)}°C máx</span>}
       </p>
-      <div className="mt-4 grid grid-cols-4 gap-2 text-center"><Metric label="Críticas" value={hotspot.criticos} critical /><Metric label="Total" value={hotspot.total} /><Metric label="Concentr." value={`${(hotspot.concentracao * 100).toFixed(0)}%`} /><Metric label="RX med." value={hotspot.rxMediano?.toFixed(1) ?? '—'} /></div>
+      <div className="mt-4 grid grid-cols-5 gap-2 text-center"><Metric label="Críticas" value={hotspot.criticos} critical /><Metric label="Atenção" value={hotspot.atencao} /><Metric label="Total" value={hotspot.total} /><Metric label="Concentr." value={`${(hotspot.concentracao * 100).toFixed(0)}%`} /><Metric label="RX med." value={hotspot.rxMediano?.toFixed(1) ?? '—'} /></div>
       <div className="mt-3 h-1 overflow-hidden rounded-full bg-surface"><div className="h-full bg-sinal-critico" style={{ width: `${hotspot.concentracao * 100}%` }} /></div>
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
         {cycles && cycles.treated_count > 0
@@ -176,7 +176,7 @@ export function HotspotGrid({ hotspots, rows, onOpen, onApply, onTreat, treatmen
           onClick={event => { event.stopPropagation(); onTreat(hotspot) }}><Check size={13} /> Tratar</Button>
       </div>
     </Card>
-  }) : <div className="col-span-full flex flex-col items-center py-10 text-center text-muted"><Broadcast size={28} className="mb-2 opacity-40" /><p className="text-label">Nenhuma PON pendente atinge ≥4 críticas e ≥30% de concentração.</p></div>}</div>
+  }) : <div className="col-span-full flex flex-col items-center py-10 text-center text-muted"><Broadcast size={28} className="mb-2 opacity-40" /><p className="text-label">Nenhuma PON pendente com cliente crítico ou em atenção.</p></div>}</div>
 }
 
 export const treatedIcons = { reopen: ArrowUUpLeft }

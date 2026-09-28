@@ -45,8 +45,8 @@ function line(doc: jsPDF, text: string, x: number, y: number, opts: { size?: num
 }
 
 /** Exporta a lista de PONs tratadas (aba "PONs tratadas" do Nível de Sinal) — mesma
- *  foto do momento do OK confrontada com o CSV atual que aparece na tabela em tela. */
-export function exportPonsTratadasPDF(treated: TreatedPon[], hasCsv: boolean, filename = `pons-tratadas-${new Date().toISOString().slice(0, 10)}.pdf`): void {
+ *  foto do momento do OK cruzada com a Nova Potência de cada cliente que aparece na tabela em tela. */
+export function exportPonsTratadasPDF(treated: TreatedPon[], filename = `pons-tratadas-${new Date().toISOString().slice(0, 10)}.pdf`): void {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const now = new Date()
   const summary = treatedSummary(treated)
@@ -80,6 +80,7 @@ export function exportPonsTratadasPDF(treated: TreatedPon[], hasCsv: boolean, fi
   const resumo = [
     `${summary.total} tratada${summary.total === 1 ? '' : 's'}`,
     `${summary.aindaCriticas} ainda crítica${summary.aindaCriticas === 1 ? '' : 's'}`,
+    `${summary.emAtencao} em atenção`,
     `${summary.normalizadas} normalizada${summary.normalizadas === 1 ? '' : 's'}`,
     `${summary.potenciasPendentes} com potência pendente`,
     `${summary.reincidentes} reincidente${summary.reincidentes === 1 ? '' : 's'}`,
@@ -132,14 +133,15 @@ export function exportPonsTratadasPDF(treated: TreatedPon[], hasCsv: boolean, fi
       line(doc, 'sem clientes registrados', COLS[5].x + 2, y1, { color: MUTED, size: 6.3, maxWidth: COLS[5].w - 3 })
     }
 
-    // Situação no CSV atual
-    if (!hasCsv) {
-      line(doc, 'sem CSV carregado', COLS[6].x + 2, y1, { color: MUTED, size: 6.5, maxWidth: COLS[6].w - 3 })
-    } else if (item.aindaCritica) {
-      line(doc, 'Ainda crítica', COLS[6].x + 2, y1, { bold: true, color: RED, size: 6.8, maxWidth: COLS[6].w - 3 })
-      if (item.atual) line(doc, `${item.atual.criticos} críticas`, COLS[6].x + 2, y2, { color: RED, size: 6.3, maxWidth: COLS[6].w - 3 })
+    // Situação no CSV atual — cruza a Nova Potência (ou a de antes, sem medição) de cada cliente
+    if (item.situacao === 'sem-dados') {
+      line(doc, 'sem clientes', COLS[6].x + 2, y1, { color: MUTED, size: 6.5, maxWidth: COLS[6].w - 3 })
     } else {
-      line(doc, 'Normalizada', COLS[6].x + 2, y1, { bold: true, color: GREEN, size: 6.8, maxWidth: COLS[6].w - 3 })
+      const cor = item.situacao === 'critica' ? RED : item.situacao === 'atencao' ? ORANGE : GREEN
+      const rotulo = item.situacao === 'critica' ? 'Ainda crítica' : item.situacao === 'atencao' ? 'Em atenção' : 'Normalizada'
+      line(doc, rotulo, COLS[6].x + 2, y1, { bold: true, color: cor, size: 6.8, maxWidth: COLS[6].w - 3 })
+      const { criticos, atencao, melhorados } = item.resumoSituacao
+      line(doc, `${criticos} crít. · ${atencao} aten. · ${melhorados} melh.`, COLS[6].x + 2, y2, { color: cor, size: 6, maxWidth: COLS[6].w - 3 })
     }
 
     doc.setDrawColor(...BORDER); doc.setLineWidth(0.2)

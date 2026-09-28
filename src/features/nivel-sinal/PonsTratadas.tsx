@@ -7,13 +7,19 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
-import { medicoesProgresso, treatedSummary, type TreatedPon } from './ponTreatments'
+import { medicoesProgresso, treatedSummary, type PonSituacao, type TreatedPon } from './ponTreatments'
 import { exportPonsTratadasPDF } from './ponsTratadasPDF'
+
+const plural = (n: number, singular: string, plural: string) => n === 1 ? singular : plural
+
+const situacaoBadge: Record<Exclude<PonSituacao, 'sem-dados'>, { label: string; variant: 'red' | 'orange' | 'green' }> = {
+  critica: { label: 'Ainda crítica', variant: 'red' },
+  atencao: { label: 'Em atenção', variant: 'orange' },
+  normalizada: { label: 'Normalizada', variant: 'green' },
+}
 
 interface PonsTratadasProps {
   treated: TreatedPon[]
-  /** Sem CSV carregado não dá para dizer se a PON normalizou — só o histórico. */
-  hasCsv: boolean
   onReopen: (item: TreatedPon) => void
   /** Abre o formulário de potências da PON — dá para completar o que ficou em branco. */
   onEditMedicoes: (item: TreatedPon) => void
@@ -28,7 +34,7 @@ const formatMoment = (value: string) => {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
 
-export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKey }: PonsTratadasProps) {
+export function PonsTratadas({ treated, onReopen, onEditMedicoes, busyKey }: PonsTratadasProps) {
   const [situacao, setSituacao] = useState('')
   const [cidade, setCidade] = useState('')
   const [olt, setOlt] = useState('')
@@ -38,8 +44,9 @@ export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKe
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('pt-BR')
     return treated.filter(item => {
-      if (situacao === 'criticas' && !item.aindaCritica) return false
-      if (situacao === 'normalizadas' && item.aindaCritica) return false
+      if (situacao === 'criticas' && item.situacao !== 'critica') return false
+      if (situacao === 'atencao' && item.situacao !== 'atencao') return false
+      if (situacao === 'normalizadas' && item.situacao !== 'normalizada') return false
       if (situacao === 'reincidentes' && !item.reopened_count) return false
       if (situacao === 'potencias' && !medicoesProgresso(item).pendentes) return false
       if (cidade && item.snapshot.cidade !== cidade) return false
@@ -54,16 +61,18 @@ export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKe
   return <div className="space-y-4">
     <PageHeader title="PONs tratadas" icon={CheckCircle}
       description="PONs que saíram da pendência por confirmação manual — só voltam se você reabrir"
-      actions={<Button variant="ghost" disabled={!visible.length} onClick={() => exportPonsTratadasPDF(visible, hasCsv)}>
+      actions={<Button variant="ghost" disabled={!visible.length} onClick={() => exportPonsTratadasPDF(visible)}>
         <FilePdf size={15} /> Exportar PDF
       </Button>} />
 
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
       <StatCard palette="sinal" title="Tratadas" value={summary.total} sub="fora da fila de pendência" tone="ok" icon={CheckCircle} />
       <StatCard palette="sinal" title="Ainda críticas" value={summary.aindaCriticas} tone={summary.aindaCriticas ? 'critical' : 'neutral'} icon={WarningCircle}
-        sub={hasCsv ? 'batem o critério no CSV atual' : 'sem CSV carregado'} />
+        sub="têm cliente crítico pela Nova Potência" />
+      <StatCard palette="sinal" title="Em atenção" value={summary.emAtencao} tone={summary.emAtencao ? 'warning' : 'neutral'} icon={WarningCircle}
+        sub="sem crítico, mas com cliente em atenção" />
       <StatCard palette="sinal" title="Normalizadas" value={summary.normalizadas} tone="ok" icon={Broadcast}
-        sub={hasCsv ? 'saíram do critério no CSV atual' : 'sem CSV carregado'} />
+        sub="nenhum cliente crítico ou em atenção" />
       <StatCard palette="sinal" title="Potências pendentes" value={summary.potenciasPendentes} sub="PONs com cliente ainda sem nova medição"
         tone={summary.potenciasPendentes ? 'warning' : 'ok'} icon={WaveSine} />
       <StatCard palette="sinal" title="Reincidentes" value={summary.reincidentes} sub="já foram reabertas ao menos uma vez" tone="warning" icon={Repeat} />
@@ -79,7 +88,7 @@ export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKe
               className="h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-label text-text outline-none placeholder:text-muted focus:border-primary/50" />
           </label>
           <FilterSelect ariaLabel="Filtrar por situação" value={situacao} onChange={setSituacao} placeholder="Todas as situações"
-            options={[{ value: 'criticas', label: 'Ainda críticas' }, { value: 'normalizadas', label: 'Normalizadas' }, { value: 'reincidentes', label: 'Reincidentes' }, { value: 'potencias', label: 'Com potência pendente' }]} />
+            options={[{ value: 'criticas', label: 'Ainda críticas' }, { value: 'atencao', label: 'Em atenção' }, { value: 'normalizadas', label: 'Normalizadas' }, { value: 'reincidentes', label: 'Reincidentes' }, { value: 'potencias', label: 'Com potência pendente' }]} />
           <FilterSelect ariaLabel="Filtrar por cidade" value={cidade} onChange={value => { setCidade(value); setOlt('') }}
             placeholder="Todas as cidades" options={options(treated.map(item => item.snapshot.cidade))} />
           <FilterSelect ariaLabel="Filtrar por OLT" value={olt} onChange={setOlt} placeholder="Todas as OLTs"
@@ -94,7 +103,7 @@ export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKe
       <Card className="overflow-hidden">
         <div className="border-b border-border px-5 py-4">
           <h2 className="text-body font-semibold text-text">Histórico de tratativas por PON</h2>
-          <p className="mt-0.5 text-caption text-muted">Os números são a foto do momento do OK, confrontada com o CSV carregado agora.</p>
+          <p className="mt-0.5 text-caption text-muted">Os números são a foto do momento do OK; a situação atual cruza a Nova Potência de cada cliente (ou a de antes, para quem ainda não foi medido).</p>
         </div>
         <div className="overflow-x-auto">
           {/* min-w-max: as 8 colunas nunca se espremem e o wrapper rola. Melhor que
@@ -119,11 +128,12 @@ export function PonsTratadas({ treated, hasCsv, onReopen, onEditMedicoes, busyKe
                     ? <span className="text-caption text-sinal-atencao">{medicoesProgresso(item).pendentes} sem potência</span>
                     : <span className="text-caption text-muted">cadastro completo</span>}</>
                 : <span className="text-caption text-muted">sem clientes registrados</span>}</td>
-              <td className="px-4 py-3">{!hasCsv
-                ? <span className="text-caption text-muted">sem CSV carregado</span>
-                : item.aindaCritica
-                  ? <Badge variant="red">Ainda crítica{item.atual ? ` · ${item.atual.criticos} críticas` : ''}</Badge>
-                  : <Badge variant="green">Normalizada</Badge>}</td>
+              <td className="px-4 py-3">{item.situacao === 'sem-dados'
+                ? <span className="text-caption text-muted">sem clientes registrados</span>
+                : <><Badge variant={situacaoBadge[item.situacao].variant}>{situacaoBadge[item.situacao].label}</Badge>
+                  <span className="mt-1 block text-caption text-muted">
+                    {item.resumoSituacao.criticos} {plural(item.resumoSituacao.criticos, 'crítica', 'críticas')} · {item.resumoSituacao.atencao} atenção · {item.resumoSituacao.melhorados} {plural(item.resumoSituacao.melhorados, 'melhorada', 'melhoradas')}
+                  </span></>}</td>
               <td className="px-4 py-3"><div className="flex flex-wrap gap-2">
                 <Button variant="ghost" size="sm" disabled={busyKey === item.pon_key}
                   aria-label={`Editar potências da PON ${item.snapshot.pon} da ${item.snapshot.olt}`}

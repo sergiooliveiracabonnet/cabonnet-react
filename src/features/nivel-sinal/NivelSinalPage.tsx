@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import { Broadcast, ChartBar, CheckCircle, DownloadSimple, FileCsv, MagnifyingGlass, Radio, UploadSimple, WarningCircle, WaveSine, X } from '@phosphor-icons/react'
+import { Broadcast, ChartBar, CheckCircle, DownloadSimple, FileCsv, FilePdf, MagnifyingGlass, Radio, UploadSimple, WarningCircle, WaveSine, X } from '@phosphor-icons/react'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterSelect } from '../../components/ui/FilterSelect'
@@ -7,8 +7,9 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { TabBar } from '../../components/ui/TabBar'
 import { useOSDerived } from '../../contexts/OSDataContext'
-import { alertRows, buildHotspots, filterSignals, groupBySeverity, oltParqueRanking, parseSignalCsv, rankedCounts, signalPonKey, signalSummary, type SignalFilters, type SignalHotspot, type SignalRow, type SignalSeverity } from './nivelSinal'
+import { alertRows, buildHotspots, filterSignals, groupBySeverity, oltParqueRanking, parseSignalCsv, rankedCounts, severityBreakdown, signalPonKey, signalSummary, type SignalFilters, type SignalHotspot, type SignalRow, type SignalSeverity } from './nivelSinal'
 import { HotspotGrid, KpiAction, OLT_PARQUE_LEGENDA, OltParqueTable, Panel, RankedList, SeverityBars, SignalDetailModal, SignalHistogram, SignalTable, type DetailState } from './NivelSinalComponents'
+import { exportNivelSinalExecutivoPDF } from './nivelSinalExecutivoPDF'
 import { NivelSinalAI } from './NivelSinalAI'
 import { OcorrenciasSinal } from './OcorrenciasSinal'
 import { syncSignalOccurrences, type SignalOccurrence } from './signalOccurrenceModel'
@@ -27,6 +28,21 @@ const EMPTY_FILTERS: SignalFilters = { query: '', cidade: '', olt: '', pon: '', 
 const HOTSPOTS_PER_PAGE = 12
 
 function csvCell(value: unknown) { return `"${String(value ?? '').replace(/"/g, '""')}"` }
+
+/** Resume os filtros ativos numa linha só, para o cabeçalho do PDF executivo. */
+function describeFilters(filters: SignalFilters): string {
+  const parts: string[] = []
+  if (filters.cidade) parts.push(`Cidade: ${filters.cidade}`)
+  if (filters.olt) parts.push(`OLT: ${filters.olt}`)
+  if (filters.pon) parts.push(`PON: ${filters.pon}`)
+  if (filters.slot) parts.push(`Slot: ${filters.slot}`)
+  if (filters.tipo) parts.push(`Fabricante: ${filters.tipo}`)
+  if (filters.situacao) parts.push(`Situação: ${filters.situacao}`)
+  if (filters.severities?.length) parts.push(filters.severities.join(', '))
+  if (filters.offline) parts.push('Offline c/ alerta RX')
+  if (filters.hotspotsOnly) parts.push('Só hotspots')
+  return parts.length ? parts.join(' · ') : 'Panorama completo das cinco cidades atendidas'
+}
 
 /** Formulário de potências aberto: tratar fecha a PON junto, editar só o cadastro. */
 interface MedicaoTarget {
@@ -198,6 +214,18 @@ export default function NivelSinalPage() {
     const link = document.createElement('a'); link.href = url; link.download = `nivel-sinal-${new Date().toISOString().slice(0, 10)}.csv`; link.click(); URL.revokeObjectURL(url)
   }
 
+  // Relatório de apresentação — mesmo recorte de filtros da tela, para levar à diretoria.
+  function exportExecutivo() {
+    exportNivelSinalExecutivoPDF({
+      filterLabel: describeFilters(filters),
+      totalOnus: parqueRows.length, sinalBom: sinalBomRows.length,
+      criticos: summary.criticos, atencao: summary.atencao, offline: summary.offline,
+      hotspots: matchingHotspots, treatedCount: treatedPons.length,
+      porCidade: severityBreakdown(filtered, row => row.cidade),
+      porOlt: severityBreakdown(filtered, row => row.olt),
+    })
+  }
+
   // sinal-cores: paleta própria de bom/atenção/crítico, só nesta página (index.css).
   return <div className="sinal-cores space-y-4 animate-fade-in">
     <TabBar tabs={[
@@ -206,7 +234,7 @@ export default function NivelSinalPage() {
       { id: 'ocorrencias', label: 'Controle de ocorrências', icon: WarningCircle },
       { id: 'comparativo', label: 'OS × Sinal', icon: ChartBar },
     ]} active={activeTab} onChange={setActiveTab} />
-    {activeTab === 'tratadas' ? <PonsTratadas treated={treatedPons} hasCsv={rows.length > 0} onReopen={reopenPon} onEditMedicoes={openEditarMedicoes} busyKey={busyPon} />
+    {activeTab === 'tratadas' ? <PonsTratadas treated={treatedPons} onReopen={reopenPon} onEditMedicoes={openEditarMedicoes} busyKey={busyPon} />
     : activeTab === 'comparativo' ? <ComparativoOSSinal osRows={osRows} signalRows={rows} hasCsv={rows.length > 0} />
     : activeTab === 'ocorrencias' ? <OcorrenciasSinal occurrences={occurrences} onChange={async updated => {
       const changed = updated.find(item => occurrences.find(previous => previous.id === item.id) !== item)
@@ -221,7 +249,7 @@ export default function NivelSinalPage() {
       }
     }} /> : <>
     <PageHeader title="Nível de Sinal" description="Supervisão óptica das ONUs nas cinco cidades atendidas" icon={WaveSine}
-      titleExtra={fileName && <span className="text-caption font-normal text-muted">{fileName}</span>} actions={<><input ref={fileRef} className="hidden" type="file" accept=".csv,text/csv" onChange={handleFile} />{rows.length > 0 && <Button variant="ghost" onClick={exportFiltered}><DownloadSimple size={15} /> Exportar filtro</Button>}<Button onClick={() => fileRef.current?.click()}><UploadSimple size={15} /> {rows.length ? 'Trocar CSV' : 'Carregar CSV'}</Button></>} />
+      titleExtra={fileName && <span className="text-caption font-normal text-muted">{fileName}</span>} actions={<><input ref={fileRef} className="hidden" type="file" accept=".csv,text/csv" onChange={handleFile} />{rows.length > 0 && <Button variant="ghost" onClick={exportExecutivo}><FilePdf size={15} /> Relatório para diretoria</Button>}{rows.length > 0 && <Button variant="ghost" onClick={exportFiltered}><DownloadSimple size={15} /> Exportar filtro</Button>}<Button onClick={() => fileRef.current?.click()}><UploadSimple size={15} /> {rows.length ? 'Trocar CSV' : 'Carregar CSV'}</Button></>} />
 
     {error && <div role="alert" className="flex items-center gap-3 rounded-xl border border-sinal-critico/30 bg-sinal-critico/[0.07] px-4 py-3 text-label text-sinal-critico"><WarningCircle size={17} /><span className="flex-1">{error}</span><button aria-label="Fechar aviso" onClick={() => setError('')}><X size={15} /></button></div>}
     {importResult && <div role="status" className="rounded-xl border border-primary/25 bg-primary/[0.07] px-4 py-3 text-label text-secondary"><strong className="text-primary">Importação concluída:</strong> {importResult}</div>}
@@ -266,7 +294,7 @@ export default function NivelSinalPage() {
       </Panel>
       <div className="grid gap-4 xl:grid-cols-[1.25fr_.75fr]"><Panel title="Distribuição por cidade" hint="crítico / atenção"><SeverityBars groups={groupBySeverity(filtered, row => row.cidade, 8)} label="Cidade" onOpen={setDetail} /></Panel><Panel title="Causa / status"><RankedList items={rankedCounts(filtered, row => row.status.toLocaleLowerCase('pt-BR') !== 'online' ? `⚠ ${row.status}` : row.causa !== '—' ? row.causa : 'sem causa reportada', 6)} label="Causa/status" onOpen={setDetail} /></Panel></div>
       <Panel title="Hotspots de PON — prioridade de campo" hint={`${matchingHotspots.length} PON${matchingHotspots.length === 1 ? '' : 's'} priorizada${matchingHotspots.length === 1 ? '' : 's'}`}>
-        <p className="mb-4 text-caption text-muted">PONs ordenadas da maior para a menor quantidade de ONUs críticas. Ao marcar “Tratada” a PON sai desta fila e vai para a aba PONs tratadas.</p>
+        <p className="mb-4 text-caption text-muted">Toda PON com cliente crítico ou em atenção entra aqui, ordenada da maior para a menor quantidade de ONUs críticas. Ao marcar “Tratada” a PON sai desta fila e vai para a aba PONs tratadas.</p>
         <HotspotGrid hotspots={visibleHotspots} rows={filtered} onOpen={setDetail} onApply={applyHotspot} onTreat={openTratar} treatments={treatmentMap} busyKey={busyPon} />
         {matchingHotspots.length > HOTSPOTS_PER_PAGE && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 text-caption text-muted">
           <span>{hotspotPage * HOTSPOTS_PER_PAGE + 1}–{Math.min(matchingHotspots.length, (hotspotPage + 1) * HOTSPOTS_PER_PAGE)} de {matchingHotspots.length} PONs</span>

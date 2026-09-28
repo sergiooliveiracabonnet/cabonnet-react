@@ -1,4 +1,4 @@
-import type { SignalHotspot } from './nivelSinal'
+import { severityFromRx, type SignalHotspot } from './nivelSinal'
 import type { PonMedicao } from './ponMedicoes'
 
 export type PonTreatmentAction = 'tratada' | 'reaberta'
@@ -31,10 +31,44 @@ export interface PonTreatment {
   medicoes: PonMedicao[]
 }
 
+/** Situação de uma PON tratada, cruzando a Nova Potência de cada cliente. */
+export type PonSituacao = 'critica' | 'atencao' | 'normalizada' | 'sem-dados'
+
+export interface PonSituacaoResumo {
+  criticos: number
+  atencao: number
+  melhorados: number
+}
+
 export interface TreatedPon extends PonTreatment {
-  /** A PON ainda bate o critério de hotspot no CSV carregado agora? */
+  /** Sobra pelo menos 1 cliente crítico pela Nova Potência (ou pela de antes,
+   *  enquanto ninguém mediu)? Não é mais o recálculo de hotspot do CSV inteiro. */
   aindaCritica: boolean
+  situacao: PonSituacao
+  resumoSituacao: PonSituacaoResumo
   atual: SignalHotspot | null
+}
+
+/** Situação de um cliente: usa a Nova Potência já medida; sem medição ainda,
+ *  cai na potência de antes — a PON não "melhora" sozinha por falta de medir. */
+export function medicaoSituacao(medicao: Pick<PonMedicao, 'rx_antes' | 'rx_depois'>) {
+  return severityFromRx(medicao.rx_depois ?? medicao.rx_antes)
+}
+
+/**
+ * Cruza a Nova Potência (coluna do formulário de tratativa) e o Resultado de
+ * cada cliente da PON — é isso que decide a "Situação no CSV atual" da aba
+ * PONs tratadas, não um recálculo de hotspot sobre o CSV inteiro.
+ */
+export function medicoesSituacao(item: Pick<PonTreatment, 'medicoes'>): PonSituacaoResumo {
+  const resumo = { criticos: 0, atencao: 0, melhorados: 0 }
+  for (const medicao of item.medicoes ?? []) {
+    const nivel = medicaoSituacao(medicao)
+    if (nivel === 'Crítico') resumo.criticos++
+    else if (nivel === 'Atenção') resumo.atencao++
+    else if (nivel === 'Normal') resumo.melhorados++
+  }
+  return resumo
 }
 
 export function snapshotFromHotspot(hotspot: SignalHotspot): PonTreatmentSnapshot {
@@ -67,14 +101,19 @@ export function splitHotspots(hotspots: SignalHotspot[], treated: Set<string>) {
 }
 
 /**
- * Lista da aba "PONs tratadas", cruzada com o CSV carregado: mostra quais
- * tratativas não pegaram sem reabrir nada sozinho.
+ * Lista da aba "PONs tratadas", cruzada com a Nova Potência de cada cliente:
+ * mostra quais tratativas não pegaram, sem reabrir nada sozinho.
  */
 export function buildTreatedPons(items: PonTreatment[], hotspots: SignalHotspot[]): TreatedPon[] {
   const current = new Map(hotspots.map(hotspot => [hotspot.key, hotspot]))
   return items
     .filter(item => item.action === 'tratada')
-    .map(item => ({ ...item, aindaCritica: current.has(item.pon_key), atual: current.get(item.pon_key) ?? null }))
+    .map(item => {
+      const resumoSituacao = medicoesSituacao(item)
+      const situacao: PonSituacao = !item.medicoes?.length ? 'sem-dados'
+        : resumoSituacao.criticos > 0 ? 'critica' : resumoSituacao.atencao > 0 ? 'atencao' : 'normalizada'
+      return { ...item, aindaCritica: situacao === 'critica', situacao, resumoSituacao, atual: current.get(item.pon_key) ?? null }
+    })
     .sort((a, b) =>
       Number(b.aindaCritica) - Number(a.aindaCritica)
       || b.reopened_count - a.reopened_count
@@ -91,8 +130,10 @@ export function medicoesProgresso(item: Pick<PonTreatment, 'medicoes'>) {
 export function treatedSummary(treated: TreatedPon[]) {
   return {
     total: treated.length,
-    aindaCriticas: treated.filter(item => item.aindaCritica).length,
-    normalizadas: treated.filter(item => !item.aindaCritica).length,
+    aindaCriticas: treated.filter(item => item.situacao === 'critica').length,
+    emAtencao: treated.filter(item => item.situacao === 'atencao').length,
+    normalizadas: treated.filter(item => item.situacao === 'normalizada').length,
+    semDados: treated.filter(item => item.situacao === 'sem-dados').length,
     reincidentes: treated.filter(item => item.reopened_count > 0).length,
     potenciasPendentes: treated.filter(item => medicoesProgresso(item).pendentes > 0).length,
   }

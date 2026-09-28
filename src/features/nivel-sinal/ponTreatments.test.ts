@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { buildTreatedPons, medicoesProgresso, snapshotFromHotspot, splitHotspots, treatedPonKeys, treatedSummary, treatmentsByKey, type PonTreatment } from './ponTreatments'
+import { buildTreatedPons, medicoesProgresso, medicoesSituacao, snapshotFromHotspot, splitHotspots, treatedPonKeys, treatedSummary, treatmentsByKey, type PonTreatment } from './ponTreatments'
 import type { SignalHotspot } from './nivelSinal'
+import type { PonMedicao } from './ponMedicoes'
 
 const hotspot = (overrides: Partial<SignalHotspot> = {}): SignalHotspot => ({
   key: 'OLT TBT · 1/2', olt: 'OLT TBT', pon: '1/2', cidade: 'Taubaté', bairro: 'Centro',
-  total: 10, criticos: 6, concentracao: 0.6, rxMediano: -28.4, piorRx: -31.2, tempMax: 48,
+  total: 10, criticos: 6, atencao: 2, concentracao: 0.6, rxMediano: -28.4, piorRx: -31.2, tempMax: 48,
   nivel: 'medio', score: 3.6,
   ...overrides,
+})
+
+let seq = 0
+const medicao = (rx_depois: number | null, rx_antes: number | null = -29): PonMedicao => ({
+  onu_key: `m${seq++}`, cliente: 'Cliente', onu: '1', serial: 's', codigo: '1', rx_antes, rx_depois, observacao: '',
 })
 
 const treatment = (overrides: Partial<PonTreatment> = {}): PonTreatment => ({
@@ -51,21 +57,46 @@ describe('splitHotspots', () => {
   })
 })
 
+describe('medicoesSituacao', () => {
+  it('classifica pela Nova Potência e cai na de antes para quem ainda não foi medido', () => {
+    const resumo = medicoesSituacao({ medicoes: [medicao(-28), medicao(-26), medicao(-22), medicao(null, -30)] })
+    expect(resumo).toEqual({ criticos: 2, atencao: 1, melhorados: 1 })
+  })
+})
+
 describe('buildTreatedPons', () => {
-  it('confronta a tratativa com o CSV carregado sem reabrir nada', () => {
-    const [ainda] = buildTreatedPons([treatment()], [hotspot({ criticos: 9 })])
+  it('cruza a tratativa com a Nova Potência de cada cliente, não com o recálculo de hotspot do CSV inteiro', () => {
+    const [ainda] = buildTreatedPons([treatment({ medicoes: [medicao(-28), medicao(null, -30)] })], [hotspot({ criticos: 9 })])
 
     expect(ainda.aindaCritica).toBe(true)
+    expect(ainda.situacao).toBe('critica')
+    expect(ainda.resumoSituacao).toEqual({ criticos: 2, atencao: 0, melhorados: 0 })
     expect(ainda.atual?.criticos).toBe(9)
     expect(ainda.snapshot.criticos).toBe(6)
     expect(ainda.action).toBe('tratada')
   })
 
-  it('marca como normalizada a PON que saiu do critério de hotspot', () => {
-    const [normalizada] = buildTreatedPons([treatment()], [])
+  it('marca "atencao" quando não sobra crítico mas tem cliente em atenção', () => {
+    const [item] = buildTreatedPons([treatment({ medicoes: [medicao(-26), medicao(-22)] })], [])
+
+    expect(item.aindaCritica).toBe(false)
+    expect(item.situacao).toBe('atencao')
+    expect(item.resumoSituacao).toEqual({ criticos: 0, atencao: 1, melhorados: 1 })
+  })
+
+  it('marca como normalizada a PON sem cliente crítico ou em atenção pela Nova Potência', () => {
+    const [normalizada] = buildTreatedPons([treatment({ medicoes: [medicao(-22)] })], [])
 
     expect(normalizada.aindaCritica).toBe(false)
+    expect(normalizada.situacao).toBe('normalizada')
     expect(normalizada.atual).toBeNull()
+  })
+
+  it('marca "sem-dados" a PON tratada sem nenhum cliente registrado', () => {
+    const [semDados] = buildTreatedPons([treatment({ medicoes: [] })], [])
+
+    expect(semDados.situacao).toBe('sem-dados')
+    expect(semDados.aindaCritica).toBe(false)
   })
 
   it('ignora PONs cujo último evento foi reabertura', () => {
@@ -74,30 +105,32 @@ describe('buildTreatedPons', () => {
   })
 
   it('põe as que continuam críticas no topo, depois as reincidentes', () => {
-    const critica = treatment({ pon_key: 'OLT TBT · 9/9' })
+    const critica = treatment({ pon_key: 'OLT TBT · 9/9', medicoes: [medicao(-28)] })
     const reincidente = treatment({ pon_key: 'OLT TBT · 5/5', treated_count: 2, reopened_count: 1 })
     const calma = treatment({ pon_key: 'OLT TBT · 1/1', created_at: '2026-08-01 10:00:00' })
 
-    const ordered = buildTreatedPons([calma, reincidente, critica], [hotspot({ key: 'OLT TBT · 9/9' })])
+    const ordered = buildTreatedPons([calma, reincidente, critica], [])
 
     expect(ordered.map(item => item.pon_key)).toEqual(['OLT TBT · 9/9', 'OLT TBT · 5/5', 'OLT TBT · 1/1'])
   })
 })
 
 describe('treatedSummary', () => {
-  it('conta pendência residual e reincidência', () => {
-    const treated = buildTreatedPons(
-      [treatment(), treatment({ pon_key: 'OLT TBT · 5/5', treated_count: 2, reopened_count: 1 })],
-      [hotspot()],
-    )
+  it('conta críticas, em atenção, normalizadas e reincidência', () => {
+    const treated = buildTreatedPons([
+      treatment({ medicoes: [medicao(-28)] }),
+      treatment({ pon_key: 'OLT TBT · 5/5', treated_count: 2, reopened_count: 1, medicoes: [medicao(-26)] }),
+      treatment({ pon_key: 'OLT TBT · 7/7', medicoes: [medicao(-22)] }),
+    ], [])
 
-    expect(treatedSummary(treated)).toEqual({ total: 2, aindaCriticas: 1, normalizadas: 1, reincidentes: 1, potenciasPendentes: 0 })
+    expect(treatedSummary(treated)).toEqual({
+      total: 3, aindaCriticas: 1, emAtencao: 1, normalizadas: 1, semDados: 0, reincidentes: 1, potenciasPendentes: 0,
+    })
   })
 
   it('acusa a PON que ficou com cliente sem nova potência', () => {
-    const medicao = (rx: number | null) => ({ onu_key: `k${rx}`, cliente: 'Cliente', onu: '1', serial: 's', codigo: '1', rx_antes: -29, rx_depois: rx, observacao: '' })
     const treated = buildTreatedPons([
-      treatment({ medicoes: [medicao(-22), medicao(null)] }),
+      treatment({ medicoes: [medicao(-22), medicao(null, -29)] }),
       treatment({ pon_key: 'OLT TBT · 5/5', medicoes: [medicao(-21)] }),
     ], [])
 

@@ -135,12 +135,13 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
     expect(screen.getByText('1 de 4 medidas')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Marcar PON como tratada' }))
 
-    await waitFor(() => expect(screen.getByText(/Nenhuma PON pendente atinge/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Nenhuma PON pendente com cliente/)).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('tab', { name: 'PONs tratadas (1)' }))
     expect(screen.getByRole('heading', { name: 'PONs tratadas' })).toBeInTheDocument()
-    // O CSV carregado ainda acusa a PON: a tratativa sai da fila mas fica sinalizada.
-    expect(screen.getByText('Ainda crítica · 4 críticas', { selector: 'span' })).toBeInTheDocument()
+    // Só o Cliente 0 foi medido (Normal); os outros 3 seguem críticos pela potência de antes.
+    expect(screen.getByText('Ainda crítica', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.getByText('3 críticas · 0 atenção · 1 melhorada')).toBeInTheDocument()
     expect(screen.getByText('1/4 medidas')).toBeInTheDocument()
     expect(screen.getByText('3 sem potência')).toBeInTheDocument()
 
@@ -151,6 +152,8 @@ Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5
     fireEvent.click(screen.getByRole('button', { name: 'Salvar potências' }))
 
     expect(await screen.findByText('2/4 medidas')).toBeInTheDocument()
+    // Cliente 1 normalizou; ainda sobram 2 clientes críticos sem medição.
+    expect(screen.getByText('2 críticas · 0 atenção · 2 melhoradas')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reabrir PON 1/2 da OLT TBT' })).toBeInTheDocument()
   })
 

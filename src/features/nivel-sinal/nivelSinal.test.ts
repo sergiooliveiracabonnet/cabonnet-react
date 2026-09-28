@@ -25,6 +25,24 @@ describe('parseSignalCsv', () => {
     expect(buildHotspots(rows)[0]).toMatchObject({ criticos: 8, total: 10, concentracao: 0.8, nivel: 'alto' })
   })
 
+  it('inclui toda PON com cliente crítico ou em atenção, mesmo abaixo do limiar de risco alto/médio', () => {
+    const base = parseSignalCsv(csv)[0]
+    const poucosCriticos = [{ ...base, pon: '7/6', onu: '1', classificacao: 'Crítico' as SignalSeverity }]
+    const soAtencao = [{ ...base, pon: '7/7', onu: '1', classificacao: 'Atenção' as SignalSeverity }]
+
+    const hotspots = buildHotspots([...poucosCriticos, ...soAtencao])
+
+    expect(hotspots.find(item => item.pon === '7/6')).toMatchObject({ criticos: 1, nivel: 'baixo' })
+    expect(hotspots.find(item => item.pon === '7/7')).toMatchObject({ criticos: 0, nivel: 'baixo' })
+  })
+
+  it('não considera hotspot a PON sem nenhum cliente crítico ou em atenção', () => {
+    const base = parseSignalCsv(csv)[0]
+    const soNormal = [{ ...base, pon: '9/1', onu: '1', classificacao: 'Normal' as SignalSeverity }]
+
+    expect(buildHotspots(soNormal)).toEqual([])
+  })
+
   it('prioriza hotspots pela maior quantidade absoluta de casos críticos', () => {
     const base = parseSignalCsv(csv)[0]
     const maiorVolume = Array.from({ length: 30 }, (_, index) => ({
