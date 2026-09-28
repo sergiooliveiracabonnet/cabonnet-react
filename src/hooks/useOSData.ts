@@ -50,6 +50,15 @@ export function useOSData() {
     initialDataUpdatedAt: () => persistLoad(dataScope)?.ts,
   })
 
+  // /query só manda cache_age_min quando o Grafana falhou e serviu backup (SQLite/
+  // PostgreSQL ou memória expirada) — cache_age_sec é o cache saudável de rotina
+  // (< 4 min) e não deve virar alerta.
+  const staleInfo = useMemo(() => {
+    const raw = data as { cache_age_min?: number; cached_source?: string } | undefined
+    if (raw?.cache_age_min == null) return { isStale: false, staleAgeMin: null as number | null, staleSource: null as string | null }
+    return { isStale: true, staleAgeMin: raw.cache_age_min, staleSource: raw.cached_source ?? null }
+  }, [data])
+
   const { allRows, discardedLixo, duplicadosLixo } = useMemo(() => {
     if (!data) return { allRows: [], discardedLixo: 0, duplicadosLixo: 0 }
     const pendente = parseCSV((data as Record<string, string>).pendente || '')
@@ -87,5 +96,5 @@ export function useOSData() {
     return applyDateFilter(allRows, { ...dateFilter, from: prevFrom, to: prevTo })
   }, [allRows, dateFilter])
 
-  return { rows, allRows, prevRows, discardedLixo, duplicadosLixo, isLoading, error, dataUpdatedAt }
+  return { rows, allRows, prevRows, discardedLixo, duplicadosLixo, isLoading, error, dataUpdatedAt, ...staleInfo }
 }

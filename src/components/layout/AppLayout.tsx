@@ -27,6 +27,43 @@ const BUILDER_LABELS: Record<string, string> = {
   ordens:     'Lista de ordens',
 }
 
+const STALE_SOURCE_LABEL: Record<string, string> = { sqlite: 'backup local (SQLite)', postgresql: 'backup PostgreSQL' }
+
+function formatStaleAge(min: number): string {
+  if (min < 60) return `${min} min`
+  if (min < 60 * 24) return `${Math.round(min / 60)} h`
+  return `${Math.round(min / (60 * 24))} dias`
+}
+
+function StaleDataBanner() {
+  const { isStale, staleAgeMin, staleSource } = useOSDerived()
+  const [dismissed, setDismissed] = useState(false)
+
+  if (!isStale || dismissed) return null
+
+  return (
+    <div className="fixed inset-x-0 top-[7.5rem] z-[490] flex justify-center px-3 md:top-[6.5rem]">
+      <div role="alert" className="mt-2 flex w-full max-w-2xl items-start gap-2.5 rounded-xl border border-red/30 bg-elevated px-4 py-3 shadow-lg shadow-black/30">
+        <Warning size={15} className="mt-0.5 flex-shrink-0 text-red" />
+        <div className="min-w-0 flex-1">
+          <p className="text-label font-semibold text-text leading-snug">Dados desatualizados — Grafana indisponível</p>
+          <p className="mt-0.5 text-caption text-muted">
+            Mostrando a última cópia salva{staleSource ? ` (${STALE_SOURCE_LABEL[staleSource] ?? staleSource})` : ''},
+            de {staleAgeMin != null ? formatStaleAge(staleAgeMin) : '—'} atrás. Os números podem não refletir o estado atual das OS.
+          </p>
+        </div>
+        <button
+          onClick={() => setDismissed(true)}
+          aria-label="Fechar aviso"
+          className="flex-shrink-0 text-muted hover:text-text transition-colors"
+        >
+          <X size={13} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function BuilderErrorBanner() {
   const { builderErrors } = useOSDerived()
   const [dismissed, setDismissed] = useState<string[]>([])
@@ -71,6 +108,7 @@ export function AppLayout() {
   return (
     <OSDataProvider>
       <FilterURLSync />
+      <StaleDataBanner />
       <BuilderErrorBanner />
       <PicoAlertaModal />
       <div className="app-shell min-h-screen max-w-full overflow-x-clip bg-bg text-text">

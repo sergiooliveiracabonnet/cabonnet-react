@@ -174,6 +174,11 @@ interface OSDataContextValue {
   error:         unknown
   dataUpdatedAt: number
   builderErrors: string[]
+  /** O Grafana falhou e o /query serviu backup (SQLite/PostgreSQL/memória expirada) —
+   *  os dados exibidos não são o estado atual das OS. */
+  isStale:       boolean
+  staleAgeMin:   number | null
+  staleSource:   string | null
   derived:       Derived
 }
 
@@ -181,7 +186,7 @@ const Ctx = createContext<OSDataContextValue | null>(null)
 
 export function OSDataProvider({ children }: { children: ReactNode }) {
   useServerEvents()  // push SSE → invalida ['os-query'] automaticamente
-  const { rows, allRows, prevRows, discardedLixo, duplicadosLixo, isLoading, error, dataUpdatedAt } = useOSData()
+  const { rows, allRows, prevRows, discardedLixo, duplicadosLixo, isLoading, error, dataUpdatedAt, isStale, staleAgeMin, staleSource } = useOSData()
   const { revisitaRows: allRevisitaRows } = useRevisitasData()
   const { hideRede, cluster, dateFilter } = useUIStore()
 
@@ -259,8 +264,9 @@ export function OSDataProvider({ children }: { children: ReactNode }) {
     error,
     dataUpdatedAt,
     builderErrors,
+    isStale, staleAgeMin, staleSource,
     derived: { dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, churn, revisitas, ordens, fila },
-  }), [activeRows, activeAllRows, activePrev, isLoading, error, dataUpdatedAt, builderErrors,
+  }), [activeRows, activeAllRows, activePrev, isLoading, error, dataUpdatedAt, builderErrors, isStale, staleAgeMin, staleSource,
        dashboard, sla, graficos, auditoria, anomalias, cidades, campo, coorte, capacidade, churn, revisitas, ordens, fila])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
@@ -270,7 +276,7 @@ export function useOSDerived(): OSDataContextValue {
   const ctx = useContext(Ctx)
   if (!ctx) {
     console.warn('[useOSDerived] usado fora do OSDataProvider — retornando defaults')
-    return { rows: [], allRows: [], prevRows: [], isLoading: true, error: null, dataUpdatedAt: 0, builderErrors: [], derived: EMPTY_DERIVED }
+    return { rows: [], allRows: [], prevRows: [], isLoading: true, error: null, dataUpdatedAt: 0, builderErrors: [], isStale: false, staleAgeMin: null, staleSource: null, derived: EMPTY_DERIVED }
   }
   return ctx
 }
