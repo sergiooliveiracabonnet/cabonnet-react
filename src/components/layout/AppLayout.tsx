@@ -42,8 +42,8 @@ function StaleDataBanner() {
   if (!isStale || dismissed) return null
 
   return (
-    <div className="fixed inset-x-0 top-[7.5rem] z-[490] flex justify-center px-3 md:top-[6.5rem]">
-      <div role="alert" className="mt-2 flex w-full max-w-2xl items-start gap-2.5 rounded-xl border border-red/30 bg-elevated px-4 py-3 shadow-lg shadow-black/30">
+    <div className="fixed inset-x-0 top-28 z-header flex justify-center px-3 md:top-24">
+      <div role="alert" className="mt-4 flex w-full max-w-2xl items-start gap-2.5 rounded-xl border border-red/30 bg-elevated px-4 py-3 shadow-lg shadow-black/30">
         <Warning size={15} className="mt-0.5 flex-shrink-0 text-red" />
         <div className="min-w-0 flex-1">
           <p className="text-label font-semibold text-text leading-snug">Dados desatualizados — Grafana indisponível</p>
