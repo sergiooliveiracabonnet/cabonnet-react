@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { enrichRows } from '../transform'
-import { buildChurn, buildInstallChurn } from './churn'
+import { buildChurn, buildInstallChurn, buildManutencaoRevisitaChurn } from './churn'
 import type { OSRow } from '../types'
 
 const HOJE = new Date(2026, 6, 29, 12, 0, 0)
@@ -140,14 +140,19 @@ describe('buildChurn — troca de cabeamento', () => {
   })
 })
 
+/** OS de "ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS" — único gatilho de revisita de instalação. */
+function primeiraConexao(codigo: string, quando: number, extra: Record<string, unknown> = {}): OSRow {
+  return manut(codigo, quando, { servico: 'ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS', ...extra })
+}
+
 describe('buildInstallChurn', () => {
-  it('conta como revisita qualquer OS dentro de 30 dias após a instalação', () => {
-    const rows = enrichRows([inst('A', 40), manut('A', 20)]) // instalação há 40d, retorno 20d depois
+  it("conta como revisita a OS 'ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS' aberta em até 30 dias após a instalação", () => {
+    const rows = enrichRows([inst('A', 40), primeiraConexao('A', 20)]) // instalação há 40d, retorno 20d depois
     const { clientes, totalReincidentes, totalBase } = buildInstallChurn(rows, 12, HOJE)
     expect(totalBase).toBe(1)
     expect(totalReincidentes).toBe(1)
     expect(clientes[0].chave).toBe('A')
-    expect(clientes[0].rows.map(r => r.numos)).toEqual(expect.arrayContaining([inst('A', 40).numos, manut('A', 20).numos]))
+    expect(clientes[0].rows.map(r => r.numos)).toEqual(expect.arrayContaining([inst('A', 40).numos, primeiraConexao('A', 20).numos]))
   })
 
   it('ignora instalação sem nenhuma OS seguinte', () => {
@@ -157,17 +162,22 @@ describe('buildInstallChurn', () => {
   })
 
   it('não conta OS depois de 30 dias da instalação', () => {
-    const rows = enrichRows([inst('C', 40), manut('C', 5)]) // retorno 35 dias depois da instalação
+    const rows = enrichRows([inst('C', 40), primeiraConexao('C', 5)]) // retorno 35 dias depois da instalação
     expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(0)
   })
 
   it('não conta OS anterior à instalação como revisita dela', () => {
-    const rows = enrichRows([manut('D', 45), inst('D', 40)]) // atendimento antes da instalação
+    const rows = enrichRows([primeiraConexao('D', 45), inst('D', 40)]) // atendimento antes da instalação
     expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(0)
   })
 
-  it('conta outra instalação como revisita — o tipo da OS seguinte não importa', () => {
-    const rows = enrichRows([inst('E', 40), inst('E', 30)])
+  it('não conta outra OS dentro de 30 dias se o serviço não for PRIMEIRA CONEXAO', () => {
+    const rows = enrichRows([inst('E', 40), manut('E', 20)]) // atendimento comum, não é o serviço de pós-venda
+    expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(0)
+  })
+
+  it('conta outra instalação como revisita se o serviço dela for PRIMEIRA CONEXAO — o tipo da OS não importa', () => {
+    const rows = enrichRows([inst('E2', 40), inst('E2', 30, { servico: 'ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS' })])
     expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(1)
   })
 
@@ -192,6 +202,69 @@ describe('buildInstallChurn', () => {
     const rows = enrichRows([inst('F', 90), manut('F', 70)])
     const { totalReincidentes, totalBase } = buildInstallChurn(rows, 12, HOJE)
     expect(totalBase).toBe(0)
+    expect(totalReincidentes).toBe(0)
+  })
+})
+
+/** VT concluída, com controle independente de execução e abertura (dias atrás de cada uma). */
+function vt(codigo: string, execDias: number, aberturaDias: number, extra: Record<string, unknown> = {}): OSRow {
+  return {
+    numos: `${codigo}${execDias}`.padStart(7, '6'),
+    nomecliente: `Cliente ${codigo}`, codigocliente: codigo,
+    nomedacidade: 'TAUBATE', bairro: 'CENTRO',
+    nomedaequipe: 'MANUTENCAO M01', tiposervico: 'MANUTENCAO', servico: 'ASSISTENCIA - VT 24H',
+    descsituacao: 'Concluída',
+    datacadastro: diasAtras(aberturaDias), dataagendamento: null,
+    dataexecucao: diasAtras(execDias), databaixa: diasAtras(execDias),
+    ...extra,
+  } as unknown as OSRow
+}
+
+describe('buildManutencaoRevisitaChurn', () => {
+  it('conta como revisita uma VT aberta em até 30 dias após a execução da OS anterior', () => {
+    const anterior = manut('V', 40)       // execução 40d atrás
+    const atual    = vt('V', 20, 25)      // execução 20d atrás, aberta 25d atrás → 15 dias depois da execução anterior
+    const { clientes, totalReincidentes, totalBase } = buildManutencaoRevisitaChurn(enrichRows([anterior, atual]), 12, HOJE)
+    expect(totalBase).toBe(1)
+    expect(totalReincidentes).toBe(1)
+    expect(clientes[0].chave).toBe('V')
+    expect(clientes[0].rows.map(r => r.numos)).toEqual(expect.arrayContaining([anterior.numos, atual.numos]))
+  })
+
+  it('não conta se a OS seguinte não for VT', () => {
+    const anterior = manut('W', 40)
+    const atual    = manut('W', 20, { datacadastro: diasAtras(25) })
+    expect(buildManutencaoRevisitaChurn(enrichRows([anterior, atual]), 12, HOJE).totalReincidentes).toBe(0)
+  })
+
+  it('não conta se a VT for aberta mais de 30 dias depois da execução anterior', () => {
+    const anterior = manut('X', 40)
+    const atual    = vt('X', 5, 5) // abertura 5d atrás → 35 dias depois da execução anterior (40d atrás)
+    expect(buildManutencaoRevisitaChurn(enrichRows([anterior, atual]), 12, HOJE).totalReincidentes).toBe(0)
+  })
+
+  it('conta mesmo quando a OS anterior é uma instalação — o tipo da OS anterior não importa', () => {
+    const anterior = inst('Y', 40)
+    const atual    = vt('Y', 20, 25)
+    expect(buildManutencaoRevisitaChurn(enrichRows([anterior, atual]), 12, HOJE).totalReincidentes).toBe(1)
+  })
+
+  it('ignora troca de cabeamento como origem da revisita', () => {
+    const cabo  = manut('Z', 40, { servico: 'TROCAR CABEAMENTO' })
+    const atual = vt('Z', 20, 25)
+    expect(buildManutencaoRevisitaChurn(enrichRows([cabo, atual]), 12, HOJE).totalReincidentes).toBe(0)
+  })
+
+  it('ignora VT fora da janela de 60 dias', () => {
+    const anterior = manut('Q', 100)
+    const atual    = vt('Q', 80, 85) // execução 80d atrás, fora da janela padrão de 60 dias
+    expect(buildManutencaoRevisitaChurn(enrichRows([anterior, atual]), 12, HOJE).totalReincidentes).toBe(0)
+  })
+
+  it('base conta clientes com qualquer execução na janela, não só quem virou revisita', () => {
+    const rows = enrichRows([manut('R1', 10), manut('R2', 45)])
+    const { totalBase, totalReincidentes } = buildManutencaoRevisitaChurn(rows, 12, HOJE)
+    expect(totalBase).toBe(2)
     expect(totalReincidentes).toBe(0)
   })
 })

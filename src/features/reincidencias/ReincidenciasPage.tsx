@@ -4,7 +4,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { TabBar } from '../../components/ui/TabBar'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useUIStore } from '../../store/uiStore'
-import { buildChurn, buildInstallChurn } from '../../lib/builders/churn'
+import { buildInstallChurn, buildManutencaoRevisitaChurn } from '../../lib/builders/churn'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { aiPairKey, useAIReincidencias } from '../../hooks/useAIReincidencias'
 import { useReincidenciaDetails } from '../../hooks/useReincidenciaDetails'
@@ -23,8 +23,8 @@ const ABA_CONFIG: Record<AbaRevisita, {
 }> = {
   manutencao: {
     label: 'Revisita de manutenção', tipoBase: 'MANUTENCAO', reportType: 'Relatório de Reincidências — Manutenção',
-    descricaoJanela: dias => `Manutenções repetidas nos últimos ${dias} dias`,
-    kpiOrdens: 'manutenções concluídas', kpiIntervalo: 'entre atendimentos',
+    descricaoJanela: dias => `VTs com retorno em até 30 dias da OS anterior, nos últimos ${dias} dias`,
+    kpiOrdens: 'OS envolvidas na revisita', kpiIntervalo: 'até o retorno',
   },
   instalacao: {
     label: 'Revisita de instalação', tipoBase: 'INSTALACAO', reportType: 'Relatório de Reincidências — Instalação',
@@ -45,7 +45,7 @@ export default function ReincidenciasPage() {
   const cfg = ABA_CONFIG[aba]
   const range = useMemo(() => (dateFilter.from && dateFilter.to ? { from: dateFilter.from, to: dateFilter.to } : null), [dateFilter.from, dateFilter.to])
   const churn = useMemo(
-    () => (aba === 'instalacao' ? buildInstallChurn : buildChurn)(allRows, Number.POSITIVE_INFINITY, new Date(), range),
+    () => (aba === 'instalacao' ? buildInstallChurn : buildManutencaoRevisitaChurn)(allRows, Number.POSITIVE_INFINITY, new Date(), range),
     [allRows, range, aba],
   )
   const reportOSNumbers = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => r.numos)))], [churn.clientes])
