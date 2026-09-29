@@ -29,39 +29,14 @@ describe('NivelSinalPage', () => {
     }))
   })
 
-  it('mantém a análise como aba principal e abre o controle de ocorrências', () => {
+  it('mantém a análise como aba principal e só oferece Análise e PONs tratadas', () => {
     renderPage()
 
     expect(screen.getByRole('tab', { name: 'Análise de sinal' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByText('Carregue o relatório de sinais das ONUs')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Controle de ocorrências' }))
-
-    expect(screen.getByRole('tab', { name: 'Controle de ocorrências' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('heading', { name: 'Controle de Ocorrências de Sinal' })).toBeInTheDocument()
-    expect(screen.getByText(/criadas automaticamente a partir do CSV/i)).toBeInTheDocument()
-  })
-
-  it('começa sem ocorrências e cria uma ocorrência automaticamente pelo CSV', async () => {
-    const { container } = renderPage()
-    fireEvent.click(screen.getByRole('tab', { name: 'Controle de ocorrências' }))
-    expect(screen.getByText('Nenhuma ocorrência registrada.')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Análise de sinal' }))
-    const csv = `Cidade;Bairro;OLT;Slot;PON;ONU ID;Cliente;Código;Serial;Status;Classificação;RX dBm
-Taubaté;Centro;OLT TBT;1;1/2;7;Cliente Teste;12345;ABC123;Online;Crítico;-29,5`
-    fireEvent.change(container.querySelector('input[type="file"]') as HTMLInputElement, { target: { files: [new File([csv], 'sinais.csv', { type: 'text/csv' })] } })
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Controle de ocorrências' }))
-    expect(await screen.findByText('Cliente Teste')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: /registrar tratativa de cliente teste/i }))
-    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'Concluído' } })
-    fireEvent.change(screen.getByLabelText('Tratativa realizada'), { target: { value: 'Conector substituído' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar tratativa' }))
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Salvar tratativa' })).not.toBeInTheDocument())
-
-    fireEvent.change(screen.getByLabelText('Filtrar por status'), { target: { value: 'Concluído' } })
-    expect(screen.getByText('Cliente Teste')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'PONs tratadas' })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Controle de ocorrências' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'OS × Sinal' })).not.toBeInTheDocument()
   })
 
   it('usa a estrutura nativa do projeto sem documento incorporado', () => {

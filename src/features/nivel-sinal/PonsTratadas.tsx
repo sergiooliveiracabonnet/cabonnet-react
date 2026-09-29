@@ -8,6 +8,7 @@ import { FilterSelect } from '../../components/ui/FilterSelect'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { medicoesProgresso, treatedSummary, type PonSituacao, type TreatedPon } from './ponTreatments'
+import { PonsEfetividade } from './PonsEfetividade'
 import { exportPonsTratadasPDF } from './ponsTratadasPDF'
 
 const plural = (n: number, singular: string, plural: string) => n === 1 ? singular : plural
@@ -61,9 +62,16 @@ export function PonsTratadas({ treated, onReopen, onEditMedicoes, busyKey }: Pon
   return <div className="space-y-4">
     <PageHeader title="PONs tratadas" icon={CheckCircle}
       description="PONs que saíram da pendência por confirmação manual — só voltam se você reabrir"
-      actions={<Button variant="ghost" disabled={!visible.length} onClick={() => exportPonsTratadasPDF(visible)}>
-        <FilePdf size={15} /> Exportar PDF
-      </Button>} />
+      actions={<>
+        <Button variant="ghost" disabled={!visible.length} onClick={() => exportPonsTratadasPDF(visible, 'resumido')}
+          title="Uma linha por PON, em paisagem">
+          <FilePdf size={15} /> PDF resumido
+        </Button>
+        <Button variant="ghost" disabled={!visible.length} onClick={() => exportPonsTratadasPDF(visible, 'detalhado')}
+          title="Todos os clientes de cada PON e o gráfico antes × depois da manutenção">
+          <FilePdf size={15} /> PDF detalhado
+        </Button>
+      </>} />
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
       <StatCard palette="sinal" title="Tratadas" value={summary.total} sub="fora da fila de pendência" tone="ok" icon={CheckCircle} />
@@ -99,6 +107,8 @@ export function PonsTratadas({ treated, onReopen, onEditMedicoes, busyKey }: Pon
           {hasFilters && <Button variant="ghost" size="sm" onClick={() => { setSituacao(''); setCidade(''); setOlt(''); setQuery('') }}><X size={13} /> Limpar filtros</Button>}
         </div>
       </Card>
+
+      <PonsEfetividade treated={visible} />
 
       <Card className="overflow-hidden">
         <div className="border-b border-border px-5 py-4">

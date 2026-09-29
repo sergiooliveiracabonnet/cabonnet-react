@@ -1,20 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import { Broadcast, ChartBar, CheckCircle, DownloadSimple, FileCsv, FilePdf, MagnifyingGlass, Radio, UploadSimple, WarningCircle, WaveSine, X } from '@phosphor-icons/react'
+import { Broadcast, CheckCircle, DownloadSimple, FileCsv, FilePdf, MagnifyingGlass, Radio, UploadSimple, WarningCircle, WaveSine, X } from '@phosphor-icons/react'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterSelect } from '../../components/ui/FilterSelect'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { TabBar } from '../../components/ui/TabBar'
-import { useOSDerived } from '../../contexts/OSDataContext'
 import { alertRows, buildHotspots, filterSignals, groupBySeverity, oltParqueRanking, parseSignalCsv, rankedCounts, severityBreakdown, signalPonKey, signalSummary, type SignalFilters, type SignalHotspot, type SignalRow, type SignalSeverity } from './nivelSinal'
 import { HotspotGrid, KpiAction, OLT_PARQUE_LEGENDA, OltParqueTable, Panel, RankedList, SeverityBars, SignalDetailModal, SignalHistogram, SignalTable, type DetailState } from './NivelSinalComponents'
 import { exportNivelSinalExecutivoPDF } from './nivelSinalExecutivoPDF'
 import { NivelSinalAI } from './NivelSinalAI'
-import { OcorrenciasSinal } from './OcorrenciasSinal'
 import { syncSignalOccurrences, type SignalOccurrence } from './signalOccurrenceModel'
 import { PonsTratadas } from './PonsTratadas'
-import { ComparativoOSSinal } from './ComparativoOSSinal'
 import { PonMedicoesModal } from './PonMedicoesModal'
 import { buildMedicaoDrafts, type MedicaoDraft, type PonMedicao } from './ponMedicoes'
 import { buildTreatedPons, snapshotFromHotspot, splitHotspots, treatedPonKeys, treatmentsByKey, type PonTreatment, type TreatedPon } from './ponTreatments'
@@ -61,7 +58,6 @@ export default function NivelSinalPage() {
   const { occurrences, treatments, allRows, fileName, loadError, queryClient } = useNivelSinalData()
   // Lado OS do comparativo "OS × Sinal" — respeita o mesmo filtro de data/cluster
   // usado no resto do dashboard, via OSDataContext.
-  const { rows: osRows } = useOSDerived()
   const [importResult, setImportResult] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const [busyPon, setBusyPon] = useState('')
@@ -231,23 +227,9 @@ export default function NivelSinalPage() {
     <TabBar tabs={[
       { id: 'analise', label: 'Análise de sinal', icon: WaveSine },
       { id: 'tratadas', label: `PONs tratadas${treatedPons.length ? ` (${treatedPons.length})` : ''}`, icon: CheckCircle },
-      { id: 'ocorrencias', label: 'Controle de ocorrências', icon: WarningCircle },
-      { id: 'comparativo', label: 'OS × Sinal', icon: ChartBar },
     ]} active={activeTab} onChange={setActiveTab} />
     {activeTab === 'tratadas' ? <PonsTratadas treated={treatedPons} onReopen={reopenPon} onEditMedicoes={openEditarMedicoes} busyKey={busyPon} />
-    : activeTab === 'comparativo' ? <ComparativoOSSinal osRows={osRows} signalRows={rows} hasCsv={rows.length > 0} />
-    : activeTab === 'ocorrencias' ? <OcorrenciasSinal occurrences={occurrences} onChange={async updated => {
-      const changed = updated.find(item => occurrences.find(previous => previous.id === item.id) !== item)
-      if (!changed) return
-      try {
-        const saved = await signalOccurrencesApi.update<SignalOccurrence>(changed)
-        queryClient.setQueryData(NIVEL_SINAL_KEYS.ocorrencias, { ok: true, items: saved.items })
-        setError('')
-      } catch (cause) {
-        setError('Não foi possível salvar a tratativa no banco de dados.')
-        throw cause
-      }
-    }} /> : <>
+    : <>
     <PageHeader title="Nível de Sinal" description="Supervisão óptica das ONUs nas cinco cidades atendidas" icon={WaveSine}
       titleExtra={fileName && <span className="text-caption font-normal text-muted">{fileName}</span>} actions={<><input ref={fileRef} className="hidden" type="file" accept=".csv,text/csv" onChange={handleFile} />{rows.length > 0 && <Button variant="ghost" onClick={exportExecutivo}><FilePdf size={15} /> Relatório para diretoria</Button>}{rows.length > 0 && <Button variant="ghost" onClick={exportFiltered}><DownloadSimple size={15} /> Exportar filtro</Button>}<Button onClick={() => fileRef.current?.click()}><UploadSimple size={15} /> {rows.length ? 'Trocar CSV' : 'Carregar CSV'}</Button></>} />
 

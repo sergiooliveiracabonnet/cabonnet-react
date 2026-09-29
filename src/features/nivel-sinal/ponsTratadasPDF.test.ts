@@ -88,4 +88,36 @@ describe('exportPonsTratadasPDF', () => {
     expect(posicao('Nenhuma PON tratada no filtro atual.')).toBeGreaterThanOrEqual(0)
     expect(posicao('PON / OLT')).toBe(-1)
   })
+
+  describe('detalhado', () => {
+    const medidos = pon({
+      medicoes: [
+        { onu_key: 'a', cliente: 'Maria Silva', onu: '1', serial: 'SN1', codigo: '10', rx_antes: -30, rx_depois: -21, observacao: '' },
+        { onu_key: 'b', cliente: 'João Souza', onu: '2', serial: 'SN2', codigo: '11', rx_antes: -28, rx_depois: -26, observacao: '' },
+        { onu_key: 'c', cliente: 'Sem Depois', onu: '3', serial: 'SN3', codigo: '12', rx_antes: -29, rx_depois: null, observacao: '' },
+        { onu_key: 'd', cliente: 'Sem Antes', onu: '4', serial: 'SN4', codigo: '13', rx_antes: null, rx_depois: -20, observacao: '' },
+      ],
+    })
+
+    it('lista os clientes medidos e descarta ONU sem potência', () => {
+      exportPonsTratadasPDF([medidos], 'detalhado')
+      expect(posicao('Maria Silva')).toBeGreaterThanOrEqual(0)
+      expect(posicao('João Souza')).toBeGreaterThanOrEqual(0)
+      expect(posicao('Sem Depois')).toBe(-1)
+      expect(posicao('Sem Antes')).toBe(-1)
+    })
+
+    it('mostra o antes e o depois da manutenção e o ganho', () => {
+      exportPonsTratadasPDF([medidos], 'detalhado')
+      expect(posicao('Antes da manutenção')).toBeGreaterThanOrEqual(0)
+      expect(posicao('Após a manutenção')).toBeGreaterThanOrEqual(0)
+      expect(posicao('+9,0 dB')).toBeGreaterThanOrEqual(0)
+      expect(posicao('-30,00')).toBeGreaterThanOrEqual(0)
+    })
+
+    it('avisa quando nenhuma PON tem cliente medido', () => {
+      exportPonsTratadasPDF([pon()], 'detalhado')
+      expect(posicao('Nenhuma PON tratada tem cliente com potência medida.')).toBeGreaterThanOrEqual(0)
+    })
+  })
 })
