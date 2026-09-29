@@ -3,7 +3,7 @@ import { drawPDFHeader } from '../../lib/pdfBrand'
 import { truncateTextToWidth } from '../../lib/pdfTableLayout'
 import { clientesMedidos, efetividadeResumo } from './ponEfetividade'
 import { severityFromRx } from './nivelSinal'
-import { medicoesProgresso, treatedSummary, type TreatedPon } from './ponTreatments'
+import { medicoesProgresso, type TreatedPon } from './ponTreatments'
 
 type RGB = readonly [number, number, number]
 
@@ -18,17 +18,8 @@ const ORANGE: RGB = [154, 52,  18]
 // Paisagem A4.
 const PW = 297, ML = 12, MR = 12
 const CW = PW - ML - MR
-const ROW_H = 15
 const RODAPE_Y = 203
 const FIM_CONTEUDO = 196
-
-// Larguras somam CW (273mm) — mesma ordem de colunas da tabela em tela.
-const COL_DEFS = [
-  { w: 35, h: 'PON / OLT' }, { w: 37, h: 'Cidade / bairro' }, { w: 55, h: 'No momento do OK' },
-  { w: 39, h: 'Tratada em' }, { w: 31, h: 'Ciclos' }, { w: 37, h: 'Potências' }, { w: 39, h: 'Situação atual' },
-]
-const COLS = COL_DEFS.reduce<{ x: number; w: number; h: string }[]>((acc, col) =>
-  [...acc, { x: acc.length ? acc[acc.length - 1].x + acc[acc.length - 1].w : ML, ...col }], [])
 
 const formatMoment = (value: string) => {
   const parsed = new Date(value.replace(' ', 'T'))
@@ -50,7 +41,7 @@ export type ModoPonsTratadasPDF = 'resumido' | 'detalhado'
 
 const hoje = () => new Date().toISOString().slice(0, 10)
 
-/** Resumido: uma linha por PON (igual à tabela em tela). Detalhado: cada PON com todos os
+/** Resumido: por PON, só os detalhes e o gráfico antes/depois. Detalhado: cada PON com todos os
  *  clientes medidos e o gráfico de como era antes e como ficou depois da manutenção. */
 export function exportPonsTratadasPDF(treated: TreatedPon[], modo: ModoPonsTratadasPDF = 'resumido',
   filename = `pons-tratadas-${modo}-${hoje()}.pdf`): void {
@@ -61,43 +52,18 @@ export function exportPonsTratadasPDF(treated: TreatedPon[], modo: ModoPonsTrata
 function exportResumido(treated: TreatedPon[], filename: string): void {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const now = new Date()
-  const summary = treatedSummary(treated)
   let page = 1
   let y = 0
 
-  const addHeader = () => {
-    y = drawPDFHeader(doc, { reportType: 'Nível de Sinal — PONs Tratadas', pageWidth: PW, margin: ML, generatedAt: now }) + 4
-  }
   const footer = () => {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...MUTED)
     doc.text(`Página ${page}`, PW - MR, RODAPE_Y, { align: 'right' })
   }
-  const newPage = () => { footer(); doc.addPage(); page++; addHeader(); tableHeader() }
-  const ensure = (altura: number = ROW_H) => { if (y + altura > FIM_CONTEUDO) newPage() }
-
-  function tableHeader() {
-    doc.setDrawColor(...BORDER); doc.setLineWidth(0.25)
-    doc.rect(ML, y, CW, 7, 'S')
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(6.8); doc.setTextColor(...TEXT)
-    COLS.forEach(c => doc.text(c.h, c.x + 2, y + 4.8))
-    y += 7
+  const addHeader = () => {
+    y = drawPDFHeader(doc, { reportType: 'Nível de Sinal — PONs Tratadas', pageWidth: PW, margin: ML, generatedAt: now }) + 4
   }
 
   addHeader()
-
-  // Resumo — mesmos números dos StatCards da tela.
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(...TEXT)
-  doc.text('PONs tratadas', ML, y); y += 6
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...SUB)
-  const resumo = [
-    `${summary.total} tratada${summary.total === 1 ? '' : 's'}`,
-    `${summary.aindaCriticas} ainda crítica${summary.aindaCriticas === 1 ? '' : 's'}`,
-    `${summary.emAtencao} em atenção`,
-    `${summary.normalizadas} normalizada${summary.normalizadas === 1 ? '' : 's'}`,
-    `${summary.potenciasPendentes} com potência pendente`,
-    `${summary.reincidentes} reincidente${summary.reincidentes === 1 ? '' : 's'}`,
-  ].join('  ·  ')
-  doc.text(resumo, ML, y); y += 8
 
   if (!treated.length) {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...MUTED)
@@ -106,59 +72,37 @@ function exportResumido(treated: TreatedPon[], filename: string): void {
     return
   }
 
-  tableHeader()
+  treated.forEach(item => {
+    if (y + 8 + CHART_H + 6 > FIM_CONTEUDO) { footer(); doc.addPage(); page++; addHeader() }
+    drawPonHeader(doc, y, item, false)
+    y += 8
 
-  treated.forEach((item, index) => {
-    ensure(ROW_H)
-    if (index % 2 === 0) { doc.setFillColor(249, 250, 251); doc.rect(ML, y, CW, ROW_H, 'F') }
+    const topo = y + 2
+    const clientes = clientesMedidos(item)
+    const contar = (pick: (c: typeof clientes[number]) => number) =>
+      NIVEIS.map(nivel => clientes.filter(c => severityFromRx(pick(c)) === nivel.nome).length)
+    if (clientes.length) drawChart(doc, ML + 4, topo, 120, contar(c => c.rx_antes), contar(c => c.rx_depois))
+    else line(doc, 'Sem clientes com potência de antes e depois medidas.', ML + 4, topo + 8, { size: 7.5, color: MUTED })
 
-    const y1 = y + 5, y2 = y + 10.5
-
-    // PON / OLT
-    line(doc, item.snapshot.pon, COLS[0].x + 2, y1, { bold: true, size: 7.5, maxWidth: COLS[0].w - 3 })
-    line(doc, item.snapshot.olt, COLS[0].x + 2, y2, { color: MUTED, size: 6.3, maxWidth: COLS[0].w - 3 })
-
-    // Cidade / bairro
-    line(doc, item.snapshot.cidade || '—', COLS[1].x + 2, y1, { size: 7, maxWidth: COLS[1].w - 3 })
-    line(doc, item.snapshot.bairro || '—', COLS[1].x + 2, y2, { color: MUTED, size: 6.3, maxWidth: COLS[1].w - 3 })
-
-    // No momento do OK
-    const rx = item.snapshot.rxMediano?.toFixed(1) ?? '—'
-    const temp = item.snapshot.tempMax != null ? ` · ${item.snapshot.tempMax.toFixed(0)}°C máx` : ''
-    line(doc, `${item.snapshot.criticos} críticas de ${item.snapshot.total} · ${(item.snapshot.concentracao * 100).toFixed(0)}%`, COLS[2].x + 2, y1, { size: 6.8, maxWidth: COLS[2].w - 3 })
-    line(doc, `RX med. ${rx}${temp}`, COLS[2].x + 2, y2, { color: MUTED, size: 6.3, maxWidth: COLS[2].w - 3 })
-
-    // Tratada em
-    line(doc, formatMoment(item.created_at), COLS[3].x + 2, y1, { size: 7, maxWidth: COLS[3].w - 3 })
-    line(doc, item.created_by || 'sem usuário', COLS[3].x + 2, y2, { color: MUTED, size: 6.3, maxWidth: COLS[3].w - 3 })
-
-    // Ciclos
-    line(doc, `${item.treated_count}× tratada`, COLS[4].x + 2, y1, { size: 6.8, maxWidth: COLS[4].w - 3 })
-    if (item.reopened_count) line(doc, `${item.reopened_count}× reaberta`, COLS[4].x + 2, y2, { color: ORANGE, size: 6.3, maxWidth: COLS[4].w - 3 })
-
-    // Potências
+    const snap = item.snapshot
     const prog = medicoesProgresso(item)
-    if (prog.total) {
-      line(doc, `${prog.preenchidas}/${prog.total} medidas`, COLS[5].x + 2, y1, { size: 6.8, maxWidth: COLS[5].w - 3 })
-      line(doc, prog.pendentes ? `${prog.pendentes} sem potência` : 'cadastro completo', COLS[5].x + 2, y2, { color: prog.pendentes ? ORANGE : MUTED, size: 6.3, maxWidth: COLS[5].w - 3 })
-    } else {
-      line(doc, 'sem clientes registrados', COLS[5].x + 2, y1, { color: MUTED, size: 6.3, maxWidth: COLS[5].w - 3 })
-    }
-
-    // Situação no CSV atual — cruza a Nova Potência (ou a de antes, sem medição) de cada cliente
-    if (item.situacao === 'sem-dados') {
-      line(doc, 'sem clientes', COLS[6].x + 2, y1, { color: MUTED, size: 6.5, maxWidth: COLS[6].w - 3 })
-    } else {
-      const cor = item.situacao === 'critica' ? RED : item.situacao === 'atencao' ? ORANGE : GREEN
-      const rotulo = item.situacao === 'critica' ? 'Ainda crítica' : item.situacao === 'atencao' ? 'Em atenção' : 'Normalizada'
-      line(doc, rotulo, COLS[6].x + 2, y1, { bold: true, color: cor, size: 6.8, maxWidth: COLS[6].w - 3 })
-      const { criticos, atencao, melhorados } = item.resumoSituacao
-      line(doc, `${criticos} crít. · ${atencao} aten. · ${melhorados} melh.`, COLS[6].x + 2, y2, { color: cor, size: 6, maxWidth: COLS[6].w - 3 })
-    }
-
-    doc.setDrawColor(...BORDER); doc.setLineWidth(0.2)
-    doc.line(ML, y + ROW_H, ML + CW, y + ROW_H)
-    y += ROW_H
+    const rotulo = item.situacao === 'sem-dados' ? 'Sem clientes' : item.situacao === 'critica' ? 'Ainda crítica' : item.situacao === 'atencao' ? 'Em atenção' : 'Normalizada'
+    const corSituacao = item.situacao === 'critica' ? RED : item.situacao === 'atencao' ? ORANGE : item.situacao === 'normalizada' ? GREEN : MUTED
+    const ganhoMedio = clientes.length ? clientes.reduce((sum, c) => sum + c.ganho, 0) / clientes.length : null
+    const detalhes: [string, string, RGB][] = [
+      ['No momento do OK', `${snap.criticos} críticas de ${snap.total} · ${(snap.concentracao * 100).toFixed(0)}%`, TEXT],
+      ['RX mediano', `${snap.rxMediano?.toFixed(1) ?? '—'} dBm${snap.tempMax != null ? ` · ${snap.tempMax.toFixed(0)}°C máx` : ''}`, TEXT],
+      ['Ciclos', `${item.treated_count}× tratada${item.reopened_count ? ` · ${item.reopened_count}× reaberta` : ''}`, item.reopened_count ? ORANGE : TEXT],
+      ['Potências', prog.total ? `${prog.preenchidas}/${prog.total} medidas` : 'sem clientes registrados', prog.pendentes ? ORANGE : TEXT],
+      ['Ganho médio', ganhoMedio == null ? '—' : fmtGanho(ganhoMedio), ganhoMedio == null ? MUTED : ganhoMedio > 0 ? GREEN : RED],
+      ['Situação atual', rotulo, corSituacao],
+    ]
+    detalhes.forEach(([nome, valor, cor], i) => {
+      const iy = topo + 6 + i * 5.2
+      line(doc, nome, ML + 140, iy, { size: 7.5, color: MUTED })
+      line(doc, valor, ML + 182, iy, { size: 8, bold: true, color: cor, maxWidth: 80 })
+    })
+    y += CHART_H + 6
   })
 
   footer()
@@ -190,6 +134,37 @@ const fmtDb = (v: number) => v.toFixed(2).replace('.', ',')
 const fmtGanho = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1).replace('.', ',')} dB`
 const corNivel = (nivel: string): RGB => nivel === 'Crítico' ? RED : nivel === 'Atenção' ? ORANGE : GREEN
 
+/** Barras horizontais de nível antes × depois da manutenção, na mesma escala. */
+function drawChart(doc: jsPDF, x: number, top: number, w: number, antes: number[], depois: number[]) {
+  const total = Math.max(1, antes.reduce((a, b) => a + b, 0))
+  const gap = 10, clusterW = (w - gap) / 2, labelW = 14, valueW = 8
+  const barMax = clusterW - labelW - valueW
+  const rowH = 6.6, barH = 4.4
+  const clusters = [
+    { titulo: 'Antes da manutenção', dados: antes, ox: x },
+    { titulo: 'Após a manutenção', dados: depois, ox: x + clusterW + gap },
+  ]
+  clusters.forEach(({ titulo, dados, ox }) => {
+    line(doc, titulo, ox, top + 3, { bold: true, size: 7.5, color: SUB })
+    dados.forEach((valor, i) => {
+      const ry = top + 7 + i * rowH
+      const bw = valor ? Math.max(0.8, (valor / total) * barMax) : 0
+      line(doc, NIVEIS[i].nome, ox, ry + 3.3, { size: 6.5, color: MUTED })
+      if (bw > 0) { doc.setFillColor(...NIVEIS[i].cor); doc.rect(ox + labelW, ry, bw, barH, 'F') }
+      line(doc, String(valor), ox + labelW + bw + 1.5, ry + 3.3, { bold: true, size: 7.5 })
+    })
+    doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
+    doc.line(ox + labelW, top + 6, ox + labelW, top + 7 + NIVEIS.length * rowH - 1)
+  })
+}
+
+function drawPonHeader(doc: jsPDF, y: number, item: TreatedPon, continuacao: boolean) {
+  doc.setFillColor(229, 231, 235); doc.rect(ML, y, CW, 8, 'F')
+  line(doc, `PON ${item.snapshot.pon} · ${item.snapshot.olt}${continuacao ? ' (continuação)' : ''}`, ML + 3, y + 5.4, { bold: true, size: 9.5, maxWidth: 100 })
+  line(doc, `${item.snapshot.cidade || '—'} · ${item.snapshot.bairro || '—'}  |  tratada em ${formatMoment(item.created_at)} por ${item.created_by || 'sem usuário'}`,
+    ML + 105, y + 5.4, { size: 7.5, color: SUB, maxWidth: CW - 108 })
+}
+
 function exportDetalhado(treated: TreatedPon[], filename: string): void {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const now = new Date()
@@ -210,30 +185,6 @@ function exportDetalhado(treated: TreatedPon[], filename: string): void {
     doc.setDrawColor(...BORDER); doc.setLineWidth(0.25); doc.rect(ML, y, CW, 6, 'S')
     DET_COLS.forEach((col, i) => line(doc, col.h, DET_X[i] + 2, y + 4.2, { bold: true, size: 6.8 }))
     y += 6
-  }
-
-  /** Barras de nível antes × depois da manutenção, na mesma escala. */
-  const drawChart = (x: number, top: number, w: number, antes: number[], depois: number[]) => {
-    const total = Math.max(1, antes.reduce((a, b) => a + b, 0))
-    const barsTop = top + 4, barsH = 20
-    const clusterW = (w - 8) / 2
-    const clusters = [
-      { titulo: 'Antes da manutenção', dados: antes, ox: x },
-      { titulo: 'Após a manutenção', dados: depois, ox: x + clusterW + 8 },
-    ]
-    clusters.forEach(({ titulo, dados, ox }) => {
-      const slot = clusterW / 3, barW = slot - 6
-      dados.forEach((valor, i) => {
-        const h = valor ? Math.max(0.8, (valor / total) * barsH) : 0
-        const bx = ox + i * slot + 3
-        doc.setFillColor(...NIVEIS[i].cor)
-        if (h > 0) doc.rect(bx, barsTop + barsH - h, barW, h, 'F')
-        line(doc, String(valor), bx + barW / 2 - String(valor).length * 0.9, barsTop + barsH - h - 1.2, { bold: true, size: 7.5 })
-        line(doc, NIVEIS[i].nome, bx + barW / 2 - NIVEIS[i].nome.length * 0.8, barsTop + barsH + 3.6, { size: 6, color: MUTED })
-      })
-      doc.setDrawColor(...BORDER); doc.setLineWidth(0.3); doc.line(ox, barsTop + barsH, ox + clusterW, barsTop + barsH)
-      line(doc, titulo, ox + clusterW / 2 - titulo.length * 1.05, barsTop + barsH + 8.4, { bold: true, size: 7.5, color: SUB })
-    })
   }
 
   addHeader()
@@ -277,18 +228,12 @@ function exportDetalhado(treated: TreatedPon[], filename: string): void {
 
     if (y + 8 + CHART_H + 4 + 6 + DET_ROW * 2 > FIM_CONTEUDO) newPage()
 
-    const cabecalhoPon = (continuacao: boolean) => {
-      doc.setFillColor(229, 231, 235); doc.rect(ML, y, CW, 8, 'F')
-      line(doc, `PON ${item.snapshot.pon} · ${item.snapshot.olt}${continuacao ? ' (continuação)' : ''}`, ML + 3, y + 5.4, { bold: true, size: 9.5, maxWidth: 100 })
-      line(doc, `${item.snapshot.cidade || '—'} · ${item.snapshot.bairro || '—'}  |  tratada em ${formatMoment(item.created_at)} por ${item.created_by || 'sem usuário'}`,
-        ML + 105, y + 5.4, { size: 7.5, color: SUB, maxWidth: CW - 108 })
-      y += 8
-    }
+    const cabecalhoPon = (continuacao: boolean) => { drawPonHeader(doc, y, item, continuacao); y += 8 }
     cabecalhoPon(false)
 
     // Gráfico à esquerda, indicadores à direita.
     const topo = y + 2
-    drawChart(ML + 4, topo, 120, antes, depois)
+    drawChart(doc, ML + 4, topo, 120, antes, depois)
     const kx = ML + 140
     const indicadores: [string, string, RGB][] = [
       ['Clientes medidos', String(clientes.length), TEXT],

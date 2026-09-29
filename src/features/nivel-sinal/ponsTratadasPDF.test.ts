@@ -51,11 +51,11 @@ const posicao = (trecho: string) => textos.findIndex(t => t.includes(trecho))
 beforeEach(() => { textos.length = 0; fontSizeAtual = 7 })
 
 describe('exportPonsTratadasPDF', () => {
-  it('mostra o resumo antes da tabela e os dados da PON na linha', () => {
+  it('mostra só os detalhes da PON, sem a tabela de resumo', () => {
     exportPonsTratadasPDF([pon()])
-    expect(posicao('PONs tratadas')).toBeGreaterThanOrEqual(0)
-    expect(posicao('1 tratada')).toBeLessThan(posicao('PON / OLT'))
-    expect(posicao('3/10')).toBeGreaterThan(posicao('PON / OLT'))
+    expect(posicao('Ciclos')).toBeGreaterThanOrEqual(0)
+    expect(posicao('3/10')).toBeGreaterThanOrEqual(0)
+    expect(posicao('PON / OLT')).toBe(-1)
   })
 
   it('marca "Ainda crítica" quando sobra cliente crítico pela Nova Potência', () => {
