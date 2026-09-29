@@ -21,10 +21,15 @@ export const MODULO_ROTA: Record<string, string> = {
   erp_ranking:       '/erp/ranking',
 }
 
+// Rotas que herdam a permissão de um módulo existente (sem módulo próprio no backend).
+const ROTA_ALIAS: Record<string, string> = {
+  '/qualidade': 'dashboard',
+}
+
 export function moduloParaRota(chave: string): string | undefined {
   return MODULO_ROTA[chave]
 }
 
 export function rotaParaModulo(rota: string): string | undefined {
-  return Object.entries(MODULO_ROTA).find(([, r]) => r === rota)?.[0]
+  return ROTA_ALIAS[rota] ?? Object.entries(MODULO_ROTA).find(([, r]) => r === rota)?.[0]
 }

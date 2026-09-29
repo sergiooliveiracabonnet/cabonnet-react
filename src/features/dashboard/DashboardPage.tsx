@@ -14,20 +14,18 @@ import OSDrawer from '../ordens/OSDrawer'
 import { PulsoHero } from './PulsoHero'
 import { DashboardCommandCenter } from './DashboardCommandCenter'
 import { FluxoOSPanel } from './FluxoOSPanel'
-import { filterRowsByEquipe, filterRowsByFornecedor } from './DashboardDrilldowns'
+import { filterRowsByEquipe } from './DashboardDrilldowns'
 import { AnomaliaSection } from './AnomaliaSection'
 import { StatCard, accentToTone } from '../../components/ui/StatCard'
 import { SectionLabel } from './DashboardKpiPrimitives'
 import { ExecutadasHeroBlock } from './DashboardHeroBlock'
 import {
-  MetaMesCard, ClustersBairroPanel, AgingPanel,
+  ClustersBairroPanel, AgingPanel,
   RitmoEquipesPanel, MudancasStrip,
-  ParetoServicoPanel, FornecedoresPanel, QualidadePeriodoCard,
+  ParetoServicoPanel,
 } from './DashboardPaineis'
 import { KpiModalTable } from './DashboardKpiModal'
-import { CoortePanel } from './CoortePanel'
 import { CidadesPanel } from './CidadesPanel'
-import { ChurnPanel } from './ChurnPanel'
 import { DashboardInvestigation } from './DashboardInvestigation'
 import {
   KPI_ICONS, KPI_FILTERS, ALLROWS_KPIS, FOCO_NAVEGAVEL,
@@ -35,10 +33,9 @@ import {
 } from './DashboardTypes'
 
 export default function DashboardPage() {
-  const { derived: { dashboard, anomalias, campo, graficos, revisitas, coorte, capacidade, churn }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
+  const { derived: { dashboard, anomalias, campo, graficos, capacidade }, rows, allRows, isLoading, error, builderErrors = [] } = useOSDerived()
   const { kpis, fornecedores, pulso, mudancas, projecaoRisco } = dashboard as unknown as TypedDashboard
   const projecaoHoje = campo.projecao as unknown as CampoProjecaoReal | null
-  const taxaRevisitas = (revisitas as { taxa?: { geral?: number } } | null)?.taxa?.geral ?? null
   const { clustersAtivos = [] } = pulso
   const [aiEnabled, setAiEnabled] = useState(false)
   const [observacao, setObservacao] = useState('')
@@ -85,13 +82,6 @@ export default function DashboardPage() {
     setModal({
       title: `Equipe ${equipe} — OS do período`,
       rows: filterRowsByEquipe(rows, equipe),
-    })
-  }
-
-  function openFornecedor(fornecedor: string) {
-    setModal({
-      title: `Fornecedor ${fornecedor} — OS do período`,
-      rows: filterRowsByFornecedor(rows, fornecedor),
     })
   }
 
@@ -303,24 +293,6 @@ export default function DashboardPage() {
                             onOpen={(title, filtered) => setModal({ title, rows: filtered })}
                             onOpenReport={temModulo('cidades') ? () => navigate('/cidades') : undefined} />
               <ParetoServicoPanel filaAtiva={filaAtiva} onOpen={(title, filtered) => setModal({ title, rows: filtered })} />
-            </div>
-          )}
-          quality={(
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <CoortePanel buckets={coorte.buckets} linhas={coorte.linhas} />
-              <ChurnPanel
-                janelaDias={churn.janelaDias}
-                clientes={churn.clientes}
-                totalReincidentes={churn.totalReincidentes}
-                totalBase={churn.totalBase}
-                pctReincidencia={churn.pctReincidencia}
-                onOpen={(title, filtered) => setModal({ title, rows: filtered })}
-                onOpenReport={() => navigate('/relatorio-reincidencias')}
-              />
-              <MetaMesCard meta={pulso.metaMes} />
-              <FornecedoresPanel fornecedores={fornecedores} onOpen={openFornecedor}
-                                 onOpenReport={temModulo('fornecedor') ? () => navigate('/fornecedor') : undefined} />
-              <QualidadePeriodoCard pulso={pulso} taxaRevisitas={taxaRevisitas} />
             </div>
           )}
         />

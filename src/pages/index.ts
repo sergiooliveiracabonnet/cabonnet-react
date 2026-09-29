@@ -20,4 +20,5 @@ export const FechamentoPage = lazy(() => import('../features/fechamento/Fechamen
 export const MapaPage      = lazy(() => import('../features/mapa/MapaPage'))
 export const GerencialPage = lazy(() => import('../features/gerencial/GerencialPage'))
 export const ClientePage = lazy(() => import('../features/cliente/ClientePage'))
-export const ReincidenciasPage = lazy(() => import('../features/reincidencias/ReincidenciasPage'))
+export const QualidadeTendenciaPage = lazy(() => import('../features/qualidade/QualidadeTendenciaPage'))
+export const ReincidenciasPage =lazy(() => import('../features/reincidencias/ReincidenciasPage'))

@@ -1,24 +1,22 @@
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { Binoculars, ChartLineUp, MapTrifold, ShieldCheck } from '@phosphor-icons/react'
+import { Binoculars, ChartLineUp, MapTrifold } from '@phosphor-icons/react'
 
-type ViewId = 'operation' | 'territory' | 'quality'
+type ViewId = 'operation' | 'territory'
 
 interface DashboardInvestigationProps {
   operation: ReactNode
   territory: ReactNode
-  quality: ReactNode
 }
 
 const VIEWS = [
   { id: 'operation', label: 'Operação', description: 'Ritmo das equipes hoje', icon: ChartLineUp },
   { id: 'territory', label: 'Território e demanda', description: 'Cidades, capacidade e motivos da fila', icon: MapTrifold },
-  { id: 'quality', label: 'Qualidade e tendência', description: 'Metas, reincidência e fornecedores', icon: ShieldCheck },
 ] as const
 
-export function DashboardInvestigation({ operation, territory, quality }: DashboardInvestigationProps) {
+export function DashboardInvestigation({ operation, territory }: DashboardInvestigationProps) {
   const [active, setActive] = useState<ViewId>('operation')
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([])
-  const content: Record<ViewId, ReactNode> = { operation, territory, quality }
+  const content: Record<ViewId, ReactNode> = { operation, territory }
 
   function selectFromKeyboard(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
@@ -40,13 +38,13 @@ export function DashboardInvestigation({ operation, territory, quality }: Dashbo
         </span>
         <div>
           <p className="text-caption font-bold uppercase tracking-label text-purple">Nível 3</p>
-          <h2 id="dashboard-investigation-title" className="text-title font-bold text-text">Investigar causas e tendências</h2>
+          <h2 id="dashboard-investigation-title" className="text-title font-bold text-text">Investigar causas</h2>
           <p className="mt-0.5 text-caption text-muted">Abra apenas a perspectiva necessária para explicar o resultado.</p>
         </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <div role="tablist" aria-label="Perspectivas de investigação" className="grid grid-cols-1 gap-1 border-b border-border bg-bg/25 p-1.5 sm:grid-cols-3">
+        <div role="tablist" aria-label="Perspectivas de investigação" className="grid grid-cols-1 gap-1 border-b border-border bg-bg/25 p-1.5 sm:grid-cols-2">
           {VIEWS.map((view, index) => {
             const selected = active === view.id
             const Icon = view.icon

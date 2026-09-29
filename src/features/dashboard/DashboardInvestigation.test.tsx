@@ -8,7 +8,6 @@ describe('DashboardInvestigation', () => {
       <DashboardInvestigation
         operation={<p>Conteúdo operacional</p>}
         territory={<p>Conteúdo territorial</p>}
-        quality={<p>Conteúdo de qualidade</p>}
       />,
     )
 
@@ -27,7 +26,6 @@ describe('DashboardInvestigation', () => {
       <DashboardInvestigation
         operation={<p>Conteúdo operacional</p>}
         territory={<p>Conteúdo territorial</p>}
-        quality={<p>Conteúdo de qualidade</p>}
       />,
     )
 

@@ -19,6 +19,7 @@ import {
 const ROUTE_LABELS: Record<string, string> = {
   '/':           'Resumo Geral',
   '/ordens':     'Ordens de Serviço',
+  '/qualidade':  'Qualidade e Tendência',
   '/graficos':   'Gráficos',
   '/cidades':    'Cidades & Categorias',
   '/fornecedor': 'Fornecedor',
