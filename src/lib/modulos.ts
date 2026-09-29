@@ -24,6 +24,7 @@ export const MODULO_ROTA: Record<string, string> = {
 // Rotas que herdam a permissão de um módulo existente (sem módulo próprio no backend).
 const ROTA_ALIAS: Record<string, string> = {
   '/qualidade': 'dashboard',
+  '/qualidade/reincidencias': 'dashboard',
 }
 
 export function moduloParaRota(chave: string): string | undefined {

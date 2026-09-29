@@ -36,18 +36,22 @@ interface NavItemProps {
   groupKey:    string
   groupColor:  string
   onNavigate:  () => void
+  /** Item de submenu: recuado e com ícone menor. */
+  nested?:     boolean
+  /** Só ativo na rota exata — o pai de um submenu não deve acender na rota filha. */
+  exact?:      boolean
 }
 
 interface Tip { top: number; left: number }
 
-function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onNavigate }: NavItemProps) {
+function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onNavigate, nested = false, exact = false }: NavItemProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [tip, setTip] = useState<Tip | null>(null)
 
   return (
     <div
       ref={ref}
-      className="relative mx-2.5 my-0.5"
+      className={`relative my-0.5 ${nested && sidebarOpen ? 'ml-7 mr-2.5' : 'mx-2.5'}`}
       onMouseEnter={() => {
         if (sidebarOpen || !ref.current) return
         const r = ref.current.getBoundingClientRect()
@@ -57,7 +61,7 @@ function NavItem({ to, label, icon: Icon, sidebarOpen, groupKey, groupColor, onN
     >
       <NavLink
         to={to}
-        end={to === '/'}
+        end={to === '/' || exact}
         onClick={onNavigate}
         className={({ isActive }) =>
           `nav-link-${groupKey} flex min-h-11 items-center gap-3 rounded-lg border py-3 pl-3 pr-2.5
@@ -205,17 +209,32 @@ export function Sidebar() {
             )}
 
             <div className="space-y-px">
-              {group.links.map(({ to, label, icon }) => (
-                <NavItem
-                  key={to}
-                  to={to}
-                  label={label}
-                  icon={icon}
-                  sidebarOpen={sidebarOpen}
-                  groupKey={group.key}
-                  groupColor={group.color}
-                  onNavigate={closeAfterMobileNavigation}
-                />
+              {group.links.map(({ to, label, icon, children }) => (
+                <div key={to}>
+                  <NavItem
+                    to={to}
+                    label={label}
+                    icon={icon}
+                    sidebarOpen={sidebarOpen}
+                    groupKey={group.key}
+                    groupColor={group.color}
+                    onNavigate={closeAfterMobileNavigation}
+                    exact={!!children?.length}
+                  />
+                  {sidebarOpen && children?.map(child => (
+                    <NavItem
+                      key={child.to}
+                      to={child.to}
+                      label={child.label}
+                      icon={child.icon}
+                      sidebarOpen={sidebarOpen}
+                      groupKey={group.key}
+                      groupColor={group.color}
+                      onNavigate={closeAfterMobileNavigation}
+                      nested
+                    />
+                  ))}
+                </div>
               ))}
             </div>
           </div>

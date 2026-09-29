@@ -5,7 +5,7 @@ import { useOSDerived } from '../../contexts/OSDataContext'
 import OSDrawer from '../../features/ordens/OSDrawer'
 import { Badge } from './Badge'
 import { osDataRelevante, shortEquipe, situacaoVariant } from '../../lib/osFormat'
-import { useVisibleNavGroups } from '../../lib/navigation'
+import { useVisibleNavGroups, flattenLinks } from '../../lib/navigation'
 import type { NavGroup, NavLinkDef } from '../../lib/navigation'
 import type { OSRow } from '../../lib/types'
 import type { ClienteBuscaItem } from '../../lib/api'
@@ -59,7 +59,7 @@ export function matchPages(groups: NavGroup[], query: string): NavLinkDef[] {
   if (!query.trim()) return []
   const q = query.toLowerCase().trim()
   return groups
-    .flatMap(g => g.links)
+    .flatMap(g => flattenLinks(g.links))
     .filter(l => l.label.toLowerCase().includes(q))
     .sort((a, b) => {
       const aExact = a.label.toLowerCase() === q
@@ -103,7 +103,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
   const navigableItems = useMemo<NavigableItem[]>(() => {
     if (!query.trim()) {
-      return groups.flatMap(g => g.links.map(l => ({ type: 'page' as const, data: l })))
+      return groups.flatMap(g => flattenLinks(g.links).map(l => ({ type: 'page' as const, data: l })))
     }
     return [
       ...results.pages.map(p => ({ type: 'page' as const, data: p })),
@@ -198,7 +198,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                         </span>
                       </div>
                       <div className="space-y-px">
-                        {group.links.map(link => {
+                        {flattenLinks(group.links).map(link => {
                           const globalIdx = navigableItems.findIndex(it => it.type === 'page' && it.data.to === link.to)
                           const isActive = globalIdx === activeIdx
                           const Icon = link.icon

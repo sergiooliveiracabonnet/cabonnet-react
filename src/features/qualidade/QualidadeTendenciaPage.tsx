@@ -48,7 +48,7 @@ export default function QualidadeTendenciaPage() {
             totalBase={churn.totalBase}
             pctReincidencia={churn.pctReincidencia}
             onOpen={(title, filtered) => setModal({ title, rows: filtered })}
-            onOpenReport={() => navigate('/relatorio-reincidencias')}
+            onOpenReport={() => navigate('/qualidade/reincidencias')}
           />
           <MetaMesCard meta={pulso.metaMes} />
           <FornecedoresPanel fornecedores={fornecedores}

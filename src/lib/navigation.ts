@@ -1,5 +1,5 @@
 import { useMemo, type ComponentType, type CSSProperties } from 'react'
-import { SquaresFour, ClipboardText, ChartBar, ChartPie, MapPin, Lightning, Monitor, FileText, MapTrifold, Bell, CalendarCheck, Shield, Siren, Medal, Users, WaveSine, IdentificationCard, ShieldCheck } from '@phosphor-icons/react'
+import { SquaresFour, ClipboardText, ChartBar, ChartPie, MapPin, Lightning, Monitor, FileText, MapTrifold, Bell, CalendarCheck, Shield, Siren, Medal, Users, WaveSine, IdentificationCard, ShieldCheck, Repeat } from '@phosphor-icons/react'
 import { useAuthStore, type UserRole } from '../store/authStore'
 import { rotaParaModulo } from './modulos'
 
@@ -7,6 +7,13 @@ export interface NavLinkDef {
   to:    string
   label: string
   icon:  ComponentType<{ size?: number; className?: string; style?: CSSProperties }>
+  /** Submenu exibido recuado sob o link (sidebar expandida). */
+  children?: NavLinkDef[]
+}
+
+/** Links do grupo com os submenus expandidos — busca global e afins. */
+export function flattenLinks(links: NavLinkDef[]): NavLinkDef[] {
+  return links.flatMap(l => [l, ...(l.children ?? [])])
 }
 
 export interface NavGroup {
@@ -23,7 +30,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/',             label: 'Dashboard',          icon: SquaresFour },
       { to: '/erp/fila',     label: 'Fila de Prioridade', icon: Siren           },
       { to: '/erp/alertas',  label: 'Alertas',            icon: Bell            },
-      { to: '/qualidade',    label: 'Qualidade e Tendência', icon: ShieldCheck  },
+      { to: '/qualidade',    label: 'Qualidade e Tendência', icon: ShieldCheck,
+        children: [{ to: '/qualidade/reincidencias', label: 'Relatório de Reincidências', icon: Repeat }] },
     ],
   },
   {
@@ -67,7 +75,12 @@ export function visibleNavGroups(role: UserRole, modulos: string[]): NavGroup[] 
     return modulo ? modulos.includes(modulo) : false
   }
   const filtrados = NAV_GROUPS
-    .map(g => ({ ...g, links: g.links.filter(l => podeVer(l.to)) }))
+    .map(g => ({
+      ...g,
+      links: g.links
+        .filter(l => podeVer(l.to))
+        .map(l => l.children ? { ...l, children: l.children.filter(c => podeVer(c.to)) } : l),
+    }))
     .filter(g => g.links.length > 0)
   if (role === 'gestor') {
     return filtrados.map(g =>

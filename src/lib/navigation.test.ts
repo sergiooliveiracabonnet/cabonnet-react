@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { visibleNavGroups, NAV_GROUPS } from './navigation'
+import { visibleNavGroups, flattenLinks, NAV_GROUPS } from './navigation'
 
 describe('visibleNavGroups', () => {
   it('gestor ve todos os grupos e ganha Usuarios no grupo infra', () => {
@@ -28,6 +28,14 @@ describe('visibleNavGroups', () => {
     const links = (m: string[]) => visibleNavGroups('operador', m).flatMap(g => g.links.map(l => l.to))
     expect(links(['cliente'])).toEqual(['/clientes'])
     expect(links(['ordens'])).not.toContain('/clientes')
+  })
+
+  it('reincidencias e submenu de qualidade e herda a permissao do dashboard', () => {
+    const agora = (m: string[]) => visibleNavGroups('operador', m).find(g => g.key === 'agora')
+    const qualidade = agora(['dashboard'])?.links.find(l => l.to === '/qualidade')
+    expect(qualidade?.children?.map(c => c.to)).toEqual(['/qualidade/reincidencias'])
+    expect(flattenLinks(agora(['dashboard'])!.links).map(l => l.to)).toContain('/qualidade/reincidencias')
+    expect(agora(['ordens'])).toBeUndefined()
   })
 
   it('remove grupos sem nenhum link visivel', () => {
