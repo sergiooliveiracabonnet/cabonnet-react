@@ -90,7 +90,8 @@ function exportResumido(treated: TreatedPon[], filename: string): void {
     const corSituacao = item.situacao === 'critica' ? RED : item.situacao === 'atencao' ? ORANGE : item.situacao === 'normalizada' ? GREEN : MUTED
     const ganhoMedio = clientes.length ? clientes.reduce((sum, c) => sum + c.ganho, 0) / clientes.length : null
     const detalhes: [string, string, RGB][] = [
-      ['No momento do OK', `${snap.criticos} críticas de ${snap.total} · ${(snap.concentracao * 100).toFixed(0)}%`, TEXT],
+      ['Total de clientes', String(snap.total), TEXT],
+      ['Inicialmente', `${snap.criticos} críticas de ${snap.total} · ${(snap.concentracao * 100).toFixed(0)}%`, TEXT],
       ['RX mediano', `${snap.rxMediano?.toFixed(1) ?? '—'} dBm${snap.tempMax != null ? ` · ${snap.tempMax.toFixed(0)}°C máx` : ''}`, TEXT],
       ['Ciclos', `${item.treated_count}× tratada${item.reopened_count ? ` · ${item.reopened_count}× reaberta` : ''}`, item.reopened_count ? ORANGE : TEXT],
       ['Potências', prog.total ? `${prog.preenchidas}/${prog.total} medidas` : 'sem clientes registrados', prog.pendentes ? ORANGE : TEXT],
@@ -98,7 +99,7 @@ function exportResumido(treated: TreatedPon[], filename: string): void {
       ['Situação atual', rotulo, corSituacao],
     ]
     detalhes.forEach(([nome, valor, cor], i) => {
-      const iy = topo + 6 + i * 5.2
+      const iy = topo + 5 + i * 4.8
       line(doc, nome, ML + 140, iy, { size: 7.5, color: MUTED })
       line(doc, valor, ML + 182, iy, { size: 8, bold: true, color: cor, maxWidth: 80 })
     })

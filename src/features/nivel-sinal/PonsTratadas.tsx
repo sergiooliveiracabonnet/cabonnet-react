@@ -120,7 +120,7 @@ export function PonsTratadas({ treated, onReopen, onEditMedicoes, busyKey }: Pon
               um px fixo, que envelhece assim que uma coluna entra ou sai. */}
           <table className="w-full min-w-max text-left text-label">
             <thead className="bg-surface/70 text-caption uppercase tracking-wide text-muted"><tr>
-              {['PON / OLT', 'Cidade / bairro', 'No momento do OK', 'Tratada em', 'Ciclos', 'Potências', 'Situação no CSV atual', 'Ações'].map(label =>
+              {['PON / OLT', 'Cidade / bairro', 'Inicialmente', 'Tratada em', 'Ciclos', 'Potências', 'Situação no CSV atual', 'Ações'].map(label =>
                 <th key={label} className="px-4 py-3 font-semibold">{label}</th>)}
             </tr></thead>
             <tbody>{visible.map(item => <tr key={item.pon_key} className="border-t border-border transition-colors hover:bg-surface/50">
