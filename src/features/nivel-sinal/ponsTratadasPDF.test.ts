@@ -53,7 +53,8 @@ beforeEach(() => { textos.length = 0; fontSizeAtual = 7 })
 describe('exportPonsTratadasPDF', () => {
   it('mostra só os detalhes da PON, sem a tabela de resumo', () => {
     exportPonsTratadasPDF([pon()])
-    expect(posicao('Ciclos')).toBeGreaterThanOrEqual(0)
+    expect(posicao('na PON')).toBeGreaterThanOrEqual(0)
+    expect(posicao('Ciclos')).toBe(-1)
     expect(posicao('3/10')).toBeGreaterThanOrEqual(0)
     expect(posicao('PON / OLT')).toBe(-1)
   })

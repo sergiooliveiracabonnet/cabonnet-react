@@ -90,10 +90,8 @@ function exportResumido(treated: TreatedPon[], filename: string): void {
     const corSituacao = item.situacao === 'critica' ? RED : item.situacao === 'atencao' ? ORANGE : item.situacao === 'normalizada' ? GREEN : MUTED
     const ganhoMedio = clientes.length ? clientes.reduce((sum, c) => sum + c.ganho, 0) / clientes.length : null
     const detalhes: [string, string, RGB][] = [
-      ['Total de clientes', String(snap.total), TEXT],
       ['Inicialmente', `${snap.criticos} críticas de ${snap.total} · ${(snap.concentracao * 100).toFixed(0)}%`, TEXT],
       ['RX mediano', `${snap.rxMediano?.toFixed(1) ?? '—'} dBm${snap.tempMax != null ? ` · ${snap.tempMax.toFixed(0)}°C máx` : ''}`, TEXT],
-      ['Ciclos', `${item.treated_count}× tratada${item.reopened_count ? ` · ${item.reopened_count}× reaberta` : ''}`, item.reopened_count ? ORANGE : TEXT],
       ['Potências', prog.total ? `${prog.preenchidas}/${prog.total} medidas` : 'sem clientes registrados', prog.pendentes ? ORANGE : TEXT],
       ['Ganho médio', ganhoMedio == null ? '—' : fmtGanho(ganhoMedio), ganhoMedio == null ? MUTED : ganhoMedio > 0 ? GREEN : RED],
       ['Situação atual', rotulo, corSituacao],
@@ -162,7 +160,7 @@ function drawChart(doc: jsPDF, x: number, top: number, w: number, antes: number[
 function drawPonHeader(doc: jsPDF, y: number, item: TreatedPon, continuacao: boolean) {
   doc.setFillColor(229, 231, 235); doc.rect(ML, y, CW, 8, 'F')
   line(doc, `PON ${item.snapshot.pon} · ${item.snapshot.olt}${continuacao ? ' (continuação)' : ''}`, ML + 3, y + 5.4, { bold: true, size: 9.5, maxWidth: 100 })
-  line(doc, `${item.snapshot.cidade || '—'} · ${item.snapshot.bairro || '—'}  |  tratada em ${formatMoment(item.created_at)} por ${item.created_by || 'sem usuário'}`,
+  line(doc, `${item.snapshot.cidade || '—'} · ${item.snapshot.bairro || '—'}  |  ${item.snapshot.total} cliente${item.snapshot.total === 1 ? '' : 's'} na PON  |  tratada em ${formatMoment(item.created_at)}`,
     ML + 105, y + 5.4, { size: 7.5, color: SUB, maxWidth: CW - 108 })
 }
 
