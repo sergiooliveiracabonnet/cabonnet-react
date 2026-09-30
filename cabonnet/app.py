@@ -646,6 +646,7 @@ _MODULO_LABELS = {
     "erp_fila":           "Fila de Prioridade",
     "erp_ranking":        "Ranking Técnicos",
     "erp_escala":         "Escala",
+    "qualidade":          "Qualidade e Tendência",
 }
 _ROLES_VALIDOS = ("gestor", "supervisor", "operador", "viewer", "fornecedor")
 # Supervisor entra aqui: os modulos dele saem da tabela, nao do codigo, entao

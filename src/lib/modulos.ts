@@ -19,12 +19,12 @@ export const MODULO_ROTA: Record<string, string> = {
   erp_escala:        '/erp/escala',
   erp_fila:          '/erp/fila',
   erp_ranking:       '/erp/ranking',
+  qualidade:         '/qualidade',
 }
 
 // Rotas que herdam a permissão de um módulo existente (sem módulo próprio no backend).
 const ROTA_ALIAS: Record<string, string> = {
-  '/qualidade': 'dashboard',
-  '/qualidade/reincidencias': 'dashboard',
+  '/qualidade/reincidencias': 'qualidade',
 }
 
 export function moduloParaRota(chave: string): string | undefined {

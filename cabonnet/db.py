@@ -30,6 +30,7 @@ ALL_MODULOS = [
     "fechamento", "mapa", "noc", "cliente",
     "erp_relatorios", "erp_alertas",
     "erp_fila", "erp_ranking", "erp_escala",
+    "qualidade",
 ]
 
 # Defaults semeados no bootstrap — só o ponto de partida, ajustável depois pela
@@ -38,8 +39,9 @@ _DEFAULT_OPERADOR_MODULOS = [
     "dashboard", "ordens", "cidades", "mapa", "juniper", "nivel_sinal",
     "erp_relatorios", "erp_alertas",
     "erp_fila", "erp_ranking", "erp_escala",
+    "qualidade",
 ]
-_DEFAULT_VIEWER_MODULOS = ["dashboard", "graficos", "cidades", "mapa"]
+_DEFAULT_VIEWER_MODULOS = ["dashboard", "graficos", "cidades", "mapa", "qualidade"]
 # Supervisor nasce com tudo, como o gestor — a diferenca e que os modulos
 # dele ficam na tabela e podem ser recortados. Administrar usuarios continua
 # exclusivo do gestor (_require_gestor), senao o supervisor desfaria sozinho
@@ -324,6 +326,7 @@ def _db_init():
     _db_migrate_onda3b_modulos()
     _db_seed_supervisor()
     _db_seed_modulo_novo_supervisor("cliente")
+    _db_migrate_qualidade_modulo()
 
 
 def _db_seed_supervisor():
@@ -376,6 +379,37 @@ def _db_seed_modulo_novo_supervisor(modulo):
             con.close()
     except Exception as ex:
         log_db.warning("Falha ao liberar %s para supervisor: %s", modulo, ex)
+
+
+def _db_migrate_qualidade_modulo():
+    """Migração idempotente (2026-09): Qualidade e Tendência (e o submenu
+    Relatório de Reincidências) ganhou módulo próprio no Sidebar, mas antes
+    emprestava a permissão de 'dashboard' (ver ROTA_ALIAS em
+    src/lib/modulos.ts). Quem já enxergava a página por causa do dashboard
+    ganha 'qualidade' também, preservando o acesso que já tinha. Roda no
+    startup; marcada em app_meta pra não reconceder o módulo depois que o
+    gestor cortar o acesso de alguém na tela de permissões."""
+    chave = "migrate_qualidade_de_dashboard"
+    try:
+        with state._db_lock:
+            con = _connect()
+            if not con.execute("SELECT 1 FROM app_meta WHERE chave=?", (chave,)).fetchone():
+                papeis = [r[0] for r in con.execute(
+                    "SELECT DISTINCT role FROM role_permissoes WHERE modulo='dashboard'"
+                ).fetchall()]
+                for papel in papeis:
+                    con.execute(
+                        "INSERT OR IGNORE INTO role_permissoes (role, modulo) VALUES (?, 'qualidade')",
+                        (papel,)
+                    )
+                con.execute(
+                    "INSERT INTO app_meta (chave, valor) VALUES (?, ?)",
+                    (chave, datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                )
+                con.commit()
+            con.close()
+    except Exception as ex:
+        log_db.warning("Falha ao migrar modulo qualidade: %s", ex)
 
 
 def _db_sync_signal_occurrences(file_name, csv_text, occurrences, username=""):

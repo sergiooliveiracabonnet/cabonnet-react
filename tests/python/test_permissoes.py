@@ -64,6 +64,11 @@ def test_get_permissoes_returns_all_roles_and_modulos(client, gestor):
     assert keys == set(db.ALL_MODULOS)
 
 
+def test_modulo_qualidade_registrado():
+    from cabonnet.app import _MODULO_LABELS
+    assert "qualidade" in db.ALL_MODULOS and "qualidade" in _MODULO_LABELS
+
+
 def test_set_permissoes_gestor_rejected(client, gestor):
     with patch("cabonnet.app._auth_enabled", return_value=True):
         r = client.put("/api/permissoes/gestor", headers=gestor, json={"modulos": ["dashboard"]})
@@ -172,5 +177,31 @@ def test_migracao_onda3b_e_idempotente_e_nao_duplica_modulo_ja_presente():
     modulos = db._db_get_permissoes("operador")
     assert modulos.count("erp_escala") == 1
     assert "erp_planner" not in modulos
+
+
+def _limpar_marco_migracao_qualidade():
+    con = sqlite3.connect(db._DB_PATH)
+    con.execute("DELETE FROM app_meta WHERE chave='migrate_qualidade_de_dashboard'")
+    con.commit()
+    con.close()
+
+
+def test_migra_qualidade_para_quem_tem_dashboard():
+    _limpar_marco_migracao_qualidade()
+    _insert_permissoes_direto("operador", ["dashboard", "ordens"])
+    _insert_permissoes_direto("viewer", ["graficos"])  # sem dashboard: não ganha
+    db._db_migrate_qualidade_modulo()
+    assert "qualidade" in db._db_get_permissoes("operador")
+    assert "qualidade" not in db._db_get_permissoes("viewer")
+
+
+def test_migracao_qualidade_nao_reconcede_apos_corte_do_gestor():
+    _limpar_marco_migracao_qualidade()
+    _insert_permissoes_direto("operador", ["dashboard"])
+    db._db_migrate_qualidade_modulo()
+    assert "qualidade" in db._db_get_permissoes("operador")
+    db._db_set_permissoes("operador", ["dashboard"])  # gestor corta qualidade de novo
+    db._db_migrate_qualidade_modulo()  # roda de novo (ex: restart) — não deve reconceder
+    assert "qualidade" not in db._db_get_permissoes("operador")
 
 

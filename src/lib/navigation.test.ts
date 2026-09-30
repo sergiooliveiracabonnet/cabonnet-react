@@ -30,12 +30,19 @@ describe('visibleNavGroups', () => {
     expect(links(['ordens'])).not.toContain('/clientes')
   })
 
-  it('reincidencias e submenu de qualidade e herda a permissao do dashboard', () => {
+  it('reincidencias e submenu de qualidade e herda a permissao do modulo qualidade', () => {
     const agora = (m: string[]) => visibleNavGroups('operador', m).find(g => g.key === 'agora')
-    const qualidade = agora(['dashboard'])?.links.find(l => l.to === '/qualidade')
+    const qualidade = agora(['qualidade'])?.links.find(l => l.to === '/qualidade')
     expect(qualidade?.children?.map(c => c.to)).toEqual(['/qualidade/reincidencias'])
-    expect(flattenLinks(agora(['dashboard'])!.links).map(l => l.to)).toContain('/qualidade/reincidencias')
+    expect(flattenLinks(agora(['qualidade'])!.links).map(l => l.to)).toContain('/qualidade/reincidencias')
     expect(agora(['ordens'])).toBeUndefined()
+  })
+
+  it('so ter dashboard nao libera mais qualidade e tendencia (modulo proprio)', () => {
+    const agora = (m: string[]) => visibleNavGroups('operador', m).find(g => g.key === 'agora')
+    const links = flattenLinks(agora(['dashboard'])!.links).map(l => l.to)
+    expect(links).not.toContain('/qualidade')
+    expect(links).not.toContain('/qualidade/reincidencias')
   })
 
   it('remove grupos sem nenhum link visivel', () => {
