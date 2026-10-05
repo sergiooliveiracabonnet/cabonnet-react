@@ -24,12 +24,12 @@ const ABA_CONFIG: Record<AbaRevisita, {
   manutencao: {
     label: 'Revisita de manutenção', tipoBase: 'MANUTENCAO', reportType: 'Relatório de Reincidências — Manutenção',
     descricaoJanela: dias => `Assistências abertas em até 30 dias após outra assistência do cliente, nos últimos ${dias} dias`,
-    kpiOrdens: 'OS envolvidas na revisita', kpiIntervalo: 'até o retorno',
+    kpiOrdens: 'origem + retorno de cada cliente', kpiIntervalo: 'até o retorno',
   },
   instalacao: {
     label: 'Revisita de instalação', tipoBase: 'INSTALACAO', reportType: 'Relatório de Reincidências — Instalação',
     descricaoJanela: dias => `Clientes instalados no mês anterior ao período, com assistência em até 30 dias da instalação (período de ${dias} dias)`,
-    kpiOrdens: 'ordens após a instalação', kpiIntervalo: 'até o retorno',
+    kpiOrdens: 'instalação + assistências do cliente', kpiIntervalo: 'até o retorno',
   },
 }
 
@@ -106,7 +106,7 @@ export default function ReincidenciasPage() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KPI label="Clientes reincidentes" value={clientes.length} detail={`${churn.totalBase} clientes na base`} />
-        <KPI label="Ordens analisadas" value={osCount} detail={cfg.kpiOrdens} />
+        <KPI label="OS envolvidas" value={osCount} detail={cfg.kpiOrdens} />
         <KPI label="Intervalo médio" value={`${avgGap.toLocaleString('pt-BR')}d`} detail={cfg.kpiIntervalo} />
         <KPI label="Taxa geral" value={`${churn.pctReincidencia}%`} detail="da base atendida" />
       </div>

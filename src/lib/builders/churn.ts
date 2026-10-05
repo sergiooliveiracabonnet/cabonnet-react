@@ -46,7 +46,7 @@ export function buildChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Date = new
                       : new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const corte = range ? new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
                       : (() => { const c = new Date(hoje); c.setDate(c.getDate() - JANELA_DIAS); return c })()
-  const janelaDias = range ? Math.max(1, Math.round((hoje.getTime() - corte.getTime()) / DIA_MS)) : JANELA_DIAS
+  const janelaDias = range ? Math.max(1, Math.round((hoje.getTime() - corte.getTime()) / DIA_MS) + 1) : JANELA_DIAS // dias corridos do período, contando o último
 
   const porCliente = new Map<string, { rows: OSRow[]; datas: Date[] }>()
 
@@ -145,7 +145,7 @@ export function buildInstallChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Dat
                       : new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const corte = range ? new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
                       : (() => { const c = new Date(hoje); c.setDate(c.getDate() - JANELA_DIAS); return c })()
-  const janelaDias = range ? Math.max(1, Math.round((hoje.getTime() - corte.getTime()) / DIA_MS)) : JANELA_DIAS
+  const janelaDias = range ? Math.max(1, Math.round((hoje.getTime() - corte.getTime()) / DIA_MS) + 1) : JANELA_DIAS // dias corridos do período, contando o último
   const coorte = range ? coorteInstalacaoRange({ from: corte, to: hoje }) : { from: corte, to: hoje }
 
   // Todas as execuções reais por cliente, qualquer tipo — a instalação é a âncora
@@ -256,7 +256,7 @@ export function buildManutencaoRevisitaChurn(allRows: OSRow[], topo = TOPO_PADRA
                       : new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const corte = range ? new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
                       : (() => { const c = new Date(hoje); c.setDate(c.getDate() - JANELA_DIAS); return c })()
-  const janelaDias = range ? Math.max(1, Math.round((hoje.getTime() - corte.getTime()) / DIA_MS)) : JANELA_DIAS
+  const janelaDias = range ? Math.max(1, Math.round((hoje.getTime() - corte.getTime()) / DIA_MS) + 1) : JANELA_DIAS // dias corridos do período, contando o último
 
   // Todas as execuções reais por cliente, qualquer tipo — a OS anterior à VT
   // pode ser outra VT, uma instalação, o que vier antes.
