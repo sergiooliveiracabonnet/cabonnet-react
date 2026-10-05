@@ -22,8 +22,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Só dependências de produção: braces (via tailwindcss 3.x, só de build) não tem
+      # versão corrigida; sair desse alerta exige migrar para tailwindcss 4.
       - name: Security audit
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Type-check
         run: npx tsc --noEmit
