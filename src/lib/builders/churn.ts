@@ -109,19 +109,35 @@ export function buildChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Date = new
 }
 
 // ─── Revisita de instalação ────────────────────────────────────────────────
-// Gatilho diferente do churn de manutenção: não é "2+ visitas do mesmo tipo",
-// é a instalação em si — cliente instalado e, dentro de uma janela fixa de 30
-// dias corridos, o ERP abriu a OS específica de pós-venda "ASSISTENCIA -
-// PRIMEIRA CONEXAO 30 DIAS" (não conta qualquer OS que caia no período — só
-// esse serviço, que é o que o ERP usa pra marcar retorno de instalação
-// recente). A janela `range`/60 dias (mesma de buildChurn) só decide QUAIS
-// instalações entram na listagem; os 30 dias fixos definem o que conta como
-// revisita dela — não se misturam. Regra confirmada pela operação em 2026-09-27.
+// Regra do ERP, conferida contra a planilha "Revisita Instalação" de setembro/2026
+// (55 clientes; 52 reproduzidos por esta regra):
+// - A coorte é a das instalações de UM MÊS ANTES do período filtrado. A janela
+//   de 30 dias dessa turma fecha dentro do período — é por isso que a lista do
+//   ERP "de setembro" traz clientes instalados em agosto. Olhar as instalações do
+//   próprio período mediria janelas ainda abertas.
+// - Revisita é qualquer assistência (VT ou "PRIMEIRA CONEXAO 30 DIAS") executada
+//   em até 30 dias depois da execução da instalação — não só a de pós-venda.
+// Sem `range` (painel de 60 dias), a coorte continua sendo a da própria janela.
 const JANELA_REVISITA_INSTALACAO_DIAS = 30
-const SERVICO_REVISITA_INSTALACAO = 'PRIMEIRA CONEXAO'
 
-function isRevisitaPrimeiraConexao(row: OSRow): boolean {
-  return (row.servico || '').toUpperCase().includes(SERVICO_REVISITA_INSTALACAO)
+/** Serviço de assistência técnica (VT de qualquer prazo ou "PRIMEIRA CONEXAO 30 DIAS"). */
+function isAssistencia(row: OSRow): boolean {
+  return (row.servico || '').toUpperCase().trim().startsWith('ASSISTENCIA')
+}
+
+function isInstalacaoDeCliente(row: OSRow): boolean {
+  return row._tipo === 'INSTALACAO' || (row.servico || '').toUpperCase().includes('PRIMEIRA CONEXAO DO ASSINANTE')
+}
+
+function mesAnterior(d: Date): Date {
+  const fimDoMes = d.getDate() === new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  const dias = new Date(d.getFullYear(), d.getMonth(), 0).getDate() // último dia do mês anterior
+  return new Date(d.getFullYear(), d.getMonth() - 1, fimDoMes ? dias : Math.min(d.getDate(), dias))
+}
+
+/** Período das instalações que entram na coorte de revisita para o período filtrado. */
+export function coorteInstalacaoRange(range: { from: Date; to: Date }): { from: Date; to: Date } {
+  return { from: mesAnterior(range.from), to: mesAnterior(range.to) }
 }
 
 export function buildInstallChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Date = new Date(), range: { from: Date; to: Date } | null = null): Churn {
@@ -130,9 +146,10 @@ export function buildInstallChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Dat
   const corte = range ? new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
                       : (() => { const c = new Date(hoje); c.setDate(c.getDate() - JANELA_DIAS); return c })()
   const janelaDias = range ? Math.max(1, Math.round((hoje.getTime() - corte.getTime()) / DIA_MS)) : JANELA_DIAS
+  const coorte = range ? coorteInstalacaoRange({ from: corte, to: hoje }) : { from: corte, to: hoje }
 
-  // Todas as execuções reais por cliente, qualquer tipo — a revisita de
-  // instalação pode ser outra instalação, uma manutenção, o que vier depois.
+  // Todas as execuções reais por cliente, qualquer tipo — a instalação é a âncora
+  // e o retorno é a primeira assistência que vier depois dela.
   const execByClient = new Map<string, { row: OSRow; data: Date }[]>()
   for (const r of allRows) {
     // A conexão de uma transferência de endereço é INSTALACAO PRINCIPAL no ERP,
@@ -152,11 +169,11 @@ export function buildInstallChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Dat
 
   for (const [chave, execs] of execByClient) {
     const sorted = [...execs].sort((a, b) => a.data.getTime() - b.data.getTime())
-    const installsNaJanela = sorted.filter(e => e.row._tipo === 'INSTALACAO' && e.data >= corte && e.data <= hoje)
+    const installsNaJanela = sorted.filter(e => isInstalacaoDeCliente(e.row) && e.data >= coorte.from && e.data <= coorte.to)
     if (!installsNaJanela.length) continue
     totalBase++
 
-    // Marca a instalação e toda execução seguinte dentro de 30 dias dela —
+    // Marca a instalação e toda assistência seguinte dentro de 30 dias dela —
     // um cliente com mais de uma instalação na janela pode acumular vários
     // grupos; o drill-down mostra tudo junto, como o buildChurn já faz.
     const envolvidos = new Set<number>()
@@ -165,7 +182,7 @@ export function buildInstallChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Dat
       const revisitasDaInstalacao = sorted
         .map((e, idx) => ({ e, idx }))
         .filter(({ e, idx }) => idx !== idxInstall &&
-          isRevisitaPrimeiraConexao(e.row) &&
+          isAssistencia(e.row) &&
           e.data.getTime() > install.data.getTime() &&
           (e.data.getTime() - install.data.getTime()) <= JANELA_REVISITA_INSTALACAO_DIAS * DIA_MS)
       if (!revisitasDaInstalacao.length) continue
@@ -212,17 +229,26 @@ export function buildInstallChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Dat
 }
 
 // ─── Revisita de manutenção (Relatório de Reincidências) ──────────────────
-// Regra de negócio confirmada pela operação em 2026-09-27, só pra esse
-// relatório dedicado — o painel "Risco de Churn" do Dashboard continua na
-// regra antiga (buildChurn: 2+ manutenções concluídas na janela).
-// Gatilho: uma VT (qualquer tipo — 08h/24h/48h) ABERTA em até 30 dias depois
-// da EXECUÇÃO da OS anterior do mesmo cliente, qualquer tipo que ela seja
-// (outra VT, instalação, o que for). Mesma convenção de datas da revisita de
-// instalação: ancora na execução da OS de origem, mede pela abertura da VT.
+// Regra do ERP ("Recorrência manutenção ≥ 1"), conferida contra a planilha
+// "Revisita Manutenção" de setembro/2026: os 99 clientes do ERP são
+// reproduzidos por esta regra (mais 2). Só para esse relatório dedicado — o painel
+// "Risco de Churn" do Dashboard continua na regra antiga (buildChurn).
+// Gatilho: uma assistência (VT 08h/12h/24h/48h ou "PRIMEIRA CONEXAO 30 DIAS")
+// ABERTA em até 30 dias depois da EXECUÇÃO de qualquer outra assistência do mesmo
+// cliente. Pontos que a regra anterior errava:
+// - A origem tem de ser assistência. Uma VT depois da instalação é revisita de
+//   INSTALAÇÃO, não de manutenção (o ERP conta separado).
+// - Aberta no mesmo dia da execução anterior conta.
+// - Vale qualquer assistência dos 30 dias anteriores, não só a imediatamente anterior.
 const JANELA_REVISITA_MANUTENCAO_DIAS = 30
 
 function isVT(row: OSRow): boolean {
   return (row.servico || '').toUpperCase().includes('VT')
+}
+
+function isRetornoManutencao(row: OSRow): boolean {
+  const sv = (row.servico || '').toUpperCase()
+  return isAssistencia(row) && (isVT(row) || sv.includes('PRIMEIRA CONEXAO 30'))
 }
 
 export function buildManutencaoRevisitaChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Date = new Date(), range: { from: Date; to: Date } | null = null): Churn {
@@ -254,14 +280,20 @@ export function buildManutencaoRevisitaChurn(allRows: OSRow[], topo = TOPO_PADRA
   for (const [chave, execs] of execByClient) {
     const sorted = [...execs].sort((a, b) => a.exec.getTime() - b.exec.getTime())
     const envolvidos = new Set<number>()
-    for (let i = 1; i < sorted.length; i++) {
+    for (let i = 0; i < sorted.length; i++) {
       const atual = sorted[i]
-      if (!isVT(atual.row) || !atual.abertura) continue
-      const anterior = sorted[i - 1]
-      const gap = atual.abertura.getTime() - anterior.exec.getTime()
-      if (gap <= 0 || gap > JANELA_REVISITA_MANUTENCAO_DIAS * DIA_MS) continue
+      if (!isRetornoManutencao(atual.row) || !atual.abertura) continue
       if (atual.exec < corte || atual.exec > hoje) continue
-      envolvidos.add(i - 1)
+      const aberturaMs = atual.abertura.getTime()
+      let origem = -1
+      for (let j = 0; j < sorted.length; j++) {
+        if (j === i || !isAssistencia(sorted[j].row)) continue
+        const gap = aberturaMs - sorted[j].exec.getTime()
+        if (gap < 0 || gap > JANELA_REVISITA_MANUTENCAO_DIAS * DIA_MS) continue
+        if (origem < 0 || sorted[j].exec.getTime() > sorted[origem].exec.getTime()) origem = j
+      }
+      if (origem < 0) continue
+      envolvidos.add(origem)
       envolvidos.add(i)
     }
     if (!envolvidos.size) continue

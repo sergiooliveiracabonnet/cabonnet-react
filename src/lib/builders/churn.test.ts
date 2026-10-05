@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { enrichRows } from '../transform'
-import { buildChurn, buildInstallChurn, buildManutencaoRevisitaChurn } from './churn'
+import { buildChurn, buildInstallChurn, buildManutencaoRevisitaChurn, coorteInstalacaoRange } from './churn'
 import type { OSRow } from '../types'
 
 const HOJE = new Date(2026, 6, 29, 12, 0, 0)
@@ -140,7 +140,7 @@ describe('buildChurn — troca de cabeamento', () => {
   })
 })
 
-/** OS de "ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS" — único gatilho de revisita de instalação. */
+/** OS de "ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS" — um dos serviços de assistência que contam como revisita. */
 function primeiraConexao(codigo: string, quando: number, extra: Record<string, unknown> = {}): OSRow {
   return manut(codigo, quando, { servico: 'ASSISTENCIA - PRIMEIRA CONEXAO 30 DIAS', ...extra })
 }
@@ -171,8 +171,13 @@ describe('buildInstallChurn', () => {
     expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(0)
   })
 
-  it('não conta outra OS dentro de 30 dias se o serviço não for PRIMEIRA CONEXAO', () => {
-    const rows = enrichRows([inst('E', 40), manut('E', 20)]) // atendimento comum, não é o serviço de pós-venda
+  it('conta uma VT executada em até 30 dias da instalação — assistência de qualquer prazo é revisita', () => {
+    const rows = enrichRows([inst('E', 40), vt('E', 20, 22)])
+    expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(1)
+  })
+
+  it('não conta outro serviço que não seja assistência dentro de 30 dias', () => {
+    const rows = enrichRows([inst('E', 40), manut('E', 20, { servico: 'MUDANCA PONTO DE CONEXAO' })])
     expect(buildInstallChurn(rows, 12, HOJE).totalReincidentes).toBe(0)
   })
 
@@ -196,6 +201,15 @@ describe('buildInstallChurn', () => {
     const conexao = inst('I', 40, { servico: 'CONEXAO - TRANSF. DE ENDERECO CIDADES' })
     const { totalBase } = buildInstallChurn(enrichRows([conexao, manut('I', 30)]), 12, HOJE)
     expect(totalBase).toBe(0)
+  })
+
+  it('com período filtrado, a coorte é a das instalações do mês anterior ao período', () => {
+    // período 01–31/07; instalação há 40 dias (19/06) está na coorte de junho, com VT 10 dias depois
+    const range = { from: new Date(2026, 6, 1), to: new Date(2026, 6, 31) }
+    const rows = enrichRows([inst('N', 40), vt('N', 30, 31), inst('O', 10), vt('O', 5, 6)])
+    const r = buildInstallChurn(rows, 12, HOJE, range)
+    expect(r.clientes.map(c => c.chave)).toEqual(['N'])  // O foi instalado em julho: janela ainda aberta
+    expect(r.totalBase).toBe(1)
   })
 
   it('ignora instalação fora da janela de 60 dias', () => {
@@ -243,11 +257,32 @@ describe('buildManutencaoRevisitaChurn', () => {
     expect(buildManutencaoRevisitaChurn(enrichRows([anterior, atual]), 12, HOJE).totalReincidentes).toBe(0)
   })
 
-  it('conta mesmo quando a OS anterior é uma instalação — o tipo da OS anterior não importa', () => {
+  it('não conta quando a OS anterior é a instalação — isso é revisita de instalação', () => {
     const anterior = inst('Y', 40)
     const atual    = vt('Y', 20, 25)
+    expect(buildManutencaoRevisitaChurn(enrichRows([anterior, atual]), 12, HOJE).totalReincidentes).toBe(0)
+  })
+
+  it('conta VT aberta no mesmo dia da execução da assistência anterior', () => {
+    const anterior = vt('S', 20, 22)
+    const atual    = vt('S2', 19, 20, { codigocliente: 'S', nomecliente: 'Cliente S' })
     expect(buildManutencaoRevisitaChurn(enrichRows([anterior, atual]), 12, HOJE).totalReincidentes).toBe(1)
   })
+
+  it('conta PRIMEIRA CONEXAO 30 DIAS como retorno', () => {
+    const anterior = vt('P', 20, 22)
+    const atual    = primeiraConexao('P', 10, { datacadastro: diasAtras(15) })
+    expect(buildManutencaoRevisitaChurn(enrichRows([anterior, atual]), 12, HOJE).totalReincidentes).toBe(1)
+  })
+
+  it('vale qualquer assistência dos 30 dias anteriores, não só a imediatamente anterior', () => {
+    const origem  = vt('T', 25, 27)
+    const meio    = manut('T', 20, { servico: 'MUDANCA PONTO DE CONEXAO' }) // não é assistência
+    const atual   = vt('T', 5, 8)
+    const { clientes } = buildManutencaoRevisitaChurn(enrichRows([origem, meio, atual]), 12, HOJE)
+    expect(clientes[0].rows.map(r => r.numos)).toEqual(expect.arrayContaining([origem.numos, atual.numos]))
+  })
+
 
   it('ignora troca de cabeamento como origem da revisita', () => {
     const cabo  = manut('Z', 40, { servico: 'TROCAR CABEAMENTO' })
@@ -266,5 +301,13 @@ describe('buildManutencaoRevisitaChurn', () => {
     const { totalBase, totalReincidentes } = buildManutencaoRevisitaChurn(rows, 12, HOJE)
     expect(totalBase).toBe(2)
     expect(totalReincidentes).toBe(0)
+  })
+})
+
+describe('coorteInstalacaoRange', () => {
+  it('desloca o período um mês para trás preservando o fim do mês', () => {
+    const { from, to } = coorteInstalacaoRange({ from: new Date(2026, 8, 1), to: new Date(2026, 8, 30) })
+    expect(from).toEqual(new Date(2026, 7, 1))
+    expect(to).toEqual(new Date(2026, 7, 31))
   })
 })

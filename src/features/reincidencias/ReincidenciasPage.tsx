@@ -4,7 +4,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { TabBar } from '../../components/ui/TabBar'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useUIStore } from '../../store/uiStore'
-import { buildInstallChurn, buildManutencaoRevisitaChurn } from '../../lib/builders/churn'
+import { buildInstallChurn, buildManutencaoRevisitaChurn, coorteInstalacaoRange } from '../../lib/builders/churn'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { aiPairKey, useAIReincidencias } from '../../hooks/useAIReincidencias'
 import { useReincidenciaDetails } from '../../hooks/useReincidenciaDetails'
@@ -23,12 +23,12 @@ const ABA_CONFIG: Record<AbaRevisita, {
 }> = {
   manutencao: {
     label: 'Revisita de manutenção', tipoBase: 'MANUTENCAO', reportType: 'Relatório de Reincidências — Manutenção',
-    descricaoJanela: dias => `VTs com retorno em até 30 dias da OS anterior, nos últimos ${dias} dias`,
+    descricaoJanela: dias => `Assistências abertas em até 30 dias após outra assistência do cliente, nos últimos ${dias} dias`,
     kpiOrdens: 'OS envolvidas na revisita', kpiIntervalo: 'até o retorno',
   },
   instalacao: {
     label: 'Revisita de instalação', tipoBase: 'INSTALACAO', reportType: 'Relatório de Reincidências — Instalação',
-    descricaoJanela: dias => `Instalações com retorno em até 30 dias, nos últimos ${dias} dias`,
+    descricaoJanela: dias => `Clientes instalados no mês anterior ao período, com assistência em até 30 dias da instalação (período de ${dias} dias)`,
     kpiOrdens: 'ordens após a instalação', kpiIntervalo: 'até o retorno',
   },
 }
@@ -60,7 +60,7 @@ export default function ReincidenciasPage() {
     (!equipe || shortEquipe(row.nomedaequipe).startsWith(equipe)) &&
     (!cidade || row.nomedacidade === cidade),
   ), [allRows, fornecedor, equipe, cidade])
-  const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows, new Date(), range, cfg.tipoBase), [clientes, filteredBaseRows, range, cfg.tipoBase])
+  const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows, new Date(), aba === 'instalacao' && range ? coorteInstalacaoRange(range) : range, cfg.tipoBase), [clientes, filteredBaseRows, range, cfg.tipoBase, aba])
   const intervals = useMemo(() => buildIntervalDistribution(pares), [pares])
   const filtros = useMemo(() => [
     fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras',
