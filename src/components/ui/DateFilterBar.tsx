@@ -4,6 +4,7 @@ import { useUIStore, PRESETS, isSameMonth } from '../../store/uiStore'
 import type { DateCampo } from '../../lib/types'
 import type { ClusterFilter } from '../../lib/clusters'
 import { useAuthStore } from '../../store/authStore'
+import { Switch } from './radix-switch'
 
 const CAMPOS: { value: DateCampo; label: string }[] = [
   { value: 'datacadastro',    label: 'Abertura'     },
@@ -225,19 +226,16 @@ export function DateFilterBar({ sidebarOpen }: DateFilterBarProps) {
 
       <span className="mx-0.5 hidden h-4 w-px flex-shrink-0 bg-surface md:block" />
 
-      <button
-        onClick={toggleHideRede}
-        title={hideRede ? 'Rede Interna oculta — clique para exibir' : 'Clique para ocultar OS de Rede Interna'}
-        className={`flex h-11 flex-shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-caption font-semibold md:h-6
-                    transition-all duration-fast flex-shrink-0
-                    ${hideRede
-                      ? 'border-orange/40 bg-orange/[0.07] text-orange'
-                      : 'border-subtle text-muted hover:text-secondary hover:border-muted/30'}`}
+      {/* Ligado = OS de Rede Interna aparecem. Desligado = ocultas (hideRede). */}
+      <label
+        title={hideRede ? 'Rede Interna oculta — ligue para exibir' : 'Desligue para ocultar OS de Rede Interna'}
+        className={`flex h-11 flex-shrink-0 cursor-pointer select-none items-center gap-1.5 text-caption font-semibold md:h-6
+                    transition-colors duration-fast ${hideRede ? 'text-orange' : 'text-muted hover:text-secondary'}`}
       >
         <HardDrives size={10} className="flex-shrink-0" />
         <span>Rede</span>
-        {hideRede && <span className="text-caption font-bold opacity-80">OFF</span>}
-      </button>
+        <Switch checked={!hideRede} onCheckedChange={() => toggleHideRede()} aria-label="Exibir OS de Rede Interna" />
+      </label>
     </div>
   )
 }
