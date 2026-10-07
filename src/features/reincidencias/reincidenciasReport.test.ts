@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ClienteBase, ClienteReincidente } from '../../lib/builders/churn'
 import type { OSRow } from '../../lib/types'
-import { buildBairroSummary, explicarDiagnostico, formatarDelta, periodoAnterior, buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
+import { buildBairroComparativo, buildBairroSummary, explicarDiagnostico, formatarDelta, periodoAnterior, buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
 
 const row = (numos: string, equipe: string, fornecedor: OSRow['_fornecedor'], data: string, obs = '') => ({
   numos, nomedaequipe: equipe, _fornecedor: fornecedor, dataexecucao: data, databaixa: '', obs,
@@ -307,5 +307,83 @@ describe('periodoAnterior', () => {
     const { from, to } = periodoAnterior({ from: new Date(2026, 8, 10), to: new Date(2026, 8, 16) })
     expect(from).toEqual(new Date(2026, 8, 3))
     expect(to).toEqual(new Date(2026, 8, 9))
+  })
+})
+
+describe('buildBairroComparativo', () => {
+  const lin = (numos: string) => ({ numos, nomedaequipe: '03- VAL - INSTALACAO F11', dataexecucao: '10/09/2026', databaixa: '10/09/2026' }) as unknown as OSRow
+  const c = (chave: string, bairro: string, n: number, cidade = 'Caçapava') => ({
+    chave, cliente: `Cliente ${chave}`, cidade, bairro, visitas: n, intervaloMedio: 5, diasDesdeUltima: 1,
+    rows: Array.from({ length: n }, (_, i) => lin(`${chave}${i}`)),
+  }) as unknown as ClienteReincidente
+  const at = (chave: string, bairro: string) => ({ chave, cliente: chave, cidade: 'Caçapava', bairro, rows: [lin(chave)] }) as unknown as ClienteBase
+
+  it('uma linha por bairro e uma coluna por mês, com o mesmo bairro na mesma linha', () => {
+    const r = buildBairroComparativo([
+      { id: '2026-08', label: 'AGO/26', clientes: [c('A', 'VITORIA VALE', 2), c('B', 'CENTRO', 2)] },
+      { id: '2026-09', label: 'SET/26', clientes: [c('C', 'VITÓRIA VALE', 3), c('D', 'VITORIA VALE', 2)] },
+      { id: '2026-10', label: 'OUT/26', clientes: [c('E', 'CENTRO', 2)] },
+    ])
+    expect(r.periodos.map(p => p.label)).toEqual(['AGO/26', 'SET/26', 'OUT/26'])
+    expect(r.linhas.map(l => l.bairro)).toEqual(['VITORIA VALE', 'CENTRO'])
+    const vv = r.linhas[0]
+    expect([vv.meses['2026-08'].nOS, vv.meses['2026-09'].nOS, vv.meses['2026-10'].nOS]).toEqual([2, 5, 0])
+    expect(vv.totalOS).toBe(7)
+    expect(vv.variacao).toBe(-2)
+  })
+
+  it('mês sem revisita no bairro fica zerado, nunca ausente', () => {
+    const r = buildBairroComparativo([
+      { id: '2026-08', label: 'AGO/26', clientes: [c('A', 'CENTRO', 2)] },
+      { id: '2026-09', label: 'SET/26', clientes: [c('B', 'OUTRO', 2)] },
+    ])
+    const centro = r.linhas.find(l => l.bairro === 'CENTRO')!
+    expect(centro.meses['2026-09']).toEqual({ nOS: 0, nClientes: 0, nBase: 0, taxa: null })
+  })
+
+  it('os totais de cada mês fecham com o total de OS do mês', () => {
+    const agosto = [c('A', 'CENTRO', 2), c('B', 'JARDIM', 3), c('C', 'VILA', 2)]
+    const setembro = [c('D', 'CENTRO', 4)]
+    const r = buildBairroComparativo([{ id: '2026-08', label: 'AGO/26', clientes: agosto }, { id: '2026-09', label: 'SET/26', clientes: setembro }])
+    expect(r.totais['2026-08'].nOS).toBe(7)
+    expect(r.linhas.reduce((s, l) => s + l.meses['2026-08'].nOS, 0)).toBe(7)
+    expect(r.linhas.reduce((s, l) => s + l.meses['2026-09'].nOS, 0)).toBe(r.totais['2026-09'].nOS)
+  })
+
+  it('taxa por mês usa a base daquele mês', () => {
+    const r = buildBairroComparativo([
+      { id: '2026-08', label: 'AGO/26', clientes: [c('A', 'CENTRO', 2)], base: [at('A', 'CENTRO'), at('X', 'CENTRO'), at('Y', 'CENTRO'), at('Z', 'CENTRO')] },
+      { id: '2026-09', label: 'SET/26', clientes: [c('B', 'CENTRO', 2)], base: [at('B', 'CENTRO'), at('W', 'CENTRO')] },
+    ])
+    expect(r.linhas[0].meses['2026-08'].taxa).toBe(25)
+    expect(r.linhas[0].meses['2026-09'].taxa).toBe(50)
+  })
+
+  it('ordena pelo total de OS dos meses selecionados', () => {
+    const r = buildBairroComparativo([
+      { id: '2026-08', label: 'AGO/26', clientes: [c('A', 'PEQUENO', 2), c('B', 'GRANDE', 2)] },
+      { id: '2026-09', label: 'SET/26', clientes: [c('C', 'GRANDE', 5)] },
+    ])
+    expect(r.linhas.map(l => l.bairro)).toEqual(['GRANDE', 'PEQUENO'])
+  })
+
+  it('um mês só não tem variação', () => {
+    const r = buildBairroComparativo([{ id: '2026-09', label: 'SET/26', clientes: [c('A', 'CENTRO', 2)] }])
+    expect(r.linhas[0].variacao).toBeNull()
+  })
+
+  it('bairros de cidades diferentes com o mesmo nome continuam em linhas separadas', () => {
+    const r = buildBairroComparativo([{ id: '2026-09', label: 'SET/26', clientes: [c('A', 'CENTRO', 2, 'Taubaté'), c('B', 'CENTRO', 2, 'Caçapava')] }])
+    expect(r.linhas).toHaveLength(2)
+    expect(r.linhas.map(l => l.label).sort()).toEqual(['CENTRO · Caçapava', 'CENTRO · Taubaté'])
+  })
+
+  it('junta o nome cortado em 20 caracteres de um mês ao nome completo de outro', () => {
+    const r = buildBairroComparativo([
+      { id: '2026-08', label: 'AGO/26', clientes: [c('A', 'RESIDENCIAL ESPERANC', 2)] },
+      { id: '2026-09', label: 'SET/26', clientes: [c('B', 'RESIDENCIAL ESPERANCA', 2)] },
+    ])
+    expect(r.linhas).toHaveLength(1)
+    expect(r.linhas[0].bairro).toBe('RESIDENCIAL ESPERANCA')
   })
 })

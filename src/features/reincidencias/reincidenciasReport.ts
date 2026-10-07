@@ -188,13 +188,14 @@ export const cidadeCurta = (cidade: string): string => {
   return cidade.trim() ? cidade.trim().charAt(0).toUpperCase() + cidade.trim().slice(1).toLowerCase() : '—'
 }
 
-type Origem = 'rev' | 'base' | 'ant'
+type ItemBairro = ClienteBase | ClienteReincidente
 interface GrupoBairro {
   cidadeKey: string
   bairroKey: string
   variantesBairro: Map<string, number>
   variantesCidade: Map<string, number>
-  itens: Record<Origem, Array<ClienteBase | ClienteReincidente>>
+  /** Itens do grupo por origem ('rev', 'base', 'ant', ou o id de cada mês no comparativo). */
+  itens: Record<string, ItemBairro[]>
 }
 
 const maisUsado = (variantes: Map<string, number>): string =>
@@ -208,9 +209,53 @@ function somar(destino: Map<string, number>, origem: Map<string, number>) {
 }
 
 function juntar(destino: GrupoBairro, origem: GrupoBairro) {
-  for (const o of ['rev', 'base', 'ant'] as Origem[]) destino.itens[o].push(...origem.itens[o])
+  for (const [nome, itens] of Object.entries(origem.itens)) (destino.itens[nome] ??= []).push(...itens)
   somar(destino.variantesBairro, origem.variantesBairro)
   somar(destino.variantesCidade, origem.variantesCidade)
+}
+
+/** Agrupa os itens de todas as origens de uma vez, para que o mesmo bairro tenha a
+ *  mesma chave e o mesmo nome em qualquer origem (período, base, mês do comparativo). */
+function agruparBairros(origens: Record<string, ItemBairro[]>): Map<string, GrupoBairro> {
+  const brutos = new Map<string, GrupoBairro>()
+  for (const [origem, itens] of Object.entries(origens)) {
+    for (const item of itens) {
+      const bairro = item.bairro.trim() || SEM_BAIRRO
+      const cidade = item.cidade.trim()
+      const cidadeKey = normalizar(cidade)
+      const bairroKey = normalizar(bairro) || normalizar(SEM_BAIRRO)
+      const key = `${cidadeKey}|${bairroKey}`
+      const grupo: GrupoBairro = brutos.get(key) ?? { cidadeKey, bairroKey, variantesBairro: new Map(), variantesCidade: new Map(), itens: {} }
+      ;(grupo.itens[origem] ??= []).push(item)
+      grupo.variantesBairro.set(bairro, (grupo.variantesBairro.get(bairro) ?? 0) + 1)
+      grupo.variantesCidade.set(cidade, (grupo.variantesCidade.get(cidade) ?? 0) + 1)
+      brutos.set(key, grupo)
+    }
+  }
+
+  // Une o nome cortado ao completo — só quando há um único candidato na mesma cidade.
+  for (const [key, corte] of [...brutos]) {
+    if (corte.bairroKey.length !== LIMITE_BAIRRO_ERP) continue
+    const candidatos = [...brutos.values()].filter(g =>
+      g !== corte && g.cidadeKey === corte.cidadeKey && g.bairroKey.length > LIMITE_BAIRRO_ERP && g.bairroKey.startsWith(corte.bairroKey))
+    if (candidatos.length !== 1) continue
+    juntar(candidatos[0], corte)
+    brutos.delete(key)
+  }
+  return brutos
+}
+
+/** Nome e cidade exibidos de cada grupo; a cidade entra no rótulo só quando o nome se repete. */
+function nomearGrupos(grupos: Array<[string, GrupoBairro]>): Map<string, { bairro: string; cidade: string; label: string }> {
+  const repetido = new Map<string, number>()
+  const nomes = new Map<string, { bairro: string; cidade: string; label: string }>()
+  for (const [key, g] of grupos) {
+    const bairro = maisUsado(g.variantesBairro)
+    nomes.set(key, { bairro, cidade: maisUsado(g.variantesCidade), label: bairro })
+    repetido.set(bairro, (repetido.get(bairro) ?? 0) + 1)
+  }
+  for (const nome of nomes.values()) if ((repetido.get(nome.bairro) ?? 0) > 1) nome.label = `${nome.bairro} · ${cidadeCurta(nome.cidade)}`
+  return nomes
 }
 
 const equipeDaOS = (row: OSRow): string => shortEquipe(row.nomedaequipe).split(' - ')[0].trim()
@@ -239,59 +284,27 @@ function diagnosticar(equipes: Array<{ equipe: string; n: number }>, nClientes: 
   return { diagnostico: 'misto', equipeDominante: topo.equipe, shareDominante: share }
 }
 
-export function buildBairroSummary(clientes: ClienteReincidente[], { base = [], anterior }: BairroOpcoes = {}): BairroResumo[] {
-  const brutos = new Map<string, GrupoBairro>()
-  const adicionar = (item: ClienteBase | ClienteReincidente, origem: Origem) => {
-    const bairro = item.bairro.trim() || SEM_BAIRRO
-    const cidade = item.cidade.trim()
-    const cidadeKey = normalizar(cidade)
-    const bairroKey = normalizar(bairro) || normalizar(SEM_BAIRRO)
-    const key = `${cidadeKey}|${bairroKey}`
-    const grupo: GrupoBairro = brutos.get(key) ?? { cidadeKey, bairroKey, variantesBairro: new Map(), variantesCidade: new Map(), itens: { rev: [], base: [], ant: [] } }
-    grupo.itens[origem].push(item)
-    grupo.variantesBairro.set(bairro, (grupo.variantesBairro.get(bairro) ?? 0) + 1)
-    grupo.variantesCidade.set(cidade, (grupo.variantesCidade.get(cidade) ?? 0) + 1)
-    brutos.set(key, grupo)
-  }
-  clientes.forEach(c => adicionar(c, 'rev'))
-  base.forEach(c => adicionar(c, 'base'))
-  anterior?.forEach(c => adicionar(c, 'ant'))
+const osDe = (lista: ItemBairro[] | undefined) => (lista ?? []).reduce((sum, c) => sum + c.rows.length, 0)
 
-  // Une o nome cortado ao completo — só quando há um único candidato na mesma cidade.
-  for (const [key, corte] of [...brutos]) {
-    if (corte.bairroKey.length !== LIMITE_BAIRRO_ERP) continue
-    const candidatos = [...brutos.values()].filter(g =>
-      g !== corte && g.cidadeKey === corte.cidadeKey && g.bairroKey.length > LIMITE_BAIRRO_ERP && g.bairroKey.startsWith(corte.bairroKey))
-    if (candidatos.length !== 1) continue
-    juntar(candidatos[0], corte)
-    brutos.delete(key)
-  }
+export function buildBairroSummary(clientes: ClienteReincidente[], { base = [], anterior }: BairroOpcoes = {}): BairroResumo[] {
+  const brutos = agruparBairros({ rev: clientes, base, ant: anterior ?? [] })
 
   // Só entram os bairros com revisita agora; a base e o período anterior só medem.
-  const grupos = [...brutos].filter(([, g]) => g.itens.rev.length > 0)
-  const nomeRepetido = new Map<string, number>()
-  const nomes = new Map<string, { bairro: string; cidade: string }>()
-  for (const [key, g] of grupos) {
-    const nome = { bairro: maisUsado(g.variantesBairro), cidade: maisUsado(g.variantesCidade) }
-    nomes.set(key, nome)
-    nomeRepetido.set(nome.bairro, (nomeRepetido.get(nome.bairro) ?? 0) + 1)
-  }
-
+  const grupos = [...brutos].filter(([, g]) => (g.itens.rev?.length ?? 0) > 0)
+  const nomes = nomearGrupos(grupos)
   const totalOS = clientes.reduce((sum, c) => sum + c.rows.length, 0)
-  const osDe = (lista: Array<ClienteBase | ClienteReincidente>) => lista.reduce((sum, c) => sum + c.rows.length, 0)
 
   return grupos.map(([key, g]): BairroResumo => {
     const revs = g.itens.rev as ClienteReincidente[]
-    const { bairro, cidade } = nomes.get(key)!
+    const { bairro, cidade, label } = nomes.get(key)!
     const nClientes = revs.length
     // Todo reincidente é cliente atendido: a base nunca fica abaixo dele.
-    const nBase = base.length ? Math.max(g.itens.base.length, nClientes) : 0
+    const nBase = base.length ? Math.max(g.itens.base?.length ?? 0, nClientes) : 0
     const nOS = osDe(revs)
     const nOSAnterior = anterior ? osDe(g.itens.ant) : null
     const equipes = contarEquipesDeOrigem(revs)
     return {
-      key, bairro, cidade,
-      label: (nomeRepetido.get(bairro) ?? 0) > 1 ? `${bairro} · ${cidadeCurta(cidade)}` : bairro,
+      key, bairro, cidade, label,
       clientes: [...revs].sort((a, b) => b.visitas - a.visitas || a.cliente.localeCompare(b.cliente)),
       nClientes,
       nRevisitas: revs.reduce((sum, c) => sum + Math.max(0, c.rows.length - 1), 0),
@@ -305,6 +318,73 @@ export function buildBairroSummary(clientes: ClienteReincidente[], { base = [], 
       ...diagnosticar(equipes, nClientes),
     }
   }).sort((a, b) => b.nOS - a.nOS || b.nClientes - a.nClientes || a.label.localeCompare(b.label))
+}
+
+// ─── Comparativo entre meses ──────────────────────────────────────────────────
+// Uma linha por bairro, uma coluna por mês. O agrupamento é feito uma vez para
+// todos os meses juntos: "VITORIA VALE" em agosto e "VITÓRIA VALE" em setembro caem
+// na mesma linha.
+export interface PeriodoComparativo {
+  /** Identificador estável ('2026-09') — chave das colunas. */
+  id: string
+  /** Rótulo da coluna ('SET/26'). */
+  label: string
+  clientes: ClienteReincidente[]
+  base?: ClienteBase[]
+}
+
+export interface CelulaMes { nOS: number; nClientes: number; nBase: number; taxa: number | null }
+
+export interface LinhaComparativo {
+  key: string
+  bairro: string
+  cidade: string
+  label: string
+  meses: Record<string, CelulaMes>
+  totalOS: number
+  totalClientes: number
+  /** nOS do último mês − nOS do primeiro; null com um mês só. */
+  variacao: number | null
+}
+
+export interface Comparativo {
+  periodos: Array<{ id: string; label: string }>
+  linhas: LinhaComparativo[]
+  /** Totais por mês: a soma das linhas fecha com o total de OS do relatório de cada mês. */
+  totais: Record<string, CelulaMes>
+}
+
+export function buildBairroComparativo(periodos: PeriodoComparativo[]): Comparativo {
+  const origens: Record<string, ItemBairro[]> = {}
+  for (const p of periodos) { origens[`rev:${p.id}`] = p.clientes; origens[`base:${p.id}`] = p.base ?? [] }
+  const brutos = agruparBairros(origens)
+  const grupos = [...brutos].filter(([, g]) => periodos.some(p => (g.itens[`rev:${p.id}`]?.length ?? 0) > 0))
+  const nomes = nomearGrupos(grupos)
+
+  const linhas = grupos.map(([key, g]): LinhaComparativo => {
+    const meses: Record<string, CelulaMes> = {}
+    for (const p of periodos) {
+      const nClientes = g.itens[`rev:${p.id}`]?.length ?? 0
+      const nBase = p.base?.length ? Math.max(g.itens[`base:${p.id}`]?.length ?? 0, nClientes) : 0
+      meses[p.id] = { nOS: osDe(g.itens[`rev:${p.id}`]), nClientes, nBase, taxa: nBase && nClientes ? Math.round(nClientes / nBase * 1000) / 10 : nBase ? 0 : null }
+    }
+    const { bairro, cidade, label } = nomes.get(key)!
+    const primeiro = meses[periodos[0].id], ultimo = meses[periodos[periodos.length - 1].id]
+    return {
+      key, bairro, cidade, label, meses,
+      totalOS: periodos.reduce((s, p) => s + meses[p.id].nOS, 0),
+      totalClientes: periodos.reduce((s, p) => s + meses[p.id].nClientes, 0),
+      variacao: periodos.length > 1 ? ultimo.nOS - primeiro.nOS : null,
+    }
+  }).sort((a, b) => b.totalOS - a.totalOS || b.totalClientes - a.totalClientes || a.label.localeCompare(b.label))
+
+  const totais: Record<string, CelulaMes> = {}
+  for (const p of periodos) {
+    const nClientes = p.clientes.length
+    const nBase = p.base?.length ?? 0
+    totais[p.id] = { nOS: osDe(p.clientes), nClientes, nBase, taxa: nBase ? Math.round(nClientes / nBase * 1000) / 10 : null }
+  }
+  return { periodos: periodos.map(p => ({ id: p.id, label: p.label })), linhas, totais }
 }
 
 /** Período imediatamente anterior ao filtrado: o mês civil anterior quando o filtro é

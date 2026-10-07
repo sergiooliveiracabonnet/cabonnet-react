@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Brain, CaretDown, CaretRight, FilePdf, Funnel, House, MapPin, UserMinus, Wrench } from '@phosphor-icons/react'
+import { Brain, CalendarBlank, CaretDown, CaretRight, FilePdf, Funnel, House, MapPin, UserMinus, Wrench } from '@phosphor-icons/react'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { TabBar } from '../../components/ui/TabBar'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -11,6 +11,8 @@ import { useReincidenciaDetails } from '../../hooks/useReincidenciaDetails'
 import { buildBairroSummary, buildIntervalDistribution, periodoAnterior, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
 import { exportReincidenciasPDF } from './reincidenciasPDF'
 import { ReincidenciasCharts } from './ReincidenciasCharts'
+import { ReincidenciasComparativo } from './ReincidenciasComparativo'
+import { ReincidenciasMapa } from './ReincidenciasMapa'
 import { BairroModal, BairrosCard } from './ReincidenciasBairros'
 import { exportBairrosPDF } from './reincidenciasBairroPDF'
 import { ReincidenciasAIPanel } from './ReincidenciasAIPanel'
@@ -39,6 +41,7 @@ export default function ReincidenciasPage() {
   const { allRows, isLoading } = useOSDerived()
   const { dateFilter } = useUIStore()
   const [aba, setAba] = useState<AbaRevisita>('manutencao')
+  const [comparativo, setComparativo] = useState(false)
   const [fornecedor, setFornecedor] = useState('')
   const [equipe, setEquipe] = useState('')
   const [cidade, setCidade] = useState('')
@@ -88,8 +91,8 @@ export default function ReincidenciasPage() {
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6">
       <PageHeader title="Relatório de Reincidências" icon={UserMinus}
-        description={`${cfg.descricaoJanela(churn.janelaDias)}${range ? ` (${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')})` : ''} · análise auditável por cliente`}
-        actions={<div className="flex flex-wrap items-center gap-2">
+        description={comparativo ? 'O mesmo bairro, mês a mês: escolha os meses e exporte para PDF ou Excel' : `${cfg.descricaoJanela(churn.janelaDias)}${range ? ` (${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')})` : ''} · análise auditável por cliente`}
+        actions={comparativo ? undefined : <div className="flex flex-wrap items-center gap-2">
           <button type="button" disabled={!bairros.length}
             onClick={() => exportBairrosPDF(bairros, { tipo: cfg.label, filtros, periodo: range ? `${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')}` : '', totalBase: baseFiltrada.length, totalOSAnterior: anteriorFiltrado ? anteriorFiltrado.reduce((sum, c) => sum + c.rows.length, 0) : null })}
             className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border px-4 text-label font-semibold text-text transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
@@ -106,11 +109,13 @@ export default function ReincidenciasPage() {
         tabs={[
           { id: 'manutencao', label: ABA_CONFIG.manutencao.label, icon: Wrench },
           { id: 'instalacao', label: ABA_CONFIG.instalacao.label, icon: House },
+          { id: 'comparativo', label: 'Comparativo mensal', icon: CalendarBlank },
         ]}
-        active={aba}
-        onChange={trocarAba}
+        active={comparativo ? 'comparativo' : aba}
+        onChange={id => { if (id === 'comparativo') { setComparativo(true); return } setComparativo(false); trocarAba(id) }}
       />
 
+      {comparativo ? <ReincidenciasComparativo allRows={allRows} /> : (<>
       <section aria-label="Filtros do relatório" className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
         <Funnel size={18} className="mb-3 text-muted" />
         <Filter label="Terceira" value={fornecedor} onChange={resetAI(setFornecedor)} options={FORNECEDORES} all="Todas as terceiras" />
@@ -129,6 +134,7 @@ export default function ReincidenciasPage() {
       <ReincidenciasCharts ranking={teamRanking} intervals={intervals} analysis={analysis} />
 
       <BairrosCard tipo={cfg.label} resumo={bairros} onOpen={setBairroSel} />
+      <ReincidenciasMapa tipo={cfg.label} clientes={clientes} bairros={bairros} carregando={observationsLoading} erro={observationsError} onAbrirBairro={setBairroSel} />
       <BairroModal tipo={cfg.label} resumo={bairros} selectedKey={bairroSel} onSelect={setBairroSel} onClose={() => setBairroSel(null)} />
 
       <ReincidenciasAIPanel analysis={analysis} parCount={pares.length} aiLoading={aiLoading}
@@ -162,6 +168,7 @@ export default function ReincidenciasPage() {
           </article>
         })}
       </section>
+      </>)}
     </div>
   )
 }
