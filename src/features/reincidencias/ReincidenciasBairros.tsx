@@ -2,12 +2,26 @@ import { MapPin } from '@phosphor-icons/react'
 import { Modal } from '../../components/ui/Modal'
 import { Bar, BarChart, ChartTooltip, Grid, XAxis, YAxis } from '../../components/ui/bar-chart'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
-import { cidadeCurta, getOSObservation, sortedClientRows, type BairroResumo } from './reincidenciasReport'
+import { DIAGNOSTICO_LABEL, cidadeCurta, explicarDiagnostico, formatarDelta, getOSObservation, sortedClientRows, type BairroResumo } from './reincidenciasReport'
 
 const TOPO_GRAFICO = 10
 const TOPO_LISTA = 5
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
+const pctBr = (valor: number) => valor.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 })
+
+/** Variação de OS contra o período anterior: subir é ruim (vermelho), cair é bom (verde). */
+function DeltaTag({ delta }: { delta: number | null }) {
+  if (delta === null) return null
+  const cor = delta > 0 ? 'text-red' : delta < 0 ? 'text-green' : 'text-muted'
+  return <span className={`ml-1.5 text-caption font-semibold tabular-nums ${cor}`} title="Variação de OS contra o período anterior">{formatarDelta(delta)}</span>
+}
+
+function DiagnosticoTag({ b }: { b: BairroResumo }) {
+  if (b.diagnostico === 'poucos') return null
+  const cor = b.diagnostico === 'rede' ? 'text-primary' : b.diagnostico === 'execucao' ? 'text-orange' : 'text-muted'
+  return <span className={`block truncate text-caption font-semibold ${cor}`}>{DIAGNOSTICO_LABEL[b.diagnostico]}{b.diagnostico === 'execucao' && b.equipeDominante ? ` · ${b.equipeDominante}` : ''}</span>
+}
 
 /** Cartão "Revisitas por bairro": barras dos 10 bairros com mais clientes
  *  reincidentes + lista clicável (alternativa por teclado ao clique na barra). */
@@ -59,9 +73,11 @@ export function BairrosCard({ tipo, resumo, onOpen }: { tipo: string; resumo: Ba
                       <span className="min-w-0">
                         <b className="block truncate text-label text-text">{b.label}</b>
                         <span className="block truncate text-caption text-muted">{cidadeCurta(b.cidade)}</span>
+                        <DiagnosticoTag b={b} />
                       </span>
                       <span className="whitespace-nowrap text-right text-caption tabular-nums text-secondary">
-                        <b className="text-orange">{b.nOS} OS</b><br />{plural(b.nClientes, 'cliente', 'clientes')} · {b.pct}%
+                        <b className="text-orange">{b.nOS} OS</b><DeltaTag delta={b.delta} /><br />
+                        {plural(b.nClientes, 'cliente', 'clientes')}{b.taxa !== null ? ` · taxa ${pctBr(b.taxa)}%` : ''}
                       </span>
                     </button>
                   </li>
@@ -111,7 +127,7 @@ export function BairroModal({ tipo, resumo, selectedKey, onSelect, onClose }: {
                           <b className={`block truncate text-label ${sel ? 'text-primary' : 'text-text'}`}>{b.label}</b>
                           <span className="block truncate text-caption text-muted">{cidadeCurta(b.cidade)}</span>
                         </span>
-                        <b className="text-caption tabular-nums text-text">{b.nOS} <span className="font-normal text-muted">OS</span></b>
+                        <span className="whitespace-nowrap text-caption tabular-nums"><b className="text-text">{b.nOS}</b> <span className="text-muted">OS</span><DeltaTag delta={b.delta} /></span>
                       </span>
                       <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-surface" aria-hidden="true">
                         <span className={`block h-full rounded-full ${sel ? 'bg-primary' : 'bg-orange'}`} style={{ width: `${b.nOS / maior * 100}%` }} />
@@ -130,9 +146,15 @@ export function BairroModal({ tipo, resumo, selectedKey, onSelect, onClose }: {
                 <p className="text-caption text-secondary">{atual.cidade || '—'}</p>
               </div>
               <p className="text-caption tabular-nums text-secondary">
-                <b className="text-orange">{atual.nOS} OS</b> · {plural(atual.nClientes, 'cliente', 'clientes')} · {atual.nRevisitas} {atual.nRevisitas === 1 ? 'revisita' : 'revisitas'} · {atual.pct}% do total
+                <b className="text-orange">{atual.nOS} OS</b> · {plural(atual.nClientes, 'cliente', 'clientes')}
+                {atual.taxa !== null && <> · taxa <b className="text-text">{pctBr(atual.taxa)}%</b> ({atual.nClientes} de {atual.nBase} atendidos)</>}
+                {' '}· {atual.nRevisitas} {atual.nRevisitas === 1 ? 'revisita' : 'revisitas'} · {atual.pct}% do total
+                {atual.delta !== null && <> · <DeltaTag delta={atual.delta} /> vs período anterior ({atual.nOSAnterior} OS)</>}
               </p>
             </div>
+            <p className="mt-2 rounded-lg bg-elevated/60 px-3 py-2 text-caption text-secondary">
+              <b className="text-text">{DIAGNOSTICO_LABEL[atual.diagnostico]}.</b> {explicarDiagnostico(atual)}
+            </p>
 
             <div className="mt-3 space-y-3">
               {atual.clientes.map(cliente => (

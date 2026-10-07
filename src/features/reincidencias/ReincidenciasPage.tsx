@@ -8,7 +8,7 @@ import { buildInstallChurn, buildManutencaoRevisitaChurn, coorteInstalacaoRange 
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { aiPairKey, useAIReincidencias } from '../../hooks/useAIReincidencias'
 import { useReincidenciaDetails } from '../../hooks/useReincidenciaDetails'
-import { buildBairroSummary, buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
+import { buildBairroSummary, buildIntervalDistribution, periodoAnterior, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
 import { exportReincidenciasPDF } from './reincidenciasPDF'
 import { ReincidenciasCharts } from './ReincidenciasCharts'
 import { BairroModal, BairrosCard } from './ReincidenciasBairros'
@@ -47,9 +47,11 @@ export default function ReincidenciasPage() {
   const [aiEnabled, setAIEnabled] = useState(false)
   const cfg = ABA_CONFIG[aba]
   const range = useMemo(() => (dateFilter.from && dateFilter.to ? { from: dateFilter.from, to: dateFilter.to } : null), [dateFilter.from, dateFilter.to])
-  const churn = useMemo(
-    () => (aba === 'instalacao' ? buildInstallChurn : buildManutencaoRevisitaChurn)(allRows, Number.POSITIVE_INFINITY, new Date(), range),
-    [allRows, range, aba],
+  const construir = aba === 'instalacao' ? buildInstallChurn : buildManutencaoRevisitaChurn
+  const churn = useMemo(() => construir(allRows, Number.POSITIVE_INFINITY, new Date(), range), [allRows, range, construir])
+  const churnAnterior = useMemo(
+    () => (range ? construir(allRows, Number.POSITIVE_INFINITY, new Date(), periodoAnterior(range)) : null),
+    [allRows, range, construir],
   )
   const reportOSNumbers = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => r.numos)))], [churn.clientes])
   const { data: observations, isLoading: observationsLoading, isError: observationsError } = useReincidenciaDetails(reportOSNumbers)
@@ -65,7 +67,9 @@ export default function ReincidenciasPage() {
   ), [allRows, fornecedor, equipe, cidade])
   const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows, new Date(), aba === 'instalacao' && range ? coorteInstalacaoRange(range) : range, cfg.tipoBase), [clientes, filteredBaseRows, range, cfg.tipoBase, aba])
   const intervals = useMemo(() => buildIntervalDistribution(pares), [pares])
-  const bairros = useMemo(() => buildBairroSummary(clientes), [clientes])
+  const baseFiltrada = useMemo(() => filterReincidentes(churn.baseClientes ?? [], { fornecedor, equipe, cidade }), [churn.baseClientes, fornecedor, equipe, cidade])
+  const anteriorFiltrado = useMemo(() => (churnAnterior ? filterReincidentes(churnAnterior.clientes, { fornecedor, equipe, cidade }) : undefined), [churnAnterior, fornecedor, equipe, cidade])
+  const bairros = useMemo(() => buildBairroSummary(clientes, { base: baseFiltrada, anterior: anteriorFiltrado }), [clientes, baseFiltrada, anteriorFiltrado])
   const filtros = useMemo(() => [
     fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras',
     equipe ? `Equipe: ${equipe}` : 'Todas as equipes',
@@ -87,7 +91,7 @@ export default function ReincidenciasPage() {
         description={`${cfg.descricaoJanela(churn.janelaDias)}${range ? ` (${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')})` : ''} · análise auditável por cliente`}
         actions={<div className="flex flex-wrap items-center gap-2">
           <button type="button" disabled={!bairros.length}
-            onClick={() => exportBairrosPDF(bairros, { tipo: cfg.label, filtros, periodo: range ? `${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')}` : '' })}
+            onClick={() => exportBairrosPDF(bairros, { tipo: cfg.label, filtros, periodo: range ? `${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')}` : '', totalBase: baseFiltrada.length, totalOSAnterior: anteriorFiltrado ? anteriorFiltrado.reduce((sum, c) => sum + c.rows.length, 0) : null })}
             className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border px-4 text-label font-semibold text-text transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
             <MapPin size={17} /> Exportar por bairro
           </button>

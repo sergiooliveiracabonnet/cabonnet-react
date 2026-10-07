@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { ClienteReincidente } from '../../lib/builders/churn'
+import type { ClienteBase, ClienteReincidente } from '../../lib/builders/churn'
 import type { OSRow } from '../../lib/types'
-import { buildBairroSummary, buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
+import { buildBairroSummary, explicarDiagnostico, formatarDelta, periodoAnterior, buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
 
 const row = (numos: string, equipe: string, fornecedor: OSRow['_fornecedor'], data: string, obs = '') => ({
   numos, nomedaequipe: equipe, _fornecedor: fornecedor, dataexecucao: data, databaixa: '', obs,
@@ -211,5 +211,101 @@ describe('buildBairroSummary', () => {
 
   it('cliente sem bairro vai para "Sem bairro"', () => {
     expect(buildBairroSummary([cli('A', 'Taubaté', '', 2)])[0].label).toBe('Sem bairro')
+  })
+})
+
+describe('buildBairroSummary — taxa, período anterior e diagnóstico', () => {
+  const linha = (numos: string, equipe: string, data: string) => ({ numos, nomedaequipe: `03- VAL - INSTALACAO ${equipe}`, dataexecucao: data, databaixa: data }) as unknown as OSRow
+  const comEquipes = (chave: string, bairro: string, equipes: string[]) => ({
+    chave, cliente: `Cliente ${chave}`, cidade: 'Taubaté', bairro, visitas: equipes.length, intervaloMedio: 5, diasDesdeUltima: 1,
+    rows: equipes.map((e, i) => linha(`${chave}${i}`, e, `0${i + 1}/09/2026`)),
+  }) as unknown as ClienteReincidente
+  const atendido = (chave: string, bairro: string) => ({ chave, cliente: chave, cidade: 'Taubaté', bairro, rows: [linha(chave, 'F11', '01/09/2026')] }) as unknown as ClienteBase
+
+  it('taxa = reincidentes ÷ atendidos no bairro, com uma casa', () => {
+    const base = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map(k => atendido(k, 'CENTRO'))
+    const [b] = buildBairroSummary([comEquipes('A', 'CENTRO', ['F11', 'F11'])], { base })
+    expect(b.nBase).toBe(7)
+    expect(b.taxa).toBe(14.3)
+  })
+
+  it('a base nunca fica abaixo dos reincidentes', () => {
+    const [b] = buildBairroSummary([comEquipes('A', 'CENTRO', ['F11', 'F11']), comEquipes('B', 'CENTRO', ['F11', 'F11'])], { base: [atendido('A', 'CENTRO')] })
+    expect(b.nBase).toBe(2)
+    expect(b.taxa).toBe(100)
+  })
+
+  it('sem base não há taxa', () => {
+    const [b] = buildBairroSummary([comEquipes('A', 'CENTRO', ['F11', 'F11'])])
+    expect(b.taxa).toBeNull()
+    expect(b.nBase).toBe(0)
+  })
+
+  it('variação contra o período anterior no mesmo bairro (grafia diferente também casa)', () => {
+    const atual = [comEquipes('A', 'VITÓRIA VALE', ['F11', 'F11']), comEquipes('B', 'VITÓRIA VALE', ['F11', 'F11'])]
+    const anterior = [comEquipes('C', 'VITORIA VALE', ['F11', 'F11'])]
+    const [b] = buildBairroSummary(atual, { anterior })
+    expect(b.nOS).toBe(4)
+    expect(b.nOSAnterior).toBe(2)
+    expect(b.delta).toBe(2)
+  })
+
+  it('bairro novo no período: o anterior é zero e a variação é o total', () => {
+    const [b] = buildBairroSummary([comEquipes('A', 'NOVO', ['F11', 'F11'])], { anterior: [comEquipes('C', 'OUTRO', ['F11', 'F11'])] })
+    expect(b.nOSAnterior).toBe(0)
+    expect(b.delta).toBe(2)
+  })
+
+  it('sem período anterior, não há variação', () => {
+    expect(buildBairroSummary([comEquipes('A', 'CENTRO', ['F11', 'F11'])])[0].delta).toBeNull()
+  })
+
+  it('execução: uma equipe responde pela maioria das visitas de origem', () => {
+    const [b] = buildBairroSummary([
+      comEquipes('A', 'CENTRO', ['F11', 'F11', 'F11']), comEquipes('B', 'CENTRO', ['F11', 'F11', 'F36']),
+    ])
+    expect(b.diagnostico).toBe('execucao')
+    expect(b.equipeDominante).toBe('INST F11')
+    expect(explicarDiagnostico(b)).toContain('INST F11')
+  })
+
+  it('rede: várias equipes, nenhuma dominante, em vários clientes', () => {
+    const [b] = buildBairroSummary([
+      comEquipes('A', 'CENTRO', ['F11', 'F36', 'F11']), comEquipes('B', 'CENTRO', ['F12', 'F13']), comEquipes('C', 'CENTRO', ['F14', 'F45']),
+    ])
+    expect(b.diagnostico).toBe('rede')
+    expect(b.equipes.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('poucos casos: menos de 4 revisitas não dá para diagnosticar', () => {
+    const [b] = buildBairroSummary([comEquipes('A', 'CENTRO', ['F11', 'F11', 'F11'])])
+    expect(b.diagnostico).toBe('poucos')
+  })
+
+  it('formata a variação com seta e sinal', () => {
+    expect(formatarDelta(5)).toBe('▲ +5')
+    expect(formatarDelta(-3)).toBe('▼ −3')
+    expect(formatarDelta(0)).toBe('= 0')
+    expect(formatarDelta(null)).toBe('')
+  })
+})
+
+describe('periodoAnterior', () => {
+  it('mês inteiro vira o mês civil anterior', () => {
+    const { from, to } = periodoAnterior({ from: new Date(2026, 8, 1), to: new Date(2026, 8, 30) })
+    expect(from).toEqual(new Date(2026, 7, 1))
+    expect(to).toEqual(new Date(2026, 7, 31))
+  })
+
+  it('mês de março volta para fevereiro com o último dia certo', () => {
+    const { from, to } = periodoAnterior({ from: new Date(2026, 2, 1), to: new Date(2026, 2, 31) })
+    expect(from).toEqual(new Date(2026, 1, 1))
+    expect(to).toEqual(new Date(2026, 1, 28))
+  })
+
+  it('janela qualquer vira a mesma quantidade de dias logo antes', () => {
+    const { from, to } = periodoAnterior({ from: new Date(2026, 8, 10), to: new Date(2026, 8, 16) })
+    expect(from).toEqual(new Date(2026, 8, 3))
+    expect(to).toEqual(new Date(2026, 8, 9))
   })
 })

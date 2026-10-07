@@ -311,3 +311,32 @@ describe('coorteInstalacaoRange', () => {
     expect(to).toEqual(new Date(2026, 7, 31))
   })
 })
+
+describe('baseClientes (denominador da taxa por bairro)', () => {
+  it('manutenção: lista os clientes atendidos na janela, com a OS que os colocou na base', () => {
+    const rows = enrichRows([manut('R1', 10), manut('R2', 45, { bairro: 'JARDIM', nomedacidade: 'CACAPAVA' })])
+    const { baseClientes, totalBase } = buildManutencaoRevisitaChurn(rows, 12, HOJE)
+    expect(baseClientes).toHaveLength(totalBase)
+    const r2 = baseClientes!.find(c => c.chave === 'R2')!
+    expect(r2.bairro).toBe('JARDIM')
+    expect(r2.cidade.toUpperCase()).toContain('CACAPAVA')
+    expect(r2.rows).toHaveLength(1)
+  })
+
+  it('manutenção: cliente fora da janela não entra na base', () => {
+    const rows = enrichRows([manut('Q', 100)])
+    expect(buildManutencaoRevisitaChurn(rows, 12, HOJE).baseClientes).toEqual([])
+  })
+
+  it('instalação: a base são os clientes instalados na coorte, tenham voltado ou não', () => {
+    const rows = enrichRows([inst('A', 40), vt('A', 30, 31), inst('B', 20)])
+    const { baseClientes, totalBase, clientes } = buildInstallChurn(rows, 12, HOJE)
+    expect(totalBase).toBe(2)
+    expect(baseClientes!.map(c => c.chave).sort()).toEqual(['A', 'B'])
+    expect(clientes.map(c => c.chave)).toEqual(['A'])
+  })
+
+  it('o painel antigo (buildChurn) não preenche a base', () => {
+    expect(buildChurn(enrichRows([manut('A', 10), manut('A', 20)]), 12, HOJE).baseClientes).toBeUndefined()
+  })
+})

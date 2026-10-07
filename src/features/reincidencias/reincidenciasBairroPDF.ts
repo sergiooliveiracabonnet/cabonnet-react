@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf'
 import { drawPDFHeader } from '../../lib/pdfBrand'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
-import { cidadeCurta, getOSObservation, sortedClientRows, type BairroResumo } from './reincidenciasReport'
+import { DIAGNOSTICO_LABEL, cidadeCurta, explicarDiagnostico, getOSObservation, sortedClientRows, type BairroResumo, type DiagnosticoBairro } from './reincidenciasReport'
 
 type RGB = [number, number, number]
 interface Estilo { size: number; bold: boolean; color: RGB }
@@ -10,9 +10,15 @@ const INK: RGB = [17, 24, 39]
 const BODY: RGB = [55, 65, 81]
 const MUTED: RGB = [107, 114, 128]
 const AZUL: RGB = [30, 64, 175]
+const LARANJA: RGB = [194, 65, 12]
+const VERMELHO: RGB = [185, 28, 28]
+const VERDE: RGB = [21, 128, 61]
 const FIO: RGB = [226, 232, 240]
 const FUNDO: RGB = [245, 247, 250]
 const TRILHA: RGB = [229, 233, 240]
+
+// Cor de cada diagnóstico: as únicas cores do relatório além do azul das barras.
+const COR_DIAGNOSTICO: Record<DiagnosticoBairro, RGB> = { rede: AZUL, execucao: LARANJA, misto: [100, 116, 139], poucos: [203, 213, 225] }
 
 const TIPO = {
   manchete: { size: 11.5, bold: true,  color: INK }   as Estilo,
@@ -31,11 +37,16 @@ const BASE = 0.74
 const RODAPE_Y = 290
 const FIM_CONTEUDO = 275
 
-const TOPO_BARRAS = 15
+const TOPO_BARRAS = 8
+const TOPO_ONDE_AGIR = 5
 const TOPO_DETALHE = 5
 
 const pct1 = (valor: number) => valor.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
+
+// Helvetica do PDF não tem ▲ ▼ nem o sinal de menos tipográfico: variação em ASCII, colorida.
+export const deltaPDF = (delta: number | null): string => (delta === null ? '' : delta > 0 ? `+${delta}` : delta < 0 ? `-${Math.abs(delta)}` : '0')
+const corDelta = (delta: number | null): RGB => (delta === null || delta === 0 ? MUTED : delta > 0 ? VERMELHO : VERDE)
 
 export interface BairroPDFOpcoes {
   /** "Revisita de manutenção" ou "Revisita de instalação". */
@@ -43,6 +54,10 @@ export interface BairroPDFOpcoes {
   filtros: string[]
   /** Período filtrado, já formatado ("01/09/2026 a 30/09/2026"); vazio se não houver. */
   periodo?: string
+  /** Clientes atendidos no período (com os mesmos filtros): denominador da taxa geral. */
+  totalBase?: number
+  /** OS envolvidas no período anterior; null sem comparação. */
+  totalOSAnterior?: number | null
 }
 
 /** Frases de leitura calculadas só dos números — sem IA, para o PDF sair igual toda vez. */
@@ -63,7 +78,21 @@ export function leituraPorBairro(resumo: BairroResumo[]): string[] {
   return frases
 }
 
-export function exportBairrosPDF(resumo: BairroResumo[], { tipo, filtros, periodo }: BairroPDFOpcoes) {
+/** Ações por tipo de indício, só para os bairros que mais pesam. Sempre sugestão. */
+export function acoesSugeridas(resumo: BairroResumo[]): string[] {
+  const grandes = resumo.slice(0, 8)
+  const acoes: string[] = []
+  grandes.filter(b => b.diagnostico === 'rede').slice(0, 1).forEach(b => acoes.push(
+    `Rede em ${b.label}: ${b.equipes.length} equipes na origem, nenhuma acima de ${Math.round(b.shareDominante * 100)}%. Medir as CTOs e acionar a Engenharia de Rede.`))
+  grandes.filter(b => b.diagnostico === 'execucao').slice(0, 1).forEach(b => acoes.push(
+    `Execução em ${b.label}: ${b.equipeDominante} fez ${Math.round(b.shareDominante * 100)}% das origens. Auditar o fechamento e conversar com a terceira.`))
+  const piorando = resumo.slice(0, TOPO_ONDE_AGIR).filter(b => b.delta !== null && b.delta >= 3).sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0))[0]
+  if (piorando) acoes.push(`Piorando: ${piorando.label} subiu ${piorando.delta} OS contra o período anterior (${piorando.nOSAnterior} para ${piorando.nOS}).`)
+  if (!acoes.length) acoes.push('Sem padrão claro de rede ou de execução nos maiores bairros: revisar os casos um a um.')
+  return acoes.slice(0, 3)
+}
+
+export function exportBairrosPDF(resumo: BairroResumo[], { tipo, filtros, periodo, totalBase = 0, totalOSAnterior = null }: BairroPDFOpcoes) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const width = 210, margin = 15, usable = width - margin * 2
   let page = 1, y = 0
@@ -74,10 +103,8 @@ export function exportBairrosPDF(resumo: BairroResumo[], { tipo, filtros, period
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...MUTED)
     doc.text(`Página ${page}`, width - margin, RODAPE_Y, { align: 'right' })
   }
-  const ensure = (altura: number) => {
-    if (y + altura <= FIM_CONTEUDO) return
-    footer(); doc.addPage(); page++; addHeader()
-  }
+  const novaPagina = () => { footer(); doc.addPage(); page++; addHeader() }
+  const ensure = (altura: number) => { if (y + altura > FIM_CONTEUDO) novaPagina() }
   const aplicar = (e: Estilo) => { doc.setFont('helvetica', e.bold ? 'bold' : 'normal'); doc.setFontSize(e.size); doc.setTextColor(...e.color) }
   const escrever = (texto: string, estilo: Estilo, { indent = 0, gap = 1.6 } = {}) => {
     const lh = alturaLinha(estilo.size)
@@ -102,65 +129,155 @@ export function exportBairrosPDF(resumo: BairroResumo[], { tipo, filtros, period
   const totalClientes = resumo.reduce((s, b) => s + b.nClientes, 0)
   const totalRevisitas = resumo.reduce((s, b) => s + b.nRevisitas, 0)
   const top3 = resumo.slice(0, 3).reduce((s, b) => s + b.nOS, 0)
+  const nomeArquivo = `reincidencias-por-bairro-${new Date().toISOString().slice(0, 10)}.pdf`
 
   escrever([periodo, ...filtros].filter(Boolean).join(' · '), TIPO.legenda, { gap: 3 })
   if (!resumo.length) {
     escrever('Nenhuma revisita encontrada para os filtros selecionados.', TIPO.manchete)
-    footer(); doc.save(`reincidencias-por-bairro-${new Date().toISOString().slice(0, 10)}.pdf`)
+    footer(); doc.save(nomeArquivo)
     return
   }
 
+  // ── Manchete: o bairro que pede decisão, com taxa, tendência e indício.
   const lider = resumo[0]
-  escrever(`${lider.label} lidera com ${lider.nOS} OS (${lider.pct}% do total), em ${plural(resumo.length, 'bairro', 'bairros')} com revisita.`, TIPO.manchete, { gap: 3 })
+  const partes = [`${lider.label} lidera com ${lider.nOS} OS (${lider.pct}% do total)`]
+  if (lider.taxa !== null) partes.push(`taxa de revisita de ${pct1(lider.taxa)}%`)
+  if (lider.delta !== null && lider.delta !== 0) partes.push(`${lider.delta > 0 ? 'subiu' : 'caiu'} ${Math.abs(lider.delta)} OS contra o período anterior`)
+  if (lider.diagnostico === 'rede' || lider.diagnostico === 'execucao') partes.push(DIAGNOSTICO_LABEL[lider.diagnostico].toLowerCase())
+  escrever(`${partes.join(', ')}.`, TIPO.manchete, { gap: 3 })
 
-  // Quatro números, mesma base do card "OS envolvidas" da tela.
+  // ── Quatro números. O segundo e o terceiro trazem a comparação e a base.
   ensure(22)
-  const indicadores: Array<[string, string]> = [
-    [String(resumo.length), 'bairros com revisita'],
-    [String(totalOS), 'OS envolvidas'],
-    [String(totalClientes), 'clientes reincidentes'],
-    [`${Math.round(top3 / totalOS * 100)}%`, 'das OS nos 3 maiores'],
+  const taxaGeral = totalBase ? totalClientes / totalBase * 100 : null
+  const deltaGeral = totalOSAnterior === null ? null : totalOS - totalOSAnterior
+  const indicadores: Array<{ valor: string; rotulo: string; extra?: { texto: string; cor: RGB } }> = [
+    { valor: String(resumo.length), rotulo: 'bairros com revisita' },
+    { valor: String(totalOS), rotulo: 'OS envolvidas', extra: deltaGeral === null ? undefined : { texto: `${deltaPDF(deltaGeral)} vs período anterior`, cor: corDelta(deltaGeral) } },
+    { valor: taxaGeral === null ? '—' : `${pct1(taxaGeral)}%`, rotulo: 'taxa de revisita', extra: totalBase ? { texto: `${totalClientes} de ${totalBase} atendidos`, cor: MUTED } : undefined },
+    { valor: `${Math.round(top3 / totalOS * 100)}%`, rotulo: 'das OS nos 3 maiores' },
   ]
   const caixa = (usable - 3 * 3) / 4
-  indicadores.forEach(([valor, rotulo], i) => {
+  indicadores.forEach((ind, i) => {
     const x = margin + i * (caixa + 3)
-    doc.setFillColor(...FUNDO); doc.roundedRect(x, y, caixa, 17, 2, 2, 'F')
-    aplicar(TIPO.numero); doc.text(valor, x + 3, y + 8)
-    aplicar(TIPO.legenda); doc.text(rotulo, x + 3, y + 13.2)
+    doc.setFillColor(...FUNDO); doc.roundedRect(x, y, caixa, 19, 2, 2, 'F')
+    aplicar(TIPO.numero); doc.text(ind.valor, x + 3, y + 8)
+    aplicar(TIPO.legenda); doc.text(ind.rotulo, x + 3, y + 12.6)
+    if (ind.extra) { aplicar({ ...TIPO.legenda, bold: true, color: ind.extra.cor }); doc.text(ind.extra.texto, x + 3, y + 16.4) }
   })
-  y += 21
+  y += 23
 
+  // ── Quadrante: onde pesa mais. X = clientes atendidos, Y = taxa; tamanho = OS; cor = indício.
+  const comTaxa = resumo.filter(b => b.taxa !== null && b.nBase > 0)
+  if (comTaxa.length >= 2) {
+    ensure(78)
+    secao('Onde agir: volume atendido x taxa de revisita')
+    const topoQ = y
+    const qx = margin + 9, qw = 92, qh = 50
+    const maxX = Math.max(...comTaxa.map(b => b.nBase)) * 1.1
+    const maxY = Math.max(...comTaxa.map(b => b.taxa as number), taxaGeral ?? 0) * 1.15
+    const px = (v: number) => qx + v / maxX * qw
+    const py = (v: number) => topoQ + qh - v / maxY * qh
+    doc.setDrawColor(...FIO); doc.setLineWidth(0.2); doc.rect(qx, topoQ, qw, qh)
+    // Linhas de referência: taxa geral e a mediana de clientes atendidos.
+    const medianaX = [...comTaxa].map(b => b.nBase).sort((a, b) => a - b)[Math.floor(comTaxa.length / 2)]
+    doc.setDrawColor(...MUTED); doc.setLineWidth(0.15)
+    if (taxaGeral !== null) doc.line(qx, py(taxaGeral), qx + qw, py(taxaGeral))
+    doc.line(px(medianaX), topoQ, px(medianaX), topoQ + qh)
+    aplicar(TIPO.legenda)
+    doc.text('taxa geral', qx + 1, (taxaGeral !== null ? py(taxaGeral) : topoQ) - 0.8)
+    doc.text('0', qx - 1.2, topoQ + qh, { align: 'right' }); doc.text(`${Math.round(maxY)}%`, qx - 1.2, topoQ + 2.5, { align: 'right' })
+    doc.text('clientes atendidos no bairro', qx + qw / 2, topoQ + qh + 4.4, { align: 'center' })
+    doc.text('taxa', margin, topoQ + qh / 2)
+    const maxOS = Math.max(...comTaxa.map(b => b.nOS))
+    const rotulados = new Set(resumo.slice(0, 5).map(b => b.key))
+    // Maiores primeiro: bolhas pequenas ficam por cima e não somem atrás das grandes.
+    ;[...comTaxa].sort((a, b) => b.nOS - a.nOS).forEach(b => {
+      const r = 1.1 + 2.6 * Math.sqrt(b.nOS / maxOS)
+      doc.setFillColor(...COR_DIAGNOSTICO[b.diagnostico]); doc.circle(px(b.nBase), py(b.taxa as number), r, 'F')
+    })
+    // Rótulos dos maiores: tenta ao lado da bolha e, se bater em outro rótulo, sobe ou desce; sem lugar, omite.
+    const ocupados: Array<{ x0: number; x1: number; y: number }> = []
+    resumo.filter(b => rotulados.has(b.key) && b.taxa !== null && b.nBase > 0).forEach(b => {
+      aplicar({ ...TIPO.legenda, color: INK })
+      const texto = cortar(b.label, TIPO.legenda, 26)
+      const w = doc.getTextWidth(texto)
+      const r = 1.1 + 2.6 * Math.sqrt(b.nOS / maxOS)
+      const direita = px(b.nBase) + r + 0.8 + w < qx + qw
+      const x0 = direita ? px(b.nBase) + r + 0.8 : px(b.nBase) - r - 0.8 - w
+      for (const desloque of [0, -3, 3, -6, 6]) {
+        const yy = py(b.taxa as number) + 0.9 + desloque
+        if (yy < topoQ + 2 || yy > topoQ + qh - 1) continue
+        if (ocupados.some(o => Math.abs(o.y - yy) < 2.8 && o.x0 < x0 + w && x0 < o.x1)) continue
+        ocupados.push({ x0, x1: x0 + w, y: yy })
+        doc.text(texto, x0, yy)
+        break
+      }
+    })
+    // Legenda das cores.
+    let lx = qx
+    ;(['rede', 'execucao', 'misto', 'poucos'] as DiagnosticoBairro[]).forEach(d => {
+      doc.setFillColor(...COR_DIAGNOSTICO[d]); doc.circle(lx + 1, topoQ + qh + 8.6, 1, 'F')
+      aplicar(TIPO.legenda); doc.text(DIAGNOSTICO_LABEL[d], lx + 3, topoQ + qh + 9.4)
+      lx += 3 + doc.getTextWidth(DIAGNOSTICO_LABEL[d]) + 3
+    })
+
+    // Lista "onde agir" ao lado: os maiores, com taxa, variação e indício.
+    const lxL = qx + qw + 8, larguraL = width - margin - lxL
+    let ly = topoQ
+    resumo.slice(0, TOPO_ONDE_AGIR).forEach(b => {
+      const alturaItem = 11.6
+      doc.setFillColor(...FUNDO); doc.roundedRect(lxL, ly, larguraL, alturaItem - 1.2, 1.5, 1.5, 'F')
+      doc.setFillColor(...COR_DIAGNOSTICO[b.diagnostico]); doc.rect(lxL, ly, 1.2, alturaItem - 1.2, 'F')
+      aplicar(TIPO.destaque); doc.text(cortar(b.label, TIPO.destaque, larguraL - 6), lxL + 3, ly + 3.8)
+      aplicar(TIPO.legenda)
+      const linha2 = `${b.nOS} OS${b.taxa !== null ? ` · taxa ${pct1(b.taxa)}%` : ''}`
+      doc.text(linha2, lxL + 3, ly + 7.2)
+      if (b.delta !== null) { aplicar({ ...TIPO.legenda, bold: true, color: corDelta(b.delta) }); doc.text(deltaPDF(b.delta), lxL + 3 + doc.getTextWidth(linha2) + 2, ly + 7.2) }
+      aplicar({ ...TIPO.legenda, bold: true, color: COR_DIAGNOSTICO[b.diagnostico] === COR_DIAGNOSTICO.poucos ? MUTED : COR_DIAGNOSTICO[b.diagnostico] })
+      doc.text(cortar(`${DIAGNOSTICO_LABEL[b.diagnostico]}${b.diagnostico === 'execucao' && b.equipeDominante ? ` · ${b.equipeDominante}` : ''}`, TIPO.legenda, larguraL - 6), lxL + 3, ly + 9.9)
+      ly += alturaItem
+    })
+    y = topoQ + qh + 11
+  }
+
+  // ── Leitura e ações sugeridas.
   secao('Leitura')
   leituraPorBairro(resumo).forEach(frase => escrever(`• ${frase}`, TIPO.corpo, { gap: 0.8 }))
+  y += 1.5
+  secao('Ações sugeridas (indícios a confirmar em campo)')
+  acoesSugeridas(resumo).forEach(a => escrever(`• ${a}`, TIPO.corpo, { gap: 0.8 }))
   y += 2
 
-  // Barras horizontais: a mesma medida (OS) da tela.
+  // ── Barras horizontais: a mesma medida (OS) da tela, com a variação.
   const topo = resumo.slice(0, TOPO_BARRAS)
+  ensure(10 + topo.length * 5.6)
   secao(`OS envolvidas por bairro (${topo.length} maiores)`)
-  const larguraRotulo = 62, larguraValor = 44, larguraBarra = usable - larguraRotulo - larguraValor - 4
-  const alturaBarra = 6
+  const larguraRotulo = 62, larguraValor = 40, larguraBarra = usable - larguraRotulo - larguraValor - 4
+  const alturaBarra = 5.6
   const maximo = Math.max(1, ...topo.map(b => b.nOS))
   topo.forEach(b => {
     ensure(alturaBarra + 1)
-    const texto = cortar(b.label, TIPO.corpo, larguraRotulo - 2)
-    aplicar(TIPO.corpo); doc.text(texto, margin, y + 4.1)
-    doc.setFillColor(...TRILHA); doc.roundedRect(margin + larguraRotulo, y + 1.2, larguraBarra, 3.6, 1, 1, 'F')
-    doc.setFillColor(...AZUL); doc.roundedRect(margin + larguraRotulo, y + 1.2, Math.max(1.2, larguraBarra * b.nOS / maximo), 3.6, 1, 1, 'F')
-    aplicar(TIPO.destaque); doc.text(`${b.nOS} OS`, margin + larguraRotulo + larguraBarra + 4, y + 4.1)
-    aplicar(TIPO.legenda); doc.text(`${plural(b.nClientes, 'cliente', 'clientes')} · ${b.pct}%`, width - margin, y + 4.1, { align: 'right' })
+    aplicar(TIPO.corpo); doc.text(cortar(b.label, TIPO.corpo, larguraRotulo - 2), margin, y + 3.9)
+    doc.setFillColor(...TRILHA); doc.roundedRect(margin + larguraRotulo, y + 1, larguraBarra, 3.4, 1, 1, 'F')
+    doc.setFillColor(...AZUL); doc.roundedRect(margin + larguraRotulo, y + 1, Math.max(1.2, larguraBarra * b.nOS / maximo), 3.4, 1, 1, 'F')
+    const xv = margin + larguraRotulo + larguraBarra + 4
+    aplicar(TIPO.destaque); doc.text(`${b.nOS} OS`, xv, y + 3.9)
+    if (b.delta !== null) { aplicar({ ...TIPO.legenda, bold: true, color: corDelta(b.delta) }); doc.text(deltaPDF(b.delta), xv + 13, y + 3.9) }
+    aplicar(TIPO.legenda); doc.text(`${plural(b.nClientes, 'cliente', 'clientes')} · ${b.pct}%`, width - margin, y + 3.9, { align: 'right' })
     y += alturaBarra
   })
-  y += 3
 
-  // Tabela completa.
+  // ── Anexo: tabela completa.
+  novaPagina()
   const cols = [
-    { titulo: 'Bairro', x: margin, w: 58, alinha: 'left' as const },
-    { titulo: 'Cidade', x: margin + 58, w: 28, alinha: 'left' as const },
-    { titulo: 'OS', x: margin + 86, w: 14, alinha: 'right' as const },
-    { titulo: 'Clientes', x: margin + 100, w: 20, alinha: 'right' as const },
-    { titulo: 'Revisitas', x: margin + 120, w: 20, alinha: 'right' as const },
-    { titulo: 'OS/cliente', x: margin + 140, w: 20, alinha: 'right' as const },
-    { titulo: '% das OS', x: margin + 160, w: 20, alinha: 'right' as const },
+    { titulo: 'Bairro', x: margin, w: 46, alinha: 'left' as const },
+    { titulo: 'Cidade', x: margin + 46, w: 20, alinha: 'left' as const },
+    { titulo: 'OS', x: margin + 66, w: 12, alinha: 'right' as const },
+    { titulo: 'Var.', x: margin + 78, w: 13, alinha: 'right' as const },
+    { titulo: 'Clientes', x: margin + 91, w: 17, alinha: 'right' as const },
+    { titulo: 'Atend.', x: margin + 108, w: 15, alinha: 'right' as const },
+    { titulo: 'Taxa', x: margin + 123, w: 15, alinha: 'right' as const },
+    { titulo: 'Indício', x: margin + 140, w: 40, alinha: 'left' as const },
   ]
   const celula = (texto: string, col: typeof cols[number], yy: number) =>
     col.alinha === 'right' ? doc.text(texto, col.x + col.w - 1, yy, { align: 'right' }) : doc.text(texto, col.x + 1, yy)
@@ -170,32 +287,35 @@ export function exportBairrosPDF(resumo: BairroResumo[], { tipo, filtros, period
     cols.forEach(c => celula(c.titulo, c, y + 4.1))
     y += 6
   }
-  ensure(26)
   secao('Todos os bairros')
   cabecalhoTabela()
   resumo.forEach((b, i) => {
-    if (y + 5.4 > FIM_CONTEUDO) { footer(); doc.addPage(); page++; addHeader(); cabecalhoTabela() }
+    if (y + 5.4 > FIM_CONTEUDO) { novaPagina(); cabecalhoTabela() }
     if (i % 2) { doc.setFillColor(250, 251, 252); doc.rect(margin, y, usable, 5.4, 'F') }
     aplicar(TIPO.corpo)
     celula(cortar(b.label, TIPO.corpo, cols[0].w - 2), cols[0], y + 3.8)
     celula(cortar(cidadeCurta(b.cidade), TIPO.corpo, cols[1].w - 2), cols[1], y + 3.8)
     aplicar(TIPO.destaque); celula(String(b.nOS), cols[2], y + 3.8)
+    if (b.delta !== null) { aplicar({ ...TIPO.corpo, bold: true, color: corDelta(b.delta) }); celula(deltaPDF(b.delta), cols[3], y + 3.8) }
     aplicar(TIPO.corpo)
-    celula(String(b.nClientes), cols[3], y + 3.8)
-    celula(String(b.nRevisitas), cols[4], y + 3.8)
-    celula(pct1(b.nOS / b.nClientes), cols[5], y + 3.8)
-    celula(`${b.pct}%`, cols[6], y + 3.8)
+    celula(String(b.nClientes), cols[4], y + 3.8)
+    celula(b.nBase ? String(b.nBase) : '—', cols[5], y + 3.8)
+    celula(b.taxa !== null ? `${pct1(b.taxa)}%` : '—', cols[6], y + 3.8)
+    celula(cortar(`${DIAGNOSTICO_LABEL[b.diagnostico]}${b.diagnostico === 'execucao' && b.equipeDominante ? ` · ${b.equipeDominante}` : ''}`, TIPO.corpo, cols[7].w - 2), cols[7], y + 3.8)
     y += 5.4
   })
   aplicar(TIPO.destaque)
   ensure(7)
   doc.setDrawColor(...INK); doc.setLineWidth(0.2); doc.line(margin, y, width - margin, y)
   celula('Total', cols[0], y + 4.4); celula(String(totalOS), cols[2], y + 4.4)
-  celula(String(totalClientes), cols[3], y + 4.4); celula(String(totalRevisitas), cols[4], y + 4.4)
-  celula(pct1(totalOS / totalClientes), cols[5], y + 4.4); celula('100%', cols[6], y + 4.4)
-  y += 9
+  if (deltaGeral !== null) celula(deltaPDF(deltaGeral), cols[3], y + 4.4)
+  celula(String(totalClientes), cols[4], y + 4.4)
+  if (totalBase) { celula(String(totalBase), cols[5], y + 4.4); celula(`${pct1(totalClientes / totalBase * 100)}%`, cols[6], y + 4.4) }
+  y += 7
+  aplicar(TIPO.legenda)
+  escrever(`${totalRevisitas} revisitas (OS depois da primeira de cada cliente) em ${plural(totalClientes, 'cliente', 'clientes')}. Var. = OS contra o período anterior. Atend. = clientes atendidos no bairro no período; taxa = clientes reincidentes ÷ atendidos. Indício de rede ou execução vem de quem fez a visita de origem: é uma leitura dos números, não um laudo.`, TIPO.legenda, { gap: 5 })
 
-  // Ordens dos maiores bairros.
+  // ── Ordens dos maiores bairros.
   const detalhe = resumo.slice(0, TOPO_DETALHE)
   ensure(46)
   escrever(`Ordens dos ${plural(detalhe.length, 'maior bairro', 'maiores bairros')}`, TIPO.titulo, { gap: 2.4 })
@@ -204,8 +324,9 @@ export function exportBairrosPDF(resumo: BairroResumo[], { tipo, filtros, period
     doc.setFillColor(...FUNDO); doc.roundedRect(margin, y, usable, 11, 2, 2, 'F')
     aplicar({ size: 9.5, bold: true, color: INK }); doc.text(`${b.label} · ${b.nOS} OS`, margin + 3, y + 4.6)
     aplicar(TIPO.legenda)
-    doc.text(`${b.cidade || '—'} · ${plural(b.nClientes, 'cliente', 'clientes')} · ${plural(b.nRevisitas, 'revisita', 'revisitas')} · ${b.pct}% das OS`, margin + 3, y + 8.8)
+    doc.text(`${b.cidade || '—'} · ${plural(b.nClientes, 'cliente', 'clientes')} · ${plural(b.nRevisitas, 'revisita', 'revisitas')} · ${b.pct}% das OS · ${DIAGNOSTICO_LABEL[b.diagnostico]}`, margin + 3, y + 8.8)
     y += 14
+    escrever(explicarDiagnostico(b), TIPO.legenda, { indent: 2, gap: 1.6 })
     b.clientes.forEach(cliente => {
       ensure(16)
       escrever(`${cliente.cliente} · ${cliente.visitas} visitas · média ${cliente.intervaloMedio.toLocaleString('pt-BR')}d`, TIPO.destaque, { indent: 2, gap: 0.4 })
@@ -215,9 +336,8 @@ export function exportBairrosPDF(resumo: BairroResumo[], { tipo, filtros, period
       y += 1.6
     })
     y += 1.5
-    doc.setDrawColor(...FIO)
   })
 
   footer()
-  doc.save(`reincidencias-por-bairro-${new Date().toISOString().slice(0, 10)}.pdf`)
+  doc.save(nomeArquivo)
 }

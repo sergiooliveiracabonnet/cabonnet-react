@@ -27,6 +27,9 @@ export interface ClienteReincidente {
   rows:            OSRow[]
 }
 
+/** Cliente atendido no período (reincidente ou não): o denominador da taxa por bairro. */
+export type ClienteBase = Pick<ClienteReincidente, 'chave' | 'cliente' | 'cidade' | 'bairro' | 'rows'>
+
 export interface Churn {
   janelaDias:        number
   clientes:          ClienteReincidente[]
@@ -34,6 +37,14 @@ export interface Churn {
   /** Clientes distintos com ao menos uma manutenção concluída na janela. */
   totalBase:         number
   pctReincidencia:   number
+  /** Os clientes que formam `totalBase`, com as OS que os colocaram na base. Só os
+   *  builders do Relatório de Reincidências preenchem. */
+  baseClientes?:     ClienteBase[]
+}
+
+function clienteBase(chave: string, rows: OSRow[]): ClienteBase {
+  const ref = rows[0]
+  return { chave, cliente: String(ref.nomecliente || chave).trim(), cidade: (ref.nomedacidade || '').trim(), bairro: (ref.bairro || '').trim(), rows }
 }
 
 const DIA_MS = 86400000
@@ -164,14 +175,14 @@ export function buildInstallChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Dat
     execByClient.get(chave)!.push({ row: r, data: quando })
   }
 
-  let totalBase = 0
+  const baseClientes: ClienteBase[] = []
   const porCliente = new Map<string, { rows: OSRow[]; datas: Date[] }>()
 
   for (const [chave, execs] of execByClient) {
     const sorted = [...execs].sort((a, b) => a.data.getTime() - b.data.getTime())
     const installsNaJanela = sorted.filter(e => isInstalacaoDeCliente(e.row) && e.data >= coorte.from && e.data <= coorte.to)
     if (!installsNaJanela.length) continue
-    totalBase++
+    baseClientes.push(clienteBase(chave, installsNaJanela.map(e => e.row)))
 
     // Marca a instalação e toda assistência seguinte dentro de 30 dias dela —
     // um cliente com mais de uma instalação na janela pode acumular vários
@@ -223,8 +234,9 @@ export function buildInstallChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Dat
     janelaDias,
     clientes: clientes.slice(0, topo),
     totalReincidentes: clientes.length,
-    totalBase,
-    pctReincidencia: totalBase > 0 ? Math.round(clientes.length / totalBase * 100) : 0,
+    totalBase: baseClientes.length,
+    pctReincidencia: baseClientes.length > 0 ? Math.round(clientes.length / baseClientes.length * 100) : 0,
+    baseClientes,
   }
 }
 
@@ -261,7 +273,7 @@ export function buildManutencaoRevisitaChurn(allRows: OSRow[], topo = TOPO_PADRA
   // Todas as execuções reais por cliente, qualquer tipo — a OS anterior à VT
   // pode ser outra VT, uma instalação, o que vier antes.
   const execByClient = new Map<string, { row: OSRow; exec: Date; abertura: Date | null }[]>()
-  const clientesNaBase = new Set<string>()
+  const clientesNaBase = new Map<string, OSRow[]>()
   for (const r of allRows) {
     if (isCOPE(r) || isReagend(r) || isForaDeRevisita(r)) continue
     if (!isExecucaoReal(r.descsituacao)) continue
@@ -269,7 +281,7 @@ export function buildManutencaoRevisitaChurn(allRows: OSRow[], topo = TOPO_PADRA
     if (!exec) continue
     const chave = String(r.codigocliente || r.nomecliente || '').trim()
     if (!chave) continue
-    if (exec >= corte && exec <= hoje) clientesNaBase.add(chave)
+    if (exec >= corte && exec <= hoje) { const l = clientesNaBase.get(chave); if (l) l.push(r); else clientesNaBase.set(chave, [r]) }
     const abertura = parseDate((r.datacadastro || '').split(' ')[0])
     if (!execByClient.has(chave)) execByClient.set(chave, [])
     execByClient.get(chave)!.push({ row: r, exec, abertura })
@@ -334,5 +346,6 @@ export function buildManutencaoRevisitaChurn(allRows: OSRow[], topo = TOPO_PADRA
     totalReincidentes: clientes.length,
     totalBase,
     pctReincidencia: totalBase > 0 ? Math.round(clientes.length / totalBase * 100) : 0,
+    baseClientes: [...clientesNaBase].map(([chave, rows]) => clienteBase(chave, rows)),
   }
 }

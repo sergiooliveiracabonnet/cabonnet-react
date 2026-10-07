@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import type { ClienteReincidente } from '../../lib/builders/churn'
 import type { OSRow } from '../../lib/types'
 import { buildBairroSummary } from './reincidenciasReport'
+import type { ClienteBase } from '../../lib/builders/churn'
 
 const textos: string[] = []
 const saves: string[] = []
@@ -10,7 +11,7 @@ const addPage = vi.fn()
 const doc = {
   setFontSize: vi.fn(), setTextColor: vi.fn(), setFont: vi.fn(), setFillColor: vi.fn(),
   setDrawColor: vi.fn(), setLineWidth: vi.fn(), setLineHeightFactor: vi.fn(),
-  roundedRect: vi.fn(), rect: vi.fn(), line: vi.fn(), addImage: vi.fn(),
+  roundedRect: vi.fn(), rect: vi.fn(), line: vi.fn(), addImage: vi.fn(), circle: vi.fn(),
   addPage, save: (nome: string) => { saves.push(nome) },
   getTextWidth: (text: string) => text.length * 1.4,
   splitTextToSize: (text: string, largura: number) => {
@@ -29,7 +30,7 @@ const doc = {
 vi.mock('jspdf', () => ({ default: class { constructor() { return doc } } }))
 vi.mock('../../lib/pdfBrand', () => ({ drawPDFHeader: () => 38 }))
 
-const { exportBairrosPDF, leituraPorBairro } = await import('./reincidenciasBairroPDF')
+const { exportBairrosPDF, leituraPorBairro, acoesSugeridas, deltaPDF } = await import('./reincidenciasBairroPDF')
 
 const os = (numos: string, obs = 'trocou conector'): OSRow => ({
   numos, servico: 'ASSISTENCIA - VT 24H', tiposervico: 'MANUTENCAO', nomedaequipe: '03- VAL - INSTALACAO F11',
@@ -113,5 +114,98 @@ describe('leituraPorBairro', () => {
 
   it('lista vazia não gera frases', () => {
     expect(leituraPorBairro([])).toEqual([])
+  })
+})
+
+describe('exportBairrosPDF — página executiva', () => {
+  const eq = (e: string) => ({ ...os('x'), nomedaequipe: `03- VAL - INSTALACAO ${e}` }) as OSRow
+  const comEquipes = (chave: string, bairro: string, equipes: string[]): ClienteReincidente => ({
+    chave, cliente: `Cliente ${chave}`, cidade: 'Taubaté', bairro, visitas: equipes.length, intervaloMedio: 6, diasDesdeUltima: 2,
+    rows: equipes.map((e, i) => ({ ...eq(e), numos: `${chave}${i}` })),
+  })
+  const atendidos = (bairro: string, n: number): ClienteBase[] => Array.from({ length: n }, (_, i) => ({ chave: `${bairro}${i}`, cliente: `At ${i}`, cidade: 'Taubaté', bairro, rows: [os(`a${i}`)] }))
+
+  const atual = [
+    comEquipes('A', 'CENTRO', ['F11', 'F11', 'F11']), comEquipes('B', 'CENTRO', ['F11', 'F11', 'F36']),
+    comEquipes('C', 'JARDIM', ['F12', 'F13']), comEquipes('D', 'JARDIM', ['F14', 'F45']), comEquipes('E', 'JARDIM', ['F20', 'F11']),
+    comEquipes('F', 'VILA', ['F11', 'F11']),
+  ]
+  const base = [...atendidos('CENTRO', 10), ...atendidos('JARDIM', 8), ...atendidos('VILA', 20)]
+  const anterior = [comEquipes('Z', 'CENTRO', ['F11', 'F11'])]
+  const resumoCom = buildBairroSummary(atual, { base, anterior })
+  const opcoes = { tipo: 'Revisita de manutenção', filtros: [], totalBase: base.length, totalOSAnterior: 2 }
+
+  it('a manchete traz a taxa e a variação contra o período anterior', () => {
+    exportBairrosPDF(resumoCom, opcoes)
+    expect(textos.some(t => t.includes('lidera com') && t.includes('taxa de revisita de') && t.includes('contra o período anterior'))).toBe(true)
+  })
+
+  it('mostra a taxa geral e a variação de OS nos indicadores', () => {
+    exportBairrosPDF(resumoCom, opcoes)
+    expect(textos).toContain('taxa de revisita')
+    expect(textos).toContain('6 de 38 atendidos')
+    expect(textos.some(t => /^\+\d+ vs período anterior$/.test(t))).toBe(true)
+  })
+
+  it('desenha o quadrante e as ações sugeridas antes da tabela completa', () => {
+    exportBairrosPDF(resumoCom, opcoes)
+    const ordem = ['ONDE AGIR', 'LEITURA', 'AÇÕES SUGERIDAS', 'TODOS OS BAIRROS'].map(posicao)
+    expect(ordem.every(p => p >= 0)).toBe(true)
+    expect([...ordem].sort((a, b) => a - b)).toEqual(ordem)
+    expect(posicao('clientes atendidos no bairro')).toBeGreaterThanOrEqual(0)
+  })
+
+  it('sem base o quadrante não aparece mas o resto sai normalmente', () => {
+    exportBairrosPDF(buildBairroSummary(atual), { tipo: 'Revisita de manutenção', filtros: [] })
+    expect(posicao('ONDE AGIR')).toBe(-1)
+    expect(posicao('TODOS OS BAIRROS')).toBeGreaterThanOrEqual(0)
+  })
+
+  it('a tabela completa traz taxa e indício', () => {
+    exportBairrosPDF(resumoCom, opcoes)
+    expect(textos).toContain('Atend.')
+    expect(textos).toContain('Indício')
+    expect(textos.some(t => t.startsWith('Indício de execução'))).toBe(true)
+  })
+})
+
+describe('acoesSugeridas', () => {
+  const eq = (e: string) => ({ ...os('x'), nomedaequipe: `03- VAL - INSTALACAO ${e}` }) as OSRow
+  const c = (chave: string, bairro: string, equipes: string[]): ClienteReincidente => ({
+    chave, cliente: chave, cidade: 'Taubaté', bairro, visitas: equipes.length, intervaloMedio: 5, diasDesdeUltima: 1,
+    rows: equipes.map((e, i) => ({ ...eq(e), numos: `${chave}${i}` })),
+  })
+
+  it('sugere auditar a equipe quando o indício é de execução', () => {
+    const r = buildBairroSummary([c('A', 'CENTRO', ['F11', 'F11', 'F11']), c('B', 'CENTRO', ['F11', 'F11', 'F11'])])
+    expect(acoesSugeridas(r).some(a => a.startsWith('Execução em CENTRO') && a.includes('INST F11'))).toBe(true)
+  })
+
+  it('sugere medir CTO e acionar a Rede quando o indício é de rede', () => {
+    const r = buildBairroSummary([c('A', 'CENTRO', ['F11', 'F36', 'F11']), c('B', 'CENTRO', ['F12', 'F13']), c('C', 'CENTRO', ['F14', 'F45'])])
+    expect(acoesSugeridas(r).some(a => a.startsWith('Rede em CENTRO') && a.includes('Engenharia de Rede'))).toBe(true)
+  })
+
+  it('avisa quando um dos maiores bairros está piorando', () => {
+    const r = buildBairroSummary([c('A', 'CENTRO', ['F11', 'F11', 'F11']), c('B', 'CENTRO', ['F11', 'F11', 'F11'])], { anterior: [c('Z', 'CENTRO', ['F11', 'F11'])] })
+    expect(acoesSugeridas(r).some(a => a.startsWith('Piorando: CENTRO subiu 4 OS'))).toBe(true)
+  })
+
+  it('sem padrão, manda revisar caso a caso', () => {
+    expect(acoesSugeridas(buildBairroSummary([c('A', 'CENTRO', ['F11', 'F11'])]))[0]).toContain('revisar os casos um a um')
+  })
+
+  it('no máximo três ações', () => {
+    const muitos = Array.from({ length: 8 }, (_, i) => [c(`a${i}`, `B${i}`, ['F11', 'F11', 'F11']), c(`b${i}`, `B${i}`, ['F11', 'F11', 'F11'])]).flat()
+    expect(acoesSugeridas(buildBairroSummary(muitos)).length).toBeLessThanOrEqual(3)
+  })
+})
+
+describe('deltaPDF', () => {
+  it('usa só ASCII (a fonte do PDF não tem seta nem menos tipográfico)', () => {
+    expect(deltaPDF(5)).toBe('+5')
+    expect(deltaPDF(-3)).toBe('-3')
+    expect(deltaPDF(0)).toBe('0')
+    expect(deltaPDF(null)).toBe('')
   })
 })

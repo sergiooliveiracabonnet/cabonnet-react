@@ -27,7 +27,7 @@ describe('BairrosCard', () => {
     const onOpen = vi.fn()
     render(<BairrosCard tipo="Revisita de manutenção" resumo={resumo} onOpen={onOpen} />)
     expect(screen.getByText('4 OS')).toBeTruthy()
-    expect(screen.getByText(/2 clientes · 67%/)).toBeTruthy()
+    expect(screen.getByText(/2 clientes/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /JARDIM AZUL/ }))
     expect(onOpen).toHaveBeenCalledWith('TAUBATE|JARDIM AZUL')
   })
@@ -74,5 +74,31 @@ describe('BairroModal', () => {
   it('não renderiza nada sem bairro selecionado', () => {
     render(<BairroModal tipo="Revisita de manutenção" resumo={resumo} selectedKey={null} onSelect={() => {}} onClose={() => {}} />)
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('BairrosCard — taxa, variação e indício', () => {
+  const rows = (n: number, equipe: string) => Array.from({ length: n }, (_, i) => ({ ...os(`${equipe}${i}`), nomedaequipe: `03- VAL - INSTALACAO ${equipe}` }) as OSRow)
+  const base = Array.from({ length: 10 }, (_, i) => cli(`B${i}`, 'Taubaté', 'CENTRO', [os(`9${i}`)]))
+  const comBase = buildBairroSummary(
+    [cli('A', 'Taubaté', 'CENTRO', rows(3, 'F11')), cli('B', 'Taubaté', 'CENTRO', rows(3, 'F11')), cli('C', 'Taubaté', 'CENTRO', rows(3, 'F11'))],
+    { base, anterior: [cli('A', 'Taubaté', 'CENTRO', rows(2, 'F11'))] },
+  )
+
+  it('mostra a taxa e a variação contra o período anterior na lista', () => {
+    render(<BairrosCard tipo="Revisita de manutenção" resumo={comBase} onOpen={() => {}} />)
+    expect(screen.getByText(/taxa 30%/)).toBeTruthy()
+    expect(screen.getByText('▲ +7')).toBeTruthy()
+  })
+
+  it('mostra o indício de execução com a equipe dominante', () => {
+    render(<BairrosCard tipo="Revisita de manutenção" resumo={comBase} onOpen={() => {}} />)
+    expect(screen.getByText(/Indício de execução · INST F11/)).toBeTruthy()
+  })
+
+  it('o modal explica o indício e mostra clientes sobre atendidos', () => {
+    render(<BairroModal tipo="Revisita de manutenção" resumo={comBase} selectedKey="TAUBATE|CENTRO" onSelect={() => {}} onClose={() => {}} />)
+    expect(screen.getByText(/3 de 10 atendidos/)).toBeTruthy()
+    expect(screen.getByText(/fez a visita de origem em 100% das revisitas/)).toBeTruthy()
   })
 })

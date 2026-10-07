@@ -1,4 +1,4 @@
-import type { ClienteReincidente } from '../../lib/builders/churn'
+import type { ClienteBase, ClienteReincidente } from '../../lib/builders/churn'
 import { isCOPE, isExecucaoReal, isForaDeRevisita, isReagend, parseDate, parseDateTime } from '../../lib/transform'
 import type { OSRow } from '../../lib/types'
 import { shortEquipe } from '../../lib/osFormat'
@@ -33,7 +33,7 @@ export function sortedClientRows(rows: OSRow[]): OSRow[] {
   return [...rows].sort((a, b) => (executionDate(a)?.getTime() ?? 0) - (executionDate(b)?.getTime() ?? 0))
 }
 
-export function filterReincidentes(clientes: ClienteReincidente[], filters: ReincidenciaFilters): ClienteReincidente[] {
+export function filterReincidentes<T extends { rows: OSRow[] }>(clientes: T[], filters: ReincidenciaFilters): T[] {
   return clientes.filter(cliente => {
     const fornecedorOk = !filters.fornecedor || cliente.rows.some(row => row._fornecedor === filters.fornecedor)
     const equipeOk = !filters.equipe || cliente.rows.some(row => shortEquipe(row.nomedaequipe).startsWith(filters.equipe))
@@ -121,6 +121,8 @@ export function buildIntervalDistribution(pairs: Pick<ReincidenciaPair, 'dias_en
 // ─── Resumo por bairro ────────────────────────────────────────────────────────
 // "CENTRO" existe nas cinco cidades — agrupar só pelo nome do bairro misturaria
 // clientes de cidades diferentes, por isso a chave é cidade + bairro.
+export type DiagnosticoBairro = 'rede' | 'execucao' | 'misto' | 'poucos'
+
 export interface BairroResumo {
   key: string
   bairro: string
@@ -136,16 +138,30 @@ export interface BairroResumo {
   nOS: number
   /** Participação no total de OS envolvidas do filtro. */
   pct: number
+  /** Clientes atendidos no bairro no período (reincidentes ou não); 0 se a base não foi informada. */
+  nBase: number
+  /** Reincidentes ÷ atendidos, em %, com uma casa. null sem base. */
+  taxa: number | null
+  /** OS do mesmo bairro no período anterior; null sem comparação. */
+  nOSAnterior: number | null
+  /** nOS − nOSAnterior; null sem comparação. */
+  delta: number | null
+  /** Quem fez a visita de origem de cada revisita, do mais ao menos citado. */
+  equipes: Array<{ equipe: string; n: number }>
+  diagnostico: DiagnosticoBairro
+  equipeDominante: string | null
+  /** Parcela das revisitas cuja origem foi da equipe dominante (0–1). */
+  shareDominante: number
+}
+
+export interface BairroOpcoes {
+  /** Clientes atendidos no período (denominador da taxa). */
+  base?: ClienteBase[]
+  /** Reincidentes do período anterior, já com os mesmos filtros. */
+  anterior?: ClienteReincidente[]
 }
 
 const SEM_BAIRRO = 'Sem bairro'
-
-export function cidadeCurta(cidade: string): string {
-  const base = cidade.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim()
-  if (base === 'PINDAMONHANGABA') return 'Pinda'
-  if (base === 'SAO JOSE DOS CAMPOS') return 'SJC'
-  return cidade.trim() ? cidade.trim().charAt(0).toUpperCase() + cidade.trim().slice(1).toLowerCase() : '—'
-}
 
 // O cadastro escreve o mesmo bairro de jeitos diferentes ("VITORIA VALE" e
 // "VITÓRIA VALE"), então a chave ignora acento, caixa, pontuação e espaços sobrando.
@@ -156,12 +172,29 @@ const normalizar = (texto: string): string =>
 // com exatamente esse tamanho pode ser a versão cortada de um bairro maior.
 const LIMITE_BAIRRO_ERP = 20
 
+// Diagnóstico rede × execução (indício, não prova). Com poucas revisitas não há
+// padrão para ler. Concentrado numa equipe = execução; espalhado por várias
+// equipes, em vários clientes = o problema é do lugar (rede).
+const MIN_REVISITAS_DIAGNOSTICO = 4
+const SHARE_EXECUCAO = 0.6
+const SHARE_REDE_MAX = 0.5
+const MIN_EQUIPES_REDE = 3
+const MIN_CLIENTES_REDE = 3
+
+export const cidadeCurta = (cidade: string): string => {
+  const base = normalizar(cidade)
+  if (base === 'PINDAMONHANGABA') return 'Pinda'
+  if (base === 'SAO JOSE DOS CAMPOS') return 'SJC'
+  return cidade.trim() ? cidade.trim().charAt(0).toUpperCase() + cidade.trim().slice(1).toLowerCase() : '—'
+}
+
+type Origem = 'rev' | 'base' | 'ant'
 interface GrupoBairro {
   cidadeKey: string
   bairroKey: string
   variantesBairro: Map<string, number>
   variantesCidade: Map<string, number>
-  clientes: ClienteReincidente[]
+  itens: Record<Origem, Array<ClienteBase | ClienteReincidente>>
 }
 
 const maisUsado = (variantes: Map<string, number>): string =>
@@ -170,26 +203,59 @@ const maisUsado = (variantes: Map<string, number>): string =>
     Number(/[À-ÿ]/.test(b[0])) - Number(/[À-ÿ]/.test(a[0])) ||  // empate: a grafia com acento
     b[0].length - a[0].length)[0][0]
 
-function juntar(destino: GrupoBairro, origem: GrupoBairro) {
-  destino.clientes.push(...origem.clientes)
-  for (const [nome, n] of origem.variantesBairro) destino.variantesBairro.set(nome, (destino.variantesBairro.get(nome) ?? 0) + n)
-  for (const [nome, n] of origem.variantesCidade) destino.variantesCidade.set(nome, (destino.variantesCidade.get(nome) ?? 0) + n)
+function somar(destino: Map<string, number>, origem: Map<string, number>) {
+  for (const [nome, n] of origem) destino.set(nome, (destino.get(nome) ?? 0) + n)
 }
 
-export function buildBairroSummary(clientes: ClienteReincidente[]): BairroResumo[] {
-  const brutos = new Map<string, GrupoBairro>()
+function juntar(destino: GrupoBairro, origem: GrupoBairro) {
+  for (const o of ['rev', 'base', 'ant'] as Origem[]) destino.itens[o].push(...origem.itens[o])
+  somar(destino.variantesBairro, origem.variantesBairro)
+  somar(destino.variantesCidade, origem.variantesCidade)
+}
+
+const equipeDaOS = (row: OSRow): string => shortEquipe(row.nomedaequipe).split(' - ')[0].trim()
+
+/** Quem fez a visita anterior a cada revisita — a mesma atribuição do ranking de equipes. */
+function contarEquipesDeOrigem(clientes: ClienteReincidente[]): Array<{ equipe: string; n: number }> {
+  const contagem = new Map<string, number>()
   for (const cliente of clientes) {
-    const bairro = cliente.bairro.trim() || SEM_BAIRRO
-    const cidade = cliente.cidade.trim()
+    const rows = sortedClientRows(cliente.rows)
+    for (let i = 1; i < rows.length; i++) {
+      const equipe = equipeDaOS(rows[i - 1])
+      if (!equipe || equipe === '—') continue
+      contagem.set(equipe, (contagem.get(equipe) ?? 0) + 1)
+    }
+  }
+  return [...contagem].map(([equipe, n]) => ({ equipe, n })).sort((a, b) => b.n - a.n || a.equipe.localeCompare(b.equipe))
+}
+
+function diagnosticar(equipes: Array<{ equipe: string; n: number }>, nClientes: number): { diagnostico: DiagnosticoBairro; equipeDominante: string | null; shareDominante: number } {
+  const total = equipes.reduce((s, e) => s + e.n, 0)
+  const topo = equipes[0]
+  const share = topo && total ? topo.n / total : 0
+  if (total < MIN_REVISITAS_DIAGNOSTICO) return { diagnostico: 'poucos', equipeDominante: topo?.equipe ?? null, shareDominante: share }
+  if (share >= SHARE_EXECUCAO) return { diagnostico: 'execucao', equipeDominante: topo.equipe, shareDominante: share }
+  if (equipes.length >= MIN_EQUIPES_REDE && share <= SHARE_REDE_MAX && nClientes >= MIN_CLIENTES_REDE) return { diagnostico: 'rede', equipeDominante: topo.equipe, shareDominante: share }
+  return { diagnostico: 'misto', equipeDominante: topo.equipe, shareDominante: share }
+}
+
+export function buildBairroSummary(clientes: ClienteReincidente[], { base = [], anterior }: BairroOpcoes = {}): BairroResumo[] {
+  const brutos = new Map<string, GrupoBairro>()
+  const adicionar = (item: ClienteBase | ClienteReincidente, origem: Origem) => {
+    const bairro = item.bairro.trim() || SEM_BAIRRO
+    const cidade = item.cidade.trim()
     const cidadeKey = normalizar(cidade)
     const bairroKey = normalizar(bairro) || normalizar(SEM_BAIRRO)
     const key = `${cidadeKey}|${bairroKey}`
-    const grupo: GrupoBairro = brutos.get(key) ?? { cidadeKey, bairroKey, variantesBairro: new Map(), variantesCidade: new Map(), clientes: [] }
-    grupo.clientes.push(cliente)
+    const grupo: GrupoBairro = brutos.get(key) ?? { cidadeKey, bairroKey, variantesBairro: new Map(), variantesCidade: new Map(), itens: { rev: [], base: [], ant: [] } }
+    grupo.itens[origem].push(item)
     grupo.variantesBairro.set(bairro, (grupo.variantesBairro.get(bairro) ?? 0) + 1)
     grupo.variantesCidade.set(cidade, (grupo.variantesCidade.get(cidade) ?? 0) + 1)
     brutos.set(key, grupo)
   }
+  clientes.forEach(c => adicionar(c, 'rev'))
+  base.forEach(c => adicionar(c, 'base'))
+  anterior?.forEach(c => adicionar(c, 'ant'))
 
   // Une o nome cortado ao completo — só quando há um único candidato na mesma cidade.
   for (const [key, corte] of [...brutos]) {
@@ -201,21 +267,82 @@ export function buildBairroSummary(clientes: ClienteReincidente[]): BairroResumo
     brutos.delete(key)
   }
 
-  const grupos = new Map<string, { bairro: string; cidade: string; clientes: ClienteReincidente[] }>()
-  for (const [key, g] of brutos) grupos.set(key, { bairro: maisUsado(g.variantesBairro), cidade: maisUsado(g.variantesCidade), clientes: g.clientes })
-
+  // Só entram os bairros com revisita agora; a base e o período anterior só medem.
+  const grupos = [...brutos].filter(([, g]) => g.itens.rev.length > 0)
   const nomeRepetido = new Map<string, number>()
-  for (const g of grupos.values()) nomeRepetido.set(g.bairro, (nomeRepetido.get(g.bairro) ?? 0) + 1)
+  const nomes = new Map<string, { bairro: string; cidade: string }>()
+  for (const [key, g] of grupos) {
+    const nome = { bairro: maisUsado(g.variantesBairro), cidade: maisUsado(g.variantesCidade) }
+    nomes.set(key, nome)
+    nomeRepetido.set(nome.bairro, (nomeRepetido.get(nome.bairro) ?? 0) + 1)
+  }
 
   const totalOS = clientes.reduce((sum, c) => sum + c.rows.length, 0)
+  const osDe = (lista: Array<ClienteBase | ClienteReincidente>) => lista.reduce((sum, c) => sum + c.rows.length, 0)
 
-  return [...grupos].map(([key, g]): BairroResumo => ({
-    key, bairro: g.bairro, cidade: g.cidade,
-    label: (nomeRepetido.get(g.bairro) ?? 0) > 1 ? `${g.bairro} · ${cidadeCurta(g.cidade)}` : g.bairro,
-    clientes: [...g.clientes].sort((a, b) => b.visitas - a.visitas || a.cliente.localeCompare(b.cliente)),
-    nClientes: g.clientes.length,
-    nRevisitas: g.clientes.reduce((sum, c) => sum + Math.max(0, c.rows.length - 1), 0),
-    nOS: g.clientes.reduce((sum, c) => sum + c.rows.length, 0),
-    pct: totalOS ? Math.round(g.clientes.reduce((sum, c) => sum + c.rows.length, 0) / totalOS * 100) : 0,
-  })).sort((a, b) => b.nOS - a.nOS || b.nClientes - a.nClientes || a.label.localeCompare(b.label))
+  return grupos.map(([key, g]): BairroResumo => {
+    const revs = g.itens.rev as ClienteReincidente[]
+    const { bairro, cidade } = nomes.get(key)!
+    const nClientes = revs.length
+    // Todo reincidente é cliente atendido: a base nunca fica abaixo dele.
+    const nBase = base.length ? Math.max(g.itens.base.length, nClientes) : 0
+    const nOS = osDe(revs)
+    const nOSAnterior = anterior ? osDe(g.itens.ant) : null
+    const equipes = contarEquipesDeOrigem(revs)
+    return {
+      key, bairro, cidade,
+      label: (nomeRepetido.get(bairro) ?? 0) > 1 ? `${bairro} · ${cidadeCurta(cidade)}` : bairro,
+      clientes: [...revs].sort((a, b) => b.visitas - a.visitas || a.cliente.localeCompare(b.cliente)),
+      nClientes,
+      nRevisitas: revs.reduce((sum, c) => sum + Math.max(0, c.rows.length - 1), 0),
+      nOS,
+      pct: totalOS ? Math.round(nOS / totalOS * 100) : 0,
+      nBase,
+      taxa: nBase ? Math.round(nClientes / nBase * 1000) / 10 : null,
+      nOSAnterior,
+      delta: nOSAnterior === null ? null : nOS - nOSAnterior,
+      equipes,
+      ...diagnosticar(equipes, nClientes),
+    }
+  }).sort((a, b) => b.nOS - a.nOS || b.nClientes - a.nClientes || a.label.localeCompare(b.label))
+}
+
+/** Período imediatamente anterior ao filtrado: o mês civil anterior quando o filtro é
+ *  um mês inteiro, senão a mesma quantidade de dias logo antes. */
+export function periodoAnterior(range: { from: Date; to: Date }): { from: Date; to: Date } {
+  const from = new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
+  const to = new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate())
+  const fimDoMes = new Date(to.getFullYear(), to.getMonth() + 1, 0).getDate()
+  if (from.getDate() === 1 && from.getFullYear() === to.getFullYear() && from.getMonth() === to.getMonth() && to.getDate() === fimDoMes) {
+    return { from: new Date(from.getFullYear(), from.getMonth() - 1, 1), to: new Date(from.getFullYear(), from.getMonth(), 0) }
+  }
+  const dias = Math.round((to.getTime() - from.getTime()) / 86400000) + 1
+  return { from: new Date(from.getFullYear(), from.getMonth(), from.getDate() - dias), to: new Date(from.getFullYear(), from.getMonth(), from.getDate() - 1) }
+}
+
+export const DIAGNOSTICO_LABEL: Record<DiagnosticoBairro, string> = {
+  rede: 'Indício de rede', execucao: 'Indício de execução', misto: 'Padrão misto', poucos: 'Poucos casos',
+}
+
+/** Frase curta que justifica o selo — sempre como indício, nunca como veredito. */
+export function explicarDiagnostico(b: BairroResumo): string {
+  const share = Math.round(b.shareDominante * 100)
+  switch (b.diagnostico) {
+    case 'rede':
+      return `${b.equipes.length} equipes diferentes fizeram a visita de origem e nenhuma passa de ${share}% das revisitas: o problema parece do lugar (rede, CTO), não de uma equipe.`
+    case 'execucao':
+      return `${b.equipeDominante} fez a visita de origem em ${share}% das revisitas: o problema parece de execução dessa equipe.`
+    case 'misto':
+      return `Sem padrão claro: ${b.equipeDominante} lidera com ${share}% das revisitas, entre ${b.equipes.length} ${b.equipes.length === 1 ? 'equipe' : 'equipes'}.`
+    default:
+      return 'Menos de 4 revisitas no bairro: pouco para dizer se é rede ou execução.'
+  }
+}
+
+/** "▲ +5", "▼ −3" ou "= 0"; vazio sem período anterior. */
+export function formatarDelta(delta: number | null): string {
+  if (delta === null) return ''
+  if (delta > 0) return `▲ +${delta}`
+  if (delta < 0) return `▼ −${Math.abs(delta)}`
+  return '= 0'
 }
