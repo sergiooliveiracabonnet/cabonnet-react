@@ -121,6 +121,10 @@ export const escala = {
     request<{ ok: boolean; items: EscalaItem[] }>(`/api/escala?dias=${dias.map(encodeURIComponent).join(',')}`),
   save: (body: { team_code: string; dia: string; local1?: string; local2?: string }) =>
     request<{ ok: boolean }>('/api/escala', { method: 'POST', body: JSON.stringify(body) }),
+  /** Códigos das equipes desabilitadas na escala (ex.: 'F50'). */
+  equipesInativas: () => request<{ ok: boolean; inativas: string[] }>('/api/escala/equipes'),
+  setEquipeAtiva: (teamCode: string, ativo: boolean) =>
+    request<{ ok: boolean }>(`/api/escala/equipes/${encodeURIComponent(teamCode)}`, { method: 'PUT', body: JSON.stringify({ ativo }) }),
 }
 
 export interface FornecedorConfig {

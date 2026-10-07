@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildMindMapGroups } from './escalaMindMap'
+import { ESCALA_EQUIPES } from './escalaConstants'
 import type { EscalaItem } from '../../../lib/api'
 
 const DIA = '14/09/2026'
@@ -45,5 +46,15 @@ describe('buildMindMapGroups', () => {
     const taubate = groups.find(g => g.label === 'Taubaté')
     expect(taubate?.equipes).toHaveLength(1)
     expect(groups.some(g => g.label === 'Folga')).toBe(false)
+  })
+})
+
+describe('buildMindMapGroups — equipes desabilitadas', () => {
+  it('não mostra na imagem a equipe que está fora da lista de equipes ativas', () => {
+    const ativas = ESCALA_EQUIPES.filter(e => e.codigo !== 'F50')
+    const groups = buildMindMapGroups([item('F20', 'Taubaté'), item('F50', 'Taubaté')], DIA, ativas)
+    const codigos = groups.flatMap(g => g.equipes.map(e => e.codigo))
+    expect(codigos).toContain('F20')
+    expect(codigos).not.toContain('F50')
   })
 })

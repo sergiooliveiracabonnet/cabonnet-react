@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Image, Warning, X } from '@phosphor-icons/react'
+import { Image, UsersThree, Warning, X } from '@phosphor-icons/react'
 import { PageHeader } from '../../../components/ui/PageHeader'
 import { getWeekDays } from '../planner/PlannerComponents'
 import { useEscalaSemana, useEscalaActions } from '../../../hooks/useEscala'
@@ -8,6 +8,7 @@ import { EscalaSummaryPanel } from './EscalaSummaryPanel'
 import { EscalaModeToggle, type EscalaModo } from './EscalaModeToggle'
 import { EscalaTimelineView } from './EscalaTimelineView'
 import { EscalaMindMapModal } from './EscalaMindMapModal'
+import { EscalaEquipesModal } from './EscalaEquipesModal'
 import PlannerExecutadoView from '../planner/PlannerExecutadoView'
 
 const DESCRICAO: Record<EscalaModo, string> = {
@@ -20,6 +21,7 @@ export default function EscalaPage() {
   const [modo, setModo] = useState<EscalaModo>('grade')
   const [weekOffset, setWeekOffset] = useState(0)
   const [mindMapOpen, setMindMapOpen] = useState(false)
+  const [equipesOpen, setEquipesOpen] = useState(false)
   const [error, setError] = useState('')
   const days = useMemo(() => getWeekDays(weekOffset), [weekOffset])
   const dias = useMemo(() => days.map(d => d.key), [days])
@@ -45,6 +47,13 @@ export default function EscalaPage() {
         description={DESCRICAO[modo]}
         actions={
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setEquipesOpen(true)}
+              className="flex items-center gap-1.5 text-caption font-semibold text-secondary hover:text-text
+                         border border-subtle rounded-lg px-3 py-1.5 transition-colors"
+            >
+              <UsersThree size={12} /> Gerenciar equipes
+            </button>
             <button
               onClick={() => setMindMapOpen(true)}
               className="flex items-center gap-1.5 text-caption font-semibold text-secondary hover:text-text
@@ -79,6 +88,7 @@ export default function EscalaPage() {
       {modo === 'planner'  && <PlannerExecutadoView />}
 
       {mindMapOpen && <EscalaMindMapModal onClose={() => setMindMapOpen(false)} />}
+      <EscalaEquipesModal open={equipesOpen} onClose={() => setEquipesOpen(false)} />
     </div>
   )
 }

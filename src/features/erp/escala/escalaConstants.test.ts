@@ -58,3 +58,20 @@ describe('contarEquipesComStatus', () => {
     expect(terceira).toBe(0)
   })
 })
+
+describe('roster da escala', () => {
+  it('INST F15 (LEONARDO) é THM e tem base em Taubaté', () => {
+    const f15 = ESCALA_EQUIPES.find(e => e.codigo === 'F15')
+    expect(f15).toMatchObject({ tecnico: 'LEONARDO', empresa: 'THM', clusterBase: 'Taubaté' })
+  })
+
+  it('contarEquipesComStatus ignora equipes fora da lista informada (desabilitadas)', () => {
+    const items = [
+      { team_code: 'F12', dia: DAYS[0].key, local1: 'Férias', local2: '', updated_at: '', updated_by: '' },
+      { team_code: 'F13', dia: DAYS[0].key, local1: 'Férias', local2: '', updated_at: '', updated_by: '' },
+    ]
+    const ativas = ESCALA_EQUIPES.filter(e => e.codigo !== 'F13')
+    const { terceira } = contarEquipesComStatus('Férias', buildStatusMap(items), DAYS, ativas)
+    expect(terceira).toBe(1)
+  })
+})

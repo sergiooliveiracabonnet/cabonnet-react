@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { X, DownloadSimple, CopySimple, CalendarBlank, Check, WarningCircle } from '@phosphor-icons/react'
-import { useEscalaSemana } from '../../../hooks/useEscala'
+import { useEscalaSemana, useEscalaEquipes } from '../../../hooks/useEscala'
 import { buildMindMapGroups } from './escalaMindMap'
 import { EscalaMindMapSvg } from './EscalaMindMapSvg'
 import { svgToPngBlob, downloadBlob, copyImageBlob } from './escalaMindMapExport'
@@ -27,7 +27,8 @@ export function EscalaMindMapModal({ onClose }: { onClose: () => void }) {
 
   const dia = isoParaDia(dataIso)
   const { data: items = [], isLoading } = useEscalaSemana([dia])
-  const groups = useMemo(() => buildMindMapGroups(items, dia), [items, dia])
+  const { equipes } = useEscalaEquipes()
+  const groups = useMemo(() => buildMindMapGroups(items, dia, equipes), [items, dia, equipes])
 
   const dateTitle = useMemo(() => {
     const [y, m, d] = dataIso.split('-').map(Number)

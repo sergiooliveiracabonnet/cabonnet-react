@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { CaretLeft, CaretRight, Rows, Plus, X, CopySimple } from '@phosphor-icons/react'
 import { FilterSelect } from '../../../components/ui/FilterSelect'
 import { MONTH_PT, SectionLabel, type WeekDay } from '../planner/PlannerComponents'
+import { useEscalaEquipes } from '../../../hooks/useEscala'
 import {
-  ESCALA_EQUIPES, EMPRESA_LABEL, EMPRESA_COLOR, STATUS_OPTIONS, buildStatusMap,
+  EMPRESA_LABEL, EMPRESA_COLOR, STATUS_OPTIONS, buildStatusMap,
   type EscalaEquipe, type CellValue,
 } from './escalaConstants'
 import type { EscalaItem } from '../../../lib/api'
@@ -98,6 +99,7 @@ export function EscalaGrid({
   onChangeStatus:      (body: { team_code: string; dia: string; local1?: string; local2?: string }) => void
 }) {
   const statusMap = useMemo(() => buildStatusMap(items), [items])
+  const { equipes, isLoading: equipesLoading } = useEscalaEquipes()
 
   const weekLabel = (() => {
     const first = days[0]; const last = days[6]
@@ -108,7 +110,7 @@ export function EscalaGrid({
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <SectionLabel icon={Rows} color="rgb(var(--c-primary))">
-          Grade semanal — {ESCALA_EQUIPES.length} equipes
+          Grade semanal — {equipes.length} equipes
         </SectionLabel>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => onWeekOffsetChange(p => p - 1)}
@@ -155,10 +157,10 @@ export function EscalaGrid({
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
+              {isLoading || equipesLoading ? (
                 <tr><td colSpan={8} className="px-4 py-10 text-center text-label text-muted">Carregando…</td></tr>
               ) : (
-                ESCALA_EQUIPES.map((equipe, i) => (
+                equipes.map((equipe, i) => (
                   <tr key={equipe.codigo}
                       className="border-b border-subtle hover:bg-surface/30 transition-colors"
                       style={{ animationDelay: `${i * 20}ms` }}>

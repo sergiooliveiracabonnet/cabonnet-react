@@ -1574,6 +1574,32 @@ async def upsert_escala(
     return {"ok": True}
 
 
+@router.get("/api/escala/equipes")
+async def list_escala_equipes(_role: str = Depends(_require_modulo("erp_escala"))):
+    from cabonnet.db import _db_list_escala_equipes_inativas
+    return {"ok": True, "inativas": _db_list_escala_equipes_inativas()}
+
+
+@router.put("/api/escala/equipes/{team_code}")
+async def set_escala_equipe(
+    team_code: str,
+    request: Request,
+    _role: str = Depends(_require_modulo("erp_escala")),
+    sess: dict = Depends(_require_session),
+):
+    from cabonnet.db import _db_set_escala_equipe_ativo
+    team_code = team_code.strip()
+    if not team_code:
+        raise HTTPException(400, "team_code é obrigatório")
+    body = await request.json()
+    if not isinstance(body.get("ativo"), bool):
+        raise HTTPException(400, "ativo deve ser true ou false")
+    ok = _db_set_escala_equipe_ativo(team_code, body["ativo"], updated_by=sess.get("username") or "")
+    if not ok:
+        raise HTTPException(500, "Falha ao salvar equipe da escala")
+    return {"ok": True}
+
+
 # Chaves aceitas — espelham FORN_DISPLAY em src/lib/builders/extra.ts. Sem esta
 # lista, um erro de digitação no frontend cria silenciosamente uma operadora
 # fantasma que nunca aparece em tela nenhuma.

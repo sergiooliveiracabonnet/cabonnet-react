@@ -1,4 +1,4 @@
-import { ESCALA_EQUIPES, STATUS_LOCAIS, STATUS_INDISPONIVEL, buildStatusMap, type CellValue, type Empresa } from './escalaConstants'
+import { ESCALA_EQUIPES, STATUS_LOCAIS, STATUS_INDISPONIVEL, buildStatusMap, type CellValue, type Empresa, type EscalaEquipe } from './escalaConstants'
 import type { EscalaItem } from '../../../lib/api'
 
 export type GrupoKind = 'cidade' | 'atividade' | 'indisponivel'
@@ -52,7 +52,7 @@ function kindDoStatus(status: string): GrupoKind {
 /** Monta os grupos (cidade/atividade/indisponibilidade) do dia, cada um com as
  *  equipes que estão lá — via Local 1 ou Local 2. Grupos sem nenhuma equipe
  *  não aparecem: o mapa mental mostra só o que está de fato preenchido. */
-export function buildMindMapGroups(items: EscalaItem[], dia: string): MindMapGroup[] {
+export function buildMindMapGroups(items: EscalaItem[], dia: string, equipes: EscalaEquipe[] = ESCALA_EQUIPES): MindMapGroup[] {
   const statusMap = buildStatusMap(items.filter(it => it.dia === dia))
   const groups = new Map<string, MindMapGroup>()
 
@@ -66,7 +66,7 @@ export function buildMindMapGroups(items: EscalaItem[], dia: string): MindMapGro
     groups.get(status_)!.equipes.push(equipe)
   }
 
-  for (const e of ESCALA_EQUIPES) {
+  for (const e of equipes) {
     const v: CellValue | undefined = statusMap.get(`${e.codigo}|${dia}`)
     if (!v) continue
     if (v.local1) add(v.local1, { codigo: e.codigo, tecnico: e.tecnico, empresa: e.empresa, segundoLocal: false })

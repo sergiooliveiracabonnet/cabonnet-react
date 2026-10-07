@@ -43,7 +43,9 @@ function empresaDaFrente(frente: string): Empresa | null {
   return null
 }
 
-// Roster fixo da escala — só as frentes de instalação (que atendem cidade por
+// Roster COMPLETO da escala — o que a tela mostra é este roster menos as equipes
+// desabilitadas (useEscalaEquipes). Uma frente nova entra aqui e já aparece ativa.
+// Só as frentes de instalação (que atendem cidade por
 // cidade) mais as equipes próprias acima. Manutenção/Rede não entram aqui: seu
 // trabalho não é "qual cidade hoje", é infraestrutura/chamado técnico.
 export const ESCALA_EQUIPES: EscalaEquipe[] = [
@@ -100,9 +102,10 @@ export function contarEquipesComStatus(
   status:    string,
   statusMap: Map<string, CellValue>,
   days:      { key: string }[],
+  equipes:   EscalaEquipe[] = ESCALA_EQUIPES,
 ): { propria: number; terceira: number } {
   let propria = 0, terceira = 0
-  for (const e of ESCALA_EQUIPES) {
+  for (const e of equipes) {
     const temStatus = days.some(d => {
       const v = statusMap.get(`${e.codigo}|${d.key}`)
       return !!v && (v.local1 === status || v.local2 === status)

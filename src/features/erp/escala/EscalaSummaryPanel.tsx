@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { ChartBar } from '@phosphor-icons/react'
 import { SectionLabel, type WeekDay } from '../planner/PlannerComponents'
+import { useEscalaEquipes } from '../../../hooks/useEscala'
 import {
   ESCALA_EQUIPES, EMPRESA_LABEL, EMPRESA_COLOR, STATUS_OPTIONS, STATUS_INDISPONIVEL,
   buildStatusMap, contarEquipesComStatus, type Empresa,
@@ -9,48 +10,49 @@ import type { EscalaItem } from '../../../lib/api'
 
 export function EscalaSummaryPanel({ days, items }: { days: WeekDay[]; items: EscalaItem[] }) {
   const statusMap = useMemo(() => buildStatusMap(items), [items])
+  const { equipes } = useEscalaEquipes()
 
   const porEmpresa = useMemo(() => {
     const counts: Record<Empresa, number> = { INSTACABLE: 0, THM: 0, WES: 0, PROPRIA: 0 }
-    for (const e of ESCALA_EQUIPES) counts[e.empresa] += 1
+    for (const e of equipes) counts[e.empresa] += 1
     return counts
-  }, [])
+  }, [equipes])
 
   // linha × dia: quantas equipes estão em cada local/atividade, naquele dia
   const linhas = useMemo(() =>
     STATUS_OPTIONS.map(status => ({
       status,
       porDia: days.map(d =>
-        ESCALA_EQUIPES.reduce((n, e) => {
+        equipes.reduce((n, e) => {
           const v = statusMap.get(`${e.codigo}|${d.key}`)
           if (!v) return n
           return n + (v.local1 === status || v.local2 === status ? 1 : 0)
         }, 0)
       ),
     }))
-  , [days, statusMap])
+  , [days, statusMap, equipes])
 
   const preenchidasPorDia = useMemo(() =>
-    days.map(d => ESCALA_EQUIPES.reduce((n, e) => n + (statusMap.get(`${e.codigo}|${d.key}`)?.local1 ? 1 : 0), 0))
-  , [days, statusMap])
+    days.map(d => equipes.reduce((n, e) => n + (statusMap.get(`${e.codigo}|${d.key}`)?.local1 ? 1 : 0), 0))
+  , [days, statusMap, equipes])
 
-  const semPreenchimentoPorDia = preenchidasPorDia.map(n => ESCALA_EQUIPES.length - n)
-  const coberturaPorDia = preenchidasPorDia.map(n => ESCALA_EQUIPES.length > 0 ? Math.round((n / ESCALA_EQUIPES.length) * 100) : 0)
+  const semPreenchimentoPorDia = preenchidasPorDia.map(n => equipes.length - n)
+  const coberturaPorDia = preenchidasPorDia.map(n => equipes.length > 0 ? Math.round((n / equipes.length) * 100) : 0)
 
   const duasCidadesPorDia = useMemo(() =>
-    days.map(d => ESCALA_EQUIPES.reduce((n, e) => n + (statusMap.get(`${e.codigo}|${d.key}`)?.local2 ? 1 : 0), 0))
-  , [days, statusMap])
+    days.map(d => equipes.reduce((n, e) => n + (statusMap.get(`${e.codigo}|${d.key}`)?.local2 ? 1 : 0), 0))
+  , [days, statusMap, equipes])
 
   // Própria (equipe própria) vs terceira (Instacable/WES/THM) — cada equipe cai
   // num grupo só, então a soma dos dois sempre bate com o total.
   const equipesPorGrupo = useMemo(() => ({
-    propria:  ESCALA_EQUIPES.filter(e => e.empresa === 'PROPRIA').length,
-    terceira: ESCALA_EQUIPES.filter(e => e.empresa !== 'PROPRIA').length,
-  }), [])
+    propria:  equipes.filter(e => e.empresa === 'PROPRIA').length,
+    terceira: equipes.filter(e => e.empresa !== 'PROPRIA').length,
+  }), [equipes])
 
-  const folgasPorGrupo   = useMemo(() => contarEquipesComStatus('Folga',   statusMap, days), [days, statusMap])
-  const feriasPorGrupo   = useMemo(() => contarEquipesComStatus('Férias',  statusMap, days), [days, statusMap])
-  const ausentesPorGrupo = useMemo(() => contarEquipesComStatus('Ausente', statusMap, days), [days, statusMap])
+  const folgasPorGrupo   = useMemo(() => contarEquipesComStatus('Folga',   statusMap, days, equipes), [days, statusMap, equipes])
+  const feriasPorGrupo   = useMemo(() => contarEquipesComStatus('Férias',  statusMap, days, equipes), [days, statusMap, equipes])
+  const ausentesPorGrupo = useMemo(() => contarEquipesComStatus('Ausente', statusMap, days, equipes), [days, statusMap, equipes])
 
   const codigosNaoCadastrados = useMemo(() => {
     const validos = new Set(ESCALA_EQUIPES.map(e => e.codigo))
@@ -64,7 +66,7 @@ export function EscalaSummaryPanel({ days, items }: { days: WeekDay[]; items: Es
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="rounded-xl border border-subtle bg-card p-4">
           <p className="text-caption text-muted mb-1.5">Total equipes ativas</p>
-          <p className="font-mono font-black tabular-nums text-readout leading-none text-text">{ESCALA_EQUIPES.length}</p>
+          <p className="font-mono font-black tabular-nums text-readout leading-none text-text">{equipes.length}</p>
         </div>
         {(Object.entries(EMPRESA_LABEL) as [Empresa, string][]).map(([key, label]) => (
           <div key={key} className="relative overflow-hidden rounded-xl border bg-card p-4" style={{ borderColor: `${EMPRESA_COLOR[key]}22` }}>

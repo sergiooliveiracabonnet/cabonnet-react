@@ -56,3 +56,38 @@ def test_payload_sem_team_code_ou_dia_e_recusado(client, tmp_path):
         db._db_init()
         assert client.post("/api/escala", json={"team_code": "", "dia": DIA_SEG}).status_code == 400
         assert client.post("/api/escala", json={"team_code": "F01", "dia": ""}).status_code == 400
+
+
+def test_equipes_inativas_comecam_vazias(client, tmp_path):
+    with patch("cabonnet.db._DB_PATH", str(tmp_path / "equipes_vazias.db")):
+        db._db_init()
+        assert client.get("/api/escala/equipes").json() == {"ok": True, "inativas": []}
+
+
+def test_desabilitar_e_reabilitar_equipe(client, tmp_path):
+    with patch("cabonnet.db._DB_PATH", str(tmp_path / "equipes_toggle.db")):
+        db._db_init()
+        assert client.put("/api/escala/equipes/F50", json={"ativo": False}).status_code == 200
+        assert client.put("/api/escala/equipes/F11", json={"ativo": False}).status_code == 200
+        assert client.get("/api/escala/equipes").json()["inativas"] == ["F11", "F50"]
+
+        assert client.put("/api/escala/equipes/F50", json={"ativo": True}).status_code == 200
+        assert client.get("/api/escala/equipes").json()["inativas"] == ["F11"]
+
+
+def test_desabilitar_equipe_nao_apaga_o_status_ja_lancado(client, tmp_path):
+    with patch("cabonnet.db._DB_PATH", str(tmp_path / "equipes_historico.db")):
+        db._db_init()
+        client.post("/api/escala", json={"team_code": "F50", "dia": DIA_SEG, "local1": "Taubaté"})
+        client.put("/api/escala/equipes/F50", json={"ativo": False})
+        client.put("/api/escala/equipes/F50", json={"ativo": True})
+
+        items = client.get(f"/api/escala?dias={DIA_SEG}").json()["items"]
+        assert [i["team_code"] for i in items] == ["F50"]
+
+
+def test_ativo_precisa_ser_booleano(client, tmp_path):
+    with patch("cabonnet.db._DB_PATH", str(tmp_path / "equipes_invalido.db")):
+        db._db_init()
+        assert client.put("/api/escala/equipes/F50", json={"ativo": "nao"}).status_code == 400
+        assert client.put("/api/escala/equipes/F50", json={}).status_code == 400

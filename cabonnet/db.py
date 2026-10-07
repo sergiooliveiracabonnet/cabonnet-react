@@ -319,6 +319,18 @@ def _db_init():
                 PRIMARY KEY(team_code, dia)
             )
         """)
+        # Equipes tiradas da escala (parou de trabalhar com a gente). Só guarda o
+        # que foi mexido: equipe sem linha aqui continua ativa, então uma frente
+        # nova do roster aparece sozinha. A linha de status antiga fica intacta —
+        # reativar a equipe traz o histórico de volta.
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS escala_equipes_config (
+                team_code  TEXT PRIMARY KEY,
+                ativo      INTEGER NOT NULL DEFAULT 1,
+                updated_at TEXT NOT NULL,
+                updated_by TEXT NOT NULL DEFAULT ''
+            )
+        """)
         con.commit()
         con.close()
 
@@ -1280,6 +1292,45 @@ def _db_upsert_escala(team_code, dia, local1="", local2="", updated_by=""):
         return True
     except Exception as ex:
         log_db.warning("Falha ao salvar escala de %s em %s: %s", team_code, dia, ex)
+        return False
+
+
+def _db_list_escala_equipes_inativas():
+    """Códigos de equipe desabilitados na escala (ex: 'F50'). Lista vazia em caso
+    de erro — melhor mostrar todas as equipes do que esconder alguma por falha."""
+    try:
+        with state._db_lock:
+            con = _connect()
+            rows = con.execute(
+                "SELECT team_code FROM escala_equipes_config WHERE ativo=0 ORDER BY team_code"
+            ).fetchall()
+            con.close()
+        return [r[0] for r in rows]
+    except Exception as ex:
+        log_db.warning("Falha ao listar equipes inativas da escala: %s", ex)
+        return []
+
+
+def _db_set_escala_equipe_ativo(team_code, ativo, updated_by=""):
+    """Habilita/desabilita uma equipe na escala. Não apaga status já lançados."""
+    updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        with state._db_lock:
+            con = _connect()
+            con.execute(
+                """INSERT INTO escala_equipes_config (team_code, ativo, updated_at, updated_by)
+                   VALUES (?,?,?,?)
+                   ON CONFLICT(team_code) DO UPDATE SET
+                     ativo=excluded.ativo,
+                     updated_at=excluded.updated_at,
+                     updated_by=excluded.updated_by""",
+                (team_code, 1 if ativo else 0, updated_at, updated_by),
+            )
+            con.commit()
+            con.close()
+        return True
+    except Exception as ex:
+        log_db.warning("Falha ao alterar equipe %s da escala: %s", team_code, ex)
         return False
 
 
