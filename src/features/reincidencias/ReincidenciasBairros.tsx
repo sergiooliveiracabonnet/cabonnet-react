@@ -11,18 +11,18 @@ const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um :
 
 /** Cartão "Revisitas por bairro": barras dos 10 bairros com mais clientes
  *  reincidentes + lista clicável (alternativa por teclado ao clique na barra). */
-export function BairrosCard({ resumo, onOpen }: { resumo: BairroResumo[]; onOpen: (key: string) => void }) {
+export function BairrosCard({ tipo, resumo, onOpen }: { tipo: string; resumo: BairroResumo[]; onOpen: (key: string) => void }) {
   const topo = resumo.slice(0, TOPO_GRAFICO)
   const totalClientes = resumo.reduce((sum, b) => sum + b.nClientes, 0)
   const top3 = resumo.slice(0, 3).reduce((sum, b) => sum + b.nClientes, 0)
 
   return (
-    <section aria-label="Revisitas por bairro">
+    <section aria-label={`${tipo} por bairro`}>
       <article className="min-w-0 rounded-xl border border-border bg-card p-4">
         <div className="flex items-start gap-2">
           <MapPin size={17} className="mt-0.5 flex-shrink-0 text-primary" />
           <div>
-            <h2 className="text-body font-bold text-text">Revisitas por bairro</h2>
+            <h2 className="text-body font-bold text-text">{tipo} por bairro</h2>
             <p className="mt-0.5 text-caption text-secondary">Clientes reincidentes por bairro · clique para ver as ordens</p>
           </div>
         </div>
@@ -80,7 +80,8 @@ export function BairrosCard({ resumo, onOpen }: { resumo: BairroResumo[]; onOpen
 }
 
 /** Modal em duas colunas: bairros à esquerda, ordens do bairro escolhido à direita. */
-export function BairroModal({ resumo, selectedKey, onSelect, onClose }: {
+export function BairroModal({ tipo, resumo, selectedKey, onSelect, onClose }: {
+  tipo: string
   resumo: BairroResumo[]
   selectedKey: string | null
   onSelect: (key: string) => void
@@ -88,10 +89,11 @@ export function BairroModal({ resumo, selectedKey, onSelect, onClose }: {
 }) {
   const atual = resumo.find(b => b.key === selectedKey) ?? null
   const totalClientes = resumo.reduce((sum, b) => sum + b.nClientes, 0)
+  const maior = Math.max(1, ...resumo.map(b => b.nClientes))
 
   return (
     <Modal open={selectedKey !== null && atual !== null} onClose={onClose} maxWidth="1100px"
-           title="Revisitas por bairro"
+           title={`${tipo} por bairro`}
            subtitle={`${plural(resumo.length, 'bairro', 'bairros')} · ${plural(totalClientes, 'cliente reincidente', 'clientes reincidentes')}`}>
       {atual && (
         <div className="grid grid-cols-1 md:grid-cols-4" style={{ height: '68vh' }}>
@@ -102,12 +104,17 @@ export function BairroModal({ resumo, selectedKey, onSelect, onClose }: {
                 return (
                   <li key={b.key}>
                     <button type="button" onClick={() => onSelect(b.key)} aria-current={sel ? 'true' : undefined}
-                            className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 border-b border-border/60 px-4 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60 ${sel ? 'bg-primary/10' : 'hover:bg-elevated'}`}>
-                      <span className="min-w-0">
-                        <b className={`block truncate text-label ${sel ? 'text-primary' : 'text-text'}`}>{b.label}</b>
-                        <span className="block truncate text-caption text-muted">{cidadeCurta(b.cidade)}</span>
+                            className={`block min-h-11 w-full cursor-pointer border-b border-border/60 px-4 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60 ${sel ? 'bg-primary/10' : 'hover:bg-elevated'}`}>
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="min-w-0">
+                          <b className={`block truncate text-label ${sel ? 'text-primary' : 'text-text'}`}>{b.label}</b>
+                          <span className="block truncate text-caption text-muted">{cidadeCurta(b.cidade)}</span>
+                        </span>
+                        <b className="text-caption tabular-nums text-text">{b.nClientes}</b>
                       </span>
-                      <span className="rounded-pill bg-surface px-2 py-0.5 text-caption font-bold tabular-nums text-text">{b.nClientes}</span>
+                      <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-surface" aria-hidden="true">
+                        <span className={`block h-full rounded-full ${sel ? 'bg-primary' : 'bg-orange'}`} style={{ width: `${b.nClientes / maior * 100}%` }} />
+                      </span>
                     </button>
                   </li>
                 )

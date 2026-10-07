@@ -25,7 +25,7 @@ const resumo = buildBairroSummary([
 describe('BairrosCard', () => {
   it('lista os bairros com clientes e participação; clicar abre aquele bairro', () => {
     const onOpen = vi.fn()
-    render(<BairrosCard resumo={resumo} onOpen={onOpen} />)
+    render(<BairrosCard tipo="Revisita de manutenção" resumo={resumo} onOpen={onOpen} />)
     expect(screen.getByText('2 clientes')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /JARDIM AZUL/ }))
     expect(onOpen).toHaveBeenCalledWith('Taubaté|JARDIM AZUL')
@@ -33,20 +33,25 @@ describe('BairrosCard', () => {
 
   it('"Ver todos os bairros" abre pelo bairro com mais clientes', () => {
     const onOpen = vi.fn()
-    render(<BairrosCard resumo={resumo} onOpen={onOpen} />)
+    render(<BairrosCard tipo="Revisita de manutenção" resumo={resumo} onOpen={onOpen} />)
     fireEvent.click(screen.getByRole('button', { name: /Ver todos os bairros \(2\)/ }))
     expect(onOpen).toHaveBeenCalledWith('Taubaté|CENTRO')
   })
 
+  it('o título diz se é revisita de manutenção ou de instalação', () => {
+    render(<BairrosCard tipo="Revisita de instalação" resumo={resumo} onOpen={() => {}} />)
+    expect(screen.getByRole('heading', { name: 'Revisita de instalação por bairro' })).toBeTruthy()
+  })
+
   it('sem revisitas mostra o aviso', () => {
-    render(<BairrosCard resumo={[]} onOpen={() => {}} />)
+    render(<BairrosCard tipo="Revisita de manutenção" resumo={[]} onOpen={() => {}} />)
     expect(screen.getByText('Sem revisitas para mostrar por bairro.')).toBeTruthy()
   })
 })
 
 describe('BairroModal', () => {
   it('mostra as OS dos clientes do bairro escolhido, com a observação', () => {
-    render(<BairroModal resumo={resumo} selectedKey="Taubaté|CENTRO" onSelect={() => {}} onClose={() => {}} />)
+    render(<BairroModal tipo="Revisita de manutenção" resumo={resumo} selectedKey="Taubaté|CENTRO" onSelect={() => {}} onClose={() => {}} />)
     expect(screen.getByText('1000001')).toBeTruthy()
     expect(screen.getByText('2000002')).toBeTruthy()
     expect(screen.getByText('conector trocado')).toBeTruthy()
@@ -55,13 +60,18 @@ describe('BairroModal', () => {
 
   it('trocar de bairro na lista da esquerda avisa o novo bairro', () => {
     const onSelect = vi.fn()
-    render(<BairroModal resumo={resumo} selectedKey="Taubaté|CENTRO" onSelect={onSelect} onClose={() => {}} />)
+    render(<BairroModal tipo="Revisita de manutenção" resumo={resumo} selectedKey="Taubaté|CENTRO" onSelect={onSelect} onClose={() => {}} />)
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Bairros' })).getByRole('button', { name: /JARDIM AZUL/ }))
     expect(onSelect).toHaveBeenCalledWith('Taubaté|JARDIM AZUL')
   })
 
+  it('o título do modal traz o tipo da revisita', () => {
+    render(<BairroModal tipo="Revisita de instalação" resumo={resumo} selectedKey="Taubaté|CENTRO" onSelect={() => {}} onClose={() => {}} />)
+    expect(screen.getByText('Revisita de instalação por bairro')).toBeTruthy()
+  })
+
   it('não renderiza nada sem bairro selecionado', () => {
-    render(<BairroModal resumo={resumo} selectedKey={null} onSelect={() => {}} onClose={() => {}} />)
+    render(<BairroModal tipo="Revisita de manutenção" resumo={resumo} selectedKey={null} onSelect={() => {}} onClose={() => {}} />)
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

@@ -116,8 +116,8 @@ export default function ReincidenciasPage() {
 
       <ReincidenciasCharts ranking={teamRanking} intervals={intervals} analysis={analysis} />
 
-      <BairrosCard resumo={bairros} onOpen={setBairroSel} />
-      <BairroModal resumo={bairros} selectedKey={bairroSel} onSelect={setBairroSel} onClose={() => setBairroSel(null)} />
+      <BairrosCard tipo={cfg.label} resumo={bairros} onOpen={setBairroSel} />
+      <BairroModal tipo={cfg.label} resumo={bairros} selectedKey={bairroSel} onSelect={setBairroSel} onClose={() => setBairroSel(null)} />
 
       <ReincidenciasAIPanel analysis={analysis} parCount={pares.length} aiLoading={aiLoading}
         observationsLoading={observationsLoading} observationsError={observationsError}
