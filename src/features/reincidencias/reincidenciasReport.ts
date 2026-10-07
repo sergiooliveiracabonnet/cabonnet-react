@@ -131,9 +131,10 @@ export interface BairroResumo {
   nClientes: number
   /** Retornos: cada OS depois da primeira do cliente (mesma contagem dos pares do relatório). */
   nRevisitas: number
-  /** Todas as OS envolvidas (origem + retornos). */
+  /** Todas as OS envolvidas (origem + retornos) — a mesma contagem do card "OS envolvidas":
+   *  a soma de nOS de todos os bairros fecha com ele. */
   nOS: number
-  /** Participação no total de clientes reincidentes do filtro. */
+  /** Participação no total de OS envolvidas do filtro. */
   pct: number
 }
 
@@ -160,6 +161,8 @@ export function buildBairroSummary(clientes: ClienteReincidente[]): BairroResumo
   const nomeRepetido = new Map<string, number>()
   for (const g of grupos.values()) nomeRepetido.set(g.bairro, (nomeRepetido.get(g.bairro) ?? 0) + 1)
 
+  const totalOS = clientes.reduce((sum, c) => sum + c.rows.length, 0)
+
   return [...grupos].map(([key, g]): BairroResumo => ({
     key, bairro: g.bairro, cidade: g.cidade,
     label: (nomeRepetido.get(g.bairro) ?? 0) > 1 ? `${g.bairro} · ${cidadeCurta(g.cidade)}` : g.bairro,
@@ -167,6 +170,6 @@ export function buildBairroSummary(clientes: ClienteReincidente[]): BairroResumo
     nClientes: g.clientes.length,
     nRevisitas: g.clientes.reduce((sum, c) => sum + Math.max(0, c.rows.length - 1), 0),
     nOS: g.clientes.reduce((sum, c) => sum + c.rows.length, 0),
-    pct: clientes.length ? Math.round(g.clientes.length / clientes.length * 100) : 0,
-  })).sort((a, b) => b.nClientes - a.nClientes || b.nRevisitas - a.nRevisitas || a.label.localeCompare(b.label))
+    pct: totalOS ? Math.round(g.clientes.reduce((sum, c) => sum + c.rows.length, 0) / totalOS * 100) : 0,
+  })).sort((a, b) => b.nOS - a.nOS || b.nClientes - a.nClientes || a.label.localeCompare(b.label))
 }

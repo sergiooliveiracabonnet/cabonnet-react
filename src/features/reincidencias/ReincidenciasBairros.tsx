@@ -13,8 +13,8 @@ const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um :
  *  reincidentes + lista clicável (alternativa por teclado ao clique na barra). */
 export function BairrosCard({ tipo, resumo, onOpen }: { tipo: string; resumo: BairroResumo[]; onOpen: (key: string) => void }) {
   const topo = resumo.slice(0, TOPO_GRAFICO)
-  const totalClientes = resumo.reduce((sum, b) => sum + b.nClientes, 0)
-  const top3 = resumo.slice(0, 3).reduce((sum, b) => sum + b.nClientes, 0)
+  const totalOS = resumo.reduce((sum, b) => sum + b.nOS, 0)
+  const top3 = resumo.slice(0, 3).reduce((sum, b) => sum + b.nOS, 0)
 
   return (
     <section aria-label={`${tipo} por bairro`}>
@@ -23,7 +23,7 @@ export function BairrosCard({ tipo, resumo, onOpen }: { tipo: string; resumo: Ba
           <MapPin size={17} className="mt-0.5 flex-shrink-0 text-primary" />
           <div>
             <h2 className="text-body font-bold text-text">{tipo} por bairro</h2>
-            <p className="mt-0.5 text-caption text-secondary">Clientes reincidentes por bairro · clique para ver as ordens</p>
+            <p className="mt-0.5 text-caption text-secondary">OS envolvidas por bairro (origem + retornos) · clique para ver as ordens</p>
           </div>
         </div>
 
@@ -33,15 +33,15 @@ export function BairrosCard({ tipo, resumo, onOpen }: { tipo: string; resumo: Ba
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="min-w-0 lg:col-span-2" role="img" aria-label="Clientes reincidentes por bairro"
+            <div className="min-w-0 lg:col-span-2" role="img" aria-label="OS envolvidas por bairro"
                  style={{ height: Math.max(180, topo.length * 30 + 30) }}>
               <BarChart data={topo} layout="vertical" margin={{ top: 2, right: 18, left: 8, bottom: 0 }} accessibilityLayer>
                 <Grid />
                 <XAxis type="number" allowDecimals={false} />
                 <YAxis type="category" dataKey="label" width={150}
                        tickFormatter={(value: string) => value.length > 24 ? `${value.slice(0, 23)}…` : value} />
-                <ChartTooltip suffix=" clientes" />
-                <Bar dataKey="nClientes" name="Clientes" fill="#fb923c" radius={[0, 4, 4, 0]} isAnimationActive={false}
+                <ChartTooltip suffix=" OS" />
+                <Bar dataKey="nOS" name="OS" fill="#fb923c" radius={[0, 4, 4, 0]} isAnimationActive={false}
                      onClick={(data: { key?: string }) => data?.key && onOpen(data.key)} />
               </BarChart>
             </div>
@@ -49,7 +49,7 @@ export function BairrosCard({ tipo, resumo, onOpen }: { tipo: string; resumo: Ba
             <div className="min-w-0">
               <p className="text-caption text-secondary">
                 {plural(resumo.length, 'bairro com revisita', 'bairros com revisita')}
-                {resumo.length > 3 && <> · os 3 maiores concentram <b className="text-text">{Math.round(top3 / totalClientes * 100)}%</b> dos clientes</>}
+                {resumo.length > 3 && <> · os 3 maiores concentram <b className="text-text">{Math.round(top3 / totalOS * 100)}%</b> das OS</>}
               </p>
               <ul className="mt-2 divide-y divide-border/60 border-t border-border">
                 {resumo.slice(0, TOPO_LISTA).map(b => (
@@ -61,7 +61,7 @@ export function BairrosCard({ tipo, resumo, onOpen }: { tipo: string; resumo: Ba
                         <span className="block truncate text-caption text-muted">{cidadeCurta(b.cidade)}</span>
                       </span>
                       <span className="whitespace-nowrap text-right text-caption tabular-nums text-secondary">
-                        <b className="text-orange">{plural(b.nClientes, 'cliente', 'clientes')}</b><br />{b.nRevisitas} {b.nRevisitas === 1 ? 'revisita' : 'revisitas'} · {b.pct}%
+                        <b className="text-orange">{b.nOS} OS</b><br />{plural(b.nClientes, 'cliente', 'clientes')} · {b.pct}%
                       </span>
                     </button>
                   </li>
@@ -89,12 +89,13 @@ export function BairroModal({ tipo, resumo, selectedKey, onSelect, onClose }: {
 }) {
   const atual = resumo.find(b => b.key === selectedKey) ?? null
   const totalClientes = resumo.reduce((sum, b) => sum + b.nClientes, 0)
-  const maior = Math.max(1, ...resumo.map(b => b.nClientes))
+  const totalOS = resumo.reduce((sum, b) => sum + b.nOS, 0)
+  const maior = Math.max(1, ...resumo.map(b => b.nOS))
 
   return (
     <Modal open={selectedKey !== null && atual !== null} onClose={onClose} maxWidth="1100px"
            title={`${tipo} por bairro`}
-           subtitle={`${plural(resumo.length, 'bairro', 'bairros')} · ${plural(totalClientes, 'cliente reincidente', 'clientes reincidentes')}`}>
+           subtitle={`${plural(resumo.length, 'bairro', 'bairros')} · ${totalOS} OS envolvidas · ${plural(totalClientes, 'cliente reincidente', 'clientes reincidentes')}`}>
       {atual && (
         <div className="grid grid-cols-1 md:grid-cols-4" style={{ height: '68vh' }}>
           <nav aria-label="Bairros" className="min-h-0 overflow-y-auto border-b border-border md:col-span-1 md:border-b-0 md:border-r">
@@ -110,10 +111,10 @@ export function BairroModal({ tipo, resumo, selectedKey, onSelect, onClose }: {
                           <b className={`block truncate text-label ${sel ? 'text-primary' : 'text-text'}`}>{b.label}</b>
                           <span className="block truncate text-caption text-muted">{cidadeCurta(b.cidade)}</span>
                         </span>
-                        <b className="text-caption tabular-nums text-text">{b.nClientes}</b>
+                        <b className="text-caption tabular-nums text-text">{b.nOS} <span className="font-normal text-muted">OS</span></b>
                       </span>
                       <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-surface" aria-hidden="true">
-                        <span className={`block h-full rounded-full ${sel ? 'bg-primary' : 'bg-orange'}`} style={{ width: `${b.nClientes / maior * 100}%` }} />
+                        <span className={`block h-full rounded-full ${sel ? 'bg-primary' : 'bg-orange'}`} style={{ width: `${b.nOS / maior * 100}%` }} />
                       </span>
                     </button>
                   </li>
@@ -129,7 +130,7 @@ export function BairroModal({ tipo, resumo, selectedKey, onSelect, onClose }: {
                 <p className="text-caption text-secondary">{atual.cidade || '—'}</p>
               </div>
               <p className="text-caption tabular-nums text-secondary">
-                <b className="text-orange">{plural(atual.nClientes, 'cliente', 'clientes')}</b> · {atual.nRevisitas} {atual.nRevisitas === 1 ? 'revisita' : 'revisitas'} · {atual.nOS} OS · {atual.pct}% do total
+                <b className="text-orange">{atual.nOS} OS</b> · {plural(atual.nClientes, 'cliente', 'clientes')} · {atual.nRevisitas} {atual.nRevisitas === 1 ? 'revisita' : 'revisitas'} · {atual.pct}% do total
               </p>
             </div>
 

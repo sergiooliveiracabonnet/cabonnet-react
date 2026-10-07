@@ -158,6 +158,18 @@ describe('buildBairroSummary', () => {
     expect(r.map(b => b.label).sort()).toEqual(['CENTRO · Pinda', 'CENTRO · Taubaté', 'JARDIM'])
   })
 
+  it('a soma das OS dos bairros fecha com o total de OS envolvidas', () => {
+    const todos = [cli('A', 'Taubaté', 'CENTRO', 2), cli('B', 'Taubaté', 'CENTRO', 3), cli('C', 'Taubaté', 'JARDIM', 5), cli('D', 'Pindamonhangaba', 'CENTRO', 2)]
+    const r = buildBairroSummary(todos)
+    expect(r.reduce((sum, b) => sum + b.nOS, 0)).toBe(todos.reduce((sum, c) => sum + c.rows.length, 0))
+    expect(r.reduce((sum, b) => sum + b.pct, 0)).toBeGreaterThanOrEqual(99)
+  })
+
+  it('ordena por OS: um bairro com poucos clientes e muitas OS passa na frente', () => {
+    const r = buildBairroSummary([cli('A', 'Taubaté', 'CENTRO', 2), cli('B', 'Taubaté', 'CENTRO', 2), cli('C', 'Taubaté', 'JARDIM', 6)])
+    expect(r.map(b => [b.bairro, b.nOS, b.nClientes])).toEqual([['JARDIM', 6, 1], ['CENTRO', 4, 2]])
+  })
+
   it('cliente sem bairro vai para "Sem bairro"', () => {
     expect(buildBairroSummary([cli('A', 'Taubaté', '', 2)])[0].label).toBe('Sem bairro')
   })

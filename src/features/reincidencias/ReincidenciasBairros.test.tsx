@@ -26,7 +26,8 @@ describe('BairrosCard', () => {
   it('lista os bairros com clientes e participação; clicar abre aquele bairro', () => {
     const onOpen = vi.fn()
     render(<BairrosCard tipo="Revisita de manutenção" resumo={resumo} onOpen={onOpen} />)
-    expect(screen.getByText('2 clientes')).toBeTruthy()
+    expect(screen.getByText('4 OS')).toBeTruthy()
+    expect(screen.getByText(/2 clientes · 67%/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /JARDIM AZUL/ }))
     expect(onOpen).toHaveBeenCalledWith('Taubaté|JARDIM AZUL')
   })
