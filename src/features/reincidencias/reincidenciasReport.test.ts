@@ -170,6 +170,45 @@ describe('buildBairroSummary', () => {
     expect(r.map(b => [b.bairro, b.nOS, b.nClientes])).toEqual([['JARDIM', 6, 1], ['CENTRO', 4, 2]])
   })
 
+  it('junta o mesmo bairro escrito com e sem acento e usa a grafia com acento', () => {
+    const r = buildBairroSummary([
+      cli('A', 'Caçapava', 'VITORIA VALE', 2), cli('B', 'Caçapava', 'VITÓRIA VALE', 2), cli('C', 'Caçapava', 'VITORIA VALE', 2),
+    ])
+    expect(r).toHaveLength(1)
+    expect(r[0].nClientes).toBe(3)
+    expect(r[0].nOS).toBe(6)
+    expect(r[0].bairro).toBe('VITORIA VALE')  // a grafia mais usada
+  })
+
+  it('empate de grafia: fica a que tem acento', () => {
+    const r = buildBairroSummary([cli('A', 'Caçapava', 'VITORIA VALE', 2), cli('B', 'Caçapava', 'VITÓRIA VALE', 2)])
+    expect(r).toHaveLength(1)
+    expect(r[0].bairro).toBe('VITÓRIA VALE')
+  })
+
+  it('ignora caixa, pontuação e espaços sobrando', () => {
+    const r = buildBairroSummary([cli('A', 'Taubaté', 'Jardim  das-Flores', 2), cli('B', 'Taubaté', 'JARDIM DAS FLORES ', 2)])
+    expect(r).toHaveLength(1)
+  })
+
+  it('cidade com e sem acento é a mesma cidade', () => {
+    const r = buildBairroSummary([cli('A', 'Caçapava', 'CENTRO', 2), cli('B', 'CACAPAVA', 'CENTRO', 2)])
+    expect(r).toHaveLength(1)
+  })
+
+  it('junta o nome cortado em 20 caracteres pelo ERP ao bairro completo da mesma cidade', () => {
+    const r = buildBairroSummary([
+      cli('A', 'Caçapava', 'RESIDENCIAL ESPERANC', 2), cli('B', 'Caçapava', 'RESIDENCIAL ESPERANCA', 2),
+      cli('C', 'Taubaté', 'RESIDENCIAL ESPERANC', 2),
+    ])
+    expect(r.map(b => [b.cidade, b.bairro, b.nClientes])).toEqual([['Caçapava', 'RESIDENCIAL ESPERANCA', 2], ['Taubaté', 'RESIDENCIAL ESPERANC', 1]])
+  })
+
+  it('não junta bairros diferentes só porque o nome começa igual (sem corte de 20)', () => {
+    const r = buildBairroSummary([cli('A', 'Taubaté', 'JARDIM AMERICA', 2), cli('B', 'Taubaté', 'JARDIM AMERICA II', 2)])
+    expect(r).toHaveLength(2)
+  })
+
   it('cliente sem bairro vai para "Sem bairro"', () => {
     expect(buildBairroSummary([cli('A', 'Taubaté', '', 2)])[0].label).toBe('Sem bairro')
   })

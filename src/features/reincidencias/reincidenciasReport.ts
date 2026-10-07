@@ -147,16 +147,62 @@ export function cidadeCurta(cidade: string): string {
   return cidade.trim() ? cidade.trim().charAt(0).toUpperCase() + cidade.trim().slice(1).toLowerCase() : '—'
 }
 
+// O cadastro escreve o mesmo bairro de jeitos diferentes ("VITORIA VALE" e
+// "VITÓRIA VALE"), então a chave ignora acento, caixa, pontuação e espaços sobrando.
+const normalizar = (texto: string): string =>
+  texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim()
+
+// O ERP corta o nome do bairro em 20 caracteres ("RESIDENCIAL ESPERANC"): um nome
+// com exatamente esse tamanho pode ser a versão cortada de um bairro maior.
+const LIMITE_BAIRRO_ERP = 20
+
+interface GrupoBairro {
+  cidadeKey: string
+  bairroKey: string
+  variantesBairro: Map<string, number>
+  variantesCidade: Map<string, number>
+  clientes: ClienteReincidente[]
+}
+
+const maisUsado = (variantes: Map<string, number>): string =>
+  [...variantes].sort((a, b) =>
+    b[1] - a[1] ||
+    Number(/[À-ÿ]/.test(b[0])) - Number(/[À-ÿ]/.test(a[0])) ||  // empate: a grafia com acento
+    b[0].length - a[0].length)[0][0]
+
+function juntar(destino: GrupoBairro, origem: GrupoBairro) {
+  destino.clientes.push(...origem.clientes)
+  for (const [nome, n] of origem.variantesBairro) destino.variantesBairro.set(nome, (destino.variantesBairro.get(nome) ?? 0) + n)
+  for (const [nome, n] of origem.variantesCidade) destino.variantesCidade.set(nome, (destino.variantesCidade.get(nome) ?? 0) + n)
+}
+
 export function buildBairroSummary(clientes: ClienteReincidente[]): BairroResumo[] {
-  const grupos = new Map<string, { bairro: string; cidade: string; clientes: ClienteReincidente[] }>()
+  const brutos = new Map<string, GrupoBairro>()
   for (const cliente of clientes) {
     const bairro = cliente.bairro.trim() || SEM_BAIRRO
     const cidade = cliente.cidade.trim()
-    const key = `${cidade}|${bairro}`
-    const grupo = grupos.get(key) ?? { bairro, cidade, clientes: [] }
+    const cidadeKey = normalizar(cidade)
+    const bairroKey = normalizar(bairro) || normalizar(SEM_BAIRRO)
+    const key = `${cidadeKey}|${bairroKey}`
+    const grupo: GrupoBairro = brutos.get(key) ?? { cidadeKey, bairroKey, variantesBairro: new Map(), variantesCidade: new Map(), clientes: [] }
     grupo.clientes.push(cliente)
-    grupos.set(key, grupo)
+    grupo.variantesBairro.set(bairro, (grupo.variantesBairro.get(bairro) ?? 0) + 1)
+    grupo.variantesCidade.set(cidade, (grupo.variantesCidade.get(cidade) ?? 0) + 1)
+    brutos.set(key, grupo)
   }
+
+  // Une o nome cortado ao completo — só quando há um único candidato na mesma cidade.
+  for (const [key, corte] of [...brutos]) {
+    if (corte.bairroKey.length !== LIMITE_BAIRRO_ERP) continue
+    const candidatos = [...brutos.values()].filter(g =>
+      g !== corte && g.cidadeKey === corte.cidadeKey && g.bairroKey.length > LIMITE_BAIRRO_ERP && g.bairroKey.startsWith(corte.bairroKey))
+    if (candidatos.length !== 1) continue
+    juntar(candidatos[0], corte)
+    brutos.delete(key)
+  }
+
+  const grupos = new Map<string, { bairro: string; cidade: string; clientes: ClienteReincidente[] }>()
+  for (const [key, g] of brutos) grupos.set(key, { bairro: maisUsado(g.variantesBairro), cidade: maisUsado(g.variantesCidade), clientes: g.clientes })
 
   const nomeRepetido = new Map<string, number>()
   for (const g of grupos.values()) nomeRepetido.set(g.bairro, (nomeRepetido.get(g.bairro) ?? 0) + 1)
