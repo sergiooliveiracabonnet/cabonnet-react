@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Warning } from '@phosphor-icons/react'
 import { Modal } from '../../../components/ui/Modal'
+import { Switch } from '../../../components/ui/radix-switch'
 import { useEscalaEquipes } from '../../../hooks/useEscala'
 import { EMPRESA_LABEL, EMPRESA_COLOR, type Empresa } from './escalaConstants'
 
@@ -56,13 +57,9 @@ export function EscalaEquipesModal({ open, onClose }: { open: boolean; onClose: 
                         <p className="truncate text-caption text-muted">{e.clusterBase}</p>
                       </div>
                       <span className="w-16 text-right text-caption text-muted">{ativo ? 'Ativa' : 'Desligada'}</span>
-                      <button type="button" role="switch" aria-checked={ativo}
+                      <Switch checked={ativo} disabled={salvando === e.codigo}
                               aria-label={`${ativo ? 'Desligar' : 'Ligar'} ${e.codigo}`}
-                              disabled={salvando === e.codigo}
-                              onClick={() => alternar(e.codigo, !ativo)}
-                              className={`relative h-7 w-11 flex-shrink-0 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 disabled:opacity-50 ${ativo ? 'bg-primary' : 'bg-muted/25'}`}>
-                        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${ativo ? 'translate-x-5' : 'translate-x-1'}`} />
-                      </button>
+                              onCheckedChange={next => alternar(e.codigo, next)} />
                     </li>
                   )
                 })}

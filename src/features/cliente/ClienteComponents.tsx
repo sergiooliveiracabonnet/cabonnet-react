@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import L from 'leaflet'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
+import { Switch } from '../../components/ui/radix-switch'
 import { SectionTitle } from '../../components/ui/SectionTitle'
 import { fmtDate, shortEquipe, situacaoContratoLabel, situacaoVariant } from '../../lib/osFormat'
 import type { ClienteBuscaItem, ClienteCadastro, ClienteContrato, ClienteEndereco } from '../../lib/api'
@@ -369,10 +370,12 @@ export function HistoricoOS({ resumo, truncado, auditoriaOk, onSelect }: {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <SectionTitle icon={FileText} className="mt-0 mb-0">Histórico de OS ({linhas.length})</SectionTitle>
         {resumo.administrativas.length > 0 && (
-          <label className="flex items-center gap-2 text-label text-secondary cursor-pointer">
-            <input type="checkbox" checked={comAdmin} onChange={e => setComAdmin(e.target.checked)} />
-            Incluir administrativas ({resumo.administrativas.length})
-          </label>
+          <div className="flex items-center gap-2 text-label text-secondary">
+            <Switch id="cliente-incluir-admin" checked={comAdmin} onCheckedChange={setComAdmin} />
+            <label htmlFor="cliente-incluir-admin" className="cursor-pointer select-none">
+              Incluir administrativas ({resumo.administrativas.length})
+            </label>
+          </div>
         )}
       </div>
       <Card className="mt-3 overflow-x-auto">

@@ -44,6 +44,7 @@ const RULE_ICONS:   Record<string, IconComp> = { criticas: ShieldWarning, taxa: 
 // ─── buildAlerts ──────────────────────────────────────────────────────────────
 
 import { TEAMS } from '../erpConstants'
+import { Switch } from '../../../components/ui/radix-switch'
 
 export function buildAlerts(
   rows:          OSRow[],
@@ -398,11 +399,8 @@ export function SettingsPanel({ settings, onSave, onClose }: {
               {rulesD.map(rule => (
                 <div key={rule.id} className="rounded-lg border border-subtle bg-surface/30 p-3">
                   <div className="flex items-center gap-3">
-                    <button type="button" role="switch" aria-checked={rule.enabled} aria-label={`${rule.enabled ? 'Desativar' : 'Ativar'} ${rule.label}`}
-                      onClick={() => setRulesD(current => current.map(item => item.id === rule.id ? { ...item, enabled: !item.enabled } : item))}
-                      className={`relative w-11 h-7 rounded-full flex-shrink-0 focus-visible:ring-2 focus-visible:ring-primary/50 ${rule.enabled ? 'bg-primary' : 'bg-muted/25'}`}>
-                      <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${rule.enabled ? 'translate-x-5' : 'translate-x-1'}`} />
-                    </button>
+                    <Switch checked={rule.enabled} aria-label={`${rule.enabled ? 'Desativar' : 'Ativar'} ${rule.label}`}
+                      onCheckedChange={enabled => setRulesD(current => current.map(item => item.id === rule.id ? { ...item, enabled } : item))} />
                     <label htmlFor={`rule-threshold-${rule.id}`} className="flex-1 min-w-0">
                       <span className="block text-label font-semibold text-text">{rule.label}</span>
                       <span className="block text-caption text-muted leading-snug">{rule.desc}</span>

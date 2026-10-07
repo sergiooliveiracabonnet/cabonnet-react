@@ -5,6 +5,7 @@ import { usePermissoes, usePermissoesActions } from '../../hooks/usePermissoes'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
+import { Switch } from '../../components/ui/radix-switch'
 import type { UserRole, UsuarioItem, FornecedorAcesso } from '../../lib/api'
 import type { ClusterFilter } from '../../lib/clusters'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -187,12 +188,12 @@ function PermissoesMatrix() {
                   const disabled = r === 'gestor' || pending[`${r}:${m.key}`]
                   return (
                     <td key={r} className="px-3 py-2 text-center">
-                      <input
-                        type="checkbox"
+                      <Switch
                         checked={checked}
                         disabled={disabled}
-                        onChange={() => toggle(r, m.key)}
-                        className="w-3.5 h-3.5 accent-primary disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                        onCheckedChange={() => toggle(r, m.key)}
+                        aria-label={`${m.label} — ${r}`}
+                        className="mx-auto"
                       />
                     </td>
                   )

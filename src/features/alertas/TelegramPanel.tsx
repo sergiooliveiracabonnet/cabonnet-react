@@ -3,6 +3,7 @@ import { PaperPlaneTilt, Bell, BellSlash, Trash, Checks, Gear, Warning, Clock, T
 import { useTelegramStore } from '../../store/telegramStore'
 import { telegram, ai } from '../../lib/api'
 import { Badge } from '../../components/ui/Badge'
+import { Switch } from '../../components/ui/radix-switch'
 
 interface BriefingData { texto: string; acoes: string[]; data: string; cached?: boolean }
 
@@ -214,11 +215,8 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
                 <p className="text-caption font-semibold text-text">OS com SLA vencido</p>
                 <p className="text-caption text-muted">Até 3 OS por ciclo de verificação</p>
               </div>
-              <button onClick={() => store.setAlertaAging(!store.alertaAging)} role="switch" aria-checked={store.alertaAging} aria-label="Enviar alertas individuais de OS com SLA vencido"
-                className={`w-11 h-7 rounded-full transition-all relative focus-visible:ring-2 focus-visible:ring-primary/50 ${store.alertaAging ? 'bg-primary' : 'bg-muted/25'}`}
-              >
-                <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${store.alertaAging ? 'left-5' : 'left-1'}`} />
-              </button>
+              <Switch checked={store.alertaAging} onCheckedChange={store.setAlertaAging}
+                aria-label="Enviar alertas individuais de OS com SLA vencido" />
             </div>
           </div>
 
