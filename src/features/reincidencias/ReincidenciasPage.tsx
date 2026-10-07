@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Brain, CaretDown, CaretRight, FilePdf, Funnel, House, UserMinus, Wrench } from '@phosphor-icons/react'
+import { Brain, CaretDown, CaretRight, FilePdf, Funnel, House, MapPin, UserMinus, Wrench } from '@phosphor-icons/react'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { TabBar } from '../../components/ui/TabBar'
 import { useOSDerived } from '../../contexts/OSDataContext'
@@ -12,6 +12,7 @@ import { buildBairroSummary, buildIntervalDistribution, buildReincidenciaPairs, 
 import { exportReincidenciasPDF } from './reincidenciasPDF'
 import { ReincidenciasCharts } from './ReincidenciasCharts'
 import { BairroModal, BairrosCard } from './ReincidenciasBairros'
+import { exportBairrosPDF } from './reincidenciasBairroPDF'
 import { ReincidenciasAIPanel } from './ReincidenciasAIPanel'
 
 const FORNECEDORES = ['WES', 'Instacable', 'THM', 'REDE', 'MANUTENCAO', 'INTERNO', 'OUTRO']
@@ -84,10 +85,17 @@ export default function ReincidenciasPage() {
     <div className="flex flex-col gap-5 p-4 sm:p-6">
       <PageHeader title="Relatório de Reincidências" icon={UserMinus}
         description={`${cfg.descricaoJanela(churn.janelaDias)}${range ? ` (${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')})` : ''} · análise auditável por cliente`}
-        actions={<button type="button" disabled={!clientes.length} onClick={() => exportReincidenciasPDF(clientes, filtros, analysis, cfg.reportType)}
-          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 text-label font-semibold text-white transition-colors hover:bg-primary/85 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
-          <FilePdf size={17} /> Exportar PDF
-        </button>}
+        actions={<div className="flex flex-wrap items-center gap-2">
+          <button type="button" disabled={!bairros.length}
+            onClick={() => exportBairrosPDF(bairros, { tipo: cfg.label, filtros, periodo: range ? `${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')}` : '' })}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border px-4 text-label font-semibold text-text transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
+            <MapPin size={17} /> Exportar por bairro
+          </button>
+          <button type="button" disabled={!clientes.length} onClick={() => exportReincidenciasPDF(clientes, filtros, analysis, cfg.reportType)}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 text-label font-semibold text-white transition-colors hover:bg-primary/85 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
+            <FilePdf size={17} /> Exportar PDF
+          </button>
+        </div>}
       />
 
       <TabBar
