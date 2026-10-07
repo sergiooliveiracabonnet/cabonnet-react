@@ -19,7 +19,7 @@ export interface FechamentoStats {
 // fechamentoUtils.test.ts trava as três listas contra o mapeamento confirmado.
 export const INST_EQS = ['F01', 'F04', 'F20', 'F45', 'F47', 'F48', 'F50']
 export const WES_EQS  = ['F08', 'F11', 'F23', 'F36']
-export const THM_EQS  = ['F12', 'F13', 'F14']
+export const THM_EQS  = ['F12', 'F13', 'F14', 'F15']
 const normEq   = (s: string | null | undefined): string => (s || '').toUpperCase().replace(/([A-Z])\s+(\d)/g, '$1$2')
 
 // Adamantina resolve pelo prefixo: as frentes se repetem entre clusters

@@ -4,7 +4,7 @@ from cabonnet import ai, config, stats
 EXPECTED_GROUPS = {
     "INSTACABLE": ["F01", "F04", "F20", "F45", "F47", "F48", "F50"],
     "WES": ["F08", "F11", "F23", "F36"],
-    "THM": ["F12", "F13", "F14"],
+    "THM": ["F12", "F13", "F14", "F15"],
 }
 
 

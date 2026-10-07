@@ -9,6 +9,7 @@ export const EQUIPE_NAMES: Record<string, string> = {
   'INST F12':  'INST F12 - CLAUDIO',
   'INST F13':  'INST F13 - KELVIN',
   'INST F14':  'INST F14 - JOÃO',
+  'INST F15':  'INST F15 - LEONARDO',
   'INST F20':  'INST F20 - LUCAS',
   'INST F36':  'INST F36 - MAYKON',
   'INST F45':  'INST F45 - DIMAS',

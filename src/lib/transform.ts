@@ -303,7 +303,7 @@ export function isAgendamentoDesassistido(r: Pick<OSRow, 'dataagendamento'>, now
 
 const WES_CODES  = new Set(['F08', 'F11', 'F23', 'F36'])
 const INST_CODES = new Set(['F01', 'F04', 'F20', 'F45', 'F47', 'F48', 'F50'])
-const THM_CODES  = new Set(['F12', 'F13', 'F14'])
+const THM_CODES  = new Set(['F12', 'F13', 'F14', 'F15'])
 
 export function getFornecedor(equipe: string | undefined | null): Fornecedor {
   const u = (equipe || '').toUpperCase()

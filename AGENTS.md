@@ -105,7 +105,7 @@ The bot isolates notifications by operator using team codes matched against `nom
 |---|---|---|
 | INSTACABLE | F01, F04, F05, F07, F20, F45, F46, F47, F48, F49, F50 | `TELEGRAM_CHAT_INSTACABLE` |
 | WES | F08, F11, F23, F36, F44 | `TELEGRAM_CHAT_WES` |
-| THM | F12, F13, F14 | `TELEGRAM_CHAT_OPERACIONAL_THM` |
+| THM | F12, F13, F14, F15 | `TELEGRAM_CHAT_OPERACIONAL_THM` |
 | REDE | service starts with "REDE" | `TELEGRAM_CHAT_REDE` |
 
 19 frentes at present. `cabonnet/config.py` is the source of truth — every other list is a copy.

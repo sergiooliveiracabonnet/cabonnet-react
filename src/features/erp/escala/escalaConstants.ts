@@ -20,7 +20,7 @@ export interface EscalaEquipe {
 const CLUSTER_BASE_POR_FRENTE: Record<string, string> = {
   F01: 'Caçapava', F04: 'Tremembé', F48: 'São José dos Campos',
   F20: 'Taubaté', F45: 'Taubaté', F47: 'Taubaté', F50: 'Taubaté',
-  F12: 'Taubaté', F13: 'Taubaté', F14: 'Taubaté',
+  F12: 'Taubaté', F13: 'Taubaté', F14: 'Taubaté', F15: 'Taubaté',
   F08: 'Pindamonhangaba', F11: 'Pindamonhangaba', F23: 'Pindamonhangaba',
   F36: 'Pindamonhangaba',
 }

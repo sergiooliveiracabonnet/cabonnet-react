@@ -11,6 +11,7 @@ export const TEAMS: Team[] = [
   { code: 'INST F12',  leader: 'CLAUDIO',   tipo: 'INSTALACAO', members: [] },
   { code: 'INST F13',  leader: 'KELVIN',    tipo: 'INSTALACAO', members: [] },
   { code: 'INST F14',  leader: 'JOÃO',      tipo: 'INSTALACAO', members: [] },
+  { code: 'INST F15',  leader: 'LEONARDO',  tipo: 'INSTALACAO', members: [] },
   { code: 'INST F20',  leader: 'LUCAS',     tipo: 'INSTALACAO', members: [] },
   { code: 'INST F23',  leader: 'ANDERSON',  tipo: 'INSTALACAO', members: [] },
   { code: 'INST F36',  leader: 'MAYKON',    tipo: 'INSTALACAO', members: [] },
