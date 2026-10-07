@@ -121,15 +121,6 @@ export function Sidebar() {
     return () => clearInterval(id)
   }, [])
 
-  useEffect(() => {
-    if (!sidebarOpen) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSidebar(false)
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [sidebarOpen, setSidebar])
-
   const closeAfterMobileNavigation = () => {
     if (window.innerWidth < 768) setSidebar(false)
   }
