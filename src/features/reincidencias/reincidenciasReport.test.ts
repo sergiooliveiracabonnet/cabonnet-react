@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ClienteReincidente } from '../../lib/builders/churn'
 import type { OSRow } from '../../lib/types'
-import { buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
+import { buildBairroSummary, buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
 
 const row = (numos: string, equipe: string, fornecedor: OSRow['_fornecedor'], data: string, obs = '') => ({
   numos, nomedaequipe: equipe, _fornecedor: fornecedor, dataexecucao: data, databaixa: '', obs,
@@ -127,5 +127,38 @@ Latitude Inicio: -22.9589369`
     const [merged] = mergeOSObservations([original], { '1': { observacoes: 'Executado em campo', observacaocritica: 'Atenção' } })
     expect(getOSObservation(merged.rows[0])).toBe('Executado em campo')
     expect(original.rows[0].observacoes).toBeUndefined()
+  })
+})
+
+describe('buildBairroSummary', () => {
+  const cli = (chave: string, cidade: string, bairro: string, nOS: number) => ({
+    chave, cliente: `Cliente ${chave}`, cidade, bairro, visitas: nOS, intervaloMedio: 5, diasDesdeUltima: 3,
+    rows: Array.from({ length: nOS }, (_, i) => ({ numos: `${chave}${i}` })),
+  }) as unknown as ClienteReincidente
+
+  it('agrupa por cidade + bairro e ordena por clientes', () => {
+    const r = buildBairroSummary([
+      cli('A', 'Taubaté', 'CENTRO', 2), cli('B', 'Taubaté', 'CENTRO', 3),
+      cli('C', 'Taubaté', 'JARDIM', 2), cli('D', 'Pindamonhangaba', 'CENTRO', 2),
+    ])
+    expect(r.map(b => [b.cidade, b.bairro, b.nClientes])).toEqual([
+      ['Taubaté', 'CENTRO', 2], ['Pindamonhangaba', 'CENTRO', 1], ['Taubaté', 'JARDIM', 1],
+    ])
+  })
+
+  it('conta revisitas (OS após a primeira) e OS envolvidas', () => {
+    const [b] = buildBairroSummary([cli('A', 'Taubaté', 'CENTRO', 2), cli('B', 'Taubaté', 'CENTRO', 3)])
+    expect(b.nRevisitas).toBe(3)
+    expect(b.nOS).toBe(5)
+    expect(b.pct).toBe(100)
+  })
+
+  it('só põe a cidade no rótulo quando o nome do bairro se repete', () => {
+    const r = buildBairroSummary([cli('A', 'Taubaté', 'CENTRO', 2), cli('D', 'Pindamonhangaba', 'CENTRO', 2), cli('C', 'Taubaté', 'JARDIM', 2)])
+    expect(r.map(b => b.label).sort()).toEqual(['CENTRO · Pinda', 'CENTRO · Taubaté', 'JARDIM'])
+  })
+
+  it('cliente sem bairro vai para "Sem bairro"', () => {
+    expect(buildBairroSummary([cli('A', 'Taubaté', '', 2)])[0].label).toBe('Sem bairro')
   })
 })

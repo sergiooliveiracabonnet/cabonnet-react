@@ -8,9 +8,10 @@ import { buildInstallChurn, buildManutencaoRevisitaChurn, coorteInstalacaoRange 
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { aiPairKey, useAIReincidencias } from '../../hooks/useAIReincidencias'
 import { useReincidenciaDetails } from '../../hooks/useReincidenciaDetails'
-import { buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
+import { buildBairroSummary, buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
 import { exportReincidenciasPDF } from './reincidenciasPDF'
 import { ReincidenciasCharts } from './ReincidenciasCharts'
+import { BairroModal, BairrosCard } from './ReincidenciasBairros'
 import { ReincidenciasAIPanel } from './ReincidenciasAIPanel'
 
 const FORNECEDORES = ['WES', 'Instacable', 'THM', 'REDE', 'MANUTENCAO', 'INTERNO', 'OUTRO']
@@ -41,6 +42,7 @@ export default function ReincidenciasPage() {
   const [equipe, setEquipe] = useState('')
   const [cidade, setCidade] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [bairroSel, setBairroSel] = useState<string | null>(null)
   const [aiEnabled, setAIEnabled] = useState(false)
   const cfg = ABA_CONFIG[aba]
   const range = useMemo(() => (dateFilter.from && dateFilter.to ? { from: dateFilter.from, to: dateFilter.to } : null), [dateFilter.from, dateFilter.to])
@@ -62,6 +64,7 @@ export default function ReincidenciasPage() {
   ), [allRows, fornecedor, equipe, cidade])
   const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows, new Date(), aba === 'instalacao' && range ? coorteInstalacaoRange(range) : range, cfg.tipoBase), [clientes, filteredBaseRows, range, cfg.tipoBase, aba])
   const intervals = useMemo(() => buildIntervalDistribution(pares), [pares])
+  const bairros = useMemo(() => buildBairroSummary(clientes), [clientes])
   const filtros = useMemo(() => [
     fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras',
     equipe ? `Equipe: ${equipe}` : 'Todas as equipes',
@@ -74,7 +77,7 @@ export default function ReincidenciasPage() {
   const resetAI = (setter: (value: string) => void) => (value: string) => { setter(value); setAIEnabled(false) }
   const trocarAba = (id: string) => {
     setAba(id as AbaRevisita)
-    setFornecedor(''); setEquipe(''); setCidade(''); setExpanded(null); setAIEnabled(false)
+    setFornecedor(''); setEquipe(''); setCidade(''); setExpanded(null); setBairroSel(null); setAIEnabled(false)
   }
 
   return (
@@ -112,6 +115,9 @@ export default function ReincidenciasPage() {
       </div>
 
       <ReincidenciasCharts ranking={teamRanking} intervals={intervals} analysis={analysis} />
+
+      <BairrosCard resumo={bairros} onOpen={setBairroSel} />
+      <BairroModal resumo={bairros} selectedKey={bairroSel} onSelect={setBairroSel} onClose={() => setBairroSel(null)} />
 
       <ReincidenciasAIPanel analysis={analysis} parCount={pares.length} aiLoading={aiLoading}
         observationsLoading={observationsLoading} observationsError={observationsError}

@@ -20,6 +20,9 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['src/**/*.test.{js,ts,jsx,tsx}'],
     setupFiles: ['./src/test-setup.ts'],
+    // A suíte já passa de 100 arquivos; os testes de página pesados (ex.: Nível de
+    // Sinal) estouravam os 5 s padrão só pela carga, sem falha real.
+    testTimeout: 15000,
   },
   plugins: [
     react(),

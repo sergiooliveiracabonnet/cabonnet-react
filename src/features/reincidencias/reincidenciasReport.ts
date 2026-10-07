@@ -117,3 +117,56 @@ export function buildIntervalDistribution(pairs: Pick<ReincidenciaPair, 'dias_en
   ]
   return bands.map(band => ({ faixa: band.faixa, total: pairs.filter(pair => pair.dias_entre >= band.min && pair.dias_entre <= band.max).length }))
 }
+
+// ─── Resumo por bairro ────────────────────────────────────────────────────────
+// "CENTRO" existe nas cinco cidades — agrupar só pelo nome do bairro misturaria
+// clientes de cidades diferentes, por isso a chave é cidade + bairro.
+export interface BairroResumo {
+  key: string
+  bairro: string
+  cidade: string
+  /** Nome para o gráfico: o bairro, com a cidade ao lado só quando o nome se repete. */
+  label: string
+  clientes: ClienteReincidente[]
+  nClientes: number
+  /** Retornos: cada OS depois da primeira do cliente (mesma contagem dos pares do relatório). */
+  nRevisitas: number
+  /** Todas as OS envolvidas (origem + retornos). */
+  nOS: number
+  /** Participação no total de clientes reincidentes do filtro. */
+  pct: number
+}
+
+const SEM_BAIRRO = 'Sem bairro'
+
+export function cidadeCurta(cidade: string): string {
+  const base = cidade.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim()
+  if (base === 'PINDAMONHANGABA') return 'Pinda'
+  if (base === 'SAO JOSE DOS CAMPOS') return 'SJC'
+  return cidade.trim() ? cidade.trim().charAt(0).toUpperCase() + cidade.trim().slice(1).toLowerCase() : '—'
+}
+
+export function buildBairroSummary(clientes: ClienteReincidente[]): BairroResumo[] {
+  const grupos = new Map<string, { bairro: string; cidade: string; clientes: ClienteReincidente[] }>()
+  for (const cliente of clientes) {
+    const bairro = cliente.bairro.trim() || SEM_BAIRRO
+    const cidade = cliente.cidade.trim()
+    const key = `${cidade}|${bairro}`
+    const grupo = grupos.get(key) ?? { bairro, cidade, clientes: [] }
+    grupo.clientes.push(cliente)
+    grupos.set(key, grupo)
+  }
+
+  const nomeRepetido = new Map<string, number>()
+  for (const g of grupos.values()) nomeRepetido.set(g.bairro, (nomeRepetido.get(g.bairro) ?? 0) + 1)
+
+  return [...grupos].map(([key, g]): BairroResumo => ({
+    key, bairro: g.bairro, cidade: g.cidade,
+    label: (nomeRepetido.get(g.bairro) ?? 0) > 1 ? `${g.bairro} · ${cidadeCurta(g.cidade)}` : g.bairro,
+    clientes: [...g.clientes].sort((a, b) => b.visitas - a.visitas || a.cliente.localeCompare(b.cliente)),
+    nClientes: g.clientes.length,
+    nRevisitas: g.clientes.reduce((sum, c) => sum + Math.max(0, c.rows.length - 1), 0),
+    nOS: g.clientes.reduce((sum, c) => sum + c.rows.length, 0),
+    pct: clientes.length ? Math.round(g.clientes.length / clientes.length * 100) : 0,
+  })).sort((a, b) => b.nClientes - a.nClientes || b.nRevisitas - a.nRevisitas || a.label.localeCompare(b.label))
+}
