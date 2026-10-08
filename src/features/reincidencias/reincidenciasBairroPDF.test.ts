@@ -209,3 +209,44 @@ describe('deltaPDF', () => {
     expect(deltaPDF(null)).toBe('')
   })
 })
+
+describe('exportBairrosPDF — várias cidades no mesmo PDF', () => {
+  const eq = (e: string) => ({ ...os('x'), nomedaequipe: `03- VAL - INSTALACAO ${e}` }) as OSRow
+  const c = (chave: string, bairro: string, cidade: string, equipes = ['F11', 'F11']): ClienteReincidente => ({
+    chave, cliente: `Cliente ${chave}`, cidade, bairro, visitas: equipes.length, intervaloMedio: 6, diasDesdeUltima: 2,
+    rows: equipes.map((e, i) => ({ ...eq(e), numos: `${chave}${i}` })),
+  })
+  const varias = buildBairroSummary([
+    c('A', 'CENTRO', 'Taubaté', ['F11', 'F11', 'F11']), c('B', 'JARDIM', 'Taubaté'), c('C', 'CENTRO', 'Caçapava'), c('D', 'VILA', 'Pindamonhangaba', ['F08', 'F23', 'F08', 'F08']),
+  ])
+  const opcoes = { tipo: 'Revisita de manutenção', filtros: ['Cidades: Taubaté, Caçapava, Pindamonhangaba'], basePorCidade: { TAUBATE: 20, CACAPAVA: 5, PINDAMONHANGABA: 8 } }
+
+  it('inclui o quadro "Por cidade" com as três cidades e os totais batendo', () => {
+    exportBairrosPDF(varias, opcoes)
+    expect(posicao('POR CIDADE (3)')).toBeGreaterThanOrEqual(0)
+    expect(posicao('POR CIDADE (3)')).toBeLessThan(posicao('TODOS OS BAIRROS'))
+    for (const cidade of ['Taubaté', 'Caçapava', 'Pindamonhangaba']) expect(textos).toContain(cidade)
+  })
+
+  it('a taxa de cada cidade usa a base da cidade', () => {
+    exportBairrosPDF(varias, opcoes)
+    expect(textos).toContain('10,0%')   // Taubaté: 2 reincidentes de 20
+    expect(textos).toContain('20,0%')   // Caçapava: 1 de 5
+  })
+
+  it('a leitura diz quanto cada cidade pesa', () => {
+    exportBairrosPDF(varias, opcoes)
+    expect(textos.some(t => t.includes('Por cidade:') && t.includes('Taubaté'))).toBe(true)
+  })
+
+  it('uma cidade só não ganha o quadro por cidade', () => {
+    exportBairrosPDF(buildBairroSummary([c('A', 'CENTRO', 'Taubaté'), c('B', 'JARDIM', 'Taubaté')]), { tipo: 'Revisita de manutenção', filtros: [] })
+    expect(posicao('POR CIDADE')).toBe(-1)
+    expect(textos.some(t => t.includes('Por cidade:'))).toBe(false)
+  })
+
+  it('o cabeçalho do PDF traz as cidades escolhidas', () => {
+    exportBairrosPDF(varias, opcoes)
+    expect(textos.some(t => t.includes('Cidades: Taubaté, Caçapava, Pindamonhangaba'))).toBe(true)
+  })
+})

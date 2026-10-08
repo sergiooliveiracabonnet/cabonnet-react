@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf'
 import { drawPDFHeader } from '../../lib/pdfBrand'
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
-import { DIAGNOSTICO_LABEL, cidadeCurta, explicarDiagnostico, getOSObservation, sortedClientRows, type BairroResumo, type DiagnosticoBairro } from './reincidenciasReport'
+import { DIAGNOSTICO_LABEL, buildResumoPorCidade, cidadeCurta, explicarDiagnostico, getOSObservation, sortedClientRows, type BairroResumo, type DiagnosticoBairro } from './reincidenciasReport'
 
 type RGB = [number, number, number]
 interface Estilo { size: number; bold: boolean; color: RGB }
@@ -58,6 +58,8 @@ export interface BairroPDFOpcoes {
   totalBase?: number
   /** OS envolvidas no período anterior; null sem comparação. */
   totalOSAnterior?: number | null
+  /** Clientes atendidos por cidade (chave da cidade → quantidade), para a taxa de cada cidade. */
+  basePorCidade?: Record<string, number>
 }
 
 /** Frases de leitura calculadas só dos números — sem IA, para o PDF sair igual toda vez. */
@@ -68,6 +70,10 @@ export function leituraPorBairro(resumo: BairroResumo[]): string[] {
   const frases = [
     `${plural(top3.length, 'bairro concentra', 'bairros concentram')} ${Math.round(top3.reduce((s, b) => s + b.nOS, 0) / totalOS * 100)}% das OS: ${top3.map(b => b.label).join(', ')}.`,
   ]
+  const cidades = buildResumoPorCidade(resumo)
+  if (cidades.length >= 2) {
+    frases.push(`Por cidade: ${cidades.slice(0, 4).map(c => `${c.cidade} ${c.nOS} OS (${c.pct}%)`).join(', ')}${cidades.length > 4 ? ` e mais ${cidades.length - 4}` : ''}.`)
+  }
   const comVolta = resumo.filter(b => b.nClientes >= 2)
   if (comVolta.length) {
     const pior = [...comVolta].sort((a, b) => b.nOS / b.nClientes - a.nOS / a.nClientes || b.nOS - a.nOS)[0]
@@ -92,7 +98,7 @@ export function acoesSugeridas(resumo: BairroResumo[]): string[] {
   return acoes.slice(0, 3)
 }
 
-export function exportBairrosPDF(resumo: BairroResumo[], { tipo, filtros, periodo, totalBase = 0, totalOSAnterior = null }: BairroPDFOpcoes) {
+export function exportBairrosPDF(resumo: BairroResumo[], { tipo, filtros, periodo, totalBase = 0, totalOSAnterior = null, basePorCidade = {} }: BairroPDFOpcoes) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const width = 210, margin = 15, usable = width - margin * 2
   let page = 1, y = 0
@@ -267,8 +273,42 @@ export function exportBairrosPDF(resumo: BairroResumo[], { tipo, filtros, period
     y += alturaBarra
   })
 
-  // ── Anexo: tabela completa.
+  // ── Anexo: com mais de uma cidade, abre com o quadro por cidade.
   novaPagina()
+  const porCidade = buildResumoPorCidade(resumo, basePorCidade)
+  if (porCidade.length >= 2) {
+    secao(`Por cidade (${porCidade.length})`)
+    const colsC = [
+      { titulo: 'Cidade', x: margin, w: 46, alinha: 'left' as const },
+      { titulo: 'Bairros', x: margin + 46, w: 20, alinha: 'right' as const },
+      { titulo: 'OS', x: margin + 66, w: 14, alinha: 'right' as const },
+      { titulo: 'Var.', x: margin + 80, w: 14, alinha: 'right' as const },
+      { titulo: 'Clientes', x: margin + 94, w: 18, alinha: 'right' as const },
+      { titulo: 'Atend.', x: margin + 112, w: 18, alinha: 'right' as const },
+      { titulo: 'Taxa', x: margin + 130, w: 18, alinha: 'right' as const },
+      { titulo: '% das OS', x: margin + 148, w: 20, alinha: 'right' as const },
+    ]
+    const cel = (texto: string, col: typeof colsC[number], yy: number) =>
+      col.alinha === 'right' ? doc.text(texto, col.x + col.w - 1, yy, { align: 'right' }) : doc.text(texto, col.x + 1, yy)
+    ensure(8 + (porCidade.length + 2) * 5.4)
+    doc.setFillColor(...FUNDO); doc.rect(margin, y, usable, 6, 'F')
+    aplicar({ ...TIPO.secao, color: INK }); colsC.forEach(c => cel(c.titulo, c, y + 4.1)); y += 6
+    porCidade.forEach((c, i) => {
+      if (i % 2) { doc.setFillColor(250, 251, 252); doc.rect(margin, y, usable, 5.4, 'F') }
+      aplicar(TIPO.destaque); cel(cortar(c.cidade, TIPO.destaque, colsC[0].w - 2), colsC[0], y + 3.8)
+      aplicar(TIPO.corpo); cel(String(c.nBairros), colsC[1], y + 3.8)
+      aplicar(TIPO.destaque); cel(String(c.nOS), colsC[2], y + 3.8)
+      if (c.delta !== null) { aplicar({ ...TIPO.corpo, bold: true, color: corDelta(c.delta) }); cel(deltaPDF(c.delta), colsC[3], y + 3.8) }
+      aplicar(TIPO.corpo)
+      cel(String(c.nClientes), colsC[4], y + 3.8)
+      cel(c.nBase ? String(c.nBase) : '—', colsC[5], y + 3.8)
+      cel(c.taxa !== null ? `${pct1(c.taxa)}%` : '—', colsC[6], y + 3.8)
+      cel(`${c.pct}%`, colsC[7], y + 3.8)
+      y += 5.4
+    })
+    doc.setDrawColor(...INK); doc.setLineWidth(0.2); doc.line(margin, y, width - margin, y)
+    y += 7
+  }
   const cols = [
     { titulo: 'Bairro', x: margin, w: 46, alinha: 'left' as const },
     { titulo: 'Cidade', x: margin + 46, w: 20, alinha: 'left' as const },

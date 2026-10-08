@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ClienteBase, ClienteReincidente } from '../../lib/builders/churn'
 import type { OSRow } from '../../lib/types'
-import { buildBairroComparativo, buildBairroSummary, explicarDiagnostico, formatarDelta, periodoAnterior, buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
+import { buildBairroComparativo, buildBairroSummary, buildResumoPorCidade, chaveDaCidade, opcoesDeCidade, explicarDiagnostico, formatarDelta, periodoAnterior, buildIntervalDistribution, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations } from './reincidenciasReport'
 
 const row = (numos: string, equipe: string, fornecedor: OSRow['_fornecedor'], data: string, obs = '') => ({
   numos, nomedaequipe: equipe, _fornecedor: fornecedor, dataexecucao: data, databaixa: '', obs,
@@ -17,8 +17,8 @@ describe('relatório de reincidências', () => {
   it('filtra terceira e equipe sem perder o histórico completo do cliente selecionado', () => {
     const a = cliente([row('1', 'INST F08', 'WES', '01/08/2026'), row('2', 'INST F11', 'WES', '05/08/2026')])
     const b = { ...cliente([row('3', 'INST F12', 'THM', '02/08/2026'), row('4', 'INST F12', 'THM', '06/08/2026')]), chave: '2' }
-    expect(filterReincidentes([a, b], { fornecedor: 'WES', equipe: '', cidade: '' })).toEqual([a])
-    expect(filterReincidentes([a, b], { fornecedor: '', equipe: 'INST F12', cidade: '' })).toEqual([b])
+    expect(filterReincidentes([a, b], { fornecedor: 'WES', equipe: '', cidades: [] })).toEqual([a])
+    expect(filterReincidentes([a, b], { fornecedor: '', equipe: 'INST F12', cidades: [] })).toEqual([b])
   })
 
   it('filtra por cidade sem perder o histórico completo do cliente selecionado', () => {
@@ -30,8 +30,8 @@ describe('relatório de reincidências', () => {
       ]),
       chave: '2',
     }
-    expect(filterReincidentes([a, b], { fornecedor: '', equipe: '', cidade: 'Taubaté' })).toEqual([a])
-    expect(filterReincidentes([a, b], { fornecedor: '', equipe: '', cidade: 'Pindamonhangaba' })).toEqual([b])
+    expect(filterReincidentes([a, b], { fornecedor: '', equipe: '', cidades: ['TAUBATE'] })).toEqual([a])
+    expect(filterReincidentes([a, b], { fornecedor: '', equipe: '', cidades: ['PINDAMONHANGABA'] })).toEqual([b])
   })
 
   it('monta pares consecutivos em ordem cronológica para a IA', () => {
@@ -385,5 +385,89 @@ describe('buildBairroComparativo', () => {
     ])
     expect(r.linhas).toHaveLength(1)
     expect(r.linhas[0].bairro).toBe('RESIDENCIAL ESPERANCA')
+  })
+})
+
+describe('filtro por várias cidades', () => {
+  const lin = (cidade: string, numos: string) => ({ numos, nomedacidade: cidade, nomedaequipe: '03- VAL - INSTALACAO F11', dataexecucao: '10/09/2026', databaixa: '10/09/2026' }) as unknown as OSRow
+  const cli = (chave: string, cidade: string) => ({ chave, cliente: chave, cidade, bairro: 'CENTRO', visitas: 2, intervaloMedio: 5, diasDesdeUltima: 1, rows: [lin(cidade, `${chave}a`), lin(cidade, `${chave}b`)] }) as unknown as ClienteReincidente
+  const tbt = cli('T', 'Taubaté'), pnd = cli('P', 'Pindamonhangaba'), cpv = cli('C', 'Caçapava')
+  const todos = [tbt, pnd, cpv]
+
+  it('lista vazia não filtra', () => {
+    expect(filterReincidentes(todos, { fornecedor: '', equipe: '', cidades: [] })).toEqual(todos)
+  })
+
+  it('duas cidades ficam, a terceira sai', () => {
+    expect(filterReincidentes(todos, { fornecedor: '', equipe: '', cidades: ['TAUBATE', 'CACAPAVA'] })).toEqual([tbt, cpv])
+  })
+
+  it('a mesma cidade com e sem acento ou caixa casa com a mesma chave', () => {
+    const maiuscula = cli('M', 'PINDAMONHANGABA')
+    expect(filterReincidentes([pnd, maiuscula], { fornecedor: '', equipe: '', cidades: [chaveDaCidade('Pindamonhangaba')] })).toEqual([pnd, maiuscula])
+    expect(chaveDaCidade('Caçapava')).toBe(chaveDaCidade('CACAPAVA'))
+  })
+})
+
+describe('opcoesDeCidade', () => {
+  it('uma opção por cidade de verdade, com o nome mais usado, em ordem alfabética', () => {
+    const o = opcoesDeCidade(['Taubaté', 'Taubaté', 'TAUBATE', 'Caçapava', 'CACAPAVA', 'Caçapava', '', null, undefined, 'Pindamonhangaba'])
+    expect(o).toEqual([
+      { value: 'CACAPAVA', label: 'Caçapava' },
+      { value: 'PINDAMONHANGABA', label: 'Pindamonhangaba' },
+      { value: 'TAUBATE', label: 'Taubaté' },
+    ])
+  })
+})
+
+describe('buildResumoPorCidade', () => {
+  const lin = (numos: string) => ({ numos, nomedaequipe: '03- VAL - INSTALACAO F11', dataexecucao: '10/09/2026', databaixa: '10/09/2026' }) as unknown as OSRow
+  const cli = (chave: string, cidade: string, bairro: string, n: number) => ({
+    chave, cliente: chave, cidade, bairro, visitas: n, intervaloMedio: 5, diasDesdeUltima: 1, rows: Array.from({ length: n }, (_, i) => lin(`${chave}${i}`)),
+  }) as unknown as ClienteReincidente
+
+  const resumo = buildBairroSummary(
+    [cli('A', 'Taubaté', 'CENTRO', 3), cli('B', 'Taubaté', 'JARDIM', 2), cli('C', 'Caçapava', 'CENTRO', 2), cli('D', 'Pindamonhangaba', 'VILA', 5)],
+    { anterior: [cli('Z', 'Taubaté', 'CENTRO', 2)] },
+  )
+
+  it('soma os bairros por cidade e ordena pelas OS', () => {
+    const r = buildResumoPorCidade(resumo)
+    expect(r.map(c => [c.cidade, c.nBairros, c.nOS, c.nClientes])).toEqual([['Pindamonhangaba', 1, 5, 1], ['Taubaté', 2, 5, 2], ['Caçapava', 1, 2, 1]])
+  })
+
+  it('a soma das cidades fecha com o total de OS e os percentuais com 100', () => {
+    const r = buildResumoPorCidade(resumo)
+    expect(r.reduce((s, c) => s + c.nOS, 0)).toBe(resumo.reduce((s, b) => s + b.nOS, 0))
+    expect(r.reduce((s, c) => s + c.pct, 0)).toBeGreaterThanOrEqual(99)
+  })
+
+  it('taxa da cidade usa a base da cidade, não só a dos bairros com revisita', () => {
+    const r = buildResumoPorCidade(resumo, { TAUBATE: 20, CACAPAVA: 4, PINDAMONHANGABA: 5 })
+    const tbt = r.find(c => c.cidade === 'Taubaté')!
+    expect(tbt.nBase).toBe(20)
+    expect(tbt.taxa).toBe(10)
+    expect(r.find(c => c.cidade === 'Pindamonhangaba')!.taxa).toBe(20)
+  })
+
+  it('sem base não há taxa', () => {
+    expect(buildResumoPorCidade(resumo).every(c => c.taxa === null)).toBe(true)
+  })
+
+  it('variação contra o período anterior soma o que cada bairro tinha', () => {
+    const tbt = buildResumoPorCidade(resumo).find(c => c.cidade === 'Taubaté')!
+    expect(tbt.nOSAnterior).toBe(2)
+    expect(tbt.delta).toBe(3)
+  })
+
+  it('sem período anterior não há variação', () => {
+    const r = buildResumoPorCidade(buildBairroSummary([cli('A', 'Taubaté', 'CENTRO', 2)]))
+    expect(r[0].delta).toBeNull()
+  })
+
+  it('o mesmo nome de cidade escrito de dois jeitos é uma cidade só', () => {
+    const r = buildResumoPorCidade(buildBairroSummary([cli('A', 'Caçapava', 'CENTRO', 2), cli('B', 'CACAPAVA', 'VILA', 2)]))
+    expect(r).toHaveLength(1)
+    expect(r[0].nBairros).toBe(2)
   })
 })

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Brain, CalendarBlank, CaretDown, CaretRight, FilePdf, Funnel, House, MapPin, UserMinus, Wrench } from '@phosphor-icons/react'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { MultiSelect } from '../../components/ui/MultiSelect'
 import { TabBar } from '../../components/ui/TabBar'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useUIStore } from '../../store/uiStore'
@@ -8,7 +9,7 @@ import { buildInstallChurn, buildManutencaoRevisitaChurn, coorteInstalacaoRange 
 import { fmtDate, shortEquipe } from '../../lib/osFormat'
 import { aiPairKey, useAIReincidencias } from '../../hooks/useAIReincidencias'
 import { useReincidenciaDetails } from '../../hooks/useReincidenciaDetails'
-import { buildBairroSummary, buildIntervalDistribution, periodoAnterior, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
+import { buildBairroSummary, buildIntervalDistribution, chaveDaCidade, opcoesDeCidade, periodoAnterior, buildReincidenciaPairs, buildTeamRecurrenceRanking, filterReincidentes, getOSObservation, mergeOSObservations, sortedClientRows } from './reincidenciasReport'
 import { exportReincidenciasPDF } from './reincidenciasPDF'
 import { ReincidenciasCharts } from './ReincidenciasCharts'
 import { ReincidenciasComparativo } from './ReincidenciasComparativo'
@@ -44,7 +45,7 @@ export default function ReincidenciasPage() {
   const [comparativo, setComparativo] = useState(false)
   const [fornecedor, setFornecedor] = useState('')
   const [equipe, setEquipe] = useState('')
-  const [cidade, setCidade] = useState('')
+  const [cidades, setCidades] = useState<string[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
   const [bairroSel, setBairroSel] = useState<string | null>(null)
   const [aiEnabled, setAIEnabled] = useState(false)
@@ -60,24 +61,25 @@ export default function ReincidenciasPage() {
   const { data: observations, isLoading: observationsLoading, isError: observationsError } = useReincidenciaDetails(reportOSNumbers)
   const detailedClients = useMemo(() => mergeOSObservations(churn.clientes, observations), [churn.clientes, observations])
   const equipes = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => shortEquipe(r.nomedaequipe).split(' - ')[0])))].filter(v => v && v !== '—').sort(), [churn.clientes])
-  const cidades = useMemo(() => [...new Set(churn.clientes.flatMap(c => c.rows.map(r => r.nomedacidade)))].filter((v): v is string => Boolean(v)).sort(), [churn.clientes])
-  const clientes = useMemo(() => filterReincidentes(detailedClients, { fornecedor, equipe, cidade }), [detailedClients, fornecedor, equipe, cidade])
+  const opcoesCidade = useMemo(() => opcoesDeCidade(churn.clientes.flatMap(c => c.rows.map(r => r.nomedacidade))), [churn.clientes])
+  const clientes = useMemo(() => filterReincidentes(detailedClients, { fornecedor, equipe, cidades }), [detailedClients, fornecedor, equipe, cidades])
   const pares = useMemo(() => buildReincidenciaPairs(clientes), [clientes])
   const filteredBaseRows = useMemo(() => allRows.filter(row =>
     (!fornecedor || row._fornecedor === fornecedor) &&
     (!equipe || shortEquipe(row.nomedaequipe).startsWith(equipe)) &&
-    (!cidade || row.nomedacidade === cidade),
-  ), [allRows, fornecedor, equipe, cidade])
+    (!cidades.length || cidades.includes(chaveDaCidade(row.nomedacidade))),
+  ), [allRows, fornecedor, equipe, cidades])
   const teamRanking = useMemo(() => buildTeamRecurrenceRanking(clientes, filteredBaseRows, new Date(), aba === 'instalacao' && range ? coorteInstalacaoRange(range) : range, cfg.tipoBase), [clientes, filteredBaseRows, range, cfg.tipoBase, aba])
   const intervals = useMemo(() => buildIntervalDistribution(pares), [pares])
-  const baseFiltrada = useMemo(() => filterReincidentes(churn.baseClientes ?? [], { fornecedor, equipe, cidade }), [churn.baseClientes, fornecedor, equipe, cidade])
-  const anteriorFiltrado = useMemo(() => (churnAnterior ? filterReincidentes(churnAnterior.clientes, { fornecedor, equipe, cidade }) : undefined), [churnAnterior, fornecedor, equipe, cidade])
+  const baseFiltrada = useMemo(() => filterReincidentes(churn.baseClientes ?? [], { fornecedor, equipe, cidades }), [churn.baseClientes, fornecedor, equipe, cidades])
+  const anteriorFiltrado = useMemo(() => (churnAnterior ? filterReincidentes(churnAnterior.clientes, { fornecedor, equipe, cidades }) : undefined), [churnAnterior, fornecedor, equipe, cidades])
+  const basePorCidade = useMemo(() => baseFiltrada.reduce<Record<string, number>>((acc, c) => { const k = chaveDaCidade(c.cidade); acc[k] = (acc[k] ?? 0) + 1; return acc }, {}), [baseFiltrada])
   const bairros = useMemo(() => buildBairroSummary(clientes, { base: baseFiltrada, anterior: anteriorFiltrado }), [clientes, baseFiltrada, anteriorFiltrado])
   const filtros = useMemo(() => [
     fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras',
     equipe ? `Equipe: ${equipe}` : 'Todas as equipes',
-    cidade ? `Cidade: ${cidade}` : 'Todas as cidades',
-  ], [fornecedor, equipe, cidade])
+    cidades.length ? `${cidades.length === 1 ? 'Cidade' : 'Cidades'}: ${opcoesCidade.filter(o => cidades.includes(o.value)).map(o => o.label).join(', ')}` : 'Todas as cidades',
+  ], [fornecedor, equipe, cidades, opcoesCidade])
   const contexto = useMemo(() => ({ janelaDias: churn.janelaDias, filtros: filtros.join(' · ') }), [churn.janelaDias, filtros])
   const { data: analysis, isFetching: aiLoading, isError: aiError, errorMessage } = useAIReincidencias(pares, aiEnabled, contexto)
   const osCount = clientes.reduce((sum, c) => sum + c.rows.length, 0)
@@ -85,7 +87,7 @@ export default function ReincidenciasPage() {
   const resetAI = (setter: (value: string) => void) => (value: string) => { setter(value); setAIEnabled(false) }
   const trocarAba = (id: string) => {
     setAba(id as AbaRevisita)
-    setFornecedor(''); setEquipe(''); setCidade(''); setExpanded(null); setBairroSel(null); setAIEnabled(false)
+    setFornecedor(''); setEquipe(''); setCidades([]); setExpanded(null); setBairroSel(null); setAIEnabled(false)
   }
 
   return (
@@ -94,7 +96,7 @@ export default function ReincidenciasPage() {
         description={comparativo ? 'O mesmo bairro, mês a mês: escolha os meses e exporte para PDF ou Excel' : `${cfg.descricaoJanela(churn.janelaDias)}${range ? ` (${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')})` : ''} · análise auditável por cliente`}
         actions={comparativo ? undefined : <div className="flex flex-wrap items-center gap-2">
           <button type="button" disabled={!bairros.length}
-            onClick={() => exportBairrosPDF(bairros, { tipo: cfg.label, filtros, periodo: range ? `${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')}` : '', totalBase: baseFiltrada.length, totalOSAnterior: anteriorFiltrado ? anteriorFiltrado.reduce((sum, c) => sum + c.rows.length, 0) : null })}
+            onClick={() => exportBairrosPDF(bairros, { tipo: cfg.label, filtros, periodo: range ? `${range.from.toLocaleDateString('pt-BR')} a ${range.to.toLocaleDateString('pt-BR')}` : '', totalBase: baseFiltrada.length, basePorCidade, totalOSAnterior: anteriorFiltrado ? anteriorFiltrado.reduce((sum, c) => sum + c.rows.length, 0) : null })}
             className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border px-4 text-label font-semibold text-text transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
             <MapPin size={17} /> Exportar por bairro
           </button>
@@ -120,8 +122,8 @@ export default function ReincidenciasPage() {
         <Funnel size={18} className="mb-3 text-muted" />
         <Filter label="Terceira" value={fornecedor} onChange={resetAI(setFornecedor)} options={FORNECEDORES} all="Todas as terceiras" />
         <Filter label="Equipe" value={equipe} onChange={resetAI(setEquipe)} options={equipes} all="Todas as equipes" />
-        <Filter label="Cidade" value={cidade} onChange={resetAI(setCidade)} options={cidades} all="Todas as cidades" />
-        {(fornecedor || equipe || cidade) && <button type="button" onClick={() => { setFornecedor(''); setEquipe(''); setCidade(''); setAIEnabled(false) }} className="min-h-11 cursor-pointer rounded-lg px-3 text-label font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">Limpar filtros</button>}
+        <MultiSelect label="Cidade" options={opcoesCidade} value={cidades} onChange={v => { setCidades(v); setAIEnabled(false) }} allLabel="Todas as cidades" pluralLabel="cidades" />
+        {(fornecedor || equipe || cidades.length > 0) && <button type="button" onClick={() => { setFornecedor(''); setEquipe(''); setCidades([]); setAIEnabled(false) }} className="min-h-11 cursor-pointer rounded-lg px-3 text-label font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">Limpar filtros</button>}
       </section>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

@@ -7,7 +7,8 @@ import {
   METRICAS, formatarValor, formatarVariacao, montarTabela, tabelaParaCSV, ultimosMeses,
   type MetricaComparativo,
 } from './reincidenciasMatriz'
-import { buildBairroComparativo, cidadeCurta, filterReincidentes, type PeriodoComparativo } from './reincidenciasReport'
+import { MultiSelect } from '../../components/ui/MultiSelect'
+import { buildBairroComparativo, cidadeCurta, filterReincidentes, opcoesDeCidade, type PeriodoComparativo } from './reincidenciasReport'
 
 const FORNECEDORES = ['WES', 'Instacable', 'THM', 'REDE', 'MANUTENCAO', 'INTERNO', 'OUTRO']
 const TIPOS = [
@@ -44,7 +45,7 @@ export function ReincidenciasComparativo({ allRows }: { allRows: OSRow[] }) {
   const [metrica, setMetrica] = useState<MetricaComparativo>('os')
   const [selecionados, setSelecionados] = useState<string[]>(() => MESES_OPCOES.slice(0, 3).map(m => m.id))
   const [fornecedor, setFornecedor] = useState('')
-  const [cidade, setCidade] = useState('')
+  const [cidades, setCidades] = useState<string[]>([])
   const [busca, setBusca] = useState('')
   const [todas, setTodas] = useState(false)
 
@@ -54,12 +55,12 @@ export function ReincidenciasComparativo({ allRows }: { allRows: OSRow[] }) {
 
   // Cada mês é calculado com a mesma regra do relatório, sobre o intervalo do mês inteiro.
   const brutos = useMemo(() => meses.map(m => ({ mes: m, churn: construir(allRows, Number.POSITIVE_INFINITY, new Date(), { from: m.from, to: m.to }) })), [meses, construir, allRows])
-  const cidades = useMemo(() => [...new Set(brutos.flatMap(b => b.churn.clientes.map(c => c.cidade)))].filter(Boolean).sort(), [brutos])
+  const opcoesCidade = useMemo(() => opcoesDeCidade(brutos.flatMap(b => b.churn.clientes.flatMap(c => c.rows.map(r => r.nomedacidade)))), [brutos])
   const periodos = useMemo((): PeriodoComparativo[] => brutos.map(({ mes, churn }) => ({
     id: mes.id, label: mes.label,
-    clientes: filterReincidentes(churn.clientes, { fornecedor, equipe: '', cidade }),
-    base: filterReincidentes(churn.baseClientes ?? [], { fornecedor, equipe: '', cidade }),
-  })), [brutos, fornecedor, cidade])
+    clientes: filterReincidentes(churn.clientes, { fornecedor, equipe: '', cidades }),
+    base: filterReincidentes(churn.baseClientes ?? [], { fornecedor, equipe: '', cidades }),
+  })), [brutos, fornecedor, cidades])
 
   const comparativo = useMemo(() => (periodos.length ? buildBairroComparativo(periodos) : null), [periodos])
   const tabela = useMemo(() => (comparativo ? montarTabela(comparativo, metrica) : null), [comparativo, metrica])
@@ -72,7 +73,7 @@ export function ReincidenciasComparativo({ allRows }: { allRows: OSRow[] }) {
 
   const semDados = brutos.filter(b => b.churn.totalBase === 0).map(b => b.mes.label)
   const parciais = meses.filter(m => m.parcial).map(m => m.label)
-  const filtros = [fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras', cidade ? `Cidade: ${cidade}` : 'Todas as cidades']
+  const filtros = [fornecedor ? `Terceira: ${fornecedor}` : 'Todas as terceiras', cidades.length ? `${cidades.length === 1 ? 'Cidade' : 'Cidades'}: ${opcoesCidade.filter(o => cidades.includes(o.value)).map(o => o.label).join(', ')}` : 'Todas as cidades']
 
   const alternarMes = (id: string) => setSelecionados(atual => (atual.includes(id) ? atual.filter(x => x !== id) : [...atual, id]))
   const ultimos = (n: number) => setSelecionados(MESES_OPCOES.slice(0, n).map(m => m.id))
@@ -106,13 +107,7 @@ export function ReincidenciasComparativo({ allRows }: { allRows: OSRow[] }) {
               {FORNECEDORES.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
           </label>
-          <label className="flex min-w-48 flex-1 flex-col gap-1 text-caption font-semibold text-secondary sm:flex-none">
-            <span>Cidade</span>
-            <select value={cidade} onChange={e => setCidade(e.target.value)} className="min-h-11 cursor-pointer rounded-lg border border-border bg-elevated px-3 text-label text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
-              <option value="">Todas as cidades</option>
-              {cidades.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </label>
+          <MultiSelect label="Cidade" options={opcoesCidade} value={cidades} onChange={setCidades} allLabel="Todas as cidades" pluralLabel="cidades" />
         </div>
 
         <div>

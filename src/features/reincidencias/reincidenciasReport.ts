@@ -6,7 +6,11 @@ import { isCOPE, isExecucaoReal, isForaDeRevisita, isReagend, parseDate, parseDa
 import type { OSRow } from '../../lib/types'
 import { shortEquipe } from '../../lib/osFormat'
 
-export interface ReincidenciaFilters { fornecedor: string; equipe: string; cidade: string }
+/** `cidades` guarda a chave de cada cidade (ver chaveDaCidade); lista vazia = todas. */
+export interface ReincidenciaFilters { fornecedor: string; equipe: string; cidades: string[] }
+
+/** A mesma cidade vem escrita de jeitos diferentes ("Pindamonhangaba" e "PINDAMONHANGABA"). */
+export const chaveDaCidade = (cidade: string | null | undefined): string => normalizarTexto(cidade ?? '')
 
 export function summarizeOSObservation(raw: string): string {
   const text = raw.replace(/\r\n?/g, '\n').trim()
@@ -40,7 +44,7 @@ export function filterReincidentes<T extends { rows: OSRow[] }>(clientes: T[], f
   return clientes.filter(cliente => {
     const fornecedorOk = !filters.fornecedor || cliente.rows.some(row => row._fornecedor === filters.fornecedor)
     const equipeOk = !filters.equipe || cliente.rows.some(row => shortEquipe(row.nomedaequipe).startsWith(filters.equipe))
-    const cidadeOk = !filters.cidade || cliente.rows.some(row => row.nomedacidade === filters.cidade)
+    const cidadeOk = !filters.cidades.length || cliente.rows.some(row => filters.cidades.includes(chaveDaCidade(row.nomedacidade)))
     return fornecedorOk && equipeOk && cidadeOk
   })
 }
@@ -442,4 +446,58 @@ export function formatarDelta(delta: number | null): string {
   if (delta > 0) return `▲ +${delta}`
   if (delta < 0) return `▼ −${Math.abs(delta)}`
   return '= 0'
+}
+
+/** Opções do filtro de cidade: uma por cidade de verdade, com o nome mais usado, em ordem alfabética. */
+export function opcoesDeCidade(nomes: Array<string | null | undefined>): Array<{ value: string; label: string }> {
+  const grupos = new Map<string, Map<string, number>>()
+  for (const n of nomes) {
+    const nome = (n ?? '').trim()
+    if (!nome) continue
+    const chave = chaveDaCidade(nome)
+    const variantes = grupos.get(chave) ?? new Map<string, number>()
+    variantes.set(nome, (variantes.get(nome) ?? 0) + 1)
+    grupos.set(chave, variantes)
+  }
+  return [...grupos].map(([value, variantes]) => ({ value, label: maisUsado(variantes) })).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+}
+
+// ─── Resumo por cidade (PDF com várias cidades) ───────────────────────────────
+export interface ResumoCidade {
+  key: string
+  cidade: string
+  nBairros: number
+  nOS: number
+  nClientes: number
+  /** Clientes atendidos na cidade no período; 0 sem base. */
+  nBase: number
+  taxa: number | null
+  nOSAnterior: number | null
+  delta: number | null
+  pct: number
+}
+
+/** Soma os bairros por cidade. A base da cidade vem de fora (`basePorCidade`, pela chave da cidade)
+ *  porque inclui os bairros sem revisita, que o resumo por bairro não traz. */
+export function buildResumoPorCidade(resumo: BairroResumo[], basePorCidade: Record<string, number> = {}): ResumoCidade[] {
+  const porCidade = new Map<string, BairroResumo[]>()
+  for (const b of resumo) {
+    const chave = chaveDaCidade(b.cidade)
+    porCidade.set(chave, [...(porCidade.get(chave) ?? []), b])
+  }
+  const totalOS = resumo.reduce((s, b) => s + b.nOS, 0)
+  return [...porCidade].map(([key, bairros]): ResumoCidade => {
+    const nOS = bairros.reduce((s, b) => s + b.nOS, 0)
+    const nClientes = bairros.reduce((s, b) => s + b.nClientes, 0)
+    const nBase = Math.max(basePorCidade[key] ?? 0, basePorCidade[key] ? nClientes : 0)
+    const comparavel = bairros.every(b => b.nOSAnterior !== null)
+    const nOSAnterior = comparavel ? bairros.reduce((s, b) => s + (b.nOSAnterior ?? 0), 0) : null
+    const rotulo = [...bairros].sort((a, b) => b.nOS - a.nOS)[0].cidade
+    return {
+      key, cidade: rotulo, nBairros: bairros.length, nOS, nClientes, nBase,
+      taxa: nBase ? Math.round(nClientes / nBase * 1000) / 10 : null,
+      nOSAnterior, delta: nOSAnterior === null ? null : nOS - nOSAnterior,
+      pct: totalOS ? Math.round(nOS / totalOS * 100) : 0,
+    }
+  }).sort((a, b) => b.nOS - a.nOS || a.cidade.localeCompare(b.cidade, 'pt-BR'))
 }
