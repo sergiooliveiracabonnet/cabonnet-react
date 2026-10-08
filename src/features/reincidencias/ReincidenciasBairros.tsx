@@ -155,6 +155,11 @@ export function BairroModal({ tipo, resumo, selectedKey, onSelect, onClose }: {
             <p className="mt-2 rounded-lg bg-elevated/60 px-3 py-2 text-caption text-secondary">
               <b className="text-text">{DIAGNOSTICO_LABEL[atual.diagnostico]}.</b> {explicarDiagnostico(atual)}
             </p>
+            {atual.variantes.length > 1 && (
+              <p className="mt-2 text-caption text-muted" data-testid="grafias-reunidas">
+                <b className="text-secondary">{atual.variantes.length} grafias do cadastro reunidas neste bairro:</b> {atual.variantes.join(' · ')}
+              </p>
+            )}
 
             <div className="mt-3 space-y-3">
               {atual.clientes.map(cliente => (

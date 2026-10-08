@@ -105,8 +105,8 @@ describe('tabelaParaCSV', () => {
   })
 
   it('protege campos com ponto e vírgula ou aspas', () => {
-    const estranho = buildBairroComparativo([{ id: '2026-09', label: 'SET/26', clientes: [c('A', 'JD "ALFA"; BETA', 2)] }])
+    const estranho = buildBairroComparativo([{ id: '2026-09', label: 'SET/26', clientes: [c('A', 'BAIRRO "ALFA"; BETA', 2)] }])
     const csv = tabelaParaCSV(montarTabela(estranho, 'os'), 'Revisita de manutenção')
-    expect(csv).toContain('"JD ""ALFA""; BETA"')
+    expect(csv).toContain('"BAIRRO ""ALFA""; BETA"')
   })
 })

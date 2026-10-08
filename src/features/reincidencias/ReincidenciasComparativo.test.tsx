@@ -47,6 +47,13 @@ describe('ReincidenciasComparativo', () => {
     expect(within(corpo).getByRole('rowheader').textContent).toMatch(/VIT[OÓ]RIA VALE/)
   })
 
+  it('a linha que reúne grafias mostra quantas e quais, na dica', () => {
+    render(<ReincidenciasComparativo allRows={[]} />)
+    const cabecalho = within(screen.getByRole('table').querySelector('tbody')!).getByRole('rowheader')
+    expect(cabecalho.textContent).toContain('(2)')   // VITORIA / VITÓRIA, alternando mês a mês
+    expect(cabecalho.getAttribute('title')).toMatch(/2 grafias reunidas: .*VIT[OÓ]RIA VALE/)
+  })
+
   it('o total do rodapé fecha com a soma da linha', () => {
     render(<ReincidenciasComparativo allRows={[]} />)
     const esperado = ultimos3.reduce((s, m) => s + (m.from.getMonth() % 3) + 2, 0)

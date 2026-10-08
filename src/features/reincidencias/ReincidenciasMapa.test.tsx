@@ -35,6 +35,7 @@ const clientes = [
   cli('C', 'JARDIM', [os('5', gps('-22.9510', '-45.4010')), os('6', gps('-22.9511', '-45.4011'))]),
 ]
 const bairros = buildBairroSummary(clientes)
+const chaveDe = (nome: string) => bairros.find(b => b.bairro === nome)!.key
 const props = { tipo: 'Revisita de manutenção', clientes, bairros, carregando: false, erro: false, onAbrirBairro: vi.fn() }
 
 describe('ReincidenciasMapa', () => {
@@ -63,14 +64,14 @@ describe('ReincidenciasMapa', () => {
     const onAbrirBairro = vi.fn()
     render(<ReincidenciasMapa {...props} onAbrirBairro={onAbrirBairro} />)
     fireEvent.click(screen.getAllByRole('button', { name: 'Ver ordens' })[1])
-    expect(onAbrirBairro).toHaveBeenCalledWith('TAUBATE|JARDIM')
+    expect(onAbrirBairro).toHaveBeenCalledWith(chaveDe('JARDIM'))
   })
 
   it('clicar no pino do mapa também abre o bairro', () => {
     const onAbrirBairro = vi.fn()
     render(<ReincidenciasMapa {...props} onAbrirBairro={onAbrirBairro} />)
     fireEvent.click(screen.getAllByTestId('pino')[0])
-    expect(onAbrirBairro).toHaveBeenCalledWith('TAUBATE|CENTRO')
+    expect(onAbrirBairro).toHaveBeenCalledWith(chaveDe('CENTRO'))
   })
 
   it('enquanto as observações carregam, avisa e não desenha o mapa', () => {

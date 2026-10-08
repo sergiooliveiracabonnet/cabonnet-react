@@ -191,7 +191,10 @@ export function ReincidenciasComparativo({ allRows }: { allRows: OSRow[] }) {
                 <tbody>
                   {visiveis.map(l => (
                     <tr key={l.key} className="hover:bg-elevated/60">
-                      <th scope="row" className="sticky left-0 z-10 max-w-64 truncate border-b border-border/60 bg-card px-4 py-2 font-semibold text-text">{l.label}</th>
+                      <th scope="row" title={l.variantes.length > 1 ? `${l.variantes.length} grafias reunidas: ${l.variantes.join(' · ')}` : undefined}
+                        className="sticky left-0 z-10 max-w-64 truncate border-b border-border/60 bg-card px-4 py-2 font-semibold text-text">
+                        {l.label}{l.variantes.length > 1 && <span className="ml-1.5 text-caption font-normal text-muted" aria-label={`${l.variantes.length} grafias reunidas`}>({l.variantes.length})</span>}
+                      </th>
                       <td className="whitespace-nowrap border-b border-border/60 px-3 py-2 text-secondary">{cidadeCurta(l.cidade)}</td>
                       {l.valores.map((v, i) => {
                         const d = l.detalhes[i]

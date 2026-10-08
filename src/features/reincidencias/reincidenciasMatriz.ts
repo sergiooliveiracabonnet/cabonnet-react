@@ -47,6 +47,8 @@ export interface LinhaTabela {
   bairro: string
   cidade: string
   label: string
+  /** Grafias do cadastro reunidas nesta linha, da mais usada à menos. */
+  variantes: string[]
   /** Um valor por mês, na ordem das colunas. */
   valores: Array<number | null>
   /** Total dos meses; null na taxa (não se soma). */
@@ -80,7 +82,7 @@ export function montarTabela(comp: Comparativo, metrica: MetricaComparativo): Ta
   const linhas = comp.linhas.map((l: LinhaComparativo): LinhaTabela => {
     const valores = ids.map(id => valorCelula(l.meses[id], metrica))
     return {
-      key: l.key, bairro: l.bairro, cidade: l.cidade, label: l.label, valores,
+      key: l.key, bairro: l.bairro, cidade: l.cidade, label: l.label, variantes: l.variantes, valores,
       total: metrica === 'os' ? l.totalOS : metrica === 'clientes' ? l.totalClientes : null,
       variacao: variacaoDe(valores),
       detalhes: ids.map(id => l.meses[id]),

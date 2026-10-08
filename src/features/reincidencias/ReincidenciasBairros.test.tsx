@@ -22,6 +22,9 @@ const resumo = buildBairroSummary([
   cli('C', 'Taubaté', 'JARDIM AZUL', [os('3000001'), os('3000002')]),
 ])
 
+// A chave do bairro é interna (forma canônica); o teste a busca pelo nome em vez de fixá-la no texto.
+const chaveDe = (nome: string) => resumo.find(b => b.bairro === nome)!.key
+
 describe('BairrosCard', () => {
   it('lista os bairros com clientes e participação; clicar abre aquele bairro', () => {
     const onOpen = vi.fn()
@@ -29,14 +32,14 @@ describe('BairrosCard', () => {
     expect(screen.getByText('4 OS')).toBeTruthy()
     expect(screen.getByText(/2 clientes/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /JARDIM AZUL/ }))
-    expect(onOpen).toHaveBeenCalledWith('TAUBATE|JARDIM AZUL')
+    expect(onOpen).toHaveBeenCalledWith(chaveDe('JARDIM AZUL'))
   })
 
   it('"Ver todos os bairros" abre pelo bairro com mais clientes', () => {
     const onOpen = vi.fn()
     render(<BairrosCard tipo="Revisita de manutenção" resumo={resumo} onOpen={onOpen} />)
     fireEvent.click(screen.getByRole('button', { name: /Ver todos os bairros \(2\)/ }))
-    expect(onOpen).toHaveBeenCalledWith('TAUBATE|CENTRO')
+    expect(onOpen).toHaveBeenCalledWith(chaveDe('CENTRO'))
   })
 
   it('o título diz se é revisita de manutenção ou de instalação', () => {
@@ -52,7 +55,7 @@ describe('BairrosCard', () => {
 
 describe('BairroModal', () => {
   it('mostra as OS dos clientes do bairro escolhido, com a observação', () => {
-    render(<BairroModal tipo="Revisita de manutenção" resumo={resumo} selectedKey="TAUBATE|CENTRO" onSelect={() => {}} onClose={() => {}} />)
+    render(<BairroModal tipo="Revisita de manutenção" resumo={resumo} selectedKey={chaveDe('CENTRO')} onSelect={() => {}} onClose={() => {}} />)
     expect(screen.getByText('1000001')).toBeTruthy()
     expect(screen.getByText('2000002')).toBeTruthy()
     expect(screen.getByText('conector trocado')).toBeTruthy()
@@ -61,13 +64,13 @@ describe('BairroModal', () => {
 
   it('trocar de bairro na lista da esquerda avisa o novo bairro', () => {
     const onSelect = vi.fn()
-    render(<BairroModal tipo="Revisita de manutenção" resumo={resumo} selectedKey="TAUBATE|CENTRO" onSelect={onSelect} onClose={() => {}} />)
+    render(<BairroModal tipo="Revisita de manutenção" resumo={resumo} selectedKey={chaveDe('CENTRO')} onSelect={onSelect} onClose={() => {}} />)
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Bairros' })).getByRole('button', { name: /JARDIM AZUL/ }))
-    expect(onSelect).toHaveBeenCalledWith('TAUBATE|JARDIM AZUL')
+    expect(onSelect).toHaveBeenCalledWith(chaveDe('JARDIM AZUL'))
   })
 
   it('o título do modal traz o tipo da revisita', () => {
-    render(<BairroModal tipo="Revisita de instalação" resumo={resumo} selectedKey="TAUBATE|CENTRO" onSelect={() => {}} onClose={() => {}} />)
+    render(<BairroModal tipo="Revisita de instalação" resumo={resumo} selectedKey={chaveDe('CENTRO')} onSelect={() => {}} onClose={() => {}} />)
     expect(screen.getByText('Revisita de instalação por bairro')).toBeTruthy()
   })
 
@@ -97,8 +100,29 @@ describe('BairrosCard — taxa, variação e indício', () => {
   })
 
   it('o modal explica o indício e mostra clientes sobre atendidos', () => {
-    render(<BairroModal tipo="Revisita de manutenção" resumo={comBase} selectedKey="TAUBATE|CENTRO" onSelect={() => {}} onClose={() => {}} />)
+    render(<BairroModal tipo="Revisita de manutenção" resumo={comBase} selectedKey={chaveDe('CENTRO')} onSelect={() => {}} onClose={() => {}} />)
     expect(screen.getByText(/3 de 10 atendidos/)).toBeTruthy()
     expect(screen.getByText(/fez a visita de origem em 100% das revisitas/)).toBeTruthy()
+  })
+})
+
+describe('BairroModal — grafias reunidas', () => {
+  const grafias = buildBairroSummary([
+    cli('A', 'Taubaté', 'JD SONIA MARIA', [os('1'), os('2')]),
+    cli('B', 'Taubaté', 'JARDIM SONIA MARIA', [os('3'), os('4')]),
+    cli('C', 'Taubaté', 'JARDIM SANIA MARIA', [os('5'), os('6')]),
+  ])
+
+  it('mostra todas as grafias do cadastro que foram unidas, para conferir', () => {
+    render(<BairroModal tipo="Revisita de manutenção" resumo={grafias} selectedKey={grafias[0].key} onSelect={() => {}} onClose={() => {}} />)
+    const aviso = screen.getByTestId('grafias-reunidas')
+    expect(aviso.textContent).toContain('3 grafias do cadastro reunidas')
+    expect(aviso.textContent).toContain('JD SONIA MARIA')
+    expect(aviso.textContent).toContain('JARDIM SANIA MARIA')
+  })
+
+  it('bairro com uma única grafia não mostra o aviso', () => {
+    render(<BairroModal tipo="Revisita de manutenção" resumo={resumo} selectedKey={chaveDe('CENTRO')} onSelect={() => {}} onClose={() => {}} />)
+    expect(screen.queryByTestId('grafias-reunidas')).toBeNull()
   })
 })

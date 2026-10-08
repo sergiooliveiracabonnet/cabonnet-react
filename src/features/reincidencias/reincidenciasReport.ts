@@ -1,4 +1,7 @@
 import type { ClienteBase, ClienteReincidente } from '../../lib/builders/churn'
+import {
+  canonicalizarBairro, chaveDeAgrupamento, escolherNomeBairro, listarGrafias, mesmoNomeComUmaLetraErrada, normalizarTexto, terminaEmArtigo, todasCortadasNoLimite,
+} from './bairroNomes'
 import { isCOPE, isExecucaoReal, isForaDeRevisita, isReagend, parseDate, parseDateTime } from '../../lib/transform'
 import type { OSRow } from '../../lib/types'
 import { shortEquipe } from '../../lib/osFormat'
@@ -129,6 +132,8 @@ export interface BairroResumo {
   cidade: string
   /** Nome para o gráfico: o bairro, com a cidade ao lado só quando o nome se repete. */
   label: string
+  /** Todas as grafias do cadastro que foram unidas neste bairro, da mais usada à menos. */
+  variantes: string[]
   clientes: ClienteReincidente[]
   nClientes: number
   /** Retornos: cada OS depois da primeira do cliente (mesma contagem dos pares do relatório). */
@@ -163,15 +168,6 @@ export interface BairroOpcoes {
 
 const SEM_BAIRRO = 'Sem bairro'
 
-// O cadastro escreve o mesmo bairro de jeitos diferentes ("VITORIA VALE" e
-// "VITÓRIA VALE"), então a chave ignora acento, caixa, pontuação e espaços sobrando.
-const normalizar = (texto: string): string =>
-  texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim()
-
-// O ERP corta o nome do bairro em 20 caracteres ("RESIDENCIAL ESPERANC"): um nome
-// com exatamente esse tamanho pode ser a versão cortada de um bairro maior.
-const LIMITE_BAIRRO_ERP = 20
-
 // Diagnóstico rede × execução (indício, não prova). Com poucas revisitas não há
 // padrão para ler. Concentrado numa equipe = execução; espalhado por várias
 // equipes, em vários clientes = o problema é do lugar (rede).
@@ -182,7 +178,7 @@ const MIN_EQUIPES_REDE = 3
 const MIN_CLIENTES_REDE = 3
 
 export const cidadeCurta = (cidade: string): string => {
-  const base = normalizar(cidade)
+  const base = normalizarTexto(cidade)
   if (base === 'PINDAMONHANGABA') return 'Pinda'
   if (base === 'SAO JOSE DOS CAMPOS') return 'SJC'
   return cidade.trim() ? cidade.trim().charAt(0).toUpperCase() + cidade.trim().slice(1).toLowerCase() : '—'
@@ -222,9 +218,9 @@ function agruparBairros(origens: Record<string, ItemBairro[]>): Map<string, Grup
     for (const item of itens) {
       const bairro = item.bairro.trim() || SEM_BAIRRO
       const cidade = item.cidade.trim()
-      const cidadeKey = normalizar(cidade)
-      const bairroKey = normalizar(bairro) || normalizar(SEM_BAIRRO)
-      const key = `${cidadeKey}|${bairroKey}`
+      const cidadeKey = normalizarTexto(cidade)
+      const bairroKey = canonicalizarBairro(bairro) || canonicalizarBairro(SEM_BAIRRO)
+      const key = `${cidadeKey}|${chaveDeAgrupamento(bairroKey)}`
       const grupo: GrupoBairro = brutos.get(key) ?? { cidadeKey, bairroKey, variantesBairro: new Map(), variantesCidade: new Map(), itens: {} }
       ;(grupo.itens[origem] ??= []).push(item)
       grupo.variantesBairro.set(bairro, (grupo.variantesBairro.get(bairro) ?? 0) + 1)
@@ -233,25 +229,45 @@ function agruparBairros(origens: Record<string, ItemBairro[]>): Map<string, Grup
     }
   }
 
-  // Une o nome cortado ao completo — só quando há um único candidato na mesma cidade.
-  for (const [key, corte] of [...brutos]) {
-    if (corte.bairroKey.length !== LIMITE_BAIRRO_ERP) continue
-    const candidatos = [...brutos.values()].filter(g =>
-      g !== corte && g.cidadeKey === corte.cidadeKey && g.bairroKey.length > LIMITE_BAIRRO_ERP && g.bairroKey.startsWith(corte.bairroKey))
-    if (candidatos.length !== 1) continue
-    juntar(candidatos[0], corte)
-    brutos.delete(key)
+  const unirNomesCortados = () => {
+    // Une o nome cortado ao completo — só quando há um único candidato na mesma cidade E o corte
+    // caiu no meio de uma palavra ("ESPERANC" -> "ESPERANCA") ou num artigo ("VALE DAS"). Corte
+    // numa palavra inteira ("CONJUNTO RESIDENCIAL") é genérico demais: pode ser qualquer conjunto.
+    for (const [key, corte] of [...brutos]) {
+      if (!todasCortadasNoLimite(corte.variantesBairro.keys())) continue
+      const cortouNoArtigo = terminaEmArtigo(corte.variantesBairro.keys())
+      const candidatos = [...brutos.values()].filter(g =>
+        g !== corte && g.cidadeKey === corte.cidadeKey && g.bairroKey.length > corte.bairroKey.length && g.bairroKey.startsWith(corte.bairroKey) &&
+        (cortouNoArtigo || g.bairroKey[corte.bairroKey.length] !== ' '))
+      if (candidatos.length !== 1) continue
+      juntar(candidatos[0], corte)
+      brutos.delete(key)
+    }
   }
+
+  unirNomesCortados()
+
+  // Erro de digitação: dois nomes iguais menos uma palavra que difere em uma letra. Só une quando
+  // o par é inequívoco (um único vizinho); o menor entra no maior.
+  const peso = (g: GrupoBairro) => Object.values(g.itens).reduce((s, l) => s + l.length, 0)
+  for (const [key, g] of [...brutos].sort((a, b) => peso(a[1]) - peso(b[1]))) {
+    if (!brutos.has(key)) continue
+    const vizinhos = [...brutos].filter(([k, o]) => k !== key && o.cidadeKey === g.cidadeKey && mesmoNomeComUmaLetraErrada(g.bairroKey, o.bairroKey))
+    if (vizinhos.length !== 1) continue
+    const [chaveVizinho, vizinho] = vizinhos[0]
+    if (peso(g) <= peso(vizinho)) { juntar(vizinho, g); brutos.delete(key) } else { juntar(g, vizinho); brutos.delete(chaveVizinho) }
+  }
+  unirNomesCortados()
   return brutos
 }
 
 /** Nome e cidade exibidos de cada grupo; a cidade entra no rótulo só quando o nome se repete. */
-function nomearGrupos(grupos: Array<[string, GrupoBairro]>): Map<string, { bairro: string; cidade: string; label: string }> {
+function nomearGrupos(grupos: Array<[string, GrupoBairro]>): Map<string, { bairro: string; cidade: string; label: string; variantes: string[] }> {
   const repetido = new Map<string, number>()
-  const nomes = new Map<string, { bairro: string; cidade: string; label: string }>()
+  const nomes = new Map<string, { bairro: string; cidade: string; label: string; variantes: string[] }>()
   for (const [key, g] of grupos) {
-    const bairro = maisUsado(g.variantesBairro)
-    nomes.set(key, { bairro, cidade: maisUsado(g.variantesCidade), label: bairro })
+    const bairro = escolherNomeBairro(g.variantesBairro)
+    nomes.set(key, { bairro, cidade: maisUsado(g.variantesCidade), label: bairro, variantes: listarGrafias(g.variantesBairro) })
     repetido.set(bairro, (repetido.get(bairro) ?? 0) + 1)
   }
   for (const nome of nomes.values()) if ((repetido.get(nome.bairro) ?? 0) > 1) nome.label = `${nome.bairro} · ${cidadeCurta(nome.cidade)}`
@@ -296,7 +312,7 @@ export function buildBairroSummary(clientes: ClienteReincidente[], { base = [], 
 
   return grupos.map(([key, g]): BairroResumo => {
     const revs = g.itens.rev as ClienteReincidente[]
-    const { bairro, cidade, label } = nomes.get(key)!
+    const { bairro, cidade, label, variantes } = nomes.get(key)!
     const nClientes = revs.length
     // Todo reincidente é cliente atendido: a base nunca fica abaixo dele.
     const nBase = base.length ? Math.max(g.itens.base?.length ?? 0, nClientes) : 0
@@ -304,7 +320,7 @@ export function buildBairroSummary(clientes: ClienteReincidente[], { base = [], 
     const nOSAnterior = anterior ? osDe(g.itens.ant) : null
     const equipes = contarEquipesDeOrigem(revs)
     return {
-      key, bairro, cidade, label,
+      key: `${g.cidadeKey}|${g.bairroKey}`, bairro, cidade, label, variantes,
       clientes: [...revs].sort((a, b) => b.visitas - a.visitas || a.cliente.localeCompare(b.cliente)),
       nClientes,
       nRevisitas: revs.reduce((sum, c) => sum + Math.max(0, c.rows.length - 1), 0),
@@ -340,6 +356,7 @@ export interface LinhaComparativo {
   bairro: string
   cidade: string
   label: string
+  variantes: string[]
   meses: Record<string, CelulaMes>
   totalOS: number
   totalClientes: number
@@ -368,10 +385,10 @@ export function buildBairroComparativo(periodos: PeriodoComparativo[]): Comparat
       const nBase = p.base?.length ? Math.max(g.itens[`base:${p.id}`]?.length ?? 0, nClientes) : 0
       meses[p.id] = { nOS: osDe(g.itens[`rev:${p.id}`]), nClientes, nBase, taxa: nBase && nClientes ? Math.round(nClientes / nBase * 1000) / 10 : nBase ? 0 : null }
     }
-    const { bairro, cidade, label } = nomes.get(key)!
+    const { bairro, cidade, label, variantes } = nomes.get(key)!
     const primeiro = meses[periodos[0].id], ultimo = meses[periodos[periodos.length - 1].id]
     return {
-      key, bairro, cidade, label, meses,
+      key: `${g.cidadeKey}|${g.bairroKey}`, bairro, cidade, label, variantes, meses,
       totalOS: periodos.reduce((s, p) => s + meses[p.id].nOS, 0),
       totalClientes: periodos.reduce((s, p) => s + meses[p.id].nClientes, 0),
       variacao: periodos.length > 1 ? ultimo.nOS - primeiro.nOS : null,
