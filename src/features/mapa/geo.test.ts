@@ -43,6 +43,14 @@ describe('buildEquipeOptions', () => {
     ])
   })
 
+  it('equipes diferentes com o mesmo rótulo curto (COPE) mostram o nome completo', () => {
+    const rows = [
+      makeOS({ numos: 'A', nomedaequipe: '03- VAL - COPE INSTALACAO' }),
+      makeOS({ numos: 'B', nomedaequipe: '03- VAL - COPE MANUTENCAO' }),
+    ]
+    expect(buildEquipeOptions(rows).map(o => o.label)).toEqual(['COPE INSTALACAO', 'COPE MANUTENCAO'])
+  })
+
   it('ignora OS sem equipe (nulo, vazio ou só espaços) e trima o valor', () => {
     const rows = [
       makeOS({ numos: 'A', nomedaequipe: null }),

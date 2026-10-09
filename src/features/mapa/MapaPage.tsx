@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Marker, Circle as MapCircle, Tooltip, ZoomControl, ScaleControl } from 'react-leaflet'
 import { MapTrifold as MapIcon, Fire, Circle, X, GridFour, Stack, MagnifyingGlass, CircleNotch, Warning, Wrench, SlidersHorizontal, ArrowCounterClockwise } from '@phosphor-icons/react'
 import { useOSDerived } from '../../contexts/OSDataContext'
-import { isConcluida } from '../../lib/transform'
+import { isConcluida, isReagend } from '../../lib/transform'
 import { aggregateByCidade, aggregateByBairro, buildHeatPoints, buildEquipeOptions, type BairroAgg } from './geo'
 import { useGeocodedEquipeOS } from './useGeocodedEquipeOS'
 import { geocodeAddress, haversineKm, type GeocodeResult } from './searchAddress'
@@ -86,7 +86,10 @@ export default function MapaPage() {
     const base = globalRows || []
     let r
 
-    if (!filterStatus) {
+    if (filterStatus === 'reagendamento') {
+      // Fila de reagendamento: equipes "REAGEND…" que ainda não foram concluídas.
+      r = base.filter(x => isReagend(x) && !isConcluida(x._situacaoEfetiva))
+    } else if (!filterStatus) {
       // padrão: ativas — mesma definição do Dashboard "Total OS"
       r = base.filter(x => x.descsituacao === 'Pendente' || x.descsituacao === 'Atendimento')
     } else {
@@ -173,6 +176,7 @@ export default function MapaPage() {
     { value: 'excedido',   label: 'SLA Excedido'     },
     { value: 'pendente',   label: 'Pendente'         },
     { value: 'atendimento',label: 'Atendimento'      },
+    { value: 'reagendamento', label: 'Reagendamento'  },
     { value: 'concluida',  label: 'Concluída'        },
   ]
   const agingOpts = [
@@ -201,8 +205,8 @@ export default function MapaPage() {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
 
         {/* Ícone + título */}
-        <div className="flex items-center gap-2">
-          <MapIcon size={15} className="text-primary" />
+        <div className="flex flex-shrink-0 items-center gap-2.5">
+          <MapIcon size={18} className="flex-shrink-0 text-primary" />
           <div>
             <h1 className="text-body font-bold text-text">Mapa Operacional</h1>
             <p className="text-caption text-muted">Distribuição e risco da fila em campo</p>
@@ -212,7 +216,7 @@ export default function MapaPage() {
         {/* Busca de endereço */}
         <div className="order-3 flex w-full min-w-0 items-center gap-2 lg:order-none lg:w-auto lg:flex-1">
           <div className="relative flex min-w-0 flex-1 lg:max-w-md">
-            <MagnifyingGlass size={11} className="absolute left-2.5 text-muted pointer-events-none" />
+            <MagnifyingGlass size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
             <input
               aria-label="Buscar endereço no mapa"
               type="text"
@@ -220,7 +224,7 @@ export default function MapaPage() {
               onChange={e => setAddressQuery(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleSearchAddress() }}
               placeholder="Buscar endereço (ex: Rua X, bairro, cidade)"
-              className="h-11 w-full pl-8 pr-3 text-base sm:text-label rounded-lg
+              className="h-11 w-full pl-9 pr-3 text-base sm:text-label rounded-lg
                          bg-bg border border-subtle text-text placeholder:text-muted
                          outline-none focus:border-primary/40 transition-colors duration-fast"
             />
@@ -228,7 +232,7 @@ export default function MapaPage() {
           <button
             onClick={handleSearchAddress}
             disabled={searching || !addressQuery.trim()}
-            className="flex min-h-11 items-center gap-1.5 px-3 rounded-lg text-caption font-semibold
+            className="flex h-11 flex-shrink-0 items-center gap-1.5 px-4 rounded-lg text-caption font-semibold
                        bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25
                        disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-fast"
           >
@@ -267,7 +271,7 @@ export default function MapaPage() {
         </button>
         </div>
 
-        <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5" aria-label="Resumo do mapa">
+        <div className="mt-2.5 flex items-center gap-x-5 gap-y-1 overflow-x-auto pb-0.5" aria-label="Resumo do mapa">
           <StatCard size="inline" title={filterStatus === '' ? 'OS Ativas' : 'OS'} value={rows.length} />
           <StatCard size="inline" title="Críticas" value={totalCriticos} tone="critical" />
           <StatCard size="inline" title="Excedidas" value={totalExcedidos} tone="warning" />

@@ -208,7 +208,14 @@ export function buildEquipeOptions(rows: OSRow[]): { value: string; label: strin
     const eq = (r.nomedaequipe || '').trim()
     if (eq) set.add(eq)
   }
-  return Array.from(set)
-    .map(nome => ({ value: nome, label: shortEquipe(nome) }))
+  const nomes = Array.from(set)
+  const curtos = nomes.map(shortEquipe)
+  // Equipes diferentes que viram o mesmo rótulo curto (ex.: várias "COPE") levam o nome completo.
+  return nomes
+    .map((nome, i) => {
+      const repetido = curtos.filter(c => c === curtos[i]).length > 1
+      const completo = nome.replace(/^0*3[\s-]*VAL\s*[-–]\s*/i, '').replace(/\s+/g, ' ').trim()
+      return { value: nome, label: repetido ? completo : curtos[i] }
+    })
     .sort((a, b) => a.label.localeCompare(b.label))
 }
