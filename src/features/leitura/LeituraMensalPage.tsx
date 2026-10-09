@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, ChartLineUp, FilePdf, Minus } from '@phosphor-icons/react'
+import { ArrowDown, ArrowUp, ChartLineUp, FilePdf, House, ListBullets, Minus, Wrench, WifiHigh } from '@phosphor-icons/react'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { TabBar } from '../../components/ui/TabBar'
 import { useOSDerived } from '../../contexts/OSDataContext'
 import { useOSMotivos } from '../../hooks/useOSMotivos'
 import { ultimosMeses } from '../reincidencias/reincidenciasMatriz'
-import { buildLeituraMensal, osParaLer, sinal, sinalPP, type BlocoRevisita, type Contribuicao, type Frase, type LeituraCidade, type LeituraMensal, type Tom } from './leituraMensal'
+import { buildLeituraMensal, osParaLer, sinal, sinalPP, type BlocoRevisita, type Contribuicao, type Frase, type LeituraCidade, type LeituraMensal, type PontoTendencia, type Tom } from './leituraMensal'
 import { exportLeituraMensalPDF } from './leituraMensalPDF'
 
 const MESES = ultimosMeses(13)
@@ -46,6 +47,7 @@ interface ViewProps {
 /** A tela em si, sem buscar dados: recebe a leitura pronta. */
 export function LeituraMensalView({ leitura, carregando, lendo, erroMotivos, mesId, onMes }: ViewProps) {
   const [cidadeSel, setCidadeSel] = useState<string | null>(null)
+  const [aba, setAba] = useState<Aba>('geral')
   const selecionada = leitura ? (leitura.cidades.find(c => c.key === cidadeSel) ?? leitura.geral) : null
 
   return (
@@ -127,7 +129,7 @@ export function LeituraMensalView({ leitura, carregando, lendo, erroMotivos, mes
           <p className="border-t border-border px-4 py-2 text-caption text-muted">Clique numa cidade para ver de onde veio a variação. Variação contra {leitura.anterior.label}; pp = pontos percentuais.</p>
         </section>
 
-        {selecionada && <DetalheCidade c={selecionada} meses={{ atual: leitura.atual.label, anterior: leitura.anterior.label }} />}
+        {selecionada && <DetalheCidade c={selecionada} meses={{ atual: leitura.atual.label, anterior: leitura.anterior.label }} aba={aba} onAba={setAba} />}
 
         <p className="rounded-xl border border-border bg-card p-4 text-caption leading-relaxed text-secondary">
           Esta leitura mostra <b className="text-text">onde e com quem</b> a variação aconteceu: bairros, equipes e motivos que somaram ou tiraram OS.
@@ -156,7 +158,58 @@ function CelulaTaxa({ r }: { r: BlocoRevisita }) {
 
 interface Meses { atual: string; anterior: string }
 
-function DetalheCidade({ c, meses }: { c: LeituraCidade; meses: Meses }) {
+type Aba = 'geral' | 'vt' | 'manut' | 'inst'
+
+const ABAS = [
+  { id: 'geral', label: 'Visão geral', icon: ListBullets },
+  { id: 'vt', label: 'VTs abertas', icon: WifiHigh },
+  { id: 'manut', label: 'Revisita de manutenção', icon: Wrench },
+  { id: 'inst', label: 'Revisita de instalação', icon: House },
+]
+
+interface Indicador {
+  titulo: string
+  frases: Frase[]
+  listas: Array<{ titulo: string; itens: Contribuicao[] }>
+  /** Linha da tendência: o valor do indicador em cada mês. */
+  serie: { rotulo: string; valor: (t: PontoTendencia) => number | null; formato: (v: number) => string }
+}
+
+function indicadores(c: LeituraCidade): Record<Exclude<Aba, 'geral'>, Indicador> {
+  const taxa = (v: number) => `${fmt1(v)}%`
+  return {
+    vt: {
+      titulo: 'VTs abertas', frases: c.frases.vt,
+      listas: [{ titulo: 'Por bairro', itens: c.vt.porBairro }, { titulo: 'Por motivo de abertura', itens: c.vt.porMotivo }],
+      serie: { rotulo: 'VTs abertas', valor: t => t.vts, formato: v => v.toLocaleString('pt-BR') },
+    },
+    manut: {
+      titulo: 'Revisita de manutenção', frases: c.frases.manut,
+      listas: [
+        { titulo: 'Equipe da visita de origem', itens: c.manut.porEquipe },
+        { titulo: 'Por bairro (clientes)', itens: c.manut.porBairro },
+        { titulo: 'O que a equipe fez na origem', itens: c.manut.porAcaoOrigem },
+        { titulo: 'Motivo do retorno', itens: c.manut.porMotivoRetorno },
+      ],
+      serie: { rotulo: 'Taxa de revisita', valor: t => t.taxaManut, formato: taxa },
+    },
+    inst: {
+      titulo: 'Revisita de instalação', frases: c.frases.inst,
+      listas: [
+        { titulo: 'Equipe da instalação', itens: c.inst.porEquipe },
+        { titulo: 'Por bairro (clientes)', itens: c.inst.porBairro },
+        { titulo: 'Motivo do retorno', itens: c.inst.porMotivoRetorno },
+      ],
+      serie: { rotulo: 'Taxa de revisita', valor: t => t.taxaInst, formato: taxa },
+    },
+  }
+}
+
+// Na visão geral a manutenção mostra só as três primeiras listas; o motivo do retorno fica no detalhado.
+const LISTAS_NA_GERAL: Record<Exclude<Aba, 'geral'>, number> = { vt: 2, manut: 3, inst: 3 }
+
+function DetalheCidade({ c, meses, aba, onAba }: { c: LeituraCidade; meses: Meses; aba: Aba; onAba: (a: Aba) => void }) {
+  const ind = indicadores(c)
   return (
     <section aria-label={`Leitura de ${c.cidade}`} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 sm:p-5">
       <header className="flex flex-col gap-1.5">
@@ -167,59 +220,114 @@ function DetalheCidade({ c, meses }: { c: LeituraCidade; meses: Meses }) {
         <p className="text-label text-secondary">{c.porqueSaldo}</p>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Bloco titulo="VTs abertas" frases={c.frases.vt} listas={[
-          { titulo: 'Por bairro', itens: c.vt.porBairro },
-          { titulo: 'Por motivo de abertura', itens: c.vt.porMotivo },
-        ]} meses={meses} />
-        <Bloco titulo="Revisita de manutenção" frases={c.frases.manut} listas={[
-          { titulo: 'Equipe da visita de origem', itens: c.manut.porEquipe },
-          { titulo: 'Por bairro (clientes)', itens: c.manut.porBairro },
-          { titulo: 'O que a equipe fez na origem', itens: c.manut.porAcaoOrigem },
-        ]} meses={meses} />
-        <Bloco titulo="Revisita de instalação" frases={c.frases.inst} listas={[
-          { titulo: 'Equipe da instalação', itens: c.inst.porEquipe },
-          { titulo: 'Por bairro (clientes)', itens: c.inst.porBairro },
-          { titulo: 'Motivo do retorno', itens: c.inst.porMotivoRetorno },
-        ]} meses={meses} />
-      </div>
+      <TabBar tabs={ABAS} active={aba} onChange={id => onAba(id as Aba)} />
 
-      <div>
-        <h3 className="mb-2 text-caption font-semibold uppercase tracking-wide text-muted">Últimos meses</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-label">
-            <thead>
-              <tr className="text-caption text-muted">
-                <th className="border-b border-border px-3 py-2 font-semibold" />
-                {c.tendencia.map(t => <th key={t.id} className="border-b border-border px-3 py-2 text-right font-semibold tabular-nums">{t.label}{t.parcial ? '*' : ''}</th>)}
-              </tr>
-            </thead>
-            <tbody className="tabular-nums">
-              <tr><th scope="row" className="px-3 py-2 font-semibold text-secondary">VTs abertas</th>{c.tendencia.map(t => <td key={t.id} className="px-3 py-2 text-right text-text">{t.vts}</td>)}</tr>
-              <tr><th scope="row" className="px-3 py-2 font-semibold text-secondary">Revisita manut.</th>{c.tendencia.map(t => <td key={t.id} className="px-3 py-2 text-right text-text">{t.taxaManut === null ? '—' : `${fmt1(t.taxaManut)}%`}</td>)}</tr>
-              <tr><th scope="row" className="px-3 py-2 font-semibold text-secondary">Revisita inst.</th>{c.tendencia.map(t => <td key={t.id} className="px-3 py-2 text-right text-text">{t.taxaInst === null ? '—' : `${fmt1(t.taxaInst)}%`}</td>)}</tr>
-            </tbody>
-          </table>
+      {aba === 'geral' ? (<>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          {(['vt', 'manut', 'inst'] as const).map(k => (
+            <Bloco key={k} titulo={ind[k].titulo} frases={ind[k].frases} listas={ind[k].listas.slice(0, LISTAS_NA_GERAL[k])} meses={meses} onDetalhar={() => onAba(k)} />
+          ))}
         </div>
-      </div>
+
+        <div>
+          <h3 className="mb-2 text-caption font-semibold uppercase tracking-wide text-muted">Últimos meses</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-label">
+              <thead>
+                <tr className="text-caption text-muted">
+                  <th className="border-b border-border px-3 py-2 font-semibold" />
+                  {c.tendencia.map(t => <th key={t.id} className="border-b border-border px-3 py-2 text-right font-semibold tabular-nums">{t.label}{t.parcial ? '*' : ''}</th>)}
+                </tr>
+              </thead>
+              <tbody className="tabular-nums">
+                <tr><th scope="row" className="px-3 py-2 font-semibold text-secondary">VTs abertas</th>{c.tendencia.map(t => <td key={t.id} className="px-3 py-2 text-right text-text">{t.vts}</td>)}</tr>
+                <tr><th scope="row" className="px-3 py-2 font-semibold text-secondary">Revisita manut.</th>{c.tendencia.map(t => <td key={t.id} className="px-3 py-2 text-right text-text">{t.taxaManut === null ? '—' : `${fmt1(t.taxaManut)}%`}</td>)}</tr>
+                <tr><th scope="row" className="px-3 py-2 font-semibold text-secondary">Revisita inst.</th>{c.tendencia.map(t => <td key={t.id} className="px-3 py-2 text-right text-text">{t.taxaInst === null ? '—' : `${fmt1(t.taxaInst)}%`}</td>)}</tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </>) : <DetalheIndicador ind={ind[aba]} tendencia={c.tendencia} meses={meses} />}
     </section>
   )
 }
 
-function Bloco({ titulo, frases, listas, meses }: { titulo: string; frases: Frase[]; listas: Array<{ titulo: string; itens: Contribuicao[] }>; meses: Meses }) {
+const LIMITE_DETALHADO = 12
+// Quantas listas, quantas colunas na tela larga: nenhuma lista sobra sozinha numa linha.
+const COLUNAS_LISTAS: Record<number, string> = { 3: 'xl:grid-cols-3', 4: 'xl:grid-cols-4' }
+
+/** Um indicador ocupando a largura toda: leitura e evolução lado a lado, listas em colunas. */
+function DetalheIndicador({ ind, tendencia, meses }: { ind: Indicador; tendencia: PontoTendencia[]; meses: Meses }) {
+  return (
+    <div role="tabpanel" aria-label={ind.titulo} className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <article className="rounded-xl border border-border p-4 lg:col-span-2">
+          <h3 className="mb-2 text-label font-bold text-text">O que mudou</h3>
+          <ListaFrases frases={ind.frases} />
+        </article>
+        <Evolucao serie={ind.serie} tendencia={tendencia} />
+      </div>
+      <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 ${COLUNAS_LISTAS[ind.listas.length] ?? ''}`}>
+        {ind.listas.map(l => (
+          <article key={l.titulo} className="rounded-xl border border-border p-4">
+            <ListaContribuicao titulo={l.titulo} itens={l.itens} meses={meses} limite={LIMITE_DETALHADO} />
+          </article>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Barras horizontais do indicador nos últimos meses; o mês analisado em destaque. */
+function Evolucao({ serie, tendencia }: { serie: Indicador['serie']; tendencia: PontoTendencia[] }) {
+  const valores = tendencia.map(t => serie.valor(t))
+  const maximo = Math.max(0, ...valores.filter((v): v is number => v !== null))
+  return (
+    <article className="rounded-xl border border-border p-4">
+      <h3 className="mb-3 text-label font-bold text-text">{serie.rotulo}: últimos meses</h3>
+      <ul className="space-y-1.5">
+        {tendencia.map((t, i) => {
+          const v = valores[i]
+          const atual = i === tendencia.length - 1
+          return (
+            <li key={t.id} className="grid grid-cols-6 items-center gap-2 text-label tabular-nums">
+              <span className={atual ? 'font-semibold text-text' : 'text-muted'}>{t.label}{t.parcial ? '*' : ''}</span>
+              <span className="col-span-4 h-2.5 overflow-hidden rounded-full bg-elevated">
+                {v !== null && maximo > 0 && <span className={`block h-full rounded-full ${atual ? 'bg-primary' : 'bg-primary/40'}`} style={{ width: `${Math.max(2, v / maximo * 100)}%` }} />}
+              </span>
+              <span className={`text-right ${atual ? 'font-semibold text-text' : 'text-secondary'}`}>{v === null ? '—' : serie.formato(v)}</span>
+            </li>
+          )
+        })}
+      </ul>
+    </article>
+  )
+}
+
+function ListaFrases({ frases }: { frases: Frase[] }) {
+  if (!frases.length) return <p className="text-label text-muted">Sem movimento nos dois meses.</p>
+  return (
+    <ul className="space-y-1.5">
+      {frases.map((f, i) => (
+        <li key={i} className="flex gap-2 text-label leading-relaxed text-secondary">
+          <span aria-hidden="true" className={`mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full ${f.tom === 'piora' ? 'bg-red' : f.tom === 'melhora' ? 'bg-green' : 'bg-muted'}`} />
+          <span className={i === 0 ? `font-semibold ${COR_TOM[f.tom] === 'text-secondary' ? 'text-text' : COR_TOM[f.tom]}` : ''}>{f.texto}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function Bloco({ titulo, frases, listas, meses, onDetalhar }: { titulo: string; frases: Frase[]; listas: Array<{ titulo: string; itens: Contribuicao[] }>; meses: Meses; onDetalhar: () => void }) {
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-border p-4">
-      <h3 className="text-label font-bold text-text">{titulo}</h3>
-      {frases.length ? (
-        <ul className="space-y-1.5">
-          {frases.map((f, i) => (
-            <li key={i} className="flex gap-2 text-label leading-relaxed text-secondary">
-              <span aria-hidden="true" className={`mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full ${f.tom === 'piora' ? 'bg-red' : f.tom === 'melhora' ? 'bg-green' : 'bg-muted'}`} />
-              <span className={i === 0 ? `font-semibold ${COR_TOM[f.tom] === 'text-secondary' ? 'text-text' : COR_TOM[f.tom]}` : ''}>{f.texto}</span>
-            </li>
-          ))}
-        </ul>
-      ) : <p className="text-label text-muted">Sem movimento nos dois meses.</p>}
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-label font-bold text-text">{titulo}</h3>
+        <button type="button" onClick={onDetalhar} className="min-h-9 cursor-pointer rounded-lg px-2 text-caption font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+          Ver detalhado
+        </button>
+      </div>
+      <ListaFrases frases={frases} />
       {listas.map(l => <ListaContribuicao key={l.titulo} titulo={l.titulo} itens={l.itens} meses={meses} />)}
     </article>
   )
@@ -228,12 +336,12 @@ function Bloco({ titulo, frases, listas, meses }: { titulo: string; frases: Fras
 const LIMITE_LISTA = 5
 
 // Colunas em ordem do tempo — mês anterior, mês analisado, variação — para "de 19 para 4" ler da esquerda para a direita.
-function ListaContribuicao({ titulo, itens, meses }: { titulo: string; itens: Contribuicao[]; meses: Meses }) {
+function ListaContribuicao({ titulo, itens, meses, limite = LIMITE_LISTA }: { titulo: string; itens: Contribuicao[]; meses: Meses; limite?: number }) {
   const [todas, setTodas] = useState(false)
   const relevantes = itens.filter(i => i.atual || i.anterior)
   if (!relevantes.length) return null
   const ordenadas = [...relevantes].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta) || b.atual - a.atual)
-  const visiveis = todas ? ordenadas : ordenadas.slice(0, LIMITE_LISTA)
+  const visiveis = todas ? ordenadas : ordenadas.slice(0, limite)
   return (
     <div>
       <table className="w-full text-label tabular-nums">
@@ -256,7 +364,7 @@ function ListaContribuicao({ titulo, itens, meses }: { titulo: string; itens: Co
           ))}
         </tbody>
       </table>
-      {ordenadas.length > LIMITE_LISTA && (
+      {ordenadas.length > limite && (
         <button type="button" onClick={() => setTodas(v => !v)} className="mt-1 min-h-9 cursor-pointer text-caption font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
           {todas ? 'Mostrar menos' : `Ver todos (${ordenadas.length})`}
         </button>

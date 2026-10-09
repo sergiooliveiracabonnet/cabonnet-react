@@ -41,6 +41,29 @@ describe('LeituraMensalView', () => {
     expect([...linha.querySelectorAll('td')].map(td => td.textContent)).toEqual(['BORDA DA MATA', '19', '4', '−15'])
   })
 
+  it('abas: visão geral e uma visão detalhada por indicador, que fica escolhida ao trocar de cidade', () => {
+    render(<LeituraMensalView leitura={leitura} carregando={false} lendo={false} erroMotivos={false} mesId="2026-09" onMes={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'CACAPAVA' }))
+    expect(screen.getByRole('tab', { name: 'Visão geral' }).getAttribute('aria-selected')).toBe('true')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'VTs abertas' }))
+    const painel = screen.getByRole('tabpanel', { name: 'VTs abertas' })
+    expect(within(painel).getByText('O que mudou')).toBeTruthy()
+    expect(within(painel).getByText('VTs abertas: últimos meses')).toBeTruthy()
+    expect(within(painel).getByText('BORDA DA MATA')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todas as cidades' }))
+    expect(screen.getByRole('tabpanel', { name: 'VTs abertas' })).toBeTruthy()
+  })
+
+  it('"Ver detalhado" na visão geral abre a aba do indicador', () => {
+    render(<LeituraMensalView leitura={leitura} carregando={false} lendo={false} erroMotivos={false} mesId="2026-09" onMes={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'CACAPAVA' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalhado' })[1])
+    expect(screen.getByRole('tab', { name: 'Revisita de manutenção' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('tabpanel', { name: 'Revisita de manutenção' })).toBeTruthy()
+  })
+
   it('o selo vem com o porquê', () => {
     render(<LeituraMensalView leitura={leitura} carregando={false} lendo={false} erroMotivos={false} mesId="2026-09" onMes={() => {}} />)
     fireEvent.click(screen.getByRole('button', { name: 'CACAPAVA' }))
