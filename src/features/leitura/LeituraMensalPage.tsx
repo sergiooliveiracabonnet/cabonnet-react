@@ -49,7 +49,7 @@ export function LeituraMensalView({ leitura, carregando, lendo, erroMotivos, mes
   const selecionada = leitura ? (leitura.cidades.find(c => c.key === cidadeSel) ?? leitura.geral) : null
 
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6">
+    <div className="flex flex-col gap-4">
       <PageHeader title="Leitura mensal por cidade" icon={ChartLineUp}
         description="Quanto cada cidade melhorou ou piorou no mês e de onde veio a variação"
         actions={<div className="flex flex-wrap items-end gap-2">
@@ -83,7 +83,6 @@ export function LeituraMensalView({ leitura, carregando, lendo, erroMotivos, mes
               <thead>
                 <tr className="text-caption uppercase tracking-wide text-muted">
                   <th className="border-b border-border px-4 py-2.5 font-semibold">Cidade</th>
-                  <th className="border-b border-border px-3 py-2.5 font-semibold">Saldo</th>
                   <th className="border-b border-border px-3 py-2.5 text-right font-semibold">VTs abertas</th>
                   <th className="border-b border-border px-3 py-2.5 text-right font-semibold">Revisita manut.</th>
                   <th className="border-b border-border px-3 py-2.5 text-right font-semibold">Revisita inst.</th>
@@ -97,13 +96,16 @@ export function LeituraMensalView({ leitura, carregando, lendo, erroMotivos, mes
                   return (
                     <tr key={c.key} onClick={() => setCidadeSel(geral ? null : c.key)} aria-selected={ativa}
                       className={`cursor-pointer transition-colors ${ativa ? 'bg-primary/10' : 'hover:bg-elevated/60'} ${geral ? 'font-bold' : ''}`}>
-                      <th scope="row" className="border-b border-border/60 px-4 py-3">
-                        <button type="button" onClick={e => { e.stopPropagation(); setCidadeSel(geral ? null : c.key) }}
-                          className="cursor-pointer text-left font-semibold text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
-                          {c.cidade}
-                        </button>
+                      <th scope="row" className="border-b border-border/60 px-4 py-3 text-left font-normal">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button type="button" onClick={e => { e.stopPropagation(); setCidadeSel(geral ? null : c.key) }}
+                            className="cursor-pointer text-left font-semibold text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
+                            {c.cidade}
+                          </button>
+                          <SaldoTag tom={c.saldo} />
+                        </div>
+                        <p className="mt-1 max-w-2xl text-caption leading-snug text-muted">{c.porqueSaldo}</p>
                       </th>
-                      <td className="border-b border-border/60 px-3 py-3"><SaldoTag tom={c.saldo} /></td>
                       <td className="border-b border-border/60 px-3 py-3 text-right tabular-nums">
                         <span className="font-semibold text-text">{c.vt.atual.toLocaleString('pt-BR')}</span>{' '}
                         <span className={`text-caption ${corDelta(c.vt.delta)}`}>{c.vt.anterior || c.vt.atual ? `${sinal(c.vt.delta)}${c.vt.pct !== null ? ` (${sinalPP(c.vt.pct)}%)` : ''}` : ''}</span>
@@ -125,7 +127,7 @@ export function LeituraMensalView({ leitura, carregando, lendo, erroMotivos, mes
           <p className="border-t border-border px-4 py-2 text-caption text-muted">Clique numa cidade para ver de onde veio a variação. Variação contra {leitura.anterior.label}; pp = pontos percentuais.</p>
         </section>
 
-        {selecionada && <DetalheCidade c={selecionada} mesAnterior={leitura.anterior.label} />}
+        {selecionada && <DetalheCidade c={selecionada} meses={{ atual: leitura.atual.label, anterior: leitura.anterior.label }} />}
 
         <p className="rounded-xl border border-border bg-card p-4 text-caption leading-relaxed text-secondary">
           Esta leitura mostra <b className="text-text">onde e com quem</b> a variação aconteceu: bairros, equipes e motivos que somaram ou tiraram OS.
@@ -137,9 +139,9 @@ export function LeituraMensalView({ leitura, carregando, lendo, erroMotivos, mes
   )
 }
 
-function SaldoTag({ tom }: { tom: Tom }) {
+function SaldoTag({ tom, title }: { tom: Tom; title?: string }) {
   const Icone = tom === 'piora' ? ArrowUp : tom === 'melhora' ? ArrowDown : Minus
-  return <span className={`inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-caption font-semibold ${FUNDO_TOM[tom]}`}><Icone size={12} weight="bold" aria-hidden="true" />{ROTULO_SALDO[tom]}</span>
+  return <span title={title} className={`inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-caption font-semibold ${FUNDO_TOM[tom]}`}><Icone size={12} weight="bold" aria-hidden="true" />{ROTULO_SALDO[tom]}</span>
 }
 
 function CelulaTaxa({ r }: { r: BlocoRevisita }) {
@@ -152,29 +154,34 @@ function CelulaTaxa({ r }: { r: BlocoRevisita }) {
   )
 }
 
-function DetalheCidade({ c, mesAnterior }: { c: LeituraCidade; mesAnterior: string }) {
+interface Meses { atual: string; anterior: string }
+
+function DetalheCidade({ c, meses }: { c: LeituraCidade; meses: Meses }) {
   return (
     <section aria-label={`Leitura de ${c.cidade}`} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 sm:p-5">
-      <header className="flex flex-wrap items-center gap-3">
-        <h2 className="text-body font-bold text-text">{c.cidade}</h2>
-        <SaldoTag tom={c.saldo} />
+      <header className="flex flex-col gap-1.5">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-body font-bold text-text">{c.cidade}</h2>
+          <SaldoTag tom={c.saldo} />
+        </div>
+        <p className="text-label text-secondary">{c.porqueSaldo}</p>
       </header>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Bloco titulo="VTs abertas" frases={c.frases.vt} listas={[
           { titulo: 'Por bairro', itens: c.vt.porBairro },
           { titulo: 'Por motivo de abertura', itens: c.vt.porMotivo },
-        ]} mesAnterior={mesAnterior} />
+        ]} meses={meses} />
         <Bloco titulo="Revisita de manutenção" frases={c.frases.manut} listas={[
           { titulo: 'Equipe da visita de origem', itens: c.manut.porEquipe },
           { titulo: 'Por bairro (clientes)', itens: c.manut.porBairro },
           { titulo: 'O que a equipe fez na origem', itens: c.manut.porAcaoOrigem },
-        ]} mesAnterior={mesAnterior} />
+        ]} meses={meses} />
         <Bloco titulo="Revisita de instalação" frases={c.frases.inst} listas={[
           { titulo: 'Equipe da instalação', itens: c.inst.porEquipe },
           { titulo: 'Por bairro (clientes)', itens: c.inst.porBairro },
           { titulo: 'Motivo do retorno', itens: c.inst.porMotivoRetorno },
-        ]} mesAnterior={mesAnterior} />
+        ]} meses={meses} />
       </div>
 
       <div>
@@ -199,7 +206,7 @@ function DetalheCidade({ c, mesAnterior }: { c: LeituraCidade; mesAnterior: stri
   )
 }
 
-function Bloco({ titulo, frases, listas, mesAnterior }: { titulo: string; frases: Frase[]; listas: Array<{ titulo: string; itens: Contribuicao[] }>; mesAnterior: string }) {
+function Bloco({ titulo, frases, listas, meses }: { titulo: string; frases: Frase[]; listas: Array<{ titulo: string; itens: Contribuicao[] }>; meses: Meses }) {
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-border p-4">
       <h3 className="text-label font-bold text-text">{titulo}</h3>
@@ -213,14 +220,15 @@ function Bloco({ titulo, frases, listas, mesAnterior }: { titulo: string; frases
           ))}
         </ul>
       ) : <p className="text-label text-muted">Sem movimento nos dois meses.</p>}
-      {listas.map(l => <ListaContribuicao key={l.titulo} titulo={l.titulo} itens={l.itens} mesAnterior={mesAnterior} />)}
+      {listas.map(l => <ListaContribuicao key={l.titulo} titulo={l.titulo} itens={l.itens} meses={meses} />)}
     </article>
   )
 }
 
 const LIMITE_LISTA = 5
 
-function ListaContribuicao({ titulo, itens, mesAnterior }: { titulo: string; itens: Contribuicao[]; mesAnterior: string }) {
+// Colunas em ordem do tempo — mês anterior, mês analisado, variação — para "de 19 para 4" ler da esquerda para a direita.
+function ListaContribuicao({ titulo, itens, meses }: { titulo: string; itens: Contribuicao[]; meses: Meses }) {
   const [todas, setTodas] = useState(false)
   const relevantes = itens.filter(i => i.atual || i.anterior)
   if (!relevantes.length) return null
@@ -228,16 +236,22 @@ function ListaContribuicao({ titulo, itens, mesAnterior }: { titulo: string; ite
   const visiveis = todas ? ordenadas : ordenadas.slice(0, LIMITE_LISTA)
   return (
     <div>
-      <h4 className="mb-1 text-caption font-semibold uppercase tracking-wide text-muted">{titulo}</h4>
       <table className="w-full text-label tabular-nums">
-        <thead className="sr-only"><tr><th>Item</th><th>Mês</th><th>{mesAnterior}</th><th>Variação</th></tr></thead>
+        <thead>
+          <tr className="text-caption text-muted">
+            <th className="pb-1 text-left font-semibold uppercase tracking-wide">{titulo}</th>
+            <th className="w-14 pb-1 text-right font-semibold">{meses.anterior}</th>
+            <th className="w-14 pb-1 text-right font-semibold">{meses.atual}</th>
+            <th className="w-12 pb-1 text-right font-semibold">Var.</th>
+          </tr>
+        </thead>
         <tbody>
           {visiveis.map(i => (
             <tr key={i.key} className="border-b border-border/40 last:border-0">
               <td className="max-w-0 truncate py-1 pr-2 text-text" title={i.label}>{i.label}</td>
-              <td className="w-10 py-1 text-right text-text">{i.atual}</td>
-              <td className="w-10 py-1 text-right text-muted" title={`em ${mesAnterior}`}>{i.anterior}</td>
-              <td className={`w-12 py-1 text-right font-semibold ${corDelta(i.delta)}`}>{sinal(i.delta)}</td>
+              <td className="py-1 text-right text-muted">{i.anterior}</td>
+              <td className="py-1 text-right font-semibold text-text">{i.atual}</td>
+              <td className={`py-1 text-right font-semibold ${corDelta(i.delta)}`}>{sinal(i.delta)}</td>
             </tr>
           ))}
         </tbody>

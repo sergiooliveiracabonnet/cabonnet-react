@@ -64,6 +64,8 @@ export interface LeituraCidade {
   manut: BlocoRevisita
   inst: BlocoRevisita
   saldo: Tom
+  /** O selo explicado: quais indicadores melhoraram, pioraram ou ficaram estáveis. */
+  porqueSaldo: string
   frases: { vt: Frase[]; manut: Frase[]; inst: Frase[] }
   tendencia: PontoTendencia[]
 }
@@ -353,10 +355,37 @@ function frasesRevisita(r: BlocoRevisita, mesAnterior: string, comAcao: boolean,
 
 /** Saldo do mês: cada indicador que mudou de verdade vota. */
 function saldoDe(vt: BlocoVT, manut: BlocoRevisita, inst: BlocoRevisita): Tom {
-  let s = 0
-  if (vt.pct !== null && Math.abs(vt.pct) >= LIMIAR_VT_PCT && !poucasVTs(vt)) s += vt.delta > 0 ? 1 : -1
-  for (const r of [manut, inst]) if (r.deltaPP !== null && Math.abs(r.deltaPP) >= LIMIAR_PP && r.baseAtual >= MIN_BASE_TAXA) s += r.deltaPP > 0 ? 1 : -1
+  const s = votos(vt, manut, inst).reduce((soma, v) => soma + (v.tom === 'piora' ? 1 : v.tom === 'melhora' ? -1 : 0), 0)
   return s > 0 ? 'piora' : s < 0 ? 'melhora' : 'neutro'
+}
+
+/** O que cada indicador disse no mês — a base do saldo e da sua explicação. */
+function votos(vt: BlocoVT, manut: BlocoRevisita, inst: BlocoRevisita): Array<{ tom: Tom; texto: string }> {
+  const lista: Array<{ tom: Tom; texto: string }> = []
+  if (vt.atual || vt.anterior) {
+    const mudou = vt.pct !== null && Math.abs(vt.pct) >= LIMIAR_VT_PCT && !poucasVTs(vt)
+    const aviso = !mudou && poucasVTs(vt) ? ', poucas VTs' : ''
+    lista.push({ tom: mudou ? (vt.delta > 0 ? 'piora' : 'melhora') : 'neutro', texto: `VTs abertas (${vt.pct === null ? sinal(vt.delta) : `${sinalPP(vt.pct)}%`}${aviso})` })
+  }
+  for (const [nome, r] of [['revisita de manutenção', manut], ['revisita de instalação', inst]] as const) {
+    if (r.deltaPP === null) continue
+    const mudou = Math.abs(r.deltaPP) >= LIMIAR_PP && r.baseAtual >= MIN_BASE_TAXA
+    const aviso = !mudou && r.baseAtual < MIN_BASE_TAXA && Math.abs(r.deltaPP) >= LIMIAR_PP ? `, base pequena: ${plural(r.baseAtual, 'atendido', 'atendidos')}` : ''
+    lista.push({ tom: mudou ? (r.deltaPP > 0 ? 'piora' : 'melhora') : 'neutro', texto: `${nome} (${sinalPP(r.deltaPP)} pp${aviso})` })
+  }
+  return lista
+}
+
+/** O selo explicado: "Melhoraram: VTs abertas (−35,1%). Piorou: revisita de instalação (+1,3 pp). Estável: …". */
+export function explicarSaldo(vt: BlocoVT, manut: BlocoRevisita, inst: BlocoRevisita): string {
+  const v = votos(vt, manut, inst)
+  const grupo = (tom: Tom, um: string, varios: string) => {
+    const l = v.filter(x => x.tom === tom)
+    if (!l.length) return ''
+    const texto = l.map(x => x.texto).join(', ')
+    return `${l.length === 1 ? um : varios}: ${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`
+  }
+  return [grupo('melhora', 'Melhorou', 'Melhoraram'), grupo('piora', 'Piorou', 'Pioraram'), grupo('neutro', 'Sem mudança relevante', 'Sem mudança relevante')].filter(Boolean).join(' ')
 }
 
 /** OS cujo texto interessa para motivo/ação: VTs dos dois meses e as OS das revisitas. */
@@ -388,13 +417,15 @@ export function buildLeituraMensal(allRows: OSRow[], meses: Periodo[], motivos: 
     const vt = blocoVT(da, dp, motivos)
     const manut = blocoRevisita(da.manut, dp.manut, motivos)
     const inst = blocoRevisita(da.inst, dp.inst, motivos)
+    const saldo = saldoDe(vt, manut, inst)
     const tendencia = meses.map((m, i): PontoTendencia => {
       const d = filtrarCidade(dados[i], key)
       return { id: m.id, label: m.label, parcial: !!m.parcial, vts: d.vts.length, taxaManut: pct(d.manut.clientes.length, d.manut.base.length), taxaInst: pct(d.inst.clientes.length, d.inst.base.length) }
     }).reverse()
     return {
       key, cidade, vt, manut, inst,
-      saldo: saldoDe(vt, manut, inst),
+      saldo,
+      porqueSaldo: explicarSaldo(vt, manut, inst),
       frases: {
         vt: frasesVT(vt, anterior.label),
         manut: frasesRevisita(manut, anterior.label, true, 'Equipe da visita anterior à revisita'),

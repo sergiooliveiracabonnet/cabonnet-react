@@ -142,6 +142,7 @@ describe('buildLeituraMensal', () => {
     expect([cpv.manut.efeitoBase, cpv.manut.efeitoTaxa]).toEqual([4, 8])
     expect(cpv.frases.manut).toContainEqual({ tom: 'neutro', texto: 'Reincidentes +12 contra AGO/26: +4 pelo volume de atendidos (maior) e +8 pela taxa.' })
     expect(cpv.saldo).toBe('piora')
+    expect(cpv.porqueSaldo).toBe('Pioraram: VTs abertas (+118,2%), revisita de manutenção (+10,0 pp).')
   })
 
   it('tendência vai do mês mais antigo ao mais recente', () => {
@@ -158,6 +159,7 @@ describe('buildLeituraMensal', () => {
     expect(tre.frases.vt[0]).toEqual({ tom: 'neutro', texto: '20 VTs abertas, o mesmo número de AGO/26.' })
     expect(tre.frases.vt.some(f => f.texto.startsWith('A alta') || f.texto.startsWith('A queda'))).toBe(false)
     expect(tre.saldo).toBe('neutro')
+    expect(tre.porqueSaldo).toMatch(/^Sem mudança relevante: VTs abertas \(0,0%\)/)
   })
 
   it('osParaLer junta as VTs e as OS das revisitas dos meses', () => {

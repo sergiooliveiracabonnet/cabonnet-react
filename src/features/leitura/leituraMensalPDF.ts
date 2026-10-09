@@ -146,6 +146,7 @@ export function exportLeituraMensalPDF(l: LeituraMensal) {
     const larguraNome = doc.getTextWidth(ascii(c.cidade))
     aplicar({ ...TIPO.corpo, bold: true, color: COR_TOM[c.saldo] }); doc.text(SALDO[c.saldo], margin + larguraNome + 4, y)
     y += 4
+    escrever(c.porqueSaldo, TIPO.corpo, { gap: 1.5 })
 
     const blocos: Array<[string, Frase[], Array<[string, Contribuicao[]]>]> = [
       ['VTs abertas', c.frases.vt, [['Por bairro', c.vt.porBairro], ['Por motivo', c.vt.porMotivo]]],
