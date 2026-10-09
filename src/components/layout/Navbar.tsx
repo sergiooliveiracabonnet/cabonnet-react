@@ -21,6 +21,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/ordens':     'Ordens de Serviço',
   '/qualidade':  'Qualidade e Tendência',
   '/qualidade/reincidencias': 'Relatório de Reincidências',
+  '/qualidade/leitura-mensal': 'Leitura mensal por cidade',
   '/graficos':   'Gráficos',
   '/cidades':    'Cidades & Categorias',
   '/fornecedor': 'Fornecedor',

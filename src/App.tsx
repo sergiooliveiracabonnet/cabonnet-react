@@ -14,7 +14,7 @@ import {
   GraficosPage, CidadesGerencialPage,
   FornecedorPage, JuniperPage, NivelSinalPage, NotFoundPage, NocPage, FechamentoPage,
   MapaPage, UsuariosPage,
-  ReincidenciasPage, QualidadeTendenciaPage,
+  ReincidenciasPage, QualidadeTendenciaPage, LeituraMensalPage,
   ClientePage,
 } from './pages/index'
 
@@ -81,6 +81,7 @@ export default function App() {
         <Route index             element={<RequireModulo modulo="dashboard"> <DashboardPage />          </RequireModulo>} />
         <Route path="ordens"     element={<RequireModulo modulo="ordens">    <OrdensPage />              </RequireModulo>} />
         <Route path="qualidade/reincidencias" element={<RequireModulo modulo="dashboard"><ReincidenciasPage /></RequireModulo>} />
+        <Route path="qualidade/leitura-mensal" element={<RequireModulo modulo="dashboard"><LeituraMensalPage /></RequireModulo>} />
         <Route path="relatorio-reincidencias" element={<Navigate to="/qualidade/reincidencias" replace />} />
         <Route path="qualidade"  element={<RequireModulo modulo="dashboard"> <QualidadeTendenciaPage /> </RequireModulo>} />
         <Route path="graficos"   element={<RequireModulo modulo="graficos">  <GraficosPage />            </RequireModulo>} />

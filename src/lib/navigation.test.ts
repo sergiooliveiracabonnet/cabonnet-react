@@ -33,8 +33,8 @@ describe('visibleNavGroups', () => {
   it('reincidencias e submenu de qualidade e herda a permissao do modulo qualidade', () => {
     const agora = (m: string[]) => visibleNavGroups('operador', m).find(g => g.key === 'agora')
     const qualidade = agora(['qualidade'])?.links.find(l => l.to === '/qualidade')
-    expect(qualidade?.children?.map(c => c.to)).toEqual(['/qualidade/reincidencias'])
-    expect(flattenLinks(agora(['qualidade'])!.links).map(l => l.to)).toContain('/qualidade/reincidencias')
+    expect(qualidade?.children?.map(c => c.to)).toEqual(['/qualidade/reincidencias', '/qualidade/leitura-mensal'])
+    expect(flattenLinks(agora(['qualidade'])!.links).map(l => l.to)).toEqual(expect.arrayContaining(['/qualidade/reincidencias', '/qualidade/leitura-mensal']))
     expect(agora(['ordens'])).toBeUndefined()
   })
 

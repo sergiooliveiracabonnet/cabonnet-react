@@ -1,5 +1,5 @@
 import { useMemo, type ComponentType, type CSSProperties } from 'react'
-import { SquaresFour, ClipboardText, ChartBar, ChartPie, MapPin, Lightning, Monitor, FileText, MapTrifold, Bell, CalendarCheck, Shield, Siren, Medal, Users, WaveSine, IdentificationCard, ShieldCheck, Repeat } from '@phosphor-icons/react'
+import { SquaresFour, ClipboardText, ChartBar, ChartPie, MapPin, Lightning, Monitor, FileText, MapTrifold, Bell, CalendarCheck, Shield, Siren, Medal, Users, WaveSine, IdentificationCard, ShieldCheck, Repeat, ChartLineUp } from '@phosphor-icons/react'
 import { useAuthStore, type UserRole } from '../store/authStore'
 import { rotaParaModulo } from './modulos'
 
@@ -31,7 +31,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/erp/fila',     label: 'Fila de Prioridade', icon: Siren           },
       { to: '/erp/alertas',  label: 'Alertas',            icon: Bell            },
       { to: '/qualidade',    label: 'Qualidade e Tendência', icon: ShieldCheck,
-        children: [{ to: '/qualidade/reincidencias', label: 'Relatório de Reincidências', icon: Repeat }] },
+        children: [
+          { to: '/qualidade/reincidencias', label: 'Relatório de Reincidências', icon: Repeat },
+          { to: '/qualidade/leitura-mensal', label: 'Leitura mensal por cidade', icon: ChartLineUp },
+        ] },
     ],
   },
   {

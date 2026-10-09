@@ -278,7 +278,15 @@ function nomearGrupos(grupos: Array<[string, GrupoBairro]>): Map<string, { bairr
   return nomes
 }
 
-const equipeDaOS = (row: OSRow): string => shortEquipe(row.nomedaequipe).split(' - ')[0].trim()
+/** Agrupa itens de várias origens por bairro com a mesma unificação de grafias do relatório
+ *  (acento, abreviação, nome cortado, erro de digitação). */
+export function gruposDeBairro<T extends ItemBairro>(origens: Record<string, T[]>): Array<{ key: string; bairro: string; cidade: string; label: string; itens: Record<string, T[]> }> {
+  const grupos = [...agruparBairros(origens)]
+  const nomes = nomearGrupos(grupos)
+  return grupos.map(([key, g]) => ({ key, ...nomes.get(key)!, itens: g.itens as Record<string, T[]> }))
+}
+
+export const equipeDaOS = (row: OSRow): string => shortEquipe(row.nomedaequipe).split(' - ')[0].trim()
 
 /** Quem fez a visita anterior a cada revisita — a mesma atribuição do ranking de equipes. */
 function contarEquipesDeOrigem(clientes: ClienteReincidente[]): Array<{ equipe: string; n: number }> {

@@ -87,6 +87,7 @@ from cabonnet.db import (
 )
 from cabonnet.postgres import pg_init, pg_is_available, pg_load_snapshot, pg_sync_grafana
 from cabonnet.query_payload import compact_query_parts, extract_os_details
+from cabonnet.motivos import classificar as _classificar_os
 from cabonnet.grafana import (
     SQL_AGENDADO,
     SQL_ATENDIMENTO,
@@ -1107,6 +1108,30 @@ async def os_observacoes(request: Request, sess: dict = Depends(_require_session
         for key in ("pendente", "agendado", "futuro")
     ]
     return {"ok": True, "items": extract_os_details(parts, requested)}
+
+
+@router.post("/api/os-motivos")
+async def os_motivos(request: Request, sess: dict = Depends(_require_session)):
+    """Motivo de abertura e ação da equipe de cada OS, lidos do texto livre.
+
+    Devolve só os rótulos (não o texto) — dá para pedir milhares de OS de uma vez
+    sem trafegar as observações.
+    """
+    body = await request.json()
+    raw_numos = body.get("numos", [])
+    if not isinstance(raw_numos, list):
+        raise HTTPException(400, "numos deve ser uma lista")
+    requested = {str(value).strip() for value in raw_numos[:8000]}
+    with state._query_cache_lock:
+        cached = dict(state._query_cache)
+    fornecedor_key = sess.get("fornecedor_key") if isinstance(sess, dict) else None
+    cluster_key = sess.get("cluster_key") if isinstance(sess, dict) else None
+    parts = [
+        _filter_csv_escopo(cached.get(key, ""), fornecedor_key, cluster_key)
+        for key in ("pendente", "agendado", "futuro")
+    ]
+    detalhes = extract_os_details(parts, requested)
+    return {"ok": True, "items": {numos: _classificar_os(d["observacoes"], d["observacaocritica"]) for numos, d in detalhes.items()}}
 
 
 @router.get("/revisitas")

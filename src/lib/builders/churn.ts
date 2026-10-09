@@ -132,7 +132,7 @@ export function buildChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Date = new
 const JANELA_REVISITA_INSTALACAO_DIAS = 30
 
 /** Serviço de assistência técnica (VT de qualquer prazo ou "PRIMEIRA CONEXAO 30 DIAS"). */
-function isAssistencia(row: OSRow): boolean {
+export function isAssistencia(row: OSRow): boolean {
   return (row.servico || '').toUpperCase().trim().startsWith('ASSISTENCIA')
 }
 
@@ -254,7 +254,7 @@ export function buildInstallChurn(allRows: OSRow[], topo = TOPO_PADRAO, now: Dat
 // - Vale qualquer assistência dos 30 dias anteriores, não só a imediatamente anterior.
 const JANELA_REVISITA_MANUTENCAO_DIAS = 30
 
-function isVT(row: OSRow): boolean {
+export function isVT(row: OSRow): boolean {
   return (row.servico || '').toUpperCase().includes('VT')
 }
 
