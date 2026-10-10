@@ -2,18 +2,14 @@ import { useState, type ComponentType } from 'react'
 import { CaretRight, Calendar, Users, Clock, Package, ArrowCounterClockwise, ChatText, ArrowRight } from '@phosphor-icons/react'
 import { Badge } from '../../components/ui/Badge'
 
-interface TimelineNodeProps {
-  icon:    ComponentType<{ size?: number; className?: string }>
-  color:   string
-  filled?: boolean
-}
-
-function TimelineNode({ icon: Icon, color, filled }: TimelineNodeProps) {
-  const base = 'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2'
-  const cls  = filled
-    ? `${base} border-${color} bg-${color}/15 text-${color}`
-    : `${base} border-subtle bg-surface/30 text-muted/50`
-  return <div className={cls}><Icon size={14} /></div>
+// Classes literais: o Tailwind não enxerga `text-${color}` montado em runtime.
+const TONS: Record<string, { avatar: string; text: string }> = {
+  primary: { avatar: 'bg-primary/15 text-primary', text: 'text-primary' },
+  cyan:    { avatar: 'bg-cyan/15 text-cyan',       text: 'text-cyan' },
+  green:   { avatar: 'bg-green/15 text-green',     text: 'text-green' },
+  yellow:  { avatar: 'bg-yellow/15 text-yellow',   text: 'text-yellow' },
+  orange:  { avatar: 'bg-orange/15 text-orange',   text: 'text-orange' },
+  red:     { avatar: 'bg-red/15 text-red',         text: 'text-red' },
 }
 
 interface HistoricoEntry { autor?: string; data?: string; hora?: string; isReagend?: boolean; texto?: string }
@@ -49,7 +45,7 @@ interface TimelineStepProps {
   done?:   boolean
 }
 
-export function TimelineStep({ icon, color, label, date, equipe, obs, registradoEm, details, isLast, done }: TimelineStepProps) {
+export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, registradoEm, details, isLast, done }: TimelineStepProps) {
   const [open, setOpen] = useState(false)
 
   const d = details || {}
@@ -69,50 +65,58 @@ export function TimelineStep({ icon, color, label, date, equipe, obs, registrado
   )
   const timestamp = registradoEm || date
 
+  const tom = TONS[color] ?? TONS.primary
+
   return (
-    <div className="flex gap-3">
-      {/* Nó + linha vertical */}
-      <div className="flex flex-col items-center">
-        <TimelineNode icon={icon} color={color} filled={done} />
-        {!isLast && (
-          <div className={`w-px flex-1 my-1 min-h-[20px] ${done ? 'bg-primary/25' : 'bg-surface'}`} />
-        )}
+    <div className={`relative flex gap-x-3 ${isLast ? '' : 'pb-5'}`}>
+      {/* Linha vertical ligando ao próximo evento */}
+      <div className={`absolute top-0 left-0 flex w-6 justify-center ${isLast ? 'h-6' : 'bottom-0'}`}>
+        <span aria-hidden className="w-px bg-border" />
       </div>
 
-      {/* Cartão do evento */}
-      <div className={`flex-1 min-w-0 rounded-xl border border-subtle bg-surface/20 px-3.5 py-3 ${isLast ? 'mb-0' : 'mb-3'}`}>
-
-        {/* Cabeçalho: título + horário */}
-        <div className="flex items-start justify-between gap-3">
-          <p className={`text-label font-semibold leading-snug ${done ? `text-${color}` : 'text-muted'}`}>
-            {label}
-          </p>
-          {timestamp && (
-            <span className="flex-shrink-0 font-mono text-caption text-muted/70 whitespace-nowrap">
-              {timestamp}
-            </span>
-          )}
+      {/* Ponto (cheio = feito, vazado = pendente) + ícone do evento */}
+      <div className="flex flex-none items-start gap-x-2">
+        <div className="relative flex size-6 flex-none items-center justify-center bg-surface">
+          <div className={`size-3 rounded-full border border-border ring-4 ring-surface ${done ? 'bg-muted/40' : 'bg-surface'}`} />
         </div>
+        <span
+          aria-hidden
+          className={`inline-flex size-6 flex-none items-center justify-center rounded-full ${done ? tom.avatar : 'bg-surface/60 text-muted/60'}`}
+        >
+          <Icon size={13} />
+        </span>
+      </div>
 
-        {/* Subtítulo: equipe · data-alvo (quando difere do horário registrado) · badges */}
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <div className="min-w-0 flex-1 pt-0.5">
+        {/* Linha principal: evento · equipe · horário */}
+        <p className="text-body leading-snug">
+          <span className={`font-semibold ${done ? tom.text : 'text-muted'}`}>{label}</span>
           {equipe && (
-            <span className="inline-flex items-center gap-1 text-caption text-secondary">
-              <Users size={9} className="opacity-50 flex-shrink-0" />
-              {equipe}
-            </span>
-          )}
-          {date && registradoEm && date !== registradoEm && (
             <>
-              {equipe && <span className="text-muted/30">·</span>}
+              <span className="text-muted/50"> · </span>
+              <span className="font-medium text-text">{equipe}</span>
+            </>
+          )}
+          {timestamp && (
+            <>
+              <span className="text-muted/50"> &#8729; </span>
+              <span className="font-mono text-caption text-muted/70 whitespace-nowrap">{timestamp}</span>
+            </>
+          )}
+        </p>
+
+        {/* Data-alvo (quando difere do horário registrado) · badges */}
+        {((date && registradoEm && date !== registradoEm) || d.reagendada === true) && (
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {date && registradoEm && date !== registradoEm && (
               <span className="inline-flex items-center gap-1 text-caption text-muted">
                 <Calendar size={9} className="opacity-50 flex-shrink-0" />
                 agendado p/ {date}
               </span>
-            </>
-          )}
-          {d.reagendada === true && <Badge variant="orange" dot={false}>reagendada</Badge>}
-        </div>
+            )}
+            {d.reagendada === true && <Badge variant="orange" dot={false}>reagendada</Badge>}
+          </div>
+        )}
 
         {/* Pills de fatos rápidos */}
         {pills.length > 0 && (
