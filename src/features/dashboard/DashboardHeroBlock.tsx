@@ -13,7 +13,7 @@ const CAT_CFG: CatCfgItem[] = [
 ]
 
 function RitmoIndicator({ p }: { p: CampoProjecaoReal }) {
-  const cor  = p.status === 'acima' ? '#4ade80' : p.status === 'abaixo' ? '#facc15' : '#94a3b8'
+  const cor  = p.status === 'acima' ? 'rgb(var(--c-green))' : p.status === 'abaixo' ? 'rgb(var(--c-yellow))' : 'rgb(var(--c-muted))'
   const Icon = p.status === 'acima' ? TrendUp : p.status === 'abaixo' ? TrendDown : Gauge
   return (
     <div className="flex items-center gap-1.5 text-caption">
@@ -44,12 +44,12 @@ function RitmoIntradiarioBar({ r }: { r: PulsoRitmoIntradiario }) {
       </div>
       <div className="flex items-center gap-4 mb-1.5">
         <span className="flex items-center gap-1.5 text-caption">
-          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#f59e0b' }} />
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'rgb(var(--c-chart-3))' }} />
           <span className="text-muted">Manhã</span>
           <span className="font-mono font-bold text-text">{r.manha}</span>
         </span>
         <span className="flex items-center gap-1.5 text-caption">
-          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#818cf8' }} />
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'rgb(var(--c-chart-2))' }} />
           <span className="text-muted">Tarde</span>
           <span className={`font-mono font-bold ${r.alerta ? 'text-yellow' : 'text-text'}`}>
             {r.tardeIniciada ? r.tarde : '—'}
@@ -57,8 +57,8 @@ function RitmoIntradiarioBar({ r }: { r: PulsoRitmoIntradiario }) {
         </span>
       </div>
       <div className="flex h-1.5 rounded-full overflow-hidden bg-surface/30">
-        <div className="h-full" style={{ width: `${pctManha}%`, background: '#f59e0b' }} />
-        <div className="h-full" style={{ width: `${pctTarde}%`, background: '#818cf8' }} />
+        <div className="h-full" style={{ width: `${pctManha}%`, background: 'rgb(var(--c-chart-3))' }} />
+        <div className="h-full" style={{ width: `${pctTarde}%`, background: 'rgb(var(--c-chart-2))' }} />
       </div>
     </div>
   )

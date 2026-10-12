@@ -49,16 +49,8 @@
       "#e2e8f0",
       "#e8edf5"
     ],
-    "src/features/dashboard/DashboardHeroBlock.tsx": [
-      "#818cf8",
-      "#94a3b8",
-      "#f59e0b"
-    ],
     "src/features/erp/fila/FilaPage.tsx": [
       "#ef4444"
-    ],
-    "src/features/erp/ranking/RankingTecnicosPage.tsx": [
-      "#94a3b8"
     ],
     "src/features/gerencial/GerencialPage.tsx": [
       "#0d1117",
@@ -111,7 +103,7 @@
     ]
   },
   "tetos": {
-    "hexTolerados": 81,
+    "hexTolerados": 77,
     "valoresArbitrarios": 268
   }
 }

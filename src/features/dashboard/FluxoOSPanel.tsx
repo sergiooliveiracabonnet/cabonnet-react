@@ -5,8 +5,8 @@ import { DashboardPanelHeader } from './DashboardKpiPrimitives'
 // Painel "Fluxo de OS — 14 dias": entradas × concluídas por dia com crosshair.
 // Reusa a série diária já computada em buildGraficos (evolucao), sem builder novo.
 
-const BLUE   = '#3b82f6'
-const PURPLE = '#a78bfa'
+const BLUE   = 'rgb(var(--c-chart-1))'
+const PURPLE = 'rgb(var(--c-chart-2))'
 const H = 220
 const PAD_L = 30, PAD_R = 78, PAD_T = 12, PAD_B = 24
 const IH = H - PAD_T - PAD_B

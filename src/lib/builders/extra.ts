@@ -3,12 +3,12 @@ import type { OSRow, Fornecedor } from '../types'
 import { avg, calcMTTR, mttrStats, slaPeriodoPct, shortName } from './_helpers'
 
 const FORN_DISPLAY: Partial<Record<Fornecedor, { label: string; cor: string }>> = {
-  WES:        { label: 'WES (Instalação)', cor: '#c4b5fd' },
-  Instacable: { label: 'Instacable',       cor: '#facc15' },
-  THM:        { label: 'THM (Instalação)', cor: '#22d3ee' },
-  REDE:       { label: 'Rede',             cor: '#4ade80' },
-  MANUTENCAO: { label: 'Manutenção',       cor: '#f97316' },
-  INTERNO:    { label: 'Interno (COPE)',   cor: '#94a3b8' },
+  WES:        { label: 'WES (Instalação)', cor: 'rgb(var(--c-chart-2))' },
+  Instacable: { label: 'Instacable',       cor: 'rgb(var(--c-chart-1))' },
+  THM:        { label: 'THM (Instalação)', cor: 'rgb(var(--c-chart-3))' },
+  REDE:       { label: 'Rede',             cor: 'rgb(var(--c-chart-4))' },
+  MANUTENCAO: { label: 'Manutenção',       cor: 'rgb(var(--c-chart-5))' },
+  INTERNO:    { label: 'Interno (COPE)',   cor: 'rgb(var(--c-chart-6))' },
 }
 
 // Custo é contratado por mês; o painel é lido em qualquer recorte de data. Sem
@@ -95,7 +95,7 @@ export function buildFornecedor(
 
     return {
       nome:    FORN_DISPLAY[key as Fornecedor]?.label ?? key,
-      cor:     FORN_DISPLAY[key as Fornecedor]?.cor   ?? '#64748b',
+      cor:     FORN_DISPLAY[key as Fornecedor]?.cor   ?? 'rgb(var(--c-chart-6))',
       fornKey: key,
       kpis:    { total, concluidas, criticas, sla, conclPct, mttr, mttrP90, custoMensal, custoPorOs },
       equipes, chart,

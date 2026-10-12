@@ -135,6 +135,36 @@ function contraste(a: string, b: string): number {
   return (alto + 0.05) / (baixo + 0.05)
 }
 
+// Daltonismo: Machado et al. 2009, severidade 1.0, aplicada em RGB linear.
+const MACHADO: Record<string, number[][]> = {
+  normal: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+  deuteranopia: [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.011820, 0.042940, 0.968881]],
+  protanopia: [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]],
+  tritanopia: [[1.255528, -0.076749, -0.178779], [-0.078411, 0.930809, 0.147602], [0.004733, 0.691367, 0.303900]],
+}
+const paraLinear = (v: number) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }
+const daLinear = (v: number) => { const c = Math.min(1, Math.max(0, v)); return 255 * (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055) }
+
+function simular(rgb: string, visao: string): [number, number, number] {
+  const lin = rgb.split(' ').map(Number).map(paraLinear)
+  const M = MACHADO[visao]
+  return [0, 1, 2].map(i => daLinear(M[i][0] * lin[0] + M[i][1] * lin[1] + M[i][2] * lin[2])) as [number, number, number]
+}
+
+function oklab(rgb: [number, number, number]): [number, number, number] {
+  const [r, g, b] = rgb.map(paraLinear)
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b)
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b)
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b)
+  return [
+    0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s,
+  ]
+}
+
+const distancia = (a: number[], b: number[]) => 100 * Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
+
 // Derivado do nome, nao escrito a mao: superficie nova entra na varredura
 // sozinha. As contagens minimas abaixo sao o que impede a lista de esvaziar
 // em silencio depois de um rename.
@@ -282,6 +312,47 @@ describe('tinta de KPI e serie de grafico', () => {
       }
     }
     expect(invisiveis).toEqual([])
+  })
+
+  it.each(['dark', 'light'] as const)('%s: a serie de grafico nao se confunde com status nem sob daltonismo', tema => {
+    // O teste anterior garante que as series se veem; este garante que se
+    // distinguem. A escala antiga tinha verde, amarelo e vermelho como series e
+    // dava 2.0 entre duas delas na deuteranopia. Piso 6: a escala atual mede
+    // 7.6 no escuro e 6.5 no claro, e e o que seis categorias sem os matizes de
+    // status conseguem. Cair abaixo disso e voltar a ter series gemeas.
+    const resolvidos = resolveTheme(tokens, tema)
+    const series = Object.keys(resolvidos).filter(n => /^--c-chart-\d$/.test(n))
+    const status = ['--c-green', '--c-yellow', '--c-red', '--c-orange']
+
+    const pisos: Record<string, number> = { dark: 6, light: 6 }
+    const reprovados: string[] = []
+    for (const visao of Object.keys(MACHADO)) {
+      const simula = (nome: string) => oklab(simular(resolvidos[nome], visao))
+      const todos = [...series, ...status]
+      for (let i = 0; i < series.length; i++) {
+        for (let j = i + 1; j < todos.length; j++) {
+          const d = distancia(simula(series[i]), simula(todos[j]))
+          if (d < pisos[tema]) reprovados.push(`${visao}: ${series[i]} x ${todos[j]} = ${d.toFixed(1)}`)
+        }
+      }
+    }
+    expect(reprovados).toEqual([])
+  })
+
+  it('nenhuma serie de grafico usa o matiz de um status', () => {
+    // Serie vermelha le-se como alarme. A regra e de matiz, nao de valor: cada
+    // serie fica fora de vermelho, laranja, amarelo e verde, nos dois temas.
+    for (const tema of ['dark', 'light'] as const) {
+      const resolvidos = resolveTheme(tokens, tema)
+      for (const nome of Object.keys(resolvidos).filter(n => /^--c-chart-\d$/.test(n))) {
+        const [L, a, b] = oklab(resolvidos[nome].split(' ').map(Number) as [number, number, number])
+        const croma = Math.hypot(a, b)
+        const matiz = (Math.atan2(b, a) * 180 / Math.PI + 360) % 360
+        // Neutras (croma baixo) nao tem matiz de status; as demais ficam em 190-350.
+        const ehStatus = croma > 0.07 && (matiz < 190 || matiz > 350)
+        expect(ehStatus, `${tema} ${nome}: matiz ${matiz.toFixed(0)}, L ${L.toFixed(2)}`).toBe(false)
+      }
+    }
   })
 
   it('nenhum var(--c-*) aponta para token que nao existe', () => {

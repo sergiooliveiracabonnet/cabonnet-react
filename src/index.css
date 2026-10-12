@@ -81,22 +81,34 @@
   --p-teal-vivid:    45 212 191;
   --p-teal-deep:     25 122 109;
 
-  /* Serie de grafico: escala categorica, independente da semantica. Nao e
-     texto, entao nao vai a 4.5:1 — mas e objeto grafico necessario para
-     entender o conteudo, entao vai a 3:1 (WCAG 1.4.11). Tres valores claros do
-     design system ficavam abaixo; o amarelo dava 1.35:1 sobre branco. */
-  --p-chart-1-vivid: 255  90  31;
-  --p-chart-1-deep:  255  69   2;
-  --p-chart-2-vivid:  74 128 240;
-  --p-chart-2-deep:   40 100 232;
-  --p-chart-3-vivid:  17 199 176;
-  --p-chart-3-deep:   14 155 137;
-  --p-chart-4-vivid: 245 201  21;
-  --p-chart-4-deep:  167 133   3;
-  --p-chart-5-vivid: 255 107 107;
-  --p-chart-5-deep:  224  49  49;
-  --p-chart-6-vivid: 154 122 255;
-  --p-chart-6-deep:  124  77 255;
+  /* Serie de grafico: escala categorica, independente da semantica.
+
+     Nenhuma das seis ocupa o matiz de um status (vermelho, laranja, amarelo,
+     verde): numa tela que ja pinta SLA e alerta com essas quatro, uma barra
+     vermelha de grafico lia-se como alarme. A ordem e fixa — azul, violeta,
+     ciano, magenta, areia, ardosia — igual nos dois temas.
+
+     Medida (Machado 2009, severidade total, distancia em OKLab x100): o menor
+     par entre as seis series e as quatro cores de status fica em 7.6 no escuro e
+     6.5 no claro, nas quatro visoes (normal, deuteranopia, protanopia,
+     tritanopia). A escala anterior dava 2.0 e 1.8: duas series quase iguais para
+     quem tem daltonismo. Seis categorias sem os matizes de status nao passam
+     disso, entao grafico com mais de quatro series precisa de rotulo direto.
+
+     Tambem nao e texto, entao nao vai a 4.5:1, mas vai a 3:1 (WCAG 1.4.11)
+     sobre toda superficie, o que designTokens.test.ts trava. */
+  --p-chart-1-vivid:  82 142 217;
+  --p-chart-1-deep:   27  88 158;
+  --p-chart-2-vivid: 187 158 249;
+  --p-chart-2-deep:  152  95 241;
+  --p-chart-3-vivid: 143 231 253;
+  --p-chart-3-deep:   56 148 168;
+  --p-chart-4-vivid: 164  83 143;
+  --p-chart-4-deep:  160   1 133;
+  --p-chart-5-vivid: 131 113  91;
+  --p-chart-5-deep:  157 129  94;
+  --p-chart-6-vivid: 132 148 168;
+  --p-chart-6-deep:   70  78  88;
 }
 
 /* SEMANTICOS: DARK */

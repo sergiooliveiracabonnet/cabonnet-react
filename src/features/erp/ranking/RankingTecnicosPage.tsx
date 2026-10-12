@@ -9,6 +9,8 @@ import { StatCard } from '../../../components/ui/StatCard'
 import { useTecnicos, useTecnicosActions } from '../../../hooks/useTecnicos'
 import type { TecnicoItem } from '../../../lib/api'
 import type { OSRow } from '../../../lib/types'
+import { StatusValue } from '../../../components/ui/StatusPill'
+import { nivelPorPiso, nivelPorTeto } from '../../../lib/statusNivel'
 
 // "Equipe" neste sistema é, na prática, 1 técnico (código de frente, ex: F04) —
 // não uma equipe multi-pessoa. Essa granularidade já existia espalhada em 3
@@ -95,20 +97,6 @@ export function buildRankingTecnicos(
       avgAging:     sla?.agingMed ?? null,
     }
   })
-}
-
-function slaColor(sla: number | null): string {
-  if (sla == null) return '#94a3b8'
-  if (sla >= 90) return '#4ade80'
-  if (sla >= 75) return '#facc15'
-  return '#f87171'
-}
-
-function revisitaColor(taxa: number | null): string {
-  if (taxa == null) return '#94a3b8'
-  if (taxa <= 5)  return '#4ade80'
-  if (taxa <= 15) return '#facc15'
-  return '#f87171'
 }
 
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: 'asc' | 'desc' }) {
@@ -255,7 +243,7 @@ export default function RankingTecnicosPage() {
                   <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.volume}</td>
                   <td className="px-4 py-2.5 text-right">
                     {r.sla != null
-                      ? <span className="font-mono font-bold tabular-nums" style={{ color: slaColor(r.sla) }}>{r.sla}%</span>
+                      ? <StatusValue nivel={nivelPorPiso(r.sla, 90, 75)} className="font-mono font-bold tabular-nums">{r.sla}%</StatusValue>
                       : <span className="text-muted/40">—</span>}
                   </td>
                   <td className="px-4 py-2.5 text-right">
@@ -263,7 +251,7 @@ export default function RankingTecnicosPage() {
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     {r.taxaRevisita != null
-                      ? <span className="font-mono font-bold tabular-nums" style={{ color: revisitaColor(r.taxaRevisita) }}>{r.taxaRevisita}%</span>
+                      ? <StatusValue nivel={nivelPorTeto(r.taxaRevisita, 5, 15)} className="font-mono font-bold tabular-nums">{r.taxaRevisita}%</StatusValue>
                       : <span className="text-muted/40">—</span>}
                   </td>
                   <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.execInst || <span className="text-muted/40">—</span>}</td>

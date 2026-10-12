@@ -13,7 +13,7 @@ import {
 import type { ReactNode } from 'react'
 
 const FONT = '"Inter", system-ui, sans-serif'
-const TICK = '#71717a'  /* zinc-500 — legível em ambos os temas */
+const TICK = 'rgb(var(--c-muted))'  /* token: o zinc fixo dava 4.0:1 sobre o card escuro */
 
 function isLight(): boolean {
   return document.documentElement.classList.contains('light')
@@ -34,8 +34,8 @@ function tipStyle() {
   }
 }
 
-function tipLabelColor() { return isLight() ? '#71717a' : '#71717a' }
-function tipValueColor() { return isLight() ? '#09090b' : '#fafafa' }
+function tipLabelColor() { return 'rgb(var(--c-muted))' }
+function tipValueColor() { return 'rgb(var(--c-text))' }
 function gridColor()     { return isLight() ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)' }
 
 interface TipProps {

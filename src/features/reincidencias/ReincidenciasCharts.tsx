@@ -20,7 +20,7 @@ export function ReincidenciasCharts({ ranking, intervals, analysis }: {
             <BarChart data={ranking} layout="vertical" margin={{ top: 2, right: 18, left: 8, bottom: 0 }} accessibilityLayer>
               <Grid /><XAxis type="number" domain={[0, 'dataMax']} unit="%" /><YAxis type="category" dataKey="equipe" width={72} />
               <ChartTooltip suffix="%" formatter={(value: number) => `${value}%`} />
-              <Bar dataKey="taxa" name="Taxa" fill="#fb923c" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="taxa" name="Taxa" fill="rgb(var(--c-chart-4))" radius={[0, 4, 4, 0]} />
             </BarChart>
           </div>
           <DataList items={ranking.slice(0, 5).map(item => ({ label: item.equipe, value: `${item.taxa}% · ${item.reincidentes}/${item.base} clientes` }))} />
@@ -32,7 +32,7 @@ export function ReincidenciasCharts({ ranking, intervals, analysis }: {
           <div role="img" aria-label="Principais causas das revisitas" className="h-[260px]">
             <BarChart data={causes} layout="vertical" margin={{ top: 2, right: 18, left: 8, bottom: 0 }} accessibilityLayer>
               <Grid /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="causa" width={108} tickFormatter={(value: string) => value.length > 18 ? `${value.slice(0, 17)}…` : value} />
-              <ChartTooltip suffix=" pares" /><Bar dataKey="count" name="Pares" fill="#60a5fa" radius={[0, 4, 4, 0]} />
+              <ChartTooltip suffix=" pares" /><Bar dataKey="count" name="Pares" fill="rgb(var(--c-chart-1))" radius={[0, 4, 4, 0]} />
             </BarChart>
           </div>
           <DataList items={causes.slice(0, 5).map(item => ({ label: item.causa, value: `${item.count} · ${item.pct}%` }))} />
@@ -43,7 +43,7 @@ export function ReincidenciasCharts({ ranking, intervals, analysis }: {
         <div role="img" aria-label="Distribuição do intervalo entre visitas" className="h-[260px]">
           <BarChart data={intervals} margin={{ top: 8, right: 8, left: -10, bottom: 0 }} accessibilityLayer>
             <Grid /><XAxis dataKey="faixa" /><YAxis allowDecimals={false} /><ChartTooltip suffix=" pares" />
-            <Bar dataKey="total" name="Pares" fill="#a78bfa" />
+            <Bar dataKey="total" name="Pares" fill="rgb(var(--c-chart-2))" />
           </BarChart>
         </div>
         <DataList items={intervals.map(item => ({ label: item.faixa, value: String(item.total) }))} />

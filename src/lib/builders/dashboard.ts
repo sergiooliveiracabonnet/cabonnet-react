@@ -497,7 +497,7 @@ export function buildDashboard(rows: OSRow[], allRows: OSRow[] = rows, prevRows:
       const prevSla  = prevF && prevF.total > 0 ? Math.round(prevF.noPrazo / prevF.total * 100) : 0
       return {
         nome: FORN_CFG[k]?.label ?? k, total: t, concluidas: c, sla, conclPct,
-        cor: FORN_CFG[k]?.cor ?? '#64748b',
+        cor: FORN_CFG[k]?.cor ?? 'rgb(var(--c-chart-6))',
         slaTrend: mkTrend(sla, prevSla, true),
       }
     })

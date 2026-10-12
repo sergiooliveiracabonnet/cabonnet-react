@@ -1,7 +1,7 @@
 import type { ComponentType, CSSProperties } from 'react'
 import { WarningCircle, CheckCircle, Target, Clock, ChartBar, Broadcast, Pulse, Users, ArrowCounterClockwise, PaperPlaneTilt, CalendarCheck, CalendarDots } from '@phosphor-icons/react'
 import { isCOPE, isReagend, getReagendTipo, getAtendimentoBucket, isAgendamentoDesassistido } from '../../lib/transform'
-import type { OSRow, KPI, Pulso, AccentColor } from '../../lib/types'
+import type { OSRow, KPI, Pulso } from '../../lib/types'
 import type { ProjecaoRisco } from '../../lib/builders/dashboard'
 
 export type { ProjecaoRisco }
@@ -51,17 +51,6 @@ export const KPI_FILTERS: Record<string, (r: OSRow) => boolean> = {
   reagend:       r => isReagend(r) && isAtivo(r),
 }
 export const ALLROWS_KPIS = new Set(['total','rede','pend','atend','criticasDesassist','atendHoje','atendAmanha','atendFutura','criticas','semEq','copeAguardando','reagendInviab','reagendMobile','reagendFutura','reagend'])
-
-type AccentConfig = { solid: string; glow: string; bg: string }
-export const ACCENT_COLORS: Record<AccentColor, AccentConfig> = {
-  red:     { solid: '#f87171', glow: 'rgba(248,113,113,0.18)', bg: 'rgba(248,113,113,0.10)' },
-  orange:  { solid: '#fb923c', glow: 'rgba(251,146,60,0.18)',  bg: 'rgba(251,146,60,0.10)'  },
-  yellow:  { solid: '#facc15', glow: 'rgba(250,204,21,0.16)',  bg: 'rgba(250,204,21,0.10)'  },
-  cyan:    { solid: '#22d3ee', glow: 'rgba(34,211,238,0.18)',  bg: 'rgba(34,211,238,0.10)'  },
-  primary: { solid: '#3b82f6', glow: 'rgba(59,130,246,0.18)',  bg: 'rgba(59,130,246,0.10)'  },
-  purple:  { solid: '#c4b5fd', glow: 'rgba(196,181,253,0.16)', bg: 'rgba(196,181,253,0.10)' },
-  green:   { solid: '#4ade80', glow: 'rgba(74,222,128,0.18)',  bg: 'rgba(74,222,128,0.10)'  },
-}
 
 export const KPI_ICONS: Partial<Record<string, IconComp>> = {
   criticas: WarningCircle, criticasDesassist: WarningCircle, semEq: Users, pend: Clock, atend: Pulse,

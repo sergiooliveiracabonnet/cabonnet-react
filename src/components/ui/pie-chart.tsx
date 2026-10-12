@@ -11,7 +11,7 @@ import {
 export { Cell }
 
 const FONT = '"Inter", system-ui, sans-serif'
-const TICK = '#71717a'
+const TICK = 'rgb(var(--c-muted))'  /* token: o zinc fixo dava 4.0:1 sobre o card escuro */
 
 function isLight(): boolean {
   return document.documentElement.classList.contains('light')
@@ -32,7 +32,7 @@ function Tip({ active, payload }: any) {
       fontFamily:   FONT,
       boxShadow:    light ? '0 4px 16px rgba(0,0,0,.10)' : '0 4px 16px rgba(0,0,0,.50)',
     }}>
-      <p style={{ color: light ? '#09090b' : '#fafafa' }}>
+      <p style={{ color: 'rgb(var(--c-text))' }}>
         <span style={{ color: TICK }}>{name}: </span>
         {value} OS ({pct}%)
       </p>

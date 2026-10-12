@@ -227,7 +227,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
                     className="h-full rounded-full"
                     style={{
                       width: `${pct}%`,
-                      background: `linear-gradient(90deg, ${f.cor}88, ${f.cor})`,
+                      background: `linear-gradient(90deg, color-mix(in srgb, ${f.cor} 53%, transparent), ${f.cor})`,
                       transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
                     }}
                   />

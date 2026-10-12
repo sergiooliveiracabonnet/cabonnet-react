@@ -79,11 +79,11 @@ export interface FornCard {
 }
 
 export const FORN_CFG: Record<string, { label: string; cor: string }> = {
-  WES:        { label: 'WES',        cor: '#c4b5fd' },
-  Instacable: { label: 'Instacable', cor: '#facc15' },
-  THM:        { label: 'THM',        cor: '#22d3ee' },
-  REDE:       { label: 'Rede',       cor: '#4ade80' },
-  MANUTENCAO: { label: 'Manutenção', cor: '#f97316' },
-  INSTALACAO: { label: 'Instalação', cor: '#3b82f6' },
-  INTERNO:    { label: 'Interno',    cor: '#94a3b8' },
+  WES:        { label: 'WES',        cor: 'rgb(var(--c-chart-2))' },
+  Instacable: { label: 'Instacable', cor: 'rgb(var(--c-chart-1))' },
+  THM:        { label: 'THM',        cor: 'rgb(var(--c-chart-3))' },
+  REDE:       { label: 'Rede',       cor: 'rgb(var(--c-chart-4))' },
+  MANUTENCAO: { label: 'Manutenção', cor: 'rgb(var(--c-chart-5))' },
+  INSTALACAO: { label: 'Instalação', cor: 'rgb(var(--c-chart-1))' },
+  INTERNO:    { label: 'Interno',    cor: 'rgb(var(--c-chart-6))' },
 }

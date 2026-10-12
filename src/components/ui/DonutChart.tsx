@@ -36,7 +36,7 @@ function buildSegments(data: DataPoint[], colors: string[], total: number): Segm
       pct:        Math.round(frac * 100),
       arc,
       dashoffset: C - (acc - allotted),
-      color:      colors[i % colors.length] ?? '#71717a',
+      color:      colors[i % colors.length] ?? 'rgb(var(--c-chart-6))',
     }
   })
 }
@@ -69,8 +69,8 @@ export function DonutChart({ data = [], colors = [], onClick, centerLabel = 'Tot
   const hs = hovered != null ? segments[hovered] : null
 
   const trackStroke  = isLight() ? 'rgba(0,0,0,0.06)'   : 'rgba(255,255,255,0.06)'
-  const centerVal    = isLight() ? '#09090b'              : '#fafafa'
-  const centerMuted  = '#71717a'
+  const centerVal    = 'rgb(var(--c-text))'
+  const centerMuted  = 'rgb(var(--c-muted))'
 
   return (
     <div className="flex h-full w-full min-h-0">
@@ -166,7 +166,7 @@ export function DonutChart({ data = [], colors = [], onClick, centerLabel = 'Tot
                 </span>
                 <span
                   className="flex-shrink-0 text-caption font-mono font-semibold tabular-nums"
-                  style={{ color: isHov ? s.color : '#71717a', transition: 'color 0.18s ease' }}
+                  style={{ color: isHov ? s.color : 'rgb(var(--c-muted))', transition: 'color 0.18s ease' }}
                 >
                   {s.pct}%
                 </span>
