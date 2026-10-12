@@ -9,6 +9,8 @@
 // Faixas de SLA, não de score: 75% de cumprimento de prazo não é "Bom" para um
 // fornecedor sob contrato, é problema.
 
+import type { NivelStatus } from '../../lib/statusNivel'
+
 export type SlaAccent = 'green' | 'primary' | 'yellow' | 'red'
 
 export interface SlaEscala {
@@ -21,6 +23,8 @@ export interface SlaEscala {
    *  Restrito às variantes que o Badge realmente conhece — nome fora da lista
    *  cai num `?? ''` silencioso e o badge sai sem cor. */
   badge:  'green' | 'cyan' | 'yellow' | 'red'
+  /** Forma do status (icone), para a leitura nao depender so do matiz. */
+  nivel:  NivelStatus
 }
 
 export const SLA_EXCELENTE = 90
@@ -29,13 +33,13 @@ export const SLA_REGULAR   = 65
 
 export function slaEscala(s: number): SlaEscala {
   if (s >= SLA_EXCELENTE) {
-    return { text: 'text-green', bg: 'bg-green/10', border: 'border-green/20', label: 'Excelente', accent: 'green', badge: 'green' }
+    return { text: 'text-green', bg: 'bg-green/10', border: 'border-green/20', label: 'Excelente', accent: 'green', badge: 'green', nivel: 'ok' }
   }
   if (s >= SLA_BOM) {
-    return { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', label: 'Bom', accent: 'primary', badge: 'cyan' }
+    return { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', label: 'Bom', accent: 'primary', badge: 'cyan', nivel: 'ok' }
   }
   if (s >= SLA_REGULAR) {
-    return { text: 'text-yellow', bg: 'bg-yellow/10', border: 'border-yellow/20', label: 'Regular', accent: 'yellow', badge: 'yellow' }
+    return { text: 'text-yellow', bg: 'bg-yellow/10', border: 'border-yellow/20', label: 'Regular', accent: 'yellow', badge: 'yellow', nivel: 'atencao' }
   }
-  return { text: 'text-red', bg: 'bg-red/10', border: 'border-red/20', label: 'Crítico', accent: 'red', badge: 'red' }
+  return { text: 'text-red', bg: 'bg-red/10', border: 'border-red/20', label: 'Crítico', accent: 'red', badge: 'red', nivel: 'critico' }
 }

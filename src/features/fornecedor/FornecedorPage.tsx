@@ -14,6 +14,8 @@ import { Badge } from '../../components/ui/Badge'
 import { KPIGridSkeleton } from '../../components/ui/Skeleton'
 import { useIsFornecedor, useIsGestor } from '../../hooks/useRole'
 import { useAIFornecedor } from '../../hooks/useAIFornecedor'
+import { StatusPill, StatusValue } from '../../components/ui/StatusPill'
+import { nivelPorTeto } from '../../lib/statusNivel'
 
 const FORNECEDORES = [
   { value: '',           label: 'Todos',              color: 'rgb(var(--c-primary))' },
@@ -428,12 +430,10 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                       <td className="px-3 py-2 font-mono text-green">{eq.concluidas}</td>
                       <td className="px-3 py-2 font-mono text-red">{eq.criticas}</td>
                       <td className="px-3 py-2">
-                        <Badge variant={slaEscala(eq.sla).badge}>{eq.sla}%</Badge>
+                        <StatusPill nivel={slaEscala(eq.sla).nivel}>{eq.sla}%</StatusPill>
                       </td>
                       <td className="px-3 py-2">
-                        <span className={`font-mono text-caption ${eq.mttr <= 2 ? 'text-green' : eq.mttr <= 5 ? 'text-yellow' : 'text-red'}`}>
-                          {eq.mttr}d
-                        </span>
+                        <StatusValue nivel={nivelPorTeto(eq.mttr, 2, 5)} className="font-mono text-caption">{eq.mttr}d</StatusValue>
                       </td>
                       <td className="px-3 py-2 font-mono">{eq.aging}d</td>
                     </tr>

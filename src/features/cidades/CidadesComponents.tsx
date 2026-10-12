@@ -4,6 +4,8 @@ import { Badge } from '../../components/ui/Badge'
 import { shortEquipe } from '../../lib/osFormat'
 import { estourouSLA } from '../../lib/builders/_helpers'
 import type { OSRow, CidadeSaude } from '../../lib/types'
+import { StatusPill, StatusValue } from '../../components/ui/StatusPill'
+import { nivelPorPiso, nivelPorTeto } from '../../lib/statusNivel'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -160,8 +162,6 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
           </thead>
           <tbody className="divide-y divide-hairline">
             {comFila.map(c => {
-              const slaCls  = c.slaPct >= 90 ? 'text-green bg-green/10' : c.slaPct >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
-              const backCls = c.backlogDias == null ? 'text-muted' : c.backlogDias > 5 ? 'text-red' : c.backlogDias > 3 ? 'text-yellow' : 'text-text'
               const deltaCls = c.deltaShare >= 5 ? 'text-orange' : c.deltaShare <= -5 ? 'text-green' : 'text-muted'
               const reinc = reincDe.get(c.cidade.toUpperCase())
               return (
@@ -180,14 +180,16 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
                       : <span className="text-white/20">—</span>}
                   </td>
                   <td className="px-4 py-2.5 text-center">
-                    <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums ${slaCls}`}>{c.slaPct}%</span>
+                    <StatusPill nivel={nivelPorPiso(c.slaPct, 90, 75)}>{c.slaPct}%</StatusPill>
                   </td>
                   <td className="px-4 py-2.5 text-right font-mono tabular-nums">{c.agingMed}d</td>
                   <td className="px-4 py-2.5 text-right font-mono tabular-nums">
                     {c.saidasDia > 0 ? c.saidasDia.toLocaleString('pt-BR') : '—'}
                   </td>
-                  <td className={`px-4 py-2.5 text-right font-mono font-bold tabular-nums ${backCls}`}>
-                    {c.backlogDias != null ? `${c.backlogDias.toLocaleString('pt-BR')}d` : '—'}
+                  <td className="px-4 py-2.5 text-right font-mono font-bold tabular-nums">
+                    {c.backlogDias != null
+                      ? <StatusValue nivel={nivelPorTeto(c.backlogDias, 3, 5)} okClass="text-text">{c.backlogDias.toLocaleString('pt-BR')}d</StatusValue>
+                      : <span className="text-muted">—</span>}
                   </td>
                   <td className={`px-4 py-2.5 text-center font-mono font-semibold tabular-nums ${deltaCls}`}
                       title={`${c.shareFila}% da fila do Vale vs ${c.shareExec}% das execuções`}>
@@ -195,7 +197,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     {reinc != null
-                      ? <span className={`font-mono tabular-nums ${reinc > 15 ? 'text-red font-bold' : reinc > 8 ? 'text-yellow' : 'text-muted'}`}>{reinc}%</span>
+                      ? <StatusValue nivel={nivelPorTeto(reinc, 8, 15)} okClass="text-muted" className="font-mono tabular-nums">{reinc}%</StatusValue>
                       : <span className="text-white/20">—</span>}
                   </td>
                 </tr>
@@ -415,10 +417,7 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
             : <span className="text-white/20">—</span>}
         </td>
         <td className="px-4 py-2.5 text-center">
-          <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums
-            ${c.slaPct >= 90 ? 'text-green bg-green/10' : c.slaPct >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'}`}>
-            {c.slaPct}%
-          </span>
+          <StatusPill nivel={nivelPorPiso(c.slaPct, 90, 75)}>{c.slaPct}%</StatusPill>
         </td>
         <td className="p-1 text-right">
           <button type="button" onClick={onToggle} aria-expanded={expanded}

@@ -5,6 +5,8 @@ import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { Badge }   from '../../components/ui/Badge'
 import type { OSRow } from '../../lib/types'
 import type { DrillRow, EquipeEntry, IconComp } from './gerencialUtils'
+import { StatusPill } from '../../components/ui/StatusPill'
+import { nivelPorPiso } from '../../lib/statusNivel'
 
 export function SectionLabel({ icon: Icon, color, children }: { icon: IconComp; color: string; children: ReactNode }) {
   return (
@@ -355,7 +357,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
   return (
     <div className="rounded-xl border border-subtle bg-card overflow-hidden">
       {/* Header */}
-      <div className="grid grid-cols-[1fr_54px_54px_54px_54px_44px_50px_24px] gap-2 px-4 py-2.5 bg-surface/20
+      <div className="grid grid-cols-[1fr_54px_54px_54px_54px_44px_64px_24px] gap-2 px-4 py-2.5 bg-surface/20
                       border-b border-hairline text-caption font-bold uppercase tracking-label text-muted">
         <span>Equipe</span>
         <span className="text-right">Total</span>
@@ -370,10 +372,9 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
         {equipes.map((e, _i) => {
           const pct = Math.round((e.total / max) * 100)
           const clickable = !!(sourceRows && onDrillDown)
-          const slaCls = e.slaPct >= 90 ? 'text-green bg-green/10' : e.slaPct >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
           return (
             <div key={e.equipe}
-                 className={`grid grid-cols-[1fr_54px_54px_54px_54px_44px_50px_24px] gap-2 px-4 py-3
+                 className={`grid grid-cols-[1fr_54px_54px_54px_54px_44px_64px_24px] gap-2 px-4 py-3
                              transition-colors items-center
                              ${clickable ? 'cursor-pointer hover:bg-surface/30' : 'hover:bg-surface/20'}`}
                  onClick={clickable ? () => {
@@ -396,9 +397,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
               <span className={`font-mono text-label text-right ${e.criticas > 0 ? 'text-red font-bold' : 'text-white/20'}`}>
                 {e.criticas > 0 ? e.criticas : '—'}
               </span>
-              <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums text-center ${slaCls}`}>
-                {e.slaPct}%
-              </span>
+              <StatusPill nivel={nivelPorPiso(e.slaPct, 90, 75)} className="justify-self-center">{e.slaPct}%</StatusPill>
               {clickable
                 ? <CaretRight size={11} className="text-muted justify-self-end" />
                 : <span />}

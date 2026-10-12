@@ -54,45 +54,11 @@
       "#94a3b8",
       "#f59e0b"
     ],
-    "src/features/dashboard/DashboardPaineis.tsx": [
-      "#94a3b8"
-    ],
     "src/features/erp/fila/FilaPage.tsx": [
       "#ef4444"
     ],
-    "src/features/erp/planner/PlannerComponents.tsx": [
-      "#64748b",
-      "#f97316"
-    ],
-    "src/features/erp/planner/PlannerExecutadoView.tsx": [
-      "#374151",
-      "#475569",
-      "#64748b",
-      "#6b7280",
-      "#94a3b8",
-      "#cd7c3c",
-      "#f59e0b",
-      "#f97316",
-      "#fbbf24"
-    ],
     "src/features/erp/ranking/RankingTecnicosPage.tsx": [
       "#94a3b8"
-    ],
-    "src/features/erp/relatorios/RelatoriosComponents.tsx": [
-      "#94a3b8",
-      "#f97316"
-    ],
-    "src/features/erp/relatorios/RelatoriosPage.tsx": [
-      "#34d399",
-      "#f97316"
-    ],
-    "src/features/fornecedor/FornecedorPage.tsx": [
-      "#94a3b8",
-      "#f97316"
-    ],
-    "src/features/gerencial/GerencialComponents.tsx": [
-      "#94a3b8",
-      "#f97316"
     ],
     "src/features/gerencial/GerencialPage.tsx": [
       "#0d1117",
@@ -102,7 +68,6 @@
       "#94a3b8",
       "#e2e8f0",
       "#f0f4ff",
-      "#f97316",
       "#ffffff"
     ],
     "src/features/graficos/GraficosComponents.tsx": [
@@ -146,7 +111,7 @@
     ]
   },
   "tetos": {
-    "hexTolerados": 102,
-    "valoresArbitrarios": 269
+    "hexTolerados": 81,
+    "valoresArbitrarios": 268
   }
 }

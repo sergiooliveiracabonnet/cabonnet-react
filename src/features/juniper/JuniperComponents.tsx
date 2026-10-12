@@ -1,4 +1,6 @@
 import { Badge } from '../../components/ui/Badge'
+import { StatusIcon } from '../../components/ui/StatusPill'
+import type { NivelStatus } from '../../lib/statusNivel'
 import { CaretDown, CaretRight, Clock, Circle } from '@phosphor-icons/react'
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -55,14 +57,14 @@ export function relTime(ts: string | null | undefined): string {
 export function StatusPill({ nivel, txt }: { nivel: string; txt: string }) {
   const isOk   = nivel === 'ok'
   const isWarn = nivel === 'warn'
-  const dot    = isOk ? 'bg-green' : isWarn ? 'bg-yellow' : 'bg-red'
+  const nivelStatus: NivelStatus = isOk ? 'ok' : isWarn ? 'atencao' : 'critico'
   const border = isOk ? 'border-green/20' : isWarn ? 'border-yellow/20' : 'border-red/25'
   return (
     <div className={`inline-flex items-center gap-2 text-caption font-bold px-3 py-1.5 rounded-full
                     bg-card-high border ${border} text-secondary`}>
-      <span className="relative flex h-2 w-2 flex-shrink-0">
-        {!isWarn && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-50 ${isOk ? 'bg-green' : 'bg-red'}`} />}
-        <span className={`relative inline-flex rounded-full h-2 w-2 ${dot}`} />
+      <span className={`relative inline-flex flex-shrink-0 ${isOk ? 'text-green' : isWarn ? 'text-yellow' : 'text-red'}`}>
+        {!isWarn && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-40 ${isOk ? 'bg-green' : 'bg-red'}`} />}
+        <StatusIcon nivel={nivelStatus} size={14} className="relative" />
       </span>
       {txt}
     </div>

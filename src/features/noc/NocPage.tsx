@@ -5,6 +5,8 @@ import { Monitor, Pause, Play, X, ArrowsOut, ArrowsIn, ArrowsLeftRight, Pulse, U
 import { OSDataProvider, useOSDerived } from '../../contexts/OSDataContext'
 import { isCOPE, isReagend } from '../../lib/transform'
 import { shortEquipe } from '../../lib/osFormat'
+import { StatusIcon } from '../../components/ui/StatusPill'
+import { nivelPorPiso, statusTextClass } from '../../lib/statusNivel'
 
 const SLIDE_MS     = 30_000
 const TOTAL_SLIDES = 3
@@ -194,7 +196,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
         )}
         {fornecedores.map(f => {
           const pct    = f.total > 0 ? Math.round((f.concluidas / f.total) * 100) : 0
-          const slaCls = f.sla >= 80 ? 'text-green' : f.sla >= 60 ? 'text-yellow' : 'text-red'
+          const slaNivel = nivelPorPiso(f.sla, 80, 60)
           return (
             <div
               key={f.nome}
@@ -216,7 +218,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
                 </div>
                 <div>
                   <p className="text-caption text-muted uppercase tracking-wide mb-1">SLA%</p>
-                  <p className={`font-mono text-2xl font-bold tabular-nums ${slaCls}`}>{f.sla}%</p>
+                  <p className={`inline-flex items-center gap-1.5 font-mono text-2xl font-bold tabular-nums ${statusTextClass(slaNivel)}`}><StatusIcon nivel={slaNivel} size="0.75em" />{f.sla}%</p>
                 </div>
               </div>
               <div>

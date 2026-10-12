@@ -7,6 +7,7 @@ import { useOSMotivos } from '../../hooks/useOSMotivos'
 import { ultimosMeses } from '../reincidencias/reincidenciasMatriz'
 import { buildLeituraMensal, osParaLer, sinal, sinalPP, type BlocoRevisita, type Contribuicao, type Frase, type LeituraCidade, type LeituraMensal, type PontoTendencia, type Tom } from './leituraMensal'
 import { exportLeituraMensalPDF } from './leituraMensalPDF'
+import { StatusIcon } from '../../components/ui/StatusPill'
 
 const MESES = ultimosMeses(13)
 const MESES_TENDENCIA = 6
@@ -310,7 +311,11 @@ function ListaFrases({ frases }: { frases: Frase[] }) {
     <ul className="space-y-1.5">
       {frases.map((f, i) => (
         <li key={i} className="flex gap-2 text-label leading-relaxed text-secondary">
-          <span aria-hidden="true" className={`mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full ${f.tom === 'piora' ? 'bg-red' : f.tom === 'melhora' ? 'bg-green' : 'bg-muted'}`} />
+          {f.tom === 'neutro'
+            ? <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-muted" />
+            : <span className={`mt-1 flex-shrink-0 ${f.tom === 'piora' ? 'text-red' : 'text-green'}`}>
+                <StatusIcon nivel={f.tom === 'piora' ? 'critico' : 'ok'} size={13} semRotulo />
+              </span>}
           <span className={i === 0 ? `font-semibold ${COR_TOM[f.tom] === 'text-secondary' ? 'text-text' : COR_TOM[f.tom]}` : ''}>{f.texto}</span>
         </li>
       ))}

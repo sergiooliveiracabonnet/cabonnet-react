@@ -4,6 +4,8 @@ import type { OSRow, Pulso, ClusterAtivo, CampoSemaforo, PulsoMetaMes, KPI } fro
 import { TrendPill } from '../../components/ui/StatCard'
 import { DashboardPanelHeader, SectionLabel } from './DashboardKpiPrimitives'
 import type { DashMover, DashFornCard } from './DashboardTypes'
+import { StatusPill, StatusValue } from '../../components/ui/StatusPill'
+import { nivelPorPiso } from '../../lib/statusNivel'
 
 // Faixa de trajetória: o que mudou vs período anterior, ordenado por variação
 // relativa. Sem score sintético — cada componente responde por si.
@@ -311,7 +313,6 @@ export function FornecedoresPanel({ fornecedores, onOpen, onOpenReport }: {
 
       <div className="mt-2">
         {fornecedores.map(f => {
-          const tier = f.sla >= 85 ? 'text-green bg-green/10' : f.sla >= 65 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
           return (
             <button key={f.nome}
                  type="button"
@@ -329,7 +330,7 @@ export function FornecedoresPanel({ fornecedores, onOpen, onOpenReport }: {
                      style={{ width: `${Math.round(f.total / maxTotal * 100)}%`, background: f.cor }} />
               </div>
               <span className="flex items-center gap-1.5 justify-end min-w-[76px]">
-                <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums ${tier}`}>{f.sla}%</span>
+                <StatusPill nivel={nivelPorPiso(f.sla, 85, 65)}>{f.sla}%</StatusPill>
                 {f.slaTrend && <TrendPill trend={f.slaTrend} />}
               </span>
             </button>
@@ -509,9 +510,8 @@ export function QualidadePeriodoCard({ pulso, taxaRevisitas }: { pulso: Pulso; t
           <div key={s.label} title={s.hint}
                className="flex flex-col border border-border rounded-md bg-bg/40 px-3 py-2">
             <p className="text-caption font-semibold uppercase tracking-label text-muted">{s.label}</p>
-            <p className={`font-bold text-subtitle leading-none tabular-nums tracking-tight mt-1
-                           ${s.danger ? 'text-red' : s.warn ? 'text-yellow' : 'text-text'}`}>
-              {s.value}
+            <p className="font-bold text-subtitle leading-none tabular-nums tracking-tight mt-1">
+              <StatusValue nivel={s.danger ? 'critico' : s.warn ? 'atencao' : 'ok'} okClass="text-text">{s.value}</StatusValue>
             </p>
             {s.sub && <p className="text-caption text-muted/70 mt-0.5 leading-none">{s.sub}</p>}
           </div>

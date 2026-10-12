@@ -13,6 +13,8 @@ import { generateFechamentoPDF } from './fechamentoPDF'
 import { useFechamentoAutomation, type FechamentoSnapshot } from './useFechamentoAutomation'
 import type { OSRow } from '../../lib/types'
 import { StatCard, type StatTone } from '../../components/ui/StatCard'
+import { StatusValue } from '../../components/ui/StatusPill'
+import { nivelPorPiso, statusTextClass, type NivelStatus } from '../../lib/statusNivel'
 
 const ABAS     = ['global', 'instacable', 'wes', 'thm', 'rede']
 const PERIODOS = [
@@ -28,10 +30,12 @@ const PERIODOS = [
 const TIPO_COR:    Record<string, string> = { Instalação: 'text-primary', Manutenção: 'text-green', Serviço: 'text-purple', Outros: 'text-muted' }
 const TIPO_BORDER: Record<string, string> = { Instalação: 'border-primary', Manutenção: 'border-green', Serviço: 'border-purple', Outros: 'border-muted' }
 
+function taxaNivel(taxa: number): NivelStatus {
+  return nivelPorPiso(taxa, SLA_MIN, SLA_MIN - 15)
+}
+
 function taxaCor(taxa: number): string {
-  if (taxa >= SLA_MIN)      return 'text-green'
-  if (taxa >= SLA_MIN - 15) return 'text-yellow'
-  return 'text-red'
+  return statusTextClass(taxaNivel(taxa))
 }
 
 export default function FechamentoPage() {
@@ -308,7 +312,7 @@ function EquipesTable({ byEquipe }: { byEquipe: Record<string, TeamStats> }) {
               <td className={`px-2 py-2 text-center font-semibold ${e.slaVenc > 0 ? 'text-red' : 'text-muted'}`}>
                 {e.slaVenc || '—'}
               </td>
-              <td className={`px-2 py-2 text-center font-bold ${taxaCor(e.taxa)}`}>{e.taxa}%</td>
+              <td className="px-2 py-2 text-center font-bold"><StatusValue nivel={taxaNivel(e.taxa)}>{e.taxa}%</StatusValue></td>
             </tr>
           ))}
         </tbody>
@@ -349,7 +353,7 @@ function CidadesChart({ byCidade }: { byCidade: Record<string, CidadeStats> }) {
                 <span className="font-bold text-green">{c.exec}</span>
                 {c.pend    > 0 && <span className="text-yellow">{c.pend} pend</span>}
                 {c.slaVenc > 0 && <span className="text-red font-semibold">{c.slaVenc} SLA</span>}
-                <span className={`font-bold ${tc}`}>{c.taxa}%</span>
+                <StatusValue nivel={taxaNivel(c.taxa)} className="font-bold">{c.taxa}%</StatusValue>
               </div>
             </div>
             <div className="h-1.5 bg-surface rounded-full overflow-hidden">
@@ -387,7 +391,7 @@ function TiposCards({ byTipo }: { byTipo: Record<string, TeamStats> }) {
           <div key={t.tipo} className={`bg-bg rounded-lg p-3 border-l-2 ${TIPO_BORDER[t.tipo] ?? 'border-muted'}`}>
             <div className="flex justify-between items-center mb-2">
               <span className={`text-caption font-bold ${TIPO_COR[t.tipo] ?? 'text-muted'}`}>{t.tipo}</span>
-              <span className={`text-body font-bold ${tc}`}>{t.taxa}%</span>
+              <StatusValue nivel={taxaNivel(t.taxa)} className="text-body font-bold">{t.taxa}%</StatusValue>
             </div>
             <div className="flex gap-4 flex-wrap">
               <Stat label="Exec."   value={t.exec}    cls="text-green" />

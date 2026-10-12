@@ -10,6 +10,7 @@ import { shortEquipe } from '../../lib/osFormat'
 import { useAlertStore } from '../../store/alertStore'
 import type { FiredAlert } from '../../hooks/useAlerts'
 import type { OSRow } from '../../lib/types'
+import { StatusIcon } from '../ui/StatusPill'
 
 const INTERVALS: { value: number | null; label: string }[] = [
   { value: null, label: 'Manual'  },
@@ -212,7 +213,11 @@ export function AIStatusBadge() {
         className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-surface transition-colors"
       >
         <Sparkle size={13} className={valid ? 'text-green' : noConn ? 'text-orange' : valid === false ? 'text-red' : 'text-muted'} />
-        <span className={`w-1.5 h-1.5 rounded-full ${dotCls}`} />
+        {isLoading
+          ? <span className={`w-1.5 h-1.5 rounded-full ${dotCls}`} />
+          : <span className={valid ? 'text-green' : noConn ? 'text-orange' : 'text-red'}>
+              <StatusIcon nivel={valid ? 'ok' : noConn ? 'atencao' : 'critico'} size={11} />
+            </span>}
       </button>
 
       {open && (

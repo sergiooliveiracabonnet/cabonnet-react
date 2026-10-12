@@ -24,6 +24,8 @@ import { useAgendamentoHistorico } from '../../hooks/useAgendamentoHistorico'
 import { useTemModuloCliente } from '../../hooks/useCliente'
 import { ClassificarEncerramento } from './ClassificarEncerramento'
 import { buildAgendamentoSequence } from './osTimeline'
+import { StatusIcon } from '../../components/ui/StatusPill'
+import { nivelPorTeto } from '../../lib/statusNivel'
 
 export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; onClose: () => void }) {
   const [showModal, setShowModal] = useState(false)
@@ -74,7 +76,8 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
   const hasBaixa      = !!os.databaixa?.trim()
 
   const agingVal  = os._aging ?? 0
-  const agingCls  = agingVal >= 6 ? 'text-red' : agingVal >= 3 ? 'text-yellow' : 'text-cyan'
+  const agingNivel = nivelPorTeto(agingVal, 2, 5)
+  const agingCls  = agingNivel === 'critico' ? 'text-red' : agingNivel === 'atencao' ? 'text-yellow' : 'text-cyan'
 
   // Status accent color para barra lateral
   const statusAccent = isConcluida ? 'bg-green/70' : isAtendimento ? 'bg-cyan/70' : 'bg-yellow/70'
@@ -240,8 +243,9 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                 {os._aging != null && (
                   <div className="px-4 py-3 flex flex-col gap-1 items-center justify-center min-w-[72px]">
                     <span className="text-caption font-bold uppercase tracking-label text-muted">Aging</span>
-                    <span className={`font-mono font-black text-headline leading-none ${agingCls}`}>
-                      {os._aging}<span className="text-label font-semibold ml-0.5 opacity-60">d</span>
+                    <span className={`inline-flex items-center gap-1 font-mono font-black text-headline leading-none ${agingCls}`}>
+                      {agingNivel !== 'ok' && <StatusIcon nivel={agingNivel} size="0.7em" />}
+                      <span>{os._aging}<span className="text-label font-semibold ml-0.5 opacity-60">d</span></span>
                     </span>
                   </div>
                 )}

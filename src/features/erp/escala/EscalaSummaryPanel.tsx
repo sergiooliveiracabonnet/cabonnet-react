@@ -7,6 +7,8 @@ import {
   buildStatusMap, contarEquipesComStatus, type Empresa,
 } from './escalaConstants'
 import type { EscalaItem } from '../../../lib/api'
+import { StatusValue } from '../../../components/ui/StatusPill'
+import { nivelPorPiso } from '../../../lib/statusNivel'
 
 export function EscalaSummaryPanel({ days, items }: { days: WeekDay[]; items: EscalaItem[] }) {
   const statusMap = useMemo(() => buildStatusMap(items), [items])
@@ -120,8 +122,8 @@ export function EscalaSummaryPanel({ days, items }: { days: WeekDay[]; items: Es
                 <tr className="border-b border-subtle">
                   <td className="px-4 py-1.5 text-label font-semibold text-text">Cobertura da semana</td>
                   {coberturaPorDia.map((n, i) => (
-                    <td key={days[i].key} className={`px-2 py-1.5 text-center font-mono text-label font-semibold tabular-nums ${n === 100 ? 'text-green' : n >= 60 ? 'text-yellow' : 'text-red'}`}>
-                      {n}%
+                    <td key={days[i].key} className="px-2 py-1.5 text-center font-mono text-label font-semibold tabular-nums">
+                      <StatusValue nivel={nivelPorPiso(n, 100, 60)}>{n}%</StatusValue>
                     </td>
                   ))}
                 </tr>

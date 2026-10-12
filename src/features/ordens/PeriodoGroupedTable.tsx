@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { shortEquipe, situacaoVariant } from '../../lib/osFormat'
 import { Badge } from '../../components/ui/Badge'
 import type { OSRow } from '../../lib/types'
+import { StatusIcon } from '../../components/ui/StatusPill'
+import { nivelPorTeto } from '../../lib/statusNivel'
 
 const PERIOD_ORDER = ['manhã', 'tarde']
 
@@ -116,6 +118,7 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
               {(periodoRows as OSRow[]).map((row: OSRow, i: number) => {
                 const isActive    = row._aging != null
                 const aging      = row._aging ?? row._agingAbertura ?? 0
+                const agingNivel = nivelPorTeto(aging, 2, 5)
                 const agingColor = !isActive ? 'text-teal'  : aging >= 6 ? 'text-red'   : aging >= 3 ? 'text-yellow'  : 'text-cyan'
                 const agingBg    = !isActive ? 'bg-teal/10' : aging >= 6 ? 'bg-red/10'  : aging >= 3 ? 'bg-yellow/10' : 'bg-cyan/10'
                 return (
@@ -135,7 +138,8 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50`}
                   >
                     <span className={`${C.aging} text-center`}>
-                      <span className={`inline-block font-mono font-bold text-caption rounded-full px-2 py-0.5 ${agingColor} ${agingBg}`}>
+                      <span className={`inline-flex items-center gap-1 font-mono font-bold text-caption rounded-full px-2 py-0.5 ${agingColor} ${agingBg}`}>
+                        {isActive && agingNivel !== 'ok' && <StatusIcon nivel={agingNivel} size="0.9em" />}
                         {aging}d
                       </span>
                     </span>

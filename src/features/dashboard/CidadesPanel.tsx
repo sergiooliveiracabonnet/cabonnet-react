@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { ArrowRight, MapPin } from '@phosphor-icons/react'
 import type { OSRow } from '../../lib/types'
 import { DashboardPanelHeader } from './DashboardKpiPrimitives'
+import { StatusPill } from '../../components/ui/StatusPill'
+import { nivelPorPiso } from '../../lib/statusNivel'
 
 export interface CapacidadeCidadeView {
   cidade:        string
@@ -108,7 +110,6 @@ export function CidadesPanel({ horizonte, capacidadeCidades, filaAtiva, onOpen, 
         {linhas.map(l => {
           const cap = l.capacidade
           const cor = cap?.status === 'nao_zera' ? 'rgb(var(--c-orange))' : cap?.status === 'atencao' ? 'rgb(var(--c-yellow))' : 'rgb(var(--c-green))'
-          const slaCls = l.sla >= 90 ? 'text-green bg-green/10' : l.sla >= 75 ? 'text-yellow bg-yellow/10' : 'text-red bg-red/10'
           const wCrit = l.rows.length > 0 ? l.criticas / l.rows.length : 0
           const clicavel = l.rows.length > 0
 
@@ -126,9 +127,7 @@ export function CidadesPanel({ horizonte, capacidadeCidades, filaAtiva, onOpen, 
                   <span className="text-caption text-muted tabular-nums">
                     {n(l.rows.length)} na fila{cap ? ` · ${cap.frentes} ${cap.frentes === 1 ? 'frente' : 'frentes'}` : ''}
                   </span>
-                  <span className={`text-caption font-bold rounded px-1.5 py-0.5 tabular-nums ${slaCls}`}>
-                    {l.sla}%
-                  </span>
+                  <StatusPill nivel={nivelPorPiso(l.sla, 90, 75)}>{l.sla}%</StatusPill>
                 </span>
               </div>
 

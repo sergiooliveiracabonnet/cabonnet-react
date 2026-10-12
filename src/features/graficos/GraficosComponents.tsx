@@ -15,6 +15,8 @@ import { buildDistribuicaoSummary, sortDistribution, type DistributionItem } fro
 import { buildTendenciaSummary } from '../../lib/builders/graficosTendencia'
 import { buildAgingStatistics } from '../../lib/builders/graficosEstatistica'
 import { buildCohortView } from '../../lib/builders/graficosCohort'
+import { StatusValue } from '../../components/ui/StatusPill'
+import { nivelPorTeto } from '../../lib/statusNivel'
 
 // ─── Tipos exportados ─────────────────────────────────────────────────────────
 
@@ -178,9 +180,7 @@ export function DrillModal({ drill, onClose, onOS }: { drill: DrillState | null;
                   <td className="px-3 py-2 font-mono text-muted whitespace-nowrap">{r.datacadastro?.split(' ')[0] || '—'}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     {r._aging != null ? (
-                      <span className={`font-mono font-semibold ${r._aging > 7 ? 'text-red' : r._aging > 3 ? 'text-yellow' : 'text-green'}`}>
-                        {r._aging}d
-                      </span>
+                      <StatusValue nivel={nivelPorTeto(r._aging, 3, 7)} className="font-mono font-semibold">{r._aging}d</StatusValue>
                     ) : '—'}
                   </td>
                   <td className="px-3 py-2 text-muted whitespace-nowrap truncate max-w-[100px]">{r.tiposervico || '—'}</td>
