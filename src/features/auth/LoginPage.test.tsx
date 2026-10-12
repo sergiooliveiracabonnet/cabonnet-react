@@ -57,4 +57,13 @@ describe('LoginPage', () => {
       .filter((v): v is string => !!v && v.startsWith('#') && v.toLowerCase() !== '#fff')
     expect(cores).toEqual([])
   })
+
+  it('fica escuro mesmo com tema claro salvo, e devolve o tema ao sair', () => {
+    document.documentElement.classList.add('light')
+    const { unmount } = render(<LoginPage />)
+    expect(document.documentElement.classList.contains('light')).toBe(false)
+    unmount()
+    expect(document.documentElement.classList.contains('light')).toBe(true)
+    document.documentElement.classList.remove('light')
+  })
 })

@@ -1,4 +1,4 @@
-import { useState, useRef, useId, type FormEvent } from 'react'
+import { useState, useRef, useId, useLayoutEffect, type FormEvent } from 'react'
 import { Eye, EyeSlash, WarningCircle } from '@phosphor-icons/react'
 import { api } from '../../lib/api'
 import { CABONNET_BLACK_LOGO } from '../../lib/pdfBrand'
@@ -19,7 +19,6 @@ const CAMPO = `w-full h-10 rounded-md border border-muted bg-bg px-3 text-body t
 export function LoginPage() {
   const setAuthed  = useAuthStore(s => s.setAuthed)
   const logAudit   = useAuditStore(s => s.log)
-  const theme      = useUIStore(s => s.theme)
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -28,6 +27,15 @@ export function LoginPage() {
   const [error,    setError]    = useState('')
   const [success,  setSuccess]  = useState(false)
   const submittingRef = useRef(false)
+
+  // O login e sempre escuro, qualquer que seja o tema salvo: o cenario do rack
+  // foi pensado sobre carbono. O tema do usuario volta quando a tela sai.
+  useLayoutEffect(() => {
+    const raiz = document.documentElement
+    const eraClaro = raiz.classList.contains('light')
+    raiz.classList.remove('light')
+    return () => { if (eraClaro) raiz.classList.add('light') }
+  }, [])
   const idUsuario = useId()
   const idSenha   = useId()
   const idErro    = useId()
@@ -76,7 +84,7 @@ export function LoginPage() {
             src={CABONNET_BLACK_LOGO}
             alt="Cabonnet"
             className="h-16 w-auto mb-5"
-            style={theme === 'dark' ? { filter: 'brightness(0) invert(1)' } : undefined}
+            style={{ filter: 'brightness(0) invert(1)' }}
           />
           <h1 className="font-headline text-headline font-semibold text-text">Gestão de OS</h1>
           <p className="mt-1 text-label text-secondary">Acesso restrito</p>
