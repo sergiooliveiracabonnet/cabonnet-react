@@ -153,7 +153,7 @@ export default function FornecedorPage() {
                       <span className={`text-label font-mono font-bold w-10 text-right flex-shrink-0 ${sc.text}`}>{f.sla}%</span>
                       <span
                         className={`text-caption font-mono font-bold w-9 text-right flex-shrink-0
-                                    ${delta == null ? 'text-muted/40' : delta > 0 ? 'text-green' : delta < 0 ? 'text-red' : 'text-muted'}`}
+                                    ${delta == null ? 'text-muted' : delta > 0 ? 'text-green' : delta < 0 ? 'text-red' : 'text-muted'}`}
                         title={delta == null
                           ? 'Sem dados do período anterior para comparar'
                           : `Período anterior: ${slaAnterior[f.fornKey]}%`}
@@ -175,7 +175,7 @@ export default function FornecedorPage() {
 
                       {/* Meta editável inline */}
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <Target size={9} className="text-muted/50" />
+                        <Target size={9} className="text-muted" />
                         <input
                           type="number" min={0} max={100}
                           value={meta ?? ''}
@@ -195,7 +195,7 @@ export default function FornecedorPage() {
                   )
                 })}
               </div>
-              <p className="text-caption text-muted/50 mt-3">
+              <p className="text-caption text-muted mt-3">
                 * Edite o campo "Meta" para definir a meta de SLA de cada operadora. O marcador vertical aparece na barra.
               </p>
             </div>
@@ -392,7 +392,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
               <span className="inline-flex items-center gap-1 text-caption text-muted">
                 <ArrowRight size={11} weight="bold" className="flex-shrink-0" />
                 <span className="text-orange font-semibold">{fmtCusto(kpis.custoPorOs)} / OS concluída</span>
-                {' '}<span className="text-muted/60">(custo rateado para os {dias}d do período)</span>
+                {' '}<span className="text-muted">(custo rateado para os {dias}d do período)</span>
               </span>
             )}
           </div>}

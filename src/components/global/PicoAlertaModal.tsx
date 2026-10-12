@@ -95,7 +95,7 @@ function AlertaPainel({
       {/* Campo contexto */}
       <div className="space-y-1.5">
         <label className="text-caption font-bold uppercase tracking-label text-muted">
-          O que aconteceu neste dia? <span className="font-normal normal-case tracking-normal text-muted/50">(opcional)</span>
+          O que aconteceu neste dia? <span className="font-normal normal-case tracking-normal text-muted">(opcional)</span>
         </label>
         <textarea
           value={contexto}
@@ -103,7 +103,7 @@ function AlertaPainel({
           placeholder="Ex: Troca em massa de roteadores Zyxel contaminados…"
           rows={2}
           className="w-full rounded-xl border border-subtle bg-surface/30 px-3 py-2.5
-                     text-label text-text placeholder:text-muted/40 resize-none
+                     text-label text-text placeholder:text-muted resize-none
                      focus:outline-none focus:border-purple/40 transition-colors"
         />
       </div>
@@ -182,7 +182,7 @@ function AlertaPainel({
       {/* Ignorar */}
       <button
         onClick={onDismiss}
-        className="text-caption text-muted/50 hover:text-muted transition-colors underline underline-offset-2">
+        className="text-caption text-muted hover:text-text transition-colors underline underline-offset-2">
         Ignorar este alerta
       </button>
     </div>

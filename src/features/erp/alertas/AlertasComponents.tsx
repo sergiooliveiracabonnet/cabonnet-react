@@ -446,7 +446,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
                 </div>
               ))}
             </div>
-            <p className="text-caption text-muted/50 mt-3">
+            <p className="text-caption text-muted mt-3">
               Afeta todos os cálculos de SLA do sistema em tempo real.
             </p>
           </div>

@@ -96,7 +96,7 @@ export function ClientCard({ c }: { c: JuniperClient }) {
                 ${isOnline ? 'bg-red shadow-[0_0_6px_rgba(248,113,113,0.7)] animate-pulse' : 'bg-muted/60'}`} />
               <p className="text-body font-bold text-text truncate uppercase antialiased leading-tight">{c.usuario}</p>
             </div>
-            <p className="text-caption text-muted/60 ml-3.5 uppercase tracking-label font-mono truncate">{c.iface}</p>
+            <p className="text-caption text-muted ml-3.5 uppercase tracking-label font-mono truncate">{c.iface}</p>
           </div>
           <span className={`flex-shrink-0 inline-flex items-center gap-1.5 text-caption font-bold px-2.5 py-1 rounded-full tracking-widest border
             ${isOnline ? 'bg-red/[0.10] text-red border-red/25' : 'bg-surface text-muted border-subtle'}`}>
@@ -115,8 +115,8 @@ export function ClientCard({ c }: { c: JuniperClient }) {
 
         {c.mac !== '—' && (
           <div className="mb-3">
-            <p className="text-caption font-bold uppercase tracking-label text-muted/60 mb-0.5">MAC Address</p>
-            <p className="text-caption font-mono text-secondary/80 uppercase tracking-wider">{c.mac}</p>
+            <p className="text-caption font-bold uppercase tracking-label text-muted mb-0.5">MAC Address</p>
+            <p className="text-caption font-mono text-secondary uppercase tracking-wider">{c.mac}</p>
           </div>
         )}
 
@@ -124,13 +124,13 @@ export function ClientCard({ c }: { c: JuniperClient }) {
           <div className="flex items-center gap-1.5">
             {c.uptime !== '—' && (
               <>
-                <Clock size={10} className="text-muted/50 flex-shrink-0" />
+                <Clock size={10} className="text-muted flex-shrink-0" />
                 <span className="text-caption font-mono text-muted uppercase">{c.uptime}</span>
               </>
             )}
           </div>
           {c.loginTime !== '—' && (
-            <span className="text-caption text-muted/50 font-mono uppercase">{c.loginTime}</span>
+            <span className="text-caption text-muted font-mono uppercase">{c.loginTime}</span>
           )}
         </div>
       </div>
@@ -160,7 +160,7 @@ export function InterfaceCard({ iface, maxIface }: { iface: IfaceRow; maxIface: 
         <div className="h-1.5 bg-surface rounded-full overflow-hidden">
           <div className="h-full bg-red rounded-full" style={{ width: `${pct}%`, transition: 'width 0.6s ease' }} />
         </div>
-        <p className="text-caption text-muted/50 mt-1 font-mono text-right">{pct}%</p>
+        <p className="text-caption text-muted mt-1 font-mono text-right">{pct}%</p>
       </div>
     </div>
   )
@@ -184,7 +184,7 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
           : <CaretRight size={12} className="text-muted flex-shrink-0" />}
         <div className="flex-shrink-0 w-[72px]">
           <p className="font-mono text-label text-text">{snap.hora}</p>
-          {relTxt && <p className="text-caption text-muted/50">{relTxt}</p>}
+          {relTxt && <p className="text-caption text-muted">{relTxt}</p>}
         </div>
         <span className="text-caption text-muted w-[80px] flex-shrink-0">{snap.data}</span>
         <Badge variant={snap.total > 0 ? 'red' : 'green'}>{snap.total > 0 ? `${snap.total} ocorrências` : 'Saudável'}</Badge>
@@ -193,7 +193,7 @@ export function SnapshotRow({ snap, isOpen, onToggle }: {
           <div className="h-1 bg-surface rounded-full overflow-hidden">
             <div className={`h-full rounded-full ${snap.online > 0 ? 'bg-red' : 'bg-green'}`} style={{ width: `${onlinePct}%` }} />
           </div>
-          <p className="text-caption text-muted/40 font-mono mt-0.5">{onlinePct}%</p>
+          <p className="text-caption text-muted font-mono mt-0.5">{onlinePct}%</p>
         </div>
         <span className="text-caption text-muted ml-auto font-mono">{(snap.clientes ?? []).length} reg.</span>
       </button>

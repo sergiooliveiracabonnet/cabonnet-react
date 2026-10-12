@@ -223,7 +223,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       </div>
                     </div>
                   ))}
-                  <div className="px-4 py-2.5 border-t border-subtle flex items-center gap-5 text-muted/50 mt-1">
+                  <div className="px-4 py-2.5 border-t border-subtle flex items-center gap-5 text-muted mt-1">
                     {[
                       { keys: [<ArrowUp size={10} weight="bold" alt="seta para cima" />,
                                <ArrowDown size={10} weight="bold" alt="seta para baixo" />], label: 'navegar' },
@@ -233,7 +233,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       <div key={label} className="flex items-center gap-1.5">
                         <div className="flex gap-1">
                           {keys.map((k, ki) => (
-                            <kbd key={ki} className="text-caption font-mono bg-surface border border-subtle rounded px-1.5 py-0.5 leading-none text-muted/70">
+                            <kbd key={ki} className="text-caption font-mono bg-surface border border-subtle rounded px-1.5 py-0.5 leading-none text-muted">
                               {k}
                             </kbd>
                           ))}
@@ -248,7 +248,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               {query.trim().length > 0 && results.pages.length === 0 && results.os.length === 0 && clientes.length === 0 && !buscandoClientes && (
                 <div className="px-5 py-10 text-center">
                   <p className="text-body text-muted">Nenhum resultado para <span className="text-text font-semibold">"{query}"</span></p>
-                  <p className="text-caption text-muted/50 mt-1">Tente nº da OS, cliente, contrato, CPF, cidade ou página</p>
+                  <p className="text-caption text-muted mt-1">Tente nº da OS, cliente, contrato, CPF, cidade ou página</p>
                 </div>
               )}
 
@@ -384,7 +384,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                     <span className="text-caption text-muted">
                       {results.os.length} resultado{results.os.length !== 1 ? 's' : ''}
                     </span>
-                    <span className="flex items-center gap-1 text-caption text-muted/50">
+                    <span className="flex items-center gap-1 text-caption text-muted">
                       <ArrowUp size={10} weight="bold" alt="seta para cima" />
                       <ArrowDown size={10} weight="bold" alt="seta para baixo" />
                       para navegar

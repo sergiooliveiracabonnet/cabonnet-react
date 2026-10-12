@@ -150,9 +150,9 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
           <div className="flex-1 overflow-y-auto divide-y divide-hairline">
             {store.history.length === 0 ? (
               <div className="py-12 text-center">
-                <Bell size={32} className="mx-auto text-muted/30 mb-3" />
+                <Bell size={32} className="mx-auto text-muted mb-3" />
                 <p className="text-label text-muted">Nenhum alerta registrado ainda.</p>
-                <p className="text-caption text-muted/60 mt-1">Ative o motor para começar o monitoramento.</p>
+                <p className="text-caption text-muted mt-1">Ative o motor para começar o monitoramento.</p>
               </div>
             ) : store.history.map((a: any, i: number) => {
               const Icon = (ICON_MAP as Record<string, any>)[a.icon] ?? Bell
@@ -169,7 +169,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
                     </div>
                     <p className="text-caption text-muted">{a.msg}</p>
                   </div>
-                  <span className="text-caption text-muted/60 flex-shrink-0 tabular-nums">
+                  <span className="text-caption text-muted flex-shrink-0 tabular-nums">
                     {ts.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -261,7 +261,7 @@ export default function TelegramPanel({ onClose }: { onClose: () => void }) {
                 )}
               </div>
             ) : (
-              <p className="text-caption text-muted/60 mb-2">Nenhum briefing gerado hoje. Será enviado automaticamente às 7h.</p>
+              <p className="text-caption text-muted mb-2">Nenhum briefing gerado hoje. Será enviado automaticamente às 7h.</p>
             )}
           </div>
 

@@ -134,7 +134,7 @@ export function DrillModal({ drill, onClose, onOS }: { drill: DrillState | null;
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por OS, cliente, cidade ou equipe..."
           className="w-full bg-surface border border-subtle rounded-xl px-3 py-2.5 text-label
-                     text-text placeholder:text-muted/60 outline-none focus:border-primary/50 transition-colors"
+                     text-text placeholder:text-muted outline-none focus:border-primary/50 transition-colors"
           autoFocus />
         <div className="overflow-auto max-h-[55vh]">
           <table className="w-full text-caption">
@@ -233,9 +233,9 @@ export function ForecastCard({ evolucao, totalAtivo, fila }: { evolucao: unknown
       <div className="flex items-center gap-2">
         <Sparkle size={14} className="text-primary" />
         <span className="text-body font-bold text-text">Previsão de Demanda — próximos 7 dias</span>
-        <span className="text-caption text-muted/60 ml-1">regressão linear + sazonalidade · R²={forecast.r2}</span>
+        <span className="text-caption text-muted ml-1">regressão linear + sazonalidade · R²={forecast.r2}</span>
         {isFetching && <span className="text-caption text-muted animate-pulse ml-auto">Analisando…</span>}
-        {cached && !isFetching && <span className="text-caption text-muted/50 ml-auto">cache</span>}
+        {cached && !isFetching && <span className="text-caption text-muted ml-auto">cache</span>}
       </div>
 
       <div className="flex items-start gap-3">
@@ -625,7 +625,7 @@ export function TabCohort({ d, rows, onDrill }: { d: Record<string,unknown>; row
           <div className="px-4 py-3 border-b border-subtle">
             <p className="text-caption font-bold uppercase tracking-wide text-muted">
               Tabela detalhada das coortes
-              <span className="ml-2 font-normal normal-case tracking-normal text-muted/50">
+              <span className="ml-2 font-normal normal-case tracking-normal text-muted">
                 — clique em uma linha para ver as OS
               </span>
             </p>

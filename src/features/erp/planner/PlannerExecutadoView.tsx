@@ -528,7 +528,7 @@ export default function PlannerExecutadoView() {
               <div className="flex flex-1 gap-[2px] min-w-0">
                 {days.map(d => (
                   <div key={d.key} className="flex-1 text-center">
-                    <span className={`text-caption font-bold ${d.isToday ? 'text-primary' : 'text-muted/50'}`}>
+                    <span className={`text-caption font-bold ${d.isToday ? 'text-primary' : 'text-muted'}`}>
                       {d.dow}
                     </span>
                   </div>

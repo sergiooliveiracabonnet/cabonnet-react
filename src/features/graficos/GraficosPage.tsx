@@ -46,13 +46,13 @@ export default function GraficosPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="font-headline text-xl font-semibold text-text">Gráficos &amp; Análises</h2>
-          <div className="flex items-center gap-1.5 mt-1 text-caption text-muted/60">
+          <div className="flex items-center gap-1.5 mt-1 text-caption text-muted">
             <CursorClick size={11} className="flex-shrink-0" />
             <span>Clique nos gráficos para ver as OS detalhadas</span>
           </div>
         </div>
         {!isFornecedor && <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-caption font-medium text-muted/60 mr-0.5">Frente:</span>
+          <span className="text-caption font-medium text-muted mr-0.5">Frente:</span>
           {FORN_PILLS.map(f => (
             <button key={f.value} onClick={() => setFornecedor(f.value)}
               className={`text-caption font-medium px-3 py-1 rounded-md border transition-all duration-150 cursor-pointer

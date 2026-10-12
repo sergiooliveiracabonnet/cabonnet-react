@@ -81,7 +81,7 @@ export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, regi
         </div>
         <span
           aria-hidden
-          className={`inline-flex size-6 flex-none items-center justify-center rounded-full ${done ? tom.avatar : 'bg-surface/60 text-muted/60'}`}
+          className={`inline-flex size-6 flex-none items-center justify-center rounded-full ${done ? tom.avatar : 'bg-surface/60 text-muted'}`}
         >
           <Icon size={13} />
         </span>
@@ -93,14 +93,14 @@ export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, regi
           <span className={`font-semibold ${done ? tom.text : 'text-muted'}`}>{label}</span>
           {equipe && (
             <>
-              <span className="text-muted/50"> · </span>
+              <span className="text-muted"> · </span>
               <span className="font-medium text-text">{equipe}</span>
             </>
           )}
           {timestamp && (
             <>
-              <span className="text-muted/50"> &#8729; </span>
-              <span className="font-mono text-caption text-muted/70 whitespace-nowrap">{timestamp}</span>
+              <span className="text-muted"> &#8729; </span>
+              <span className="font-mono text-caption text-muted whitespace-nowrap">{timestamp}</span>
             </>
           )}
         </p>
@@ -133,7 +133,7 @@ export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, regi
             </p>
             <div className="flex items-center gap-2 text-caption">
               <span className="text-secondary font-medium">{d.equipeAgendada}</span>
-              <ArrowRight size={10} className="text-muted/50" />
+              <ArrowRight size={10} className="text-muted" />
               <span className="text-secondary font-medium">{equipe ?? '—'}</span>
             </div>
           </div>
@@ -193,7 +193,7 @@ export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, regi
                           <span className="text-caption font-semibold text-muted">{entry.autor}</span>
                         )}
                         {entry.data && (
-                          <span className="font-mono text-caption text-muted/60">{entry.data}{entry.hora ? ` ${entry.hora}` : ''}</span>
+                          <span className="font-mono text-caption text-muted">{entry.data}{entry.hora ? ` ${entry.hora}` : ''}</span>
                         )}
                       </div>
                     )}
@@ -235,7 +235,7 @@ export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, regi
                   {d.matRetirados!.map((m, i) => (
                     <div key={i} className="flex items-baseline gap-2">
                       <span className="text-caption text-red/70 font-mono font-semibold min-w-[28px] text-right">{m.quantidade}×</span>
-                      <span className="text-caption text-secondary/80 leading-snug flex-1">{m.nome}</span>
+                      <span className="text-caption text-secondary leading-snug flex-1">{m.nome}</span>
                       {m.id && <span className="text-caption text-muted font-mono">{m.id}</span>}
                     </div>
                   ))}
@@ -253,7 +253,7 @@ export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, regi
 function InfoPill({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-pill border border-subtle bg-surface/40 px-2.5 py-1 text-caption">
-      <Clock size={9} className="text-muted/40 flex-shrink-0" />
+      <Clock size={9} className="text-muted flex-shrink-0" />
       <span className="text-muted">{label}</span>
       <span className={`font-semibold text-text ${mono ? 'font-mono' : ''}`}>{value}</span>
     </span>

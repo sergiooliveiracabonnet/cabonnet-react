@@ -26,7 +26,7 @@ function Field({ label, value, mono = false, full = false, highlight = false }: 
 
 function SectionDivider({ children }: { children: ReactNode }) {
   return (
-    <p className="font-headline text-caption font-bold uppercase tracking-label text-muted/70 mb-3 flex items-center gap-3">
+    <p className="font-headline text-caption font-bold uppercase tracking-label text-muted mb-3 flex items-center gap-3">
       <span className="flex-1 h-px bg-surface" />
       {children}
       <span className="flex-1 h-px bg-surface" />
@@ -214,7 +214,7 @@ export function OSDetailModal({ os: osRow, open, onClose }: OSDetailModalProps) 
                 <div key={i} className="flex items-center gap-2.5 bg-surface/30 border border-subtle rounded-lg px-3 py-2">
                   {item.checked
                     ? <CheckSquare size={13} className="text-green flex-shrink-0" />
-                    : <Square size={13} className="text-muted/50 flex-shrink-0" />}
+                    : <Square size={13} className="text-muted flex-shrink-0" />}
                   <span className="text-label text-secondary flex-1">{item.descricao}</span>
                   <span className="text-caption text-muted">{item.servico}</span>
                 </div>

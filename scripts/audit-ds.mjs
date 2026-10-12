@@ -42,6 +42,14 @@ const RULES = [
     test: (src) => [...src.matchAll(/\b(?:[a-z-]+:)?(?:border|divide)[a-z-]*-white\/\[[0-9.]+\]/g)].map(m => m[0]),
   },
   {
+    // Opacidade no token de texto derruba o contraste sem aviso: text-muted/50
+    // da 2.2:1 no escuro e 2.0:1 no claro (piso: 4.5:1), e text-white/20 some no
+    // tema claro. Eram ~100 usos. Se precisar de um cinza mais fraco, crie um
+    // token medido; se for so um icone decorativo, use text-disabled.
+    name: 'Texto com opacidade em token (use o token solido: text-muted, text-secondary)',
+    test: (src) => [...src.matchAll(/(?<![\w-])(?:placeholder:|hover:|group-hover:)?text-(?:muted|secondary|disabled)\/(?!0\b)\d+/g)].map(m => m[0]),
+  },
+  {
     name: 'Import de componente removido do design system',
     test: (src) => [...src.matchAll(/from\s+['"][^'"]*ui\/KPICard['"]|(?:\bBentoKPICard\b|\bKpiBadge\b|\bKpiCard\b)/g)].map(m => m[0]),
   },

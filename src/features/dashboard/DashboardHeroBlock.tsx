@@ -129,8 +129,8 @@ export function ExecutadasHeroBlock({ rows, projecao, ritmoIntradiario, onOpenMo
 
         {total === 0 ? (
           <div className="flex items-center gap-3 py-4">
-            <p className="number-display text-readout-2xl leading-none text-muted/20">0</p>
-            <p className="text-body text-muted/60">Nenhuma OS concluída registrada ainda.</p>
+            <p className="number-display text-readout-2xl leading-none text-muted">0</p>
+            <p className="text-body text-muted">Nenhuma OS concluída registrada ainda.</p>
           </div>
         ) : (
           <div className="flex items-end gap-6 flex-wrap">

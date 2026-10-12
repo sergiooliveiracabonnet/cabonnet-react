@@ -51,7 +51,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
     <div className="h-full p-6 flex flex-col gap-4">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Pulse size={13} className="text-muted" />
-        <p className="text-caption font-bold uppercase tracking-label text-muted/70">
+        <p className="text-caption font-bold uppercase tracking-label text-muted">
           Visão Operacional
         </p>
       </div>
@@ -98,7 +98,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       <div className="flex flex-col gap-2.5 overflow-y-auto">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
           <Users size={13} className="text-muted" />
-          <p className="text-caption font-bold uppercase tracking-label text-muted/70">
+          <p className="text-caption font-bold uppercase tracking-label text-muted">
             Semáforo por Equipe
           </p>
         </div>
@@ -130,7 +130,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       <div className="flex flex-col gap-2.5 overflow-hidden">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
           <WarningCircle size={13} className="text-red flex-shrink-0" />
-          <p className="text-caption font-bold uppercase tracking-label text-muted/70">
+          <p className="text-caption font-bold uppercase tracking-label text-muted">
             OS com SLA 2× Excedido
           </p>
           <span className="ml-auto font-mono text-body font-bold text-red tabular-nums">
@@ -184,7 +184,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
     <div className="h-full p-6 flex flex-col gap-4 overflow-y-auto">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Package size={13} className="text-muted" />
-        <p className="text-caption font-bold uppercase tracking-label text-muted/70">
+        <p className="text-caption font-bold uppercase tracking-label text-muted">
           Desempenho por Fornecedor
         </p>
       </div>
@@ -234,7 +234,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
                 </div>
                 <div className="flex justify-between items-center mt-1.5">
                   <p className="text-caption text-muted">{pct}% concluído</p>
-                  <p className="text-caption text-muted/60 font-mono tabular-nums">{f.concluidas}/{f.total}</p>
+                  <p className="text-caption text-muted font-mono tabular-nums">{f.concluidas}/{f.total}</p>
                 </div>
               </div>
             </div>
@@ -360,7 +360,7 @@ function NocInner() {
         {/* Current slide label */}
         <SlideIcon size={13} className="text-primary flex-shrink-0" />
         <span className="text-label font-semibold text-secondary">{slideName}</span>
-        <span className="text-caption text-muted/50 font-mono">{slide + 1}/{TOTAL_SLIDES}</span>
+        <span className="text-caption text-muted font-mono">{slide + 1}/{TOTAL_SLIDES}</span>
 
         <div className="flex-1" />
 
@@ -488,7 +488,7 @@ function NocInner() {
 
           <div className="flex-1" />
 
-          <span className="flex items-center gap-1 text-caption text-muted/35 font-mono hidden xl:flex mr-3">
+          <span className="flex items-center gap-1 text-caption text-muted font-mono hidden xl:flex mr-3">
             <ArrowsLeftRight size={11} weight="bold" alt="setas esquerda e direita" />
             slides · Espaço pausar · F tela cheia
           </span>

@@ -397,7 +397,7 @@ export function RankingPanel({ cidades, onSelect, selected }: {
                 className={`w-full min-h-11 flex items-center gap-2.5 px-3.5 py-2 text-left transition-all
                             ${isSelected ? 'bg-primary/10' : 'hover:bg-surface/30'}`}
               >
-                <span className="text-caption font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
+                <span className="text-caption font-mono text-muted w-4 flex-shrink-0">{i + 1}</span>
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: fill }} />
                 <span className="flex-1 text-caption text-secondary truncate capitalize">
                   {g.cidade.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
@@ -410,7 +410,7 @@ export function RankingPanel({ cidades, onSelect, selected }: {
             )
           })}
           {cidades.length === 0 && (
-            <p className="text-caption text-muted/50 italic px-4 py-3">Nenhum dado com coordenadas.</p>
+            <p className="text-caption text-muted italic px-4 py-3">Nenhum dado com coordenadas.</p>
           )}
         </div>
       </div>
@@ -576,13 +576,13 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
                 className={`w-full min-h-11 flex items-center gap-2 px-3.5 py-2 text-left transition-all
                             ${isSelected ? 'bg-primary/10' : 'hover:bg-surface/30'}`}
               >
-                <span className="text-caption font-mono text-muted/50 w-4 flex-shrink-0">{i + 1}</span>
+                <span className="text-caption font-mono text-muted w-4 flex-shrink-0">{i + 1}</span>
                 <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: fill }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-caption text-secondary truncate capitalize">
                     {b.bairro.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                   </p>
-                  <p className="text-caption text-muted/60 truncate capitalize">
+                  <p className="text-caption text-muted truncate capitalize">
                     {b.cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                   </p>
                 </div>
@@ -592,7 +592,7 @@ export function BairroRankingPanel({ bairros, onSelect, selected }: {
             )
           })}
           {bairros.length === 0 && (
-            <p className="text-caption text-muted/50 italic px-4 py-3">Nenhum bairro com OS no filtro atual.</p>
+            <p className="text-caption text-muted italic px-4 py-3">Nenhum bairro com OS no filtro atual.</p>
           )}
         </div>
       </div>

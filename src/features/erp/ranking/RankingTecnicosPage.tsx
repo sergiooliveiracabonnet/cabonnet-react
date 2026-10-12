@@ -100,7 +100,7 @@ export function buildRankingTecnicos(
 }
 
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: 'asc' | 'desc' }) {
-  if (sortKey !== col) return <ArrowsDownUp size={11} className="text-muted/40" />
+  if (sortKey !== col) return <ArrowsDownUp size={11} className="text-muted" />
   return sortDir === 'desc' ? <ArrowDown size={11} className="text-primary" /> : <ArrowUp size={11} className="text-primary" />
 }
 
@@ -141,7 +141,7 @@ function TecnicoCell({ codigo, cadastro }: { codigo: string; cadastro: TecnicoIt
         </p>
         {cadastro?.nome_real && <p className="text-caption text-muted font-mono">{shortEquipe(codigo)}</p>}
       </div>
-      <Pencil size={10} className="text-muted/0 group-hover:text-muted/60 transition-colors flex-shrink-0" />
+      <Pencil size={10} className="text-muted/0 group-hover:text-muted transition-colors flex-shrink-0" />
     </button>
   )
 }
@@ -244,22 +244,22 @@ export default function RankingTecnicosPage() {
                   <td className="px-4 py-2.5 text-right">
                     {r.sla != null
                       ? <StatusValue nivel={nivelPorPiso(r.sla, 90, 75)} className="font-mono font-bold tabular-nums">{r.sla}%</StatusValue>
-                      : <span className="text-muted/40">—</span>}
+                      : <span className="text-muted">—</span>}
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    {r.criticas > 0 ? <Badge variant="red" dot={false}>{r.criticas}</Badge> : <span className="text-muted/40">0</span>}
+                    {r.criticas > 0 ? <Badge variant="red" dot={false}>{r.criticas}</Badge> : <span className="text-muted">0</span>}
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     {r.taxaRevisita != null
                       ? <StatusValue nivel={nivelPorTeto(r.taxaRevisita, 5, 15)} className="font-mono font-bold tabular-nums">{r.taxaRevisita}%</StatusValue>
-                      : <span className="text-muted/40">—</span>}
+                      : <span className="text-muted">—</span>}
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.execInst || <span className="text-muted/40">—</span>}</td>
-                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.execManut || <span className="text-muted/40">—</span>}</td>
-                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.execServico || <span className="text-muted/40">—</span>}</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.execInst || <span className="text-muted">—</span>}</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.execManut || <span className="text-muted">—</span>}</td>
+                  <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.execServico || <span className="text-muted">—</span>}</td>
                   <td className="px-4 py-2.5 text-right font-mono tabular-nums text-text">{r.queue}</td>
                   <td className="px-4 py-2.5 text-right">
-                    {r.slaVenc > 0 ? <Badge variant="red" dot={false}>{r.slaVenc}</Badge> : <span className="text-muted/40">0</span>}
+                    {r.slaVenc > 0 ? <Badge variant="red" dot={false}>{r.slaVenc}</Badge> : <span className="text-muted">0</span>}
                   </td>
                   <td className="px-4 py-2.5 text-right font-mono tabular-nums text-muted">
                     {r.avgAging != null ? `${r.avgAging.toFixed(1)}d` : '—'}

@@ -16,7 +16,7 @@ function ComposicaoLine({ composicao }: { composicao: Composicao }) {
   const recorrente = composicao.clientesRecorrentes[0]
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-3 pt-0.5 pb-1 text-caption text-muted/80">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-3 pt-0.5 pb-1 text-caption text-muted">
       {tipo && (
         <span>Predomina <span className="text-secondary font-medium">{tipo.nome}</span> ({tipo.pct}%)</span>
       )}
@@ -80,7 +80,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
 
       {open && (
         <div className="px-5 pb-5 space-y-4 border-t border-yellow/[0.10]">
-          <p className="text-caption text-muted/70 pt-3">
+          <p className="text-caption text-muted pt-3">
             Padrões fora do normal detectados via Z-score nos dados do período selecionado.
           </p>
 
@@ -158,7 +158,7 @@ export function AnomaliaSection({ anomalias, contexto }: {
             </div>
 
             {rcaLoading && (
-              <div className="flex items-center gap-2 text-caption text-muted/60 py-2">
+              <div className="flex items-center gap-2 text-caption text-muted py-2">
                 <div className="w-3 h-3 rounded-full border border-primary/40 border-t-primary animate-spin" />
                 Analisando anomalias...
               </div>

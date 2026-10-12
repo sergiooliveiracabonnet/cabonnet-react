@@ -62,7 +62,7 @@ function OcorrenciasExpand({ numos }: { numos: string }) {
   }
   const hist = details?.historico ?? []
   const equipeReagend = details?.equipeReagend
-  if (!hist.length) return <p className="px-10 py-3 text-caption text-muted/60 italic">Sem ocorrências registradas.</p>
+  if (!hist.length) return <p className="px-10 py-3 text-caption text-muted italic">Sem ocorrências registradas.</p>
   return (
     <div className="px-10 py-3 space-y-2 bg-surface/20">
       {equipeReagend && (
@@ -81,7 +81,7 @@ function OcorrenciasExpand({ numos }: { numos: string }) {
               </span>
             )}
             {e.autor && <span className="text-caption font-semibold text-muted">{e.autor}</span>}
-            {e.data && <span className="font-mono text-caption text-muted/60">{e.data}{e.hora ? ` ${e.hora}` : ''}</span>}
+            {e.data && <span className="font-mono text-caption text-muted">{e.data}{e.hora ? ` ${e.hora}` : ''}</span>}
           </div>
           <p className={`text-caption leading-relaxed whitespace-pre-wrap ${e.isReagend ? 'text-orange/90' : 'text-secondary'}`}>
             {e.texto}
@@ -252,7 +252,7 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                   <div className="flex items-center gap-3 px-5 py-2.5 hover:bg-surface/30 transition-colors text-label">
                     <button onClick={() => setExpanded(v => v === os.numos ? null : os.numos)}
                             title="Ver histórico de reagendamentos"
-                            className={`${COL_W.chevron} flex-shrink-0 text-muted/50 hover:text-primary transition-colors`}>
+                            className={`${COL_W.chevron} flex-shrink-0 text-muted hover:text-primary transition-colors`}>
                       {isOpen ? <CaretDown size={13} /> : <CaretRight size={13} />}
                     </button>
                     <button onClick={() => onOS(os)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
@@ -278,11 +278,11 @@ export function KpiModalTable({ rows, onOS }: { rows: OSRow[]; onOS: (os: OSRow)
                     </button>
                     <span className="w-[1px] h-4 bg-white/[0.06] flex-shrink-0" />
                     <button onClick={() => copyResumo(os)} title="Copiar só a OS (resumo)"
-                            className={`${COL_W.action} flex-shrink-0 text-muted/50 hover:text-primary transition-colors`}>
+                            className={`${COL_W.action} flex-shrink-0 text-muted hover:text-primary transition-colors`}>
                       {copied === `${os.numos}:os` ? <Check size={13} className="text-green" /> : <Copy size={13} />}
                     </button>
                     <button onClick={() => copyCompleto(os)} title="Copiar OS + histórico"
-                            className={`${COL_W.action} flex-shrink-0 text-muted/50 hover:text-primary transition-colors`}>
+                            className={`${COL_W.action} flex-shrink-0 text-muted hover:text-primary transition-colors`}>
                       {copied === `${os.numos}:full` ? <Check size={13} className="text-green" /> : <ClipboardText size={13} />}
                     </button>
                   </div>

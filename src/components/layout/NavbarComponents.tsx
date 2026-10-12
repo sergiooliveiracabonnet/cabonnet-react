@@ -252,7 +252,7 @@ export function AIStatusBadge() {
                     <span className="text-label text-orange font-semibold">Sem conexão com a Anthropic</span>
                   </div>
                   {d?.reason && (
-                    <p className="text-caption text-muted/70 pl-4">{d.reason}</p>
+                    <p className="text-caption text-muted pl-4">{d.reason}</p>
                   )}
                 </div>
               ) : (
@@ -262,7 +262,7 @@ export function AIStatusBadge() {
                     <span className="text-label text-red font-semibold">Chave inválida</span>
                   </div>
                   {d?.reason && (
-                    <p className="text-caption text-muted/70 pl-4">{d.reason}</p>
+                    <p className="text-caption text-muted pl-4">{d.reason}</p>
                   )}
                 </div>
               )}
@@ -290,7 +290,7 @@ export function AIStatusBadge() {
                     <p className="text-body font-mono font-bold text-cyan">R$ {usage.cost_brl.toFixed(2)}</p>
                   </div>
                 </div>
-                <div className="flex justify-between text-caption text-muted/60 pt-1">
+                <div className="flex justify-between text-caption text-muted pt-1">
                   <span>Entrada: {usage.input_tokens.toLocaleString('pt-BR')} tokens</span>
                   <span>Saída: {usage.output_tokens.toLocaleString('pt-BR')} tokens</span>
                 </div>

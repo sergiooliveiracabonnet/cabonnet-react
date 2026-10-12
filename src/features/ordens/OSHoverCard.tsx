@@ -107,14 +107,14 @@ export function OSHoverCard({ os, anchorRect }: OSHoverCardProps) {
               <Calendar size={10} className="text-muted" />
               <span className="text-caption text-secondary">{agend}</span>
               {(o.periodo || o.horaatendimento) && (
-                <span className="text-caption text-muted/70">
+                <span className="text-caption text-muted">
                   · {[o.periodo, o.horaatendimento ? `${o.horaatendimento}h` : ''].filter(Boolean).join(' ')}
                 </span>
               )}
             </div>
           )}
           {!agend && (
-            <span className="text-caption text-muted/50">Sem agendamento</span>
+            <span className="text-caption text-muted">Sem agendamento</span>
           )}
         </div>
 
@@ -137,7 +137,7 @@ export function OSHoverCard({ os, anchorRect }: OSHoverCardProps) {
 
       {/* Footer hint */}
       <div className="px-4 pb-3 flex justify-end">
-        <span className="inline-flex items-center gap-1.5 text-caption text-muted/40">
+        <span className="inline-flex items-center gap-1.5 text-caption text-muted">
           <kbd className="bg-surface/40 border border-subtle rounded px-1.5 py-0.5 font-mono leading-none">
             <ArrowElbowDownLeft size={10} weight="bold" alt="Enter" />
           </kbd>

@@ -246,7 +246,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
               return (
                 <div key={v.id} className={`${CELL} px-3 py-2.5`}>
                   <dt className="truncate text-caption font-semibold text-muted">
-                    {v.label}{v.nota && <span className="ml-1 font-normal text-muted/60">· {v.nota}</span>}
+                    {v.label}{v.nota && <span className="ml-1 font-normal text-muted">· {v.nota}</span>}
                   </dt>
                   <dd className="mt-0.5">
                     <span className="flex items-baseline gap-2">
@@ -394,7 +394,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
                     onChange={event => setDraftObs(event.target.value)}
                     placeholder="Contexto opcional para a IA: ex. tivemos queda de energia hoje, o que pode justificar menor fluxo de atendimentos."
                     rows={2}
-                    className="w-full resize-none rounded-md border border-subtle bg-surface/60 px-3 py-2 text-caption leading-relaxed text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
+                    className="w-full resize-none rounded-md border border-subtle bg-surface/60 px-3 py-2 text-caption leading-relaxed text-secondary placeholder:text-muted focus:border-primary/30 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -425,7 +425,7 @@ export function PulsoHero({ pulso, aiData, isLoadingAI, onRequestAI, onOpenFlow,
                     onChange={event => setDraftObs(event.target.value)}
                     placeholder="Novo contexto para a IA..."
                     rows={2}
-                    className="w-full resize-none rounded-md border border-subtle bg-surface/60 px-3 py-2 text-caption text-secondary placeholder:text-muted/50 focus:border-primary/30 focus:outline-none"
+                    className="w-full resize-none rounded-md border border-subtle bg-surface/60 px-3 py-2 text-caption text-secondary placeholder:text-muted focus:border-primary/30 focus:outline-none"
                   />
                   <button
                     type="button"

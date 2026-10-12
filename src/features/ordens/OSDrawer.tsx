@@ -286,7 +286,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                   <p className="text-label text-secondary leading-relaxed whitespace-pre-wrap">{obsGeral as string}</p>
                 </div>
               ) : !obsCrit && (
-                <p className="text-label text-muted/60 italic px-1">Nenhuma observação registrada.</p>
+                <p className="text-label text-muted italic px-1">Nenhuma observação registrada.</p>
               )}
               {isConcluida && (
                 <ClassificarEncerramento
@@ -319,7 +319,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                     <p className="text-label text-muted italic">Endereço não cadastrado</p>
                   )}
                 </div>
-                <ArrowSquareOut size={11} className="text-muted/40 group-hover:text-primary/60 flex-shrink-0 mt-1 transition-colors" />
+                <ArrowSquareOut size={11} className="text-muted group-hover:text-primary/60 flex-shrink-0 mt-1 transition-colors" />
               </button>
 
               {/* Equipe (destaque) + Tipo */}
@@ -371,7 +371,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
             {(loadingDetails || dataContratacao || dataInstalacao || situacaoContratoTexto) && (
               <Section label="Contrato do cliente">
                 {loadingDetails ? (
-                  <p className="text-label text-muted/60 italic px-1">Carregando dados do contrato…</p>
+                  <p className="text-label text-muted italic px-1">Carregando dados do contrato…</p>
                 ) : (
                   <div className="bg-surface/30 border border-subtle rounded-xl overflow-hidden">
                     <div className="grid grid-cols-2 divide-x divide-hairline">

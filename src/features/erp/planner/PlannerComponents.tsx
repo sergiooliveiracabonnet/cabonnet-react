@@ -110,7 +110,7 @@ export function OsRowItem({ r }: { r: OSRow }) {
         <div className="flex items-center gap-2 mt-0.5">
           <span className="text-caption text-muted">{r.nomedacidade || '—'}</span>
           {r.tiposervico && (
-            <><span className="text-muted/40">·</span><span className="text-caption text-muted truncate">{r.tiposervico}</span></>
+            <><span className="text-muted">·</span><span className="text-caption text-muted truncate">{r.tiposervico}</span></>
           )}
         </div>
       </div>

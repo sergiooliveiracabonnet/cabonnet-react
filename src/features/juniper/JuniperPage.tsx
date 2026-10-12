@@ -459,10 +459,10 @@ export default function JuniperPage() {
             <span className="text-caption font-bold uppercase tracking-label text-muted">
               {historico.length} snapshots
             </span>
-            <span className="text-caption text-muted/40">· máx {MAX_SNAPS}</span>
+            <span className="text-caption text-muted">· máx {MAX_SNAPS}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-caption text-muted/60">Sincronizado com o servidor</span>
+            <span className="text-caption text-muted">Sincronizado com o servidor</span>
             {historico.length > 0 && (
               <button onClick={limparHistorico}
                 className="flex items-center gap-1 text-caption text-red/60 hover:text-red transition-colors"

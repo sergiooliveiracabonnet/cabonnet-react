@@ -64,7 +64,7 @@ export function Timeline({ items, title, subtitle, className }: TimelineProps) {
               <p className="mt-0.5 text-body font-medium text-text">
                 {item.autor}
                 <span className="font-normal text-muted"> {item.descricao}</span>
-                <span className="font-normal text-muted/60"> &#8729; {item.quando}</span>
+                <span className="font-normal text-muted"> &#8729; {item.quando}</span>
               </p>
             </div>
           </li>

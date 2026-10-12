@@ -177,7 +177,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
                   <td className="px-4 py-2.5 text-center">
                     {c.criticas > 0
                       ? <span className="font-mono font-bold text-red">{c.criticas}</span>
-                      : <span className="text-white/20">—</span>}
+                      : <span className="text-muted">—</span>}
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <StatusPill nivel={nivelPorPiso(c.slaPct, 90, 75)}>{c.slaPct}%</StatusPill>
@@ -198,7 +198,7 @@ export function SaudeCidadeTable({ saude, revisitasPorCidade, selectedCity, onSe
                   <td className="px-4 py-2.5 text-center">
                     {reinc != null
                       ? <StatusValue nivel={nivelPorTeto(reinc, 8, 15)} okClass="text-muted" className="font-mono tabular-nums">{reinc}%</StatusValue>
-                      : <span className="text-white/20">—</span>}
+                      : <span className="text-muted">—</span>}
                   </td>
                 </tr>
               )
@@ -407,14 +407,14 @@ function CidadeRows({ c, tipos, color, maxTotal, expanded, tipoFilter, onToggle,
                   >
                     {count}
                   </button>
-                : <span className="text-white/20">—</span>}
+                : <span className="text-muted">—</span>}
             </td>
           )
         })}
         <td className="px-4 py-2.5 text-center">
           {c.criticas > 0
             ? <span className="font-mono font-bold text-red">{c.criticas}</span>
-            : <span className="text-white/20">—</span>}
+            : <span className="text-muted">—</span>}
         </td>
         <td className="px-4 py-2.5 text-center">
           <StatusPill nivel={nivelPorPiso(c.slaPct, 90, 75)}>{c.slaPct}%</StatusPill>

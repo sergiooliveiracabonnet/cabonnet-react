@@ -103,7 +103,7 @@ export function PeriodoGroupedTable({ rows, density, onRowClick, equipe }: {
                     <div className="ml-auto flex items-center gap-2">
                       {tipoItems.map(({ n, label }, idx) => (
                         <span key={label} className="flex items-center gap-1.5 text-caption text-muted">
-                          {idx > 0 && <span className="text-white/20">|</span>}
+                          {idx > 0 && <span className="text-disabled">|</span>}
                           <span className="font-mono font-bold text-secondary">{n}</span>
                           <span>{label}</span>
                         </span>

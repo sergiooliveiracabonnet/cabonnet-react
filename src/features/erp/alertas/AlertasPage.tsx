@@ -313,7 +313,7 @@ export default function AlertasPage() {
           </div>
           <GrafanaCityStrip cidades={grafOS.cidades as GrafanaCidade[]} loading={grafOS.loading} />
           {grafOS.error && (
-            <p className="text-caption text-muted/50 mt-1.5">iManager offline · usando dados ERP locais</p>
+            <p className="text-caption text-muted mt-1.5">iManager offline · usando dados ERP locais</p>
           )}
         </section>
       )}

@@ -11,7 +11,7 @@ export function SectionTitle({ children, icon: Icon, className = '' }: SectionTi
     <h2 className={`flex items-center gap-2 font-headline font-semibold text-caption
                     uppercase tracking-label text-muted
                     mt-6 mb-3 ${className}`}>
-      {Icon && <Icon size={12} className="text-muted/70" />}
+      {Icon && <Icon size={12} className="text-muted" />}
       {children}
     </h2>
   )

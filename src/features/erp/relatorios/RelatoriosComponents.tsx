@@ -84,7 +84,7 @@ export function Section({ title, subtitle, action, children, height = 'h-64' }: 
 export function Empty({ label = 'Sem dados' }) {
   return (
     <div className="flex items-center justify-center h-full">
-      <p className="text-sm text-muted/40">{label}</p>
+      <p className="text-sm text-muted">{label}</p>
     </div>
   )
 }

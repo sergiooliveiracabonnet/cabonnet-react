@@ -287,7 +287,7 @@ export function ClienteSearch({ rows, color, onDrillDown }: { rows: OSRow[]; col
           onChange={e => setQ(e.target.value)}
           placeholder="Buscar cliente em rota…"
           className="w-full pl-7 pr-7 py-1.5 rounded-lg text-caption bg-surface/30
-                     border border-subtle text-text placeholder:text-muted/50
+                     border border-subtle text-text placeholder:text-muted
                      focus:outline-none focus:border-muted/40 transition-colors"
         />
         {q && (
@@ -394,7 +394,7 @@ export function EquipeTable({ equipes, sourceRows, onDrillDown }: { equipes: ({ 
               <span className="font-mono text-label text-yellow text-right">{e.pendente}</span>
               <span className="font-mono text-label text-cyan text-right">{e.atendimento}</span>
               <span className="font-mono text-label text-green text-right">{e.concluida}</span>
-              <span className={`font-mono text-label text-right ${e.criticas > 0 ? 'text-red font-bold' : 'text-white/20'}`}>
+              <span className={`font-mono text-label text-right ${e.criticas > 0 ? 'text-red font-bold' : 'text-muted'}`}>
                 {e.criticas > 0 ? e.criticas : '—'}
               </span>
               <StatusPill nivel={nivelPorPiso(e.slaPct, 90, 75)} className="justify-self-center">{e.slaPct}%</StatusPill>

@@ -147,7 +147,7 @@ export function EscalaGrid({
                 {days.map(d => (
                   <th key={d.key}
                       className={`px-3 py-3 text-center text-caption font-bold border-r border-hairline last:border-r-0 w-56
-                                  ${d.isToday ? 'text-primary' : d.isWeekend ? 'text-muted/70' : 'text-muted'}
+                                  ${d.isToday ? 'text-primary' : d.isWeekend ? 'text-muted' : 'text-muted'}
                                   ${d.isWeekend ? 'bg-surface/10' : ''}`}>
                     <div>{d.dow}</div>
                     <div className={`text-caption font-normal mt-0.5 ${d.isToday ? 'text-primary/70' : ''}`}>{d.label}</div>

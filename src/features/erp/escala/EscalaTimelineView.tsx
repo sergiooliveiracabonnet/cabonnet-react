@@ -11,7 +11,7 @@ import type { OSRow } from '../../../lib/types'
 function HourCell({ rows, onClick }: { rows: OSRow[]; onClick: () => void }) {
   const count = rows.length
   if (count === 0) {
-    return <td className="px-1.5 py-2 text-center border-r border-hairline last:border-r-0"><span className="text-caption text-muted/40">—</span></td>
+    return <td className="px-1.5 py-2 text-center border-r border-hairline last:border-r-0"><span className="text-caption text-muted">—</span></td>
   }
   const conflito = count > 1
   return (
@@ -143,7 +143,7 @@ export function EscalaTimelineView() {
                           {t.semHorario.length}
                         </button>
                       ) : (
-                        <span className="text-caption text-muted/40">—</span>
+                        <span className="text-caption text-muted">—</span>
                       )}
                     </td>
                   </tr>

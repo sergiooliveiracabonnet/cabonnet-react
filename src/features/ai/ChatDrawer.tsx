@@ -134,7 +134,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
             rows={2}
             disabled={loading}
             className="flex-1 resize-none rounded-lg bg-card border border-subtle text-body text-text
-                       placeholder:text-muted/50 px-3 py-2 outline-none
+                       placeholder:text-muted px-3 py-2 outline-none
                        focus:border-primary/60 focus:ring-1 focus:ring-primary/20
                        transition-all disabled:opacity-50 leading-snug"
           />

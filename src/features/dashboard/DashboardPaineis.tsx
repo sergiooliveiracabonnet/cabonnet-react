@@ -422,7 +422,7 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
     return (
       <div className="h-full rounded-lg border border-border bg-card p-5">
         <SectionLabel icon={Target} color="rgb(var(--c-muted))">Meta do Mês</SectionLabel>
-        <p className="text-label text-muted/60 mt-3">
+        <p className="text-label text-muted mt-3">
           {meta.concluidas} concluídas até agora · sem execuções suficientes para dimensionar a capacidade
         </p>
       </div>
@@ -457,7 +457,7 @@ export function MetaMesCard({ meta }: { meta: PulsoMetaMes }) {
 
       {/* Meta sem lastro vira número de enfeite: mostra de onde ela sai */}
       {meta.frentes > 0 && (
-        <p className="mt-2 text-caption text-muted/70 tabular-nums"
+        <p className="mt-2 text-caption text-muted tabular-nums"
            title="Capacidade instalada: frentes que executaram OS nos últimos 7 dias × mediana de OS por frente/dia (60 dias) × dias úteis do mês">
           {meta.frentes} frentes × {meta.prodFrenteDia.toLocaleString('pt-BR')} OS/frente/dia × {meta.diasUteisTotal} dias úteis
         </p>
@@ -513,7 +513,7 @@ export function QualidadePeriodoCard({ pulso, taxaRevisitas }: { pulso: Pulso; t
             <p className="font-bold text-subtitle leading-none tabular-nums tracking-tight mt-1">
               <StatusValue nivel={s.danger ? 'critico' : s.warn ? 'atencao' : 'ok'} okClass="text-text">{s.value}</StatusValue>
             </p>
-            {s.sub && <p className="text-caption text-muted/70 mt-0.5 leading-none">{s.sub}</p>}
+            {s.sub && <p className="text-caption text-muted mt-0.5 leading-none">{s.sub}</p>}
           </div>
         ))}
       </div>

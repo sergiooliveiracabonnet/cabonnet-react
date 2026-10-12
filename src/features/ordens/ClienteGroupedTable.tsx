@@ -146,7 +146,7 @@ export function ClienteGroupedTable({ rows, density, onRowClick }: {
                     <div key={r.numos}>
                       {/* Conector de gap entre OS */}
                       {i > 0 && showGap && (
-                        <div className="flex items-center gap-2 py-1 text-caption text-muted/50">
+                        <div className="flex items-center gap-2 py-1 text-caption text-muted">
                           {gap != null ? `${gap}d depois` : ''}
                           {badge && (
                             <Badge variant={badge.variant} className="text-caption px-1 py-px">
