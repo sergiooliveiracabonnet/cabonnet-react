@@ -11,9 +11,11 @@ const base = [
 
 const variants = {
   primary: [
-    'bg-primary text-white',
+    // text-white sobre --c-primary no escuro da 3.6:1; sobre --c-primary-dark, 5.3:1.
+    // No claro os dois sao o mesmo azul, entao o hover passa a ser brilho.
+    'bg-primary-dark text-white',
     'shadow-sm',
-    'hover:bg-primary-dark',
+    'hover:brightness-110',
   ].join(' '),
 
   ghost: [

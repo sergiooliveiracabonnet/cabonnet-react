@@ -31,24 +31,6 @@
       "#27272a",
       "#e4e4e7"
     ],
-    "src/features/auth/LoginPage.tsx": [
-      "#010509",
-      "#020810",
-      "#040c18",
-      "#047857",
-      "#059669",
-      "#07111f",
-      "#0d2147",
-      "#1d4ed8",
-      "#1e40af",
-      "#38bdf8",
-      "#4f46e5",
-      "#6366f1",
-      "#818cf8",
-      "#93c5fd",
-      "#e2e8f0",
-      "#e8edf5"
-    ],
     "src/features/erp/fila/FilaPage.tsx": [
       "#ef4444"
     ],
@@ -103,7 +85,7 @@
     ]
   },
   "tetos": {
-    "hexTolerados": 77,
-    "valoresArbitrarios": 268
+    "hexTolerados": 61,
+    "valoresArbitrarios": 265
   }
 }
