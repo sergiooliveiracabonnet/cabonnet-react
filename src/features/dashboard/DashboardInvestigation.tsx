@@ -37,7 +37,7 @@ export function DashboardInvestigation({ operation, territory }: DashboardInvest
           <Binoculars size={16} aria-hidden="true" />
         </span>
         <div>
-          <p className="text-caption font-bold uppercase tracking-label text-purple">Nível 3</p>
+          <p className="text-caption font-medium text-purple">Nível 3</p>
           <h2 id="dashboard-investigation-title" className="text-title font-bold text-text">Investigar causas</h2>
           <p className="mt-0.5 text-caption text-muted">Abra apenas a perspectiva necessária para explicar o resultado.</p>
         </div>

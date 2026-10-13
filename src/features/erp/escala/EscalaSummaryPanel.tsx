@@ -139,7 +139,7 @@ export function EscalaSummaryPanel({ days, items }: { days: WeekDay[]; items: Es
         </div>
 
         <div className="lg:w-72 flex-shrink-0 rounded-2xl border border-subtle bg-card p-4">
-          <p className="text-caption font-bold uppercase tracking-label text-muted mb-2">Controle rápido</p>
+          <p className="text-caption font-medium text-muted mb-2">Controle rápido</p>
           <table className="w-full">
             <thead>
               <tr>

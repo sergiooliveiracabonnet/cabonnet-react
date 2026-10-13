@@ -255,7 +255,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               {results.pages.length > 0 && (
                 <div>
                   {showSectionHeaders && (
-                    <p className="px-4 pt-3 pb-1 text-caption font-semibold text-muted uppercase tracking-label">Páginas</p>
+                    <p className="px-4 pt-3 pb-1 text-caption font-medium text-muted">Páginas</p>
                   )}
                   <div className="divide-y divide-hairline">
                     {results.pages.map(page => {
@@ -287,7 +287,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               {clientes.length > 0 && (
                 <div>
                   {showSectionHeaders && (
-                    <p className="px-4 pt-3 pb-1 text-caption font-semibold text-muted uppercase tracking-label">Clientes</p>
+                    <p className="px-4 pt-3 pb-1 text-caption font-medium text-muted">Clientes</p>
                   )}
                   <div className="divide-y divide-hairline">
                     {clientes.map(c => {
@@ -326,7 +326,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               {results.os.length > 0 && (
                 <div>
                   {showSectionHeaders && (
-                    <p className="px-4 pt-3 pb-1 text-caption font-semibold text-muted uppercase tracking-label">Ordens de Serviço</p>
+                    <p className="px-4 pt-3 pb-1 text-caption font-medium text-muted">Ordens de Serviço</p>
                   )}
                   <div className="divide-y divide-hairline">
                     {results.os.map(os => {

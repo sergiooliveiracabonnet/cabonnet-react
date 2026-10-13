@@ -94,9 +94,9 @@ export function ClientCard({ c }: { c: JuniperClient }) {
             <div className="flex items-center gap-2 mb-0.5">
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0
                 ${isOnline ? 'bg-red shadow-[0_0_6px_rgba(248,113,113,0.7)] animate-pulse' : 'bg-muted/60'}`} />
-              <p className="text-body font-bold text-text truncate uppercase antialiased leading-tight">{c.usuario}</p>
+              <p className="text-body font-medium text-text truncate antialiased leading-tight">{c.usuario}</p>
             </div>
-            <p className="text-caption text-muted ml-3.5 uppercase tracking-label font-mono truncate">{c.iface}</p>
+            <p className="text-caption text-muted ml-3.5 font-mono truncate">{c.iface}</p>
           </div>
           <span className={`flex-shrink-0 inline-flex items-center gap-1.5 text-caption font-bold px-2.5 py-1 rounded-full tracking-widest border
             ${isOnline ? 'bg-red/[0.10] text-red border-red/25' : 'bg-surface text-muted border-subtle'}`}>
@@ -108,15 +108,15 @@ export function ClientCard({ c }: { c: JuniperClient }) {
         <div className={`rounded-xl px-3 py-2.5 mb-3 border ${isOnline
           ? 'bg-red/[0.06] border-red/[0.15]'
           : 'bg-surface/20 border-hairline'}`}>
-          <p className="text-caption font-bold uppercase tracking-label text-muted mb-1">Endereço IP</p>
+          <p className="text-caption font-medium text-muted mb-1">Endereço IP</p>
           <p className={`text-title font-mono font-bold uppercase antialiased leading-none tracking-wide
             ${isOnline ? 'text-red' : 'text-secondary'}`}>{c.ip}</p>
         </div>
 
         {c.mac !== '—' && (
           <div className="mb-3">
-            <p className="text-caption font-bold uppercase tracking-label text-muted mb-0.5">MAC Address</p>
-            <p className="text-caption font-mono text-secondary uppercase tracking-wider">{c.mac}</p>
+            <p className="text-caption font-medium text-muted mb-0.5">MAC Address</p>
+            <p className="text-caption font-mono text-secondary">{c.mac}</p>
           </div>
         )}
 

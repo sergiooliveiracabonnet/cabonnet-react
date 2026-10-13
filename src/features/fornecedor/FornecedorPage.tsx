@@ -404,7 +404,7 @@ function FornecedorPanel({ nome, cor, equipes, kpis, chart, custoMensal, onCusto
                 <div key={k.label}
                   title={'title' in k ? k.title : undefined}
                   className={`bg-surface bg-gradient-to-br ${FROM[k.accent] ?? FROM.primary} to-transparent border border-subtle rounded-xl p-3`}>
-                  <p className="text-caption font-bold uppercase tracking-wide text-muted mb-1">{k.label}</p>
+                  <p className="text-caption font-medium text-muted mb-1">{k.label}</p>
                   <p className={`font-mono font-bold text-xl leading-none ${TEXT[k.accent] ?? TEXT.primary}`}>{k.value ?? '—'}</p>
                 </div>
               ))}

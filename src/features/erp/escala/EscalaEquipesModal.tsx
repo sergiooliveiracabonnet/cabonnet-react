@@ -45,7 +45,7 @@ export function EscalaEquipesModal({ open, onClose }: { open: boolean; onClose: 
   }
 
   const titulo = (empresa: Empresa) => (
-    <p className="mb-1.5 flex items-center gap-1.5 text-caption font-bold uppercase tracking-label text-muted">
+    <p className="mb-1.5 flex items-center gap-1.5 text-caption font-medium text-muted">
       <span className="h-2 w-2 rounded-sm" style={{ background: EMPRESA_COLOR[empresa] }} />{EMPRESA_LABEL[empresa]}
     </p>
   )

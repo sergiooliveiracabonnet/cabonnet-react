@@ -278,7 +278,7 @@ export default function OrdensPage() {
 
       {/* ── Opções de visualização ── */}
       <div className="flex items-center justify-between gap-3 flex-wrap border-b border-hairline pb-2">
-        <p className="text-caption font-bold uppercase tracking-label text-muted">
+        <p className="text-caption font-medium text-muted">
           Indicadores do resultado atual
         </p>
         <div className="flex items-center justify-end gap-2 flex-wrap">

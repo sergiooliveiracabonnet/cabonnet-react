@@ -151,16 +151,16 @@ function AlertaPainel({
           {expanded && (
             <div className="px-4 pb-4 space-y-2.5 text-label">
               <div>
-                <p className="text-caption font-bold uppercase tracking-label text-purple/70 mb-0.5">Causa Principal</p>
+                <p className="text-caption font-medium text-purple/70 mb-0.5">Causa Principal</p>
                 <p className="text-text leading-relaxed">{iaResult.causa_principal}</p>
               </div>
               <div>
-                <p className="text-caption font-bold uppercase tracking-label text-muted mb-0.5">Impacto</p>
+                <p className="text-caption font-medium text-muted mb-0.5">Impacto</p>
                 <p className="text-text leading-relaxed">{iaResult.impacto}</p>
               </div>
               {iaResult.acoes?.length > 0 && (
                 <div>
-                  <p className="text-caption font-bold uppercase tracking-label text-muted mb-1">Ações</p>
+                  <p className="text-caption font-medium text-muted mb-1">Ações</p>
                   <ul className="space-y-0.5">
                     {iaResult.acoes.map((a, i) => (
                       <li key={i} className="flex items-baseline gap-1.5 text-text">
@@ -171,7 +171,7 @@ function AlertaPainel({
                 </div>
               )}
               <div className="pt-2 border-t border-purple/10">
-                <p className="text-caption font-bold uppercase tracking-label text-muted mb-0.5">Recomendação para Gestão</p>
+                <p className="text-caption font-medium text-muted mb-0.5">Recomendação para Gestão</p>
                 <p className="text-purple font-medium">{iaResult.recomendacao_gestao}</p>
               </div>
             </div>

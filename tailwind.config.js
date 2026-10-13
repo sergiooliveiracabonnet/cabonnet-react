@@ -56,7 +56,7 @@ export default {
         mono:     ['"Inter Variable"', '"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
       },
 
-      // Escala tipográfica semantizada — 5 papéis, mínimo 11px (spec Onda 1)
+      // Escala tipográfica semantizada — 5 papéis, mínimo 12px (era 11px até a crítica de 2026-10)
       fontSize: {
         caption:       ['var(--fs-caption)',      { lineHeight: '1.35' }],
         label:         ['var(--fs-label)',        { lineHeight: '1.4'  }],

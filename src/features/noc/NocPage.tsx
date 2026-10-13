@@ -51,7 +51,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
     <div className="h-full p-6 flex flex-col gap-4">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Pulse size={13} className="text-muted" />
-        <p className="text-caption font-bold uppercase tracking-label text-muted">
+        <p className="text-caption font-medium text-muted">
           Visão Operacional
         </p>
       </div>
@@ -70,7 +70,7 @@ function SlideOperacional({ kpis, isLoading }: { kpis: any[]; isLoading: boolean
                              flex flex-col items-center justify-center gap-2 p-6 relative overflow-hidden`}
               >
                 <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${acc.bar}`} />
-                <p className="text-caption font-bold text-muted uppercase tracking-label text-center">
+                <p className="text-caption font-medium text-muted text-center">
                   {k.title}
                 </p>
                 <p className={`font-mono text-7xl font-bold tabular-nums ${acc.text}`}>
@@ -98,7 +98,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       <div className="flex flex-col gap-2.5 overflow-y-auto">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
           <Users size={13} className="text-muted" />
-          <p className="text-caption font-bold uppercase tracking-label text-muted">
+          <p className="text-caption font-medium text-muted">
             Semáforo por Equipe
           </p>
         </div>
@@ -130,7 +130,7 @@ function SlideEquipes({ semaforo, slaCriticas }: { semaforo: any[]; slaCriticas:
       <div className="flex flex-col gap-2.5 overflow-hidden">
         <div className="flex items-center gap-2 flex-shrink-0 mb-0.5">
           <WarningCircle size={13} className="text-red flex-shrink-0" />
-          <p className="text-caption font-bold uppercase tracking-label text-muted">
+          <p className="text-caption font-medium text-muted">
             OS com SLA 2× Excedido
           </p>
           <span className="ml-auto font-mono text-body font-bold text-red tabular-nums">
@@ -184,7 +184,7 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
     <div className="h-full p-6 flex flex-col gap-4 overflow-y-auto">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Package size={13} className="text-muted" />
-        <p className="text-caption font-bold uppercase tracking-label text-muted">
+        <p className="text-caption font-medium text-muted">
           Desempenho por Fornecedor
         </p>
       </div>
@@ -209,15 +209,15 @@ function SlideFornecedores({ fornecedores }: { fornecedores: any[] }) {
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-caption text-muted uppercase tracking-wide mb-1">Ativas</p>
+                  <p className="text-caption text-muted mb-1">Ativas</p>
                   <p className="font-mono text-2xl font-bold text-text tabular-nums">{f.total}</p>
                 </div>
                 <div>
-                  <p className="text-caption text-muted uppercase tracking-wide mb-1">Concl.</p>
+                  <p className="text-caption text-muted mb-1">Concl.</p>
                   <p className="font-mono text-2xl font-bold text-green tabular-nums">{f.concluidas}</p>
                 </div>
                 <div>
-                  <p className="text-caption text-muted uppercase tracking-wide mb-1">SLA%</p>
+                  <p className="text-caption text-muted mb-1">SLA%</p>
                   <p className={`inline-flex items-center gap-1.5 font-mono text-2xl font-bold tabular-nums ${statusTextClass(slaNivel)}`}><StatusIcon nivel={slaNivel} size="0.75em" />{f.sla}%</p>
                 </div>
               </div>

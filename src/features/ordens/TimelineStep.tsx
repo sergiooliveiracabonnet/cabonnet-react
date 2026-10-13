@@ -128,7 +128,7 @@ export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, regi
         {/* Troca de equipe — agendada vs. executante */}
         {d.equipeAgendada && (
           <div className="mt-2.5 bg-yellow/[0.07] border border-yellow/20 rounded-xl px-3 py-2.5">
-            <p className="text-caption font-bold uppercase tracking-label text-yellow/80 mb-1.5 flex items-center gap-1.5">
+            <p className="text-caption font-medium text-yellow/80 mb-1.5 flex items-center gap-1.5">
               <Users size={10} /> Equipe diferente da agendada
             </p>
             <div className="flex items-center gap-2 text-caption">
@@ -169,7 +169,7 @@ export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, regi
             {/* Histórico de notas / reagendamentos */}
             {(d.historico?.length ?? 0) > 0 && (
               <div className="space-y-1.5">
-                <p className="text-caption font-bold uppercase tracking-label text-muted flex items-center gap-1.5">
+                <p className="text-caption font-medium text-muted flex items-center gap-1.5">
                   <ChatText size={10} /> Histórico de ocorrências
                 </p>
                 {d.historico!.map((entry, i) => (
@@ -210,7 +210,7 @@ export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, regi
             {/* Materiais utilizados */}
             {(d.materiais?.length ?? 0) > 0 && (
               <div className="bg-surface/30 border border-subtle rounded-xl px-3 py-2.5">
-                <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
+                <p className="text-caption font-medium text-muted mb-2 flex items-center gap-1.5">
                   <Package size={10} /> Materiais utilizados
                 </p>
                 <div className="space-y-1">
@@ -228,7 +228,7 @@ export function TimelineStep({ icon: Icon, color, label, date, equipe, obs, regi
             {/* Materiais retirados */}
             {(d.matRetirados?.length ?? 0) > 0 && (
               <div className="bg-red/[0.05] border border-red/15 rounded-xl px-3 py-2.5">
-                <p className="text-caption font-bold uppercase tracking-label text-red/70 mb-2 flex items-center gap-1.5">
+                <p className="text-caption font-medium text-red/70 mb-2 flex items-center gap-1.5">
                   <Package size={10} /> Materiais retirados
                 </p>
                 <div className="space-y-1">
@@ -263,7 +263,7 @@ function InfoPill({ label, value, mono }: { label: string; value: string; mono?:
 function InfoBlock({ label, text }: { label: string; text: string }) {
   return (
     <div className="bg-surface/30 border border-subtle rounded-xl px-3 py-2.5">
-      <p className="text-caption font-bold uppercase tracking-label text-muted mb-1">{label}</p>
+      <p className="text-caption font-medium text-muted mb-1">{label}</p>
       <p className="text-caption text-secondary leading-relaxed whitespace-pre-wrap">{text}</p>
     </div>
   )

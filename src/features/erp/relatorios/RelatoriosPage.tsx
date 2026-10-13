@@ -333,7 +333,7 @@ export default function RelatoriosPage() {
                                 flex flex-col justify-between cursor-pointer hover:bg-surface/30 transition-colors"
                      onClick={() => setDrill({ title: `Total Executado — ${drillConcl.length} ordens`, rows: drillConcl, color: 'rgb(var(--c-primary))' })}>
                   <div className="absolute top-0 left-0 right-0 h-[2px] bg-surface/200" />
-                  <p className="text-caption font-bold uppercase tracking-widest text-muted mb-2">Total Executado</p>
+                  <p className="text-caption font-medium text-muted mb-2">Total Executado</p>
                   <p className="font-mono font-black tabular-nums leading-none text-text" style={{ fontSize: 'clamp(36px,4vw,48px)' }}>
                     {totals.execTotal}
                   </p>
@@ -353,7 +353,7 @@ export default function RelatoriosPage() {
                        style={{ borderColor: `color-mix(in srgb, ${s.color} 15%, transparent)` }}
                        onClick={() => setDrill({ title: `${s.label} Executadas — ${s.rows.length} ordens`, rows: s.rows, color: s.color })}>
                     <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: s.color }} />
-                    <p className="text-caption font-bold uppercase tracking-widest text-muted mb-2">{s.label}</p>
+                    <p className="text-caption font-medium text-muted mb-2">{s.label}</p>
                     <p className="font-mono font-black tabular-nums leading-none" style={{ fontSize: 'clamp(32px,3.5vw,42px)', color: s.color }}>
                       {s.value}
                     </p>
@@ -371,7 +371,7 @@ export default function RelatoriosPage() {
 
               {/* Barra de proporção */}
               <div className="px-5 pb-5">
-                <p className="text-caption font-bold uppercase tracking-widest text-muted mb-2">Proporção da produção</p>
+                <p className="text-caption font-medium text-muted mb-2">Proporção da produção</p>
                 <div className="flex h-3 rounded-full overflow-hidden gap-px">
                   {totals.pctInst    > 0 && <div className="transition-all duration-700" style={{ width: `${totals.pctInst}%`,    background: 'rgb(var(--c-chart-2))' }} title={`Instalações ${totals.pctInst}%`} />}
                   {totals.pctManut   > 0 && <div className="transition-all duration-700" style={{ width: `${totals.pctManut}%`,   background: 'rgb(var(--c-chart-1))' }} title={`Manutenções ${totals.pctManut}%`} />}

@@ -103,7 +103,7 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
 
         {/* Seletor de fornecedor */}
         <div className="space-y-2">
-          <p className="text-caption font-bold text-muted uppercase tracking-wide">Fornecedor</p>
+          <p className="text-caption font-medium text-muted">Fornecedor</p>
           <div className="flex flex-wrap gap-2">
             {FORNECEDOR_OPTS.map(o => {
               const cnt    = ordens.filter(r => r._fornecedor === o.value).length
@@ -142,12 +142,12 @@ export function TelegramOrdensModal({ open, onClose, ordens }: TelegramOrdensMod
           )}
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-surface/30 rounded px-3 py-2 space-y-0.5">
-              <p className="text-caption font-bold text-muted uppercase tracking-wide">Resumo</p>
+              <p className="text-caption font-medium text-muted">Resumo</p>
               <p className="text-secondary text-label">{equipes} equipes · {rows.length} OS</p>
               <p className="text-muted text-caption">Imagem · {scopeLabel}</p>
             </div>
             <div className="bg-surface/30 rounded px-3 py-2 space-y-0.5">
-              <p className="text-caption font-bold text-muted uppercase tracking-wide">Detalhado</p>
+              <p className="text-caption font-medium text-muted">Detalhado</p>
               <p className="text-secondary text-label">{rows.length} OS individualmente</p>
               <p className="text-muted text-caption">Documento · {scopeLabel}</p>
             </div>

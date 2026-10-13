@@ -228,9 +228,9 @@
 
 /* TIPO: MESA */
 :root {
-  --fs-caption:      11px;   /* rotulo denso, o piso do sistema */
-  --fs-label:        12px;   /* rotulo de campo                 */
-  --fs-body:         13px;   /* texto corrido                   */
+  --fs-caption:      12px;   /* rotulo denso, o piso do sistema */
+  --fs-label:        13px;   /* rotulo de campo                 */
+  --fs-body:         14px;   /* texto corrido                   */
   --fs-title:        15px;   /* titulo de cartao                */
   --fs-subtitle:     18px;   /* titulo de secao                 */
   --fs-headline:     22px;   /* titulo de pagina                */

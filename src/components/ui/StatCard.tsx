@@ -130,7 +130,7 @@ export function StatCard({
                     ${onClick ? `cursor-pointer ${FOCUS_RING}` : ''} ${className}`}
       >
         <p className="text-headline font-bold tabular-nums leading-none" style={{ color: valColor }}>{value ?? '—'}</p>
-        <p className="text-caption text-muted mt-1 uppercase tracking-wide">{title}</p>
+        <p className="text-caption text-muted mt-1">{title}</p>
         {sub && <p className="text-caption text-muted mt-0.5">{sub}</p>}
         {sparkline && sparkline.length > 1 && (
           <div className="flex justify-center">

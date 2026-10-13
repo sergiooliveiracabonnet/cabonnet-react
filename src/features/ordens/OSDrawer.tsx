@@ -275,7 +275,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
             <Section label="Observações">
               {obsCrit && (
                 <div className="bg-red/[0.08] border border-red/20 rounded-xl p-4">
-                  <p className="text-caption font-bold uppercase tracking-label text-red mb-2 flex items-center gap-1.5">
+                  <p className="text-caption font-medium text-red mb-2 flex items-center gap-1.5">
                     <Warning size={11} /> Observação Crítica
                   </p>
                   <p className="text-label text-red/85 leading-relaxed whitespace-pre-wrap">{obsCrit as string}</p>
@@ -359,7 +359,7 @@ export default function OSDrawer({ os: osMaybe, onClose }: { os: OSRow | null; o
                     os._diasAteAgendamento!= null && { label: 'Dias até agend.',        value: `${os._diasAteAgendamento}d`, color: 'text-secondary' },
                   ].filter(Boolean).map((item) => { const { label, value, color } = item as { label: string; value: string; color: string }; return (
                     <div key={label} className="bg-surface/30 border border-subtle rounded-xl p-3 text-center">
-                      <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 leading-tight">{label}</p>
+                      <p className="text-caption font-medium text-muted mb-2 leading-tight">{label}</p>
                       <p className={`font-mono text-headline font-black leading-none ${color}`}>{value}</p>
                     </div>
                   )})}
@@ -462,7 +462,7 @@ function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <p className="text-caption font-bold uppercase tracking-label text-muted whitespace-nowrap">{label}</p>
+        <p className="text-caption font-medium text-muted whitespace-nowrap">{label}</p>
         <div className="flex-1 h-px bg-surface" />
       </div>
       {children}

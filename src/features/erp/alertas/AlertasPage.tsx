@@ -256,13 +256,13 @@ export default function AlertasPage() {
               )}
               {aiAlertas.causa_raiz && (
                 <div>
-                  <p className="text-caption font-bold uppercase tracking-wide text-muted mb-1">Causa raiz</p>
+                  <p className="text-caption font-medium text-muted mb-1">Causa raiz</p>
                   <p className="text-label text-secondary leading-relaxed">{aiAlertas.causa_raiz}</p>
                 </div>
               )}
               {aiAlertas.acao_imediata && (
                 <div>
-                  <p className="text-caption font-bold uppercase tracking-wide text-muted mb-1">Ação imediata</p>
+                  <p className="text-caption font-medium text-muted mb-1">Ação imediata</p>
                   <p className="text-label text-text font-semibold leading-relaxed">{aiAlertas.acao_imediata}</p>
                 </div>
               )}

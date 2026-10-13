@@ -271,7 +271,7 @@ export default function CidadesPage() {
                             hover:shadow-md hover:-translate-y-0.5 focus-visible:outline-none
                             focus-visible:ring-2 focus-visible:ring-primary/50`}
               >
-                <p className="text-caption font-bold uppercase tracking-label text-muted mb-1">{p.title}</p>
+                <p className="text-caption font-medium text-muted mb-1">{p.title}</p>
                 <p className={`font-mono font-bold text-3xl text-${p.color}`}>{p.rows.length}</p>
                 <p className="text-caption text-muted mt-0.5">ordens</p>
                 {(p.semEquipe ?? 0) > 0 && (

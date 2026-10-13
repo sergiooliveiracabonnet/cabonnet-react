@@ -146,7 +146,7 @@ export const RefreshControl = memo(function RefreshControl() {
             )}
           </div>
           <div className="px-3 py-2">
-            <p className="text-caption font-bold uppercase tracking-label text-muted mb-2">Auto-refresh</p>
+            <p className="text-caption font-medium text-muted mb-2">Auto-refresh</p>
             {INTERVALS.map((opt) => (
               <button
                 key={String(opt.value)}
@@ -271,7 +271,7 @@ export function AIStatusBadge() {
             {/* Uso desta sessão */}
             {usage && (
               <div className="px-4 py-3 border-b border-hairline space-y-2">
-                <p className="text-caption font-bold uppercase tracking-label text-muted">Esta sessão do servidor</p>
+                <p className="text-caption font-medium text-muted">Esta sessão do servidor</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                   <div>
                     <p className="text-caption text-muted">Chamadas</p>
@@ -455,7 +455,7 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
           </div>
           {alerts.length > 0 && (
             <div className="border-b border-subtle">
-              <p className="text-caption font-bold uppercase tracking-label text-muted px-3 pt-2.5 pb-1.5">
+              <p className="text-caption font-medium text-muted px-3 pt-2.5 pb-1.5">
                 Ativos ({alerts.length})
               </p>
               {alerts.map(a => (
@@ -473,7 +473,7 @@ export function AlertasEngineBadge({ alerts }: { alerts: FiredAlert[] }) {
             </div>
           )}
           <div className="px-3 py-2.5 space-y-2.5">
-            <p className="text-caption font-bold uppercase tracking-label text-muted">Regras</p>
+            <p className="text-caption font-medium text-muted">Regras</p>
             {rules.map(rule => (
               <div key={rule.id} className="flex items-center gap-2">
                 <button

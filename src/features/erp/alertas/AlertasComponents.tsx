@@ -360,7 +360,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
 
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           <div>
-            <p className="text-caption font-bold uppercase tracking-widest text-muted mb-4">
+            <p className="text-caption font-medium text-muted mb-4">
               Thresholds do Motor de Alertas
             </p>
             <div className="space-y-5">
@@ -389,7 +389,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
 
           <div className="pt-2 border-t border-subtle">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-caption font-bold uppercase tracking-widest text-muted">Regras de negócio</p>
+              <p className="text-caption font-medium text-muted">Regras de negócio</p>
               <button onClick={() => setRulesD(DEFAULT_RULES.map(rule => ({ ...rule })))}
                 className="min-h-8 text-caption text-muted hover:text-secondary underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-primary/50 rounded">
                 Restaurar padrões
@@ -419,7 +419,7 @@ export function SettingsPanel({ settings, onSave, onClose }: {
 
           <div className="pt-2 border-t border-subtle">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-caption font-bold uppercase tracking-widest text-muted">
+              <p className="text-caption font-medium text-muted">
                 Limites de SLA por Tipo (dias)
               </p>
               <button

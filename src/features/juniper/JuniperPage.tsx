@@ -254,7 +254,7 @@ export default function JuniperPage() {
       {/* ── Origem segura da coleta ── */}
       <div className="bg-card border border-subtle border-l-[4px] border-l-primary rounded-xl p-5">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-caption font-bold uppercase tracking-label text-primary/80 flex items-center gap-1.5">
+          <p className="text-caption font-medium text-primary/80 flex items-center gap-1.5">
             <ShieldCheck size={13} /> Coleta protegida pelo servidor · Cluster {cluster}
           </p>
           <StatusPill nivel={hero.nivel ?? ''} txt={hero.statusTxt ?? 'Não verificado'} />

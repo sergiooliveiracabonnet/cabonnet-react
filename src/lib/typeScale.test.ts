@@ -96,9 +96,11 @@ describe('degraus e densidade', () => {
     }
   })
 
-  it('nada desce abaixo de 11px, o mínimo do sistema', () => {
+  it('nada desce abaixo de 12px, o mínimo do sistema', () => {
+    // Era 11px até a crítica de 2026-10: 1051 usos de caption a 11px, em caixa
+    // alta e cinza, a 60 cm da tela durante a jornada inteira.
     for (const [papel, px] of Object.entries(escala.mesa)) {
-      expect(px, papel).toBeGreaterThanOrEqual(11)
+      expect(px, papel).toBeGreaterThanOrEqual(12)
     }
   })
 })

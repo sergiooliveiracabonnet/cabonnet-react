@@ -294,7 +294,7 @@ export default function GerencialPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-medium text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
@@ -304,7 +304,7 @@ export default function GerencialPage() {
               />
             </div>
             <div>
-              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-medium text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Concluídas por cidade
               </p>
               <CidadeTable
@@ -354,7 +354,7 @@ export default function GerencialPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-medium text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
@@ -364,7 +364,7 @@ export default function GerencialPage() {
               />
             </div>
             <div>
-              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-medium text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Concluídas por cidade
               </p>
               <CidadeTable
@@ -414,7 +414,7 @@ export default function GerencialPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-medium text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Em aberto por cidade
               </p>
               <CidadeTable
@@ -424,7 +424,7 @@ export default function GerencialPage() {
               />
             </div>
             <div>
-              <p className="text-caption font-bold uppercase tracking-label text-muted mb-2 flex items-center gap-1.5">
+              <p className="text-caption font-medium text-muted mb-2 flex items-center gap-1.5">
                 <MapPin size={10} /> Concluídos por cidade
               </p>
               <CidadeTable
