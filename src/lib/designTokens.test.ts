@@ -16,27 +16,30 @@ import { lerComponentes, lerIndexCss, resolveTheme } from '../../scripts/design-
  * em componente.
  */
 
+// Valores resolvidos. Mexer aqui e mexer em pixel: a ultima revisao foi a das
+// superficies, da critica de 2026-10 (camadas, borda e texto no escuro; borda
+// e sombra no claro).
 const DARK = {
-  '--c-bg': '2 2 2',
-  '--c-elevated': '8 8 8',
-  '--c-surface': '24 24 24',
-  '--c-card': '12 12 12',
-  '--c-card-high': '18 18 18',
-  '--c-card-highest': '32 32 32',
-  '--c-border': '37 37 37',
-  '--c-text': '255 255 255',
-  '--c-secondary': '181 181 181',
-  '--c-muted': '138 138 138',
+  '--c-bg': '10 10 11',
+  '--c-elevated': '15 15 17',
+  '--c-surface': '32 32 36',
+  '--c-card': '20 20 22',
+  '--c-card-high': '26 26 29',
+  '--c-card-highest': '40 40 45',
+  '--c-border': '58 58 64',
+  '--c-text': '238 238 241',
+  '--c-secondary': '190 190 196',
+  '--c-muted': '152 152 160',
   '--c-disabled': '80 80 80',
-  '--c-primary': '80 132 240',
+  '--c-primary': '100 150 247',
   '--c-primary-dark': '31 97 236',
-  '--c-blue': '80 132 240',
+  '--c-blue': '100 150 247',
   '--c-cyan': '34 211 238',
   '--c-green': '17 199 176',
   '--c-yellow': '245 201 21',
   '--c-red': '255 107 107',
-  '--c-orange': '255 90 31',
-  '--c-purple': '154 122 255',
+  '--c-orange': '255 100 45',
+  '--c-purple': '160 130 255',
   '--c-teal': '45 212 191',
 }
 
@@ -47,7 +50,7 @@ const LIGHT = {
   '--c-card': '255 255 255',
   '--c-card-high': '255 255 255',
   '--c-card-highest': '238 240 242',
-  '--c-border': '232 232 232',
+  '--c-border': '212 216 223',
   '--c-text': '23 23 23',
   '--c-secondary': '68 68 68',
   '--c-muted': '109 109 109',
@@ -276,21 +279,35 @@ describe('contraste de acento', () => {
   })
 })
 
-describe('tinta de KPI e serie de grafico', () => {
-  it.each(['dark', 'light'] as const)('%s: a tinta de KPI passa sobre o acento', tema => {
-    // O par vem do sufixo: --c-kpi-ink-orange e medido contra --c-orange.
-    // A escolha nao e preferencia — a tinta oposta reprova nos oito casos.
+describe('selos (badges) e serie de grafico', () => {
+  // O alfa da tinta mora no CSS; o teste le de la em vez de repetir o numero.
+  const css = readFileSync('src/index.css', 'utf8')
+  const ACENTOS = ['green', 'red', 'yellow', 'orange', 'purple', 'cyan', 'teal']
+
+  function alfaDoSelo(cor: string, tema: 'dark' | 'light'): number {
+    const inicio = `${tema === 'light' ? '.light ' : ''}.badge-${cor} `
+    const linha = css.split(/\r?\n/).find(l => l.startsWith(inicio) && l.includes('background:'))
+    expect(linha, `${tema}: .badge-${cor} nao encontrado`).toBeDefined()
+    const m = linha!.match(/background:\s*rgb\(var\(--c-(\w+)\)\s*\/\s*([0-9.]+)\)/)
+    expect(m, `${tema}: .badge-${cor} sem tinta lida de token`).not.toBeNull()
+    expect(m![1], `${tema}: .badge-${cor} usa a tinta de outro token`).toBe(cor)
+    return Number(m![2])
+  }
+
+  it.each(['dark', 'light'] as const)('%s: o texto do selo passa sobre a propria tinta', tema => {
+    // O texto e o acento; o fundo e o acento a 6-12% sobre o card. Texto escuro
+    // sobre a propria tinta perde contraste: no claro, 12% dava 4.45:1.
     const resolvidos = resolveTheme(tokens, tema)
-    const tintas = Object.keys(resolvidos).filter(n => n.startsWith('--c-kpi-ink-'))
-
-    expect(tintas.length, 'a varredura de tinta esvaziou').toBe(4)
-
-    for (const tinta of tintas) {
-      const acento = tinta.replace('--c-kpi-ink-', '--c-')
-      expect(resolvidos[acento], `${tinta} nao tem acento ${acento}`).toBeDefined()
-      const r = contraste(resolvidos[tinta], resolvidos[acento])
-      expect(r, `${tinta} sobre ${acento}: ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5)
+    const card = resolvidos['--c-card'].split(' ').map(Number)
+    const reprovados: string[] = []
+    for (const cor of ACENTOS) {
+      const texto = resolvidos[`--c-${cor}`]
+      const alfa = alfaDoSelo(cor, tema)
+      const fundo = texto.split(' ').map((v, i) => Math.round(Number(v) * alfa + card[i] * (1 - alfa))).join(' ')
+      const r = contraste(texto, fundo)
+      if (r < 4.5) reprovados.push(`${cor}: ${r.toFixed(2)}:1 (alfa ${alfa})`)
     }
+    expect(reprovados).toEqual([])
   })
 
   it.each(['dark', 'light'] as const)('%s: a serie de grafico se ve e se distingue', tema => {

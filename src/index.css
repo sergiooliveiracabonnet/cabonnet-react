@@ -28,26 +28,31 @@
 
 /* PRIMITIVOS */
 :root {
-  /* Escala escura do design system. Sete degraus de superficie mais tres de
-     texto: o painel de operacao empilha muita superficie, e sem degrau proprio
+  /* Escala escura do design system. Reajustada na critica de 2026-10: os
+     degraus vizinhos davam 1.02 a 1.09 de contraste e o card sumia do fundo;
+     agora 1.03 a 1.11, com a borda a 1.6:1 sobre o card (era 1.3). Subir as
+     camadas custa contraste de acento, entao primario, laranja, roxo e as
+     series 1, 4, 5 e 6 foram clareados juntos (ver designTokens.test.ts).
+     Sete degraus de superficie mais tres de texto: o painel de operacao empilha muita superficie, e sem degrau proprio
      cada componente inventava o seu. */
-  --p-carbon-0:    2   2   2;
-  --p-carbon-1:    8   8   8;
-  --p-carbon-2:   12  12  12;
-  --p-carbon-3:   18  18  18;
-  --p-carbon-4:   24  24  24;
-  --p-carbon-5:   32  32  32;
-  --p-carbon-6:   37  37  37;
+  --p-carbon-0:   10  10  11;
+  --p-carbon-1:   15  15  17;
+  --p-carbon-2:   20  20  22;
+  --p-carbon-3:   26  26  29;
+  --p-carbon-4:   32  32  36;
+  --p-carbon-5:   40  40  45;
+  --p-carbon-6:   58  58  64;
   --p-carbon-7:   80  80  80;
-  --p-carbon-8:  138 138 138;
-  --p-carbon-9:  181 181 181;
+  --p-carbon-8:  152 152 160;
+  --p-carbon-9:  190 190 196;
+  --p-carbon-10: 238 238 241;   /* texto: branco puro sobre quase preto da halo */
 
   /* Escala clara. O 5 e #6D6D6D, nao o #6E6E6E do design system original:
      sobre a superficie ativa o #6E6E6E da 4.46:1 e reprova AA. */
   --p-paper-0:  243 244 246;
   --p-paper-1:  246 247 248;
   --p-paper-2:  238 240 242;
-  --p-paper-3:  232 232 232;
+  --p-paper-3:  212 216 223;
   --p-paper-4:  165 165 165;
   --p-paper-5:  109 109 109;
   --p-paper-6:   68  68  68;
@@ -60,9 +65,9 @@
      e texto legivel sobre superficie clara e aceita tinta branca. O claro ja
      era escurecido antes desta fase (--p-orange-700 e nao 400); o que muda e
      o valor sair de medicao em vez de intuicao. */
-  --p-orange-vivid: 255  90  31;
+  --p-orange-vivid: 255 100  45;
   --p-orange-deep:  203  53   0;
-  --p-blue-vivid:    80 132 240;
+  --p-blue-vivid:   100 150 247;
   --p-blue-deep:     31  97 236;
   --p-green-vivid:   17 199 176;
   --p-green-deep:    11 123 109;
@@ -74,7 +79,7 @@
   --p-sinal-critico: 255 110 110; /* #ff6e6e */
   --p-red-vivid:    255 107 107;
   --p-red-deep:     221   0   0;
-  --p-purple-vivid: 154 122 255;
+  --p-purple-vivid: 160 130 255;
   --p-purple-deep:  114  69 255;
   --p-cyan-vivid:    34 211 238;
   --p-cyan-deep:     10 120 136;
@@ -89,7 +94,7 @@
      ciano, magenta, areia, ardosia — igual nos dois temas.
 
      Medida (Machado 2009, severidade total, distancia em OKLab x100): o menor
-     par entre as seis series e as quatro cores de status fica em 7.6 no escuro e
+     par entre as seis series e as quatro cores de status fica em 7.8 no escuro e
      6.5 no claro, nas quatro visoes (normal, deuteranopia, protanopia,
      tritanopia). A escala anterior dava 2.0 e 1.8: duas series quase iguais para
      quem tem daltonismo. Seis categorias sem os matizes de status nao passam
@@ -97,15 +102,15 @@
 
      Tambem nao e texto, entao nao vai a 4.5:1, mas vai a 3:1 (WCAG 1.4.11)
      sobre toda superficie, o que designTokens.test.ts trava. */
-  --p-chart-1-vivid:  82 142 217;
+  --p-chart-1-vivid:  34 121 220;
   --p-chart-1-deep:   27  88 158;
   --p-chart-2-vivid: 187 158 249;
   --p-chart-2-deep:  152  95 241;
   --p-chart-3-vivid: 143 231 253;
   --p-chart-3-deep:   56 148 168;
-  --p-chart-4-vivid: 164  83 143;
+  --p-chart-4-vivid: 183  74 157;
   --p-chart-4-deep:  160   1 133;
-  --p-chart-5-vivid: 131 113  91;
+  --p-chart-5-vivid: 139 111  77;
   --p-chart-5-deep:  157 129  94;
   --p-chart-6-vivid: 132 148 168;
   --p-chart-6-deep:   70  78  88;
@@ -124,7 +129,7 @@
   --c-border:        var(--p-carbon-6);
 
   /* Texto */
-  --c-text:          var(--p-white);
+  --c-text:          var(--p-carbon-10);
   --c-secondary:     var(--p-carbon-9);
   --c-muted:         var(--p-carbon-8);
   --c-disabled:      var(--p-carbon-7);
@@ -158,10 +163,6 @@
 
   /* Tinta sobre KPI preenchido. No escuro o acento e vivido, entao a tinta e
      escura: branco reprova nos quatro, de 1.59:1 a 3.56:1. */
-  --c-kpi-ink-orange: var(--p-paper-7);
-  --c-kpi-ink-blue:   var(--p-paper-7);
-  --c-kpi-ink-green:  var(--p-paper-7);
-  --c-kpi-ink-yellow: var(--p-paper-7);
 }
 
 /* SEMANTICOS: LIGHT */
@@ -209,10 +210,6 @@
 
   /* No claro o acento foi escurecido para passar como texto, entao a tinta e
      branca: a escura reprova nos quatro, de 3.40:1 a 3.47:1. */
-  --c-kpi-ink-orange: var(--p-white);
-  --c-kpi-ink-blue:   var(--p-white);
-  --c-kpi-ink-green:  var(--p-white);
-  --c-kpi-ink-yellow: var(--p-white);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -294,9 +291,9 @@
 
   /* Quase invisiveis de proposito: sao o unico separador entre shell, card e
      popover, que no claro sao os tres o mesmo branco. */
-  --c-shadow-sm: 0 2px 10px rgba(0, 0, 0, .03);
-  --c-shadow-md: 0 4px 20px rgba(0, 0, 0, .04);
-  --c-shadow-lg: 0 10px 30px rgba(0, 0, 0, .08);
+  --c-shadow-sm: 0 2px 8px rgba(0, 0, 0, .08);
+  --c-shadow-md: 0 4px 16px rgba(0, 0, 0, .10);
+  --c-shadow-lg: 0 12px 32px rgba(0, 0, 0, .14);
 }
 
 /* ── Dot grid light mode — levemente mais visível ── */
@@ -373,10 +370,6 @@ body {
 @keyframes floatUp {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes slideRight {
-  from { opacity: 0; transform: translateX(-10px); }
-  to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes shimmer {
   from { background-position: -200% 0; }
@@ -514,22 +507,27 @@ body {
 .grp-dot-anal  { background: rgb(74,222,128);  }
 .grp-dot-infra { background: rgb(251,146,60);  }
 
-/* ── Semantic badges ── */
-.badge-green  { background: rgba(74,  222, 128, 0.12); color: rgb(var(--c-green)); }
-.badge-red    { background: rgba(248, 113, 113, 0.12); color: rgb(var(--c-red));   }
-.badge-yellow { background: rgba(250, 204,  21, 0.12); color: rgb(var(--c-yellow));}
-.badge-orange { background: rgba(251, 146,  60, 0.12); color: rgb(var(--c-orange));}
-.badge-purple { background: rgba(167, 139, 250, 0.12); color: rgb(var(--c-purple));}
-.badge-cyan   { background: rgba(34,  211, 238, 0.12); color: rgb(var(--c-cyan));  }
-.badge-teal   { background: rgba(45,  212, 191, 0.12); color: rgb(var(--c-teal));  }
+/* ── Semantic badges ──
+   A tinta e o texto saem do mesmo token, entao trocam de tema juntos. Antes o
+   fundo era um rgba cravado (no escuro, verde-limao 74,222,128) sob um texto
+   --c-green teal: duas cores brigando dentro da mesma pilula. O alfa muda por
+   tema porque o texto escuro sobre a propria tinta a 12% cai para 4.45:1 no
+   claro; a 6% passa (o vermelho, 221 0 0, e o pior caso). designTokens.test.ts mede os sete. */
+.badge-green  { background: rgb(var(--c-green)  / 0.12); color: rgb(var(--c-green));  }
+.badge-red    { background: rgb(var(--c-red)    / 0.12); color: rgb(var(--c-red));    }
+.badge-yellow { background: rgb(var(--c-yellow) / 0.12); color: rgb(var(--c-yellow)); }
+.badge-orange { background: rgb(var(--c-orange) / 0.12); color: rgb(var(--c-orange)); }
+.badge-purple { background: rgb(var(--c-purple) / 0.12); color: rgb(var(--c-purple)); }
+.badge-cyan   { background: rgb(var(--c-cyan)   / 0.12); color: rgb(var(--c-cyan));   }
+.badge-teal   { background: rgb(var(--c-teal)   / 0.12); color: rgb(var(--c-teal));   }
 
-.light .badge-green  { background: rgba(22,  163,  74, 0.10); color: rgb(var(--c-green)); }
-.light .badge-red    { background: rgba(220,  38,  38, 0.10); color: rgb(var(--c-red));   }
-.light .badge-yellow { background: rgba(161,  98,   7, 0.11); color: rgb(var(--c-yellow));}
-.light .badge-orange { background: rgba(194,  65,  12, 0.10); color: rgb(var(--c-orange));}
-.light .badge-purple { background: rgba(109,  40, 217, 0.10); color: rgb(var(--c-purple));}
-.light .badge-cyan   { background: rgba(8,   145, 178, 0.10); color: rgb(var(--c-cyan));  }
-.light .badge-teal   { background: rgba(15,  118, 110, 0.10); color: rgb(var(--c-teal));  }
+.light .badge-green  { background: rgb(var(--c-green)  / 0.06); }
+.light .badge-red    { background: rgb(var(--c-red)    / 0.06); }
+.light .badge-yellow { background: rgb(var(--c-yellow) / 0.06); }
+.light .badge-orange { background: rgb(var(--c-orange) / 0.06); }
+.light .badge-purple { background: rgb(var(--c-purple) / 0.06); }
+.light .badge-cyan   { background: rgb(var(--c-cyan)   / 0.06); }
+.light .badge-teal   { background: rgb(var(--c-teal)   / 0.06); }
 
 /* Nível de Sinal: badges na paleta própria das faixas. Fica no container da
    página e nos modais dela (que vão por portal). */

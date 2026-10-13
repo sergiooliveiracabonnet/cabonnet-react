@@ -42,10 +42,6 @@ export default {
         'chart-4':      'rgb(var(--c-chart-4) / <alpha-value>)',
         'chart-5':      'rgb(var(--c-chart-5) / <alpha-value>)',
         'chart-6':      'rgb(var(--c-chart-6) / <alpha-value>)',
-        'kpi-ink-orange': 'rgb(var(--c-kpi-ink-orange) / <alpha-value>)',
-        'kpi-ink-blue':   'rgb(var(--c-kpi-ink-blue) / <alpha-value>)',
-        'kpi-ink-green':  'rgb(var(--c-kpi-ink-green) / <alpha-value>)',
-        'kpi-ink-yellow': 'rgb(var(--c-kpi-ink-yellow) / <alpha-value>)',
         // Token semântico de borda — substitui border-white/[0.07]
         border:         'rgb(var(--c-border) / <alpha-value>)',
       },
@@ -53,6 +49,9 @@ export default {
       fontFamily: {
         sans:     ['"Inter Variable"', '"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
         headline: ['"Inter Variable"', '"Inter"', 'system-ui', 'sans-serif'],
+        // `font-mono` NAO e monoespacada: aponta para a Inter de proposito, com
+        // tabular-nums nos numeros. Uma mono de verdade alargaria as 268 colunas
+        // que ja usam a classe. O nome e herdado; o comportamento e este.
         mono:     ['"Inter Variable"', '"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
       },
 
@@ -130,47 +129,26 @@ export default {
       },
 
       animation: {
-        aurora:           'aurora 8s ease infinite',
         'fade-in':        'fadeIn .22s cubic-bezier(.4,0,.2,1)',
-        'slide-up':       'slideUp .22s cubic-bezier(.4,0,.2,1)',
         'slide-down':     'slideDown .22s cubic-bezier(.4,0,.2,1)',
         'scale-in':       'scaleIn .22s cubic-bezier(.34,1.56,.64,1)',
         'page-enter':     'pageEnter .40s cubic-bezier(.4,0,.2,1) both',
         'card-enter':     'cardEnter .36s cubic-bezier(.34,1.56,.64,1) both',
-        'float-up':       'floatUp .44s cubic-bezier(.4,0,.2,1) both',
-        'glow-pulse':     'glowPulse 2.6s ease-in-out infinite',
         'shimmer':        'shimmer 1.6s linear infinite',
         'breathe':        'breathe 3.2s ease-in-out infinite',
-        'slide-right':    'slideRight .32s cubic-bezier(.34,1.56,.64,1) both',
-        'pop-in':         'popIn .24s cubic-bezier(.34,1.56,.64,1) both',
-        'gradient-flow':  'gradientFlow 5s ease infinite',
-        'glow-border':    'glowBorderPulse 2.8s ease-in-out infinite',
         'slide-left':     'slideInLeft .30s cubic-bezier(.34,1.56,.64,1) both',
         'count-up':       'countUp .42s cubic-bezier(.34,1.56,.64,1) both',
-        'morph':          'morphBlob 9s ease-in-out infinite',
       },
       keyframes: {
-        aurora: {
-          '0%,100%': { backgroundPosition: '0% 50%' },
-          '50%':     { backgroundPosition: '100% 50%' },
-        },
         fadeIn:          { from: { opacity: '0' },                                                                      to: { opacity: '1' } },
-        slideUp:         { from: { opacity: '0', transform: 'translateY(8px)' },                                        to: { opacity: '1', transform: 'translateY(0)' } },
         slideDown:       { from: { opacity: '0', transform: 'translateY(-8px)' },                                       to: { opacity: '1', transform: 'translateY(0)' } },
         scaleIn:         { from: { opacity: '0', transform: 'scale(.92)' },                                             to: { opacity: '1', transform: 'scale(1)' } },
         pageEnter:       { from: { opacity: '0', transform: 'translateY(16px)' },                                       to: { opacity: '1', transform: 'translateY(0)' } },
         cardEnter:       { from: { opacity: '0', transform: 'scale(.93) translateY(12px)' },                            to: { opacity: '1', transform: 'scale(1)   translateY(0)' } },
-        floatUp:         { from: { opacity: '0', transform: 'translateY(24px)' },                                       to: { opacity: '1', transform: 'translateY(0)' } },
-        slideRight:      { from: { opacity: '0', transform: 'translateX(-14px)' },                                      to: { opacity: '1', transform: 'translateX(0)' } },
-        popIn:           { from: { opacity: '0', transform: 'scale(.80)' },                                             to: { opacity: '1', transform: 'scale(1)' } },
-        glowPulse:       { '0%,100%': { boxShadow: '0 0 0 0 rgba(14,165,233,0)' },     '50%': { boxShadow: '0 0 0 12px rgba(14,165,233,.12)' } },
         shimmer:         { from: { backgroundPosition: '-200% 0' },                                                     to:   { backgroundPosition: '200% 0' } },
         breathe:         { '0%,100%': { transform: 'scale(1)',    opacity: '0.7' },     '50%': { transform: 'scale(1.04)', opacity: '1' } },
-        gradientFlow:    { '0%,100%': { backgroundPosition: '0% 50%' },                '50%': { backgroundPosition: '100% 50%' } },
-        glowBorderPulse: { '0%,100%': { opacity: '0.45', transform: 'scaleY(0.65)' },  '50%': { opacity: '1', transform: 'scaleY(1)' } },
         slideInLeft:     { from: { opacity: '0', transform: 'translateX(-8px)' },                                       to:   { opacity: '1', transform: 'translateX(0)' } },
         countUp:         { from: { opacity: '0', transform: 'translateY(10px) scale(0.90)', filter: 'blur(3px)' },      to:   { opacity: '1', transform: 'translateY(0) scale(1)', filter: 'blur(0)' } },
-        morphBlob:       { '0%,100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' }, '50%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' } },
       },
 
       transitionTimingFunction: {
@@ -197,7 +175,7 @@ export default {
     'text-gradient', 'text-gradient-gold', 'text-gradient-green', 'text-gradient-red',
     'glow-text', 'glow-text-green', 'glow-text-red', 'glow-text-yellow',
     'glow-text-purple', 'glow-text-cyan',
-    'animate-slide-left', 'animate-count-up', 'animate-morph',
+    'animate-slide-left', 'animate-count-up',
     { pattern: /^card-glow-/ },
     { pattern: /^animate-/ },
     { pattern: /^badge-/ },
